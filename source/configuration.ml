@@ -36,7 +36,7 @@ module Buck = struct
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     try
       let mode = optional_string_member "mode" json in
       let isolation_prefix = optional_string_member "isolation_prefix" json in
@@ -91,7 +91,7 @@ module ChangeIndicator = struct
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     try
       let root = path_member "root" json in
       let relative = string_member "relative" json in
@@ -118,7 +118,7 @@ module UnwatchedFiles = struct
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     try
       let root = path_member "root" json in
       let checksum_path = string_member "checksum_path" json in
@@ -260,7 +260,7 @@ module SharedMemory = struct
 
 
   let of_yojson json =
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     Ok
       {
         heap_size = int_member "heap_size" ~default:default.heap_size json;

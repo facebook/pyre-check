@@ -16,7 +16,7 @@
 
 open Core
 open Data_structures
-module Json = Yojson.Safe
+module JsonAst = JsonParsing.JsonAst
 
 let ( >>= ) = Result.( >>= )
 
@@ -694,7 +694,7 @@ module Error = struct
     | InvalidJson of string
     | NoConfigurationFound
     | UnexpectedJsonType of {
-        json: Json.t;
+        json: JsonAst.Json.t;
         message: string;
         section: string option;
       }
@@ -709,7 +709,7 @@ module Error = struct
     | UnsupportedSource of string
     | UnsupportedSink of string
     | UnsupportedTransform of string
-    | UnexpectedCombinedSourceRule of Json.t
+    | UnexpectedCombinedSourceRule of JsonAst.Json.t
     | PartialSinkDuplicate of string
     | InvalidLabelMultiSink of {
         label: string;
@@ -728,23 +728,24 @@ module Error = struct
   type t = {
     kind: kind;
     path: PyrePath.t option;
+    location: JsonAst.Location.t option;
   }
   [@@deriving equal]
 
-  let create ~path ~kind = { kind; path = Some path }
+  let create_with_location ~path ~kind ~location =
+    { kind; path = Some path; location = Some location }
+
+
+  let create ~path ~kind = { kind; path = Some path; location = None }
 
   let pp_kind formatter = function
     | FileNotFound -> Format.fprintf formatter "File not found"
     | FileRead -> Format.fprintf formatter "Could not read file"
-    | InvalidJson error -> Format.fprintf formatter "%s" error
+    | InvalidJson message -> Format.fprintf formatter "Error parsing taint config: %s." message
     | NoConfigurationFound ->
         Format.fprintf formatter "No `.config` was found in the taint directories"
     | UnexpectedJsonType { json; message; section } ->
-        let json =
-          match json with
-          | `Null -> ""
-          | _ -> Format.sprintf ": `%s`" (Json.to_string json)
-        in
+        let json = Format.asprintf ": `%a`" JsonAst.Json.pp json in
         let section =
           match section with
           | Some section -> Format.sprintf " for section `%s`" section
@@ -763,8 +764,9 @@ module Error = struct
         Format.fprintf
           formatter
           "Combined source rules must be of the form {\"a\": [\"SourceA\"], \"b\": [\"SourceB\"]}, \
-           got `%s`"
-          (Json.to_string json)
+           got `%a`"
+          JsonAst.Json.pp
+          json
     | PartialSinkDuplicate partial_sink ->
         Format.fprintf
           formatter
@@ -814,69 +816,96 @@ module Error = struct
   let show_kind = Format.asprintf "%a" pp_kind
 
   let pp formatter = function
-    | { path = None; kind } -> pp_kind formatter kind
-    | { path = Some path; kind } -> Format.fprintf formatter "%a: %a" PyrePath.pp path pp_kind kind
+    | { path = None; kind; _ } -> pp_kind formatter kind
+    | { path = Some path; kind; location = None } ->
+        Format.fprintf formatter "%a: %a" PyrePath.pp path pp_kind kind
+    | { path = Some path; kind; location = Some location } ->
+        Format.fprintf
+          formatter
+          "%a:%a: %a"
+          PyrePath.pp
+          path
+          JsonAst.Location.pp_start
+          location
+          pp_kind
+          kind
 
 
   let show = Format.asprintf "%a" pp
 
-  let to_json { path; kind } =
+  let to_json { path; kind; location } =
     let path =
       match path with
       | None -> `Null
       | Some path -> `String (PyrePath.absolute path)
     in
-    `Assoc ["description", `String (show_kind kind); "path", path; "code", `Int (code kind)]
+    let assoc_of_position { JsonAst.Location.line; column } =
+      `Assoc ["line", `Int line; "column", `Int column]
+    in
+    let location =
+      match location with
+      | None -> `Null
+      | Some { JsonAst.Location.start; stop } ->
+          `Assoc ["start", assoc_of_position start; "stop", assoc_of_position stop]
+    in
+    `Assoc
+      [
+        "description", `String (show_kind kind);
+        "path", path;
+        "code", `Int (code kind);
+        "location", location;
+      ]
 end
 
 (** Parse json files to create a taint configuration. *)
 let from_json_list source_json_list =
   let json_exception_to_error ~path ?section f =
     try f () with
-    | Json.Util.Type_error (message, json)
-    | Json.Util.Undefined (message, json) ->
+    | JsonAst.Json.TypeError { json; message } ->
         Result.Error
           [Error.create ~path ~kind:(Error.UnexpectedJsonType { json; message; section })]
   in
   let json_bool_member ~path key value ~default =
     json_exception_to_error ~path ~section:key (fun () ->
-        Json.Util.member key value
-        |> Yojson.Safe.Util.to_bool_option
+        JsonAst.Json.Util.member_exn key value
+        |> JsonAst.Json.Util.to_bool
         |> Option.value ~default
         |> Result.return)
   in
   let json_string_member ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
-        Json.Util.member key value |> Json.Util.to_string |> Result.return)
+        JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_string_exn |> Result.return)
   in
   let json_integer_member ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
-        Json.Util.member key value |> Json.Util.to_int |> Result.return)
-  in
-  let member name json =
-    try Json.Util.member name json with
-    | Not_found -> `Null
+        JsonAst.Json.Util.member_exn key value |> JsonAst.Json.Util.to_int_exn |> Result.return)
   in
   let array_member ~path ?section name json =
-    match member name json with
+    let node = JsonAst.Json.Util.member name json in
+    match node.JsonAst.Node.value with
     | `Null -> Result.Ok []
-    | json ->
-        json_exception_to_error ~path ?section (fun () -> Json.Util.to_list json |> Result.return)
+    | _ ->
+        json_exception_to_error ~path ?section (fun () ->
+            JsonAst.Json.Util.to_list_exn node |> Result.return)
   in
   let json_string_list ~path ?section json =
     json_exception_to_error ~path ?section (fun () ->
-        Json.Util.to_list json |> List.map ~f:Json.Util.to_string |> Result.return)
+        JsonAst.Json.Util.to_list_exn json
+        |> List.map ~f:JsonAst.Json.Util.to_string_exn
+        |> Result.return)
   in
   let parse_kind ~path ?section json =
-    match member "kind" json with
+    let kind_node = JsonAst.Json.Util.member "kind" json in
+    match kind_node.JsonAst.Node.value with
     | `Null -> Result.Ok AnnotationParser.Named
     | `String "parametric" -> Result.Ok AnnotationParser.Parametric
-    | json ->
+    | _ ->
         Error
           [
             Error.create
               ~path
-              ~kind:(Error.UnexpectedJsonType { json; message = "Unexpected kind"; section });
+              ~kind:
+                (Error.UnexpectedJsonType { json = kind_node; message = "Unexpected kind"; section });
           ]
   in
   let check_keys ~path ~section ~required_keys ~valid_keys ~current_keys =
@@ -903,7 +932,7 @@ let from_json_list source_json_list =
       ~path
       ~section
       ~required_keys:["name"]
-      ~current_keys:(Json.Util.keys json)
+      ~current_keys:(JsonAst.Json.Util.keys json)
       ~valid_keys:["name"; "kind"; "comment"]
     >>= fun () ->
     json_string_member ~path "name" json
@@ -928,7 +957,7 @@ let from_json_list source_json_list =
       ~path
       ~section
       ~required_keys:["name"]
-      ~current_keys:(Json.Util.keys json)
+      ~current_keys:(JsonAst.Json.Util.keys json)
       ~valid_keys:["name"; "comment"]
     >>= fun () ->
     json_string_member ~path "name" json >>= fun name -> Result.Ok (TaintTransform.Named name)
@@ -995,22 +1024,22 @@ let from_json_list source_json_list =
         ~section:"rules"
         ~required_keys
         ~valid_keys
-        ~current_keys:(Json.Util.keys json)
+        ~current_keys:(JsonAst.Json.Util.keys json)
       >>= fun () ->
-      Json.Util.member "sources" json
+      JsonAst.Json.Util.member_exn "sources" json
       |> json_string_list ~path ~section:"rules"
       >>= fun sources ->
       List.map ~f:(parse_source_reference ~path ~allowed_sources) sources
       |> Result.combine_errors
       >>= fun sources ->
-      Json.Util.member "sinks" json
+      JsonAst.Json.Util.member_exn "sinks" json
       |> json_string_list ~path ~section:"rules"
       >>= fun sinks ->
       List.map ~f:(parse_sink_reference ~path ~allowed_sinks) sinks
       |> Result.combine_errors
       >>= fun sinks ->
-      (match member "transforms" json with
-      | `Null -> Result.Ok []
+      (match JsonAst.Json.Util.member "transforms" json with
+      | { JsonAst.Node.value = `Null; _ } -> Result.Ok []
       | transforms -> json_string_list ~path ~section:"rules" transforms)
       >>= fun transforms ->
       List.map ~f:(parse_transform_reference ~path ~allowed_transforms) transforms
@@ -1033,10 +1062,11 @@ let from_json_list source_json_list =
     }
 
     let parse_sources ~allowed_sources ~path ~section json =
-      (match Json.Util.member section json with
+      let source_node = JsonAst.Json.Util.member_exn section json in
+      (match source_node.JsonAst.Node.value with
       | `String source -> Result.Ok [source]
-      | `List sources -> Result.Ok (List.map ~f:Json.Util.to_string sources)
-      | unsupported ->
+      | `List sources -> Result.Ok (List.map ~f:JsonAst.Json.Util.to_string_exn sources)
+      | _ ->
           Result.Error
             [
               Error.create
@@ -1044,7 +1074,7 @@ let from_json_list source_json_list =
                 ~kind:
                   (Error.UnexpectedJsonType
                      {
-                       json = unsupported;
+                       json = source_node;
                        message = "Expected a string or an array of strings";
                        section = Some section;
                      });
@@ -1054,8 +1084,8 @@ let from_json_list source_json_list =
 
 
     let parse_combined_source_rule ~allowed_sources ~path json =
-      let sources = Json.Util.member "sources" json in
-      let keys = Json.Util.keys sources in
+      let sources = JsonAst.Json.Util.member_exn "sources" json in
+      let keys = JsonAst.Json.Util.keys sources in
       match keys with
       | [first_tag; second_tag] ->
           parse_sources ~allowed_sources ~path ~section:first_tag sources
@@ -1248,18 +1278,18 @@ let from_json_list source_json_list =
           ~f:(parse_string_combine_rule ~path ~allowed_sources)
   in
   let parse_implicit_sinks ~allowed_sinks (path, json) =
-    match member "implicit_sinks" json with
-    | `Null -> Result.Ok empty_implicit_sinks
+    match JsonAst.Json.Util.member "implicit_sinks" json with
+    | { JsonAst.Node.value = `Null; _ } -> Result.Ok empty_implicit_sinks
     | implicit_sinks ->
         check_keys
           ~path
           ~section:"implicit_sinks"
           ~required_keys:[]
           ~valid_keys:["conditional_test"; "literal_strings"]
-          ~current_keys:(Json.Util.keys implicit_sinks)
+          ~current_keys:(JsonAst.Json.Util.keys implicit_sinks)
         >>= fun () ->
-        (match member "conditional_test" implicit_sinks with
-        | `Null -> Result.Ok []
+        (match JsonAst.Json.Util.member "conditional_test" implicit_sinks with
+        | { JsonAst.Node.value = `Null; _ } -> Result.Ok []
         | conditional_test ->
             json_string_list ~path conditional_test
             >>= fun sinks ->
@@ -1282,15 +1312,15 @@ let from_json_list source_json_list =
         >>| fun literal_string_sinks -> { conditional_test; literal_string_sinks }
   in
   let parse_implicit_sources ~allowed_sources (path, json) =
-    match member "implicit_sources" json with
-    | `Null -> Result.Ok { literal_strings = [] }
+    match JsonAst.Json.Util.member "implicit_sources" json with
+    | { JsonAst.Node.value = `Null; _ } -> Result.Ok { literal_strings = [] }
     | implicit_sources ->
         check_keys
           ~path
           ~section:"implicit_sources"
           ~required_keys:[]
           ~valid_keys:["conditional_test"; "literal_strings"]
-          ~current_keys:(Json.Util.keys implicit_sources)
+          ~current_keys:(JsonAst.Json.Util.keys implicit_sources)
         >>= fun () ->
         array_member ~path "literal_strings" implicit_sources
         >>= fun literal_strings ->
@@ -1366,19 +1396,21 @@ let from_json_list source_json_list =
   >>= fun implicit_sinks ->
   let parse_integer_option name =
     let parse_single_json (path, json) =
-      match member "options" json with
-      | `Null -> Result.Ok None
+      match JsonAst.Json.Util.member "options" json with
+      | { JsonAst.Node.value = `Null; _ } -> Result.Ok None
       | options -> (
-          match member name options with
-          | `Null -> Result.Ok None
-          | `Int value -> Result.Ok (Some value)
-          | json ->
+          try
+            let options_node = JsonAst.Json.Util.member_exn name options in
+            let options_value = JsonAst.Json.Util.to_int options_node in
+            match options_value with
+            | None -> Result.Ok None
+            | Some value -> Result.Ok (Some value)
+          with
+          | JsonAst.Json.TypeError { message; json } ->
               Error
                 (Error.create
                    ~path
-                   ~kind:
-                     (Error.UnexpectedJsonType
-                        { json; message = "Expected integer, got"; section = Some "options" })))
+                   ~kind:(Error.UnexpectedJsonType { json; message; section = Some "options" })))
     in
     List.map source_json_list ~f:parse_single_json
     |> Result.combine_errors
@@ -1386,7 +1418,7 @@ let from_json_list source_json_list =
     >>= function
     | [] -> Result.Ok None
     | [value] -> Result.Ok (Some value)
-    | _ -> Result.Error [{ Error.path = None; kind = Error.OptionDuplicate name }]
+    | _ -> Result.Error [{ Error.path = None; kind = Error.OptionDuplicate name; location = None }]
   in
   parse_integer_option "maximum_model_source_tree_width"
   >>= fun maximum_model_source_tree_width ->
@@ -1476,7 +1508,7 @@ let validate ({ Heap.sources; sinks; transforms; features; _ } as configuration)
     let ensure_unique element =
       let element = get_name element in
       if Hash_set.mem seen element then
-        Result.Error [{ Error.path = None; kind = get_error element }]
+        Result.Error [{ Error.path = None; kind = get_error element; location = None }]
       else (
         Hash_set.add seen element;
         Result.Ok ())
@@ -1595,14 +1627,19 @@ let from_taint_model_paths taint_model_paths =
         |> File.content
         |> Result.of_option ~error:(Error.create ~path ~kind:FileRead)
       in
-      try content >>| Json.from_string >>| fun json -> path, json with
-      | Yojson.Json_error parse_error ->
-          Result.Error (Error.create ~path ~kind:(Error.InvalidJson parse_error))
+      content
+      >>| JsonAst.Json.from_string
+      >>= function
+      | Result.Ok json -> Result.Ok (path, json)
+      | Result.Error { JsonAst.ParseError.message; location } ->
+          Result.Error
+            (Error.create_with_location ~path ~kind:(Error.InvalidJson message) ~location)
   in
   let configurations = file_paths |> List.map ~f:parse_json |> Result.combine_errors in
   match configurations with
   | Result.Error errors -> Result.Error errors
-  | Result.Ok [] -> Result.Error [{ Error.path = None; kind = NoConfigurationFound }]
+  | Result.Ok [] ->
+      Result.Error [{ Error.path = None; kind = NoConfigurationFound; location = None }]
   | Result.Ok configurations -> from_json_list configurations >>= validate
 
 
@@ -1633,7 +1670,7 @@ let with_command_line_options
       let parse_source_reference source =
         AnnotationParser.parse_source ~allowed:configuration.Heap.sources source
         |> Result.map_error ~f:(fun _ ->
-               { Error.path = None; kind = Error.UnsupportedSource source })
+               { Error.path = None; kind = Error.UnsupportedSource source; location = None })
       in
       source_filter
       |> List.map ~f:parse_source_reference
@@ -1648,7 +1685,8 @@ let with_command_line_options
   | Some sink_filter ->
       let parse_sink_reference sink =
         AnnotationParser.parse_sink ~allowed:configuration.sinks sink
-        |> Result.map_error ~f:(fun _ -> { Error.path = None; kind = Error.UnsupportedSink sink })
+        |> Result.map_error ~f:(fun _ ->
+               { Error.path = None; kind = Error.UnsupportedSink sink; location = None })
       in
       sink_filter
       |> List.map ~f:parse_sink_reference
@@ -1664,7 +1702,7 @@ let with_command_line_options
       let parse_transform_reference transform =
         AnnotationParser.parse_transform ~allowed:configuration.transforms transform
         |> Result.map_error ~f:(fun _ ->
-               { Error.path = None; kind = Error.UnsupportedTransform transform })
+               { Error.path = None; kind = Error.UnsupportedTransform transform; location = None })
       in
       transform_filter
       |> List.map ~f:parse_transform_reference

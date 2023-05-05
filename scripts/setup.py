@@ -36,6 +36,7 @@ DEPENDENCIES = [
     "re2.v0.15.0",
     "dune.3.7.1",
     "yojson.2.0.2",
+    "jsonm.1.0.2",
     "ppx_deriving_yojson.3.7.0",
     "ppx_yojson_conv.v0.15.1",
     "ounit2.2.2.7",

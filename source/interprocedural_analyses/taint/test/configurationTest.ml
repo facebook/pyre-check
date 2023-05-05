@@ -15,7 +15,10 @@ let parse ?rule_filter ?source_filter ?sink_filter ?transform_filter configurati
   let open Result in
   let configuration =
     TaintConfiguration.from_json_list
-      [PyrePath.create_absolute "/taint.config", Yojson.Safe.from_string configuration]
+      [
+        ( PyrePath.create_absolute "/taint.config",
+          JsonParsing.JsonAst.Json.from_string_exn configuration );
+      ]
     >>= TaintConfiguration.with_command_line_options
           ~rule_filter
           ~source_filter
@@ -78,29 +81,29 @@ let test_simple _ =
   let configuration =
     assert_parse
       {|
-    { sources: [
-        { name: "A" },
-        { name: "B" }
+    { "sources": [
+        { "name": "A" },
+        { "name": "B" }
       ],
-      sinks: [
-        { name: "C" },
-        { name: "D" }
+      "sinks": [
+        { "name": "C" },
+        { "name": "D" }
       ],
-      features: [
-        { name: "E" },
-        { name: "F" }
+      "features": [
+        { "name": "E" },
+        { "name": "F" }
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: ["A"],
-           sinks: ["D"],
-           code: 2001,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": ["A"],
+           "sinks": ["D"],
+           "code": 2001,
+           "message_format": "whatever"
         }
       ],
-      options: {
-        maximum_overrides_to_analyze: 50
+      "options": {
+        "maximum_overrides_to_analyze": 50
       }
     }
   |}
@@ -123,15 +126,15 @@ let test_transform _ =
   let configuration =
     assert_parse
       {|
-    { sources:[],
-      sinks:[],
-      rules:[
+    { "sources": [],
+      "sinks": [],
+      "rules": [
         {
-           name: "test rule",
-           sources: [],
-           sinks: [],
-           code: 2001,
-           message_format: "transforms are optional"
+           "name": "test rule",
+           "sources": [],
+           "sinks": [],
+           "code": 2001,
+           "message_format": "transforms are optional"
         }
       ]
     }
@@ -143,19 +146,19 @@ let test_transform _ =
   let configuration =
     assert_parse
       {|
-    { sources:[],
-      sinks:[],
-      transforms: [
-        {name: "A"}
+    { "sources": [],
+      "sinks": [],
+      "transforms": [
+        {"name": "A"}
       ],
-      rules:[
+      "rules": [
         {
-           name: "test rule",
-           sources: [],
-           sinks: [],
-           transforms: ["A", "A"],
-           code: 2001,
-           message_format: "transforms can repeat in rules"
+           "name": "test rule",
+           "sources": [],
+           "sinks": [],
+           "transforms": ["A", "A"],
+           "code": 2001,
+           "message_format": "transforms can repeat in rules"
         }
       ]
     }
@@ -183,21 +186,21 @@ let test_invalid_source _ =
   assert_parse_error
     ~errors:[TaintConfiguration.Error.UnsupportedSource "C"]
     {|
-    { sources: [
-        { name: "A" },
-        { name: "B" }
+    { "sources": [
+        { "name": "A" },
+        { "name": "B" }
       ],
-      sinks: [
+      "sinks": [
       ],
-      features: [
+      "features": [
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: ["C"],
-           sinks: [],
-           code: 2001,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": ["C"],
+           "sinks": [],
+           "code": 2001,
+           "message_format": "whatever"
         }
       ]
     }
@@ -208,20 +211,20 @@ let test_invalid_sink _ =
   assert_parse_error
     ~errors:[TaintConfiguration.Error.UnsupportedSink "B"]
     {|
-    { sources: [
+    { "sources": [
       ],
-      sinks: [
-        { name: "A" }
+      "sinks": [
+        { "name": "A" }
       ],
-      features: [
+      "features": [
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: [],
-           sinks: ["B"],
-           code: 2001,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": [],
+           "sinks": ["B"],
+           "code": 2001,
+           "message_format": "whatever"
         }
       ]
     }
@@ -232,24 +235,24 @@ let test_invalid_transform _ =
   assert_parse_error
     ~errors:[TaintConfiguration.Error.UnsupportedTransform "B"]
     {|
-    { sources: [
+    { "sources": [
       ],
-      sinks: [
-        { name: "A" }
+      "sinks": [
+        { "name": "A" }
       ],
-      transforms: [
-        { name: "A" }
+      "transforms": [
+        { "name": "A" }
       ],
-      features: [
+      "features": [
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: [],
-           sinks: [],
-           transforms: ["B"],
-           code: 2001,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": [],
+           "sinks": [],
+           "transforms": ["B"],
+           "code": 2001,
+           "message_format": "whatever"
         }
       ]
     }
@@ -261,20 +264,28 @@ let test_combined_source_rules _ =
     ~errors:
       [
         TaintConfiguration.Error.UnexpectedJsonType
-          { json = `Null; message = "Expected string, got null"; section = Some "partial_sink" };
+          {
+            json =
+              {
+                JsonParsing.JsonAst.Node.value = `Null;
+                location = JsonParsing.JsonAst.Location.null_location;
+              };
+            message = "Expected string, got null";
+            section = Some "partial_sink";
+          };
       ]
     {|
-      { sources: [
-          { name: "A" },
-          { name: "B" }
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" }
         ],
-        combined_source_rules: [
+        "combined_source_rules": [
           {
-             name: "test combined rule",
-             sources: {"a": "A", "b": "B"},
-             sinks: ["C"],
-             code: 2001,
-             message_format: "some form"
+             "name": "test combined rule",
+             "sources": {"a": "A", "b": "B"},
+             "sinks": ["C"],
+             "code": 2001,
+             "message_format": "some form"
           }
         ]
       }
@@ -284,24 +295,32 @@ let test_combined_source_rules _ =
       [
         TaintConfiguration.Error.UnexpectedJsonType
           {
-            json = `Int 123;
+            json =
+              {
+                JsonParsing.JsonAst.Node.value = `Float 123.;
+                location =
+                  {
+                    JsonParsing.JsonAst.Location.start = { line = 9; column = 31 };
+                    stop = { line = 9; column = 33 };
+                  };
+              };
             message = "Expected a string or an array of strings";
             section = Some "a";
           };
       ]
     {|
-      { sources: [
-          { name: "A" },
-          { name: "B" }
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" }
         ],
-        combined_source_rules: [
+        "combined_source_rules": [
           {
-             name: "test combined rule",
-             sources: {"a": 123, "b": "B"},
-             sinks: ["C"],
-             partial_sink: "CombinedSink",
-             code: 2001,
-             message_format: "some form"
+             "name": "test combined rule",
+             "sources": {"a": 123, "b": "B"},
+             "sinks": ["C"],
+             "partial_sink": "CombinedSink",
+             "code": 2001,
+             "message_format": "some form"
           }
         ]
       }
@@ -309,18 +328,18 @@ let test_combined_source_rules _ =
   let configuration =
     assert_parse
       {|
-    { sources: [
-        { name: "A" },
-        { name: "B" }
+    { "sources": [
+        { "name": "A" },
+        { "name": "B" }
       ],
-      combined_source_rules: [
+      "combined_source_rules": [
         {
-           name: "test combined rule",
-           sources: {"a": "A", "b": "B"},
-           partial_sink: "C",
-           main_trace_source: "b",
-           code: 2001,
-           message_format: "some form"
+           "name": "test combined rule",
+           "sources": {"a": "A", "b": "B"},
+           "partial_sink": "C",
+           "main_trace_source": "b",
+           "code": 2001,
+           "message_format": "some form"
         }
       ]
     }
@@ -356,19 +375,19 @@ let test_combined_source_rules _ =
   let configuration =
     assert_parse
       {|
-    { sources: [
-        { name: "A" },
-        { name: "B" },
-        { name: "C" }
+    { "sources": [
+        { "name": "A" },
+        { "name": "B" },
+        { "name": "C" }
       ],
-      sinks: [],
-      combined_source_rules: [
+      "sinks": [],
+      "combined_source_rules": [
         {
-           name: "test combined rule",
-           sources: {"a": "A", "b": ["B", "C"]},
-           partial_sink: "CombinedSink",
-           code: 2001,
-           message_format: "some form"
+           "name": "test combined rule",
+           "sources": {"a": "A", "b": ["B", "C"]},
+           "partial_sink": "CombinedSink",
+           "code": 2001,
+           "message_format": "some form"
         }
       ]
     }
@@ -404,24 +423,24 @@ let test_combined_source_rules _ =
   assert_parse_error
     ~errors:[TaintConfiguration.Error.PartialSinkDuplicate "C"]
     {|
-      { sources: [
-          { name: "A" },
-          { name: "B" }
+      { "sources": [
+          { "name": "A" },
+          { "name": "B" }
         ],
-        combined_source_rules: [
+        "combined_source_rules": [
           {
-             name: "test combined rule",
-             sources: {"a": "A", "b": "B"},
-             partial_sink: "C",
-             code: 2001,
-             message_format: "some form"
+             "name": "test combined rule",
+             "sources": {"a": "A", "b": "B"},
+             "partial_sink": "C",
+             "code": 2001,
+             "message_format": "some form"
           },
           {
-             name: "test combined rule",
-             sources: {"a": "A", "b": "B"},
-             partial_sink: "C",
-             code: 2002,
-             message_format: "other form"
+             "name": "test combined rule",
+             "sources": {"a": "A", "b": "B"},
+             "partial_sink": "C",
+             "code": 2002,
+             "message_format": "other form"
           }
         ]
       }
@@ -435,18 +454,22 @@ let test_string_combine_rules _ =
       [
         TaintConfiguration.Error.UnexpectedJsonType
           {
-            json = `Null;
+            json =
+              {
+                JsonParsing.JsonAst.Node.value = `Null;
+                location = JsonParsing.JsonAst.Location.null_location;
+              };
             message = "Expected a string or an array of strings";
             section = Some "main_sources";
           };
       ]
     {|
-      { sources: [],
-        string_combine_rules: [
+      { "sources": [],
+        "string_combine_rules": [
           {
-             name: "",
-             code: 2001,
-             message_format: ""
+             "name": "",
+             "code": 2001,
+             "message_format": ""
           }
         ]
       }
@@ -457,21 +480,25 @@ let test_string_combine_rules _ =
       [
         TaintConfiguration.Error.UnexpectedJsonType
           {
-            json = `Null;
+            json =
+              {
+                JsonParsing.JsonAst.Node.value = `Null;
+                location = JsonParsing.JsonAst.Location.null_location;
+              };
             message = "Expected a string or an array of strings";
             section = Some "secondary_sources";
           };
       ]
     {|
-      { sources: [
-          { name: "A" }
+      { "sources": [
+          { "name": "A" }
         ],
-        string_combine_rules: [
+        "string_combine_rules": [
           {
-             name: "",
-             main_sources: "A",
-             code: 2001,
-             message_format: ""
+             "name": "",
+             "main_sources": "A",
+             "code": 2001,
+             "message_format": ""
           }
         ]
       }
@@ -479,20 +506,20 @@ let test_string_combine_rules _ =
   let configuration =
     assert_parse
       {|
-    { sources: [
-        { name: "A" },
-        { name: "B" },
-        { name: "C" }
+    { "sources": [
+        { "name": "A" },
+        { "name":"B" },
+        { "name":"C" }
       ],
-      sinks: [],
-      string_combine_rules: [
+      "sinks": [],
+      "string_combine_rules": [
         {
-           name: "rule name",
-           main_sources: "A",
-           secondary_sources: ["B", "C"],
-           partial_sink: "UserDefinedPartialSink",
-           code: 2001,
-           message_format: "rule message"
+           "name": "rule name",
+           "main_sources": "A",
+           "secondary_sources": ["B", "C"],
+           "partial_sink": "UserDefinedPartialSink",
+           "code": 2001,
+           "message_format": "rule message"
         }
       ]
     }
@@ -537,9 +564,9 @@ let test_lineage_analysis _ =
   let configuration =
     assert_parse
       {|
-        { sources:[],
-          sinks: [],
-          rules: []
+        { "sources":[],
+          "sinks": [],
+          "rules": []
          }
       |}
   in
@@ -547,10 +574,10 @@ let test_lineage_analysis _ =
   let configuration =
     assert_parse
       {|
-          { sources:[],
-            sinks: [],
-            rules: [],
-            lineage_analysis: true
+          { "sources":[],
+            "sinks": [],
+            "rules": [],
+            "lineage_analysis": true
           }
       |}
   in
@@ -569,15 +596,15 @@ let test_partial_sink_converter _ =
   let configuration =
     {|
     {
-      sources: [{ name: "A" }, { name: "B" }],
-      sinks: [],
-      combined_source_rules: [
+      "sources": [{ "name": "A" }, { "name": "B" }],
+      "sinks": [],
+      "combined_source_rules": [
         {
-           name: "c rule",
-           sources: {"ca": "A", "cb": "B"},
-           partial_sink: "C",
-           code: 2001,
-           message_format: "some form"
+           "name": "c rule",
+           "sources": {"ca": "A", "cb": "B"},
+           "partial_sink": "C",
+           "code": 2001,
+           "message_format": "some form"
         }
       ]
     }
@@ -610,41 +637,41 @@ let test_multiple_configurations _ =
     TaintConfiguration.from_json_list
       [
         ( PyrePath.create_absolute "/a.config",
-          Yojson.Safe.from_string
+          JsonParsing.JsonAst.Json.from_string_exn
             {|
-              { sources: [
-                  { name: "A" },
-                  { name: "B" }
+              { "sources": [
+                  { "name": "A" },
+                  { "name": "B" }
                 ],
-                sinks: [
-                  { name: "C" },
-                  { name: "D" }
+                "sinks": [
+                  { "name": "C" },
+                  { "name": "D" }
                 ],
-                features: [
-                  { name: "E" },
-                  { name: "F" }
+                "features": [
+                  { "name": "E" },
+                  { "name": "F" }
                 ],
-                rules: [],
-                options: {
-                  maximum_overrides_to_analyze: 42
+                "rules": [],
+                "options": {
+                  "maximum_overrides_to_analyze": 42
                 }
                }
            |}
         );
         ( PyrePath.create_absolute "/b.config",
-          Yojson.Safe.from_string
+          JsonParsing.JsonAst.Json.from_string_exn
             {|
               {
-                sources: [],
-                sinks: [],
-                features: [],
-                rules: [
+                "sources": [],
+                "sinks": [],
+                "features": [],
+                "rules": [
                   {
-                     name: "test rule",
-                     sources: ["A"],
-                     sinks: ["D"],
-                     code: 2001,
-                     message_format: "whatever"
+                     "name": "test rule",
+                     "sources": ["A"],
+                     "sinks": ["D"],
+                     "code": 2001,
+                     "message_format": "whatever"
                   }
                 ]
               }
@@ -673,11 +700,11 @@ let test_validate _ =
     let result =
       configurations
       |> List.map ~f:(fun (path, content) ->
-             PyrePath.create_absolute path, Yojson.Safe.from_string content)
+             PyrePath.create_absolute path, JsonParsing.JsonAst.Json.from_string_exn content)
       |> TaintConfiguration.from_json_list
       |> Core.Result.map_error
            ~f:
-             (List.map ~f:(fun { TaintConfiguration.Error.path; kind } ->
+             (List.map ~f:(fun { TaintConfiguration.Error.path; kind; _ } ->
                   path >>| PyrePath.absolute, kind))
     in
     let printer = function
@@ -692,9 +719,9 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.SourceDuplicate "UserControlled"]
     {|
     {
-      sources: [
-       { name: "UserControlled" },
-       { name: "UserControlled" }
+      "sources": [
+       { "name": "UserControlled" },
+       { "name": "UserControlled" }
       ]
     }
     |};
@@ -702,11 +729,11 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.SinkDuplicate "Test"]
     {|
     {
-      sources: [
+      "sources": [
       ],
-      sinks: [
-       { name: "Test" },
-       { name: "Test" }
+      "sinks": [
+       { "name": "Test" },
+       { "name": "Test" }
       ]
     }
     |};
@@ -714,13 +741,13 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.TransformDuplicate "Test"]
     {|
     {
-      sources: [
+      "sources": [
       ],
-      sinks: [
+      "sinks": [
       ],
-      transforms: [
-        { name: "Test" },
-        { name: "Test" }
+      "transforms": [
+        { "name": "Test" },
+        { "name": "Test" }
       ]
     }
     |};
@@ -728,15 +755,15 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.FeatureDuplicate "concat"]
     {|
     {
-      sources: [
-       { name: "UserControlled" }
+      "sources": [
+       { "name": "UserControlled" }
       ],
-      sinks: [
-       { name: "Test" }
+      "sinks": [
+       { "name": "Test" }
       ],
-      features: [
-       { name: "concat" },
-       { name: "concat" }
+      "features": [
+       { "name": "concat" },
+       { "name": "concat" }
       ]
     }
     |};
@@ -749,17 +776,17 @@ let test_validate _ =
       ]
     {|
     {
-      sources: [
-       { name: "UserControlled" },
-       { name: "UserControlled" }
+      "sources": [
+       { "name": "UserControlled" },
+       { "name": "UserControlled" }
       ],
-      sinks: [
-       { name: "Test" },
-       { name: "Test" }
+      "sinks": [
+       { "name": "Test" },
+       { "name": "Test" }
       ],
-      features: [
-       { name: "concat" },
-       { name: "concat" }
+      "features": [
+       { "name": "concat" },
+       { "name": "concat" }
       ]
     }
     |};
@@ -767,14 +794,14 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.SourceDuplicate "UserControlled"]
     {|
     {
-      sources: [
+      "sources": [
        {
-         name: "UserControlled",
-         comment: "First copy of user controlled"
+         "name": "UserControlled",
+         "comment": "First copy of user controlled"
        },
        {
-         name: "UserControlled",
-         comment: "Another copy of user controlled"
+         "name": "UserControlled",
+         "comment": "Another copy of user controlled"
        }
       ]
     }
@@ -783,13 +810,13 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.SinkDuplicate "Test"]
     {|
     {
-      sinks: [
+      "sinks": [
        {
-         name: "Test"
+         "name": "Test"
        },
        {
-         name: "Test",
-         kind: "parametric"
+         "name": "Test",
+         "kind": "parametric"
        }
       ]
     }
@@ -798,27 +825,27 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.RuleCodeDuplicate 2001]
     {|
     {
-      sources: [
-        { name: "A" }
+      "sources": [
+        { "name": "A" }
       ],
-      sinks: [
-       { name: "B" },
-       { name: "C" }
+      "sinks": [
+       { "name": "B" },
+       { "name": "C" }
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: ["A"],
-           sinks: ["B"],
-           code: 2001,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": ["A"],
+           "sinks": ["B"],
+           "code": 2001,
+           "message_format": "whatever"
         },
         {
-           name: "test rule",
-           sources: ["A"],
-           sinks: ["C"],
-           code: 2001,
-           message_format: "format"
+           "name": "test rule",
+           "sources": ["A"],
+           "sinks": ["C"],
+           "code": 2001,
+           "message_format": "format"
         }
       ]
     }
@@ -827,30 +854,30 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.RuleCodeDuplicate 2002]
     {|
     {
-      sources: [
-        { name: "A" },
-        { name: "B" }
+      "sources": [
+        { "name": "A" },
+        { "name": "B" }
       ],
-      sinks: [
-        { name: "C" },
-        { name: "D" }
+      "sinks": [
+        { "name": "C" },
+        { "name": "D" }
       ],
-      rules: [
+      "rules": [
         {
-           name: "test rule",
-           sources: ["A"],
-           sinks: ["D"],
-           code: 2002,
-           message_format: "whatever"
+           "name": "test rule",
+           "sources": ["A"],
+           "sinks": ["D"],
+           "code": 2002,
+           "message_format": "whatever"
         }
       ],
-      combined_source_rules: [
+      "combined_source_rules": [
         {
-           name: "test combined rule",
-           sources: {"a": "A", "b": "B"},
-           sinks: ["C"],
-           code: 2002,
-           message_format: "some form"
+           "name": "test combined rule",
+           "sources": {"a": "A", "b": "B"},
+           "sinks": ["C"],
+           "code": 2002,
+           "message_format": "some form"
         }
       ]
     }
@@ -861,12 +888,12 @@ let test_validate _ =
       ( "/a.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_overrides_to_analyze: 50
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_overrides_to_analyze": 50
             }
           }
         |}
@@ -874,12 +901,12 @@ let test_validate _ =
       ( "/b.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_overrides_to_analyze: 60
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_overrides_to_analyze": 60
             }
           }
         |}
@@ -891,12 +918,12 @@ let test_validate _ =
       ( "/a.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_trace_length: 10
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_trace_length": 10
             }
           }
         |}
@@ -904,12 +931,12 @@ let test_validate _ =
       ( "/b.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_trace_length: 20
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_trace_length": 20
             }
           }
         |}
@@ -921,12 +948,12 @@ let test_validate _ =
       ( "/a.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_tito_depth: 10
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_tito_depth": 10
             }
           }
         |}
@@ -934,12 +961,12 @@ let test_validate _ =
       ( "/b.config",
         {|
           {
-            sources: [],
-            sinks: [],
-            features: [],
-            rules: [],
-            options: {
-              maximum_tito_depth: 20
+            "sources": [],
+            "sinks": [],
+            "features": [],
+            "rules": [],
+            "options": {
+              "maximum_tito_depth": 20
             }
           }
         |}
@@ -949,12 +976,12 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.UnsupportedSource "MisspelledStringDigit"]
     {|
         {
-          sources: [{ name: "StringDigit" }],
-          sinks: [],
-          features: [],
-          rules: [],
-          implicit_sources: {
-            literal_strings: [
+          "sources": [{ "name": "StringDigit" }],
+          "sinks": [],
+          "features": [],
+          "rules": [],
+          "implicit_sources": {
+            "literal_strings": [
               {
                 "regexp": "^\\d+$",
                 "kind": "MisspelledStringDigit"
@@ -967,12 +994,12 @@ let test_validate _ =
     ~errors:[TaintConfiguration.Error.UnsupportedSink "Misspelled"]
     {|
           {
-            sources: [],
-            sinks: [{ name: "Test" }],
-            features: [],
-            rules: [],
-            implicit_sinks: {
-              literal_strings: [
+            "sources": [],
+            "sinks": [{ "name": "Test" }],
+            "features": [],
+            "rules": [],
+            "implicit_sinks": {
+              "literal_strings": [
                 {
                   "regexp": "^\\d+$",
                   "kind": "Misspelled"
@@ -987,20 +1014,20 @@ let test_implicit_sources _ =
   let configuration =
     assert_parse
       {|
-          { sources: [{ name: "StringDigit" }],
-            sinks: [{ name: "RCE" }],
-            features: [],
-            rules: [
+          { "sources": [{ "name": "StringDigit" }],
+            "sinks": [{ "name": "RCE" }],
+            "features": [],
+            "rules": [
               {
-                 name: "test rule",
-                 sources: ["StringDigit"],
-                 sinks: ["RCE"],
-                 code: 1,
-                 message_format: ""
+                 "name": "test rule",
+                 "sources": ["StringDigit"],
+                 "sinks": ["RCE"],
+                 "code": 1,
+                 "message_format": ""
               }
             ],
-            implicit_sources: {
-              literal_strings: [
+            "implicit_sources": {
+              "literal_strings": [
                 {
                   "regexp": "^\\d+$",
                   "kind": "StringDigit"
@@ -1025,20 +1052,20 @@ let test_implicit_sinks _ =
   let configuration =
     assert_parse
       {|
-          { sources: [{ name: "UserControlled" }],
-            sinks: [{ name: "HTMLContainer" }],
-            features: [],
-            rules: [
+          { "sources": [{ "name": "UserControlled" }],
+            "sinks": [{ "name": "HTMLContainer" }],
+            "features": [],
+            "rules": [
               {
-                 name: "test rule",
-                 sources: ["UserControlled"],
-                 sinks: ["HTMLContainer"],
-                 code: 1,
-                 message_format: ""
+                 "name": "test rule",
+                 "sources": ["UserControlled"],
+                 "sinks": ["HTMLContainer"],
+                 "code": 1,
+                 "message_format": ""
               }
             ],
-            implicit_sinks: {
-              literal_strings: [
+            "implicit_sinks": {
+              "literal_strings": [
                 {
                   "regexp": "<.*>",
                   "kind": "HTMLContainer"
@@ -1117,21 +1144,21 @@ let test_matching_kinds _ =
   assert_matching
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" }
           ],
-          sinks: [
-            { name: "C" },
-            { name: "D" }
+          "sinks": [
+            { "name": "C" },
+            { "name": "D" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["C", "D"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["C", "D"],
+               "code": 1,
+               "message_format": ""
             }
           ]
         }
@@ -1148,21 +1175,21 @@ let test_matching_kinds _ =
   assert_matching
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" }
           ],
-          sinks: [
-            { name: "C" },
-            { name: "D" }
+          "sinks": [
+            { "name": "C" },
+            { "name": "D" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A", "B"],
-               sinks: ["D"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A", "B"],
+               "sinks": ["D"],
+               "code": 1,
+               "message_format": ""
             }
           ]
         }
@@ -1179,28 +1206,28 @@ let test_matching_kinds _ =
   assert_matching
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" }
           ],
-          sinks: [
-            { name: "C" },
-            { name: "D" }
+          "sinks": [
+            { "name": "C" },
+            { "name": "D" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["C"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["C"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["A"],
-               sinks: ["D"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["A"],
+               "sinks": ["D"],
+               "code": 2,
+               "message_format": ""
             }
           ]
         }
@@ -1237,26 +1264,26 @@ let test_matching_kinds _ =
   assert_matching
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" }
           ],
-          sinks: [
-            { name: "C" },
-            { name: "D" }
+          "sinks": [
+            { "name": "C" },
+            { "name": "D" }
           ],
-          transforms: [
-            { name: "X" },
-            { name: "Y" }
+          "transforms": [
+            { "name": "X" },
+            { "name": "Y" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               transforms: ["X", "Y"],
-               sinks: ["C", "D"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "transforms": ["X", "Y"],
+               "sinks": ["C", "D"],
+               "code": 1,
+               "message_format": ""
             }
           ]
         }
@@ -1291,28 +1318,28 @@ let test_matching_kinds _ =
     ~rule_filter:[1]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" }
           ],
-          sinks: [
-            { name: "C" },
-            { name: "D" }
+          "sinks": [
+            { "name": "C" },
+            { "name": "D" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["C"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["C"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["A"],
-               sinks: ["D"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["A"],
+               "sinks": ["D"],
+               "code": 2,
+               "message_format": ""
             }
           ]
         }
@@ -1325,38 +1352,38 @@ let test_matching_kinds _ =
     ~source_filter:["A"; "B"]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B", kind: "parametric" },
-            { name: "C" },
-            { name: "D" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B", "kind": "parametric" },
+            { "name": "C" },
+            { "name": "D" }
           ],
-          sinks: [
-            { name: "X" },
-            { name: "Y" },
-            { name: "Z" }
+          "sinks": [
+            { "name": "X" },
+            { "name": "Y" },
+            { "name": "Z" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["X"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["X"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["B", "C"],
-               sinks: ["Y"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["B", "C"],
+               "sinks": ["Y"],
+               "code": 2,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["C", "D"],
-               sinks: ["Z"],
-               code: 3,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["C", "D"],
+               "sinks": ["Z"],
+               "code": 3,
+               "message_format": ""
             }
           ]
         }
@@ -1377,18 +1404,18 @@ let test_matching_kinds _ =
     ~source_filter:["A"; "B"]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B" },
-            { name: "C" },
-            { name: "D" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B" },
+            { "name": "C" },
+            { "name": "D" }
           ],
-          sinks: [
-            { name: "X" },
-            { name: "Y" },
-            { name: "Z" }
+          "sinks": [
+            { "name": "X" },
+            { "name": "Y" },
+            { "name": "Z" }
           ],
-          combined_source_rules: [
+          "combined_source_rules": [
             {
               "name": "test combined rule",
               "sources": { "a": "A", "b": "B" },
@@ -1439,38 +1466,38 @@ let test_matching_kinds _ =
     ~sink_filter:["X"; "Y"]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B", kind: "parametric" },
-            { name: "C" },
-            { name: "D" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B", "kind": "parametric" },
+            { "name": "C" },
+            { "name": "D" }
           ],
-          sinks: [
-            { name: "X" },
-            { name: "Y", kind: "parametric" },
-            { name: "Z" }
+          "sinks": [
+            { "name": "X" },
+            { "name": "Y", "kind": "parametric" },
+            { "name": "Z" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["X"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["X"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["B"],
-               sinks: ["Y", "Z"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["B"],
+               "sinks": ["Y", "Z"],
+               "code": 2,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["C"],
-               sinks: ["Z"],
-               code: 3,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["C"],
+               "sinks": ["Z"],
+               "code": 3,
+               "message_format": ""
             }
           ]
         }
@@ -1491,53 +1518,53 @@ let test_matching_kinds _ =
     ~transform_filter:["TU"]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B", kind: "parametric" },
-            { name: "C" },
-            { name: "D" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B", "kind": "parametric" },
+            { "name": "C" },
+            { "name": "D" }
           ],
-          sinks: [
-            { name: "X" },
-            { name: "Y", kind: "parametric" },
-            { name: "Z" }
+          "sinks": [
+            { "name": "X" },
+            { "name": "Y", "kind": "parametric" },
+            { "name": "Z" }
           ],
-          transforms: [
-            { name: "TU" },
-            { name: "TV" },
-            { name: "TW" }
+          "transforms": [
+            { "name": "TU" },
+            { "name": "TV" },
+            { "name": "TW" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A"],
-               sinks: ["X"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A"],
+               "sinks": ["X"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["B"],
-               transforms: ["TU"],
-               sinks: ["Y"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["B"],
+               "transforms": ["TU"],
+               "sinks": ["Y"],
+               "code": 2,
+               "message_format": ""
             },
             {
-               name: "test rule 3",
-               sources: ["C"],
-               transforms: ["TV"],
-               sinks: ["Z"],
-               code: 3,
-               message_format: ""
+               "name": "test rule 3",
+               "sources": ["C"],
+               "transforms": ["TV"],
+               "sinks": ["Z"],
+               "code": 3,
+               "message_format": ""
             },
             {
-               name: "test rule 4",
-               sources: ["C"],
-               transforms: ["TU", "TW"],
-               sinks: ["Z"],
-               code: 4,
-               message_format: ""
+               "name": "test rule 4",
+               "sources": ["C"],
+               "transforms": ["TU", "TW"],
+               "sinks": ["Z"],
+               "code": 4,
+               "message_format": ""
             }
           ]
         }
@@ -1594,53 +1621,53 @@ let test_matching_kinds _ =
     ~transform_filter:["TU"; "TW"]
     ~configuration:
       {|
-        { sources: [
-            { name: "A" },
-            { name: "B", kind: "parametric" },
-            { name: "C" },
-            { name: "D" }
+        { "sources": [
+            { "name": "A" },
+            { "name": "B", "kind": "parametric" },
+            { "name": "C" },
+            { "name": "D" }
           ],
-          sinks: [
-            { name: "X" },
-            { name: "Y", kind: "parametric" },
-            { name: "Z" }
+          "sinks": [
+            { "name": "X" },
+            { "name": "Y", "kind": "parametric" },
+            { "name": "Z" }
           ],
-          transforms: [
-            { name: "TU" },
-            { name: "TV" },
-            { name: "TW" }
+          "transforms": [
+            { "name": "TU" },
+            { "name": "TV" },
+            { "name": "TW" }
           ],
-          rules: [
+          "rules": [
             {
-               name: "test rule",
-               sources: ["A", "D"],
-               sinks: ["X", "Y"],
-               code: 1,
-               message_format: ""
+               "name": "test rule",
+               "sources": ["A", "D"],
+               "sinks": ["X", "Y"],
+               "code": 1,
+               "message_format": ""
             },
             {
-               name: "test rule 2",
-               sources: ["B"],
-               transforms: ["TU"],
-               sinks: ["Y"],
-               code: 2,
-               message_format: ""
+               "name": "test rule 2",
+               "sources": ["B"],
+               "transforms": ["TU"],
+               "sinks": ["Y"],
+               "code": 2,
+               "message_format": ""
             },
             {
-               name: "test rule 3",
-               sources: ["C"],
-               transforms: ["TV"],
-               sinks: ["Z"],
-               code: 3,
-               message_format: ""
+               "name": "test rule 3",
+               "sources": ["C"],
+               "transforms": ["TV"],
+               "sinks": ["Z"],
+               "code": 3,
+               "message_format": ""
             },
             {
-               name: "test rule 4",
-               sources: ["C"],
-               transforms: ["TU", "TW"],
-               sinks: ["Z"],
-               code: 4,
-               message_format: ""
+               "name": "test rule 4",
+               "sources": ["C"],
+               "transforms": ["TU", "TW"],
+               "sinks": ["Z"],
+               "code": 4,
+               "message_format": ""
             }
           ]
         }

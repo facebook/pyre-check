@@ -61,7 +61,7 @@ module AnalyzeConfiguration = struct
   let of_yojson json =
     let open Core.Result in
     let open Yojson.Safe.Util in
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     (* Parsing logic *)
     try
       match CommandStartup.BaseConfiguration.of_yojson json with

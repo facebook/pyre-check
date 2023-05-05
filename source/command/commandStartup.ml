@@ -47,7 +47,7 @@ module BaseConfiguration = struct
 
   let of_yojson json =
     let open Yojson.Safe.Util in
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     (* Parsing logic *)
     try
       let source_paths =
