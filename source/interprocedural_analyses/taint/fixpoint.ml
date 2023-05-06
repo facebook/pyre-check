@@ -25,6 +25,7 @@ module Context = struct
     type_environment: TypeEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.t;
+    global_constants: Ast.Expression.t Ast.Reference.Map.t;
   }
 end
 
@@ -96,6 +97,7 @@ module Analysis = struct
       ~taint_configuration
       ~type_environment
       ~class_interval_graph
+      ~global_constants
       ~define_call_graphs
       ~qualifier
       ~callable
@@ -134,6 +136,7 @@ module Analysis = struct
               (CallModel.string_combine_partial_sink_tree taint_configuration)
             ~environment:type_environment
             ~class_interval_graph
+            ~global_constants
             ~qualifier
             ~callable
             ~define
@@ -177,7 +180,13 @@ module Analysis = struct
 
   let analyze_define
       ~context:
-        { Context.taint_configuration; type_environment; class_interval_graph; define_call_graphs }
+        {
+          Context.taint_configuration;
+          type_environment;
+          class_interval_graph;
+          define_call_graphs;
+          global_constants;
+        }
       ~qualifier
       ~callable
       ~define:
@@ -213,6 +222,7 @@ module Analysis = struct
         ~taint_configuration
         ~type_environment
         ~class_interval_graph
+        ~global_constants
         ~define_call_graphs
         ~qualifier
         ~callable

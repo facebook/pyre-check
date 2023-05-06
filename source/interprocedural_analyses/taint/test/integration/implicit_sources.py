@@ -37,7 +37,6 @@ GOOGLE_API_KEY = "AIzaSyB2qiehH9CMRIuRVJghvnluwA1GvQ3FCe4"
 
 
 def string_source_top_level():
-    # TODO(T84547986): We should see a model here
     params = {"key": GOOGLE_API_KEY}
     return params
 

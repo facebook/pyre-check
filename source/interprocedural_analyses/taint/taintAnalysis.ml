@@ -415,7 +415,6 @@ let run_taint_analysis
           ();
         initial_callables)
   in
-
   (* Save the cache here, in case there is a model verification error. *)
   let () = Cache.save cache in
 
@@ -538,6 +537,7 @@ let run_taint_analysis
           type_environment = Analysis.TypeEnvironment.read_only environment;
           class_interval_graph;
           define_call_graphs;
+          global_constants = Ast.Reference.Map.empty;
         }
       ~initial_callables:(Interprocedural.FetchCallables.get_non_stub_callables initial_callables)
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)

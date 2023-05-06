@@ -60,6 +60,8 @@ module type FUNCTION_CONTEXT = sig
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
+  val global_constants : Expression.t Reference.Map.t
+
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
@@ -2488,7 +2490,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | ListComprehension comprehension ->
           analyze_comprehension ~resolution ~state ~is_result_used comprehension
       | Name (Name.Identifier identifier) ->
-          let global_taint =
+          let global_model_taint =
             GlobalModel.from_expression
               ~resolution
               ~call_graph:FunctionContext.call_graph_of_define
@@ -2498,12 +2500,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~interval:FunctionContext.caller_class_interval
             |> GlobalModel.get_source
           in
+
+          let global_taint, state =
+            let as_reference = Reference.create identifier in
+            let global_assign = Reference.Map.find FunctionContext.global_constants as_reference in
+            (* Reanalyze expression with global identifier replaced by assigned string *)
+            match global_assign with
+            | Some global_assign ->
+                let global_expression = global_assign.value |> Node.create ~location in
+                analyze_expression ~resolution ~state ~is_result_used ~expression:global_expression
+            | None -> ForwardState.Tree.empty, state
+          in
+
           let local_taint =
             let root = AccessPath.Root.Variable identifier in
             ForwardState.read ~root ~path:[] state.taint
             |> ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression
           in
-          ForwardState.Tree.join local_taint global_taint, state
+          ( local_taint
+            |> ForwardState.Tree.join global_taint
+            |> ForwardState.Tree.join global_model_taint,
+            state )
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
@@ -2936,6 +2953,7 @@ let run
     ~string_combine_partial_sink_tree
     ~environment
     ~class_interval_graph
+    ~global_constants
     ~qualifier
     ~callable
     ~define
@@ -2960,6 +2978,8 @@ let run
     let taint_configuration = taint_configuration
 
     let class_interval_graph = class_interval_graph
+
+    let global_constants = global_constants
 
     let call_graph_of_define = call_graph_of_define
 

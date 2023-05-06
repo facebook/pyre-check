@@ -128,7 +128,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 56, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 55, "start": 15, "end": 16 } ],
             "tito": null
           }
         ]
@@ -148,8 +148,8 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 52, "start": 15, "end": 23 },
-              { "line": 54, "start": 15, "end": 23 }
+              { "line": 51, "start": 15, "end": 23 },
+              { "line": 53, "start": 15, "end": 23 }
             ],
             "tito": null
           }
@@ -170,9 +170,31 @@
             "kinds": [ { "kind": "GoogleAPIKey" } ],
             "origin": {
               "filename": "implicit_sources.py",
-              "line": 46,
+              "line": 45,
               "start": 21,
               "end": 62
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sources.string_source_top_level",
+    "sources": [
+      {
+        "port": "result[key]",
+        "taint": [
+          {
+            "kinds": [ { "kind": "GoogleAPIKey" } ],
+            "origin": {
+              "filename": "implicit_sources.py",
+              "line": 40,
+              "start": 21,
+              "end": 35
             }
           }
         ]

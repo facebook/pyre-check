@@ -36,9 +36,9 @@ def string_operations(arg) -> None:
 
     query % user_controlled  # Issue here
 
-    global_query.format(user_controlled)  # Should see an issue
+    global_query.format(user_controlled)  # Issue here
 
-    # Should see an issue
+    # TODO(T145247918): Should see an issue
     DatabaseSchemaEditor.attribute_query.format(user_controlled)
 
 

@@ -29,6 +29,7 @@ let assert_fixpoint
     taint_configuration_shared_memory;
     whole_program_call_graph;
     define_call_graphs;
+    global_constants;
     type_environment;
     override_graph_heap;
     override_graph_shared_memory;
@@ -61,6 +62,7 @@ let assert_fixpoint
           type_environment;
           class_interval_graph;
           define_call_graphs;
+          global_constants;
         }
       ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
       ~stubs

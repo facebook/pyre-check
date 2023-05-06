@@ -452,6 +452,7 @@ type test_environment = {
   initial_models: Registry.t;
   type_environment: TypeEnvironment.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
+  global_constants: Expression.t Reference.Map.t;
 }
 
 let set_up_decorator_preprocessing ~handle models =
@@ -615,6 +616,8 @@ let initialize
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
+  let global_constants = (GlobalConstants.from_source source).global_constants in
+
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
   let { CallGraph.whole_program_call_graph; define_call_graphs } =
@@ -651,6 +654,7 @@ let initialize
     initial_models;
     type_environment;
     class_interval_graph;
+    global_constants;
   }
 
 
@@ -766,7 +770,7 @@ let end_to_end_integration_test path context =
       initial_callables;
       stubs;
       class_interval_graph;
-      _;
+      global_constants;
     }
       =
       initialize
@@ -804,6 +808,7 @@ let end_to_end_integration_test path context =
             type_environment;
             class_interval_graph;
             define_call_graphs;
+            global_constants;
           }
         ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
         ~stubs
