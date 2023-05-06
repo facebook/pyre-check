@@ -46,13 +46,11 @@ def inline_issue_rhs_add_literal():
 
 
 def propagate_sink_lhs_add_literal(a):
-    sql_start = "SELECT"
     columns = a + " FROM"
 
 
 def inline_issue_lhs_add_literal():
     a = _test_source()
-    sql_start = "SELECT"
     columns = a + " FROM"
 
 
