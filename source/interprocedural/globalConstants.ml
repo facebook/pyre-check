@@ -11,7 +11,7 @@ open Statement
 open Expression
 
 module Heap = struct
-  type t = Expression.t Reference.Map.t
+  type t = StringLiteral.t Reference.Map.t
 
   let empty = Reference.Map.empty
 
@@ -21,7 +21,7 @@ module Heap = struct
           Node.value =
             {
               Assign.target = { Node.value = Expression.Name (_ as name); _ };
-              Assign.value = { Node.value = Expression.Constant (Constant.String _); _ } as value;
+              Assign.value = { Node.value = Expression.Constant (Constant.String (_ as value)); _ };
               _;
             };
           _;
@@ -67,7 +67,7 @@ module SharedMemory = struct
     Memory.WithCache.Make
       (Analysis.SharedMemoryKeys.ReferenceKey)
       (struct
-        type t = Expression.t
+        type t = StringLiteral.t
 
         let prefix = Prefix.make ()
 

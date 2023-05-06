@@ -2503,16 +2503,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
           let global_taint, state =
             let as_reference = Reference.create identifier in
-            let global_assign =
+            let global_string =
               Interprocedural.GlobalConstants.SharedMemory.get
                 FunctionContext.global_constants
                 as_reference
             in
             (* Reanalyze expression with global identifier replaced by assigned string *)
-            match global_assign with
-            | Some global_assign ->
-                let global_expression = global_assign.value |> Node.create ~location in
-                analyze_expression ~resolution ~state ~is_result_used ~expression:global_expression
+            match global_string with
+            | Some global_string ->
+                analyze_joined_string
+                  ~resolution
+                  ~state
+                  ~breadcrumbs:Features.BreadcrumbSet.empty
+                  {
+                    StringFormatCall.nested_expressions = [];
+                    string_literal = { value = global_string.value; location };
+                    call_target_for_string_combine_rules = None;
+                    location;
+                  }
             | None -> ForwardState.Tree.empty, state
           in
 

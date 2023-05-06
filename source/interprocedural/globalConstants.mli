@@ -21,7 +21,7 @@ module SharedMemory : sig
 
   val from_heap : Heap.t -> t
 
-  val get : t -> Reference.t -> Expression.t option
+  val get : t -> Reference.t -> StringLiteral.t option
 
   val from_qualifiers
     :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
