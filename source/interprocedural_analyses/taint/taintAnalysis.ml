@@ -454,6 +454,20 @@ let run_taint_analysis
   in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
+  Log.info "Indexing global constants...";
+  let timer = Timer.start () in
+  let global_constants =
+    (Interprocedural.GlobalConstants.from_qualifiers
+       ~environment:(Analysis.TypeEnvironment.read_only environment)
+       ~qualifiers)
+      .global_constants
+  in
+  Statistics.performance
+    ~name:"Finished constant propagation analysis"
+    ~phase_name:"Indexing global constants"
+    ~timer
+    ();
+
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs } =
@@ -537,7 +551,7 @@ let run_taint_analysis
           type_environment = Analysis.TypeEnvironment.read_only environment;
           class_interval_graph;
           define_call_graphs;
-          global_constants = Ast.Reference.Map.empty;
+          global_constants;
         }
       ~initial_callables:(Interprocedural.FetchCallables.get_non_stub_callables initial_callables)
       ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)

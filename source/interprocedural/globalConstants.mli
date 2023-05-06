@@ -10,4 +10,9 @@ open Expression
 
 type t = { global_constants: Expression.t Reference.Map.t }
 
-val from_source : Source.t -> t
+val from_source : Source.t -> Expression.t Reference.Map.t
+
+val from_qualifiers
+  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+  qualifiers:Reference.t list ->
+  t

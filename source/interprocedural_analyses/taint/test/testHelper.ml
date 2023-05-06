@@ -616,7 +616,7 @@ let initialize
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
-  let global_constants = (GlobalConstants.from_source source).global_constants in
+  let global_constants = GlobalConstants.from_source source in
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)

@@ -36,4 +36,27 @@ let from_source source =
   |> List.map ~f:split_for_map
   (* Overwrite with the newer expression for duplicate global assigns *)
   |> Ast.Reference.Map.of_alist_reduce ~f:(fun _old updated -> updated)
-  |> fun x -> { global_constants = x }
+
+
+let from_qualifiers ~environment ~qualifiers =
+  let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+  let build_per_qualifier qualifier =
+    match Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier with
+    | None -> Reference.Map.empty
+    | Some source -> from_source source
+  in
+  let join =
+    let merge ~key:_ = function
+      (* TODO(T152494938): Error here after fixing imports as assign issue *)
+      | `Both (left, _) -> Some left
+      | `Left left -> Some left
+      | `Right right -> Some right
+    in
+    Reference.Map.merge ~f:merge
+  in
+  let global_constants =
+    qualifiers
+    |> List.map ~f:build_per_qualifier
+    |> Algorithms.fold_balanced ~init:Reference.Map.empty ~f:join
+  in
+  { global_constants }
