@@ -45,6 +45,13 @@ def inline_issue_rhs_add_literal():
     "https://" + a
 
 
+https_start = "https://"
+
+
+def propagate_sink_add_global(a):
+    https_start + a
+
+
 def propagate_sink_lhs_add_literal(a):
     columns = a + " FROM"
 
