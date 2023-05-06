@@ -51,6 +51,8 @@ module type FUNCTION_CONTEXT = sig
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
+  val global_constants : Interprocedural.GlobalConstants.SharedMemory.t
+
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
@@ -1762,6 +1764,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      arguments;
     }
       when CallGraph.CallCallees.is_string_method callees ->
+        let globals_to_constants = function
+          | { Node.value = Expression.Name (Name.Identifier identifier); _ } as value -> (
+              let as_reference = Reference.create identifier in
+              let global_string =
+                Interprocedural.GlobalConstants.SharedMemory.get
+                  FunctionContext.global_constants
+                  as_reference
+              in
+              match global_string with
+              | Some global_string ->
+                  global_string
+                  |> (fun string_literal -> Expression.Constant (Constant.String string_literal))
+                  |> Node.create ~location:value.location
+              | _ -> value)
+          | value -> value
+        in
         let breadcrumbs =
           match function_name with
           | "__mod__"
@@ -1770,7 +1788,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           | _ -> Features.BreadcrumbSet.empty
         in
         let substrings =
-          arguments |> List.map ~f:(fun argument -> argument.Call.Argument.value) |> List.cons base
+          arguments
+          |> List.map ~f:(fun argument -> argument.Call.Argument.value)
+          |> List.cons base
+          |> List.map ~f:globals_to_constants
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
         analyze_joined_string
@@ -2414,6 +2435,7 @@ let run
     ~taint_configuration
     ~environment
     ~class_interval_graph
+    ~global_constants
     ~qualifier
     ~callable
     ~define
@@ -2449,6 +2471,8 @@ let run
     let taint_configuration = taint_configuration
 
     let class_interval_graph = class_interval_graph
+
+    let global_constants = global_constants
 
     let call_graph_of_define = call_graph_of_define
 

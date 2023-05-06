@@ -14,6 +14,7 @@ val run
   taint_configuration:TaintConfiguration.Heap.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
+  global_constants:Interprocedural.GlobalConstants.SharedMemory.t ->
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->

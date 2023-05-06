@@ -153,6 +153,7 @@ module Analysis = struct
             ~taint_configuration
             ~environment:type_environment
             ~class_interval_graph
+            ~global_constants
             ~qualifier
             ~callable
             ~define

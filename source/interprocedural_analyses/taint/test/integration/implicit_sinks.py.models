@@ -482,6 +482,30 @@
 {
   "kind": "model",
   "data": {
+    "callable": "implicit_sinks.propagate_sink_add_global",
+    "sinks": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 52, "start": 18, "end": 19 } ],
+            "origin": {
+              "filename": "implicit_sinks.py",
+              "line": 52,
+              "start": 4,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "implicit_sinks.propagate_sink_dot_format",
     "sinks": [
       {

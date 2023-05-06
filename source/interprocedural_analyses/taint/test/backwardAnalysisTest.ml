@@ -49,6 +49,9 @@ let assert_taint ~context source expected =
         ~taint_configuration:TaintConfiguration.Heap.default
         ~environment:type_environment
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
+        ~global_constants:
+          (Interprocedural.GlobalConstants.SharedMemory.from_heap
+             Interprocedural.GlobalConstants.Heap.empty)
         ~qualifier
         ~callable:call_target
         ~define
