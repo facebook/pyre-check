@@ -25,7 +25,7 @@ module Context = struct
     type_environment: TypeEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.t;
-    global_constants: Ast.Expression.t Ast.Reference.Map.t;
+    global_constants: Interprocedural.GlobalConstants.SharedMemory.t;
   }
 end
 

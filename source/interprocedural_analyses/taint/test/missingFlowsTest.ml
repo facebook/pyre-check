@@ -72,7 +72,7 @@ let assert_fixpoint
           type_environment;
           class_interval_graph;
           define_call_graphs;
-          global_constants = Ast.Reference.Map.empty;
+          global_constants = GlobalConstants.SharedMemory.from_heap GlobalConstants.Heap.empty;
         }
       ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
       ~stubs

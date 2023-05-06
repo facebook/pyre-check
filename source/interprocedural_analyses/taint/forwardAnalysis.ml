@@ -60,7 +60,7 @@ module type FUNCTION_CONTEXT = sig
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
-  val global_constants : Expression.t Reference.Map.t
+  val global_constants : Interprocedural.GlobalConstants.SharedMemory.t
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
@@ -2503,7 +2503,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
           let global_taint, state =
             let as_reference = Reference.create identifier in
-            let global_assign = Reference.Map.find FunctionContext.global_constants as_reference in
+            let global_assign =
+              Interprocedural.GlobalConstants.SharedMemory.get
+                FunctionContext.global_constants
+                as_reference
+            in
             (* Reanalyze expression with global identifier replaced by assigned string *)
             match global_assign with
             | Some global_assign ->

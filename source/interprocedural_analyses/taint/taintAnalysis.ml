@@ -457,10 +457,9 @@ let run_taint_analysis
   Log.info "Indexing global constants...";
   let timer = Timer.start () in
   let global_constants =
-    (Interprocedural.GlobalConstants.from_qualifiers
-       ~environment:(Analysis.TypeEnvironment.read_only environment)
-       ~qualifiers)
-      .global_constants
+    Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
+      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~qualifiers
   in
   Statistics.performance
     ~name:"Finished constant propagation analysis"

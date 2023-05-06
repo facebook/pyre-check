@@ -8,11 +8,23 @@
 open Ast
 open Expression
 
-type t = { global_constants: Expression.t Reference.Map.t }
+module Heap : sig
+  type t
 
-val from_source : Source.t -> Expression.t Reference.Map.t
+  val empty : t
 
-val from_qualifiers
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  qualifiers:Reference.t list ->
-  t
+  val from_source : Source.t -> t
+end
+
+module SharedMemory : sig
+  type t
+
+  val from_heap : Heap.t -> t
+
+  val get : t -> Reference.t -> Expression.t option
+
+  val from_qualifiers
+    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    qualifiers:Reference.t list ->
+    t
+end

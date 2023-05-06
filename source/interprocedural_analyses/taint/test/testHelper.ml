@@ -452,7 +452,7 @@ type test_environment = {
   initial_models: Registry.t;
   type_environment: TypeEnvironment.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
-  global_constants: Expression.t Reference.Map.t;
+  global_constants: GlobalConstants.SharedMemory.t;
 }
 
 let set_up_decorator_preprocessing ~handle models =
@@ -616,7 +616,9 @@ let initialize
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
 
-  let global_constants = GlobalConstants.from_source source in
+  let global_constants =
+    GlobalConstants.Heap.from_source source |> GlobalConstants.SharedMemory.from_heap
+  in
 
   (* Initialize models *)
   (* The call graph building depends on initial models for global targets. *)
