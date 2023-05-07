@@ -188,3 +188,10 @@ let get_non_stub_callables { callables; _ } = callables
 let get_stubs { stubs; _ } = stubs
 
 let get_callables_and_stubs { callables; stubs; _ } = List.rev_append stubs callables
+
+let get_stats { internals; callables; stubs } =
+  [
+    "callables", List.length callables;
+    "internals", List.length internals;
+    "stubs", List.length stubs;
+  ]

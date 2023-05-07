@@ -34,3 +34,5 @@ val get_non_stub_callables : t -> Target.t list
 val get_stubs : t -> Target.t list
 
 val get_callables_and_stubs : t -> Target.t list
+
+val get_stats : t -> (string * int) list

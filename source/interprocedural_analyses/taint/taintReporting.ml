@@ -313,7 +313,6 @@ let produce_errors
   (* Log and record stats *)
   let () = Log.info "Found %d issues" (List.length errors) in
   let iterations = Fixpoint.get_iterations fixpoint_state in
-  let () = Log.info "Fixpoint iterations: %d" iterations in
   let () =
     Statistics.performance
       ~name:"Analysis fixpoint complete"
@@ -321,9 +320,9 @@ let produce_errors
       ~timer:fixpoint_timer
       ~integers:
         [
-          "pysa fixpoint iterations", iterations;
-          "pysa heap size", SharedMemory.heap_size ();
-          "pysa issues", List.length errors;
+          "iterations", iterations;
+          "heap size", SharedMemory.heap_size ();
+          "issues", List.length errors;
         ]
       ()
   in

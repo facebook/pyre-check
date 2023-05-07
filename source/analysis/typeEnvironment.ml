@@ -168,7 +168,11 @@ let populate_for_modules ~scheduler environment qualifiers =
         ~inputs:qualifiers
         ()
     in
-    Statistics.performance ~name:"collected definitions" ~timer ();
+    Statistics.performance
+      ~name:"collected definitions"
+      ~timer
+      ~integers:["defines", List.length defines]
+      ();
     defines
   in
   populate_for_definitions ~scheduler environment all_defines;

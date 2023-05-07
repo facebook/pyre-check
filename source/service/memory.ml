@@ -67,7 +67,7 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         }
       in
       Log.info
-        "Initializing shared memory [heap_size=%d, dep_table_pow=%d, hash_table_pow=%d]"
+        "Initializing shared memory (heap_size: %d, dep_table_pow: %d, hash_table_pow: %d)"
         heap_size
         dep_table_pow
         hash_table_pow;

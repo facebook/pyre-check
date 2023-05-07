@@ -219,5 +219,6 @@ let infer ~environment ~user_models =
     ~name:"Computed inferred models"
     ~phase_name:"Computing inferred models"
     ~timer
+    ~integers:["models", Registry.size models]
     ();
   models
