@@ -71,6 +71,16 @@ end
 
 let disable () = GlobalState.global_state.logger <- None
 
+let format_as_text ~integers ~normals () =
+  let values =
+    List.map ~f:(fun (name, value) -> Format.sprintf "%s: %d" name value) integers
+    @ List.map ~f:(fun (name, value) -> Format.sprintf "%s: %s" name value) normals
+  in
+  match values with
+  | [] -> ""
+  | values -> Format.sprintf " (%s)" (String.concat ~sep:", " values)
+
+
 let format_as_json ~integers ~normals () =
   Yojson.Safe.to_string
     (`Assoc
@@ -185,7 +195,12 @@ let performance
   =
   let time_in_seconds = Timer.stop_in_sec timer in
   let integer_time_in_microseconds = time_in_seconds *. 1e6 |> Int.of_float in
-  Log.log ~section "%s: %.3fs" (String.capitalize name) time_in_seconds;
+  Log.log
+    ~section
+    "%s%s: %.3fs"
+    (String.capitalize name)
+    (format_as_text ~integers ~normals ())
+    time_in_seconds;
   Profiling.log_performance_event (fun () ->
       let tags =
         List.map ~f:(fun (name, value) -> name, string_of_int value) integers
@@ -221,13 +236,7 @@ let event
     ?(normals = [])
     ()
   =
-  let integer (name, value) = Format.asprintf "%s: %d" name value in
-  let normal (name, value) = Format.asprintf "%s: %s" name value in
-  Log.log
-    ~section
-    "%s (%s)"
-    (String.capitalize name)
-    (List.map ~f:integer integers @ List.map ~f:normal normals |> String.concat ~sep:", ");
+  Log.log ~section "%s%s" (String.capitalize name) (format_as_text ~integers ~normals ());
   match should_log randomly_log_every with
   | false -> ()
   | true ->
