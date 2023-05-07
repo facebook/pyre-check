@@ -792,32 +792,25 @@ let rec process_request ~type_environment ~build_system request =
     in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
-        let cache =
-          Taint.Cache.try_load
-            ~scheduler
-            ~configuration
-            ~decorator_configuration:
-              Analysis.DecoratorPreprocessing.Configuration.disable_preprocessing
-            ~enabled:false
-        in
         let initial_callables =
-          Taint.Cache.initial_callables cache (fun () ->
-              let timer = Timer.start () in
-              let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
-              let initial_callables =
-                Interprocedural.FetchCallables.from_qualifiers
-                  ~scheduler
-                  ~configuration
-                  ~environment:type_environment
-                  ~include_unit_tests:false
-                  ~qualifiers
-              in
-              Statistics.performance
-                ~name:"Fetched initial callables to analyze"
-                ~phase_name:"Fetching initial callables to analyze"
-                ~timer
-                ();
-              initial_callables)
+          let timer = Timer.start () in
+          let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
+          let initial_callables =
+            Interprocedural.FetchCallables.from_qualifiers
+              ~scheduler
+              ~configuration
+              ~environment:type_environment
+              ~include_unit_tests:false
+              ~qualifiers
+          in
+          let () =
+            Statistics.performance
+              ~name:"Fetched initial callables to analyze"
+              ~phase_name:"Fetching initial callables to analyze"
+              ~timer
+              ()
+          in
+          initial_callables
         in
         let qualifiers =
           Analysis.TypeEnvironment.ReadOnly.module_tracker type_environment
