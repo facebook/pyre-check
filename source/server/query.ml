@@ -794,23 +794,12 @@ let rec process_request ~type_environment ~build_system request =
       let scheduler_wrapper scheduler =
         let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         let initial_callables =
-          let timer = Timer.start () in
-          let initial_callables =
-            Interprocedural.FetchCallables.from_qualifiers
-              ~scheduler
-              ~configuration
-              ~environment:type_environment
-              ~include_unit_tests:false
-              ~qualifiers
-          in
-          let () =
-            Statistics.performance
-              ~name:"Fetched initial callables to analyze"
-              ~phase_name:"Fetching initial callables to analyze"
-              ~timer
-              ()
-          in
-          initial_callables
+          Interprocedural.FetchCallables.from_qualifiers
+            ~scheduler
+            ~configuration
+            ~environment:type_environment
+            ~include_unit_tests:false
+            ~qualifiers
         in
         let class_hierarchy_graph =
           Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
