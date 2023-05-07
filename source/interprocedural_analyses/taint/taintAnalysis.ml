@@ -355,11 +355,12 @@ let run_taint_analysis
 
   compact_ocaml_heap ~name:"after type check";
 
-  let qualifiers =
-    Analysis.TypeEnvironment.module_tracker environment
-    |> Analysis.ModuleTracker.read_only
-    |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
+  let module_tracker =
+    environment
+    |> Analysis.TypeEnvironment.read_only
+    |> Analysis.TypeEnvironment.ReadOnly.module_tracker
   in
+  let qualifiers = Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
 
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
 
@@ -427,12 +428,6 @@ let run_taint_analysis
       ~class_hierarchy_graph
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~initial_callables
-  in
-
-  let module_tracker =
-    environment
-    |> Analysis.TypeEnvironment.read_only
-    |> Analysis.TypeEnvironment.ReadOnly.module_tracker
   in
 
   Log.info "Computing overrides...";
