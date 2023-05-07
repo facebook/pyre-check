@@ -792,9 +792,9 @@ let rec process_request ~type_environment ~build_system request =
     in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
+        let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
         let initial_callables =
           let timer = Timer.start () in
-          let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
           let initial_callables =
             Interprocedural.FetchCallables.from_qualifiers
               ~scheduler
@@ -811,10 +811,6 @@ let rec process_request ~type_environment ~build_system request =
               ()
           in
           initial_callables
-        in
-        let qualifiers =
-          Analysis.TypeEnvironment.ReadOnly.module_tracker type_environment
-          |> Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules
         in
         let class_hierarchy_graph =
           Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
