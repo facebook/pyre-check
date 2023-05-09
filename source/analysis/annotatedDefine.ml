@@ -12,7 +12,6 @@ open Ast
 open Pyre
 open Statement
 module Callable = AnnotatedCallable
-module Class = AnnotatedClass
 
 type t = Define.t Node.t [@@deriving compare, sexp, show, hash]
 

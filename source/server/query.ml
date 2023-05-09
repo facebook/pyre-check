@@ -867,7 +867,7 @@ let rec process_request ~type_environment ~build_system request =
     match request with
     | Request.Attributes annotation ->
         let to_attribute attribute =
-          let name = Annotated.Attribute.name attribute in
+          let name = AnnotatedAttribute.name attribute in
           let instantiated_annotation =
             GlobalResolution.instantiate_attribute
               ~resolution:global_resolution
@@ -876,16 +876,16 @@ let rec process_request ~type_environment ~build_system request =
               attribute
           in
           let annotation =
-            instantiated_annotation |> Annotated.Attribute.annotation |> Annotation.annotation
+            instantiated_annotation |> AnnotatedAttribute.annotation |> Annotation.annotation
           in
-          let property = Annotated.Attribute.property attribute in
+          let property = AnnotatedAttribute.property attribute in
           let kind =
             if property then
               Base.Property
             else
               Base.Regular
           in
-          let final = Annotated.Attribute.is_final instantiated_annotation in
+          let final = AnnotatedAttribute.is_final instantiated_annotation in
           { Base.name; annotation; kind; final }
         in
         parse_and_validate (Expression.from_reference ~location:Location.any annotation)

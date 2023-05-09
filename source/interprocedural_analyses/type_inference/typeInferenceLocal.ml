@@ -113,7 +113,7 @@ module State (Context : Context) = struct
         let expected =
           let parser = GlobalResolution.annotation_parser global_resolution in
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+          AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
         in
         let errors =
           let error_to_string error =
@@ -411,9 +411,7 @@ module State (Context : Context) = struct
               in
               let { Node.value = { Define.signature; _ }; _ } = Context.define in
               Annotation.create_mutable
-                (Annotated.Callable.return_annotation_without_applying_decorators
-                   ~signature
-                   ~parser)
+                (AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser)
             in
             Resolution.with_annotation_store resolution ~annotation_store:Refinement.Store.empty
             |> Resolution.new_local ~reference:return_reference ~annotation:expected_return
@@ -460,7 +458,7 @@ module State (Context : Context) = struct
             let return_annotation =
               let annotation =
                 let parser = GlobalResolution.annotation_parser global_resolution in
-                Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+                AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
               in
               if async then
                 Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -762,7 +760,7 @@ module State (Context : Context) = struct
             (Resolution.global_resolution resolution)
             ~parent:resolved_callee
             ~name:"__call__"
-          >>| Annotated.Attribute.annotation
+          >>| AnnotatedAttribute.annotation
           >>| Annotation.annotation
           >>= function
           | Type.Callable callable -> Some callable
@@ -959,7 +957,7 @@ let infer_local
   let dump = Define.dump define in
   if dump then (
     Log.dump "Checking `%s`..." (Log.Color.yellow (Reference.show name));
-    Log.dump "AST:\n%s" (Annotated.Define.create define_node |> Annotated.Define.show));
+    Log.dump "AST:\n%s" (AnnotatedDefine.create define_node |> AnnotatedDefine.show));
   let print_state name state =
     if dump then
       Log.dump "%s state:\n%a" name State.pp state;
@@ -1014,7 +1012,7 @@ let infer_parameters_from_parent
           ~name:(Define.unqualified_name (Node.value define))
   in
   let missing_parameter_errors overridden_attribute =
-    match Annotation.annotation (Annotated.Attribute.annotation overridden_attribute) with
+    match Annotation.annotation (AnnotatedAttribute.annotation overridden_attribute) with
     | Type.Parametric
         {
           name = "BoundMethod";

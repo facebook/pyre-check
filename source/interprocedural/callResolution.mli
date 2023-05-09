@@ -38,7 +38,7 @@ val defining_attribute
   :  resolution:Resolution.t ->
   Type.t ->
   string ->
-  Annotated.Attribute.instantiated_annotation Annotated.Attribute.t option
+  AnnotatedAttribute.instantiated_annotation AnnotatedAttribute.t option
 
 (* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t

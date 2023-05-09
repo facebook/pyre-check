@@ -1456,7 +1456,7 @@ let test_fallback_attribute context =
       ~cmp:(Option.equal Type.equal)
       ~printer
       annotation
-      (attribute >>| Annotated.Attribute.annotation >>| Annotation.annotation)
+      (attribute >>| AnnotatedAttribute.annotation >>| Annotation.annotation)
   in
   assert_fallback_attribute ~name:"attribute" {|
       class Foo:

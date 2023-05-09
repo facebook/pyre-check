@@ -75,7 +75,7 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
         if Reference.equal define_name name && predicate define then
           let parser = GlobalResolution.annotation_parser resolution in
           let variables = GlobalResolution.variables resolution in
-          Annotated.Define.Callable.create_overload_without_applying_decorators
+          AnnotatedDefine.Callable.create_overload_without_applying_decorators
             ~parser
             ~variables
             signature

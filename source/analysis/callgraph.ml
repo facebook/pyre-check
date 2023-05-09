@@ -220,7 +220,7 @@ module DefaultBuilder : Builder = struct
 
 
   let attribute_target attribute name =
-    Annotated.Attribute.parent attribute
+    AnnotatedAttribute.parent attribute
     |> fun parent -> Reference.create ~prefix:(Reference.create parent) name
 
 
@@ -233,7 +233,7 @@ module DefaultBuilder : Builder = struct
         :: !property_callables
     in
     let register (attribute, instantiated) =
-      if Annotated.Attribute.property attribute then
+      if AnnotatedAttribute.property attribute then
         register_attribute_callable instantiated attribute
       (* As the callgraph is an overapproximation, we also have to consider property calls from
          optional attributes.*)
@@ -256,7 +256,7 @@ module DefaultBuilder : Builder = struct
                 in
                 match attribute with
                 | Some attribute ->
-                    if Annotated.Attribute.property attribute then
+                    if AnnotatedAttribute.property attribute then
                       register_attribute_callable
                         ~is_optional_class_attribute:true
                         instantiated

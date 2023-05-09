@@ -2453,9 +2453,9 @@ let run
        function, the user-defined models of the function may no longer be applicable to the
        resultant function of the application (e.g., T132302522). *)
     let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    Analysis.Annotated.Define.create define
-    |> Analysis.Annotated.Define.decorate ~resolution
-    |> Analysis.Annotated.Define.define
+    Analysis.AnnotatedDefine.create define
+    |> Analysis.AnnotatedDefine.decorate ~resolution
+    |> Analysis.AnnotatedDefine.define
   in
   let module FunctionContext = struct
     let qualifier = qualifier

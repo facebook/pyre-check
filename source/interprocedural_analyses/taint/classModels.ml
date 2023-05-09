@@ -77,7 +77,7 @@ let infer ~environment ~user_models =
 
   let compute_dataclass_models class_name =
     let attributes =
-      attributes class_name >>| List.map ~f:Annotated.Attribute.name |> Option.value ~default:[]
+      attributes class_name >>| List.map ~f:AnnotatedAttribute.name |> Option.value ~default:[]
     in
     let taint_in_taint_out =
       List.foldi ~f:(add_parameter_tito ~positional:true) ~init:BackwardState.empty attributes
@@ -104,7 +104,7 @@ let infer ~environment ~user_models =
     let attributes = attributes class_name |> Option.value ~default:[] in
     let has_attribute name =
       List.exists attributes ~f:(fun attribute ->
-          String.equal (Annotated.Attribute.name attribute) name)
+          String.equal (AnnotatedAttribute.name attribute) name)
     in
     (* If a user-specified __new__ exist, don't override it. *)
     if has_attribute "__new__" then

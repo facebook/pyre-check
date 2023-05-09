@@ -3345,21 +3345,21 @@ let assert_errors
 
 let assert_instantiated_attribute_equal expected actual =
   let pp_as_sexps format l =
-    List.map l ~f:Annotated.Attribute.sexp_of_instantiated
+    List.map l ~f:AnnotatedAttribute.sexp_of_instantiated
     |> List.map ~f:Sexp.to_string_hum
     |> String.concat ~sep:"\n"
     |> Format.fprintf format "%s\n"
   in
   let simple_print l =
     let simple attribute =
-      let annotation = Annotated.Attribute.annotation attribute |> Annotation.annotation in
-      let name = Annotated.Attribute.name attribute in
+      let annotation = AnnotatedAttribute.annotation attribute |> Annotation.annotation in
+      let name = AnnotatedAttribute.name attribute in
       Printf.sprintf "%s, %s" name (Type.show annotation)
     in
     List.map l ~f:simple |> String.concat ~sep:"\n"
   in
   assert_equal
-    ~cmp:[%compare.equal: Annotated.Attribute.instantiated list]
+    ~cmp:[%compare.equal: AnnotatedAttribute.instantiated list]
     ~printer:simple_print
     ~pp_diff:(diff ~print:pp_as_sexps)
     expected
@@ -3387,7 +3387,7 @@ let assert_equivalent_attributes
     in
     let global_resolution = GlobalResolution.create global_environment in
     let compare_by_name left right =
-      String.compare (Annotated.Attribute.name left) (Annotated.Attribute.name right)
+      String.compare (AnnotatedAttribute.name left) (AnnotatedAttribute.name right)
     in
     Format.asprintf "%s.%s" module_name class_name
     |> GlobalResolution.attributes ~transitive:false ~resolution:global_resolution

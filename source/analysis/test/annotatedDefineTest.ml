@@ -13,7 +13,7 @@ open Pyre
 open Statement
 open Test
 module StatementDefine = Define
-module Define = Annotated.Define
+module Define = AnnotatedDefine
 
 let test_parent_definition context =
   let parent_class_summary environment name parent =
@@ -97,9 +97,9 @@ let test_decorate context =
     let define =
       Source.statements source
       |> take_define
-      |> Annotated.Define.create
-      |> Annotated.Define.decorate ~resolution
-      |> Annotated.Define.define
+      |> AnnotatedDefine.create
+      |> AnnotatedDefine.decorate ~resolution
+      |> AnnotatedDefine.define
       |> Node.value
     in
     assert_equal

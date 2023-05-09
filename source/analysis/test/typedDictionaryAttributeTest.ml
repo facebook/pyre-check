@@ -86,7 +86,7 @@ let assert_equivalent_typed_dictionary_attribute_types
   in
   let transform_attribute_annotation attribute =
     attribute
-    |> Annotated.Attribute.annotation
+    |> AnnotatedAttribute.annotation
     |> Annotation.annotation
     |> with_sanitized_callable_parameters
     |> with_sanitized_type_variables

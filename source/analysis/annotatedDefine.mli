@@ -9,7 +9,6 @@ open Core
 open Ast
 open Statement
 module Callable = AnnotatedCallable
-module Class = AnnotatedClass
 
 type t [@@deriving compare, sexp, show, hash]
 

@@ -48,7 +48,7 @@ let test_inferred_generic_base context =
       ~printer:[%show: Expression.t list]
       ~cmp:(List.equal [%compare.equal: Expression.t])
       expected
-      (Annotated.Bases.inferred_generic_base target ~parse_annotation)
+      (AnnotatedBases.inferred_generic_base target ~parse_annotation)
   in
   assert_inferred_generic
     ~target:"test.C"

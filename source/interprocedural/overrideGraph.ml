@@ -73,7 +73,7 @@ module Heap = struct
           in
           ancestor
           >>= fun ancestor ->
-          let parent_annotation = Analysis.Annotated.Attribute.parent ancestor in
+          let parent_annotation = Analysis.AnnotatedAttribute.parent ancestor in
           let ancestor_parent =
             Type.Primitive parent_annotation
             |> Type.expression

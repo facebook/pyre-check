@@ -23,7 +23,6 @@ open Ast
 open Pyre
 open Statement
 module TypeEnvironment = Analysis.TypeEnvironment
-module Kind = AnalysisKind
 
 (** Represents the set of information that must be propagated from callees to callers during an
     interprocedural analysis, within the global fixpoint. Each iteration should produce a model for

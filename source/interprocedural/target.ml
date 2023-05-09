@@ -281,8 +281,8 @@ let resolve_method ~resolution ~class_type ~method_name =
           ~instantiated:class_type
   in
   match callable_implementation with
-  | Some callable when Annotated.Attribute.defined callable ->
-      Annotated.Attribute.annotation callable
+  | Some callable when AnnotatedAttribute.defined callable ->
+      AnnotatedAttribute.annotation callable
       |> Annotation.annotation
       |> Type.callable_name
       >>| create_method

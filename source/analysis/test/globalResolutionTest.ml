@@ -14,7 +14,7 @@ open Statement
 open Pyre
 open Test
 module StatementClass = Class
-module Attribute = Annotated.Attribute
+module Attribute = AnnotatedAttribute
 module Argument = Call.Argument
 
 let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
@@ -200,7 +200,7 @@ let test_constructors context =
         resolution
         ~name:"__call__"
       |> (fun option -> Option.value_exn option)
-      |> Annotated.Attribute.annotation
+      |> AnnotatedAttribute.annotation
       |> Annotation.annotation
     in
     assert_equal ~printer:Type.show ~cmp:Type.equal callable actual
@@ -515,7 +515,7 @@ let test_all_attributes context =
       ~parent
       name
     =
-    Annotated.Attribute.create
+    AnnotatedAttribute.create
       ~abstract:false
       ~annotation
       ~original_annotation:annotation
@@ -536,7 +536,7 @@ let test_all_attributes context =
     let attribute_list_equal = List.equal Attribute.equal_instantiated in
     let print_attributes attributes =
       let print_attribute attribute =
-        Annotated.Attribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
+        AnnotatedAttribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
       in
       List.map attributes ~f:print_attribute |> String.concat ~sep:", "
     in
@@ -694,7 +694,7 @@ let test_attribute_from_class_name context =
       ?(property = false)
       ?(visibility = Attribute.ReadWrite)
       ?(parent = "test.Attributes")
-      ?(initialized = Annotated.Attribute.OnClass)
+      ?(initialized = AnnotatedAttribute.OnClass)
       ?(defined = true)
       ?(class_variable = false)
       ?callable_name
@@ -712,7 +712,7 @@ let test_attribute_from_class_name context =
       | _ -> None
     in
     Some
-      (Annotated.Attribute.create
+      (AnnotatedAttribute.create
          ~annotation
          ~original_annotation:annotation
          ~uninstantiated_annotation
@@ -937,7 +937,7 @@ let test_attribute_from_annotation context =
     in
     let actual =
       GlobalResolution.attribute_from_annotation ~parent:(parse parent) global_resolution ~name
-      >>| Annotated.Attribute.annotation
+      >>| AnnotatedAttribute.annotation
       >>| Annotation.annotation
       >>| Type.show
     in
@@ -1303,7 +1303,7 @@ let test_typed_dictionary_attributes context =
       (Option.map
          ~f:
            (List.map ~f:(fun attribute ->
-                Annotated.Attribute.name attribute, Annotated.Attribute.parent attribute))
+                AnnotatedAttribute.name attribute, AnnotatedAttribute.parent attribute))
          attributes)
   in
   assert_attributes
@@ -1744,7 +1744,7 @@ let test_metaclasses context =
 let test_overrides context =
   let create_simple_callable_attribute ?(initialized = Attribute.OnClass) ~signature ~parent name =
     let annotation = Type.Callable signature in
-    Annotated.Attribute.create
+    AnnotatedAttribute.create
       ~abstract:false
       ~annotation
       ~original_annotation:annotation
@@ -1801,7 +1801,7 @@ let test_overrides context =
   let assert_overrides ~class_name ~method_name ~expected_override =
     let overrides = GlobalResolution.overrides ~resolution ~name:method_name class_name in
     let print_attribute attribute =
-      Annotated.Attribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
+      AnnotatedAttribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
     in
     match expected_override with
     | Some expected ->

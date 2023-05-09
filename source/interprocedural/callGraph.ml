@@ -1360,7 +1360,7 @@ let redirect_special_calls ~resolution call =
   | None ->
       (* Rewrite certain calls using the same logic used in the type checker.
        * This should be sound for most analyses. *)
-      Annotated.Call.redirect_special_calls ~resolution call
+      AnnotatedCall.redirect_special_calls ~resolution call
 
 
 let resolve_recognized_callees
@@ -1539,11 +1539,11 @@ let resolve_attribute_access_properties
       if setter then
         ReturnType.none
       else
-        Annotated.Attribute.annotation property
+        AnnotatedAttribute.annotation property
         |> Annotation.annotation
         |> ReturnType.from_annotation ~resolution:(Resolution.global_resolution resolution)
     in
-    let parent = Annotated.Attribute.parent property |> Reference.create in
+    let parent = AnnotatedAttribute.parent property |> Reference.create in
     let property_targets =
       let kind = if setter then Target.PropertySetter else Target.Normal in
       if Type.is_meta base_annotation then
@@ -1565,7 +1565,7 @@ let resolve_attribute_access_properties
   let properties, non_properties =
     List.partition_map
       ~f:(function
-        | Some property when Annotated.Attribute.property property -> Either.First property
+        | Some property when AnnotatedAttribute.property property -> Either.First property
         | attribute -> Either.Second attribute)
       attributes
   in
@@ -1621,8 +1621,8 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
                       ~instantiated:annotation
               in
               match attribute with
-              | Some attribute when Annotated.Attribute.defined attribute ->
-                  Type.Primitive (Annotated.Attribute.parent attribute) |> Type.class_name
+              | Some attribute when AnnotatedAttribute.defined attribute ->
+                  Type.Primitive (AnnotatedAttribute.parent attribute) |> Type.class_name
               | _ -> Type.class_name annotation
             in
             let attribute = Format.sprintf "__class__.%s" attribute in
@@ -1984,7 +1984,7 @@ struct
                     let { CallCallees.call_targets; _ } =
                       let callee =
                         let method_name =
-                          Annotated.Call.resolve_stringify_call ~resolution expression
+                          AnnotatedCall.resolve_stringify_call ~resolution expression
                         in
                         {
                           Node.value =

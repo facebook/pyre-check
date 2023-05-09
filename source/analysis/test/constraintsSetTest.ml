@@ -12,14 +12,13 @@ open Analysis
 open Ast
 open Test
 open TypeOrder
-open Annotated
 open Assumptions
 
 let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
 
 let make_attributes ~class_name =
   let parse_attribute (name, annotation) =
-    Attribute.create
+    AnnotatedAttribute.create
       ~annotation
       ~original_annotation:annotation
       ~uninstantiated_annotation:(Some annotation)
@@ -65,7 +64,7 @@ let hierarchy class_hierarchy_handler =
 
 let attribute_from_attributes attributes =
   let attribute annotation ~assumptions ~name =
-    let find attribute = String.equal (Annotated.Attribute.name attribute) name in
+    let find attribute = String.equal (AnnotatedAttribute.name attribute) name in
     attributes annotation ~assumptions >>= List.find ~f:find
   in
   attribute

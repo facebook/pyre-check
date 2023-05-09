@@ -302,7 +302,7 @@ let incompatible_variable_type_error_kind
 let rec unpack_callable_and_self_argument ~signature_select ~global_resolution input =
   let get_call_attribute parent =
     GlobalResolution.attribute_from_annotation global_resolution ~parent ~name:"__call__"
-    >>| Annotated.Attribute.annotation
+    >>| AnnotatedAttribute.annotation
     >>| Annotation.annotation
   in
   match input with
@@ -360,7 +360,7 @@ module State (Context : Context) = struct
         let expected =
           let parser = GlobalResolution.annotation_parser global_resolution in
           let { Node.value = { Define.signature; _ }; _ } = Context.define in
-          Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+          AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
         in
         let errors =
           let error_to_string error =
@@ -758,7 +758,7 @@ module State (Context : Context) = struct
     let signature = define_signature in
     let annotation : Type.t =
       let parser = GlobalResolution.annotation_parser global_resolution in
-      Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+      AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
     in
     let annotation =
       match annotation with
@@ -1164,7 +1164,7 @@ module State (Context : Context) = struct
           with
           | Some attribute ->
               let attribute =
-                if not (Annotated.Attribute.defined attribute) then
+                if not (AnnotatedAttribute.defined attribute) then
                   Resolution.fallback_attribute
                     class_name
                     ~instantiated:(Some resolved_base)
@@ -1176,7 +1176,7 @@ module State (Context : Context) = struct
                   attribute
               in
               let undefined_target =
-                if Annotated.Attribute.defined attribute then
+                if AnnotatedAttribute.defined attribute then
                   None
                 else
                   Some instantiated
@@ -1301,8 +1301,8 @@ module State (Context : Context) = struct
               | _ -> errors
             in
 
-            let head_annotation = Annotated.Attribute.annotation head_attribute in
-            let tail_annotations = List.map ~f:Annotated.Attribute.annotation tail_attributes in
+            let head_annotation = AnnotatedAttribute.annotation head_attribute in
+            let tail_annotations = List.map ~f:AnnotatedAttribute.annotation tail_attributes in
 
             let resolved_annotation =
               let apply_local_override global_annotation =
@@ -1410,7 +1410,7 @@ module State (Context : Context) = struct
       in
       let find_method ~parent ~name ~special_method =
         GlobalResolution.attribute_from_annotation global_resolution ~parent ~name ~special_method
-        >>| Annotated.Attribute.annotation
+        >>| AnnotatedAttribute.annotation
         >>| Annotation.annotation
         >>= unpack_callable_and_self_argument
       in
@@ -1552,7 +1552,7 @@ module State (Context : Context) = struct
                           ~resolution:global_resolution
                         >>| List.filter ~f:AnnotatedAttribute.abstract
                         |> Option.value ~default:[]
-                        |> List.map ~f:Annotated.Attribute.name
+                        |> List.map ~f:AnnotatedAttribute.name
                       in
                       if not (List.is_empty abstract_methods) then
                         SignatureSelectionTypes.NotFound
@@ -2480,7 +2480,7 @@ module State (Context : Context) = struct
               ~special_method
               ~name
               ~instantiated
-            >>| Annotated.Attribute.annotation
+            >>| AnnotatedAttribute.annotation
             >>| Annotation.annotation
             >>= function
             | Type.Top -> None
@@ -4210,8 +4210,8 @@ module State (Context : Context) = struct
                     | _ -> None
                   in
                   match attribute with
-                  | Some attribute when Annotated.Attribute.defined attribute -> (
-                      match Annotated.Attribute.annotation attribute |> Annotation.annotation with
+                  | Some attribute when AnnotatedAttribute.defined attribute -> (
+                      match AnnotatedAttribute.annotation attribute |> Annotation.annotation with
                       | Type.Parametric
                           { name = "BoundMethod"; parameters = [Single (Callable _); _] }
                       | Type.Callable _ ->
@@ -4259,12 +4259,11 @@ module State (Context : Context) = struct
                                    ~right:expected))
                           && not is_valid_enumeration_assignment
                         in
-                        let open Annotated in
                         match attribute with
                         | Some (attribute, name) when is_incompatible ->
                             Error.IncompatibleAttributeType
                               {
-                                parent = Primitive (Attribute.parent attribute);
+                                parent = Primitive (AnnotatedAttribute.parent attribute);
                                 incompatible_type =
                                   {
                                     Error.name = Reference.create name;
@@ -4296,8 +4295,8 @@ module State (Context : Context) = struct
                       let check_assign_class_variable_on_instance errors =
                         match
                           ( resolved_base,
-                            attribute >>| fst >>| Annotated.Attribute.class_variable,
-                            attribute >>| fst >>| Annotated.Attribute.name )
+                            attribute >>| fst >>| AnnotatedAttribute.class_variable,
+                            attribute >>| fst >>| AnnotatedAttribute.name )
                         with
                         | `Attribute (_, parent), Some true, Some class_variable
                           when Option.is_none original_annotation && not (Type.is_meta parent) ->
@@ -4324,7 +4323,7 @@ module State (Context : Context) = struct
                       let check_undefined_attribute_target errors =
                         match resolved_base, attribute with
                         | `Attribute (_, parent), Some (attribute, _)
-                          when not (Annotated.Attribute.defined attribute) ->
+                          when not (AnnotatedAttribute.defined attribute) ->
                             let is_meta_typed_dictionary =
                               Type.is_meta parent
                               && GlobalResolution.is_typed_dictionary
@@ -4657,8 +4656,8 @@ module State (Context : Context) = struct
                                      { target; kind = InvalidExpression }),
                               false )
                           else if
-                            Annotated.Attribute.defined attribute
-                            && (not (Annotated.Attribute.property attribute))
+                            AnnotatedAttribute.defined attribute
+                            && (not (AnnotatedAttribute.property attribute))
                             && insufficiently_annotated
                           then
                             ( emit_error
@@ -4667,7 +4666,7 @@ module State (Context : Context) = struct
                                 ~kind:
                                   (Error.MissingAttributeAnnotation
                                      {
-                                       parent = Primitive (Annotated.Attribute.parent attribute);
+                                       parent = Primitive (AnnotatedAttribute.parent attribute);
                                        missing_annotation =
                                          {
                                            Error.name = reference;
@@ -4829,13 +4828,13 @@ module State (Context : Context) = struct
                         match resolved_base, attribute with
                         | `Attribute (_, parent), Some (attribute, _)
                           when not
-                                 (Annotated.Attribute.property attribute
+                                 (AnnotatedAttribute.property attribute
                                  || Option.is_some (find_getattr parent)) ->
                             let { name; attribute_path; base_annotation } =
                               partition_name ~resolution name
                             in
                             Resolution.new_local_with_attributes
-                              ~temporary:(is_not_local || Annotated.Attribute.defined attribute)
+                              ~temporary:(is_not_local || AnnotatedAttribute.defined attribute)
                               resolution
                               ~name
                               ~attribute_path
@@ -5452,7 +5451,7 @@ module State (Context : Context) = struct
         let return_annotation =
           let annotation =
             let parser = GlobalResolution.annotation_parser global_resolution in
-            Annotated.Callable.return_annotation_without_applying_decorators ~signature ~parser
+            AnnotatedCallable.return_annotation_without_applying_decorators ~signature ~parser
           in
           if async && not generator then
             Type.coroutine_value annotation |> Option.value ~default:Type.Top
@@ -5932,7 +5931,6 @@ module State (Context : Context) = struct
         |> Option.value ~default:false
       in
       if Define.is_class_toplevel define then
-        let open Annotated in
         let check_base old_errors base =
           let annotation_errors, parsed = parse_and_check_annotation ~resolution base in
           let errors = List.append annotation_errors old_errors in
@@ -5975,8 +5973,8 @@ module State (Context : Context) = struct
         in
         let bases =
           Node.create define ~location
-          |> Define.create
-          |> Define.parent_definition ~resolution:global_resolution
+          |> AnnotatedDefine.create
+          |> AnnotatedDefine.parent_definition ~resolution:global_resolution
           >>| Node.value
           >>| ClassSummary.base_classes
           |> Option.value ~default:[]
@@ -6077,8 +6075,8 @@ module State (Context : Context) = struct
     let check_init_subclass_call resolution errors =
       let init_subclass_arguments =
         Node.create define ~location
-        |> Annotated.Define.create
-        |> Annotated.Define.parent_definition ~resolution:global_resolution
+        |> AnnotatedDefine.create
+        |> AnnotatedDefine.parent_definition ~resolution:global_resolution
         >>| Node.value
         >>| (fun { ClassSummary.bases = { init_subclass_arguments; _ }; _ } ->
               init_subclass_arguments)
@@ -6160,7 +6158,6 @@ module State (Context : Context) = struct
         then
           errors
         else
-          let open Annotated in
           begin
             match define with
             | { Ast.Statement.Define.signature = { parent = Some parent; decorators; _ }; _ } -> (
@@ -6172,7 +6169,7 @@ module State (Context : Context) = struct
                 let errors =
                   match AnnotatedAttribute.visibility overridden_attribute with
                   | ReadOnly (Refinable { overridable = false }) ->
-                      let parent = overridden_attribute |> Attribute.parent in
+                      let parent = overridden_attribute |> AnnotatedAttribute.parent in
                       emit_error
                         ~errors
                         ~location
@@ -6183,12 +6180,12 @@ module State (Context : Context) = struct
                   if
                     not
                       (Bool.equal
-                         (Attribute.static overridden_attribute)
+                         (AnnotatedAttribute.static overridden_attribute)
                          (StatementDefine.is_static_method define))
                   then
-                    let parent = overridden_attribute |> Attribute.parent in
+                    let parent = overridden_attribute |> AnnotatedAttribute.parent in
                     let decorator =
-                      if Attribute.static overridden_attribute then
+                      if AnnotatedAttribute.static overridden_attribute then
                         Error.StaticSuper
                       else
                         Error.StaticOverride
@@ -6199,7 +6196,7 @@ module State (Context : Context) = struct
                 in
                 (* Check strengthening of postcondition. *)
                 let overridden_base_attribute_annotation =
-                  Annotation.annotation (Attribute.annotation overridden_attribute)
+                  Annotation.annotation (AnnotatedAttribute.annotation overridden_attribute)
                 in
                 match overridden_base_attribute_annotation with
                 | Type.Parametric
@@ -6245,7 +6242,9 @@ module State (Context : Context) = struct
                             (Error.InconsistentOverride
                                {
                                  overridden_method = StatementDefine.unqualified_name define;
-                                 parent = Attribute.parent overridden_attribute |> Reference.create;
+                                 parent =
+                                   AnnotatedAttribute.parent overridden_attribute
+                                   |> Reference.create;
                                  override_kind = Method;
                                  override =
                                    Error.WeakenedPostcondition
@@ -6307,7 +6306,8 @@ module State (Context : Context) = struct
                                      {
                                        overridden_method = StatementDefine.unqualified_name define;
                                        parent =
-                                         Attribute.parent overridden_attribute |> Reference.create;
+                                         AnnotatedAttribute.parent overridden_attribute
+                                         |> Reference.create;
                                        override_kind = Method;
                                        override =
                                          Error.StrengthenedPrecondition
@@ -6345,7 +6345,8 @@ module State (Context : Context) = struct
                                      overridden_method = StatementDefine.unqualified_name define;
                                      override_kind = Method;
                                      parent =
-                                       Attribute.parent overridden_attribute |> Reference.create;
+                                       AnnotatedAttribute.parent overridden_attribute
+                                       |> Reference.create;
                                      override =
                                        Error.StrengthenedPrecondition
                                          (Error.NotFound
@@ -6446,7 +6447,8 @@ module State (Context : Context) = struct
                                    {
                                      overridden_method = StatementDefine.unqualified_name define;
                                      parent =
-                                       Attribute.parent overridden_attribute |> Reference.create;
+                                       AnnotatedAttribute.parent overridden_attribute
+                                       |> Reference.create;
                                      override_kind = Method;
                                      override =
                                        Error.StrengthenedPrecondition
@@ -6737,7 +6739,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 |> Option.value ~default:[]
               in
               let is_uninitialized attribute =
-                match Annotated.Attribute.initialized attribute with
+                match AnnotatedAttribute.initialized attribute with
                 | NotInitialized -> true
                 | _ -> false
               in
@@ -6749,10 +6751,10 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                     ~accessed_through_readonly:false
                     ?instantiated:None
                     attribute
-                  |> Annotated.Attribute.annotation
+                  |> AnnotatedAttribute.annotation
                   |> Annotation.annotation
                 in
-                let name = Annotated.Attribute.name attribute in
+                let name = AnnotatedAttribute.name attribute in
                 match String.Map.add sofar ~key:name ~data:(annotation, name_and_metadata) with
                 | `Ok map -> map
                 | `Duplicate -> sofar
@@ -6773,8 +6775,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 (* TODO(T54083014): Don't error on properties overriding attributes, even if they
                    are read-only and therefore not marked as initialized on the attribute object. We
                    should error in the future that this is an inconsistent override. *)
-                match Annotated.Attribute.initialized attribute with
-                | NotInitialized -> Annotated.Attribute.property attribute
+                match AnnotatedAttribute.initialized attribute with
+                | NotInitialized -> AnnotatedAttribute.property attribute
                 | _ -> true
               in
 
@@ -6866,7 +6868,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     in
     if Define.is_class_toplevel define then
       let check_bases errors =
-        let open Annotated in
         let is_final errors expression_value =
           let add_error { ClassMetadataEnvironment.is_final; _ } =
             if is_final then
@@ -6890,7 +6891,9 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               |> Option.value ~default:errors
           | _ -> errors
         in
-        Define.parent_definition ~resolution:global_resolution (Define.create define_node)
+        AnnotatedDefine.parent_definition
+          ~resolution:global_resolution
+          (AnnotatedDefine.create define_node)
         >>| Node.value
         >>| ClassSummary.base_classes
         >>| List.fold ~init:errors ~f:is_final
@@ -6967,7 +6970,6 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           List.map wrongly_overriding_fields ~f:create_override_error
         in
         let override_errors =
-          let open Annotated in
           let class_name = ClassSummary.name class_summary |> Reference.show in
           if
             GlobalResolution.is_typed_dictionary
@@ -6992,17 +6994,17 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         ~resolution:global_resolution
                         ?instantiated:None
                         attribute
-                      |> Annotated.Attribute.annotation
+                      |> AnnotatedAttribute.annotation
                       |> Annotation.annotation
                     in
-                    let name = Annotated.Attribute.name attribute in
+                    let name = AnnotatedAttribute.name attribute in
                     let actual = annotation in
                     let check_override overridden_attribute =
                       let annotation =
-                        Annotated.Attribute.annotation overridden_attribute |> Annotation.annotation
+                        AnnotatedAttribute.annotation overridden_attribute |> Annotation.annotation
                       in
-                      let name = Annotated.Attribute.name overridden_attribute in
-                      let visibility = Annotated.Attribute.visibility overridden_attribute in
+                      let name = AnnotatedAttribute.name overridden_attribute in
+                      let visibility = AnnotatedAttribute.visibility overridden_attribute in
                       let expected = annotation in
                       let overridable =
                         match visibility with
@@ -7010,7 +7012,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                         | _ -> true
                       in
                       if
-                        Annotated.Attribute.is_private overridden_attribute
+                        AnnotatedAttribute.is_private overridden_attribute
                         || (GlobalResolution.less_or_equal
                               global_resolution
                               ~left:actual
@@ -7028,7 +7030,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                             Error.InconsistentOverride
                               {
                                 overridden_method = name;
-                                parent = Attribute.parent overridden_attribute |> Reference.create;
+                                parent =
+                                  AnnotatedAttribute.parent overridden_attribute |> Reference.create;
                                 override_kind = Attribute;
                                 override =
                                   Error.WeakenedPostcondition

@@ -123,7 +123,7 @@ let defining_attribute ~resolution parent_type attribute =
   in
   instantiated_attribute
   >>= fun instantiated_attribute ->
-  if Annotated.Attribute.defined instantiated_attribute then
+  if AnnotatedAttribute.defined instantiated_attribute then
     Some instantiated_attribute
   else
     Resolution.fallback_attribute ~resolution ~name:attribute class_name

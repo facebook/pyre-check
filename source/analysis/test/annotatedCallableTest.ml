@@ -11,7 +11,7 @@ open Ast
 open Analysis
 open Statement
 open Test
-module Callable = Annotated.Callable
+module Callable = AnnotatedCallable
 open Pyre
 
 let test_return_annotation context =
