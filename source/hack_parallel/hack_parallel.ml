@@ -22,10 +22,6 @@ module Std = struct
 
   module Bucket = Hack_bucket
 
-  module Socket = Socket
-
-  module Lock = Lock
-
   module Marshal_tools = Marshal_tools
 
   module Measure = Measure
