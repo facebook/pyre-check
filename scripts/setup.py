@@ -330,7 +330,7 @@ def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) 
     if local:
         if not home_opam.is_dir():
             local_opam = home / "local" / "opam"
-            local_opam.mkdir(parents=True)
+            local_opam.parent.mkdir(parents=True, exist_ok=True)
             local_opam.symlink_to(home_opam, target_is_directory=True)
         return home_opam
     if temporary_root:
