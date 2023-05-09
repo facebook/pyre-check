@@ -76,7 +76,7 @@ def run_and_check_output(
 def run_test_no_cache(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa without the cache argument.
+    """Run Pysa without the cache argument."""
     LOG.info("Testing with no --use-cache flag:")
     returncode = run_and_check_output(
         [
@@ -102,14 +102,20 @@ def run_test_no_cache(
 def run_test_cache_first_and_second_runs(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_names: List[str]
 ) -> None:
-    # Ensure the cache file doesn't already exist for a clean run.
+    """
+    Run Pysa with the cache argument for the first time. This should create
+    the cache file and save state to it since the file doesn't exist already.
+    Ensure the cache file doesn't already exist for a clean run.
+
+    Then, run Pysa with the cache argument for the second time. Since the file
+    exists, Pysa should load the saved state from the file.
+    """
+
     try:
         shutil.rmtree(cache_path)
     except FileNotFoundError:
         pass
 
-    # Run Pysa with the cache argument for the first time. This should create
-    # the cache file and save state to it since the file doesn't exist already.
     LOG.info("Testing behavior with --use-cache flag on initial run:")
     returncode = run_and_check_output(
         [
@@ -132,8 +138,6 @@ def run_test_cache_first_and_second_runs(
     else:
         sys.exit(returncode)
 
-    # Run Pysa with the cache argument for the second time. Since the file
-    # exists, Pysa should load the saved state from the file.
     LOG.info("Testing behavior with --use-cache on subsequent runs:")
     returncode = run_and_check_output(
         [
@@ -160,10 +164,13 @@ def run_test_cache_first_and_second_runs(
 def run_test_invalid_cache_file(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
+    """
+    Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
+    cache file. Pysa should fall back to doing a clean run.
+    """
+
     LOG.info("Testing fallback behavior with invalid cache file:")
 
-    # Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
-    # cache file. Pysa should fall back to doing a clean run.
     cache_file = cache_path / "sharedmem"
     try:
         cache_file.unlink()
@@ -197,8 +204,10 @@ def run_test_invalid_cache_file(
 def run_test_changed_pysa_file(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after adding a new Pysa model and ensure the cache is not
-    # invalidated.
+    """
+    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+    """
+
     LOG.info("Testing cache is not invalidated after .pysa file change:")
 
     test_model_path = Path("test_taint/PYSA_CACHE_TEST__tmp_model.pysa")
@@ -242,8 +251,10 @@ def run_test_changed_pysa_file(
 def run_test_changed_taint_config_file(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after adding a new Pysa model and ensure the cache is not
-    # invalidated.
+    """
+    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+    """
+
     LOG.info("Testing cache is not invalidated after taint.config change:")
 
     test_taint_config = Path("test_taint/test_taint.config")
@@ -298,8 +309,10 @@ def run_test_changed_taint_config_file(
 def run_test_changed_models(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after adding a new Pysa model and ensure the cache is not
-    # invalidated.
+    """
+    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+    """
+
     LOG.info("Testing results after models change:")
 
     # Remove a test taint file
@@ -354,9 +367,12 @@ def run_test_changed_models(
 def run_test_changed_source_files(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after adding a new file to test cache invalidation.
-    # Pysa should detect that the source has changed and fall back
-    # to doing a clean run.
+    """
+    Run Pysa after adding a new file to test cache invalidation.
+    Pysa should detect that the source has changed and fall back
+    to doing a clean run.
+    """
+
     LOG.info("Testing cache invalidation after source files change:")
 
     new_file_path = Path("PYSA_CACHE_TEST__tmp_file.py")
@@ -400,9 +416,12 @@ def run_test_changed_source_files(
 def run_test_changed_decorators(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
-    # Pysa should detect that the decorator modes have changed and fall back
-    # to doing a clean run.
+    """
+    Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
+    Pysa should detect that the decorator modes have changed and fall back
+    to doing a clean run.
+    """
+
     LOG.info("Testing cache invalidation after decorator mode change:")
 
     new_model_path = Path("test_taint/test_decorator.pysa")
@@ -462,9 +481,12 @@ def run_test_changed_decorators(
 def run_test_changed_overrides(
     typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
 ) -> None:
-    # Run Pysa after removing a @SkipOverrides model to test cache invalidation.
-    # Pysa should detect that the override graph has changed and fall back
-    # to doing a clean run.
+    """
+    Run Pysa after removing a @SkipOverrides model to test cache invalidation.
+    Pysa should detect that the override graph has changed and fall back
+    to doing a clean run.
+    """
+
     LOG.info("Testing cache invalidation after skip override change:")
 
     # Remove a test taint file
