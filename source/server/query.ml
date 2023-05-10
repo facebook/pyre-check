@@ -186,6 +186,16 @@ module Response = struct
     }
     [@@deriving equal, to_yojson]
 
+    type taint_model = {
+      callable: string;
+      model: Yojson.Safe.t;
+    }
+    [@@deriving equal]
+
+    let taint_model_to_yojson { callable; model } =
+      `Assoc ["callable", `String callable; "model", model]
+
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -197,7 +207,7 @@ module Response = struct
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
-      | FoundModels of string
+      | FoundModels of taint_model list
       | FoundModules of Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list
@@ -304,7 +314,7 @@ module Response = struct
           `List (List.map defines ~f:define_to_yojson)
       | FoundLocationsOfDefinitions locations ->
           `List (List.map locations ~f:code_location_to_yojson)
-      | FoundModels models -> `String models
+      | FoundModels models -> `List (List.map ~f:taint_model_to_yojson models)
       | FoundModules references ->
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
@@ -1151,25 +1161,25 @@ let rec process_request ~type_environment ~build_system request =
                          (PyrePath.show path))
                   else
                     let models_and_names, errors = setup_and_execute_model_queries rules in
-                    let to_json (callable, model) =
-                      `Assoc
-                        [
-                          "callable", `String (Interprocedural.Target.external_name callable);
-                          ( "model",
-                            Taint.Model.to_json
-                              ~expand_overrides:None
-                              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-                              ~filename_lookup:None
-                              ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
-                              callable
-                              model );
-                        ]
+                    let to_taint_model (callable, model) =
+                      {
+                        Base.callable = Interprocedural.Target.external_name callable;
+                        model =
+                          Taint.Model.to_json
+                            ~expand_overrides:None
+                            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                            ~filename_lookup:None
+                            ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
+                            callable
+                            model;
+                      }
                     in
                     let models =
                       models_and_names
                       |> Taint.ModelQueryExecution.ModelQueryRegistryMap.get_registry
                            ~model_join:Taint.Model.join_user_models
                       |> Taint.Registry.to_alist
+                      |> List.map ~f:to_taint_model
                     in
                     if List.is_empty models then
                       Error
@@ -1182,10 +1192,7 @@ let rec process_request ~type_environment ~build_system request =
                         (List.fold errors ~init:"" ~f:(fun accum error ->
                              accum ^ Taint.ModelVerificationError.display error))
                     else
-                      let models_string =
-                        `List (List.map models ~f:to_json) |> Yojson.Safe.to_string
-                      in
-                      Single (Base.FoundModels models_string)))
+                      Single (Base.FoundModels models)))
     | ModulesOfPath path ->
         Single
           (Base.FoundModules

@@ -173,6 +173,12 @@ module Response : sig
     }
     [@@deriving equal, to_yojson]
 
+    type taint_model = {
+      callable: string;
+      model: Yojson.Safe.t;
+    }
+    [@@deriving equal, to_yojson]
+
     type t =
       | Boolean of bool
       | Callees of Analysis.Callgraph.callee list
@@ -184,7 +190,7 @@ module Response : sig
       | FoundAttributes of attribute list
       | FoundDefines of define list
       | FoundLocationsOfDefinitions of code_location list
-      | FoundModels of string
+      | FoundModels of taint_model list
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list
