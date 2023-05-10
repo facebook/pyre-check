@@ -244,8 +244,8 @@ def map_model(
 
 def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
     def local_taint_map(caller_port: str, local_taint: Dict[str, Any]) -> None:
-        if "tito" in local_taint:
-            del local_taint["tito"]
+        if "tito_positions" in local_taint:
+            del local_taint["tito_positions"]
 
     return map_model(model, local_taint_map=local_taint_map)
 
