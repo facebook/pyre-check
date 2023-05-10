@@ -47,6 +47,8 @@ Possible queries:
     Returns a JSON with the signature of all defines for given module or class.
   - dump_call_graph()
     Returns a comprehensive JSON of caller -> list of callees.
+  - global_leaks(function1, ...): analyzes the given function(s) and emits errors when
+    global variables are mutated.
   - inline_decorators(qualified_function_name, decorators_to_skip=[decorator1, ...])
     Returns the function definition after inlining decorators.
     Allows skipping certain decorators when inlining.
