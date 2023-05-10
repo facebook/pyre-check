@@ -42,28 +42,32 @@ let assert_event ?name ?event_type ?timestamp ?tags log_file =
 
 let test_event_format _ =
   let output_name = Filename_unix.temp_file "event_format" "test" in
-  Profiling.GlobalState.initialize ~profiling_output:output_name ();
+  PyreProfiling.GlobalState.initialize ~profiling_output:output_name ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
     PyrePath.(remove_if_exists (create_absolute output_name));
-    Profiling.log_performance_event event;
+    PyreProfiling.log_performance_event event;
     assert_event ~name ~event_type ~timestamp ~tags output_name
   in
   assert_event
-    (fun () -> Profiling.Event.create "foo" ~event_type:(Duration 42) ~timestamp:0)
+    (fun () -> PyreProfiling.Event.create "foo" ~event_type:(Duration 42) ~timestamp:0)
     ~name:"foo"
     ~event_type:"[\"Duration\", 42]"
     ~timestamp:0
     ~tags:[];
   assert_event
     (fun () ->
-      Profiling.Event.create "bar" ~event_type:(Duration 24) ~timestamp:1 ~tags:["hello", "world"])
+      PyreProfiling.Event.create
+        "bar"
+        ~event_type:(Duration 24)
+        ~timestamp:1
+        ~tags:["hello", "world"])
     ~name:"bar"
     ~event_type:"[\"Duration\", 24]"
     ~timestamp:1
     ~tags:["hello", "world"];
   assert_event
     (fun () ->
-      Profiling.Event.create
+      PyreProfiling.Event.create
         "baz"
         ~event_type:(Counter (Some "[Luck 7] Ice Cream"))
         ~timestamp:1
@@ -79,8 +83,10 @@ let test_event_format _ =
 
 let test_event_track _ =
   let output_name = Filename_unix.temp_file "event_track" "test" in
-  Profiling.GlobalState.initialize ~profiling_output:output_name ();
-  let foo x = Profiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1) in
+  PyreProfiling.GlobalState.initialize ~profiling_output:output_name ();
+  let foo x =
+    PyreProfiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1)
+  in
   let y = foo 42 in
   assert_int_equal 43 y;
   assert_event output_name ~name:"foo" ~tags:["hello", "world"];
@@ -91,8 +97,8 @@ let test_event_track _ =
 
 let test_memory_profiling _ =
   let output_name = Filename_unix.temp_file "event_track" "test" in
-  Profiling.GlobalState.initialize ~memory_profiling_output:output_name ();
-  Profiling.track_shared_memory_usage ~name:"foo" ();
+  PyreProfiling.GlobalState.initialize ~memory_profiling_output:output_name ();
+  PyreProfiling.track_shared_memory_usage ~name:"foo" ();
   assert_event
     output_name
     ~name:"Shared Memory Usage"

@@ -201,7 +201,7 @@ let performance
     (String.capitalize name)
     (format_as_text ~integers ~normals ())
     time_in_seconds;
-  Profiling.log_performance_event (fun () ->
+  PyreProfiling.log_performance_event (fun () ->
       let tags =
         List.map ~f:(fun (name, value) -> name, string_of_int value) integers
         |> List.rev_append normals
@@ -211,7 +211,7 @@ let performance
         | None -> tags
         | Some name -> ("phase_name", name) :: tags
       in
-      Profiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
+      PyreProfiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
   let randomly_log_every =
     match always_log_time_threshold with
     | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every

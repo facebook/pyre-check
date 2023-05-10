@@ -509,7 +509,7 @@ module FromReadOnlyUpstream = struct
     in
     let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_module_paths in
     let _, raw_source_dependencies =
-      Profiling.track_duration_and_shared_memory
+      PyreProfiling.track_duration_and_shared_memory
         "Parse Raw Sources"
         ~tags:["phase_name", "Parsing"]
         ~f:(fun _ ->

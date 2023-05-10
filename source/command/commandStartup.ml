@@ -214,4 +214,4 @@ let setup_global_states
     ~project_root:(PyrePath.absolute global_root)
     ~project_name:relative_local_root
     ();
-  Profiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ()
+  PyreProfiling.GlobalState.initialize ?profiling_output ?memory_profiling_output ()

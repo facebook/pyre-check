@@ -84,7 +84,7 @@ end
 let entry =
   Worker.register_entry_point ~restore:(fun (log_state, profiling_state, statistics_state) ->
       Log.GlobalState.restore log_state;
-      Profiling.GlobalState.restore profiling_state;
+      PyreProfiling.GlobalState.restore profiling_state;
       Statistics.GlobalState.restore statistics_state;
       ())
 
@@ -100,7 +100,7 @@ let create
         ~saved_state:
           ( (* These states need to be restored in the worker process. *)
             Log.GlobalState.get (),
-            Profiling.GlobalState.get (),
+            PyreProfiling.GlobalState.get (),
             Statistics.GlobalState.get () )
         ~entry
         ~nbr_procs:number_of_workers

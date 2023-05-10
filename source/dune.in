@@ -150,8 +150,8 @@
  (libraries lwt lwt.unix))
 
 (library
- (name profiling)
- (modules profiling)
+ (name pyreProfiling)
+ (modules pyreProfiling)
  (public_name pyrelib.profiling)
  (preprocess
   (pps

@@ -138,7 +138,7 @@ let populate_for_definitions ~scheduler environment defines =
 
 
 let populate_for_modules ~scheduler environment qualifiers =
-  Profiling.track_shared_memory_usage ~name:"Before legacy type check" ();
+  PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
   let all_defines =
     let timer = Timer.start () in
     Log.info "Collecting all definitions...";
@@ -181,7 +181,7 @@ let populate_for_modules ~scheduler environment qualifiers =
     ~name:"shared memory size post-typecheck"
     ~integers:["size", Memory.heap_size ()]
     ();
-  Profiling.track_shared_memory_usage ~name:"After legacy type check" ()
+  PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ()
 
 
 module ReadOnly = struct

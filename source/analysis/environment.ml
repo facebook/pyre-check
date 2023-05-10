@@ -454,7 +454,7 @@ module EnvironmentTable = struct
         in
         let triggered_dependencies =
           let name = Format.sprintf "TableUpdate(%s)" In.Value.description in
-          Profiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
+          PyreProfiling.track_duration_and_shared_memory_with_dynamic_tags name ~f:(fun _ ->
               let names_to_update = Map.to_alist trigger_map in
               let (), triggered_dependencies =
                 let keys =
@@ -481,7 +481,7 @@ module EnvironmentTable = struct
                   "number_of_triggered_dependencies", triggered_dependencies_size;
                 ]
               in
-              { Profiling.result = triggered_dependencies; tags })
+              { PyreProfiling.result = triggered_dependencies; tags })
         in
         triggered_dependencies
     end

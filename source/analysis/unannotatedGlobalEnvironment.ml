@@ -1038,7 +1038,7 @@ module FromReadOnlyUpstream = struct
     in
     let previous_defines_list = DefineNames.get_define_names define_names invalidated_modules in
     let triggered_dependencies =
-      Profiling.track_duration_and_shared_memory_with_dynamic_tags
+      PyreProfiling.track_duration_and_shared_memory_with_dynamic_tags
         "TableUpdate(Unannotated globals)"
         ~f:(fun _ ->
           let (), mutation_triggers =
@@ -1087,7 +1087,7 @@ module FromReadOnlyUpstream = struct
               "number_of_triggered_dependencies", triggered_dependencies_size;
             ]
           in
-          { Profiling.result = triggered_dependencies; tags })
+          { PyreProfiling.result = triggered_dependencies; tags })
     in
     { UpdateResult.triggered_dependencies; upstream }
 end

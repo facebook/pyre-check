@@ -285,7 +285,7 @@ let create controls =
     | Some _ -> ()
     | None -> EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths
   in
-  Profiling.track_shared_memory_usage ~name:"Before module tracking" ();
+  PyreProfiling.track_shared_memory_usage ~name:"Before module tracking" ();
   Log.info "Creating environment...";
   let environment = create controls in
   Statistics.performance ~name:"full environment built" ~timer ();
@@ -295,5 +295,5 @@ let create controls =
 let check_and_preprocess ~scheduler environment qualifiers =
   (type_environment environment |> TypeEnvironment.populate_for_modules ~scheduler) qualifiers;
   populate_for_modules ~scheduler environment qualifiers;
-  Profiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
+  PyreProfiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
   ()
