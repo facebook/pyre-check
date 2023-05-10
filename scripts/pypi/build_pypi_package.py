@@ -294,9 +294,7 @@ def _rename_and_move_artifacts(
     wheel_destination = destination_path / wheel_name.replace(
         "-any", _distribution_platform()
     )
-    # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
     shutil.move(wheel, wheel_destination)
-    # pyre-fixme[6]: Expected `str` for 1st param but got `Path`.
     shutil.move(source_distribution, source_distribution_destination)
     return wheel_destination, source_distribution_destination
 

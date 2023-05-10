@@ -114,9 +114,9 @@ def _get_annotations_as_types(
 ) -> Dict[str, Any]:
     # TODO(T148815848) Simply use "inspect.get_annotations(function_to_model, eval_str=True)" when migrated to python 3.10
     try:
-        from inspect import get_annotations  # pyre-ignore
+        from inspect import get_annotations
 
-        resolved_annotations = get_annotations(function, eval_str=True)  # pyre-ignore
+        resolved_annotations = get_annotations(function, eval_str=True)
     except ImportError:
         resolved_annotations = function.__annotations__
     finally:
