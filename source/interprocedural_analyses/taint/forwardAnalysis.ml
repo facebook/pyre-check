@@ -2861,7 +2861,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           (ForwardState.Tree.join prime default_value_taint)
           state.taint
       in
-      { state with taint }
+      { taint }
     in
     List.fold parameters ~init:bottom ~f:prime_parameter
 

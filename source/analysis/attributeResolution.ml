@@ -1328,7 +1328,7 @@ module SignatureSelection = struct
           consume
             ~arguments:arguments_tail
             ~parameters:remaining_parameters
-            { parameter_argument_mapping_with_reasons with parameter_argument_mapping; reasons }
+            { parameter_argument_mapping; reasons }
       | ( ({ kind = DoubleStar; _ } as argument) :: arguments_tail,
           (Parameter.Keywords _ as parameter) :: _ ) ->
           let parameter_argument_mapping =

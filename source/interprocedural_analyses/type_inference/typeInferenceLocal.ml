@@ -224,7 +224,6 @@ module State (Context : Context) = struct
         in
         Value
           {
-            previous with
             errors = Map.merge_skewed previous.errors next.errors ~combine:combine_errors;
             resolution =
               Resolution.outer_widen_refinements

@@ -1862,7 +1862,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let location_with_module =
       Location.with_module ~module_reference:FunctionContext.qualifier location
     in
-    let state = { state with taint = BackwardState.join state.taint triggered_taint } in
+    let state = { taint = BackwardState.join state.taint triggered_taint } in
     let taint =
       let literal_string_sinks =
         FunctionContext.taint_configuration.implicit_sinks.literal_string_sinks

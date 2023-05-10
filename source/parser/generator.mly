@@ -109,11 +109,11 @@
     |> Node.create ~location:{ location with stop }
 
   let slice ~lower ~upper ~step ~bound_colon ~step_colon =
-    let increment ({ Location.start; stop; _ } as location) =
+    let increment { Location.start; stop; _ } =
       let increment ({ Location.column; _ } as position) =
         { position with Location.column = column + 1 }
       in
-      { location with Location.start = increment start; stop = increment stop }
+      { Location.start = increment start; stop = increment stop }
     in
     let lower_location =
       match lower with

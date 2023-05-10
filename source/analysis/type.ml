@@ -2727,9 +2727,8 @@ module Transform = struct
         | NoneType -> NoneType
         | Callable ({ implementation; overloads; _ } as callable) ->
             let open Record.Callable in
-            let visit_overload ({ annotation; parameters; _ } as overload) =
+            let visit_overload { annotation; parameters; _ } =
               {
-                overload with
                 annotation = visit_annotation annotation ~state;
                 parameters = visit_parameters parameters;
               }

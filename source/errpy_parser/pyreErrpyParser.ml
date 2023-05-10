@@ -781,7 +781,7 @@ and translate_statements
             ~async:false
             ~name:function_def.name
             ~args:(translate_arguments function_def.args)
-            ~body:(translate_statements function_def.body ~context:{ context with parent = None })
+            ~body:(translate_statements function_def.body ~context:{ parent = None })
             ~decorator_list:(List.map ~f:translate_expression function_def.decorator_list)
             ~returns:(Option.map ~f:translate_expression function_def.returns)
             ~_type_comment:function_def.type_comment
@@ -790,8 +790,7 @@ and translate_statements
             ~async:true
             ~name:async_function_def.name
             ~args:(translate_arguments async_function_def.args)
-            ~body:
-              (translate_statements async_function_def.body ~context:{ context with parent = None })
+            ~body:(translate_statements async_function_def.body ~context:{ parent = None })
             ~decorator_list:(List.map ~f:translate_expression async_function_def.decorator_list)
             ~returns:(Option.map ~f:translate_expression async_function_def.returns)
             ~_type_comment:async_function_def.type_comment
@@ -814,8 +813,7 @@ and translate_statements
               {
                 Class.name = Ast.Reference.create name;
                 base_arguments;
-                body =
-                  translate_statements class_def.body ~context:{ context with parent = Some name };
+                body = translate_statements class_def.body ~context:{ parent = Some name };
                 decorators = List.map ~f:translate_expression class_def.decorator_list;
                 top_level_unbound_names = [];
               };

@@ -634,8 +634,7 @@ let test_arguments_location _ =
     let expression = parse_single_expression expression in
     let expected_location =
       {
-        expression.Node.location with
-        start = { Location.line = 1; column = expected_start };
+        Location.start = { Location.line = 1; column = expected_start };
         stop = { Location.line = 1; column = expected_stop };
       }
     in

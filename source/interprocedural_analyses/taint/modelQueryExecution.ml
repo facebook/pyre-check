@@ -277,7 +277,7 @@ module DumpModelQueryResults = struct
 end
 
 let sanitized_location_insensitive_compare left right =
-  let sanitize_decorator_argument ({ Expression.Call.Argument.name; value } as argument) =
+  let sanitize_decorator_argument { Expression.Call.Argument.name; value } =
     let new_name =
       match name with
       | None -> None
@@ -296,7 +296,7 @@ let sanitized_location_insensitive_compare left right =
           }
       | _ -> value
     in
-    { argument with name = new_name; value = new_value }
+    { Expression.Call.Argument.name = new_name; value = new_value }
   in
   let left_sanitized = sanitize_decorator_argument left in
   let right_sanitized = sanitize_decorator_argument right in
