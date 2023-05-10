@@ -5,7 +5,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Explore taint models interactively.
+
+This script can be used to debug false positives and false negatives in the
+taint analysis. See https://pyre-check.org/docs/pysa-explore/ for the documentation.
 """
 
 
