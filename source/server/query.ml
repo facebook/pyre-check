@@ -63,7 +63,7 @@ module Request = struct
         path: string option;
         verify_dsl: bool;
       }
-  [@@deriving sexp, compare]
+  [@@deriving equal, show]
 
   let inline_decorators ?(decorators_to_skip = []) function_reference =
     InlineDecorators { function_reference; decorators_to_skip }
@@ -74,7 +74,7 @@ module Response = struct
     type attribute_kind =
       | Regular
       | Property
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type attribute = {
       name: string;
@@ -82,93 +82,93 @@ module Response = struct
       kind: attribute_kind;
       final: bool;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type type_at_location = {
       location: Location.t;
       annotation: Type.t;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type types_at_path = {
       path: string;
       types: type_at_location list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type hover_info = {
       value: string option;
       docstring: string option;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type coverage_at_path = {
       path: string;
       total_expressions: int;
       coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type error_at_path = {
       path: string;
       error: string;
     }
-    [@@deriving sexp, compare, to_yojson, show]
+    [@@deriving equal, to_yojson, show]
 
     type coverage_response_at_path =
       | CoverageAtPath of coverage_at_path
       | ErrorAtPath of error_at_path
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
       result: bool;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type callees = {
       caller: Reference.t;
       callees: callee_with_instantiated_locations list;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type parameter_representation = {
       parameter_name: string;
       parameter_annotation: Expression.t option;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type define = {
       define_name: Reference.t;
       parameters: parameter_representation list;
       return_annotation: Expression.t option;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type superclasses_mapping = {
       class_name: Reference.t;
       superclasses: Reference.t list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type position = {
       line: int;
       character: int;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type range = {
       start: position;
       end_: position;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     let range_to_yojson { start; end_ } =
       `Assoc ["start", position_to_yojson start; "end", position_to_yojson end_]
@@ -178,13 +178,13 @@ module Response = struct
       path: string;
       range: range;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type global_leak_errors = {
       global_leaks: Analysis.AnalysisError.Instantiated.t list;
       query_errors: string list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type t =
       | Boolean of bool
@@ -211,7 +211,7 @@ module Response = struct
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | TypesByPath of types_at_path list
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     let to_yojson response =
       let open Analysis in
@@ -336,7 +336,7 @@ module Response = struct
     | Single of Base.t
     | Batch of t list
     | Error of string
-  [@@deriving sexp, compare]
+  [@@deriving equal]
 
   let rec to_yojson = function
     | Single base_response -> `Assoc ["response", Base.to_yojson base_response]

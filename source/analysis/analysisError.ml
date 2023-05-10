@@ -3068,7 +3068,7 @@ module Instantiated = struct
     concise_description: string;
     define: string;
   }
-  [@@deriving sexp, compare, show, hash, yojson { strict = false }]
+  [@@deriving sexp, equal, compare, show, hash, yojson { strict = false }]
 
   let location { line; column; stop_line; stop_column; path; _ } =
     { Location.start = { line; column }; stop = { line = stop_line; column = stop_column } }

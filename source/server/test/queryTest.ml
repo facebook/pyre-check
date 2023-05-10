@@ -24,14 +24,14 @@ let test_parse_query context =
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> Reference.equal left right) left right
       | Type left, Type right -> expression_equal left right
-      | _ -> [%compare.equal: Query.Request.t] left right
+      | _ -> Query.Request.equal left right
     in
     match Query.parse_request serialized with
     | Result.Ok request ->
         assert_equal
           ~ctxt:context
           ~cmp:type_query_request_equal
-          ~printer:(fun request -> Sexp.to_string_hum (Query.Request.sexp_of_t request))
+          ~printer:(fun request -> Query.Request.show request)
           query
           request
     | Result.Error reason ->
@@ -48,8 +48,8 @@ let test_parse_query context =
           Format.asprintf
             "Query parsing unexpectedly succeeded for '%s': %a"
             serialized
-            Sexp.pp_hum
-            (Query.Request.sexp_of_t request)
+            Query.Request.pp
+            request
         in
         assert_failure message
   in
@@ -3385,7 +3385,7 @@ let test_global_leaks context =
                     "define": "foo.nested_run_2.do_the_thing_2.another_nest"
                   }
               ]
-            } 
+            }
           }
         |}
       );

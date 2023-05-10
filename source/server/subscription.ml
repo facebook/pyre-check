@@ -14,7 +14,7 @@ module Request = struct
   type t =
     | SubscribeToTypeErrors of string
     | SubscribeToStateChanges of string
-  [@@deriving sexp, compare, yojson { strict = false }]
+  [@@deriving equal, yojson { strict = false }]
 end
 
 module Response = struct
@@ -22,7 +22,7 @@ module Response = struct
     name: string;
     body: Response.t;
   }
-  [@@deriving sexp, compare, to_yojson { strict = false }]
+  [@@deriving equal, to_yojson { strict = false }]
 
   let send ~output_channel response =
     let open Lwt.Infix in

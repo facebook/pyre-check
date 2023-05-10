@@ -12,7 +12,7 @@ type position = {
   line: int;
   column: int;
 }
-[@@deriving compare, sexp, show, hash, yojson]
+[@@deriving equal, compare, sexp, show, hash, yojson]
 
 val any_position : position
 
@@ -20,7 +20,7 @@ type t = {
   start: position;
   stop: position;
 }
-[@@deriving compare, sexp, show, hash, yojson]
+[@@deriving equal, compare, sexp, show, hash, yojson]
 
 val create : start:Lexing.position -> stop:Lexing.position -> t
 
@@ -69,7 +69,7 @@ module WithPath : sig
     start: position;
     stop: position;
   }
-  [@@deriving compare, sexp, hash, to_yojson]
+  [@@deriving equal, compare, sexp, hash, to_yojson]
 
   val any : t
 

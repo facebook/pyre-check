@@ -37,7 +37,7 @@ type coverage_gap_by_location = {
   type_: Type.t;
   reason: string list;
 }
-[@@deriving compare, sexp, show, hash, to_yojson]
+[@@deriving equal, compare, sexp, show, hash, to_yojson]
 
 type coverage_for_path = {
   total_expressions: int;

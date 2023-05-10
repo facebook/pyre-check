@@ -13,7 +13,7 @@ module OverlayCodeUpdate = struct
   type t =
     | NewCode of string
     | ResetCode
-  [@@deriving sexp, compare, hash, yojson]
+  [@@deriving sexp, equal, hash, yojson]
 end
 
 type t =
@@ -33,7 +33,7 @@ type t =
       source_path: string;
       code_update: OverlayCodeUpdate.t;
     }
-[@@deriving sexp, compare, hash, yojson { strict = false }]
+[@@deriving sexp, equal, hash, yojson { strict = false }]
 
 (* For some of the requests, use their legacy names for backward compatibility. *)
 let name_of = function

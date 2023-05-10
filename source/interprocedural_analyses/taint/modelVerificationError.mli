@@ -22,13 +22,13 @@ module IncompatibleModelError : sig
         position: int;
         valid_positions: int list;
       }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   type t = {
     reason: reason;
     overload: Type.t Type.Callable.overload option;
   }
-  [@@deriving sexp, compare]
+  [@@deriving sexp, equal, compare]
 
   val strip_overload : t -> t
 end
@@ -170,14 +170,14 @@ type kind =
     }
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
-[@@deriving sexp, compare]
+[@@deriving sexp, equal, compare]
 
 type t = {
   kind: kind;
   path: PyrePath.t option;
   location: Location.t;
 }
-[@@deriving sexp, compare, show]
+[@@deriving sexp, equal, compare, show]
 
 val to_json : t -> Yojson.Safe.t
 

@@ -20,11 +20,11 @@ module ServerStatus = struct
        shadow mode), which requires us to invent a new type called Ready to indicate the server is
        done processing an incremental request, and is ready to handle new requests.. *)
     | Ready
-  [@@deriving sexp, compare, to_yojson]
+  [@@deriving equal, to_yojson]
 end
 
 module IncrementalTelemetry = struct
-  type t = { overall_duration_ms: int } [@@deriving sexp, compare, to_yojson]
+  type t = { overall_duration_ms: int } [@@deriving equal, to_yojson]
 end
 
 type t =
@@ -42,4 +42,4 @@ type t =
   | TypeErrors of Analysis.AnalysisError.Instantiated.t list
   | Query of Query.Response.t
   | IncrementalTelemetry of IncrementalTelemetry.t
-[@@deriving sexp, compare, to_yojson]
+[@@deriving equal, to_yojson]

@@ -11,7 +11,7 @@ module Request : sig
   type t =
     | SubscribeToTypeErrors of string
     | SubscribeToStateChanges of string
-  [@@deriving sexp, compare, yojson { strict = false }]
+  [@@deriving equal, yojson { strict = false }]
 end
 
 module Response : sig
@@ -19,7 +19,7 @@ module Response : sig
     name: string;
     body: Response.t;
   }
-  [@@deriving sexp, compare, to_yojson]
+  [@@deriving equal, to_yojson]
 end
 
 type t

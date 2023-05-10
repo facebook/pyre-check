@@ -26,13 +26,13 @@ module IncompatibleModelError = struct
         position: int;
         valid_positions: int list;
       }
-  [@@deriving sexp, compare, show]
+  [@@deriving sexp, equal, compare, show]
 
   type t = {
     reason: reason;
     overload: Type.t Type.Callable.overload option;
   }
-  [@@deriving sexp, compare, show]
+  [@@deriving sexp, equal, compare, show]
 
   let strip_overload { reason; _ } = { reason; overload = None }
 end
@@ -174,14 +174,14 @@ type kind =
     }
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
-[@@deriving sexp, compare, show]
+[@@deriving sexp, equal, compare, show]
 
 type t = {
   kind: kind;
   path: PyrePath.t option;
   location: Location.t;
 }
-[@@deriving sexp, compare, show]
+[@@deriving sexp, equal, compare, show]
 
 let show_type_for_error annotation =
   match annotation with

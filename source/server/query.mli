@@ -55,7 +55,7 @@ module Request : sig
         path: string option;
         verify_dsl: bool;
       }
-  [@@deriving sexp, compare]
+  [@@deriving equal, show]
 
   val inline_decorators : ?decorators_to_skip:Reference.t list -> Reference.t -> t
 end
@@ -65,7 +65,7 @@ module Response : sig
     type attribute_kind =
       | Regular
       | Property
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type attribute = {
       name: string;
@@ -73,105 +73,105 @@ module Response : sig
       kind: attribute_kind;
       final: bool;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type type_at_location = {
       location: Location.t;
       annotation: Type.t;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type types_at_path = {
       path: string;
       types: type_at_location list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type hover_info = {
       value: string option;
       docstring: string option;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type coverage_at_path = {
       path: string;
       total_expressions: int;
       coverage_gaps: LocationBasedLookup.coverage_gap_by_location list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type error_at_path = {
       path: string;
       error: string;
     }
-    [@@deriving sexp, compare, to_yojson, show]
+    [@@deriving equal, to_yojson, show]
 
     type coverage_response_at_path =
       | CoverageAtPath of coverage_at_path
       | ErrorAtPath of error_at_path
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type compatibility = {
       actual: Type.t;
       expected: Type.t;
       result: bool;
     }
-    [@@derving sexp, compare]
+    [@@derving equal]
 
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type callees = {
       caller: Reference.t;
       callees: callee_with_instantiated_locations list;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type parameter_representation = {
       parameter_name: string;
       parameter_annotation: Expression.t option;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type define = {
       define_name: Reference.t;
       parameters: parameter_representation list;
       return_annotation: Expression.t option;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type superclasses_mapping = {
       class_name: Reference.t;
       superclasses: Reference.t list;
     }
-    [@@deriving sexp, compare]
+    [@@deriving equal]
 
     type position = {
       line: int;
       character: int;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type range = {
       start: position;
       end_: position;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type code_location = {
       path: string;
       range: range;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type global_leak_errors = {
       global_leaks: Analysis.AnalysisError.Instantiated.t list;
       query_errors: string list;
     }
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
 
     type t =
       | Boolean of bool
@@ -198,14 +198,14 @@ module Response : sig
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | TypesByPath of types_at_path list
-    [@@deriving sexp, compare, to_yojson]
+    [@@deriving equal, to_yojson]
   end
 
   type t =
     | Single of Base.t
     | Batch of t list
     | Error of string
-  [@@deriving sexp, compare, to_yojson]
+  [@@deriving equal, to_yojson]
 
   val create_type_at_location : Location.t * Type.t -> Base.type_at_location
 end

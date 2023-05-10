@@ -16,7 +16,7 @@ module T = struct
     line: int;
     column: int;
   }
-  [@@deriving compare, eq, sexp, hash, yojson]
+  [@@deriving equal, compare, sexp, hash, yojson]
 
   (* These are not filtered: our backend is broken if any locations appear in errors. *)
   let any_position = { line = -1; column = -1 }
@@ -29,7 +29,7 @@ module T = struct
     start: position;
     stop: position;
   }
-  [@@deriving compare, sexp, hash, yojson]
+  [@@deriving equal, compare, sexp, hash, yojson]
 
   let pp format { start; stop } =
     Format.fprintf format "%d:%d-%d:%d" start.line start.column stop.line stop.column
@@ -103,7 +103,7 @@ module WithPath = struct
     start: position;
     stop: position;
   }
-  [@@deriving compare, sexp, hash, to_yojson]
+  [@@deriving equal, compare, sexp, hash, to_yojson]
 
   let line { start = { line; _ }; _ } = line
 

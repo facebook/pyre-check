@@ -30,7 +30,7 @@ module ClientRequest = struct
     | Request of Request.t
     | Subscription of Subscription.Request.t
     | Error of string
-  [@@deriving sexp, compare]
+  [@@deriving equal]
 
   let of_string input_string =
     try
