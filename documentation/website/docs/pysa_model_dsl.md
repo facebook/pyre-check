@@ -58,6 +58,8 @@ $ pyre analyze --dump-model-query-results /path/to/output/file.txt
 
 You can then view this file to see the generated models.
 
+You can also test DSL queries using [`pyre query`](querying_pyre.md#model-query).
+
 ## Name clauses
 The `name` clause describes what the query is meant to find.  Normally it follows the format of `get_` + [what the query matches with in the `where` clause] + [`_sinks`, `_source` and/or `_tito`]. This clause should be unique for every ModelQuery within a file.
 
