@@ -252,6 +252,18 @@ $ pyre query "model_query(path='/absolute/path/to/test_pysa/directory', query_na
 }
 ```
 
+:::caution
+
+`pyre query` does not include external sources by default, which leads to discrepancies
+with `pyre analyze` (i.e, Pysa). To avoid this problem, we recommend starting
+a pyre server with the following parameters:
+
+```bash
+$ pyre --no-saved-state start --skip-initial-type-check --wait-on-initialization --analyze-external-sources
+```
+
+:::
+
 ### Path of module
 
 The command `path_of_module` returns the full absolute path for a given module.
