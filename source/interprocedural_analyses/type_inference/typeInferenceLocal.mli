@@ -33,7 +33,7 @@ module type Signature = sig
   include Analysis.Fixpoint.State with type t := t
 end
 
-module State (Context : Context) : Signature
+module State (_ : Context) : Signature
 
 val infer_for_define
   :  configuration:Configuration.Analysis.t ->

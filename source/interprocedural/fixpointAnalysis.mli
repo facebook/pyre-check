@@ -206,6 +206,6 @@ end
 
 module WithoutLogging : LOGGER
 
-module WithLogging (Config : sig
+module WithLogging (_ : sig
   val expensive_callable_ms : int
 end) : LOGGER

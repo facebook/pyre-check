@@ -87,4 +87,4 @@ end
 
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
 
-module Make (OrderedConstraints : OrderedConstraintsType) : OrderedConstraintsSetType
+module Make (_ : OrderedConstraintsType) : OrderedConstraintsSetType

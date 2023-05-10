@@ -65,7 +65,7 @@ val unpack_callable_and_self_argument
   Type.t ->
   TypeOperation.callable_and_self_argument option
 
-module State (Context : Context) : Signature
+module State (_ : Context) : Signature
 
 module DummyContext : Context
 

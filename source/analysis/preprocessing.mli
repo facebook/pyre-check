@@ -106,7 +106,7 @@ module type QualifyContext = sig
   val source_qualifier : Reference.t
 end
 
-module Qualify (Context : QualifyContext) : sig
+module Qualify (_ : QualifyContext) : sig
   type alias = {
     name: Reference.t;
     qualifier: Reference.t;
