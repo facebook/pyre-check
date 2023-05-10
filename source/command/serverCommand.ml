@@ -42,6 +42,7 @@ module ServerConfiguration = struct
     saved_state_action: SavedStateAction.t option;
     skip_initial_type_check: bool;
     use_lazy_module_tracking: bool;
+    analyze_external_sources: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -82,6 +83,9 @@ module ServerConfiguration = struct
           let use_lazy_module_tracking =
             json |> bool_member "use_lazy_module_tracking" ~default:false
           in
+          let analyze_external_sources =
+            json |> bool_member "analyze_external_sources" ~default:false
+          in
           Result.Ok
             {
               base;
@@ -96,6 +100,7 @@ module ServerConfiguration = struct
               additional_logging_sections;
               skip_initial_type_check;
               use_lazy_module_tracking;
+              analyze_external_sources;
             }
     with
     | Type_error (message, _)
@@ -143,11 +148,12 @@ module ServerConfiguration = struct
         additional_logging_sections = _;
         skip_initial_type_check = _;
         use_lazy_module_tracking = _;
+        analyze_external_sources;
       }
     =
     Configuration.Analysis.create
       ~parallel
-      ~analyze_external_sources:false
+      ~analyze_external_sources
       ~filter_directories:checked_directory_allowlist
       ~ignore_all_errors:checked_directory_blocklist
       ~number_of_workers

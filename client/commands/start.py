@@ -178,6 +178,7 @@ class Arguments:
     saved_state_action: Optional[SavedStateAction] = None
     skip_initial_type_check: bool = False
     use_lazy_module_tracking: bool = False
+    analyze_external_sources: bool = False
     use_errpy_parser: bool = False
 
     def serialize(self) -> Dict[str, Any]:
@@ -204,6 +205,7 @@ class Arguments:
             ),
             "skip_initial_type_check": self.skip_initial_type_check,
             "use_lazy_module_tracking": self.use_lazy_module_tracking,
+            "analyze_external_sources": self.analyze_external_sources,
             "use_errpy_parser": self.use_errpy_parser,
         }
 
@@ -377,6 +379,7 @@ def create_server_arguments(
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,
+        analyze_external_sources=start_arguments.analyze_external_sources,
         socket_path=daemon_socket.get_socket_path(
             configuration.get_project_identifier(),
             flavor=start_arguments.flavor,

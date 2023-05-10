@@ -121,6 +121,7 @@ class StartArguments:
     wait_on_initialization: bool = False
     skip_initial_type_check: bool = False
     use_lazy_module_tracking: bool = False
+    analyze_external_sources: bool = False
 
     @staticmethod
     def create(
@@ -132,6 +133,7 @@ class StartArguments:
         terminal: bool = False,
         skip_initial_type_check: bool = False,
         use_lazy_module_tracking: bool = False,
+        analyze_external_sources: bool = False,
     ) -> StartArguments:
         return StartArguments(
             changed_files_path=command_argument.changed_files_path,
@@ -153,6 +155,7 @@ class StartArguments:
             wait_on_initialization=wait_on_initialization,
             skip_initial_type_check=skip_initial_type_check,
             use_lazy_module_tracking=use_lazy_module_tracking,
+            analyze_external_sources=analyze_external_sources,
         )
 
     def get_log_identifier(self) -> str:

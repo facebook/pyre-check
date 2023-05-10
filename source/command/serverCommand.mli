@@ -32,6 +32,7 @@ module ServerConfiguration : sig
     saved_state_action: Server.SavedStateAction.t option;
     skip_initial_type_check: bool;
     use_lazy_module_tracking: bool;
+    analyze_external_sources: bool;
   }
   [@@deriving sexp, compare, hash, of_yojson]
 end

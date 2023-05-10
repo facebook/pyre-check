@@ -1269,6 +1269,13 @@ def servers_stop(context: click.Context) -> int:
     help="Use lazy module tracking. This is experimental and cannot power full checks.",
 )
 @click.option(
+    "--analyze-external-sources",
+    is_flag=True,
+    default=False,
+    hidden=True,
+    help="Include external sources for type checks and queries.",
+)
+@click.option(
     "--flavor",
     type=click.Choice(identifiers.PyreFlavor.server_flavor_choices()),
     help=(
@@ -1285,6 +1292,7 @@ def start(
     wait_on_initialization: bool,
     skip_initial_type_check: bool,
     use_lazy_module_tracking: bool,
+    analyze_external_sources: bool,
     flavor: Optional[str],
 ) -> int:
     """
@@ -1312,6 +1320,7 @@ def start(
             wait_on_initialization=wait_on_initialization,
             skip_initial_type_check=skip_initial_type_check,
             use_lazy_module_tracking=use_lazy_module_tracking,
+            analyze_external_sources=analyze_external_sources,
         ),
     )
 
