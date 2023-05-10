@@ -418,6 +418,7 @@ def print_issues(callable: str) -> None:
 
 
 def print_help() -> None:
+    """Print this help message."""
     print("# Pysa Model Explorer")
     print("Available commands:")
     commands = [
@@ -429,6 +430,7 @@ def print_help() -> None:
         (get_issues, "get_issues('foo.bar')"),
         (print_issues, "print_issues('foo.bar')"),
         (print_json, "print_json({'a': 'b'})"),
+        (print_help, "print_help()"),
     ]
     max_width = max(len(command[1]) for command in commands)
     for command, example in commands:
