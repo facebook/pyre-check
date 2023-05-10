@@ -157,6 +157,121 @@ The command `dump_call_graph()` returns a comprehensive JSON mapping each call t
 
 The command `dump_class_hierarchy()` returns the entire class hierarchy as Pyre understands it; elides type variables.
 
+### Global leaks
+
+The command `global_leaks([function1[, function2[, ...]]])` gives you the list of mutations to global variables and class attributes within the bodies of the given callables. If no callables are provided to the query, it is a no-op.
+
+```python
+# a.py
+class A:
+    my_class_variable: int = 3
+
+    def foo(self) -> None:
+        pass
+
+# b/c.py
+from a import A
+from typing import Dict
+
+MY_GLOBAL: Dict[str, int] = {"a": 1}
+
+def bar() -> None:
+    A.my_class_variable = 4
+
+def baz() -> None:
+    MY_GLOBAL.setdefault("b", 2)
+```
+```bash
+$ pyre query "global_leaks(a.A.foo, b.c.bar, b.c.baz)"
+{
+  "response": {
+    "query_errors": [],
+    "global_leaks": [
+      {
+        "line": 8,
+        "column": 4,
+        "stop_line": 8,
+        "stop_column": 27,
+        "path": "/path/to/b/c.py",
+        "code": 3103,
+        "name": "Leak to a class variable",
+        "description": "Leak to a class variable [3103]: Data write to global variable `a.A` of type `typing.Type[a.A]`.",
+        "long_description": "Leak to a class variable [3103]: Data write to global variable `a.A` of type `typing.Type[a.A]`.",
+        "concise_description": "Leak to a class variable [3103]: Data write to global variable `A` of type `typing.Type[a.A]`.",
+        "define": "b.c.bar"
+      },
+      {
+        "line": 12,
+        "column": 4,
+        "stop_line": 12,
+        "stop_column": 24,
+        "path": "/path/to/b/c.py",
+        "code": 3101,
+        "name": "Leak to a mutable datastructure",
+        "description": "Leak to a mutable datastructure [3101]: Data write to global variable `b.c.MY_GLOBAL` of type `typing.Dict[str, int]`.",
+        "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `b.c.MY_GLOBAL` of type `typing.Dict[str, int]`.",
+        "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `MY_GLOBAL` of type `typing.Dict[str, int]`.",
+        "define": "b.c.baz"
+      }
+    ]
+  }
+}
+```
+
+Five kinds of leaks are checked for, which can be found in `source/analysis/analysisError.ml`, under the `GlobalLeaks` module:
+
+1. Direct mutations to a global
+    - The mutation methods checked for include any mutation methods on `dict`, `list`, or `set`, as well as `__setitem__` calls on any type.
+
+```python
+def foo() -> None:
+    MY_GLOBAL = 1  # leak
+    MY_LIST.append(1)  # leak
+    MY_DICT["a"] = 2  # leak
+    MY_SET |= {2}  # leak
+
+    MY_CUSTOM_GLOBAL.custom_mutation_method(5)  # no leak
+```
+
+2. Mutations of class attributes
+    - The same cases as direct mutations to a global are checked, as well as `__setattr__` and `setattr(...)` calls on any type.
+
+```python
+def foo() -> None:
+    MY_GLOBAL.x = 1  # leak
+    MY_GLOBAL.y.z.a.b = 1  # leak
+    MY_GLOBAL.some_list.append(3)  # leak
+    setattr(MY_GLOBAL, "b", 2)  # leak
+    MY_GLOBAL.__setattr__("c", 3)  # leak
+```
+
+3. Assignment of a global or its attributes into a local variable
+
+```python
+def foo() -> None:
+    my_local: int = MY_GLOBAL_INT  # leak
+    my_other_local: List[str] = MY_OTHER_GLOBAL.str_list  # leak
+```
+
+4. Passing a global or its attribtues as a parameter
+
+```python
+def foo() -> None:
+    my_other_function(MY_GLOBAL)  # leak
+    a = MyClass()
+    a.some_method(MY_GLOBAL.x)  # leak
+```
+
+5. Returning a global or its attributes from a function or method
+
+```python
+def foo() -> None:
+    return MY_GLOBAL  # leak
+
+def bar() -> None:
+    return MY_GLOBAL.x  # leak
+```
+
 ### Less or equal
 
 The command `less_or_equal` returns whether the type on the left can be used when the type on the right is expected.
