@@ -5,7 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Pyre usually infers the type of literals by looking at the expression alone. But when it comes to
+   mutable literals, such as lists or dictionaries, Pyre needs to take the expected type into
+   account. Otherwise, users would face noisy errors due to invariance.
+
+   For example, in `x: list[Base] = [Child()]`, if Pyre inferred the value's type to be
+   `list[Child]`, then it would emit an error that `list[Child]` is not compatible with
+   `list[Base]`, since `list` is invariant. While that is generally correct, it doesn't hold for
+   literals (or constructors, in general). There is no other reference to the child list that would
+   cause a runtime type error because of non-`Child`s being inserted in the list.
+
+   So, we "weaken" the literal's type using the expected type. In the above case, we infer that its
+   type is `list[Base]`.
+
+   The long-term solution to this is function-level inference (T84553937), which will propagate
+   expected types across a function. We don't yet have that, so we just use the immediate expected
+   type when assigning to a variable or passing to a function. *)
 
 open Core
 open Pyre
