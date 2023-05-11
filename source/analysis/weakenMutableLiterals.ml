@@ -106,31 +106,34 @@ let rec weaken_mutable_literals
   let open Expression in
   match expression, resolved, expected with
   | _, _, Type.Union expected_types -> (
-      let weakened_types =
+      let weakened_and_expected_types =
         List.map
           ~f:(fun expected_type ->
-            weaken_mutable_literals
-              ~get_typed_dictionary
-              resolve
-              ~expression
-              ~resolved
-              ~expected:expected_type
-              ~resolve_items_individually
-              ~comparator:comparator_without_override)
+            ( weaken_mutable_literals
+                ~get_typed_dictionary
+                resolve
+                ~expression
+                ~resolved
+                ~expected:expected_type
+                ~resolve_items_individually
+                ~comparator:comparator_without_override,
+              expected_type ))
           expected_types
       in
       match
-        List.exists2
-          ~f:(fun { resolved = left; _ } right -> comparator ~left ~right)
-          weakened_types
-          expected_types
+        List.exists
+          ~f:(fun ({ resolved = weakened_type; _ }, expected_type) ->
+            comparator ~left:weakened_type ~right:expected_type)
+          weakened_and_expected_types
       with
-      | Ok true -> make_weakened_type expected
-      | Ok false ->
-          make_weakened_type
-            ~typed_dictionary_errors:(List.concat_map weakened_types ~f:typed_dictionary_errors)
-            resolved
-      | Unequal_lengths -> make_weakened_type resolved)
+      | true -> make_weakened_type expected
+      | false ->
+          let typed_dictionary_errors =
+            weakened_and_expected_types
+            |> List.map ~f:fst
+            |> List.concat_map ~f:typed_dictionary_errors
+          in
+          make_weakened_type ~typed_dictionary_errors resolved)
   | ( Some { Node.value = Expression.List items; _ },
       Type.Parametric { name = "list" as container_name; parameters = [Single actual_item_type] },
       Type.Parametric { name = "list"; parameters = [Single expected_item_type] } )
