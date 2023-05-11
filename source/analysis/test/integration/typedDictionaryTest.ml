@@ -2071,6 +2071,72 @@ let test_required_not_required_fields context =
   ()
 
 
+let test_extraneous_fields context =
+  assert_type_errors_inject_typing_and_typing_extensions
+    ~context
+    {|
+      from typing import TypedDict, Optional
+
+      class Movie(TypedDict, total=False):
+        name: str
+        year: int
+
+      def expect_movie(movie: Movie) -> None: ...
+      def expect_optional_movie(movie: Optional[Movie]) -> None: ...
+
+      def main() -> None:
+        expect_movie({ "name_with_typo1": "hello" })
+        expect_optional_movie({ "name_with_typo2": "hello" })
+    |}
+    [
+      "TypedDict initialization error [55]: TypedDict `Movie` has no field `name_with_typo1`.";
+      "TypedDict initialization error [55]: TypedDict `Movie` has no field `name_with_typo2`.";
+    ];
+  (* If passing a literal to a union of TypedDicts, only show errors for the best TypedDict match.
+     Don't show errors for the other TypedDicts.
+
+     In this example, the given literal could match `Book` and error about the two extra field
+     `year` and `extra field`. But we choose to match against `Movie`, since it has fewer errors. *)
+  assert_type_errors_inject_typing_and_typing_extensions
+    ~context
+    {|
+      from typing import TypedDict, Optional
+
+      class Movie(TypedDict, total=True):
+        name: str
+        year: int
+
+      class Book(TypedDict, total=True):
+        name: str
+
+      def expect_union(movie_or_book: Movie | Book) -> None: ...
+
+      def main() -> None:
+        expect_union({ "name": "The Matrix", "year": 1999, "extra field": 42 })
+    |}
+    ["TypedDict initialization error [55]: TypedDict `Movie` has no field `extra field`."];
+  (* No errors if one TypedDict in a union matches completely. *)
+  assert_type_errors_inject_typing_and_typing_extensions
+    ~context
+    {|
+      from typing import TypedDict, Optional
+
+      class Movie(TypedDict, total=True):
+        name: str
+        year: int
+
+      class Book(TypedDict, total=True):
+        name: str
+
+      def expect_union(movie_or_book: Movie | Book) -> None: ...
+
+      def main() -> None:
+        expect_union({ "name": "The Matrix", "year": 1999 })
+    |}
+    [];
+  ()
+
+
 let () =
   "typed_dictionary"
   >::: [
@@ -2080,5 +2146,6 @@ let () =
          "check_typed_dictionary_in_alias" >:: test_check_typed_dictionary_in_alias;
          "check_optional_typed_dictionary" >:: test_check_optional_typed_dictionary;
          "required_not_required_fields" >:: test_required_not_required_fields;
+         "extraneous_fields" >:: test_extraneous_fields;
        ]
   |> Test.run

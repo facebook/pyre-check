@@ -120,14 +120,34 @@ let rec weaken_mutable_literals
               expected_type ))
           expected_types
       in
-      match
-        List.exists
-          ~f:(fun ({ resolved = weakened_type; _ }, expected_type) ->
-            comparator ~left:weakened_type ~right:expected_type)
-          weakened_and_expected_types
-      with
-      | true -> make_weakened_type expected
-      | false ->
+      let best_weakened_and_expected_type_from_union =
+        let compare_by_number_of_undefined_field_errors
+            (left_weakened_type, _)
+            (right_weakened_type, _)
+          =
+          let is_undefined_field_error = function
+            | { Node.value = UndefinedField _; _ } -> true
+            | _ -> false
+          in
+          let number_of_undefined_field_errors weakened_type =
+            typed_dictionary_errors weakened_type |> List.count ~f:is_undefined_field_error
+          in
+          number_of_undefined_field_errors left_weakened_type
+          - number_of_undefined_field_errors right_weakened_type
+        in
+        let is_less_or_equal ({ resolved = weakened_type; _ }, expected_type) =
+          comparator ~left:weakened_type ~right:expected_type
+        in
+        weakened_and_expected_types
+        |> List.sort ~compare:compare_by_number_of_undefined_field_errors
+        |> List.find ~f:is_less_or_equal
+      in
+      match best_weakened_and_expected_type_from_union with
+      | Some (weakened_type, _) ->
+          make_weakened_type
+            ~typed_dictionary_errors:(typed_dictionary_errors weakened_type)
+            expected
+      | None ->
           let typed_dictionary_errors =
             weakened_and_expected_types
             |> List.map ~f:fst
