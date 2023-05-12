@@ -1,10 +1,18 @@
-diff --git a/stdlib/typing.pyi b/stdlib/typing.pyi
-index 4811ceb3e..177be9f93 100644
---- a/stdlib/typing.pyi
-+++ b/stdlib/typing.pyi
-@@ -127,7 +127,14 @@ if sys.version_info >= (3, 11):
+--- /home/pradeepkumars/unpatched_typeshed/python-typeshed-8aedbda/stdlib/typing.pyi	2023-02-28 08:50:55.000000000 -0800
++++ stubs/typeshed/typeshed/stdlib/typing.pyi	2023-05-11 15:59:29.233163397 -0700
+@@ -18,7 +18,8 @@
+     TracebackType,
+     WrapperDescriptorType,
+ )
+-from typing_extensions import Never as _Never, ParamSpec as _ParamSpec, final as _final
++from typing_extensions import Never as _Never, ParamSpec as _ParamSpec, final as _final, Self
++from pyre_extensions import ReadOnly
+ 
+ if sys.version_info >= (3, 10):
+     from types import UnionType
+@@ -127,7 +128,14 @@
      ]
-
+ 
  ContextManager = AbstractContextManager
 -AsyncContextManager = AbstractAsyncContextManager
 +
@@ -15,6 +23,17 @@ index 4811ceb3e..177be9f93 100644
 +    async def __aexit__(
 +        self, __exc_type: Type[BaseException] | None, __exc_value: BaseException | None, __traceback: TracebackType | None
 +    ) -> bool | None: ...
-
+ 
  # This itself is only available during type checking
  def type_check_only(func_or_cls: _F) -> _F: ...
+@@ -590,6 +598,10 @@
+     def get(self, __key: _KT) -> _VT_co | None: ...
+     @overload
+     def get(self, __key: _KT, default: _VT_co | _T) -> _VT_co | _T: ...
++    @overload
++    def get(self: ReadOnly[Self], __key: _KT) -> ReadOnly[_VT_co | None]: ...
++    @overload
++    def get(self: ReadOnly[Self], __key: _KT, default: _VT_co | _T) -> ReadOnly[_VT_co | _T]: ...
+     def items(self) -> ItemsView[_KT, _VT_co]: ...
+     def keys(self) -> KeysView[_KT]: ...
+     def values(self) -> ValuesView[_VT_co]: ...
