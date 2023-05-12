@@ -173,6 +173,13 @@ def find_issues(callees: List[str], search_start_path: Path) -> LeakAnalysisResu
         collected_results = collect_pyre_query_results(
             response.payload, invalid_callees
         )
+        for leak in collected_results.global_leaks:
+            leak["path"] = str(Path(cast(str, leak["path"])).relative_to(project_root.global_root))
+        collected_results = LeakAnalysisResult(
+            global_leaks=collected_results.global_leaks,
+            query_errors= collected_results.query_errors,
+            script_errors=collected_results.script_errors,
+        )
         return collected_results
     except connections.ConnectionFailure as e:
         raise RuntimeError(
