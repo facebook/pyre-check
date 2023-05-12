@@ -396,9 +396,96 @@
 %nonassoc LEFTPARENS
 
 
-%start <Statement.t list> parse_module
-%start <Expression.t> parse_expression
+%start <ParserStatement.Statement.statement Ast.Node.t list> parse_module
+%start <ParserStatement.Expression.expression Ast.Node.t> parse_expression
 
+%type <ParserStatement.Expression.expression Ast.Node.t> and_test
+%type <ParserExpression.Call.Argument.t> argument
+%type <ParserExpression.Call.Argument.t list> arguments
+%type <ParserStatement.Statement.statement Ast.Node.t> async_statement
+%type <ParserStatement.Expression.expression Ast.Node.t> atom
+%type <ParserExpression.Call.Argument.t list> bases
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> block
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> block_or_stub_body
+%type <ParserStatement.Expression.expression Ast.Node.t> comparison
+%type <Ast.Expression.ComparisonOperator.operator * ParserStatement.Expression.expression Ast.Node.t> comparison_operator
+%type <ParserStatement.Statement.statement Ast.Node.t> compound_statement
+%type <ParserExpression.Comprehension.Generator.t> comprehension
+%type <ParserStatement.Expression.expression Ast.Node.t> condition
+%type <Location.t * ParserStatement.Statement.statement> conditional
+%type <ParserStatement.Statement.statement Ast.Node.t> decorated_statement
+%type <ParserStatement.Expression.expression Ast.Node.t> decorator
+%type <ParserExpression.Parameter.t list> define_parameters
+%type <string> ellipsis_or_dot
+%type <ParserStatement.Expression.expression Ast.Node.t> expression
+%type <ParserStatement.Expression.expression Ast.Node.t> expression_list
+%type <Location.AstReference.t option> from
+%type <string> from_string
+%type <ParserStatement.Expression.expression Ast.Node.t> generator
+%type <Location.t * ParserStatement.Try.Handler.t> handler
+%type <Location.t * string> identifier
+%type <Location.t * Ast.Statement.Import.import> import
+%type <Location.t * Ast.Statement.Import.import Ast.Node.t list> imports
+%type <Lexing.position list> list(NEWLINE)
+%type <ParserExpression.Expression.t list> list(condition)
+%type <(Location.t * ParserStatement.Try.Handler.t) list> list(handler)
+%type <((Lexing.position * Lexing.position) * ParserExpression.Substring.t) list> mixed_string
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(ELSE)
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> named_optional_block(FINALLY)
+%type <((Lexing.position * Lexing.position) * (Lexing.position * Lexing.position) * string) list> nonempty_list(BYTES)
+%type <Lexing.position list> nonempty_list(NEWLINE)
+%type <(Ast.Expression.ComparisonOperator.operator * ParserStatement.Expression.expression Ast.Node.t) list> nonempty_list(comparison_operator)
+%type <ParserExpression.Comprehension.Generator.t list> nonempty_list(comprehension)
+%type <ParserStatement.Expression.t list> nonempty_list(decorator)
+%type <string list> nonempty_list(ellipsis_or_dot)
+%type <ParserStatement.Expression.expression Ast.Node.t> not_test
+%type <((Lexing.position * Lexing.position) * string) option> option(ANNOTATION_COMMENT)
+%type <unit option> option(COMMA)
+%type <((Lexing.position * Lexing.position) * string list * string) option> option(SIGNATURE_COMMENT)
+%type <ParserExpression.Expression.t option> option(annotation)
+%type <ParserExpression.Expression.t option> option(comment_annotation)
+%type <ParserStatement.Expression.t option> option(raise_from)
+%type <ParserStatement.Expression.expression Ast.Node.t option> option(return_annotation)
+%type <ParserStatement.Expression.expression Ast.Node.t option> option(test)
+%type <ParserStatement.Expression.t option> option(test_list)
+%type <ParserStatement.Expression.expression Ast.Node.t> or_test
+%type <ParserExpression.Call.Argument.t list> parser_generator_separated_list(COMMA,argument)
+%type <(Location.t * string) list> parser_generator_separated_list(COMMA,identifier)
+%type <(Location.t * Ast.Statement.Import.import) list> parser_generator_separated_list(COMMA,import)
+%type <ParserExpression.Parameter.t list> parser_generator_separated_list(COMMA,lambda_parameter)
+%type <ParserStatement.Expression.t list> parser_generator_separated_list(COMMA,subscript_key)
+%type <ParserStatement.Expression.t list> parser_generator_separated_list(COMMA,test)
+%type <(ParserStatement.Expression.t * ParserStatement.Expression.t option) list> parser_generator_separated_list(COMMA,with_item)
+%type <(Location.t * string) list> parser_generator_separated_list(DOT,identifier)
+%type <ParserStatement.Statement.statement Ast.Node.t list list> parser_generator_separated_list_of_lists(SEMICOLON,small_statement)
+%type <(Location.t * string) list> parser_generator_separated_nonempty_list(COMMA,identifier)
+%type <(Location.t * Ast.Statement.Import.import) list> parser_generator_separated_nonempty_list(COMMA,import)
+%type <ParserStatement.Expression.t list> parser_generator_separated_nonempty_list(COMMA,subscript_key)
+%type <(ParserStatement.Expression.t * ParserStatement.Expression.t option) list> parser_generator_separated_nonempty_list(COMMA,with_item)
+%type <(Location.t * string) list> parser_generator_separated_nonempty_list(DOT,identifier)
+%type <ParserStatement.Statement.statement Ast.Node.t list list> parser_generator_separated_nonempty_list_of_lists(SEMICOLON,small_statement)
+%type <ParserStatement.Expression.expression Ast.Node.t> raise_from
+%type <Location.t * Location.AstReference.t> reference
+%type <ParserStatement.Expression.t list> separated_nonempty_list(COMMA,expression)
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator(COMMA,expression)
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator(COMMA,test)
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator_tail(COMMA,expression)
+%type <ParserStatement.Expression.expression Ast.Node.t list * bool> separated_nonempty_list_indicator_tail(COMMA,test)
+%type <ParserStatement.Expression.expression Ast.Node.t> set_or_dictionary
+%type <entry> set_or_dictionary_entry
+%type <entries> set_or_dictionary_maker
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> simple_statement
+%type <ParserStatement.Statement.statement Ast.Node.t list> small_statement
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statement
+%type <Location.t * ParserStatement.Statement.statement Ast.Node.t list> statements
+%type <ParserStatement.Expression.expression Ast.Node.t> subscript_key
+%type <(value:ParserStatement.Expression.expression Ast.Node.t -> annotation:ParserExpression.Expression.t option -> ParserStatement.Statement.statement Ast.Node.t) list> targets
+%type <ParserStatement.Expression.expression Ast.Node.t> test
+%type <ParserStatement.Expression.expression Ast.Node.t> test_list
+%type <ParserStatement.Expression.expression Ast.Node.t> test_with_generator
+%type <ParserStatement.Expression.expression Ast.Node.t> value
+%type <ParserStatement.Expression.t * ParserStatement.Expression.t option> with_item
+%type <ParserStatement.Expression.expression Ast.Node.t> yield_form
 %%
 
 parse_module:
