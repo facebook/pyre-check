@@ -11,7 +11,7 @@ open OUnit2
 (* Create aliases to private modules so we could test their internal APIs. *)
 module BuildMap = Buck__BuildMap
 module Interface = Buck__Interface
-module Target = Buck__Target
+module Target = Buck__BuckTarget
 
 let test_parse_buck_normalized_targets_query_output context =
   let assert_parsed ~expected output =

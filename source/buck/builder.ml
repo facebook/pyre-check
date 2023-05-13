@@ -70,7 +70,7 @@ module Classic = struct
   module IncrementalBuildResult = struct
     type t = {
       build_map: BuildMap.t;
-      targets: Target.t list;
+      targets: BuckTarget.t list;
       changed_artifacts: ArtifactPath.Event.t list;
     }
   end
@@ -97,13 +97,13 @@ module Classic = struct
     full_incremental_build:
       old_build_map:BuildMap.t -> string list -> IncrementalBuildResult.t Lwt.t;
     incremental_build_with_normalized_targets:
-      old_build_map:BuildMap.t -> Target.t list -> IncrementalBuildResult.t Lwt.t;
+      old_build_map:BuildMap.t -> BuckTarget.t list -> IncrementalBuildResult.t Lwt.t;
     fast_incremental_build_with_normalized_targets:
       old_build_map:BuildMap.t ->
       old_build_map_index:BuildMap.Indexed.t ->
       changed_paths:PyrePath.t list ->
       removed_paths:PyrePath.t list ->
-      Target.t list ->
+      BuckTarget.t list ->
       IncrementalBuildResult.t Lwt.t;
     lookup_source: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t option;
     lookup_artifact: index:BuildMap.Indexed.t -> PyrePath.t -> PyrePath.t list;

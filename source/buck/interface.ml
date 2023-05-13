@@ -25,7 +25,7 @@ end
 module BuildResult = struct
   type t = {
     build_map: BuildMap.t;
-    targets: Target.t list;
+    targets: BuckTarget.t list;
   }
 end
 
@@ -91,10 +91,10 @@ module V1 = struct
   end
 
   type t = {
-    normalize_targets: string list -> Target.t list Lwt.t;
+    normalize_targets: string list -> BuckTarget.t list Lwt.t;
     query_owner_targets:
-      targets:Target.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
-    construct_build_map: Target.t list -> BuildResult.t Lwt.t;
+      targets:BuckTarget.t list -> PyrePath.t list -> BuckChangedTargetsQueryOutput.t list Lwt.t;
+    construct_build_map: BuckTarget.t list -> BuildResult.t Lwt.t;
   }
 
   let create_for_testing ~normalize_targets ~construct_build_map ~query_owner_targets () =
@@ -152,7 +152,7 @@ module V1 = struct
               (* Targets need to be quoted since `buck query` can fail with syntax errors if target
                  name contains special characters like `=`. *)
               let quote_string value = Format.sprintf "\"%s\"" value in
-              let quote_target target = Target.show target |> quote_string in
+              let quote_target target = BuckTarget.show target |> quote_string in
               List.map targets ~f:quote_target |> String.concat ~sep:" "
             in
             List.concat
@@ -183,7 +183,7 @@ module V1 = struct
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
             List.map targets ~f:(fun target ->
-                Format.sprintf "%s%s" (Target.show target) source_database_suffix);
+                Format.sprintf "%s%s" (BuckTarget.show target) source_database_suffix);
           ]
         |> Raw.V1.build ?mode ?isolation_prefix raw
 
@@ -288,7 +288,7 @@ module V1 = struct
     query_buck_for_normalized_targets buck_options target_specifications
     >>= fun query_output ->
     let targets =
-      parse_buck_normalized_targets_query_output query_output |> List.map ~f:Target.of_string
+      parse_buck_normalized_targets_query_output query_output |> List.map ~f:BuckTarget.of_string
     in
     Log.info "Collected %d targets" (List.length targets);
     Lwt.return targets
@@ -317,7 +317,7 @@ module V1 = struct
     let source_database_suffix_length = String.length source_database_suffix in
     parse_buck_build_output build_output
     |> List.map ~f:(fun (target, path) ->
-           ( String.drop_suffix target source_database_suffix_length |> Target.of_string,
+           ( String.drop_suffix target source_database_suffix_length |> BuckTarget.of_string,
              PyrePath.create_absolute path ))
     |> Lwt.return
 
@@ -334,7 +334,7 @@ module V1 = struct
       (next_target, next_build_map) :: target_and_build_maps_sofar, merged_build_map
     with
     | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; left_value; right_value } ->
-        Log.warning "Cannot include target for type checking: %s" (Target.show next_target);
+        Log.warning "Cannot include target for type checking: %s" (BuckTarget.show next_target);
         (* For better error message, try to figure out which target casued the conflict. *)
         let conflicting_target =
           let match_target ~key (target, build_map) =
@@ -392,7 +392,7 @@ module V1 = struct
        process deterministic later. Note that our dependency on the ordering of the target also
        implies that the loading process is non-parallelizable. *)
     List.sort target_and_source_database_paths ~compare:(fun (left_target, _) (right_target, _) ->
-        Target.compare left_target right_target)
+        BuckTarget.compare left_target right_target)
     |> load_and_merge_build_maps
 
 
@@ -449,7 +449,7 @@ module V2 = struct
     type t = {
       build_map: BuildMap.t;
       target_count: int;
-      conflicts: (Target.t * Conflict.t) list;
+      conflicts: (BuckTarget.t * Conflict.t) list;
     }
   end
 
@@ -473,7 +473,7 @@ module V2 = struct
         Util.member dropped_targets_key merged_sourcedb
         |> Util.to_assoc
         |> List.map ~f:(fun (target, conflict_json) ->
-               Target.of_string target, conflict_of_yojson conflict_json)
+               BuckTarget.of_string target, conflict_of_yojson conflict_json)
       in
       { BuckBxlBuilderOutput.build_map; target_count; conflicts }
     with
@@ -535,13 +535,13 @@ module V2 = struct
         dropped_source_path;
       }
     =
-    Log.warning "Cannot include target for type checking: %s" (Target.show target);
+    Log.warning "Cannot include target for type checking: %s" (BuckTarget.show target);
     Log.info
       "... file `%s` has already been mapped to `%s` by `%s` but the target maps it to `%s` \
        instead. "
       artifact_path
       preserved_source_path
-      (Target.show conflict_with)
+      (BuckTarget.show conflict_with)
       dropped_source_path;
     ()
 

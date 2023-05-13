@@ -10,6 +10,6 @@
 module BuildMap = BuildMap
 module Raw = Raw
 module Interface = Interface
-module Target = Target
+module Target = BuckTarget
 module Artifacts = Artifacts
 module Builder = Builder
