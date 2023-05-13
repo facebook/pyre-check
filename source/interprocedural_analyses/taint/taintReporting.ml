@@ -15,7 +15,7 @@ module Json = Yojson.Safe
 
 (* Patch the forward reference to access the final summaries in trace info generation. *)
 let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
-  match Fixpoint.get_model fixpoint_state callee with
+  match TaintFixpoint.get_model fixpoint_state callee with
   | None -> false
   | Some { Model.forward; backward; _ } -> (
       match root with
@@ -68,7 +68,7 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.map
       ~f:(fun callable ->
-        Fixpoint.get_result fixpoint_state callable
+        TaintFixpoint.get_result fixpoint_state callable
         |> IssueHandle.SerializableMap.data
         |> List.map ~f:(Issue.to_error ~taint_configuration))
       callables
@@ -123,9 +123,11 @@ let fetch_and_externalize
     callable
   =
   let model =
-    Fixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
+    TaintFixpoint.get_model fixpoint_state callable |> Option.value ~default:Model.empty_model
   in
-  let result = Fixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data in
+  let result =
+    TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
+  in
   externalize
     ~taint_configuration
     ~fixpoint_state
@@ -312,7 +314,7 @@ let produce_errors
   in
   (* Log and record stats *)
   let () = Log.info "Found %d issues" (List.length errors) in
-  let iterations = Fixpoint.get_iterations fixpoint_state in
+  let iterations = TaintFixpoint.get_iterations fixpoint_state in
   let () =
     Statistics.performance
       ~name:"Analysis fixpoint complete"

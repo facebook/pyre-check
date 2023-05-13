@@ -10,7 +10,7 @@ module Json = Yojson.Safe
 
 val externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
-  fixpoint_state:Fixpoint.t ->
+  fixpoint_state:TaintFixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
   Target.t ->
@@ -20,7 +20,7 @@ val externalize
 
 val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
-  fixpoint_state:Fixpoint.t ->
+  fixpoint_state:TaintFixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
   Target.t ->
@@ -33,7 +33,7 @@ val produce_errors
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   callables:Target.Set.t ->
   fixpoint_timer:Timer.t ->
-  fixpoint_state:Fixpoint.t ->
+  fixpoint_state:TaintFixpoint.t ->
   Yojson.Safe.t list
 
 val save_results_to_directory
@@ -47,6 +47,6 @@ val save_results_to_directory
   skipped_overrides:Target.t list ->
   callables:Target.Set.t ->
   model_verification_errors:ModelVerificationError.t list ->
-  fixpoint_state:Fixpoint.t ->
+  fixpoint_state:TaintFixpoint.t ->
   errors:Yojson.Safe.t list ->
   unit

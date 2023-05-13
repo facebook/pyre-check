@@ -15,7 +15,7 @@ let issue_handle_map ~callables ~fixpoint_state =
     |> failwith
   in
   let accumulate_issue_handles issue_handle_map callable =
-    Fixpoint.get_result fixpoint_state callable
+    TaintFixpoint.get_result fixpoint_state callable
     |> IssueHandle.SerializableMap.union union issue_handle_map
   in
   List.fold callables ~f:accumulate_issue_handles ~init:IssueHandle.SerializableMap.empty
@@ -99,7 +99,7 @@ let update_multi_source_issues ~filename_lookup ~taint_configuration ~callables 
     issues
     |> List.fold ~init:[] ~f:(fun so_far issue -> (issue.Issue.handle, issue) :: so_far)
     |> IssueHandle.SerializableMap.of_alist_exn
-    |> Fixpoint.set_result fixpoint_state callable
+    |> TaintFixpoint.set_result fixpoint_state callable
   in
-  Fixpoint.clear_results fixpoint_state;
+  TaintFixpoint.clear_results fixpoint_state;
   List.iter (Target.Map.to_alist callables_to_issues) ~f:update_issues_for_callable

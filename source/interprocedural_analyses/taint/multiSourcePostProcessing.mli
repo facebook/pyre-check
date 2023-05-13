@@ -14,5 +14,5 @@ val update_multi_source_issues
   :  filename_lookup:(Ast.Reference.t -> string option) ->
   taint_configuration:TaintConfiguration.Heap.t ->
   callables:Target.t list ->
-  fixpoint_state:Fixpoint.t ->
+  fixpoint_state:TaintFixpoint.t ->
   unit

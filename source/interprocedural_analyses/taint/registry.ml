@@ -10,7 +10,7 @@
 open Core
 open Ast
 open Interprocedural
-include Fixpoint.Registry
+include TaintFixpoint.Registry
 
 let targets_with_mode models ~mode =
   let collect ~target ~model:{ Model.modes; _ } set =
