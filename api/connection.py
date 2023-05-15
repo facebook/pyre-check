@@ -71,6 +71,7 @@ class PyreConnection:
         pyre_arguments: Optional[List[str]] = None,
         skip_initial_type_check: bool = False,
         wait_on_initialization: bool = False,
+        analyze_external_sources: bool = False,
     ) -> None:
         self.pyre_directory: Path = (
             pyre_directory if pyre_directory is not None else Path.cwd()
@@ -79,6 +80,7 @@ class PyreConnection:
         self.server_initialized = False
         self.skip_initial_type_check = skip_initial_type_check
         self.wait_on_initialization = wait_on_initialization
+        self.analyze_external_sources = analyze_external_sources
 
     def __enter__(self) -> "PyreConnection":
         self.start_server()
@@ -107,6 +109,8 @@ class PyreConnection:
             ]
             if self.wait_on_initialization:
                 command.append("--wait-on-initialization")
+            if self.analyze_external_sources:
+                command.append("--analyze-external-sources")
             result = subprocess.run(
                 command,
                 stdout=subprocess.PIPE,
