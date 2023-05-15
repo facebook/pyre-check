@@ -2520,6 +2520,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
+                        ~receiver_type:(Type.meta (Type.Primitive "test.Foo"))
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                     ]
@@ -2605,6 +2606,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
+                        ~receiver_type:(Type.meta (Type.Primitive "test.Foo"))
                         ~return_type:(Some ReturnType.integer)
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });

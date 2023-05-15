@@ -4643,12 +4643,21 @@ class base class_metadata_environment dependency =
             |> List.rev
             |> List.fold ~init:(Ok (Type.Callable undecorated_signature)) ~f:apply_decorator
           in
+          (* If the decorator preserves the function's type signature, preserve the function name.
+             This leads to better error messages, since we can print the function's name instead of
+             considering it an "anonymous call". *)
           match applied with
           | Result.Ok (Type.Callable callable)
             when Type.Callable.equal { callable with kind } undecorated_signature ->
-              (* Do some amateur taint analysis and assume that this is calling the original
-                 function under the hood *)
               Ok (Type.Callable { callable with kind })
+          | Result.Ok
+              (Type.Parametric
+                { name = "typing.ClassMethod"; parameters = [Single (Type.Callable callable)] })
+            when Type.Callable.equal { callable with kind } undecorated_signature ->
+              Ok
+                (Type.parametric
+                   "typing.ClassMethod"
+                   [Single (Type.Callable { callable with kind })])
           | other -> other
         in
         Result.bind decorators ~f:apply_decorators
