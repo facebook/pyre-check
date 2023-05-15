@@ -34,14 +34,13 @@ def get_module_paths(
     configuration: frontend_configuration.Base,
     paths: Optional[List[Path]],
 ) -> List[Path]:
+    if paths is None:
+        paths = [
+            configuration.get_local_root() or configuration.get_global_root(),
+        ]
     return list(
         coverage_data.find_module_paths(
-            coverage_data.get_paths_to_collect(
-                paths,
-                root=(
-                    configuration.get_local_root() or configuration.get_global_root()
-                ),
-            ),
+            paths=paths,
             excludes=configuration.get_excludes(),
         )
     )

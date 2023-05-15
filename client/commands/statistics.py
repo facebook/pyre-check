@@ -244,14 +244,13 @@ def collect_all_statistics(
     configuration: frontend_configuration.Base,
     statistics_arguments: command_arguments.StatisticsArguments,
 ) -> Dict[str, StatisticsData]:
+    if statistics_arguments.paths is None:
+        paths = [configuration.get_local_root() or configuration.get_global_root()]
+    else:
+        paths = statistics_arguments.paths
     return collect_statistics(
         coverage_data.find_module_paths(
-            coverage_data.get_paths_to_collect(
-                statistics_arguments.paths,
-                root=(
-                    configuration.get_local_root() or configuration.get_global_root()
-                ),
-            ),
+            paths=paths,
             excludes=configuration.get_excludes(),
         ),
         strict_default=configuration.is_strict(),

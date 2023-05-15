@@ -20,7 +20,6 @@ from ..coverage_data import (
     FunctionAnnotationInfo,
     FunctionAnnotationStatus,
     FunctionIdentifier,
-    get_paths_to_collect,
     Location,
     module_from_code,
     module_from_path,
@@ -890,73 +889,6 @@ class ModuleModecollectorTest(testslide.TestCase):
 
 
 class ModuleFindingHelpersTest(testslide.TestCase):
-    def test_get_paths_to_collect__duplicate_directories(self) -> None:
-        self.assertCountEqual(
-            get_paths_to_collect(
-                [Path("/root/foo.py"), Path("/root/bar.py"), Path("/root/foo.py")],
-                root=Path("/root"),
-            ),
-            [Path("/root/foo.py"), Path("/root/bar.py")],
-        )
-
-        self.assertCountEqual(
-            get_paths_to_collect(
-                [Path("/root/foo"), Path("/root/bar"), Path("/root/foo")],
-                root=Path("/root"),
-            ),
-            [Path("/root/foo"), Path("/root/bar")],
-        )
-
-    def test_get_paths_to_collect__expand_directories(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
-            with setup.switch_working_directory(root_path):
-                self.assertCountEqual(
-                    get_paths_to_collect(
-                        [Path("foo.py"), Path("bar.py")],
-                        root=root_path,
-                    ),
-                    [root_path / "foo.py", root_path / "bar.py"],
-                )
-
-    def test_get_paths_to_collect__invalid_given_subdirectory(self) -> None:
-        with tempfile.TemporaryDirectory() as root:
-            root_path = Path(root).resolve()  # resolve is necessary on OSX 11.6
-            with setup.switch_working_directory(root_path):
-                # this is how a valid call behaves: subdirectory lives under project_root
-                self.assertCountEqual(
-                    get_paths_to_collect(
-                        [Path("project_root/subdirectory")],
-                        root=root_path / "project_root",
-                    ),
-                    [root_path / "project_root/subdirectory"],
-                )
-                # ./subdirectory isn't part of ./project_root
-                self.assertRaisesRegex(
-                    ValueError,
-                    ".* is not nested under the project .*",
-                    get_paths_to_collect,
-                    [Path("subdirectory")],
-                    root=root_path / "project_root",
-                )
-                # ./subdirectory isn't part of ./local_root
-                self.assertRaisesRegex(
-                    ValueError,
-                    ".* is not nested under the project .*",
-                    get_paths_to_collect,
-                    [Path("subdirectory")],
-                    root=root_path / "local_root",
-                )
-
-    def test_get_paths_to_collect__no_explicit_paths(self) -> None:
-        self.assertCountEqual(
-            get_paths_to_collect(
-                None,
-                root=Path("/root/local"),
-            ),
-            [Path("/root/local")],
-        )
-
     def test_find_module_paths__basic(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)

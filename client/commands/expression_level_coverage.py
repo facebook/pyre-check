@@ -136,15 +136,16 @@ class CoveragePaths:
             # Do not typecheck everything in the project if the user passed
             # at least one argument file.
             module_paths: List[Path] = []
-        else:
-            unexpanded_module_paths = coverage_data.get_paths_to_collect(
-                paths=None if len(explicit_paths) == 0 else explicit_paths,
-                root=(
-                    configuration.get_local_root() or configuration.get_global_root()
-                ),
-            )
+        elif len(explicit_paths) == 0:
             module_paths = coverage_data.find_module_paths(
-                paths=unexpanded_module_paths,
+                paths=[
+                    configuration.get_local_root() or configuration.get_global_root()
+                ],
+                excludes=configuration.get_excludes(),
+            )
+        else:
+            module_paths = coverage_data.find_module_paths(
+                paths=explicit_paths,
                 excludes=configuration.get_excludes(),
             )
         return CoveragePaths(

@@ -478,31 +478,6 @@ def module_from_path(path: Path) -> Optional[libcst.MetadataWrapper]:
         return None
 
 
-def get_paths_to_collect(
-    paths: Optional[Sequence[Path]],
-    root: Path,
-) -> Iterable[Path]:
-    """
-    If `paths` is None, return the project root in a singleton list.
-
-    Otherwise, verify that every path in `paths` is a valid subpath
-    of the project, and return a deduplicated list of these paths (which
-    can be either directory or file paths).
-    """
-    if paths is None:
-        return [root]
-    else:
-        absolute_paths = set()
-        for path in paths:
-            absolute_path = path if path.is_absolute() else Path.cwd() / path
-            if root not in absolute_path.parents:
-                raise ValueError(
-                    f"`{path}` is not nested under the project at `{root}`",
-                )
-            absolute_paths.add(absolute_path)
-        return absolute_paths
-
-
 def _is_excluded(
     path: Path,
     excludes: Sequence[str],
