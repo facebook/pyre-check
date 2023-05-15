@@ -433,10 +433,10 @@ def urlopen(url, data=None, timeout=socket._GLOBAL_DEFAULT_TIMEOUT, *, cafile=No
 Given that signature, either of the following models are acceptable:
 
 ```python
-def urllib.request.urlopen(url: TaintSink[RequestSend], data,
+def urllib.request.urlopen(url: TaintSink[HTTPClientRequest], data,
                            timeout, *, cafile, capath,
                            cadefault, context): ...
-def urllib.request.urlopen(url: TaintSink[RequestSend]): ...
+def urllib.request.urlopen(url: TaintSink[HTTPClientRequest]): ...
 ```
 
 Pysa will complain if the signature of your model doesn't match the
