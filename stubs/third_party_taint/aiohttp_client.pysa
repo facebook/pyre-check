@@ -1,98 +1,98 @@
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.get(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
     allow_redirects,
-    **kwargs: TaintSink[RequestSend_METADATA]
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.options(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
     allow_redirects,
-    **kwargs: TaintSink[RequestSend_METADATA]
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.head(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
     allow_redirects,
-    **kwargs: TaintSink[RequestSend_METADATA]
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.post(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
-    **kwargs: TaintSink[RequestSend_METADATA]
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.put(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
-    **kwargs: TaintSink[RequestSend_METADATA]
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.patch(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
-    **kwargs: TaintSink[RequestSend_METADATA]
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.delete(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
-    **kwargs: TaintSink[RequestSend_METADATA]
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.ws_connect(
     self,
-    url: TaintSink[RequestSend_URI],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    method: TaintSink[RequestSend_METADATA],
-    protocols: TaintSink[RequestSend_METADATA],
+    method: TaintSink[HTTPClientRequest_METADATA],
+    protocols: TaintSink[HTTPClientRequest_METADATA],
     timeout,
     receive_timeout,
     autoclose,
     autoping,
     heartbeat,
-    auth: TaintSink[RequestSend_METADATA],
-    origin: TaintSink[RequestSend_METADATA],
-    headers: TaintSink[RequestSend_METADATA],
-    proxy: TaintSink[RequestSend_METADATA],
-    proxy_auth: TaintSink[RequestSend_METADATA],
+    auth: TaintSink[HTTPClientRequest_METADATA],
+    origin: TaintSink[HTTPClientRequest_METADATA],
+    headers: TaintSink[HTTPClientRequest_METADATA],
+    proxy: TaintSink[HTTPClientRequest_METADATA],
+    proxy_auth: TaintSink[HTTPClientRequest_METADATA],
     ssl,
-    proxy_headers: TaintSink[RequestSend_METADATA],
+    proxy_headers: TaintSink[HTTPClientRequest_METADATA],
     compress,
     max_msg_size
 ) -> TaintSource[DataFromInternet]: ...
 @Sanitize(TaintInTaintOut[TaintSource[ServerSecrets]])
 def aiohttp.client.ClientSession.request(
     self,
-    method: TaintSink[RequestSend_METADATA],
-    url: TaintSink[RequestSend_URI],
+    method: TaintSink[HTTPClientRequest_METADATA],
+    url: TaintSink[HTTPClientRequest_URI],
     *,
-    params: TaintSink[RequestSend_DATA],
-    data: TaintSink[RequestSend_DATA],
-    **kwargs: TaintSink[RequestSend_METADATA]
+    params: TaintSink[HTTPClientRequest_DATA],
+    data: TaintSink[HTTPClientRequest_DATA],
+    **kwargs: TaintSink[HTTPClientRequest_METADATA]
 ) -> TaintSource[DataFromInternet]: ...

@@ -62,7 +62,7 @@
     "path": "app.py",
     "code": 5012,
     "name": "Potential Server-side request forgery (SSRF)",
-    "description": "Potential Server-side request forgery (SSRF) [5012]: Data from [UserControlled] source(s) may reach [RequestSend_URI] sink(s)",
+    "description": "Potential Server-side request forgery (SSRF) [5012]: Data from [UserControlled] source(s) may reach [HTTPClientRequest_URI] sink(s)",
     "define": "app.definite_ssrf"
   },
   {
