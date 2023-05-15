@@ -503,7 +503,10 @@ def get_paths_to_collect(
         return absolute_paths
 
 
-def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
+def _is_excluded(
+    path: Path,
+    excludes: Sequence[str],
+) -> bool:
     try:
         return any(
             [re.match(exclude_pattern, str(path)) for exclude_pattern in excludes]
@@ -513,7 +516,10 @@ def _is_excluded(path: Path, excludes: Sequence[str]) -> bool:
         return False
 
 
-def _should_ignore(path: Path, excludes: Sequence[str]) -> bool:
+def _should_ignore(
+    path: Path,
+    excludes: Sequence[str],
+) -> bool:
     return (
         path.suffix != ".py"
         or path.name.startswith("__")
@@ -522,7 +528,10 @@ def _should_ignore(path: Path, excludes: Sequence[str]) -> bool:
     )
 
 
-def find_module_paths(paths: Iterable[Path], excludes: Sequence[str]) -> Iterable[Path]:
+def find_module_paths(
+    paths: Iterable[Path],
+    excludes: Sequence[str],
+) -> Iterable[Path]:
     """
     Given a set of paths (which can be file paths or directory paths)
     where we want to collect data, return an iterable of all the module

@@ -31,7 +31,8 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 def get_module_paths(
-    configuration: frontend_configuration.Base, paths: Optional[List[Path]]
+    configuration: frontend_configuration.Base,
+    paths: Optional[List[Path]],
 ) -> List[Path]:
     return list(
         coverage_data.find_module_paths(
