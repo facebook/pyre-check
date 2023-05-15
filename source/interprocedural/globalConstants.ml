@@ -45,7 +45,7 @@ module Heap = struct
     let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
     let build_per_qualifier qualifier =
       match Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier with
-      | None -> Reference.Map.empty
+      | None -> empty
       | Some source -> from_source source
     in
     let join =
@@ -57,9 +57,7 @@ module Heap = struct
       in
       Reference.Map.merge ~f:merge
     in
-    qualifiers
-    |> List.map ~f:build_per_qualifier
-    |> Algorithms.fold_balanced ~init:Reference.Map.empty ~f:join
+    qualifiers |> List.map ~f:build_per_qualifier |> Algorithms.fold_balanced ~init:empty ~f:join
 end
 
 module SharedMemory = struct
