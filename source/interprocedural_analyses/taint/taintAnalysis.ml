@@ -461,6 +461,7 @@ let run_taint_analysis
   let timer = Timer.start () in
   let global_constants =
     Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
+      ~scheduler
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~qualifiers
   in

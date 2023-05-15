@@ -24,7 +24,8 @@ module SharedMemory : sig
   val get : t -> Reference.t -> StringLiteral.t option
 
   val from_qualifiers
-    :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    :  scheduler:Scheduler.t ->
+    environment:Analysis.TypeEnvironment.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t
 end
