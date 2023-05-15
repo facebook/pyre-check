@@ -128,7 +128,7 @@
             "local_features": [
               { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 55, "start": 15, "end": 16 } ],
+            "tito_positions": [ { "line": 61, "start": 15, "end": 16 } ],
             "tito": null
           }
         ]
@@ -148,8 +148,8 @@
               { "always-via": "format-string" }, { "always-via": "tito" }
             ],
             "tito_positions": [
-              { "line": 51, "start": 15, "end": 23 },
-              { "line": 53, "start": 15, "end": 23 }
+              { "line": 57, "start": 15, "end": 23 },
+              { "line": 59, "start": 15, "end": 23 }
             ],
             "tito": null
           }

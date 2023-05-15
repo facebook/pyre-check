@@ -46,6 +46,12 @@ def string_source_not_top_level():
     return params
 
 
+def string_source_top_level_local_overwrite():
+    GOOGLE_API_KEY = "safe"
+    params = {"key": GOOGLE_API_KEY}
+    return params
+
+
 def string_literal_arguments_source(template: str, x):
     if 1 == 1:
         return template.format("SELECT1", 1)

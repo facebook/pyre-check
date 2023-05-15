@@ -2502,7 +2502,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
 
           let global_taint, state =
-            let as_reference = Reference.create identifier in
+            let as_reference = identifier |> Reference.create |> Reference.delocalize in
             let global_string =
               Interprocedural.GlobalConstants.SharedMemory.get
                 FunctionContext.global_constants

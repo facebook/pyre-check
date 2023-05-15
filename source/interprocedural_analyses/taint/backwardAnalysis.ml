@@ -1766,7 +1766,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       when CallGraph.CallCallees.is_string_method callees ->
         let globals_to_constants = function
           | { Node.value = Expression.Name (Name.Identifier identifier); _ } as value -> (
-              let as_reference = Reference.create identifier in
+              let as_reference = identifier |> Reference.create |> Reference.delocalize in
               let global_string =
                 Interprocedural.GlobalConstants.SharedMemory.get
                   FunctionContext.global_constants

@@ -3,6 +3,7 @@ Call dependencies
 implicit_sources.string_literal_arguments_source (fun) -> [int::__eq__ (method) int::__ne__ (method) str::__mod__ (method) str::format (method)]
 implicit_sources.string_source_not_top_level (fun) -> []
 implicit_sources.string_source_top_level (fun) -> [implicit_sources.GOOGLE_API_KEY (object)]
+implicit_sources.string_source_top_level_local_overwrite (fun) -> []
 implicit_sources.$toplevel (fun) -> [implicit_sources.GOOGLE_API_KEY (object)]
 implicit_sources.bar_dot_format (fun) -> [str::format (method)]
 implicit_sources.bar_format_strings (fun) -> [<format-string> (object) object::__repr__ (method)]

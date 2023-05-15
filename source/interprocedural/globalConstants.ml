@@ -27,7 +27,8 @@ module Heap = struct
           _;
         }
         when Option.is_some (Ast.Expression.name_to_reference name) ->
-          Some (Ast.Expression.name_to_reference_exn name, value)
+          let as_local = Ast.Expression.name_to_reference_exn name in
+          Some (Ast.Reference.delocalize as_local, value)
       | _ -> None
     in
     let split_for_map = function
