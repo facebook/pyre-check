@@ -1021,3 +1021,26 @@ class ModuleFindingHelpersTest(testslide.TestCase):
                     root_path / "b/c/s3.py",
                 ],
             )
+
+    # TODO(next commit): Add deduplication to find_module_paths
+    def test_find_module_paths__with_duplicates(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            setup.ensure_files_exist(
+                root_path,
+                ["a/s1.py", "a/s2.py"],
+            )
+            self.assertCountEqual(
+                find_module_paths(
+                    [
+                        root_path / "a/s1.py",
+                        root_path / "a",
+                    ],
+                    excludes=[],
+                ),
+                [
+                    root_path / "a/s1.py",
+                    root_path / "a/s1.py",
+                    root_path / "a/s2.py",
+                ],
+            )
