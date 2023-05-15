@@ -4634,33 +4634,28 @@ class base class_metadata_environment dependency =
           kind;
         }
       in
-      let decorated =
-        let apply_decorators decorators =
-          let applied =
-            List.mapi decorators ~f:(fun index decorator -> index, decorator)
-            |> List.rev
-            |> List.fold_result ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
-          in
-          (* If the decorator preserves the function's type signature, preserve the function name.
-             This leads to better error messages, since we can print the function's name instead of
-             considering it an "anonymous call". *)
-          match applied with
-          | Result.Ok (Type.Callable callable)
-            when Type.Callable.equal { callable with kind } undecorated_signature ->
-              Ok (Type.Callable { callable with kind })
-          | Result.Ok
-              (Type.Parametric
-                { name = "typing.ClassMethod"; parameters = [Single (Type.Callable callable)] })
-            when Type.Callable.equal { callable with kind } undecorated_signature ->
-              Ok
-                (Type.parametric
-                   "typing.ClassMethod"
-                   [Single (Type.Callable { callable with kind })])
-          | other -> other
+      let apply_decorators decorators =
+        let applied =
+          List.mapi decorators ~f:(fun index decorator -> index, decorator)
+          |> List.rev
+          |> List.fold_result ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
         in
-        Result.bind decorators ~f:apply_decorators
+        (* If the decorator preserves the function's type signature, preserve the function name.
+           This leads to better error messages, since we can print the function's name instead of
+           considering it an "anonymous call". *)
+        match applied with
+        | Result.Ok (Type.Callable callable)
+          when Type.Callable.equal { callable with kind } undecorated_signature ->
+            Ok (Type.Callable { callable with kind })
+        | Result.Ok
+            (Type.Parametric
+              { name = "typing.ClassMethod"; parameters = [Single (Type.Callable callable)] })
+          when Type.Callable.equal { callable with kind } undecorated_signature ->
+            Ok
+              (Type.parametric "typing.ClassMethod" [Single (Type.Callable { callable with kind })])
+        | other -> other
       in
-      { undecorated_signature; decorated }
+      { undecorated_signature; decorated = Result.bind decorators ~f:apply_decorators }
 
     method signature_select
         ~assumptions
