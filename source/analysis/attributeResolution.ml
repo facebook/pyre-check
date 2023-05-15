@@ -4254,7 +4254,7 @@ class base class_metadata_environment dependency =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads =
-      let apply_decorator (index, decorator) argument =
+      let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
         in
@@ -4572,7 +4572,6 @@ class base class_metadata_environment dependency =
         in
         AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
       in
-      (*parsed, decorators |> List.rev |> List.fold ~init:parsed ~f:apply_decorator*)
       let kind =
         match implementation, overloads with
         | Some { Define.Signature.name; _ }, _
@@ -4638,10 +4637,9 @@ class base class_metadata_environment dependency =
       let decorated =
         let apply_decorators decorators =
           let applied =
-            let apply_decorator sofar current = Result.bind sofar ~f:(apply_decorator current) in
             List.mapi decorators ~f:(fun index decorator -> index, decorator)
             |> List.rev
-            |> List.fold ~init:(Ok (Type.Callable undecorated_signature)) ~f:apply_decorator
+            |> List.fold_result ~init:(Type.Callable undecorated_signature) ~f:apply_decorator
           in
           (* If the decorator preserves the function's type signature, preserve the function name.
              This leads to better error messages, since we can print the function's name instead of
