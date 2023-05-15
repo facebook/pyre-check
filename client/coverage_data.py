@@ -531,7 +531,7 @@ def _should_ignore(
 def find_module_paths(
     paths: Iterable[Path],
     excludes: Sequence[str],
-) -> Iterable[Path]:
+) -> List[Path]:
     """
     Given a set of paths (which can be file paths or directory paths)
     where we want to collect data, return an iterable of all the module
@@ -549,9 +549,13 @@ def find_module_paths(
             if not _should_ignore(path, excludes)
         )
 
-    return itertools.chain.from_iterable(
-        _get_paths_for_file(path)
-        if not path.is_dir()
-        else _get_paths_in_directory(path)
-        for path in paths
+    return sorted(
+        set(
+            itertools.chain.from_iterable(
+                _get_paths_for_file(path)
+                if not path.is_dir()
+                else _get_paths_in_directory(path)
+                for path in paths
+            )
+        )
     )

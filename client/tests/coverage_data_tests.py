@@ -1022,7 +1022,6 @@ class ModuleFindingHelpersTest(testslide.TestCase):
                 ],
             )
 
-    # TODO(next commit): Add deduplication to find_module_paths
     def test_find_module_paths__with_duplicates(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
@@ -1039,7 +1038,6 @@ class ModuleFindingHelpersTest(testslide.TestCase):
                     excludes=[],
                 ),
                 [
-                    root_path / "a/s1.py",
                     root_path / "a/s1.py",
                     root_path / "a/s2.py",
                 ],
