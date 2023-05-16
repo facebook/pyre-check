@@ -199,15 +199,15 @@ module.exports = {
     ...fbInternalOnly([
       {
         'Developer Docs': [
-          'fb/pysa-deployment',
-          'fb/pysa-sandcastle-internals',
-          'fb/pysa-oncall-runbook',
           'fb/review-tma-system-coverage',
-          'fb/pysa-tasks-backlog',
           'fb/pysa-debug-sandcastle-runs',
-          'fb/pysa-debugging-tricks',
           'fb/pysa-github-sync',
+          'fb/pysa-debugging-tricks',
+          'fb/pysa-deployment',
+          'fb/pysa-oncall-runbook',
+          'fb/pysa-tasks-backlog',
           'fb/pysa-quality-analyzer',
+          'fb/pysa-sandcastle-internals',
         ],
       },
     ]),
