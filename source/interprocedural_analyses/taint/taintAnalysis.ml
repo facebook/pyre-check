@@ -543,14 +543,14 @@ let run_taint_analysis
     (List.length callables_kept);
   let fixpoint_timer = Timer.start () in
   let fixpoint_state =
-    Taint.Fixpoint.compute
+    Taint.TaintFixpoint.compute
       ~scheduler
       ~type_environment:(Analysis.TypeEnvironment.read_only environment)
       ~override_graph:override_graph_shared_memory
       ~dependency_graph
       ~context:
         {
-          Taint.Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+          Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           type_environment = Analysis.TypeEnvironment.read_only environment;
           class_interval_graph;
           define_call_graphs;
@@ -562,7 +562,7 @@ let run_taint_analysis
       ~callables_to_analyze
       ~initial_models
       ~max_iterations:100
-      ~epoch:Taint.Fixpoint.Epoch.initial
+      ~epoch:Taint.TaintFixpoint.Epoch.initial
   in
 
   let filename_lookup path_reference =
@@ -597,7 +597,7 @@ let run_taint_analysis
     ();
 
   let errors =
-    Reporting.produce_errors
+    TaintReporting.produce_errors
       ~scheduler
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
@@ -623,7 +623,7 @@ let run_taint_analysis
   let summary =
     match save_results_to with
     | Some result_directory ->
-        Reporting.save_results_to_directory
+        TaintReporting.save_results_to_directory
           ~scheduler
           ~taint_configuration:taint_configuration_shared_memory
           ~result_directory

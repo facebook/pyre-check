@@ -61,14 +61,14 @@ let assert_fixpoint
       ~overrides:override_graph_heap
   in
   let fixpoint_state =
-    Fixpoint.compute
+    TaintFixpoint.compute
       ~scheduler
       ~type_environment
       ~override_graph:override_graph_shared_memory
       ~dependency_graph
       ~context:
         {
-          Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+          TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           type_environment;
           class_interval_graph;
           define_call_graphs;
@@ -80,7 +80,7 @@ let assert_fixpoint
       ~callables_to_analyze
       ~initial_models
       ~max_iterations:100
-      ~epoch:Fixpoint.Epoch.initial
+      ~epoch:TaintFixpoint.Epoch.initial
   in
   assert_bool
     "Call graph is empty!"
@@ -88,18 +88,18 @@ let assert_fixpoint
   assert_equal
     ~msg:"Fixpoint iterations"
     expect_iterations
-    (Fixpoint.get_iterations fixpoint_state)
+    (TaintFixpoint.get_iterations fixpoint_state)
     ~printer:Int.to_string;
-  let get_model = Fixpoint.get_model fixpoint_state in
+  let get_model = TaintFixpoint.get_model fixpoint_state in
   let get_errors callable =
-    Fixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
+    TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
   in
   let () =
     List.iter
       ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)
       expect
   in
-  let () = Fixpoint.cleanup fixpoint_state in
+  let () = TaintFixpoint.cleanup fixpoint_state in
   ()
 
 

@@ -799,14 +799,14 @@ let end_to_end_integration_test path context =
         ~overrides:override_graph_heap
     in
     let fixpoint_state =
-      Fixpoint.compute
+      TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
         ~type_environment
         ~override_graph:override_graph_shared_memory
         ~dependency_graph
         ~context:
           {
-            Fixpoint.Context.taint_configuration = taint_configuration_shared_memory;
+            TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
             type_environment;
             class_interval_graph;
             define_call_graphs;
@@ -818,14 +818,14 @@ let end_to_end_integration_test path context =
         ~callables_to_analyze
         ~initial_models
         ~max_iterations:100
-        ~epoch:Fixpoint.Epoch.initial
+        ~epoch:TaintFixpoint.Epoch.initial
     in
     let filename_lookup =
       TypeEnvironment.ReadOnly.module_tracker type_environment
       |> ModuleTracker.ReadOnly.lookup_relative_path
     in
     let serialize_model callable =
-      Reporting.fetch_and_externalize
+      TaintReporting.fetch_and_externalize
         ~taint_configuration
         ~fixpoint_state
         ~filename_lookup
@@ -851,7 +851,7 @@ let end_to_end_integration_test path context =
       |> List.sort ~compare:String.compare
       |> String.concat ~sep:""
     in
-    let () = Fixpoint.cleanup fixpoint_state in
+    let () = TaintFixpoint.cleanup fixpoint_state in
     let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
     divergent_files, serialized_models
   in
