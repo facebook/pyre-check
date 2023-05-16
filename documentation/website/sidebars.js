@@ -207,6 +207,7 @@ module.exports = {
           'fb/pysa-debug-sandcastle-runs',
           'fb/pysa-debugging-tricks',
           'fb/pysa-github-sync',
+          'fb/pysa-quality-analyzer',
         ],
       },
     ]),
