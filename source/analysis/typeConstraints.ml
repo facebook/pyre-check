@@ -150,6 +150,7 @@ module Solution = struct
     callable_parameters: Type.Callable.parameters ParameterVariable.Map.t;
     tuple_variadics: Type.t Type.OrderedTypes.record TupleVariable.Map.t;
   }
+  [@@deriving sexp]
 
   let equal left right =
     UnaryVariable.Map.equal Type.equal left.unaries right.unaries
