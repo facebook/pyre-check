@@ -1249,6 +1249,37 @@ let test_register_buffer_attribute context =
   ()
 
 
+let test_generic__new__ context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from typing import Generic, Iterable, TypeVar, overload
+
+      _T_co = TypeVar("_T_co", covariant=True)
+      _T1 = TypeVar("_T1")
+      _T2 = TypeVar("_T2")
+
+      class zip(Generic[_T_co]):
+        @overload
+        def __new__(cls, __iter1: Iterable[_T1]) -> zip[tuple[_T1]]: ...
+        @overload
+        def __new__(cls, __iter1: Iterable[_T1], __iter2: Iterable[_T2]) -> zip[tuple[_T1, _T2]]: ...
+
+      def main(x1: list[str], x2: list[int]) -> None:
+        x3 = zip(x1)
+        x4 = zip(x1, x2)
+        reveal_type(x3)
+        reveal_type(x4)
+    |}
+    [
+      "Missing overload implementation [42]: Overloaded function `zip.__new__` must have an \
+       implementation.";
+      "Revealed type [-1]: Revealed type for `x3` is `zip[typing.Tuple[str]]`.";
+      "Revealed type [-1]: Revealed type for `x4` is `zip[typing.Tuple[str, int]]`.";
+    ];
+  ()
+
+
 let () =
   "constructor"
   >::: [
@@ -1260,5 +1291,6 @@ let () =
          "init_subclass" >:: test_init_subclass;
          "check_dictionary_constructor" >:: test_dictionary_constructor;
          "register_buffer_attribute" >:: test_register_buffer_attribute;
+         "generic__new__" >:: test_generic__new__;
        ]
   |> Test.run

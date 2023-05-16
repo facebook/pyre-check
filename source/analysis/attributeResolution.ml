@@ -338,17 +338,6 @@ let is_suppressed_module class_metadata_environment ~dependency reference =
     reference
 
 
-let is_final_class class_metadata_environment ~dependency class_name =
-  match
-    ClassMetadataEnvironment.ReadOnly.get_class_metadata
-      ?dependency
-      class_metadata_environment
-      class_name
-  with
-  | Some { ClassMetadataEnvironment.is_final; _ } -> is_final
-  | _ -> false
-
-
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
 module ParsingValidation = struct
@@ -4777,12 +4766,28 @@ class base class_metadata_environment dependency =
           new_parent_name )
       in
       let signature, with_return =
-        if new_index < constructor_index then
-          (* If it is a Final class, we respect the return type of `__new__` and its overloads. *)
-          if is_final_class class_metadata_environment ~dependency new_parent_name then
-            new_signature, Fn.id
+        let replace_return_type_for_degenerate_cases callable_return_type =
+          let is_instance_of_current_class =
+            Reference.equal (Type.class_name callable_return_type) (Reference.create class_name)
+          in
+          let should_ignore_return_type =
+            (* If the class inherits `__new__` from a parent class, replace the return type with the
+               child type. Otherwise, it would be returning `Base[T1, T2]` instead of `Child[...]`.
+               Note that this will result in the same return type for all `__new__` overloads but it
+               seems like the best we can do in an ambiguous situation.
+
+               If the user has erroneously marked the `__new__` method as returning something other
+               than an instance of the class, such as `None`, replace the return type with the
+               synthesized return type, such as `Base[T1, T2]`. *)
+            (not (String.equal class_name new_parent_name)) or not is_instance_of_current_class
+          in
+          if should_ignore_return_type then
+            return_annotation
           else
-            new_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
+            callable_return_type
+        in
+        if new_index < constructor_index then
+          new_signature, Type.Callable.map_annotation ~f:replace_return_type_for_degenerate_cases
         else
           constructor_signature, Type.Callable.with_return_annotation ~annotation:return_annotation
       in

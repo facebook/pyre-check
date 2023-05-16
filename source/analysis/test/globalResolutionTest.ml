@@ -322,7 +322,7 @@ let test_constructors context =
     "Base"
     (Some
        "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, \
-        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[test.T]], \
+        typing.Type[test.Base[test.T]]), Named(x, test.T)], test.Base[typing.Optional[test.T]]], \
         typing.Type[test.Base]]");
   (* With @final. *)
   assert_constructor
@@ -350,6 +350,8 @@ let test_constructors context =
     (Some
        "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base[int]]), \
         Named(x, int)], test.Base[typing.Optional[int]]], typing.Type[test.Base[int]]]");
+  (* When `__new__` is inherited, don't use the return type from the parent method, since that would
+     be confusing. *)
   assert_constructor
     {|
       from typing import Generic, Optional, TypeVar
@@ -393,11 +395,9 @@ let test_constructors context =
     (Some
        "BoundMethod[typing.Callable(test.Base.__new__)[[Named(cls, \
         typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
-        typing.Union[test.Base[typing.Optional[test.T]], test.Base[test.T]]][[[Named(cls, \
-        typing.Type[test.Base[test.T]]), Named(x, typing.List[test.T])], \
-        test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), Named(x, test.T)], \
-        test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
-  (* Without @final. *)
+        test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), Named(x, \
+        typing.List[test.T])], test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), \
+        Named(x, test.T)], test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
   assert_constructor
     {|
       from typing import overload, Generic, List, Optional, TypeVar, Union
@@ -416,7 +416,21 @@ let test_constructors context =
         typing.Type[test.Base[test.T]]), Named(x, typing.Union[typing.List[test.T], test.T])], \
         test.Base[test.T]][[[Named(cls, typing.Type[test.Base[test.T]]), Named(x, \
         typing.List[test.T])], test.Base[test.T]][[Named(cls, typing.Type[test.Base[test.T]]), \
-        Named(x, test.T)], test.Base[test.T]]], typing.Type[test.Base]]");
+        Named(x, test.T)], test.Base[typing.Optional[test.T]]]], typing.Type[test.Base]]");
+  (* __new__ is marked as returning `Optional[Base]`. While this is technically allowed at runtime,
+     be conservative and replace the return type with the class type. *)
+  assert_constructor
+    {|
+      from typing import Optional
+
+      class Base:
+        def __new__(self, x: str) -> Optional[Base]:
+          pass
+    |}
+    "Base"
+    (Some
+       "BoundMethod[typing.Callable(test.Base.__new__)[[Named(self, typing.Type[test.Base]), \
+        Named(x, str)], test.Base], typing.Type[test.Base]]");
   (* __init__ takes precedence over __new__ and ignores any return type for __new__. *)
   assert_constructor
     {|

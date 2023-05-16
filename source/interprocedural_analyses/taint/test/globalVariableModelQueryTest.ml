@@ -56,6 +56,11 @@ let test_find_globals context =
         !&"typing.";
         !&"typing_extensions.";
         !&"unittest.";
+        !&"_Self_complex__";
+        !&"_Self_float__";
+        !&"_Self_int__";
+        !&"_Self_list__";
+        !&"_Self_set__";
       ]
     in
     let project =
@@ -228,4 +233,4 @@ let test_find_globals context =
   ()
 
 
-let () = "globalVarQuery" >::: ["find_globals" >:: test_find_globals] |> Test.run
+let () = "globalVariableQuery" >::: ["find_globals" >:: test_find_globals] |> Test.run

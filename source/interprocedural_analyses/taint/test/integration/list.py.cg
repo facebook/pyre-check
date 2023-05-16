@@ -8,5 +8,5 @@ list.push_pop_taint (fun) -> [_test_source (fun) list::append (method) typing.Mu
 list.setitem (fun) -> [_test_sink (fun) _test_source (fun) list::__getitem__ (method) list::__mul__ (method) list::__setitem__ (method)]
 list.zipped_element_not_flowing_to_sink (fun) -> [_test_sink (fun) object::__init__ (method) zip::__iter__ (method) zip::__new__ (method) zip::__next__ (method)]
 list.zipped_element_to_sink (fun) -> [_test_sink (fun) object::__init__ (method) zip::__iter__ (method) zip::__new__ (method) zip::__next__ (method)]
-list.zipped_source_access_path (fun) -> [_test_source (fun) list::__getitem__ (method) list::__init__ (method) object::__init__ (method) object::__new__ (method) zip::__new__ (method)]
+list.zipped_source_access_path (fun) -> [_test_source (fun) list::__getitem__ (method) list::__init__ (method) object::__init__ (method) object::__new__ (method) tuple::__getitem__ (method) zip::__new__ (method)]
 list.Woot::$class_toplevel (method) -> []

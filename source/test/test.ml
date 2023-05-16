@@ -503,7 +503,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           SupportsIter, SupportsNext,
         )
         from pyre_extensions import Add, Multiply, Divide
-        from typing_extensions import Literal, LiteralString
+        from typing_extensions import Literal, LiteralString, Self
 
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)

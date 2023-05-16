@@ -75,6 +75,8 @@ let make_assert_functions context =
     environment
       ~source:
         {|
+      from typing import overload, Any, Generic
+
       class C: ...
       class D(C): ...
       class Q: ...
@@ -119,6 +121,13 @@ let make_assert_functions context =
       Ts2 = pyre_extensions.TypeVarTuple("Ts2")
 
       class Tensor(typing.Generic[T, pyre_extensions.Unpack[Ts]]): ...
+
+      class ClassWithOverloadedConstructor(Generic[T]):
+          @overload
+          def __new__(cls, __x: str=...) -> ClassWithOverloadedConstructor[str]: ...
+          @overload
+          def __new__(cls, __x: int) -> ClassWithOverloadedConstructor[int]: ...
+          def __new__(cls, __x: object=...) -> ClassWithOverloadedConstructor[Any]: ...
     |}
       context
   in
@@ -150,6 +159,7 @@ let make_assert_functions context =
           "G_invariant";
           "G_covariant";
           "T_Covariant";
+          "ClassWithOverloadedConstructor";
           "Constructable";
           "UserDefinedVariadic";
           "UserDefinedVariadicSimpleChild";
@@ -476,11 +486,22 @@ let test_add_constraint context =
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
     [["T_Unconstrained", "C"]];
+  (* `ClassWithOverloadedConstructor.__new__` has two overloads, one accepting zero arguments and
+     another accepting one argument. *)
   assert_add
-    ~left:"typing.Type[int]"
+    ~left:"typing.Type[ClassWithOverloadedConstructor]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    (* there are two int constructor overloads *)
-    [["T_Unconstrained", "int"]; ["T_Unconstrained", "int"]];
+    [
+      ["T_Unconstrained", "ClassWithOverloadedConstructor[str]"];
+      ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
+    ];
+  assert_add
+    ~left:"typing.Type[ClassWithOverloadedConstructor]"
+    ~right:"typing.Callable[[int], T_Unconstrained]"
+    [
+      ["T_Unconstrained", "ClassWithOverloadedConstructor[int]"];
+      ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
+    ];
   assert_add
     ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
