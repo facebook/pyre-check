@@ -211,9 +211,9 @@ end = struct
 
 
     let unpack = function
-      | { value = { Node.value = Starred (Starred.Once expression); _ }; _ } ->
+      | { value = { Node.value = Expression.Starred (Starred.Once expression); _ }; _ } ->
           expression, SingleStar
-      | { value = { Node.value = Starred (Starred.Twice expression); _ }; _ } ->
+      | { value = { Node.value = Expression.Starred (Starred.Twice expression); _ }; _ } ->
           expression, DoubleStar
       | { value; name = Some name } -> value, Named name
       | { value; name = None } -> value, Positional
@@ -335,10 +335,12 @@ end = struct
     let arguments = [{ Call.Argument.name = None; value = right }] in
     Expression.Call
       {
-        callee =
+        Call.callee =
           {
             Node.location;
-            value = Name (Name.Attribute { base = left; attribute = name; special = true });
+            value =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base = left; attribute = name; special = true });
           };
         arguments;
       }
@@ -556,7 +558,7 @@ end = struct
 
   let last = function
     | Identifier name -> name
-    | Attribute { attribute; _ } -> attribute
+    | Attribute { Attribute.attribute; _ } -> attribute
 end
 
 and Parameter : sig
@@ -732,10 +734,12 @@ end = struct
     >>| fun name ->
     Expression.Call
       {
-        callee =
+        Call.callee =
           {
             Node.location;
-            value = Name (Name.Attribute { base = operand; attribute = name; special = true });
+            value =
+              Expression.Name
+                (Name.Attribute { Name.Attribute.base = operand; attribute = name; special = true });
           };
         arguments = [];
       }
@@ -1042,7 +1046,8 @@ end = struct
             right
       | Call { Call.callee; arguments } -> (
           match Node.value callee with
-          | Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
+          | Expression.Name
+              (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; special = true }) ->
               Format.fprintf formatter "%a[%a]" pp_expression_t base pp_argument_list arguments
           | _ -> Format.fprintf formatter "%a(%a)" pp_expression_t callee pp_argument_list arguments
           )
@@ -1081,7 +1086,7 @@ end = struct
       | ListComprehension list_comprehension ->
           Format.fprintf formatter "%a" pp_basic_comprehension list_comprehension
       | Name (Name.Identifier name) -> Format.fprintf formatter "%s" name
-      | Name (Name.Attribute { base; attribute; _ }) ->
+      | Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
           Format.fprintf formatter "%a.%s" pp_expression (Node.value base) attribute
       | Set set -> Format.fprintf formatter "set(%a)" pp_expression_list set
       | SetComprehension set_comprehension ->
@@ -1097,7 +1102,7 @@ end = struct
             operator
             pp_expression_t
             operand
-      | WalrusOperator { target; value } ->
+      | WalrusOperator { WalrusOperator.target; value } ->
           Format.fprintf formatter "%a := %a" pp_expression_t target pp_expression_t value
       | Yield yield -> (
           match yield with
@@ -1399,8 +1404,8 @@ module Mapper = struct
 
   let default_map_name ~mapper = function
     | Name.Identifier _ as identifier -> identifier
-    | Name.Attribute { base; attribute; special } ->
-        Name.Attribute { base = map ~mapper base; attribute; special }
+    | Name.Attribute { Name.Attribute.base; attribute; special } ->
+        Name.Attribute { Name.Attribute.base = map ~mapper base; attribute; special }
 
 
   let default_map_name_node ~mapper ~location name =
@@ -1994,7 +1999,7 @@ module Folder = struct
 
   let default_fold_name ~folder ~state = function
     | Name.Identifier _ -> state
-    | Name.Attribute { base; attribute = _; special = _ } -> fold ~folder ~state base
+    | Name.Attribute { Name.Attribute.base; attribute = _; special = _ } -> fold ~folder ~state base
 
 
   let default_fold_starred ~folder ~state = function
@@ -2221,11 +2226,13 @@ let create_name_from_identifiers identifiers =
     | [{ Node.location; value = identifier }] ->
         Name (Name.Identifier identifier) |> Node.create ~location
     | { Node.location; value = identifier } :: rest ->
-        Name (Name.Attribute { base = create rest; attribute = identifier; special = false })
+        Name
+          (Name.Attribute
+             { Name.Attribute.base = create rest; attribute = identifier; special = false })
         |> Node.create ~location
   in
   match create (List.rev identifiers) with
-  | { Node.value = Name name; _ } -> name
+  | { Node.value = Expression.Name name; _ } -> name
   | _ -> failwith "Impossible."
 
 
@@ -2244,7 +2251,9 @@ let create_name_from_reference ~location reference =
     | [] -> Name (Name.Identifier "") |> Node.create ~location
     | [identifier] -> Name (Name.Identifier identifier) |> Node.create ~location
     | identifier :: rest ->
-        Name (Name.Attribute { base = create rest; attribute = identifier; special = false })
+        Name
+          (Name.Attribute
+             { Name.Attribute.base = create rest; attribute = identifier; special = false })
         |> Node.create ~location
   in
   match create (List.rev (Reference.as_list reference)) with
@@ -2260,7 +2269,7 @@ let name_to_identifiers name =
   let rec collect sofar name =
     match sofar, name with
     | Some sofar, Name (Name.Identifier identifier) -> Some (identifier :: sofar)
-    | Some sofar, Name (Name.Attribute { base; attribute; _ }) ->
+    | Some sofar, Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
         collect (Some (attribute :: sofar)) (Node.value base)
     | _ -> None
   in
@@ -2283,8 +2292,8 @@ let is_simple_name name = Option.is_some (name_to_identifiers name)
 
 let rec get_identifier_base expression =
   match Node.value expression with
-  | Call { callee; _ } -> get_identifier_base callee
-  | Name (Name.Attribute { base; _ }) -> get_identifier_base base
+  | Call { Call.callee; _ } -> get_identifier_base callee
+  | Name (Name.Attribute { Name.Attribute.base; _ }) -> get_identifier_base base
   | Name (Name.Identifier identifier) -> Some identifier
   | _ -> None
 
@@ -2302,7 +2311,7 @@ let name_is ~name expression =
   in
   let rec check_match = function
     | [name], Name (Name.Identifier identifier) when Identifier.equal name identifier -> true
-    | name :: remaining, Name (Name.Attribute { base; attribute; _ })
+    | name :: remaining, Name (Name.Attribute { Name.Attribute.base; attribute; _ })
       when Identifier.equal name attribute ->
         check_match (remaining, Node.value base)
     | _ -> false
@@ -2314,12 +2323,16 @@ let rec sanitized ({ Node.value; location } as expression) =
   match value with
   | Name (Name.Identifier identifier) ->
       Name (Name.Identifier (Identifier.sanitized identifier)) |> Node.create ~location
-  | Name (Name.Attribute { base; attribute; special }) ->
+  | Name (Name.Attribute { Name.Attribute.base; attribute; special }) ->
       Name
         (Name.Attribute
-           { base = sanitized base; attribute = Identifier.sanitized attribute; special })
+           {
+             Name.Attribute.base = sanitized base;
+             attribute = Identifier.sanitized attribute;
+             special;
+           })
       |> Node.create ~location
-  | Call { callee; arguments } ->
+  | Call { Call.callee; arguments } ->
       let sanitize_argument { Call.Argument.name; value } =
         let name =
           match name with
@@ -2329,7 +2342,7 @@ let rec sanitized ({ Node.value; location } as expression) =
         in
         { Call.Argument.name; value = sanitized value }
       in
-      Call { callee = sanitized callee; arguments = List.map ~f:sanitize_argument arguments }
+      Call { Call.callee = sanitized callee; arguments = List.map ~f:sanitize_argument arguments }
       |> Node.create ~location
   | _ -> expression
 
@@ -2337,11 +2350,12 @@ let rec sanitized ({ Node.value; location } as expression) =
 let rec delocalize ({ Node.value; location } as expression) =
   let value =
     match value with
-    | Call { callee; arguments } ->
+    | Call { Call.callee; arguments } ->
         let delocalize_argument ({ Call.Argument.value; _ } as argument) =
           { argument with Call.Argument.value = delocalize value }
         in
-        Call { callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
+        Call
+          { Call.callee = delocalize callee; arguments = List.map ~f:delocalize_argument arguments }
     | Name (Name.Identifier identifier) when identifier |> String.is_prefix ~prefix:"$local_$" ->
         let sanitized = Identifier.sanitized identifier in
         Name (Name.Identifier sanitized)
@@ -2354,13 +2368,15 @@ let rec delocalize ({ Node.value; location } as expression) =
             |> create_name ~location
             |> fun name -> Name name |> Node.create ~location
           in
-          Name (Name.Attribute { base = qualifier; attribute = sanitized; special = false })
+          Name
+            (Name.Attribute
+               { Name.Attribute.base = qualifier; attribute = sanitized; special = false })
         else (
           Log.debug "Unable to extract qualifier from %s" identifier;
           Name (Name.Identifier sanitized))
     | Name (Name.Identifier identifier) -> Name (Name.Identifier identifier)
-    | Name (Name.Attribute ({ base; _ } as name)) ->
-        Name (Name.Attribute { name with base = delocalize base })
+    | Name (Name.Attribute ({ Name.Attribute.base; _ } as name)) ->
+        Name (Name.Attribute { name with Name.Attribute.base = delocalize base })
     | List elements -> List (List.map elements ~f:delocalize)
     | Tuple elements -> Tuple (List.map elements ~f:delocalize)
     | _ -> value
@@ -2371,10 +2387,12 @@ let rec delocalize ({ Node.value; location } as expression) =
 let delocalize_qualified = function
   | { Node.location; value = Name (Name.Identifier identifier) } ->
       { Node.location; value = Name (Name.Identifier (Identifier.sanitized identifier)) }
-  | { Node.location; value = Name (Name.Attribute ({ attribute; _ } as name)) } ->
+  | { Node.location; value = Name (Name.Attribute ({ Name.Attribute.attribute; _ } as name)) } ->
       {
         Node.location;
-        value = Name (Name.Attribute { name with attribute = Identifier.sanitized attribute });
+        value =
+          Name
+            (Name.Attribute { name with Name.Attribute.attribute = Identifier.sanitized attribute });
       }
   | expression -> expression
 
@@ -2383,7 +2401,8 @@ let delocalize_qualified = function
 let is_self_call ~callee:{ Node.value; _ } =
   match value with
   | Expression.Name
-      (Name.Attribute { base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+      (Name.Attribute
+        { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
       String.equal (Identifier.sanitized identifier) "self"
   | _ -> false
 
@@ -2393,9 +2412,9 @@ let exists_in_list ?(match_prefix = false) ~expression_list target_string =
     let rec flatten flattened expression =
       match flattened, Node.value expression with
       | Some flattened, Name (Name.Identifier identifier) -> Some (identifier :: flattened)
-      | Some flattened, Name (Name.Attribute { base; attribute; _ }) ->
+      | Some flattened, Name (Name.Attribute { Name.Attribute.base; attribute; _ }) ->
           flatten (Some (attribute :: flattened)) base
-      | Some flattened, Call { callee; _ } ->
+      | Some flattened, Call { Call.callee; _ } ->
           flatten (Some ("$call_placeholder" :: flattened)) callee
       | _ -> None
     in
@@ -2422,10 +2441,13 @@ let arguments_location
   | [] ->
       {
         Location.start = callee_end;
-        stop = { callee_end with column = callee_end.Location.column + 2 };
+        stop = { callee_end with Location.column = callee_end.Location.column + 2 };
       }
   | { Call.Argument.value = { Node.location = { Location.stop; _ }; _ }; _ } :: _ ->
-      { Location.start = callee_end; stop = { stop with column = stop.Location.column + 1 } }
+      {
+        Location.start = callee_end;
+        stop = { stop with Location.column = stop.Location.column + 1 };
+      }
 
 
 let get_item_call base arguments ~location =
@@ -2441,14 +2463,14 @@ let get_item_call base arguments ~location =
   in
   Call
     {
-      callee =
+      Call.callee =
         {
           Node.location;
           value =
             Name
               (Name.Attribute
                  {
-                   base = { Node.location; value = create_name base };
+                   Name.Attribute.base = { Node.location; value = create_name base };
                    attribute = "__getitem__";
                    special = true;
                  });

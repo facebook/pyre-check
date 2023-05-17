@@ -71,11 +71,13 @@ let log_to_path path ~event_creator =
 
 (* Taking a constructor instead of an event here so that events can be created lazily *)
 let log_performance_event event_creator =
-  Option.iter GlobalState.global_state.profiling_output ~f:(log_to_path ~event_creator)
+  let open GlobalState in
+  Option.iter global_state.profiling_output ~f:(log_to_path ~event_creator)
 
 
 let log_memory_event event_creator =
-  Option.iter GlobalState.global_state.memory_profiling_output ~f:(log_to_path ~event_creator)
+  let open GlobalState in
+  Option.iter global_state.memory_profiling_output ~f:(log_to_path ~event_creator)
 
 
 type 'a result_with_tags = {
@@ -89,7 +91,7 @@ let track_duration_event_with_dynamic_tags ~f name =
   let duration = Timer.stop_in_us timer in
   let create_event () =
     let tags = tags () in
-    Event.create name ~tags ~event_type:(Duration duration)
+    Event.create name ~tags ~event_type:(Event.Duration duration)
   in
   log_performance_event create_event;
   result

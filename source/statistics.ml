@@ -69,7 +69,10 @@ end = struct
   let with_cache ~f = Error_checking_mutex.critical_section lock ~f:(fun () -> f cache)
 end
 
-let disable () = GlobalState.global_state.logger <- None
+let disable () =
+  let open GlobalState in
+  global_state.logger <- None
+
 
 let format_as_text ~integers ~normals () =
   let values =
@@ -108,13 +111,14 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         | Some normal -> normal :: normals
         | None -> normals
       in
+      let open GlobalState in
       [
-        "binary", Sys.argv.(0);
-        "root", GlobalState.global_state.project_name;
-        "username", GlobalState.username;
-        "host", GlobalState.hostname;
-        "identifier", GlobalState.global_state.log_identifier;
-        "project_root", GlobalState.global_state.project_root;
+        "binary", (Sys.argv.(0) [@alert "-deprecated"]);
+        "root", global_state.project_name;
+        "username", username;
+        "host", hostname;
+        "identifier", global_state.log_identifier;
+        "project_root", global_state.project_root;
       ]
       @ normals
     else
@@ -129,7 +133,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
       in
       [
         "time", Core_unix.time () |> Int.of_float;
-        "start_time", GlobalState.global_state.start_time |> Int.of_float;
+        "start_time", GlobalState.global_state.GlobalState.start_time |> Int.of_float;
       ]
       @ integers
     else
@@ -139,7 +143,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
 
 
 let flush () =
-  match GlobalState.global_state.logger with
+  match GlobalState.global_state.GlobalState.logger with
   | None -> ()
   | Some logger ->
       let flush_category ~key ~data =
@@ -152,7 +156,7 @@ let flush () =
       Cache.with_cache ~f:(fun cache ->
           Hashtbl.iteri ~f:flush_category cache;
           Hashtbl.clear cache);
-      GlobalState.global_state.last_flush_timestamp <- Core_unix.time ();
+      GlobalState.global_state.GlobalState.last_flush_timestamp <- Core_unix.time ();
       ()
 
 
@@ -170,7 +174,8 @@ let log ?(flush = false) category sample =
   let exceeds_timeout () =
     let current_time = Core_unix.time () in
     Float.(
-      current_time -. GlobalState.global_state.last_flush_timestamp >= GlobalState.flush_timeout)
+      current_time -. GlobalState.global_state.GlobalState.last_flush_timestamp
+      >= GlobalState.flush_timeout)
   in
   if flush || samples_count () >= GlobalState.flush_size || exceeds_timeout () then
     flush_cache ()
@@ -211,7 +216,10 @@ let performance
         | None -> tags
         | Some name -> ("phase_name", name) :: tags
       in
-      PyreProfiling.Event.create name ~event_type:(Duration integer_time_in_microseconds) ~tags);
+      PyreProfiling.Event.create
+        name
+        ~event_type:(PyreProfiling.Event.Duration integer_time_in_microseconds)
+        ~tags);
   let randomly_log_every =
     match always_log_time_threshold with
     | Some threshold -> if Float.(time_in_seconds > threshold) then None else randomly_log_every
@@ -281,12 +289,13 @@ let log_exception caught_exception ~fatal ~origin =
 
 
 let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
+  let open GlobalState in
   let default_normals =
     [
-      "host", GlobalState.hostname;
-      "user", GlobalState.username;
-      "project_root", GlobalState.global_state.project_root;
-      "root", GlobalState.global_state.project_name;
+      "host", hostname;
+      "user", username;
+      "project_root", global_state.project_root;
+      "root", global_state.project_name;
     ]
   in
   let default_integers = ["time", Core_unix.time () |> Int.of_float] in

@@ -30,6 +30,7 @@ type exit_state_of_define = {
   local_annotations: LocalAnnotationMap.t option;
   callees: Callgraph.callee_with_locations list option;
 }
+[@@warning "-69"]
 
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
@@ -792,7 +793,7 @@ module State (Context : Context) = struct
         in
         let correct_getattr_arity signature =
           Type.Callable.Overload.parameters signature
-          >>| (fun parameters -> List.length parameters == 1)
+          >>| (fun parameters -> phys_equal (List.length parameters) 1)
           |> Option.value ~default:false
         in
         let create_annotation signature =
@@ -2229,7 +2230,7 @@ module State (Context : Context) = struct
           in
           let rec is_compatible annotation =
             match annotation with
-            | _ when Type.is_meta annotation or Type.is_untyped annotation -> true
+            | _ when Type.is_meta annotation || Type.is_untyped annotation -> true
             | Type.Primitive "typing._Alias" -> true
             | Type.Tuple (Concatenation concatenation) ->
                 Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
@@ -3652,7 +3653,7 @@ module State (Context : Context) = struct
             | Type.Parametric { name = "type"; parameters = [Single typed_dictionary] } ->
                 if
                   Type.is_any typed_dictionary
-                  or GlobalResolution.is_typed_dictionary
+                  || GlobalResolution.is_typed_dictionary
                        ~resolution:global_resolution
                        typed_dictionary
                 then

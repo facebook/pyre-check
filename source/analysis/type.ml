@@ -1317,7 +1317,7 @@ end = struct
     let floor_division dividend quotient =
       let dividend = float_of_int dividend in
       let quotient = float_of_int quotient in
-      dividend /. quotient |> floor |> int_of_float
+      dividend /. quotient |> (floor [@alert "-deprecated"]) |> int_of_float
     in
     let simplify left right =
       let rec gcd x y = if y = 0 then x else gcd y (x mod y) in
@@ -2990,7 +2990,7 @@ module Callable = struct
       let left_matches = List.map ~f:process_left left_parameters in
       (* It's okay for named args to override positional ones *)
       let has_same_name left_name = function
-        | Named { name; _ } -> name == left_name
+        | Named { name; _ } -> ( ((name == left_name) [@alert "-deprecated"]))
         | _ -> false
       in
       let is_matched_with_positional_only right_param = function

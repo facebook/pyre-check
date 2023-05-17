@@ -175,7 +175,7 @@ module MatchTranslate = struct
         | None -> capture)
     | MatchClass { class_name; patterns; keyword_attributes; keyword_patterns } ->
         let of_positional_pattern index =
-          if index == 0 && is_special_builtin_for_class_pattern (Node.value class_name) then
+          if phys_equal index 0 && is_special_builtin_for_class_pattern (Node.value class_name) then
             pattern_to_condition ~subject
           else
             let attribute =
@@ -233,8 +233,8 @@ module MatchTranslate = struct
         let of_rest rest =
           let target = create_identifier_name ~location rest in
           let value =
-            let lower = if prefix_length == 0 then None else Some prefix_length in
-            let upper = if suffix_length == 0 then None else Some (-suffix_length) in
+            let lower = if phys_equal prefix_length 0 then None else Some prefix_length in
+            let upper = if phys_equal suffix_length 0 then None else Some (-suffix_length) in
             create_getitem ~location ~container:subject ~key:(create_slice ~location ~lower ~upper)
             |> create_list ~location
           in

@@ -32,7 +32,7 @@ type t =
 
 let absolute = function
   | Absolute path -> path
-  | Relative { root; relative } -> root ^/ relative
+  | Relative { RelativePath.root; relative } -> root ^/ relative
 
 
 let create_absolute ?(follow_symbolic_links = false) path =
@@ -48,7 +48,7 @@ let create_relative ~root ~relative =
     if not (String.is_suffix ~suffix:"/" root) then root ^ "/" else root
   in
   let relative = String.chop_prefix ~prefix:root relative |> Option.value ~default:relative in
-  Relative { root; relative }
+  Relative { RelativePath.root; relative }
 
 
 let show = absolute
@@ -96,13 +96,13 @@ let current_working_directory () = create_absolute (Sys_unix.getcwd ())
 let append path ~element =
   match path with
   | Absolute path -> Absolute (path ^/ element)
-  | Relative { root; relative } ->
+  | Relative { RelativePath.root; relative } ->
       let relative =
         match relative with
         | "" -> element
         | _ -> relative ^/ element
       in
-      Relative { root; relative }
+      Relative { RelativePath.root; relative }
 
 
 let is_directory path =
@@ -117,7 +117,7 @@ let is_directory path =
 
 let get_suffix_path = function
   | Absolute path -> path
-  | Relative { relative; _ } -> relative
+  | Relative { RelativePath.relative; _ } -> relative
 
 
 let is_path_python_stub path = String.is_suffix ~suffix:".pyi" path
@@ -197,7 +197,7 @@ let search_upwards ~target ~target_type ~root =
   let exists =
     match target_type with
     | FileType.File -> Sys_unix.is_file
-    | Directory -> Sys_unix.is_directory
+    | FileType.Directory -> Sys_unix.is_directory
   in
   let rec directory_has_target directory =
     match exists (directory ^/ target) with
@@ -282,7 +282,8 @@ end)
 let with_suffix path ~suffix =
   match path with
   | Absolute prefix -> Absolute (prefix ^ suffix)
-  | Relative { root; relative } -> Relative { root; relative = relative ^ suffix }
+  | Relative { RelativePath.root; relative } ->
+      Relative { RelativePath.root; relative = relative ^ suffix }
 
 
 let get_matching_files_recursively ~suffix ~paths =

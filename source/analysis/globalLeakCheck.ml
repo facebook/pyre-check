@@ -56,6 +56,7 @@ module State (Context : Context) = struct
     kind: Error.kind;
     location: Location.t;
   }
+  [@@warning "-69"]
 
   type result = {
     (* represents the list of globals from the current expression and sub-expression that will be

@@ -132,7 +132,12 @@ let warning format = log ~section:`Warning format
 let print format = Printf.printf format
 
 let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
-  log ~section "Unix error %s: %s(%s)" (Core_unix.error_message error_kind) name parameters
+  log
+    ~section
+    "Unix error %s: %s(%s)"
+    (Core_unix.error_message error_kind [@alert "-deprecated"])
+    name
+    parameters
 
 
 let log_exception message exception_to_log backtrace =

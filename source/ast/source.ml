@@ -108,11 +108,11 @@ module TypecheckFlags = struct
                 |> Str.split (Str.regexp "[^0-9]+")
                 |> List.map ~f:Int.of_string
               with
-              | Not_found -> []
+              | (Not_found [@alert "-deprecated"]) -> []
             in
             Some (Ignore.create ~ignored_line:line_index ~codes ~location ~kind)
           with
-          | Not_found -> None
+          | (Not_found [@alert "-deprecated"]) -> None
         in
         let contains_outside_quotes ~substring line =
           let find_substring index characters =

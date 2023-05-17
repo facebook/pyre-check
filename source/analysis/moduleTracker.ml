@@ -61,6 +61,7 @@ module ReadOnly = struct
     all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
   }
+  [@@warning "-69"]
 
   let controls { controls; _ } = controls ()
 
@@ -112,6 +113,7 @@ module ModulePaths = struct
       excludes: Str.regexp list;
       configuration: Configuration.Analysis.t;
     }
+    [@@warning "-69"]
 
     let create ({ Configuration.Analysis.excludes; _ } as configuration) =
       {
@@ -974,6 +976,7 @@ module Base = struct
     controls: EnvironmentControls.t;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
+  [@@warning "-69"]
 
   let load_raw_code ~configuration module_path =
     let path = ModulePath.full_path ~configuration module_path in
@@ -1067,6 +1070,7 @@ module Overlay = struct
     overlaid_code: string ModulePath.Table.t;
     overlaid_qualifiers: Reference.Hash_set.t;
   }
+  [@@warning "-69"]
 
   let owns_qualifier { overlaid_qualifiers; _ } qualifier =
     Hash_set.mem overlaid_qualifiers qualifier

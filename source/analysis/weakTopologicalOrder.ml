@@ -78,7 +78,7 @@ let create ~cfg ~entry_index ~successors =
     let components =
       if Int.equal minimum_dfn (get_depth_first_number node_index) then (
         (* Found a new component. *)
-        Hashtbl.set depth_first_numbers ~key:node_index ~data:max_int;
+        Hashtbl.set depth_first_numbers ~key:node_index ~data:(max_int [@alert "-deprecated"]);
         let element_id = Stack.pop_exn stack in
 
         if loop then (

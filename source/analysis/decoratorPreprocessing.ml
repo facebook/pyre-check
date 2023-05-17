@@ -141,8 +141,8 @@ let get_define_decorators { Define.signature = { decorators; _ }; _ } = decorato
 
 let add_original_decorators_mapping ~original_define ~new_define =
   if
-    List.length (get_define_decorators original_define)
-    != List.length (get_define_decorators new_define)
+    (List.length (get_define_decorators original_define)
+    != List.length (get_define_decorators new_define)) [@alert "-deprecated"]
   then
     DecoratedCallableToOriginalDecorators.add
       (Define.name new_define)

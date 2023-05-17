@@ -216,7 +216,7 @@ module SourcePaths = struct
     | Simple sources
     | WithUnwatchedDependency { sources; _ } ->
         sources
-    | Buck { artifact_root; _ } -> [SearchPath.Root artifact_root]
+    | Buck { Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
 end
 
 module RemoteLogging = struct
