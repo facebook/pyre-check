@@ -29,6 +29,10 @@ WIP
 
 <!-- TODO(T132521708) Common issues (ideally with info on how to contribute to this page via PR): ie., https://mypy.readthedocs.io/en/stable/common_issues.html  -->
 
+## Pyre Gotchas
+### Why isn't pyre checking functions that don't have a return signature?
+Pyre [follows PEP 484](gradual_typing.md) which specifies gradual typing in Python. As such, Pyre only reports errors on functions that have an explicit return or parameter type annotation.
+
 ## Pyre Rage
 
 <!-- TODO(T132521708) -->
