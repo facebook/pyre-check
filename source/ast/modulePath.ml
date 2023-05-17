@@ -182,7 +182,7 @@ let qualifier { qualifier; _ } = qualifier
 
 let raw { raw; _ } = raw
 
-let relative { raw = { relative; _ }; _ } = relative
+let relative { raw = { Raw.relative; _ }; _ } = relative
 
 let is_in_project { is_external; _ } = not is_external
 
@@ -201,13 +201,13 @@ let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
 let same_module_compare
     ~configuration
     {
-      raw = { relative = left_path; priority = left_priority };
+      raw = { Raw.relative = left_path; priority = left_priority };
       is_stub = left_is_stub;
       is_init = left_is_init;
       _;
     }
     {
-      raw = { relative = right_path; priority = right_priority };
+      raw = { Raw.relative = right_path; priority = right_priority };
       is_stub = right_is_stub;
       is_init = right_is_init;
       _;

@@ -262,7 +262,14 @@ let ignored_lines_including_format_strings
   in
   let make_ignore_span_all_lines
       map
-      { Node.location = { start = { line = start_line; _ }; stop = { line = end_line; _ } }; _ }
+      {
+        Node.location =
+          {
+            Location.start = { Location.line = start_line; _ };
+            Location.stop = { Location.line = end_line; _ };
+          };
+        _;
+      }
     =
     Map.change map start_line ~f:(fun ignores ->
         ignores >>| List.map ~f:(Ignore.cover_end_line ~end_line))
@@ -285,7 +292,7 @@ let create_from_module_path
     typecheck_flags =
       {
         typecheck_flags with
-        ignore_lines =
+        TypecheckFlags.ignore_lines =
           ignored_lines_including_format_strings ?collect_format_strings_with_ignores source;
       };
   }

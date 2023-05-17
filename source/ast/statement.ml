@@ -16,7 +16,7 @@ let class_toplevel_define_name = "$class_toplevel"
 
 let name_location
     ~offset_columns
-    ~body_location:{ Location.start = { line = start_line; column = start_column }; _ }
+    ~body_location:{ Location.start = { Location.line = start_line; column = start_column }; _ }
     name_string
   =
   let start_column = start_column + offset_columns in
@@ -120,7 +120,7 @@ module Decorator = struct
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
-    match Reference.compare left.name.value right.name.value with
+    match Reference.compare left.name.Node.value right.name.Node.value with
     | x when not (Int.equal x 0) -> x
     | _ ->
         (Option.compare (List.compare Expression.Call.Argument.location_insensitive_compare))
@@ -132,7 +132,9 @@ module Decorator = struct
     let name = Expression.from_reference ~location name in
     match arguments with
     | Some arguments ->
-        Node.create ~location (Expression.Expression.Call { callee = name; arguments })
+        Node.create
+          ~location
+          (Expression.Expression.Call { Expression.Call.callee = name; arguments })
     | None -> name
 
 
@@ -143,7 +145,7 @@ module Decorator = struct
         match name_to_reference name with
         | Some reference -> Some { name = Node.create ~location reference; arguments = None }
         | None -> None)
-    | Call { callee = { Node.value; location }; arguments } -> (
+    | Expression.Call { Call.callee = { Node.value; location }; arguments } -> (
         match value with
         | Expression.Name name -> (
             match name_to_reference name with
@@ -844,7 +846,7 @@ end = struct
     else
       let def_and_space_offset =
         match define with
-        | { signature = { async = true; _ }; _ } -> 10
+        | { signature = { Signature.async = true; _ }; _ } -> 10
         | _ -> 4
       in
       define
@@ -905,7 +907,10 @@ end = struct
               {
                 Node.value =
                   Expression.Call
-                    { callee = { Node.value = Expression.Name (Name.Identifier identifier); _ }; _ };
+                    {
+                      Call.callee = { Node.value = Expression.Name (Name.Identifier identifier); _ };
+                      _;
+                    };
                 _;
               };
           _;
@@ -920,9 +925,17 @@ end = struct
   let is_stub { body; _ } =
     let open Expression in
     match List.rev body with
-    | { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } :: _
+    | {
+        Node.value = Statement.Expression { Node.value = Expression.Constant Constant.Ellipsis; _ };
+        _;
+      }
+      :: _
     | _
-      :: { Node.value = Expression { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ }
+      :: {
+           Node.value =
+             Statement.Expression { Node.value = Expression.Constant Constant.Ellipsis; _ };
+           _;
+         }
       :: _ ->
         true
     | _ -> false
@@ -978,26 +991,30 @@ end = struct
         let create_call base iterator next =
           Expression.Call
             {
-              callee =
+              Call.callee =
                 {
                   Node.location = iterator_location;
                   value =
-                    Name
+                    Expression.Name
                       (Name.Attribute
                          {
-                           base =
+                           Name.Attribute.base =
                              {
                                Node.location = iterator_location;
                                value =
-                                 Call
+                                 Expression.Call
                                    {
-                                     callee =
+                                     Call.callee =
                                        {
                                          Node.location = iterator_location;
                                          value =
-                                           Name
+                                           Expression.Name
                                              (Name.Attribute
-                                                { base; attribute = iterator; special = true });
+                                                {
+                                                  Name.Attribute.base;
+                                                  attribute = iterator;
+                                                  special = true;
+                                                });
                                        };
                                      arguments = [];
                                    };
@@ -1017,7 +1034,7 @@ end = struct
       if async then
         {
           Node.location = iterator_location;
-          value = Expression.Await (Node.create value ~location:iterator_location);
+          Node.value = Expression.Await (Node.create value ~location:iterator_location);
         }
       else
         { Node.location = iterator_location; value }
@@ -1025,7 +1042,7 @@ end = struct
     {
       Node.location =
         { Location.start = Location.start target_location; stop = Location.stop iterator_location };
-      value = Statement.Assign { Assign.target; annotation = None; value };
+      Node.value = Statement.Assign { Assign.target; annotation = None; value };
     }
 
 
@@ -1214,10 +1231,10 @@ end = struct
       let rec is_pattern_irrefutable { Node.value = pattern; _ } =
         match pattern with
         | Match.Pattern.MatchAs { pattern = None; _ }
-        | MatchWildcard ->
+        | Match.Pattern.MatchWildcard ->
             true
         | Match.Pattern.MatchAs { pattern = Some pattern; _ } -> is_pattern_irrefutable pattern
-        | MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
+        | Match.Pattern.MatchOr patterns -> List.exists ~f:is_pattern_irrefutable patterns
         | _ -> false
       in
       Option.is_some guard || not (is_pattern_irrefutable pattern)
@@ -1306,15 +1323,19 @@ end = struct
         {
           Node.location;
           value =
-            Assert
+            Statement.Assert
               {
                 Assert.test =
                   {
                     Node.location;
                     value =
-                      Call
+                      Expression.Call
                         {
-                          callee = { Node.location; value = Name (Name.Identifier "isinstance") };
+                          Call.callee =
+                            {
+                              Node.location;
+                              value = Expression.Name (Name.Identifier "isinstance");
+                            };
                           arguments =
                             [
                               { Call.Argument.name = None; value = target };
@@ -1329,11 +1350,12 @@ end = struct
       ]
     in
     match kind, name with
-    | ( Some ({ Node.location; value = Name _ | Tuple _; _ } as annotation),
-        Some { Node.location = name_location; Node.value = name } ) ->
+    | ( Some ({ Node.location; value = Expression.Name _ | Expression.Tuple _; _ } as annotation),
+        Some { Node.location = name_location; value = name } ) ->
         assume
           ~location
-          ~target:{ Node.location = name_location; value = Name (Name.Identifier name) }
+          ~target:
+            { Node.location = name_location; Node.value = Expression.Name (Name.Identifier name) }
           ~annotation
     | Some ({ Node.location; _ } as expression), _ ->
         (* Insert raw `kind` so that we type check the expression. *)
@@ -1423,13 +1445,17 @@ end = struct
             value =
               Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     {
                       Node.location;
                       value =
-                        Name
+                        Expression.Name
                           (Name.Attribute
-                             { base = expression; attribute = call_name; special = true });
+                             {
+                               Name.Attribute.base = expression;
+                               attribute = call_name;
+                               special = true;
+                             });
                     };
                   arguments = [];
                 };
@@ -1555,7 +1581,7 @@ end = struct
 
 
   let assume ?(origin = Assert.Origin.Assertion) ({ Node.location; _ } as test) =
-    { Node.location; value = Assert { Assert.test; message = None; origin } }
+    { Node.location; value = Statement.Assert { Assert.test; message = None; origin } }
 
 
   let generator_assignment
@@ -1575,13 +1601,17 @@ end = struct
             value =
               Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     {
                       Node.location;
                       value =
-                        Name
+                        Expression.Name
                           (Name.Attribute
-                             { base = iterator; attribute = "__aiter__"; special = true });
+                             {
+                               Name.Attribute.base = iterator;
+                               attribute = "__aiter__";
+                               special = true;
+                             });
                     };
                   arguments = [];
                 };
@@ -1592,12 +1622,13 @@ end = struct
           value =
             Expression.Call
               {
-                callee =
+                Call.callee =
                   {
                     Node.location;
                     value =
-                      Name
-                        (Name.Attribute { base = aiter; attribute = "__anext__"; special = true });
+                      Expression.Name
+                        (Name.Attribute
+                           { Name.Attribute.base = aiter; attribute = "__anext__"; special = true });
                   };
                 arguments = [];
               };
@@ -1610,13 +1641,17 @@ end = struct
             value =
               Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     {
                       Node.location;
                       value =
-                        Name
+                        Expression.Name
                           (Name.Attribute
-                             { base = iterator; attribute = "__iter__"; special = true });
+                             {
+                               Name.Attribute.base = iterator;
+                               attribute = "__iter__";
+                               special = true;
+                             });
                     };
                   arguments = [];
                 };
@@ -1627,11 +1662,13 @@ end = struct
           value =
             Expression.Call
               {
-                callee =
+                Call.callee =
                   {
                     Node.location;
                     value =
-                      Name (Name.Attribute { base = iter; attribute = "__next__"; special = true });
+                      Expression.Name
+                        (Name.Attribute
+                           { Name.Attribute.base = iter; attribute = "__next__"; special = true });
                   };
                 arguments = [];
               };
@@ -1719,7 +1756,8 @@ module PrettyPrinter = struct
   and pp_define
       formatter
       {
-        Define.signature = { name; parameters; decorators; return_annotation; async; parent; _ };
+        Define.signature =
+          { Define.Signature.name; parameters; decorators; return_annotation; async; parent; _ };
         body;
         captures = _;
         unbound_names = _;
@@ -1924,47 +1962,48 @@ let is_generator statements =
     | Expression.Yield _
     | Expression.YieldFrom _ ->
         true
-    | Await await -> is_expression_generator await
-    | BooleanOperator { BooleanOperator.left; right; _ }
-    | ComparisonOperator { ComparisonOperator.left; right; _ } ->
+    | Expression.Await await -> is_expression_generator await
+    | Expression.BooleanOperator { BooleanOperator.left; right; _ }
+    | Expression.ComparisonOperator { ComparisonOperator.left; right; _ } ->
         is_expression_generator left || is_expression_generator right
-    | Call { Call.callee; arguments } ->
+    | Expression.Call { Call.callee; arguments } ->
         is_expression_generator callee
         || List.exists arguments ~f:(fun { Call.Argument.value; _ } ->
                is_expression_generator value)
-    | Dictionary { Dictionary.entries; keywords } ->
+    | Expression.Dictionary { Dictionary.entries; keywords } ->
         List.exists entries ~f:(fun { Dictionary.Entry.key; value } ->
             is_expression_generator key || is_expression_generator value)
         || List.exists keywords ~f:is_expression_generator
-    | DictionaryComprehension comprehension ->
+    | Expression.DictionaryComprehension comprehension ->
         is_comprehension_generator
           ~is_element_generator:(fun { Dictionary.Entry.key; value } ->
             is_expression_generator key || is_expression_generator value)
           comprehension
-    | Generator comprehension
-    | ListComprehension comprehension
-    | SetComprehension comprehension ->
+    | Expression.Generator comprehension
+    | Expression.ListComprehension comprehension
+    | Expression.SetComprehension comprehension ->
         is_comprehension_generator ~is_element_generator:is_expression_generator comprehension
-    | List expressions
-    | Set expressions
-    | Tuple expressions ->
+    | Expression.List expressions
+    | Expression.Set expressions
+    | Expression.Tuple expressions ->
         List.exists expressions ~f:is_expression_generator
-    | Starred Starred.(Once expression | Twice expression) -> is_expression_generator expression
-    | FormatString substrings ->
+    | Expression.Starred Starred.(Once expression | Twice expression) ->
+        is_expression_generator expression
+    | Expression.FormatString substrings ->
         let is_substring_generator = function
           | Substring.(Literal _) -> false
           | Substring.Format expression -> is_expression_generator expression
         in
         List.exists substrings ~f:is_substring_generator
-    | Ternary { Ternary.target; test; alternative } ->
+    | Expression.Ternary { Ternary.target; test; alternative } ->
         is_expression_generator target
         || is_expression_generator test
         || is_expression_generator alternative
-    | UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
-    | WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
-    | Constant _
-    | Lambda _
-    | Name _ ->
+    | Expression.UnaryOperator { UnaryOperator.operand; _ } -> is_expression_generator operand
+    | Expression.WalrusOperator { WalrusOperator.value; _ } -> is_expression_generator value
+    | Expression.Constant _
+    | Expression.Lambda _
+    | Expression.Name _ ->
         false
   and is_comprehension_generator
         : 'a. is_element_generator:('a -> bool) -> 'a Comprehension.t -> bool
@@ -2024,7 +2063,8 @@ let is_generator statements =
 let covers_position ~position = function
   | {
       Node.value =
-        Statement.Class { decorators; _ } | Statement.Define { signature = { decorators; _ }; _ };
+        ( Statement.Class { Class.decorators; _ }
+        | Statement.Define { Define.signature = { Define.Signature.decorators; _ }; _ } );
       location;
     } ->
       Location.contains ~location position

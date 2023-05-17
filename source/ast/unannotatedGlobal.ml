@@ -163,7 +163,7 @@ module Collector = struct
               Define
                 [
                   {
-                    define = signature;
+                    UnannotatedDefine.define = signature;
                     location = Location.with_module ~module_reference:qualifier location;
                   };
                 ];

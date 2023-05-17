@@ -123,15 +123,26 @@ let create
           match parameters with
           | [{ Node.value = { Expression.Parameter.annotation = parameter_annotation; _ }; _ }] -> (
               match parameter_annotation, return_annotation with
-              | ( (Some { Node.value = Name (Identifier "str"); _ } | None),
+              | ( ( Some
+                      {
+                        Node.value = Expression.Expression.Name (Expression.Name.Identifier "str");
+                        _;
+                      }
+                  | None ),
                   Some
                     {
                       Node.value =
-                        Name
-                          ( Identifier "Any"
-                          | Attribute
+                        Expression.Expression.Name
+                          ( Expression.Name.Identifier "Any"
+                          | Expression.Name.Attribute
                               {
-                                base = { Node.value = Name (Identifier "typing"); _ };
+                                Expression.Name.Attribute.base =
+                                  {
+                                    Node.value =
+                                      Expression.Expression.Name
+                                        (Expression.Name.Identifier "typing");
+                                    _;
+                                  };
                                 attribute = "Any";
                                 special = false;
                               } );
@@ -164,10 +175,10 @@ let create
             ~key:name
             ~data:
               Export.(Name (Name.Define { is_getattr_any = List.exists defines ~f:is_getattr_any }))
-      | Class -> Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Class)
+      | Class -> Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Name.Class)
       | SimpleAssign _
       | TupleAssign _ ->
-          Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name GlobalVariable)
+          Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Name.GlobalVariable)
     in
     Collector.from_source source |> List.fold ~init:Identifier.Map.Tree.empty ~f:collect_export
   in
@@ -191,7 +202,7 @@ let create
             Reference.Map.Tree.set aliases ~key:alias ~data:name
           in
           List.fold imports ~f:export ~init:aliases
-      | Import { Import.from = None; imports } ->
+      | Statement.Import { Import.from = None; imports } ->
           let export aliases { Node.value = { Import.name; alias }; _ } =
             let alias =
               match alias with
@@ -207,7 +218,7 @@ let create
             Reference.Map.Tree.set aliases ~key:source ~data:target
           in
           List.fold imports ~f:export ~init:aliases
-      | If { If.body; orelse; _ } ->
+      | Statement.If { If.body; orelse; _ } ->
           let aliases = List.fold body ~init:aliases ~f:aliased_exports in
           List.fold orelse ~init:aliases ~f:aliased_exports
       | _ -> aliases
