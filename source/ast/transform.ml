@@ -360,7 +360,7 @@ module Make (Transformer : Transformer) = struct
               }
         | Return ({ Return.expression; _ } as return) ->
             Return { return with Return.expression = expression >>| transform_expression }
-        | Try { Try.body; handlers; orelse; finally } ->
+        | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
             let transform_handler { Try.Handler.kind; name; body } =
               {
                 Try.Handler.kind = kind >>| transform_expression;
@@ -373,7 +373,7 @@ module Make (Transformer : Transformer) = struct
             let handlers = transform_list handlers ~f:transform_handler in
             let orelse = transform_list orelse ~f:transform_statement |> List.concat in
             let finally = transform_list finally ~f:transform_statement |> List.concat in
-            Try { Try.body; handlers; orelse; finally }
+            Try { Try.body; handlers; orelse; finally; handles_exception_group }
         | With { With.items; body; async } ->
             let transform_item (item, alias) =
               transform_expression item, alias >>| transform_expression
@@ -462,7 +462,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
             let body = List.concat_map ~f:transform_statement body in
             let orelse = List.concat_map ~f:transform_statement orelse in
             While { value with While.body; orelse }
-        | Try { Try.body; handlers; orelse; finally } ->
+        | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
             let transform_handler ({ Try.Handler.body; _ } as value) =
               { value with Try.Handler.body = List.concat_map ~f:transform_statement body }
             in
@@ -470,7 +470,7 @@ module MakeStatementTransformer (Transformer : StatementTransformer) = struct
             let handlers = List.map ~f:transform_handler handlers in
             let orelse = List.concat_map ~f:transform_statement orelse in
             let finally = List.concat_map ~f:transform_statement finally in
-            Try { Try.body; handlers; orelse; finally }
+            Try { Try.body; handlers; orelse; finally; handles_exception_group }
       in
       let new_state, statements = Transformer.statement !state { Node.location; value } in
       state := new_state;

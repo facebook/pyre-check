@@ -548,8 +548,12 @@ let create define =
         let final_else = List.fold cases ~init:predecessor ~f:from_case in
         if match_cases_refutable cases then Node.connect final_else join;
         create statements jumps join
-    | { Ast.Node.value = Try ({ Try.body; orelse; finally; handlers } as block); _ } :: statements
-      ->
+    | {
+        Ast.Node.value =
+          Try ({ Try.body; orelse; finally; handlers; handles_exception_group = _ } as block);
+        _;
+      }
+      :: statements ->
         (* We need to add edges to the "finally" block for all paths, because that block is always
            executed, regardless of the exit path (normal, return, or error), and we need to
            preserve the state that got us into the "finally".

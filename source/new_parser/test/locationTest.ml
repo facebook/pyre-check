@@ -3078,6 +3078,7 @@ let test_try_locations _ =
                    ];
                  orelse = [];
                  finally = [];
+                 handles_exception_group = false;
                });
         ];
     assert_parsed
@@ -3119,6 +3120,7 @@ let test_try_locations _ =
                    ];
                  orelse = [];
                  finally = [];
+                 handles_exception_group = false;
                });
         ];
     assert_parsed
@@ -3172,6 +3174,7 @@ let test_try_locations _ =
                        (Statement.Expression
                           (node ~start:(8, 1) ~stop:(8, 2) (Expression.Name (Name.Identifier "d"))));
                    ];
+                 handles_exception_group = false;
                });
         ]
   in

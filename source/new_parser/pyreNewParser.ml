@@ -1006,6 +1006,7 @@ let statement =
           orelse = build_statements ~context orelse;
           finally = build_statements ~context finalbody;
           handlers = build_exception_handlers ~context handlers;
+          handles_exception_group = false;
         }
       |> Node.create ~location;
     ]

@@ -334,7 +334,7 @@ module Qualify (Context : QualifyContext) = struct
             List.fold identifiers ~init:immutables ~f:register_global
           in
           { scope with immutables }
-      | Try { Try.body; handlers; orelse; finally } ->
+      | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let scope = explore_scope ~scope body in
           let scope =
             let explore_handler scope { Try.Handler.body; _ } = explore_scope ~scope body in
@@ -840,7 +840,7 @@ module Qualify (Context : QualifyContext) = struct
                 Return.expression =
                   expression >>| qualify_expression ~qualify_strings:DoNotQualify ~scope;
               } )
-      | Try { Try.body; handlers; orelse; finally } ->
+      | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
           let body_scope, body = qualify_statements ~scope body in
           let handler_scopes, handlers =
             let qualify_handler { Try.Handler.kind; name; body } =
@@ -864,7 +864,7 @@ module Qualify (Context : QualifyContext) = struct
             |> join_scopes orelse_scope
             |> join_scopes finally_scope
           in
-          scope, Try { Try.body; handlers; orelse; finally }
+          scope, Try { Try.body; handlers; orelse; finally; handles_exception_group }
       | With ({ With.items; body; _ } as block) ->
           let scope, items =
             let qualify_item (scope, reversed_items) (name, alias) =
@@ -1819,7 +1819,7 @@ let expand_implicit_returns source =
                         List.fold ~init:None ~f:get_last_in_block [orelse; body]
                     | If { body; orelse; _ } ->
                         List.fold ~init:None ~f:get_last_in_block [orelse; body]
-                    | Try { body; handlers; orelse; finally } ->
+                    | Try { body; handlers; orelse; finally; handles_exception_group = _ } ->
                         let last_handler_body =
                           match List.rev handlers with
                           | { Try.Handler.body; _ } :: _ -> body
@@ -2963,7 +2963,10 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
         let body = transform_statements ~nesting_define if_.body in
         let orelse = transform_statements ~nesting_define if_.orelse in
         { Node.location; value = If { if_ with body; orelse } }
-    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+    | {
+     Node.location;
+     value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+    } ->
         let body = transform_statements ~nesting_define body in
         let orelse = transform_statements ~nesting_define orelse in
         let finally = transform_statements ~nesting_define finally in
@@ -2972,7 +2975,10 @@ let populate_nesting_defines ({ Source.statements; _ } as source) =
               let body = transform_statements ~nesting_define body in
               { handler with body })
         in
-        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+        {
+          Node.location;
+          value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+        }
     | { Node.location; value = With with_ } ->
         let body = transform_statements ~nesting_define with_.body in
         { Node.location; value = With { with_ with body } }
@@ -3188,7 +3194,7 @@ module AccessCollector = struct
         let collected = from_optional_expression collected expression in
         from_optional_expression collected from
     | Return { Return.expression; _ } -> from_optional_expression collected expression
-    | Try { Try.body; handlers; orelse; finally } ->
+    | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
         let collected = from_statements collected body in
         let collected =
           List.fold handlers ~init:collected ~f:(fun collected { Try.Handler.kind; name; body } ->
@@ -3482,7 +3488,10 @@ let populate_captures ({ Source.statements; _ } as source) =
         let body = transform_statements ~scopes if_.body in
         let orelse = transform_statements ~scopes if_.orelse in
         { Node.location; value = If { if_ with body; orelse } }
-    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+    | {
+     Node.location;
+     value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+    } ->
         let body = transform_statements ~scopes body in
         let orelse = transform_statements ~scopes orelse in
         let finally = transform_statements ~scopes finally in
@@ -3491,7 +3500,10 @@ let populate_captures ({ Source.statements; _ } as source) =
               let body = transform_statements ~scopes body in
               { handler with body })
         in
-        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+        {
+          Node.location;
+          value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+        }
     | { Node.location; value = With with_ } ->
         let body = transform_statements ~scopes with_.body in
         { Node.location; value = With { with_ with body } }
@@ -3568,7 +3580,10 @@ let populate_unbound_names source =
         let body = transform_statements ~scopes if_.body in
         let orelse = transform_statements ~scopes if_.orelse in
         { Node.location; value = If { if_ with body; orelse } }
-    | { Node.location; value = Try { Try.body; orelse; finally; handlers } } ->
+    | {
+     Node.location;
+     value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+    } ->
         let body = transform_statements ~scopes body in
         let orelse = transform_statements ~scopes orelse in
         let finally = transform_statements ~scopes finally in
@@ -3577,7 +3592,10 @@ let populate_unbound_names source =
               let body = transform_statements ~scopes body in
               { handler with body })
         in
-        { Node.location; value = Try { Try.body; orelse; finally; handlers } }
+        {
+          Node.location;
+          value = Try { Try.body; orelse; finally; handlers; handles_exception_group };
+        }
     | { Node.location; value = With with_ } ->
         let body = transform_statements ~scopes with_.body in
         { Node.location; value = With { with_ with body } }

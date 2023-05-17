@@ -481,6 +481,7 @@ module ParserToAst = struct
               handlers = List.map ~f:convert_handler handlers;
               orelse = List.map ~f:convert_statement orelse;
               finally = List.map ~f:convert_statement finally;
+              handles_exception_group = false;
             }
       | With { items; body; async } ->
           let convert_item (resource, target) =

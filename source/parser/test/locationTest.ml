@@ -3165,6 +3165,7 @@ let test_try_locations _ =
              handlers = [];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            });
     ];
   assert_source_locations
@@ -3193,6 +3194,7 @@ let test_try_locations _ =
                       (node ~start:(4, 1) ~stop:(4, 2) (Expression.Name (Name.Identifier "b"))));
                ];
              finally = [];
+             handles_exception_group = false;
            });
     ];
   assert_source_locations
@@ -3248,6 +3250,7 @@ let test_try_locations _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            });
     ];
   assert_source_locations
@@ -3300,6 +3303,7 @@ let test_try_locations _ =
                    (Statement.Expression
                       (node ~start:(8, 1) ~stop:(8, 2) (Expression.Name (Name.Identifier "d"))));
                ];
+             handles_exception_group = false;
            });
     ]
 

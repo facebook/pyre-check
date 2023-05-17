@@ -236,7 +236,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           Option.iter ~f:visit_expression expression;
           Option.iter ~f:visit_expression from
       | Return { Return.expression; _ } -> Option.iter ~f:visit_expression expression
-      | Try { Try.body; handlers; orelse; finally } ->
+      | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let visit_handler { Try.Handler.kind; body; _ } =
             Option.iter ~f:visit_expression kind;
             List.iter body ~f:visit_statement
@@ -344,7 +344,7 @@ module MakeStatementVisitor (Visitor : StatementVisitor) = struct
         | Match { Match.cases; _ } ->
             let visit_case { Match.Case.body; _ } = List.iter ~f:visit_statement body in
             List.iter ~f:visit_case cases
-        | Try { Try.body; handlers; orelse; finally } ->
+        | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
             let visit_handler { Try.Handler.body; _ } = List.iter ~f:visit_statement body in
             List.iter ~f:visit_statement body;
             List.iter ~f:visit_handler handlers;

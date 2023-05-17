@@ -326,7 +326,7 @@ let assert_source_equal_with_locations expected actual =
           | If { If.body; orelse; _ }
           | While { While.body; orelse; _ } ->
               body @ orelse
-          | Try { Try.body; handlers; orelse; finally } ->
+          | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
               let handlers =
                 let get_handler_body sofar { Try.Handler.body; _ } = body @ sofar in
                 List.fold ~init:[] ~f:get_handler_body handlers

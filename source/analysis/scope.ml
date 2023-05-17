@@ -248,7 +248,7 @@ module Binding = struct
         let sofar = of_optional_expression sofar expression in
         of_optional_expression sofar from
     | Statement.Return { Return.expression; _ } -> of_optional_expression sofar expression
-    | Statement.Try { Try.body; handlers; orelse; finally } ->
+    | Statement.Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
         let bindings_of_handler sofar { Try.Handler.name; kind; body } =
           let sofar =
             match name with
@@ -326,7 +326,7 @@ let rec globals_of_statement sofar { Node.value; _ } =
   | Match { Match.cases; _ } ->
       List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
           globals_of_statements sofar body)
-  | Try { Try.body; handlers; orelse; finally } ->
+  | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
       let sofar = globals_of_statements sofar body in
       let sofar =
         List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->
@@ -367,7 +367,7 @@ let rec nonlocals_of_statement sofar { Node.value; _ } =
   | Match { Match.cases; _ } ->
       List.fold cases ~init:sofar ~f:(fun sofar { Match.Case.body; _ } ->
           nonlocals_of_statements sofar body)
-  | Try { Try.body; handlers; orelse; finally } ->
+  | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
       let sofar = nonlocals_of_statements sofar body in
       let sofar =
         List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->

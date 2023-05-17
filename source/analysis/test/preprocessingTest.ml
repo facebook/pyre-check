@@ -3176,7 +3176,13 @@ let test_expand_implicit_returns _ =
     |}
     [
       +Statement.Try
-         { Try.body = [+Statement.Pass]; handlers = []; orelse = []; finally = [+Statement.Pass] };
+         {
+           Try.body = [+Statement.Pass];
+           handlers = [];
+           orelse = [];
+           finally = [+Statement.Pass];
+           handles_exception_group = false;
+         };
       +Statement.Return { Return.expression = None; is_implicit = true };
     ];
 
@@ -4771,6 +4777,7 @@ let test_populate_nesting_define _ =
                              body = [+Statement.Pass];
                            };
                       ];
+                    handles_exception_group = false;
                   };
              ];
          };

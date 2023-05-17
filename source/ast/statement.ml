@@ -1252,6 +1252,7 @@ and Try : sig
     handlers: Handler.t list;
     orelse: Statement.t list;
     finally: Statement.t list;
+    handles_exception_group: bool;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -1284,6 +1285,7 @@ end = struct
     handlers: Handler.t list;
     orelse: Statement.t list;
     finally: Statement.t list;
+    handles_exception_group: bool;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -1822,7 +1824,7 @@ module PrettyPrinter = struct
         Format.fprintf formatter "raise %a" pp_expression_option ("", expression)
     | Return { Return.expression; _ } ->
         Format.fprintf formatter "return %a" pp_expression_option ("", expression)
-    | Try { Try.body; handlers; orelse; finally } ->
+    | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
         let pp_try_block formatter body =
           Format.fprintf formatter "@[<v 2>try:@;%a@]" pp_statement_list body
         in
@@ -1830,9 +1832,11 @@ module PrettyPrinter = struct
           let pp_name_node format { Node.value = name; _ } = Format.fprintf format "%s" name in
           let pp_as formatter name = pp_option ~prefix:" as " formatter name pp_name_node in
           let pp_handler formatter { Try.Handler.kind; name; body } =
+            let except_keyword = if handles_exception_group then "except*" else "except" in
             Format.fprintf
               formatter
-              "@[<v 2>except%a%a:@;%a@]"
+              "@[<v 2>%s%a%a:@;%a@]"
+              except_keyword
               pp_expression_option
               (" ", kind)
               pp_as
@@ -1996,7 +2000,7 @@ let is_generator statements =
         is_expression_generator test
         || is_statements_generator body
         || is_statements_generator orelse
-    | Try { Try.body; handlers; orelse; finally } ->
+    | Try { Try.body; handlers; orelse; finally; _ } ->
         is_statements_generator body
         || List.exists handlers ~f:(fun { Try.Handler.body; _ } -> is_statements_generator body)
         || is_statements_generator orelse

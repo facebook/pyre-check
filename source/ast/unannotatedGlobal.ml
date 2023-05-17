@@ -172,7 +172,7 @@ module Collector = struct
       | If { If.body; orelse; _ } ->
           (* TODO(T28732125): Properly take an intersection here. *)
           List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
-      | Try { Try.body; handlers; orelse; finally } ->
+      | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) body in
           let globals =
             let handlers_statements =

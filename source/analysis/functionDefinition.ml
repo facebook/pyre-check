@@ -70,7 +70,7 @@ let collect_typecheck_units { Source.statements; _ } =
     | While { While.body; orelse; _ } ->
         let sofar = List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class) in
         List.fold orelse ~init:sofar ~f:(collect_from_statement ~ignore_class)
-    | Try { Try.body; handlers; orelse; finally } ->
+    | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
         let sofar = List.fold body ~init:sofar ~f:(collect_from_statement ~ignore_class) in
         let sofar =
           List.fold handlers ~init:sofar ~f:(fun sofar { Try.Handler.body; _ } ->
@@ -128,7 +128,7 @@ let collect_typecheck_units { Source.statements; _ } =
                 body = drop_nested_body_in_statements body;
                 orelse = drop_nested_body_in_statements orelse;
               }
-        | Try { Try.body; handlers; orelse; finally } ->
+        | Try { Try.body; handlers; orelse; finally; handles_exception_group } ->
             Statement.Try
               {
                 Try.body = drop_nested_body_in_statements body;
@@ -137,6 +137,7 @@ let collect_typecheck_units { Source.statements; _ } =
                       { handler with Try.Handler.body = drop_nested_body_in_statements body });
                 orelse = drop_nested_body_in_statements orelse;
                 finally = drop_nested_body_in_statements finally;
+                handles_exception_group;
               }
         | With ({ With.body; _ } as with_statement) ->
             Statement.With { with_statement with body = drop_nested_body_in_statements body }

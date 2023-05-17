@@ -548,7 +548,15 @@ let test_return _ =
 
 let test_try _ =
   let handler ?kind ?name body = { Try.Handler.kind; name; body = [!!body] } in
-  let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [] } in
+  let block =
+    {
+      Try.body = [!!"body"];
+      handlers = [];
+      orelse = [];
+      finally = [];
+      handles_exception_group = false;
+    }
+  in
   assert_cfg
     [+Statement.Try block; !!"fall-through"]
     [
@@ -567,6 +575,7 @@ let test_try _ =
       handlers = [handler ~kind:(+Expression.Constant (Constant.Integer 1)) "handler"];
       orelse = [!!"orelse"];
       finally = [!!"finally"];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -589,7 +598,13 @@ let test_try _ =
         [6];
     ];
   let block =
-    { Try.body = [!!"body"]; handlers = [handler "handler"]; orelse = []; finally = [!!"finally"] }
+    {
+      Try.body = [!!"body"];
+      handlers = [handler "handler"];
+      orelse = [];
+      finally = [!!"finally"];
+      handles_exception_group = false;
+    }
   in
   assert_cfg
     [+Statement.Try block]
@@ -605,7 +620,13 @@ let test_try _ =
       node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
   let block =
-    { Try.body = [!!"body"]; handlers = [handler "handler"]; orelse = []; finally = [] }
+    {
+      Try.body = [!!"body"];
+      handlers = [handler "handler"];
+      orelse = [];
+      finally = [];
+      handles_exception_group = false;
+    }
   in
   assert_cfg
     [+Statement.Try block]
@@ -626,6 +647,7 @@ let test_try _ =
       handlers = [handler "handler 1"; handler "handler 2"];
       orelse = [];
       finally = [];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -649,6 +671,7 @@ let test_try _ =
       handlers = [handler "handler"];
       orelse = [];
       finally = [];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -671,6 +694,7 @@ let test_try _ =
       handlers = [handler "handler"];
       orelse = [];
       finally = [];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -692,6 +716,7 @@ let test_try _ =
       handlers = [handler "handler"];
       orelse = [!!"orelse"; error; !!"unreached"];
       finally = [];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -707,7 +732,15 @@ let test_try _ =
       node 7 (Node.Block [!!"body"; !!"orelse"; error]) [4] [2];
       node 8 (Node.Block [!!"handler"]) [5] [6];
     ];
-  let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [!!"finally"] } in
+  let block =
+    {
+      Try.body = [!!"body"];
+      handlers = [];
+      orelse = [];
+      finally = [!!"finally"];
+      handles_exception_group = false;
+    }
+  in
   assert_cfg
     [+Statement.Try block]
     [
@@ -726,6 +759,7 @@ let test_try _ =
       handlers = [];
       orelse = [];
       finally = [+Statement.Return { Return.expression = None; is_implicit = false }];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -745,7 +779,15 @@ let test_try _ =
       node 7 (Node.Block [!!"body"]) [4] [6];
     ];
   let error = +Statement.Raise { Raise.expression = None; from = None } in
-  let block = { Try.body = [!!"body"]; handlers = []; orelse = []; finally = [error] } in
+  let block =
+    {
+      Try.body = [!!"body"];
+      handlers = [];
+      orelse = [];
+      finally = [error];
+      handles_exception_group = false;
+    }
+  in
   assert_cfg
     [+Statement.Try block; !!"unreached"]
     [
@@ -768,6 +810,7 @@ let test_try _ =
       handlers = [handler ~kind:bool_handler "handler"];
       orelse = [];
       finally = [];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -789,6 +832,7 @@ let test_try _ =
       handlers = [];
       orelse = [];
       finally = [!!"finally"];
+      handles_exception_group = false;
     }
   in
   assert_cfg
@@ -817,6 +861,7 @@ let test_try _ =
           +Statement.Return
              { is_implicit = false; expression = Some (+Expression.Constant (Constant.Integer 2)) };
         ];
+      handles_exception_group = false;
     }
   in
   assert_cfg

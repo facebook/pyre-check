@@ -692,6 +692,7 @@ and translate_statements
                 orelse = translate_statements try_statement.orelse ~context;
                 finally = translate_statements try_statement.finalbody ~context;
                 handlers = List.map ~f:translate_excepthandler try_statement.handlers;
+                handles_exception_group = false;
               };
           ]
       | Errpyast.With with_statement ->

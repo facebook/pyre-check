@@ -4901,7 +4901,13 @@ let test_try _ =
     "try: a"
     [
       +Statement.Try
-         { Try.body = [+Statement.Expression !"a"]; handlers = []; orelse = []; finally = [] };
+         {
+           Try.body = [+Statement.Expression !"a"];
+           handlers = [];
+           orelse = [];
+           finally = [];
+           handles_exception_group = false;
+         };
     ];
   assert_parsed_equal
     "try:\n\ta\nelse:\n\tb"
@@ -4912,6 +4918,7 @@ let test_try _ =
            handlers = [];
            orelse = [+Statement.Expression !"b"];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -4923,6 +4930,7 @@ let test_try _ =
            handlers = [];
            orelse = [];
            finally = [+Statement.Expression !"b"];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -4935,6 +4943,7 @@ let test_try _ =
              [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -4947,6 +4956,7 @@ let test_try _ =
              [{ Try.Handler.kind = Some !"a"; name = None; body = [+Statement.Expression !"b"] }];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -4965,6 +4975,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -4990,6 +5001,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -5015,6 +5027,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -5033,6 +5046,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -5051,6 +5065,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -5070,6 +5085,7 @@ let test_try _ =
              ];
            orelse = [];
            finally = [];
+           handles_exception_group = false;
          };
     ];
   assert_parsed_equal
@@ -5082,6 +5098,7 @@ let test_try _ =
              [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
            orelse = [+Statement.Expression !"c"];
            finally = [+Statement.Expression !"d"];
+           handles_exception_group = false;
          };
     ]
 

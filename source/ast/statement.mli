@@ -382,6 +382,7 @@ and Try : sig
     handlers: Handler.t list;
     orelse: Statement.t list;
     finally: Statement.t list;
+    handles_exception_group: bool;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 

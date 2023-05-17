@@ -567,6 +567,7 @@ let test_try _ =
              handlers = [];
              orelse = [];
              finally = [+Statement.Expression !"b"];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -580,6 +581,7 @@ let test_try _ =
                [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -593,6 +595,7 @@ let test_try _ =
                [{ Try.Handler.kind = Some !"a"; name = None; body = [+Statement.Expression !"b"] }];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -612,6 +615,7 @@ let test_try _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -638,6 +642,7 @@ let test_try _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -664,6 +669,7 @@ let test_try _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -683,6 +689,7 @@ let test_try _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -703,6 +710,7 @@ let test_try _ =
                ];
              orelse = [];
              finally = [];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -716,6 +724,7 @@ let test_try _ =
                [{ Try.Handler.kind = None; name = None; body = [+Statement.Expression !"b"] }];
              orelse = [+Statement.Expression !"c"];
              finally = [+Statement.Expression !"d"];
+             handles_exception_group = false;
            };
       ];
   assert_parsed
@@ -735,6 +744,7 @@ let test_try _ =
                ];
              orelse = [+Statement.Expression !"e"; +Statement.Expression !"f"];
              finally = [+Statement.Expression !"g"; +Statement.Expression !"h"];
+             handles_exception_group = false;
            };
       ];
 
