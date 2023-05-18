@@ -15,4 +15,4 @@ let of_string target = target
 
 let show target = target
 
-let pp formatter target = Format.fprintf formatter "%s" target
+let pp formatter target = Stdlib.Format.fprintf formatter "%s" target

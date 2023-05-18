@@ -187,7 +187,7 @@ module Classic = struct
       with
       | Interface.JsonError message -> Lwt.return_error message
       | Raw.BuckError { description; _ } ->
-          let message = Format.sprintf "Buck query failed: %s" description in
+          let message = Stdlib.Format.sprintf "Buck query failed: %s" description in
           Lwt.return_error message
 
 
@@ -218,14 +218,16 @@ module Classic = struct
             BuildMap.Difference.merge difference_from_changed_paths difference_from_removed_paths
           with
           | Result.Error artifact_path ->
-              Format.sprintf "Conflicting source updates on artifact `%s`" artifact_path
+              Stdlib.Format.sprintf "Conflicting source updates on artifact `%s`" artifact_path
               |> Lwt.return_error
           | Result.Ok difference -> (
               Log.info "Updating old build map...";
               match BuildMap.strict_apply_difference ~difference old_build_map with
               | Result.Ok build_map -> Lwt.return_ok (build_map, difference)
               | Result.Error artifact_path ->
-                  Format.sprintf "Cannot determine source path for artifact `%s`" artifact_path
+                  Stdlib.Format.sprintf
+                    "Cannot determine source path for artifact `%s`"
+                    artifact_path
                   |> Lwt.return_error))
 
 

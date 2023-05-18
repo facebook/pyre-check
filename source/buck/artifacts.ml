@@ -27,11 +27,16 @@ let catch_errors f =
     (fun () -> f () >>= fun () -> Lwt.return (Result.Ok ()))
     (function
       | ParentDirectoryError message ->
-          let message = Format.sprintf "Error when ensuring parent directory exists: %s" message in
+          let message =
+            Stdlib.Format.sprintf "Error when ensuring parent directory exists: %s" message
+          in
           Lwt.return (Result.Error message)
       | Unix.Unix_error (error, function_name, _) ->
           let message =
-            Format.sprintf "Error when invoking `%s`: %s" function_name (Unix.error_message error)
+            Stdlib.Format.sprintf
+              "Error when invoking `%s`: %s"
+              function_name
+              (Unix.error_message error)
           in
           Lwt.return (Result.Error message)
       | _ as exn ->
@@ -58,11 +63,13 @@ let create_parent_directory_and_symlink ~target link =
 
 let populate ~source_root ~artifact_root build_map =
   if not (PyrePath.is_directory source_root) then
-    let message = Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root in
+    let message =
+      Stdlib.Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root
+    in
     Lwt.return (Result.Error message)
   else if not (PyrePath.is_directory artifact_root) then
     let message =
-      Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
+      Stdlib.Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
     in
     Lwt.return (Result.Error message)
   else
@@ -76,11 +83,13 @@ let populate ~source_root ~artifact_root build_map =
 
 let update ~source_root ~artifact_root difference =
   if not (PyrePath.is_directory source_root) then
-    let message = Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root in
+    let message =
+      Stdlib.Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root
+    in
     Lwt.return (Result.Error message)
   else if not (PyrePath.is_directory artifact_root) then
     let message =
-      Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
+      Stdlib.Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
     in
     Lwt.return (Result.Error message)
   else

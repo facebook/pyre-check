@@ -58,11 +58,12 @@ module V1 = struct
 
     let to_partial_build_map { source_base_path; artifact_base_path; artifacts_to_sources } =
       let to_build_mapping (artifact, source) =
-        Filename.concat artifact_base_path artifact, Filename.concat source_base_path source
+        ( Stdlib.Filename.concat artifact_base_path artifact,
+          Stdlib.Filename.concat source_base_path source )
       in
       match BuildMap.Partial.of_alist (List.map artifacts_to_sources ~f:to_build_mapping) with
       | `Duplicate_key artifact ->
-          let message = Format.sprintf "Overlapping artifact file detected: %s" artifact in
+          let message = Stdlib.Format.sprintf "Overlapping artifact file detected: %s" artifact in
           Result.Error message
       | `Ok partial_build_map -> Result.Ok partial_build_map
 
@@ -84,7 +85,9 @@ module V1 = struct
                   merge ~sofar rest
                 with
                 | FoundIncompatibleMergeItem { IncompatibleMergeItem.key; _ } ->
-                    let message = Format.sprintf "Overlapping artifact file detected: %s" key in
+                    let message =
+                      Stdlib.Format.sprintf "Overlapping artifact file detected: %s" key
+                    in
                     Result.Error message))
       in
       merge ~sofar:BuildMap.Partial.empty outputs
@@ -151,7 +154,7 @@ module V1 = struct
             let target_string =
               (* Targets need to be quoted since `buck query` can fail with syntax errors if target
                  name contains special characters like `=`. *)
-              let quote_string value = Format.sprintf "\"%s\"" value in
+              let quote_string value = Stdlib.Format.sprintf "\"%s\"" value in
               let quote_target target = BuckTarget.show target |> quote_string in
               List.map targets ~f:quote_target |> String.concat ~sep:" "
             in
@@ -162,7 +165,7 @@ module V1 = struct
                 [
                   (* This will get only those owner targets that are beneath our targets or the
                      dependencies of our targets. *)
-                  Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
+                  Stdlib.Format.sprintf "owner(%%s) ^ deps(set(%s))" target_string;
                 ];
                 List.map source_paths ~f:PyrePath.show;
                 (* These attributes are all we need to locate the source and artifact relative
@@ -183,7 +186,7 @@ module V1 = struct
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
             List.map targets ~f:(fun target ->
-                Format.sprintf "%s%s" (BuckTarget.show target) source_database_suffix);
+                Stdlib.Format.sprintf "%s%s" (BuckTarget.show target) source_database_suffix);
           ]
         |> Raw.V1.build ?mode ?isolation_prefix raw
 
@@ -346,7 +349,7 @@ module V1 = struct
           "... file `%s` has already been mapped to `%s`%s but the target maps it to `%s` instead. "
           key
           left_value
-          (Option.value_map conflicting_target ~default:"" ~f:(Format.sprintf " by `%s`"))
+          (Option.value_map conflicting_target ~default:"" ~f:(Stdlib.Format.sprintf " by `%s`"))
           right_value;
         target_and_build_maps_sofar, build_map_sofar
 
@@ -467,7 +470,7 @@ module V2 = struct
           match BuckBxlBuilderOutput.Conflict.of_yojson json with
           | Result.Ok conflict -> conflict
           | Result.Error message ->
-              let message = Format.sprintf "Cannot parse conflict item: %s" message in
+              let message = Stdlib.Format.sprintf "Cannot parse conflict item: %s" message in
               raise (JsonError message)
         in
         Util.member dropped_targets_key merged_sourcedb
@@ -521,7 +524,8 @@ module V2 = struct
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
             ["--config"; "client.id=pyre"];
             ["--"];
-            List.bind target_patterns ~f:(fun target -> ["--target"; Format.sprintf "%s" target]);
+            List.bind target_patterns ~f:(fun target ->
+                ["--target"; Stdlib.Format.sprintf "%s" target]);
           ]
         |> Raw.V2.bxl ?mode ?isolation_prefix raw
 

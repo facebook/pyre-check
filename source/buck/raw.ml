@@ -20,7 +20,7 @@ module ArgumentList = struct
       let quote argument =
         if String.contains argument ' ' then
           (* This makes sure that the buck command gets properly escaped by the shell. *)
-          Format.sprintf "'%s'" argument
+          Stdlib.Format.sprintf "'%s'" argument
         else
           argument
       in
@@ -108,19 +108,23 @@ let on_completion ~buck_command ~arguments ~log_buffer = function
       match status with
       | Unix.WEXITED 0 -> Lwt.return stdout
       | WEXITED 127 ->
-          let description = Format.sprintf "Cannot find buck exectuable under PATH." in
+          let description = Stdlib.Format.sprintf "Cannot find buck exectuable under PATH." in
           fail_with_error ~exit_code:127 description
       | WEXITED code ->
-          let description = Format.sprintf "Buck exited with code %d" code in
+          let description = Stdlib.Format.sprintf "Buck exited with code %d" code in
           fail_with_error ~exit_code:code description
       | WSIGNALED signal ->
           let description =
-            Format.sprintf "Buck signaled with %s signal" (PrintSignal.string_of_signal signal)
+            Stdlib.Format.sprintf
+              "Buck signaled with %s signal"
+              (PrintSignal.string_of_signal signal)
           in
           fail_with_error description
       | WSTOPPED signal ->
           let description =
-            Format.sprintf "Buck stopped with %s signal" (PrintSignal.string_of_signal signal)
+            Stdlib.Format.sprintf
+              "Buck stopped with %s signal"
+              (PrintSignal.string_of_signal signal)
           in
           fail_with_error description)
 
@@ -145,7 +149,7 @@ module V1 = struct
     let open Lwt.Infix in
     let invoke_buck ?mode ?isolation_prefix ~command arguments =
       command :: arguments
-      |> Core.List.map ~f:(Format.sprintf "'%s'")
+      |> Core.List.map ~f:(Stdlib.Format.sprintf "'%s'")
       |> Core.String.concat ~sep:" "
       |> Log.debug "Running buck command: buck1 %s";
       (* Preserve the last several lines of Buck log for error reporting purpose. *)
@@ -163,7 +167,7 @@ module V1 = struct
                 isolation_prefix_to_buck_arguments isolation_prefix;
                 [command];
                 mode_to_buck_arguments mode;
-                [Format.sprintf "@%s" filename];
+                [Stdlib.Format.sprintf "@%s" filename];
               ]
           in
           let consume_stderr = consume_stderr ~log_buffer in
@@ -211,7 +215,7 @@ module V2 = struct
     let open Lwt.Infix in
     let invoke_buck ?mode ?isolation_prefix ~command arguments =
       command :: arguments
-      |> Core.List.map ~f:(Format.sprintf "'%s'")
+      |> Core.List.map ~f:(Stdlib.Format.sprintf "'%s'")
       |> Core.String.concat ~sep:" "
       |> Log.debug "Running buck2 command: buck2 %s";
       (* Preserve the last several lines of Buck log for error reporting purpose. *)
@@ -229,7 +233,7 @@ module V2 = struct
                 isolation_prefix_to_buck_arguments isolation_prefix;
                 [command];
                 mode_to_buck_arguments mode;
-                [Format.sprintf "@%s" filename];
+                [Stdlib.Format.sprintf "@%s" filename];
               ]
           in
           let consume_stderr = consume_stderr ~log_buffer in
