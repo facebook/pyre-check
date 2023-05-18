@@ -1285,6 +1285,28 @@ let test_weaken_readonly_literals context =
         expect_readonly_set({{readonly_int}, {readonly_int}})
     |}
     [];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_readonly_dict(x: ReadOnly[dict[str, int]]) -> None: ...
+
+      def main(readonly_int: ReadOnly[int], readonly_str: ReadOnly[str]) -> None:
+        expect_readonly_dict({ "foo": readonly_int, "bar": readonly_int})
+        expect_readonly_dict({ readonly_str: readonly_int, readonly_str: readonly_int})
+        expect_readonly_dict({ readonly_str: x for x in [readonly_int, readonly_int]})
+    |}
+    [];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_readonly_nested_dict(x: ReadOnly[dict[int, dict[str, int]]]) -> None: ...
+
+      def main(readonly_int: ReadOnly[int], readonly_str: ReadOnly[str]) -> None:
+        expect_readonly_nested_dict({ 42: { "foo": readonly_int }})
+    |}
+    [];
   ()
 
 

@@ -744,6 +744,30 @@ let test_resolve_mutable_literals_to_readonly context =
     ~source:"{y for y in [test.Child()]}"
     ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
     "pyre_extensions.ReadOnly[typing.Set[test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': test.readonly_child }"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
+    "pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': test.readonly_unrelated }"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
+    "typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': y for y in [test.readonly_child] }"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
+    "pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 's': y for y in [test.readonly_unrelated] }"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, test.Base]]"
+    "typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 'x': { 's': test.readonly_child }}"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
+    "pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]";
+  assert_resolve_mutable_literals
+    ~source:"{ 'x': { 's': test.readonly_unrelated }}"
+    ~against:"pyre_extensions.ReadOnly[typing.Dict[str, typing.Dict[str, test.Base]]]"
+    "typing.Dict[str, typing.Dict[str, pyre_extensions.ReadOnly[test.Unrelated]]]";
   ()
 
 

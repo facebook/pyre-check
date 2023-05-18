@@ -696,6 +696,13 @@ and weaken_against_readonly
       Type.ReadOnly
         (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type]; _ }) ) ->
       weaken_parametric_type ~parametric_name [expected_parameter_type]
+  | ( Some { Node.value = Expression.Dictionary _ | DictionaryComprehension _; _ },
+      Type.Parametric { name = "dict" as parametric_name; parameters = _ },
+      Type.ReadOnly
+        (Type.Parametric
+          { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] }) )
+    ->
+      weaken_parametric_type ~parametric_name [expected_key_type; expected_value_type]
   | _ -> make_weakened_type resolved
 
 
