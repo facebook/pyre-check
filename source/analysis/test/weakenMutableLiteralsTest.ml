@@ -431,7 +431,7 @@ let test_weaken_mutable_literals_to_readonly context =
   ()
 
 
-let test_weaken_mutable_literal_to_complex_type context =
+let test_weaken_mutable_literal_against_union context =
   let resolution =
     make_resolution ~context {|
       class C: ...
@@ -1028,7 +1028,7 @@ let () =
   "resolution"
   >::: [
          "weaken_mutable_literals" >:: test_weaken_mutable_literals;
-         "weaken_mutable_literal_to_complex_type" >:: test_weaken_mutable_literal_to_complex_type;
+         "weaken_mutable_literal_to_complex_type" >:: test_weaken_mutable_literal_against_union;
          "weaken_mutable_literals_to_readonly" >:: test_weaken_mutable_literals_to_readonly;
          "weaken_mutable_literals_typed_dictionary"
          >:: test_weaken_mutable_literals_typed_dictionary;
