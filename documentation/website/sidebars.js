@@ -205,6 +205,7 @@ module.exports = {
           'fb/pysa-debugging-tricks',
           'fb/pysa-deployment',
           'fb/pysa-seceng-oncall-runbook',
+          'fb/pysa-swe-team-working-doc',
           'fb/pysa-tasks-backlog',
           'fb/pysa-quality-analyzer',
           'fb/pysa-sandcastle-internals',
