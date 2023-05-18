@@ -108,7 +108,7 @@ let distribute_union_over_parametric ~parametric_name ~number_of_parameters anno
 
 
 let rec weaken_mutable_literals
-    resolve
+    ~resolve
     ~resolve_items_individually
     ~get_typed_dictionary
     ~expression
@@ -126,7 +126,7 @@ let rec weaken_mutable_literals
           ~f:(fun expected_type ->
             ( weaken_mutable_literals
                 ~get_typed_dictionary
-                resolve
+                ~resolve
                 ~expression
                 ~resolved
                 ~expected:expected_type
@@ -187,7 +187,7 @@ let rec weaken_mutable_literals
             in
             weaken_mutable_literals
               ~get_typed_dictionary
-              resolve
+              ~resolve
               ~expression:(Some item)
               ~resolved
               ~expected:expected_item_type
@@ -223,7 +223,7 @@ let rec weaken_mutable_literals
           ~f:(fun item actual_item_type expected_item_type ->
             weaken_mutable_literals
               ~get_typed_dictionary
-              resolve
+              ~resolve
               ~expression:(Some item)
               ~resolved:actual_item_type
               ~expected:expected_item_type
@@ -254,7 +254,7 @@ let rec weaken_mutable_literals
             ~f:(fun item actual_item_type ->
               weaken_mutable_literals
                 ~get_typed_dictionary
-                resolve
+                ~resolve
                 ~expression:(Some item)
                 ~resolved:actual_item_type
                 ~expected:expected_item_type
@@ -303,7 +303,7 @@ let rec weaken_mutable_literals
                     if Type.is_dictionary resolved || Option.is_some (get_typed_dictionary resolved)
                     then
                       weaken_mutable_literals
-                        resolve
+                        ~resolve
                         ~expression:(Some value)
                         ~resolved
                         ~expected:annotation
@@ -448,7 +448,7 @@ let rec weaken_mutable_literals
       let { resolved = weakened_fallback_type; typed_dictionary_errors } =
         weaken_mutable_literals
           ~get_typed_dictionary
-          resolve
+          ~resolve
           ~resolved
           ~expected:(Type.parametric mutable_generic_name parameters)
           ~comparator:comparator_without_override
@@ -469,7 +469,7 @@ let rec weaken_mutable_literals
         { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] } ) ->
       weaken_dictionary_entries
         ~get_typed_dictionary
-        resolve
+        ~resolve
         ~expected
         ~comparator:comparator_without_override
         ~entries
@@ -514,7 +514,7 @@ let rec weaken_mutable_literals
       let ({ resolved = weakened_fallback_type; _ } as weakened_type) =
         weaken_mutable_literals
           ~get_typed_dictionary
-          resolve
+          ~resolve
           ~expression
           ~resolved
           ~expected:(Type.RecursiveType.unfold_recursive_type recursive_type)
@@ -531,7 +531,7 @@ let rec weaken_mutable_literals
   | _, _, Type.ReadOnly _ ->
       weaken_against_readonly
         ~get_typed_dictionary
-        resolve
+        ~resolve
         ~expected
         ~resolved
         ~comparator:comparator_without_override
@@ -540,7 +540,7 @@ let rec weaken_mutable_literals
   | _ ->
       weaken_by_distributing_union
         ~get_typed_dictionary
-        resolve
+        ~resolve
         ~expected
         ~resolved
         ~comparator:comparator_without_override
@@ -550,7 +550,7 @@ let rec weaken_mutable_literals
 
 and weaken_dictionary_entries
     ~get_typed_dictionary
-    resolve
+    ~resolve
     ~expected
     ~comparator
     ~entries
@@ -567,7 +567,7 @@ and weaken_dictionary_entries
       ~f:(fun { key; _ } ->
         weaken_mutable_literals
           ~get_typed_dictionary
-          resolve
+          ~resolve
           ~expression:(Some key)
           ~resolved:actual_key_type
           ~expected:expected_key_type
@@ -581,7 +581,7 @@ and weaken_dictionary_entries
       ~f:(fun { value; _ } ->
         weaken_mutable_literals
           ~get_typed_dictionary
-          resolve
+          ~resolve
           ~expression:(Some value)
           ~resolved:(if resolve_items_individually then resolve value else actual_value_type)
           ~expected:expected_value_type
@@ -603,7 +603,7 @@ and weaken_dictionary_entries
 
 and weaken_by_distributing_union
     ~get_typed_dictionary
-    resolve
+    ~resolve
     ~expected
     ~resolved
     ~comparator
@@ -636,7 +636,7 @@ and weaken_by_distributing_union
       | Some resolved ->
           weaken_mutable_literals
             ~get_typed_dictionary
-            resolve
+            ~resolve
             ~expression
             ~resolved
             ~expected
@@ -648,7 +648,7 @@ and weaken_by_distributing_union
 
 and weaken_against_readonly
     ~get_typed_dictionary
-    resolve
+    ~resolve
     ~expected
     ~resolved
     ~comparator
@@ -674,7 +674,7 @@ and weaken_against_readonly
       in
       weaken_mutable_literals
         ~get_typed_dictionary
-        resolve
+        ~resolve
         ~expression
         ~resolved
         ~expected

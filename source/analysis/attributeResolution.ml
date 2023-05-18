@@ -4666,7 +4666,7 @@ class base class_metadata_environment dependency =
 
     method resolve_mutable_literals ~assumptions ~resolve =
       WeakenMutableLiterals.weaken_mutable_literals
-        resolve
+        ~resolve
         ~get_typed_dictionary:(self#get_typed_dictionary ~assumptions)
         ~comparator:(self#constraints_solution_exists ~assumptions)
 

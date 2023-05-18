@@ -42,7 +42,7 @@ val distribute_union_over_parametric
   Type.t option
 
 val weaken_mutable_literals
-  :  (Expression.expression Node.t -> Type.t) ->
+  :  resolve:(Expression.expression Node.t -> Type.t) ->
   get_typed_dictionary:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
   expression:Expression.expression Node.t option ->
   resolved:Type.t ->

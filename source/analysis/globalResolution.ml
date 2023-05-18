@@ -345,7 +345,7 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
 
   let left =
     WeakenMutableLiterals.weaken_mutable_literals
-      resolve
+      ~resolve
       ~get_typed_dictionary:(get_typed_dictionary ~resolution)
       ~expression
       ~resolved:left
