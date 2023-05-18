@@ -658,6 +658,67 @@ let test_resolve_mutable_literals context =
   ()
 
 
+let test_resolve_mutable_literals_to_readonly context =
+  let resolution =
+    make_resolution
+      ~context
+      {|
+      from pyre_extensions import ReadOnly
+
+      class Base: ...
+      class Child(Base): ...
+      class Unrelated: ...
+
+      readonly_base: ReadOnly[Base]
+      readonly_child: ReadOnly[Child]
+      readonly_unrelated: ReadOnly[Unrelated]
+    |}
+  in
+  let assert_resolve_mutable_literals ~source ~against expected_output =
+    let parse_annotation annotation =
+      annotation
+      |> parse_single_expression
+      |> GlobalResolution.parse_annotation (Resolution.global_resolution resolution)
+    in
+    let expression =
+      match parse_single_statement source with
+      | { Node.value = Statement.Expression expression; _ } -> expression
+      | _ -> failwith "No Assign to parse"
+    in
+    let resolved = Resolution.resolve_expression_to_type resolution expression in
+    let expression = Some expression in
+    let expected = parse_annotation against in
+    let actual_weakened_type =
+      GlobalResolution.resolve_mutable_literals
+        (Resolution.global_resolution resolution)
+        ~resolve:(Resolution.resolve_expression_to_type resolution)
+        ~expression
+        ~resolved
+        ~expected
+    in
+    let expected_weakened_type =
+      WeakenMutableLiterals.make_weakened_type (parse_annotation expected_output)
+    in
+    assert_equal
+      ~printer:[%show: WeakenMutableLiterals.weakened_type]
+      expected_weakened_type
+      actual_weakened_type
+  in
+  assert_resolve_mutable_literals
+    ~source:"[test.readonly_child]"
+    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
+    "pyre_extensions.ReadOnly[typing.List[test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"[test.readonly_unrelated]"
+    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
+    "typing.List[pyre_extensions.ReadOnly[test.Unrelated]]";
+  assert_resolve_mutable_literals
+    ~source:"[y for y in [test.Child()]]"
+    ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
+    "pyre_extensions.ReadOnly[typing.List[test.Base]]";
+  ()
+
+
 let test_resolve_mutable_literal_to_complex_type context =
   let resolution =
     make_resolution ~context {|
@@ -1622,6 +1683,7 @@ let () =
          "resolve_exports" >:: test_resolve_exports;
          "resolve_mutable_literals" >:: test_resolve_mutable_literals;
          "resolve_mutable_literal_to_complex_type" >:: test_resolve_mutable_literal_to_complex_type;
+         "resolve_mutable_literals_to_readonly" >:: test_resolve_mutable_literals_to_readonly;
          "resolve_mutable_literals_typed_dictionary"
          >:: test_resolve_mutable_literals_typed_dictionary;
          "resolve_mutable_literal_to_recursive_type"

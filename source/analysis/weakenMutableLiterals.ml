@@ -528,6 +528,12 @@ let rec weaken_mutable_literals
           weakened_fallback_type
       in
       { weakened_type with resolved }
+  | ( Some { Node.value = Expression.List _ | ListComprehension _; _ },
+      Type.Parametric { name = "list"; parameters = [Single actual] },
+      Type.ReadOnly
+        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type] }) )
+    when comparator ~left:actual ~right:(Type.ReadOnly.create expected_parameter_type) ->
+      make_weakened_type expected
   | _ ->
       weaken_by_distributing_union
         ~get_typed_dictionary
