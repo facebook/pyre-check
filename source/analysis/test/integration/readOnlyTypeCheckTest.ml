@@ -1255,6 +1255,16 @@ let test_weaken_readonly_literals context =
         expect_readonly_list([readonly_int, readonly_int])
     |}
     [];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def expect_readonly_set(x: ReadOnly[set[int]]) -> None: ...
+
+      def main(readonly_int: ReadOnly[int]) -> None:
+        expect_readonly_set({readonly_int, readonly_int})
+    |}
+    [];
   ()
 
 

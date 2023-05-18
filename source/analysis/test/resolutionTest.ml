@@ -716,6 +716,18 @@ let test_resolve_mutable_literals_to_readonly context =
     ~source:"[y for y in [test.Child()]]"
     ~against:"pyre_extensions.ReadOnly[typing.List[test.Base]]"
     "pyre_extensions.ReadOnly[typing.List[test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"{test.readonly_child}"
+    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
+    "pyre_extensions.ReadOnly[typing.Set[test.Base]]";
+  assert_resolve_mutable_literals
+    ~source:"{test.readonly_unrelated}"
+    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
+    "typing.Set[pyre_extensions.ReadOnly[test.Unrelated]]";
+  assert_resolve_mutable_literals
+    ~source:"{y for y in [test.Child()]}"
+    ~against:"pyre_extensions.ReadOnly[typing.Set[test.Base]]"
+    "pyre_extensions.ReadOnly[typing.Set[test.Base]]";
   ()
 
 

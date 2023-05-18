@@ -534,6 +534,12 @@ let rec weaken_mutable_literals
         (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type] }) )
     when comparator ~left:actual ~right:(Type.ReadOnly.create expected_parameter_type) ->
       make_weakened_type expected
+  | ( Some { Node.value = Expression.Set _ | SetComprehension _; _ },
+      Type.Parametric { name = "set"; parameters = [Single actual] },
+      Type.ReadOnly
+        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type] }) )
+    when comparator ~left:actual ~right:(Type.ReadOnly.create expected_parameter_type) ->
+      make_weakened_type expected
   | _ ->
       weaken_by_distributing_union
         ~get_typed_dictionary
