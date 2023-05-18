@@ -456,6 +456,37 @@ let test_for_while_if _ =
              };
         ];
     assert_parsed
+      "for a in *b: \n\tc"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator = +Expression.Starred (Starred.Once !"b");
+               body = [+Statement.Expression !"c"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
+      "for a in *b, *c: \n\td"
+      ~expected:
+        [
+          +Statement.For
+             {
+               For.target = !"a";
+               iterator =
+                 +Expression.Tuple
+                    [
+                      +Expression.Starred (Starred.Once !"b");
+                      +Expression.Starred (Starred.Once !"c");
+                    ];
+               body = [+Statement.Expression !"d"];
+               orelse = [];
+               async = false;
+             };
+        ];
+    assert_parsed
       "while a: b\n"
       ~expected:
         [+Statement.While { While.test = !"a"; body = [+Statement.Expression !"b"]; orelse = [] }];
@@ -594,6 +625,22 @@ let test_try _ =
              };
         ];
     assert_parsed
+      "try:\n\ta\nexcept* a:\n\tb"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   { Try.Handler.kind = Some !"a"; name = None; body = [+Statement.Expression !"b"] };
+                 ];
+               orelse = [];
+               finally = [];
+               handles_exception_group = true;
+             };
+        ];
+    assert_parsed
       "try:\n\ta\nexcept a as b:\n\tb"
       ~expected:
         [
@@ -713,6 +760,31 @@ let test_try _ =
              };
         ];
     assert_parsed
+      "try:\n\ta\nexcept* a as b:\n\tb\nexcept* d:\n\te"
+      ~expected:
+        [
+          +Statement.Try
+             {
+               Try.body = [+Statement.Expression !"a"];
+               handlers =
+                 [
+                   {
+                     Try.Handler.kind = Some !"a";
+                     name = Some (+"b");
+                     body = [+Statement.Expression !"b"];
+                   };
+                   {
+                     Try.Handler.kind = Some !"d";
+                     name = None;
+                     body = [+Statement.Expression !"e"];
+                   };
+                 ];
+               orelse = [];
+               finally = [];
+               handles_exception_group = true;
+             };
+        ];
+    assert_parsed
       "try:\n\ta\nexcept:\n\tb\nelse:\n\tc\nfinally:\n\td"
       ~expected:
         [
@@ -750,6 +822,8 @@ let test_try _ =
     assert_not_parsed "try: a";
     assert_not_parsed "try:\n\ta\nelse:\n\tb";
     assert_not_parsed "try:\n\ta\nexcept a, b:\n\tb";
+    assert_not_parsed "try:\n\ta\nexcept a:\n\tb\nexcept* c:\n\td";
+    assert_not_parsed "try:\n\ta\nexcept* a:\n\tb\nexcept c:\n\td";
     ()
   in
   PyreNewParser.with_context do_test
@@ -1785,6 +1859,44 @@ let test_define _ =
                         is_implicit = false;
                       };
                  ];
+             };
+        ];
+    assert_parsed
+      "def foo() -> Tuple[*Ts]:\n  1"
+      ~expected:
+        [
+          +Statement.Define
+             {
+               signature =
+                 {
+                   name = !&"foo";
+                   parameters = [];
+                   decorators = [];
+                   return_annotation =
+                     Some
+                       (+Expression.Call
+                           {
+                             callee =
+                               +Expression.Name
+                                  (Name.Attribute
+                                     { base = !"Tuple"; attribute = "__getitem__"; special = true });
+                             arguments =
+                               [
+                                 {
+                                   Call.Argument.name = None;
+                                   value =
+                                     +Expression.Tuple [+Expression.Starred (Starred.Once !"Ts")];
+                                 };
+                               ];
+                           });
+                   async = false;
+                   generator = false;
+                   parent = None;
+                   nesting_define = None;
+                 };
+               captures = [];
+               unbound_names = [];
+               body = [+Statement.Expression (+Expression.Constant (Constant.Integer 1))];
              };
         ];
 
