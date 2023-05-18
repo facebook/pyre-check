@@ -656,61 +656,46 @@ and weaken_against_readonly
     ~resolve_items_individually
   =
   let open Expression in
-  let comparator_without_override = comparator in
-  let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
+  let comparator_ignoring_readonly_without_override ~get_typed_dictionary_override ~left ~right =
+    comparator
+      ~get_typed_dictionary_override
+      ~left:(Type.ReadOnly.strip_readonly left)
+      ~right:(Type.ReadOnly.strip_readonly right)
+  in
+  let comparator_ignoring_readonly =
+    comparator_ignoring_readonly_without_override ~get_typed_dictionary_override:(fun _ -> None)
+  in
+  let weaken_parametric_type ~parametric_name expected_parameter_types =
+    let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
+      let expected =
+        expected_parameter_types
+        |> List.map ~f:(fun type_ -> Type.Parameter.Single (Type.ReadOnly.create type_))
+        |> Type.parametric parametric_name
+      in
+      weaken_mutable_literals
+        ~get_typed_dictionary
+        resolve
+        ~expression
+        ~resolved
+        ~expected
+        ~comparator:comparator_ignoring_readonly_without_override
+        ~resolve_items_individually
+    in
+    if comparator_ignoring_readonly ~left:weakened_resolved_type ~right:expected then
+      { weakened_type with resolved = expected }
+    else
+      weakened_type
+  in
   match expression, resolved, expected with
   | ( Some { Node.value = Expression.List _ | ListComprehension _; _ },
-      Type.Parametric { name = "list"; parameters = [Single _] },
+      Type.Parametric { name = "list" as parametric_name; parameters = [Single _] },
       Type.ReadOnly
-        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type] }) ) ->
-      let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
-        weaken_mutable_literals
-          ~get_typed_dictionary
-          resolve
-          ~expression
-          ~resolved
-          ~expected:(Type.list (Type.ReadOnly.create expected_parameter_type))
-          ~comparator:(fun ~get_typed_dictionary_override ~left ~right ->
-            comparator_without_override
-              ~get_typed_dictionary_override
-              ~left:(Type.ReadOnly.strip_readonly left)
-              ~right:(Type.ReadOnly.strip_readonly right))
-          ~resolve_items_individually
-      in
-      if
-        comparator
-          ~left:(Type.ReadOnly.strip_readonly weakened_resolved_type)
-          ~right:(Type.ReadOnly.strip_readonly expected)
-      then
-        { weakened_type with resolved = expected }
-      else
-        weakened_type
+        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type]; _ }) )
   | ( Some { Node.value = Expression.Set _ | SetComprehension _; _ },
-      Type.Parametric { name = "set"; parameters = [Single _] },
+      Type.Parametric { name = "set" as parametric_name; parameters = [Single _] },
       Type.ReadOnly
-        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type] }) ) ->
-      let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
-        weaken_mutable_literals
-          ~get_typed_dictionary
-          resolve
-          ~expression
-          ~resolved
-          ~expected:(Type.set (Type.ReadOnly.create expected_parameter_type))
-          ~comparator:(fun ~get_typed_dictionary_override ~left ~right ->
-            comparator_without_override
-              ~get_typed_dictionary_override
-              ~left:(Type.ReadOnly.strip_readonly left)
-              ~right:(Type.ReadOnly.strip_readonly right))
-          ~resolve_items_individually
-      in
-      if
-        comparator
-          ~left:(Type.ReadOnly.strip_readonly weakened_resolved_type)
-          ~right:(Type.ReadOnly.strip_readonly expected)
-      then
-        { weakened_type with resolved = expected }
-      else
-        weakened_type
+        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type]; _ }) ) ->
+      weaken_parametric_type ~parametric_name [expected_parameter_type]
   | _ -> make_weakened_type resolved
 
 
