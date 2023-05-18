@@ -204,7 +204,7 @@ module.exports = {
           'fb/pysa-github-sync',
           'fb/pysa-debugging-tricks',
           'fb/pysa-deployment',
-          'fb/pysa-oncall-runbook',
+          'fb/pysa-seceng-oncall-runbook',
           'fb/pysa-tasks-backlog',
           'fb/pysa-quality-analyzer',
           'fb/pysa-sandcastle-internals',
