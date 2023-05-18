@@ -191,8 +191,8 @@
             ],
             "tito_positions": [
               { "line": 133, "start": 41, "end": 47 },
-              { "line": 136, "start": 22, "end": 43 },
-              { "line": 136, "start": 32, "end": 42 }
+              { "line": 136, "start": 13, "end": 34 },
+              { "line": 136, "start": 23, "end": 33 }
             ],
             "origin": {
               "filename": "taint_broadening.py",

@@ -1011,6 +1011,19 @@ let statement =
       |> Node.create ~location;
     ]
   in
+  let try_star ~location ~body ~handlers ~orelse ~finalbody ~context =
+    [
+      Statement.Try
+        {
+          Try.body = build_statements ~context body;
+          orelse = build_statements ~context orelse;
+          finally = build_statements ~context finalbody;
+          handlers = build_exception_handlers ~context handlers;
+          handles_exception_group = true;
+        }
+      |> Node.create ~location;
+    ]
+  in
   let assert_ ~location ~test ~msg ~context:_ =
     [
       Statement.Assert { Assert.test; message = msg; origin = Assert.Origin.Assertion }
@@ -1064,6 +1077,7 @@ let statement =
     ~match_
     ~raise_
     ~try_
+    ~try_star
     ~assert_
     ~import
     ~import_from
