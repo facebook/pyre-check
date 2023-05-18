@@ -555,11 +555,31 @@ let rec weaken_mutable_literals
       else
         weakened_type
   | ( Some { Node.value = Expression.Set _ | SetComprehension _; _ },
-      Type.Parametric { name = "set"; parameters = [Single actual] },
+      Type.Parametric { name = "set"; parameters = [Single _] },
       Type.ReadOnly
-        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type] }) )
-    when comparator ~left:actual ~right:(Type.ReadOnly.create expected_parameter_type) ->
-      make_weakened_type expected
+        (Type.Parametric { name = "set"; parameters = [Single expected_parameter_type] }) ) ->
+      let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
+        weaken_mutable_literals
+          ~get_typed_dictionary
+          resolve
+          ~expression
+          ~resolved
+          ~expected:(Type.set (Type.ReadOnly.create expected_parameter_type))
+          ~comparator:(fun ~get_typed_dictionary_override ~left ~right ->
+            comparator_without_override
+              ~get_typed_dictionary_override
+              ~left:(Type.ReadOnly.strip_readonly left)
+              ~right:(Type.ReadOnly.strip_readonly right))
+          ~resolve_items_individually
+      in
+      if
+        comparator
+          ~left:(Type.ReadOnly.strip_readonly weakened_resolved_type)
+          ~right:(Type.ReadOnly.strip_readonly expected)
+      then
+        { weakened_type with resolved = expected }
+      else
+        weakened_type
   | _ ->
       weaken_by_distributing_union
         ~get_typed_dictionary
