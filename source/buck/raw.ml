@@ -107,20 +107,20 @@ let on_completion ~buck_command ~arguments ~log_buffer = function
       in
       match status with
       | Unix.WEXITED 0 -> Lwt.return stdout
-      | WEXITED 127 ->
+      | Unix.WEXITED 127 ->
           let description = Stdlib.Format.sprintf "Cannot find buck exectuable under PATH." in
           fail_with_error ~exit_code:127 description
-      | WEXITED code ->
+      | Unix.WEXITED code ->
           let description = Stdlib.Format.sprintf "Buck exited with code %d" code in
           fail_with_error ~exit_code:code description
-      | WSIGNALED signal ->
+      | Unix.WSIGNALED signal ->
           let description =
             Stdlib.Format.sprintf
               "Buck signaled with %s signal"
               (PrintSignal.string_of_signal signal)
           in
           fail_with_error description
-      | WSTOPPED signal ->
+      | Unix.WSTOPPED signal ->
           let description =
             Stdlib.Format.sprintf
               "Buck stopped with %s signal"

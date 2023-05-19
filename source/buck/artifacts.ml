@@ -98,8 +98,8 @@ let update ~source_root ~artifact_root difference =
       let artifact_path = PyrePath.create_relative ~root:artifact_root ~relative:artifact in
       match kind with
       | BuildMap.Difference.Kind.Deleted -> remove_if_exists artifact_path
-      | New source
-      | Changed source ->
+      | BuildMap.Difference.Kind.New source
+      | BuildMap.Difference.Kind.Changed source ->
           remove_if_exists artifact_path
           >>= fun () ->
           let source_path = PyrePath.create_relative ~root:source_root ~relative:source in
