@@ -1003,6 +1003,17 @@ module State (Context : Context) = struct
     | { typed_dictionary_errors; _ } -> emit_typed_dictionary_errors ~errors typed_dictionary_errors
 
 
+  and resolve_cast ~resolution ~cast_annotation value =
+    let errors, cast_annotation = parse_and_check_annotation ~resolution cast_annotation in
+    let resolution, resolved, errors =
+      let { Resolved.resolution; resolved; errors = value_errors; _ } =
+        forward_expression ~resolution value
+      in
+      resolution, resolved, List.append value_errors errors
+    in
+    resolution, cast_annotation, resolved, errors
+
+
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
@@ -2104,16 +2115,11 @@ module State (Context : Context) = struct
                 Reference.equal
                 (name_to_reference name)
                 (Some (Reference.create "pyre_extensions.safe_cast")) ->
-        let contains_literal_any = Type.expression_contains_any cast_annotation in
-        let errors, cast_annotation = parse_and_check_annotation ~resolution cast_annotation in
-        let resolution, resolved, errors =
-          let { Resolved.resolution; resolved; errors = value_errors; _ } =
-            forward_expression ~resolution value
-          in
-          resolution, resolved, List.append value_errors errors
+        let resolution, cast_annotation_type, value_type, errors =
+          resolve_cast ~resolution ~cast_annotation value
         in
         let errors =
-          if contains_literal_any then
+          if Type.expression_contains_any cast_annotation then
             emit_error
               ~errors
               ~location
@@ -2124,31 +2130,37 @@ module State (Context : Context) = struct
                        {
                          Error.name = name_to_reference_exn name;
                          annotation = None;
-                         given_annotation = Some cast_annotation;
+                         given_annotation = Some cast_annotation_type;
                          evidence_locations = [];
                          thrown_at_source = true;
                        };
                      annotation_kind = Annotation;
                    })
-          else if Type.equal cast_annotation resolved then
-            emit_error ~errors ~location ~kind:(Error.RedundantCast resolved)
+          else if Type.equal cast_annotation_type value_type then
+            emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
           else if
             Reference.equal
               (name_to_reference_exn name)
               (Reference.create "pyre_extensions.safe_cast")
             && GlobalResolution.less_or_equal
                  global_resolution
-                 ~left:cast_annotation
-                 ~right:resolved
+                 ~left:cast_annotation_type
+                 ~right:value_type
           then
             emit_error
               ~errors
               ~location
-              ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation })
+              ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation_type })
           else
             errors
         in
-        { resolution; errors; resolved = cast_annotation; resolved_annotation = None; base = None }
+        {
+          resolution;
+          errors;
+          resolved = cast_annotation_type;
+          resolved_annotation = None;
+          base = None;
+        }
     | Call
         {
           callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
