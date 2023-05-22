@@ -12,6 +12,8 @@ because it illustrates that this is the intermediary between the Language server
 
 from __future__ import annotations
 
+import asyncio
+
 import dataclasses
 import logging
 import random
@@ -22,6 +24,7 @@ from typing import (
     Generic,
     List,
     Optional,
+    Set,
     TYPE_CHECKING,
     TypeVar,
     Union,
@@ -758,7 +761,6 @@ class CodeNavigationServerApi(PyreLanguageServerApi):
     pass
 
 
-@dataclasses.dataclass(frozen=True)
 class PyreLanguageServerDispatcher:
     """
     The dispatcher provides the top-level, "foreground" logic for a Pyre
@@ -785,6 +787,26 @@ class PyreLanguageServerDispatcher:
     daemon_manager: background_tasks.TaskManager
     api: PyreLanguageServerApi
 
+    # A set of outstanding (not "done") asyncio tasks (like requests being processed). This is necessary to retain strong references to those tasks
+    # to avoid them being collected mid-execution by gc. See https://docs.python.org/3/library/asyncio-task.html#asyncio.create_task
+    outstanding_tasks: Set[asyncio.Task[None]]
+
+    def __init__(
+        self,
+        input_channel: connections.AsyncTextReader,
+        output_channel: connections.AsyncTextWriter,
+        server_state: state.ServerState,
+        daemon_manager: background_tasks.TaskManager,
+        api: PyreLanguageServerApi,
+    ) -> None:
+        self.input_channel = input_channel
+        self.output_channel = output_channel
+        self.server_state = server_state
+        self.daemon_manager = daemon_manager
+        self.api = api
+        # TODO(T153986324) Create an abstraction over tasks
+        self.outstanding_tasks = set()
+
     async def wait_for_exit(self) -> commands.ExitCode:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return commands.ExitCode.SUCCESS
@@ -801,25 +823,9 @@ class PyreLanguageServerDispatcher:
                 " has been reached."
             )
 
-    async def dispatch_request(
-        self, request: json_rpc.Request
-    ) -> Optional[commands.ExitCode]:
-        """
-        The top-level request dispatcher has two parts:
-        - Forward the request to the appropriate handler method
-        - For some types of requests, check that the background task is running; this
-          is how we ensure the daemon connection is live (the background task will
-          crash if the daemon goes down and closes the socket).
-
-        """
-        if request.method == "exit":
-            LOG.info(
-                "Recieved exit request without a shutdown request, exiting as FAILURE."
-            )
-            return commands.ExitCode.FAILURE
-        elif request.method == "shutdown":
-            await self.api.process_shutdown_request(request.id)
-            return await self.wait_for_exit()
+    async def dispatch_nonblocking_request(self, request: json_rpc.Request) -> None:
+        if request.method == "exit" or request.method == "shutdown":
+            raise Exception("Exit and shutdown requests should be blocking")
         elif request.method == "textDocument/definition":
             await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
@@ -906,6 +912,32 @@ class PyreLanguageServerDispatcher:
             )
         elif request.id is not None:
             raise lsp.RequestCancelledError("Request not supported yet")
+
+    async def dispatch_request(
+        self, request: json_rpc.Request
+    ) -> Optional[commands.ExitCode]:
+        """
+        The top-level request dispatcher has two parts:
+        - Forward the request to the appropriate handler method
+        - For some types of requests, check that the background task is running; this
+          is how we ensure the daemon connection is live (the background task will
+          crash if the daemon goes down and closes the socket).
+
+        """
+        if request.method == "exit":
+            LOG.info(
+                "Received exit request without a shutdown request, exiting as FAILURE."
+            )
+            return commands.ExitCode.FAILURE
+        elif request.method == "shutdown":
+            await self.api.process_shutdown_request(request.id)
+            return await self.wait_for_exit()
+        else:
+            request_task = asyncio.create_task(
+                self.dispatch_nonblocking_request(request)
+            )
+            self.outstanding_tasks.add(request_task)
+            request_task.add_done_callback(self.outstanding_tasks.discard)
 
     async def serve_requests(self) -> int:
         while True:
