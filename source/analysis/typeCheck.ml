@@ -2110,11 +2110,49 @@ module State (Context : Context) = struct
       when Option.equal
              Reference.equal
              (name_to_reference name)
-             (Some (Reference.create "typing.cast"))
-           || Option.equal
-                Reference.equal
-                (name_to_reference name)
-                (Some (Reference.create "pyre_extensions.safe_cast")) ->
+             (Some (Reference.create "typing.cast")) ->
+        let resolution, cast_annotation_type, value_type, errors =
+          resolve_cast ~resolution ~cast_annotation value
+        in
+        let errors =
+          if Type.expression_contains_any cast_annotation then
+            emit_error
+              ~errors
+              ~location
+              ~kind:
+                (Error.ProhibitedAny
+                   {
+                     missing_annotation =
+                       {
+                         Error.name = name_to_reference_exn name;
+                         annotation = None;
+                         given_annotation = Some cast_annotation_type;
+                         evidence_locations = [];
+                         thrown_at_source = true;
+                       };
+                     annotation_kind = Annotation;
+                   })
+          else if Type.equal cast_annotation_type value_type then
+            emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
+          else
+            errors
+        in
+        {
+          resolution;
+          errors;
+          resolved = cast_annotation_type;
+          resolved_annotation = None;
+          base = None;
+        }
+    | Call
+        {
+          callee = { Node.location; value = Name name };
+          arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
+        }
+      when Option.equal
+             Reference.equal
+             (name_to_reference name)
+             (Some (Reference.create "pyre_extensions.safe_cast")) ->
         let resolution, cast_annotation_type, value_type, errors =
           resolve_cast ~resolution ~cast_annotation value
         in
@@ -2139,13 +2177,10 @@ module State (Context : Context) = struct
           else if Type.equal cast_annotation_type value_type then
             emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
           else if
-            Reference.equal
-              (name_to_reference_exn name)
-              (Reference.create "pyre_extensions.safe_cast")
-            && GlobalResolution.less_or_equal
-                 global_resolution
-                 ~left:cast_annotation_type
-                 ~right:value_type
+            GlobalResolution.less_or_equal
+              global_resolution
+              ~left:cast_annotation_type
+              ~right:value_type
           then
             emit_error
               ~errors
