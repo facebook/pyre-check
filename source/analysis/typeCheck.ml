@@ -2104,13 +2104,21 @@ module State (Context : Context) = struct
         { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
         {
-          callee = { Node.location; value = Name name };
+          callee =
+            {
+              Node.location;
+              value =
+                Name
+                  ( Name.Identifier "typing.cast"
+                  | Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "cast";
+                        _;
+                      } );
+            };
           arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
-        }
-      when Option.equal
-             Reference.equal
-             (name_to_reference name)
-             (Some (Reference.create "typing.cast")) ->
+        } ->
         let resolution, cast_annotation_type, value_type, errors =
           resolve_cast ~resolution ~cast_annotation value
         in
@@ -2124,7 +2132,7 @@ module State (Context : Context) = struct
                    {
                      missing_annotation =
                        {
-                         Error.name = name_to_reference_exn name;
+                         Error.name = Reference.create "typing.cast";
                          annotation = None;
                          given_annotation = Some cast_annotation_type;
                          evidence_locations = [];
@@ -2146,13 +2154,21 @@ module State (Context : Context) = struct
         }
     | Call
         {
-          callee = { Node.location; value = Name name };
+          callee =
+            {
+              Node.location;
+              value =
+                Name
+                  ( Name.Identifier "pyre_extensions.safe_cast"
+                  | Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                        attribute = "safe_cast";
+                        _;
+                      } );
+            };
           arguments = [{ Call.Argument.value = cast_annotation; _ }; { Call.Argument.value; _ }];
-        }
-      when Option.equal
-             Reference.equal
-             (name_to_reference name)
-             (Some (Reference.create "pyre_extensions.safe_cast")) ->
+        } ->
         let resolution, cast_annotation_type, value_type, errors =
           resolve_cast ~resolution ~cast_annotation value
         in
@@ -2166,7 +2182,7 @@ module State (Context : Context) = struct
                    {
                      missing_annotation =
                        {
-                         Error.name = name_to_reference_exn name;
+                         Error.name = Reference.create "pyre_extensions.safe_cast";
                          annotation = None;
                          given_annotation = Some cast_annotation_type;
                          evidence_locations = [];
