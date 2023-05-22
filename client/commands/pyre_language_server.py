@@ -220,7 +220,7 @@ class PyreLanguageServerApi:
             """
             LOG.warning(source_code_context)
         LOG.debug(
-            f"Logging file contents to scuba near requested line: {source_code_context}"
+            f"Logging file contents to scuba near requested line"
             f" for definition request position: {position}"
         )
         return source_code_context
