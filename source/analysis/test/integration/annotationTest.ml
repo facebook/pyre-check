@@ -1902,7 +1902,18 @@ let test_check_safe_cast context =
         def foo(input: int) -> float:
           return pyre_extensions.safe_cast(float, input)
     |}
-    []
+    [];
+  assert_type_errors
+    {|
+        import pyre_extensions
+        def foo(input: str) -> int:
+          return pyre_extensions.safe_cast(int, input)
+    |}
+    [
+      "Unsafe cast [49]: `safe_cast` is only permitted to widen the type of `input`. `int` is not \
+       a super type of `input`.";
+    ];
+  ()
 
 
 let test_check_annotation_with_any context =

@@ -2193,17 +2193,18 @@ module State (Context : Context) = struct
           else if Type.equal cast_annotation_type value_type then
             emit_error ~errors ~location ~kind:(Error.RedundantCast value_type)
           else if
-            GlobalResolution.less_or_equal
-              global_resolution
-              ~left:cast_annotation_type
-              ~right:value_type
+            Type.is_top value_type
+            || GlobalResolution.less_or_equal
+                 global_resolution
+                 ~left:value_type
+                 ~right:cast_annotation_type
           then
+            errors
+          else
             emit_error
               ~errors
               ~location
               ~kind:(Error.UnsafeCast { expression = value; annotation = cast_annotation_type })
-          else
-            errors
         in
         {
           resolution;
