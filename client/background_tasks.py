@@ -72,7 +72,7 @@ class TaskManager:
         something).
         """
         if self._ongoing is None:
-            self._ongoing = asyncio.ensure_future(self._run_task())
+            self._ongoing = asyncio.create_task(self._run_task())
 
     async def ensure_task_stop(self) -> None:
         """
