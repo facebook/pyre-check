@@ -804,7 +804,6 @@ class PyreLanguageServerDispatcher:
         self.server_state = server_state
         self.daemon_manager = daemon_manager
         self.api = api
-        # TODO(T153986324) Create an abstraction over tasks
         self.outstanding_tasks = set()
 
     async def wait_for_exit(self) -> commands.ExitCode:
