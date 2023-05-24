@@ -20,10 +20,22 @@ if [[ "${1}" == 'development' ]]; then
   # Use a less precise date to avoid rebuilding the binary at every
   # 'make' invocation during development.
   BUILD_INFO="$(uname -s -m) @ $(date "+%a %b %d %Y") (development build)"
+  shift
 else
   BUILD_INFO="$(uname -s -m) @ $(date)"
 fi
 echo "Build info: ${BUILD_INFO}"
+
+# Buck builds pass a `--out-dir <DIR>` argument indicating where to write
+# artifacts.
+while [ $# -gt 0 ]; do
+  if [[ "$1" =~ ^--out-dir=(.*)$ ]]; then
+    _OUT_DIR="${BASH_REMATCH[1]}"
+  else
+    echo "Unexpected arg: $1" && exit 1
+  fi
+  shift
+done
 
 # Gather version information.
 VERSION=""
@@ -38,8 +50,8 @@ else
   exit 1
 fi
 
-# Add version information to the file.
-cat > "${SCRIPTS_DIRECTORY}/../source/version.ml" <<EOF
+OUT_DIR="${_OUT_DIR:-"$SCRIPTS_DIRECTORY"/../source}"
+cat > "$OUT_DIR"/version.ml <<EOF
 open Core
 
 let build_info () =
@@ -54,8 +66,33 @@ let log_version_banner () =
   Log.info "Build info: %s" (build_info ())
 EOF
 
+# Note: [Embedded Build Info]
+# ===========================
+#
+# Buck executables automatically link build info that defines the symbols
+# `BuildInfo_kRevision` and `BuildInfo_kRevisionCommitTimeUnix` and so there's
+# no need to generate `get_build_id.c` for buck builds.
+#
+# See [1^] for details. For example, try
+# ```
+#  buck2 build @fbcode//mode/opt \
+#   -c build_info.revision="$(hg log -r . -T {node})" \
+#      fbcode//tools/pyre/source:main --show-output
+# ```
+# and inspect the results with something like
+# ```
+#  fbcode/tools/build_info/build_info -binary \
+#     buck-out/v2/gen/fbcode/ca1f7c2b2d91f85d/tools/pyre/source/__main__/main.opt
+# ```
+#
+# [^1]: [Build Info](https://www.internalfb.com/intern/wiki/Buck-users/fbcode-build-info/).
 
-cat > "${SCRIPTS_DIRECTORY}/../source/hack_parallel/hack_parallel/utils/get_build_id.c" <<EOF
+if [[ -n "$_OUT_DIR" ]]; then
+  :
+else
+  OUT_DIR="$SCRIPTS_DIRECTORY"/../source/hack_parallel/hack_parallel/utils
+  cat > "$OUT_DIR"/get_build_id.c <<EOF
 const char* const BuildInfo_kRevision = "${VERSION}";
 const unsigned long BuildInfo_kRevisionCommitTimeUnix = 0ul;
 EOF
+fi
