@@ -27,7 +27,8 @@
   searchPathTest
   statisticsTest
   profilingTest
-  algorithmsTest)
+  algorithmsTest
+  jsonParsingTest)
  (modules :standard \ test)
  (preprocess
   (pps

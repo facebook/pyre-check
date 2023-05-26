@@ -728,8 +728,20 @@ let end_to_end_integration_test path context =
         File.create path
         |> File.content
         |> Option.map ~f:(fun content ->
-               TaintConfiguration.from_json_list [path, Yojson.Safe.from_string content]
-               |> TaintConfiguration.exception_on_error)
+               JsonParsing.JsonAst.Json.from_string content
+               |> function
+               | Core.Result.Ok json ->
+                   TaintConfiguration.from_json_list [path, json]
+                   |> TaintConfiguration.exception_on_error
+               | Core.Result.Error { message; location; _ } ->
+                   TaintConfiguration.exception_on_error
+                     (Core.Result.Error
+                        [
+                          TaintConfiguration.Error.create_with_location
+                            ~path
+                            ~kind:(TaintConfiguration.Error.InvalidJson message)
+                            ~location;
+                        ]))
       with
       | Core_unix.Unix_error _ -> None
     in

@@ -121,7 +121,7 @@ module Error : sig
     | InvalidJson of string
     | NoConfigurationFound
     | UnexpectedJsonType of {
-        json: Yojson.Safe.t;
+        json: JsonParsing.JsonAst.Json.t;
         message: string;
         section: string option;
       }
@@ -136,7 +136,7 @@ module Error : sig
     | UnsupportedSource of string
     | UnsupportedSink of string
     | UnsupportedTransform of string
-    | UnexpectedCombinedSourceRule of Yojson.Safe.t
+    | UnexpectedCombinedSourceRule of JsonParsing.JsonAst.Json.t
     | PartialSinkDuplicate of string
     | InvalidLabelMultiSink of {
         label: string;
@@ -155,16 +155,25 @@ module Error : sig
   type t = {
     kind: kind;
     path: PyrePath.t option;
+    location: JsonParsing.JsonAst.Location.t option;
   }
   [@@deriving equal, show]
 
   val create : path:PyrePath.t -> kind:kind -> t
 
+  val create_with_location
+    :  path:PyrePath.t ->
+    kind:kind ->
+    location:JsonParsing.JsonAst.Location.t ->
+    t
+
   val to_json : t -> Yojson.Safe.t
 end
 
 (** Parse json files to create a taint configuration. *)
-val from_json_list : (PyrePath.t * Yojson.Safe.t) list -> (Heap.t, Error.t list) Result.t
+val from_json_list
+  :  (PyrePath.t * JsonParsing.JsonAst.Json.t) list ->
+  (Heap.t, Error.t list) Result.t
 
 (** Create a taint configuration by finding `.config` files in the given directories. *)
 val from_taint_model_paths : PyrePath.t list -> (Heap.t, Error.t list) Result.t

@@ -48,7 +48,7 @@ module ServerConfiguration = struct
 
   let of_yojson json =
     let open Yojson.Safe.Util in
-    let open JsonParsing in
+    let open JsonParsing.YojsonUtils in
     try
       match CommandStartup.BaseConfiguration.of_yojson json with
       | Result.Error _ as error -> error

@@ -255,7 +255,9 @@
  (name jsonParsing)
  (public_name pyrelib.json_parsing)
  (modules jsonParsing)
- (libraries yojson pyrePath))
+ (preprocess
+  (pps ppx_deriving.show ppx_compare))
+ (libraries yojson jsonm pyrePath))
 
 (library
  (name algorithms)

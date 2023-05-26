@@ -15,7 +15,6 @@
   core
   core_unix
   sexplib
-  yojson
   re2
   ppx_deriving_yojson
   ppx_deriving
@@ -23,6 +22,7 @@
   pyrelib.analysis
   pyrelib.domains
   pyrelib.interprocedural
+  pyrelib.json_parsing
   pyrelib.pyreParser
   pyrelib.recognized
   pyrelib.statistics
