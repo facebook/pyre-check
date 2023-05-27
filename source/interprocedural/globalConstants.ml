@@ -36,6 +36,7 @@ module Heap = struct
     in
     source
     |> Preprocessing.toplevel_assigns
+    |> List.concat_map ~f:Preprocessing.toplevel_expand_tuple_assign
     |> List.filter_map ~f:extract_string
     |> List.map ~f:split_for_map
     (* Overwrite with the newer expression for duplicate global assigns *)

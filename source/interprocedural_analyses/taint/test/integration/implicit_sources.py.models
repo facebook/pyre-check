@@ -202,3 +202,41 @@
     ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "implicit_sources.toplevel_simultaneous_assignment",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [ { "kind": "HTMLPattern" } ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 66, "start": 11, "end": 16 },
+              { "line": 66, "start": 11, "end": 23 }
+            ],
+            "origin": {
+              "filename": "implicit_sources.py",
+              "line": 66,
+              "start": 11,
+              "end": 16
+            }
+          },
+          {
+            "kinds": [ { "kind": "HTMLPattern" } ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 66, "start": 26, "end": 29 } ],
+            "origin": {
+              "filename": "implicit_sources.py",
+              "line": 66,
+              "start": 26,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
