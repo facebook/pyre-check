@@ -76,13 +76,13 @@ module JsonAst = struct
       line: int;
       column: int;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     and t = {
       start: position;
       stop: position;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     let null_position = { line = -1; column = -1 }
 
@@ -100,12 +100,22 @@ module JsonAst = struct
       }
   end
 
+  module LocationWithPath = struct
+    type t = {
+      location: Location.t;
+      path: PyrePath.t;
+    }
+    [@@deriving equal, show, compare]
+
+    let create ~location ~path = { location; path }
+  end
+
   module Node = struct
     type 'a t = {
       location: Location.t;
       value: 'a;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
   end
 
   exception
@@ -132,7 +142,7 @@ module JsonAst = struct
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show]
+    and t = expression Node.t [@@deriving equal, show, compare]
 
     exception
       TypeError of {
@@ -271,6 +281,12 @@ module JsonAst = struct
         match node.Node.value with
         | `List l -> l
         | _ -> raise (type_error "list" node)
+
+
+      let to_location_exn node =
+        match node.Node.value with
+        | `Null -> raise (type_error "non-null" node)
+        | _ -> node.Node.location
     end
   end
 end

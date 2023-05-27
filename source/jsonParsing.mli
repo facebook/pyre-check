@@ -141,19 +141,29 @@ module JsonAst : sig
       line: int;
       column: int;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     and t = {
       start: position;
       stop: position;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
 
     val pp_start : Format.formatter -> t -> unit
 
     val null_location : t
 
     val from_decoded_range : (int * int) * (int * int) -> t
+  end
+
+  module LocationWithPath : sig
+    type t = {
+      location: Location.t;
+      path: PyrePath.t;
+    }
+    [@@deriving equal, show, compare]
+
+    val create : location:Location.t -> path:PyrePath.t -> t
   end
 
   exception
@@ -167,7 +177,7 @@ module JsonAst : sig
       location: Location.t;
       value: 'a;
     }
-    [@@deriving equal, show]
+    [@@deriving equal, show, compare]
   end
 
   module ParseError : sig
@@ -188,7 +198,7 @@ module JsonAst : sig
       | `Assoc of (string * t) list
       ]
 
-    and t = expression Node.t [@@deriving equal, show]
+    and t = expression Node.t [@@deriving equal, show, compare]
 
     exception
       TypeError of {
@@ -218,6 +228,8 @@ module JsonAst : sig
       val to_int : t -> int option
 
       val to_list_exn : t -> t list
+
+      val to_location_exn : t -> Location.t (* throws Type Error *)
     end
   end
 end

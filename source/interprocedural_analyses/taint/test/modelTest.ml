@@ -64,6 +64,7 @@ let set_up_environment
               code = 1;
               name = "rule 1";
               message_format = "";
+              location = None;
             };
           ]
     in
@@ -2417,6 +2418,7 @@ let test_partial_sinks context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          location = None;
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
@@ -2425,6 +2427,7 @@ let test_partial_sinks context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          location = None;
         };
       ]
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
@@ -4786,6 +4789,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
@@ -4801,6 +4805,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
@@ -4816,6 +4821,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
@@ -4837,6 +4843,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
@@ -4852,6 +4859,7 @@ let test_filter_by_rules context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          location = None;
         };
         {
           Rule.sources = [Sources.NamedSource "TestTest"];
@@ -4860,6 +4868,7 @@ let test_filter_by_rules context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          location = None;
         };
       ]
     ~model_source:"def test.partial_sink(x: PartialSink[Test[a]], y: PartialSink[Test[b]]): ..."
@@ -4885,6 +4894,7 @@ let test_filter_by_rules context =
           code = 5022;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[WithSubkind[A]]: ..."
@@ -4906,6 +4916,7 @@ let test_filter_by_rules context =
           code = 5023;
           message_format = "";
           name = "test rule";
+          location = None;
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSinkWithSubkind[A]]): ..."
