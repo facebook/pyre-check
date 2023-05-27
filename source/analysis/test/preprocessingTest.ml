@@ -3509,6 +3509,7 @@ let test_toplevel_assigns _ =
       (source
       |> parse
       |> Preprocessing.toplevel_assigns
+      |> List.concat_map ~f:Preprocessing.toplevel_expand_tuple_assign
       |> List.map ~f:assign_to_statement
       |> List.rev
       |> Source.create)
@@ -3546,11 +3547,69 @@ let test_toplevel_assigns _ =
     y = f"hello{x}"
     z = f
   |};
-  (* TODO(T152322023): Desugar tuple assignment to multiple variable single assignment *)
+  (* Dealing with tuple assignments *)
+  let simultaneous_assign =
+    {
+      Node.location = Location.any;
+      Node.value =
+        {
+          Assign.target =
+            +Expression.Tuple
+               [+Expression.Name (Name.Identifier "a"); +Expression.Name (Name.Identifier "b")];
+          annotation = None;
+          Assign.value =
+            +Expression.Tuple
+               [+Expression.Name (Name.Identifier "c"); +Expression.Name (Name.Identifier "d")];
+        };
+    }
+  in
+  let sequential_assigns =
+    [
+      {
+        Node.location = Location.any;
+        Node.value =
+          {
+            Assign.target = +Expression.Name (Name.Identifier "b");
+            annotation = None;
+            Assign.value = +Expression.Name (Name.Identifier "d");
+          };
+      };
+      {
+        Node.location = Location.any;
+        Node.value =
+          {
+            Assign.target = +Expression.Name (Name.Identifier "a");
+            annotation = None;
+            Assign.value = +Expression.Name (Name.Identifier "c");
+          };
+      };
+    ]
+  in
+  assert_equal
+    ~cmp:(List.equal (Node.equal Assign.equal))
+    ~printer:(fun list -> String.concat (List.map ~f:(Node.show Assign.pp) list))
+    (Preprocessing.toplevel_expand_tuple_assign simultaneous_assign)
+    sequential_assigns;
   assert_assigns {|
     a, b = 1, 2
-    |} {|
-    (a, b) = (1, 2)
+  |} {|
+    a = 1
+    b = 2
+  |};
+
+  (* More complicated example of a tuple assignment to an iterable *)
+  assert_assigns {|
+    a, b = "hello world".split()
+  |} {|
+    (a, b) = "hello world".split()
+  |};
+
+  (* Example unsoundness from using `toplevel_expand_tuple_assign` *)
+  assert_assigns {|
+    a, b = b, a
+  |} {|
+      a = b
+      b = a
   |};
   ()
 

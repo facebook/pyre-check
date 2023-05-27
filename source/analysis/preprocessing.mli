@@ -86,6 +86,12 @@ val classes : Source.t -> Statement.Class.t Node.t list
 (* List of global variable assignments in a source. *)
 val toplevel_assigns : Source.t -> Statement.Assign.t Node.t list
 
+(* Turn tuple assignments `a, b = c, d` into multiple sequential assignments `a = c` and `b = d`.
+   Warning, in general this is unsound due to the left values being evaluated before being assigned
+   to the right identifiers, though it is safe if the left values do not access the right
+   identifiers*)
+val toplevel_expand_tuple_assign : Statement.Assign.t Node.t -> Statement.Assign.t Node.t list
+
 (* Creates a map used for dequalification from imports in the source *)
 val dequalify_map : Source.t -> Reference.t Reference.Map.t
 

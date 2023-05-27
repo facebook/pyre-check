@@ -1939,6 +1939,22 @@ let toplevel_assigns source =
   Collector.collect source
 
 
+let toplevel_expand_tuple_assign = function
+  | {
+      Node.value =
+        {
+          Assign.target = { Node.value = Expression.Tuple targets; _ };
+          value = { Node.value = Expression.Tuple values; _ };
+          _;
+        };
+      location;
+    }
+    when Int.equal (List.length targets) (List.length values) ->
+      List.rev_map2_exn targets values ~f:(fun target value ->
+          { Node.value = { Assign.target; value; annotation = None }; Node.location })
+  | assign -> [assign]
+
+
 let dequalify_map ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
   let module ImportDequalifier = Transform.MakeStatementTransformer (struct
     include Transform.Identity
