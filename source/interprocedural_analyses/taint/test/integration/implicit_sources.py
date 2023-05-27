@@ -59,3 +59,8 @@ def string_literal_arguments_source(template: str, x):
         return template % "SELECT2"
     else:
         return x + "SELECT3"
+
+START, BODY, END = "<html>", "lorem ipsum", "</html>"
+
+def toplevel_simultaneous_assignment():
+    return START + BODY + END
