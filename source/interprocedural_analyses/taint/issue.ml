@@ -104,7 +104,7 @@ end
 let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree =
   let make_source_sink_matches (path, sink_taint) matches =
     let source_taint =
-      ForwardState.Tree.read path source_tree
+      ForwardState.Tree.read_refined path source_tree
       |> ForwardState.Tree.collapse ~breadcrumbs:(Features.issue_broadening_set ())
     in
     if ForwardTaint.is_bottom source_taint then
@@ -113,10 +113,14 @@ let generate_source_sink_matches ~location ~sink_handle ~source_tree ~sink_tree 
       { Flow.source_taint; sink_taint } :: matches
   in
   let flows =
-    if ForwardState.Tree.is_empty source_tree then
+    if ForwardState.Tree.is_empty source_tree || BackwardState.Tree.is_empty sink_tree then
       []
     else
-      BackwardState.Tree.fold BackwardState.Tree.Path ~init:[] ~f:make_source_sink_matches sink_tree
+      BackwardState.Tree.fold
+        BackwardState.Tree.RefinedPath
+        ~init:[]
+        ~f:make_source_sink_matches
+        sink_tree
   in
   { Candidate.flows; key = { location; sink_handle } }
 

@@ -321,30 +321,6 @@
               {
                 "features": [
                   { "has": "first-index" },
-                  { "first-index": "<unknown>" },
-                  { "always-via": "special_sink" }
-                ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "overmatching.py",
-                "line": 29,
-                "start": 23,
-                "end": 24
-              },
-              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
-              "port": "formal(x)[*]"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "has": "first-index" },
                   { "first-index": "<numeric>" },
                   { "first-index": "<unknown>" },
                   { "always-via": "special_sink" }
