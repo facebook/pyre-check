@@ -91,6 +91,8 @@ let make_assert_functions context =
       T_D_Q = typing.TypeVar('T_D_Q', D, Q)
       T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
       V = pyre_extensions.ParameterSpecification("V")
+      P = pyre_extensions.ParameterSpecification("P")
+      P2 = pyre_extensions.ParameterSpecification("P2")
 
       T = typing.TypeVar('T')
       T1 = typing.TypeVar('T1')
@@ -151,6 +153,8 @@ let make_assert_functions context =
           "T_D_Q";
           "T_C_Q_int";
           "V";
+          "P";
+          "P2";
           "T";
           "T1";
           "T2";
@@ -249,6 +253,7 @@ let make_assert_functions context =
               let parse_parameters parameters =
                 match
                   parse_annotation (Printf.sprintf "typing.Callable[%s, typing.Any]" parameters)
+                  |> postprocess
                 with
                 | Type.Callable { implementation = { parameters; _ }; _ } -> parameters
                 | _ -> failwith "impossible"
@@ -1062,6 +1067,17 @@ let test_add_constraint_readonly context =
   ()
 
 
+let test_add_constraint_parameter_specification context =
+  let assert_add, _, _, _ = make_assert_functions context in
+  assert_add ~left:"typing.Callable[P, None]" ~right:"typing.Callable[P2, None]" [["P2", "P"]];
+  assert_add
+    ~leave_unbound_in_left:["P"]
+    ~left:"typing.Callable[P, None]"
+    ~right:"typing.Callable[P2, None]"
+    [[]];
+  ()
+
+
 let test_instantiate_protocol_parameters context =
   let assert_instantiate_protocol_parameters
       ?source
@@ -1327,6 +1343,7 @@ let () =
          "add_constraint_recursive_type" >:: test_add_constraint_recursive_type;
          "add_constraint_type_variable_tuple" >:: test_add_constraint_type_variable_tuple;
          "add_constraint_readonly" >:: test_add_constraint_readonly;
+         "add_constraint_parameter_specification" >:: test_add_constraint_parameter_specification;
          "instantiate_protocol_parameters" >:: test_instantiate_protocol_parameters;
          "marks_escaped_as_escaped" >:: test_mark_escaped_as_escaped;
        ]

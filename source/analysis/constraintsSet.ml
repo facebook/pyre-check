@@ -300,6 +300,18 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            the Python type system at the moment. *)
         | Defined _, Undefined -> [initial_constraints]
         | Undefined, Defined _ -> [initial_constraints]
+        | ( (ParameterVariadicTypeVariable { head = []; variable = left_variable } as left),
+            (ParameterVariadicTypeVariable { head = []; variable = right_variable } as right) )
+          when Type.Variable.Variadic.Parameters.is_free left_variable
+               && Type.Variable.Variadic.Parameters.is_free right_variable ->
+            initial_constraints
+            |> OrderedConstraints.add_upper_bound
+                 ~order
+                 ~pair:(Type.Variable.ParameterVariadicPair (right_variable, left))
+            >>= OrderedConstraints.add_lower_bound
+                  ~order
+                  ~pair:(Type.Variable.ParameterVariadicPair (left_variable, right))
+            |> Option.to_list
         | bound, ParameterVariadicTypeVariable { head = []; variable }
           when Type.Variable.Variadic.Parameters.is_free variable ->
             let pair = Type.Variable.ParameterVariadicPair (variable, bound) in
