@@ -1,0 +1,13 @@
+@generated
+Call dependencies
+overmatching.issue_source_on_0_and_star_to_sink_on_0 (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0 (fun)]
+overmatching.issue_source_on_0_and_star_to_sink_on_0_and_star (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0_and_star (fun)]
+overmatching.issue_source_on_0_to_sink_on_0 (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0 (fun)]
+overmatching.issue_source_on_0_to_sink_on_0_and_star (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0_and_star (fun)]
+overmatching.issue_source_on_1_to_sink_on_0_and_star (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0_and_star (fun)]
+overmatching.issue_source_on_star_to_sink_on_0 (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0 (fun)]
+overmatching.issue_source_on_star_to_sink_on_0_and_star (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0_and_star (fun)]
+overmatching.no_issue_source_on_1_to_sink_on_0 (fun) -> [_test_source (fun) dict::__setitem__ (method) overmatching.sink_on_0 (fun)]
+overmatching.$toplevel (fun) -> []
+overmatching.sink_on_0 (fun) -> [_test_sink (fun) dict::__getitem__ (method)]
+overmatching.sink_on_0_and_star (fun) -> [_test_sink (fun) dict::__getitem__ (method)]

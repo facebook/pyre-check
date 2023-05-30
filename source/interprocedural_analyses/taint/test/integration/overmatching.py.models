@@ -1,0 +1,998 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_0_and_star_to_sink_on_0",
+    "callable_line": 32,
+    "code": 5002,
+    "line": 36,
+    "start": 14,
+    "end": 15,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 35,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 36,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overmatching.sink_on_0" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_0_and_star_to_sink_on_0:5002:0:Call|overmatching.sink_on_0|0|formal(x):ad4856757c59e646ff27bdbe310e9c0b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_0_and_star_to_sink_on_0_and_star",
+    "callable_line": 19,
+    "code": 5002,
+    "line": 23,
+    "start": 23,
+    "end": 24,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 21,
+              "start": 11,
+              "end": 25
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 22,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 23,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[*]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 23,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0_and_star",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_0_and_star_to_sink_on_0_and_star:5002:0:Call|overmatching.sink_on_0_and_star|0|formal(x):8ecfbb3c9a537a127a3dcb766a31a570"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_0_to_sink_on_0",
+    "callable_line": 39,
+    "code": 5002,
+    "line": 42,
+    "start": 14,
+    "end": 15,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 41,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 42,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overmatching.sink_on_0" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_0_to_sink_on_0:5002:0:Call|overmatching.sink_on_0|0|formal(x):0e3444a7913a461fa683588ae0bfd4d7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_0_to_sink_on_0_and_star",
+    "callable_line": 26,
+    "code": 5002,
+    "line": 29,
+    "start": 23,
+    "end": 24,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 28,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 29,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[*]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 29,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0_and_star",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_0_to_sink_on_0_and_star:5002:0:Call|overmatching.sink_on_0_and_star|0|formal(x):3c43999f320d8ca41804d7b331ffede3"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_1_to_sink_on_0_and_star",
+    "callable_line": 45,
+    "code": 5002,
+    "line": 48,
+    "start": 23,
+    "end": 24,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 47,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 48,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[*]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0_and_star",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_1_to_sink_on_0_and_star:5002:0:Call|overmatching.sink_on_0_and_star|0|formal(x):c8550c0bac8bf32d0e6d617cedab4f26"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_star_to_sink_on_0",
+    "callable_line": 63,
+    "code": 5002,
+    "line": 66,
+    "start": 14,
+    "end": 15,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 65,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 66,
+                "start": 14,
+                "end": 15
+              },
+              "resolves_to": [ "overmatching.sink_on_0" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_star_to_sink_on_0:5002:0:Call|overmatching.sink_on_0|0|formal(x):765a583d4aa9d4f97b4d3764d9b2a7df"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "overmatching.issue_source_on_star_to_sink_on_0_and_star",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 60,
+    "start": 23,
+    "end": 24,
+    "filename": "overmatching.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 59,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 60,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[*]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" },
+                  { "first-index": "<numeric>" },
+                  { "first-index": "<unknown>" },
+                  { "always-via": "special_sink" }
+                ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "overmatching.py",
+                "line": 60,
+                "start": 23,
+                "end": 24
+              },
+              "resolves_to": [ "overmatching.sink_on_0_and_star" ],
+              "port": "formal(x)[0]"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "<numeric>" },
+      { "first-index": "<unknown>" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "overmatching.sink_on_0_and_star",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "overmatching.issue_source_on_star_to_sink_on_0_and_star:5002:0:Call|overmatching.sink_on_0_and_star|0|formal(x):592943ca5a26c8d48b4690e51ddab751"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{ClassWithSinkAttribute.attribute}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{taint._global_sink}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_cookies",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_rce",
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_sql",
+    "sinks": [
+      {
+        "port": "formal(argument)",
+        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_tito",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_user_controlled",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "copy",
+    "tito": [
+      {
+        "port": "formal(obj)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "copy" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "eval",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "getattr",
+    "sinks": [
+      {
+        "port": "formal(name)",
+        "taint": [
+          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(default)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "default" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(o)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "object" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overmatching.sink_on_0",
+    "sinks": [
+      {
+        "port": "formal(x)[0]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 11,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overmatching.sink_on_0_and_star",
+    "sinks": [
+      {
+        "port": "formal(x)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<unknown>" }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 16,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x)[0]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 15,
+              "start": 15,
+              "end": 21
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<unknown>" }
+            ],
+            "origin": {
+              "filename": "overmatching.py",
+              "line": 16,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
