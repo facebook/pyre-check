@@ -21,14 +21,31 @@ module type ELEMENT = sig
   val transform_on_hoist : t -> t
 end
 
+module StringSet : Set.S
+
 module Label : sig
   type t =
+    | AnyIndex
     | Index of string
     | Field of string
-    | AnyIndex
   [@@deriving show]
 
   type path = t list [@@deriving show]
+
+  module Refined : sig
+    type t =
+      | AnyIndex of StringSet.t
+      | Index of string
+      | Field of string
+
+    type label_path := path
+
+    type path = t list
+
+    val to_refined_path : label_path -> path
+
+    val from_refined_path : path -> label_path
+  end
 
   val compare : t -> t -> int
 
@@ -53,6 +70,9 @@ module Make (_ : CONFIG) (Element : ELEMENT) () : sig
          are visitied *)
         Path :
         (Label.path * Element.t) AbstractDomainCore.part
+    | (* Same as Path, but every AnyIndex in the path keeps a set of its Index siblings *)
+        RefinedPath :
+        (Label.Refined.path * Element.t) AbstractDomainCore.part
 
   val create_leaf : Element.t -> t
 
@@ -65,12 +85,25 @@ module Make (_ : CONFIG) (Element : ELEMENT) () : sig
 
   val read : ?transform_non_leaves:(Label.path -> Element.t -> Element.t) -> Label.path -> t -> t
 
+  val read_refined
+    :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
+    Label.Refined.path ->
+    t ->
+    t
+
   (* Read the subtree at the given path. Returns the pair ancestors, tree_at_tip.
    * ~use_precise_labels overrides the default handling of [*] matching all fields. *)
   val read_raw
     :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
     ?use_precise_labels:bool ->
     Label.path ->
+    t ->
+    Element.t * t
+
+  val read_raw_refined
+    :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
+    ?use_precise_labels:bool ->
+    Label.Refined.path ->
     t ->
     Element.t * t
 

@@ -16,6 +16,7 @@ module Make (_ : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) () : 
          are visitied *)
         Path :
         (Label.path * Element.t) AbstractDomainCore.part
+    | RefinedPath : (Label.Refined.path * Element.t) AbstractDomainCore.part
 
   val create_leaf : Root.t -> Element.t -> t
 
@@ -28,12 +29,25 @@ module Make (_ : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) () : 
 
   val read : ?transform_non_leaves:(Label.path -> Element.t -> Element.t) -> Label.path -> t -> t
 
+  val read_refined
+    :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
+    Label.Refined.path ->
+    t ->
+    t
+
   (* Read the subtree at the given path. Returns the pair ancestors, tree_at_tip.
    * ~use_precise_labels overrides the default handling of [*] matching all fields. *)
   val read_raw
     :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
     ?use_precise_labels:bool ->
     Label.path ->
+    t ->
+    Element.t * t
+
+  val read_raw_refined
+    :  ?transform_non_leaves:(Label.path -> Element.t -> Element.t) ->
+    ?use_precise_labels:bool ->
+    Label.Refined.path ->
     t ->
     Element.t * t
 

@@ -2,5 +2,5 @@
  (name abstract)
  (public_name pyrelib.domains)
  (preprocess
-  (pps ppx_deriving.eq ppx_deriving.show))
+  (pps ppx_deriving.eq ppx_deriving.show ppx_deriving.ord))
  (libraries core ppx_deriving))

@@ -111,13 +111,20 @@ module WithoutChecks : CHECK = struct
   let check _ = ()
 end
 
-module Label = struct
-  type t =
-    | Index of string
-    | Field of string
-    | AnyIndex
+module StringSet = Set.Make (String)
 
-  let compare : t -> t -> int = compare
+module Label = struct
+  module T = struct
+    type t =
+      | AnyIndex
+      | Index of string
+      | Field of string
+    [@@deriving ord]
+
+    type path = t list
+  end
+
+  include T
 
   let escape string =
     let of_string string = List.init (String.length string) (String.get string) in
@@ -146,11 +153,37 @@ module Label = struct
 
   let show = Format.asprintf "%a" pp
 
-  type path = t list
-
   let pp_path formatter = ListLabels.iter ~f:(pp formatter)
 
   let show_path = Format.asprintf "%a" pp_path
+
+  module Refined = struct
+    type t =
+      (* Tracks the set of indices that are excluded from AnyIndex *)
+      | AnyIndex of StringSet.t
+      | Index of string
+      | Field of string
+
+    let to_refined = function
+      | T.AnyIndex -> AnyIndex StringSet.empty
+      | T.Index i -> Index i
+      | T.Field f -> Field f
+
+
+    let from_refined = function
+      | AnyIndex _ -> T.AnyIndex
+      | Index i -> T.Index i
+      | Field f -> T.Field f
+
+
+    type path = t list
+
+    let to_refined_path path = List.map to_refined path
+
+    let from_refined_path path = List.map from_refined path
+
+    let show_path path = from_refined_path path |> Format.asprintf "%a" pp_path
+  end
 
   let create_name_index name = Index name
 
@@ -316,6 +349,37 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         second_accumulator
       else
         let walk ~key:label_element ~data:subtree =
+          walk_children (path @ [label_element]) subtree
+        in
+        LabelMap.fold children ~init:second_accumulator ~f:walk
+    in
+    walk_children [] tree init
+
+
+  let fold_refined_tree_paths ~init ~f tree =
+    let rec walk_children path { element; children } first_accumulator =
+      let second_accumulator =
+        if Element.is_bottom element then
+          first_accumulator
+        else
+          f ~path ~element first_accumulator
+      in
+      if LabelMap.is_empty children then
+        second_accumulator
+      else
+        let get_indices map =
+          LabelMap.fold map ~init:[] ~f:(fun ~key ~data:_ acc ->
+              match key with
+              | Label.Index i -> i :: acc
+              | _ -> acc)
+        in
+        let walk ~key ~data:subtree =
+          let label_element =
+            match key with
+            | Label.AnyIndex -> Label.Refined.AnyIndex (get_indices children |> StringSet.of_list)
+            | Label.Index i -> Label.Refined.Index i
+            | Label.Field f -> Label.Refined.Field f
+          in
           walk_children (path @ [label_element]) subtree
         in
         LabelMap.fold children ~init:second_accumulator ~f:walk
@@ -686,30 +750,42 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
       ancestors is accumulated down the recursion and returned when we reach the end of that path.
       That way the recursion is tail-recursive. *)
-  let rec read_raw ~transform_non_leaves ~use_precise_labels ~ancestors path { children; element } =
+  let rec read_raw_refined
+      ~transform_non_leaves
+      ~use_precise_labels
+      ~ancestors
+      path
+      { children; element }
+    =
     match path with
     | [] -> ancestors, create_node_option element children
     | label_element :: rest -> (
         let ancestors =
           if not (Element.is_bottom element) then
             element
-            |> transform_non_leaves path
+            |> transform_non_leaves (Label.Refined.from_refined_path path)
             |> Element.join ancestors
             |> Element.transform_on_sink
           else
             ancestors
         in
         match label_element with
-        | Label.AnyIndex when not use_precise_labels ->
+        | Label.Refined.AnyIndex excluded when not use_precise_labels ->
             (* lookup all indexes and join result *)
             let find_index_and_join ~key ~data:subtree (ancestors_accumulator, tree_accumulator) =
-              (* Fields are special - they should be excluded from [*]
-                 accesses unconditionally. *)
+              (* Fields and sibling Indices stored in Refined.AnyIndex should be excluded from [*] accesses unconditionally. *)
               match key with
+              | Label.Index i when StringSet.mem i excluded ->
+                  ancestors_accumulator, tree_accumulator
               | Label.Field _ -> ancestors_accumulator, tree_accumulator
               | _ ->
                   let ancestors_result, subtree =
-                    read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
+                    read_raw_refined
+                      ~transform_non_leaves
+                      ~use_precise_labels
+                      ~ancestors
+                      rest
+                      subtree
                   in
                   let subtree =
                     join_option_trees
@@ -722,21 +798,41 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
                   Element.join ancestors_result ancestors_accumulator, subtree
             in
             LabelMap.fold ~init:(ancestors, None) ~f:find_index_and_join children
-        | Label.Index _ when not use_precise_labels -> (
+        | Label.Refined.Index _ when not use_precise_labels -> (
             (* read [f] or [*] *)
-            match LabelMap.find_opt label_element children with
+            match LabelMap.find_opt (Label.Refined.from_refined label_element) children with
             | None -> (
                 match LabelMap.find_opt Label.AnyIndex children with
                 | Some subtree ->
-                    read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree
+                    read_raw_refined
+                      ~transform_non_leaves
+                      ~use_precise_labels
+                      ~ancestors
+                      rest
+                      subtree
                 | None -> ancestors, None)
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree)
+                read_raw_refined ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree)
         | _ -> (
-            match LabelMap.find_opt label_element children with
+            match LabelMap.find_opt (Label.Refined.from_refined label_element) children with
             | None -> ancestors, None
             | Some subtree ->
-                read_raw ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree))
+                read_raw_refined ~transform_non_leaves ~use_precise_labels ~ancestors rest subtree))
+
+
+  let read_tree_raw_refined
+      ?(transform_non_leaves = fun _p element -> element)
+      ?(use_precise_labels = false)
+      path
+      tree
+    =
+    let message () =
+      Format.sprintf "read tree_raw: %s :from: %s" (Label.Refined.show_path path) (show tree)
+    in
+    let ancestors, tree_option =
+      read_raw_refined ~transform_non_leaves ~use_precise_labels ~ancestors:Element.bottom path tree
+    in
+    ancestors, option_node_tree ~message tree_option
 
 
   (** Read the subtree at path p within t. Returns the pair ancestors, tree_at_tip. *)
@@ -746,13 +842,11 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       path
       tree
     =
-    let message () =
-      Format.sprintf "read tree_raw: %s :from: %s" (Label.show_path path) (show tree)
-    in
-    let ancestors, tree_option =
-      read_raw ~transform_non_leaves ~use_precise_labels ~ancestors:Element.bottom path tree
-    in
-    ancestors, option_node_tree ~message tree_option
+    read_tree_raw_refined
+      ~transform_non_leaves
+      ~use_precise_labels
+      (Label.Refined.to_refined_path path)
+      tree
 
 
   let assign_tree_path ~tree path ~subtree =
@@ -884,9 +978,13 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         result
 
 
-  let read ?(transform_non_leaves = fun _p element -> element) path tree =
-    let ancestors, tree = read_tree_raw ~transform_non_leaves ~use_precise_labels:false path tree in
-    let message () = Format.sprintf "read [%s] from %s" (Label.show_path path) (show tree) in
+  let read_refined ?(transform_non_leaves = fun _p element -> element) path tree =
+    let ancestors, tree =
+      read_tree_raw_refined ~transform_non_leaves ~use_precise_labels:false path tree
+    in
+    let message () =
+      Format.sprintf "read [%s] from %s" (Label.Refined.show_path path) (show tree)
+    in
     (* Important to properly join the trees and not just join ancestors and
        tree.element, as otherwise this could result in non-minimal trees. *)
     join_trees
@@ -896,6 +994,10 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       (create_leaf ancestors)
       tree
     |> option_node_tree ~message
+
+
+  let read ?(transform_non_leaves = fun _p element -> element) path tree =
+    read_refined ~transform_non_leaves (Label.Refined.to_refined_path path) tree
 
 
   (** Collapses all subtrees at depth. Used to limit amount of detail propagated across function
@@ -1071,7 +1173,9 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
 
   open AbstractDomainCore
 
-  type _ part += Path : (Label.path * Element.t) part
+  type _ part +=
+    | Path : (Label.path * Element.t) part
+    | RefinedPath : (Label.Refined.path * Element.t) part
 
   module rec Base : (BASE with type t := t) = MakeBase (struct
     type nonrec t = t
@@ -1118,6 +1222,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
     let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
      fun part op ~f tree ->
       match part, op with
+      | RefinedPath, _ -> failwith "Not Implemented"
       | Path, Map ->
           let transform_node ~path ~element = f (path, element) in
           filter_map_tree_paths ~f:transform_node tree
@@ -1155,6 +1260,10 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       =
      fun part ~using:op ~f ~init tree ->
       match part, op with
+      | RefinedPath, Acc ->
+          let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
+          fold_refined_tree_paths ~init ~f:fold_tree_node tree
+      | RefinedPath, _ -> failwith "Not Implemented"
       | Path, Acc ->
           let fold_tree_node ~path ~element accumulator = f (path, element) accumulator in
           fold_tree_paths ~init ~f:fold_tree_node tree
@@ -1185,6 +1294,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         | Some tree -> assign_tree_path ~tree path ~subtree:leaf
       in
       match part, op with
+      | RefinedPath, _ -> failwith "Not Implemented"
       | Path, By ->
           let partition ~path ~element result =
             let partition_key = f (path, element) in
@@ -1220,12 +1330,14 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
       | GetParts f ->
           f#report Self;
           f#report Path;
+          f#report RefinedPath;
           Element.introspect op
       | Structure ->
           let range = Element.introspect op in
           "Tree ->" :: ListLabels.map ~f:(fun s -> "  " ^ s) range
       | Name part -> (
           match part with
+          | RefinedPath -> Format.sprintf "Tree.RefinedPath"
           | Path -> Format.sprintf "Tree.Path"
           | Self -> Format.sprintf "Tree.Self"
           | _ -> Element.introspect op)
@@ -1274,6 +1386,8 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
   let prepend = create_tree
 
   let read_raw = read_tree_raw
+
+  let read_raw_refined = read_tree_raw_refined
 
   let labels { children; _ } =
     LabelMap.fold ~init:[] ~f:(fun ~key ~data:_ acc -> key :: acc) children

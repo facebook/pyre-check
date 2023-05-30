@@ -39,7 +39,10 @@ module Make (Config : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) 
 
   module Product = AbstractProductDomain.Make (ProductConfig)
 
-  type _ AbstractDomainCore.part += Root = Root.Self | Path = Tree.Path
+  type _ AbstractDomainCore.part +=
+    | Root = Root.Self
+    | Path = Tree.Path
+    | RefinedPath = Tree.RefinedPath
 
   include Product
 
@@ -71,9 +74,25 @@ module Make (Config : CONFIG) (Root : AbstractDomainCore.S) (Element : ELEMENT) 
     update ProductConfig.Tree tree product
 
 
+  let read_refined ?transform_non_leaves path product =
+    let tree = Tree.read_refined ?transform_non_leaves path (get ProductConfig.Tree product) in
+    update ProductConfig.Tree tree product
+
+
   let read_raw ?transform_non_leaves ?use_precise_labels path product =
     let element, tree =
       Tree.read_raw ?transform_non_leaves ?use_precise_labels path (get ProductConfig.Tree product)
+    in
+    element, update ProductConfig.Tree tree product
+
+
+  let read_raw_refined ?transform_non_leaves ?use_precise_labels path product =
+    let element, tree =
+      Tree.read_raw_refined
+        ?transform_non_leaves
+        ?use_precise_labels
+        path
+        (get ProductConfig.Tree product)
     in
     element, update ProductConfig.Tree tree product
 
