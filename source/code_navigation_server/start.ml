@@ -100,7 +100,7 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
   in
   let on_uncaught_exception exn =
     Log.warning "Uncaught exception: %s" (Exn.to_string exn);
-    Statistics.log_exception exn ~fatal:false ~origin:"code-navigation";
+    Statistics.log_exception exn ~fatal:true ~origin:"code-navigation";
     Server.Stop.(stop_waiting_server (Reason.UncaughtException exn))
   in
   let%lwt () = Lwt.catch handle_line on_uncaught_exception in
