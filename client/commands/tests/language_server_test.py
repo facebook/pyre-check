@@ -9,7 +9,7 @@ import json
 import sys
 import tempfile
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 import testslide
 
@@ -53,10 +53,32 @@ from ..persistent import (
     type_errors_to_diagnostics,
 )
 
-from ..pyre_language_server import read_lsp_request
+from ..pyre_language_server import (
+    PyreLanguageServerApi,
+    PyreLanguageServerDispatcher,
+    read_lsp_request,
+)
 from ..pyre_server_options import PyreServerOptions
 from ..server_state import OpenedDocumentState, ServerState
 from ..tests import server_setup
+
+
+class MockPyreLanguageServerApi(PyreLanguageServerApi):
+    async def process_definition_request(
+        self,
+        parameters: lsp.DefinitionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        await asyncio.Event().wait()
+
+    async def process_hover_request(
+        self,
+        parameters: lsp.HoverParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        return
 
 
 class ReadLspRequestTest(testslide.TestCase):
@@ -420,7 +442,10 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
     @staticmethod
     def _by_name_parameters(
         parameters: Union[
-            lsp.DidSaveTextDocumentParameters, lsp.DidOpenTextDocumentParameters
+            lsp.DidSaveTextDocumentParameters,
+            lsp.DidOpenTextDocumentParameters,
+            lsp.HoverParameters,
+            lsp.DefinitionParameters,
         ],
     ) -> json_rpc.ByNameParameters:
         return json_rpc.ByNameParameters(values=json.loads(parameters.to_json()))
@@ -611,6 +636,69 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
             await dispatcher.dispatch_request(request)
             await asyncio.sleep(0)
             self.assertFalse(fake_task_manager.is_task_running())
+
+    @setup.async_test
+    async def test_dispatch_requests_concurrently(self) -> None:
+        """
+        Dispatches a blocking request then a non-blocking request and ensures the
+        second one goes through.
+        """
+        test_path = Path("/foo.py")
+        requests = [
+            json_rpc.Request(
+                method="textDocument/definition",
+                parameters=self._by_name_parameters(
+                    lsp.DefinitionParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        ),
+                        position=lsp.LspPosition(line=1, character=1),
+                    )
+                ),
+            ),
+            json_rpc.Request(
+                method="textDocument/hover",
+                parameters=self._by_name_parameters(
+                    lsp.HoverParameters(
+                        text_document=lsp.TextDocumentIdentifier(
+                            uri=lsp.DocumentUri.from_file_path(test_path).unparse(),
+                        ),
+                        position=lsp.LspPosition(line=1, character=1),
+                    )
+                ),
+            ),
+        ]
+        output_channel = AsyncTextWriter(MemoryBytesWriter())
+        server_state = ServerState(
+            server_options=server_setup.mock_initial_server_options,
+            opened_documents={
+                test_path: OpenedDocumentState(code=server_setup.DEFAULT_FILE_CONTENTS)
+            },
+            consecutive_start_failure=CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+        )
+        api = MockPyreLanguageServerApi(
+            output_channel=output_channel,
+            server_state=server_state,
+            querier=server_setup.MockDaemonQuerier(),
+            client_type_error_handler=ClientTypeErrorHandler(
+                client_output_channel=output_channel,
+                server_state=server_state,
+            ),
+        )
+        dispatcher = PyreLanguageServerDispatcher(
+            input_channel=create_memory_text_reader(""),
+            output_channel=output_channel,
+            server_state=server_state,
+            daemon_manager=background_tasks.TaskManager(
+                server_setup.NoOpBackgroundTask()
+            ),
+            api=api,
+        )
+        await asyncio.gather(
+            *[dispatcher.dispatch_request(request) for request in requests]
+        )
+        self.assertEqual(len(dispatcher.outstanding_tasks), 1)
+        self.assertFalse(dispatcher.outstanding_tasks.pop().done())
 
 
 class ClientTypeErrorHandlerTest(testslide.TestCase):
