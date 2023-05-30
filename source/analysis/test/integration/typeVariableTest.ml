@@ -1600,14 +1600,14 @@ let test_callable_parameter_variadics context =
     |}
     [
       "Revealed type [-1]: Revealed type for `foo` is \
-       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
-       None]`.";
+       `typing.Callable($local_test?outer$foo)[pyre_extensions.type_variable_operators.Concatenate[int, \
+       test.TParams], None]`.";
       "Revealed type [-1]: Revealed type for `bar` is \
-       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
-       None]`.";
+       `typing.Callable($local_test?outer$bar)[pyre_extensions.type_variable_operators.Concatenate[int, \
+       test.TParams], None]`.";
       "Revealed type [-1]: Revealed type for `baz` is \
-       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
-       None]`.";
+       `typing.Callable($local_test?outer$baz)[pyre_extensions.type_variable_operators.Concatenate[int, \
+       test.TParams], None]`.";
     ];
   assert_type_errors
     {|
@@ -1623,7 +1623,7 @@ let test_callable_parameter_variadics context =
           foo(x=1, *args, **kwargs) # Rejected
         return bar
     |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `x` to anonymous call."];
+    ["Unexpected keyword [28]: Unexpected keyword argument `x` to call `foo`."];
   assert_type_errors
     {|
       from typing import Protocol, Callable, TypeVar, overload, Union
@@ -1732,8 +1732,8 @@ let test_user_defined_parameter_specification_classes context =
     |}
     [
       "Revealed type [-1]: Revealed type for `inner` is \
-       `typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.TParams], \
-       Variable[TReturn]]`.";
+       `typing.Callable($local_test?client$inner)[pyre_extensions.type_variable_operators.Concatenate[int, \
+       test.TParams], Variable[TReturn]]`.";
     ];
   assert_type_errors
     {|

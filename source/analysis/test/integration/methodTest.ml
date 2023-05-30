@@ -3448,6 +3448,59 @@ let test_fixpoint_threshold context =
   ()
 
 
+(* Check that calls to nested functions show the function name in the error message, instead of
+   showing "anonymous call". *)
+let test_nested_function_shows_function_name_in_errors context =
+  assert_type_errors
+    ~context
+    {|
+      async def main() -> None:
+        async def inner(x: int) -> None: ...
+
+        def non_async_inner(x: int) -> None: ...
+
+        await inner("hello")
+        non_async_inner("hello")
+    |}
+    [
+      "Incompatible parameter type [6]: In call `inner`, for 1st positional argument, expected \
+       `int` but got `str`.";
+      "Incompatible parameter type [6]: In call `non_async_inner`, for 1st positional argument, \
+       expected `int` but got `str`.";
+    ];
+  (* When `factorial` is a nested function, `factorial` is stored as a local variable with a
+     callable type. Show its name in error messages. *)
+  assert_type_errors
+    ~context
+    {|
+      def outer() -> None:
+        def factorial(n: int) -> int:
+          if n <= 1:
+            return 1
+
+          return n * factorial("wrong")
+    |}
+    [
+      "Incompatible parameter type [6]: In call `factorial`, for 1st positional argument, expected \
+       `int` but got `str`.";
+    ];
+  (* `inner1` is a captured variable in `inner2`. Show its name in error messages. *)
+  assert_type_errors
+    ~context
+    {|
+      def outer() -> None:
+        def inner1(x: int) -> None: ...
+
+        def inner2() -> None:
+          inner1("wrong")
+    |}
+    [
+      "Incompatible parameter type [6]: In call `inner1`, for 1st positional argument, expected \
+       `int` but got `str`.";
+    ];
+  ()
+
+
 let () =
   "method"
   >::: [
@@ -3480,5 +3533,7 @@ let () =
          "check_enter" >:: test_check_enter;
          "enforce_dunder_params" >:: test_enforce_dunder_params;
          "fixpoint_threshold" >:: test_fixpoint_threshold;
+         "nested_function_shows_function_name_in_errors"
+         >:: test_nested_function_shows_function_name_in_errors;
        ]
   |> Test.run

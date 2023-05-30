@@ -3269,7 +3269,7 @@ let test_dump_call_graph context =
                     }
                   ],
                   "kind": "function",
-                  "target": "bar.bar2.inner"
+                  "target": "$local_bar?bar2$inner"
                 }
               ],
               "bar.bar": []

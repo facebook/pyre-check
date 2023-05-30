@@ -207,7 +207,10 @@ let test_reveal_type context =
         def bar(x: int) -> int:
           return x
     |}
-    ["Revealed type [-1]: Revealed type for `bar` is `typing.Callable[[Named(x, int)], int]`."];
+    [
+      "Revealed type [-1]: Revealed type for `bar` is \
+       `typing.Callable($local_test?foo$bar)[[Named(x, int)], int]`.";
+    ];
   assert_type_errors
     {|
       def foo( *args: str, **kwargs: int) -> None:

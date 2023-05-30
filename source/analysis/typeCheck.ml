@@ -722,8 +722,6 @@ module State (Context : Context) = struct
         ~implementation:(Some signature)
         ~overloads:[]
     with
-    | { decorated = Ok (Type.Callable callable); _ } ->
-        Type.Callable { callable with kind = Anonymous }
     | { decorated = Ok other; _ } -> other
     | { decorated = Error _; _ } -> Any
 

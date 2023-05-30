@@ -431,7 +431,7 @@ let test_inferred_returns context =
           return bar
     |}
     ~target:"test.foo"
-    ~expected:{|"typing.Callable[[int], str]"|};
+    ~expected:{|"typing.Callable($local_test?foo$bar)[[int], str]"|};
   check_inference_results
     {|
       def foo():
@@ -440,7 +440,7 @@ let test_inferred_returns context =
           return [bar]
     |}
     ~target:"test.foo"
-    ~expected:{|"typing.List[typing.Callable[[int, str], bool]]"|};
+    ~expected:{|"typing.List[typing.Callable($local_test?foo$bar)[[int, str], bool]]"|};
 
   (* Self *)
   check_inference_results

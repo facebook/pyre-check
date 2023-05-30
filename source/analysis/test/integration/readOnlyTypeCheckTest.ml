@@ -1103,7 +1103,7 @@ let test_captured_variable_for_specially_decorated_functions context =
     |}
     [
       "Revealed type [-1]: Revealed type for `other_nested` is \
-       `pyre_extensions.ReadOnly[typing.Callable[[], None]]`.";
+       `pyre_extensions.ReadOnly[typing.Callable($local_test?main$other_nested)[[], None]]`.";
     ];
   ()
 
