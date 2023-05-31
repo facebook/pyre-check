@@ -842,6 +842,7 @@ let end_to_end_integration_test path context =
         ~fixpoint_state
         ~filename_lookup
         ~override_graph:override_graph_shared_memory
+        ~dump_override_models:true
         callable
       |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")
       |> String.concat ~sep:""

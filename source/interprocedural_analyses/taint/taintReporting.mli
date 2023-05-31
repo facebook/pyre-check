@@ -23,6 +23,7 @@ val fetch_and_externalize
   fixpoint_state:TaintFixpoint.t ->
   filename_lookup:(Ast.Reference.t -> string option) ->
   override_graph:OverrideGraph.SharedMemory.t ->
+  dump_override_models:bool ->
   Target.t ->
   Yojson.Safe.t list
 
