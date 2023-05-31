@@ -2,76 +2,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
-      {
-        "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_cookies",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_rce",
-    "sinks": [
-      {
-        "port": "formal(argument)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_sql",
-    "sinks": [
-      {
-        "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "_test_sink",
     "sinks": [
       {
@@ -118,137 +48,17 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_tito",
-    "tito": [
-      {
-        "port": "formal(**kw)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(*rest0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_user_controlled",
+    "callable": "model_query_parent_decorator.TestC_1.__init__",
     "sources": [
       {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "copy",
-    "tito": [
-      {
-        "port": "formal(obj)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
-    "sinks": [
-      {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "getattr",
-    "sinks": [
-      {
-        "port": "formal(name)",
-        "taint": [
-          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(default)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "default" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": null
-          }
-        ]
+        "port": "formal(bar)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(o)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "object" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": null
-          }
-        ]
+        "port": "formal(foo)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_query_parent_decorator.TestC_1.__init__",
+    ],
     "sinks": [
       {
         "port": "formal(baz)",
@@ -328,6 +138,148 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_1.__init__",
+    "callable_line": 23,
+    "code": 5002,
+    "line": 25,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:bar",
+                    "name": "model_query_parent_decorator.TestC_1.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 23,
+              "start": 28,
+              "end": 31
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 25,
+              "start": 19,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_1.__init__:5002:0:Call|_test_sink|1|formal(arg):3195fd4447e2170f2df43c12963ea524"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_1.__init__",
+    "callable_line": 23,
+    "code": 5002,
+    "line": 24,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:foo",
+                    "name": "model_query_parent_decorator.TestC_1.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 23,
+              "start": 23,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 24,
+              "start": 19,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_1.__init__:5002:0:Call|_test_sink|0|formal(arg):47ae3b9e47cf576ace0e9b6ab55d7ba5"
   }
 }
 {
@@ -419,6 +371,16 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parent_decorator.TestC_3.__init__",
+    "sources": [
+      {
+        "port": "formal(bar)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(foo)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
     "sinks": [
       {
         "port": "formal(baz)",
@@ -498,5 +460,147 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_3.__init__",
+    "callable_line": 40,
+    "code": 5002,
+    "line": 42,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:bar",
+                    "name": "model_query_parent_decorator.TestC_3.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 40,
+              "start": 28,
+              "end": 31
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 42,
+              "start": 19,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_3.__init__:5002:0:Call|_test_sink|1|formal(arg):71616e3a1d85c3a06f80f661dc1a9685"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parent_decorator.TestC_3.__init__",
+    "callable_line": 40,
+    "code": 5002,
+    "line": 41,
+    "start": 19,
+    "end": 22,
+    "filename": "model_query_parent_decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:foo",
+                    "name": "model_query_parent_decorator.TestC_3.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 40,
+              "start": 23,
+              "end": 26
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parent_decorator.py",
+              "line": 41,
+              "start": 19,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "model_query_parent_decorator.TestC_3.__init__:5002:0:Call|_test_sink|0|formal(arg):33fc2a06904f0412cc50c4231aa87721"
   }
 }

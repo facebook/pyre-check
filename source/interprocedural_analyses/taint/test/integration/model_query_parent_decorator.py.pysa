@@ -1,4 +1,8 @@
+def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+
 ModelQuery(
+  name="test1",
   find = "methods",
   where = [
     cls.name.matches("TestC"),
