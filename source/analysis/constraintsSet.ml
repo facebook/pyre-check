@@ -300,18 +300,32 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
            the Python type system at the moment. *)
         | Defined _, Undefined -> [initial_constraints]
         | Undefined, Defined _ -> [initial_constraints]
-        | ( (ParameterVariadicTypeVariable { head = []; variable = left_variable } as left),
-            (ParameterVariadicTypeVariable { head = []; variable = right_variable } as right) )
+        | ( ParameterVariadicTypeVariable { head = left_head; variable = left_variable },
+            ParameterVariadicTypeVariable { head = right_head; variable = right_variable } )
           when Type.Variable.Variadic.Parameters.is_free left_variable
                && Type.Variable.Variadic.Parameters.is_free right_variable ->
-            initial_constraints
-            |> OrderedConstraints.add_upper_bound
-                 ~order
-                 ~pair:(Type.Variable.ParameterVariadicPair (right_variable, left))
-            >>= OrderedConstraints.add_lower_bound
-                  ~order
-                  ~pair:(Type.Variable.ParameterVariadicPair (left_variable, right))
-            |> Option.to_list
+            let add_parameter_specification_bounds constraints =
+              constraints
+              |> OrderedConstraints.add_upper_bound
+                   ~order
+                   ~pair:
+                     (Type.Variable.ParameterVariadicPair
+                        ( right_variable,
+                          ParameterVariadicTypeVariable { head = []; variable = left_variable } ))
+              >>= OrderedConstraints.add_lower_bound
+                    ~order
+                    ~pair:
+                      (Type.Variable.ParameterVariadicPair
+                         ( left_variable,
+                           ParameterVariadicTypeVariable { head = []; variable = right_variable } ))
+              |> Option.to_list
+            in
+            solve_ordered_types_less_or_equal
+              order
+              ~left:(Type.OrderedTypes.Concrete right_head)
+              ~right:(Type.OrderedTypes.Concrete left_head)
+              ~constraints:initial_constraints
+            |> List.concat_map ~f:add_parameter_specification_bounds
         | bound, ParameterVariadicTypeVariable { head = []; variable }
           when Type.Variable.Variadic.Parameters.is_free variable ->
             let pair = Type.Variable.ParameterVariadicPair (variable, bound) in

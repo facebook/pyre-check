@@ -1075,6 +1075,22 @@ let test_add_constraint_parameter_specification context =
     ~left:"typing.Callable[P, None]"
     ~right:"typing.Callable[P2, None]"
     [[]];
+  assert_add
+    ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, P], None]"
+    ~right:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, P2], None]"
+    [["P2", "P"]];
+  assert_add
+    ~leave_unbound_in_left:["P"]
+    ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P], None]"
+    ~right:
+      "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
+    [[]];
+  assert_add
+    ~leave_unbound_in_left:["P"]
+    ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, int, P], None]"
+    ~right:
+      "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
+    [];
   ()
 
 
