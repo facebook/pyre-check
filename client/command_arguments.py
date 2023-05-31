@@ -275,6 +275,7 @@ class AnalyzeArguments:
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
     verify_dsl: bool = False
+    verify_taint_config_only: bool = False
     output: str = TEXT
     repository_root: Optional[str] = None
     rule: List[int] = field(default_factory=list)

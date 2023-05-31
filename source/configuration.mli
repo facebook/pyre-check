@@ -232,6 +232,7 @@ module StaticAnalysis : sig
     dump_call_graph: PyrePath.t option;
     verify_models: bool;
     verify_dsl: bool;
+    verify_taint_config_only: bool;
     (* Analysis configuration *)
     configuration: Analysis.t;
     rule_filter: int list option;
@@ -265,6 +266,7 @@ module StaticAnalysis : sig
     ?dump_call_graph:PyrePath.t ->
     ?verify_models:bool ->
     ?verify_dsl:bool ->
+    ?verify_taint_config_only:bool ->
     ?rule_filter:int list ->
     ?source_filter:string list ->
     ?sink_filter:string list ->
