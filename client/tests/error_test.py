@@ -134,11 +134,16 @@ class ErrorTest(unittest.TestCase):
                 "path": "test.py",
                 "description": "Some description",
                 "code": 1001,
+                "location": None,
             },
             expected=TaintConfigurationError(
                 path=Path("test.py"),
                 description="Some description",
                 code=1001,
+                start_line=None,
+                start_column=None,
+                stop_line=None,
+                stop_column=None,
             ),
         )
         assert_parsed(
@@ -146,11 +151,36 @@ class ErrorTest(unittest.TestCase):
                 "path": None,
                 "description": "Some description",
                 "code": 1001,
+                "location": None,
             },
             expected=TaintConfigurationError(
                 path=None,
                 description="Some description",
                 code=1001,
+                start_line=None,
+                start_column=None,
+                stop_line=None,
+                stop_column=None,
+            ),
+        )
+        assert_parsed(
+            {
+                "path": None,
+                "description": "Some description",
+                "code": 1001,
+                "location": {
+                    "start": {"line": 1, "column": 2},
+                    "stop": {"line": 3, "column": 4},
+                },
+            },
+            expected=TaintConfigurationError(
+                path=None,
+                description="Some description",
+                code=1001,
+                start_line=1,
+                start_column=2,
+                stop_line=3,
+                stop_column=4,
             ),
         )
 
