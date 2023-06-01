@@ -12,6 +12,8 @@ because it illustrates that this is the intermediary between the Language server
 
 from __future__ import annotations
 
+import abc
+
 import asyncio
 
 import dataclasses
@@ -128,8 +130,128 @@ class QueryResultWithDurations(Generic[QueryResultType]):
     overall_duration: float
 
 
+class PyreLanguageServerApi(abc.ABC):
+    @abc.abstractmethod
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+        activity_key: Optional[Dict[str, object]],
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_language_server_features(self) -> features.LanguageServerFeatures:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def update_overlay_if_needed(self, document_path: Path) -> float:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def sample_source_code(
+        self,
+        document_path: Path,
+        position: lsp.LspPosition,
+    ) -> Optional[str]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_open_request(
+        self,
+        parameters: lsp.DidOpenTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_close_request(
+        self, parameters: lsp.DidCloseTextDocumentParameters
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_did_change_request(
+        self,
+        parameters: lsp.DidChangeTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_did_save_request(
+        self,
+        parameters: lsp.DidSaveTextDocumentParameters,
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_type_coverage_request(
+        self,
+        parameters: lsp.TypeCoverageParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_hover_request(
+        self,
+        parameters: lsp.HoverParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def _get_definition_result(
+        self, document_path: Path, position: lsp.LspPosition
+    ) -> QueryResultWithDurations[List[Dict[str, object]]]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_definition_request(
+        self,
+        parameters: lsp.DefinitionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_completion_request(
+        self,
+        parameters: lsp.CompletionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_document_symbols_request(
+        self,
+        parameters: lsp.DocumentSymbolsParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_find_all_references_request(
+        self,
+        parameters: lsp.ReferencesParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
+        raise NotImplementedError()
+
+
 @dataclasses.dataclass(frozen=True)
-class PyreLanguageServerApi:
+class PyreLanguageServer(PyreLanguageServerApi):
     # Channel to send responses to the editor
     output_channel: connections.AsyncTextWriter
 
@@ -757,7 +879,7 @@ class PyreLanguageServerApi:
         )
 
 
-class CodeNavigationServerApi(PyreLanguageServerApi):
+class CodeNavigationServerApi(PyreLanguageServer):
     pass
 
 
@@ -768,7 +890,7 @@ class PyreLanguageServerDispatcher:
     parse them, and dispatch to the appropriate lower-level logic.
 
     There are two compontents to which we might dispatch:
-    - We'll dispatch to the PyreLanguageServerApi for all request handling,
+    - We'll dispatch to the PyreLanguageServer for all request handling,
       which includes querying the daemon, sending responses to the client,
       and reporting telemetry.
     - We also may check that the background task used to start/restart the

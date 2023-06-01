@@ -27,7 +27,11 @@ from ..daemon_querier import AbstractDaemonQuerier
 from ..daemon_query import DaemonQueryFailure
 from ..persistent import ClientTypeErrorHandler
 
-from ..pyre_language_server import PyreLanguageServerApi, PyreLanguageServerDispatcher
+from ..pyre_language_server import (
+    PyreLanguageServer,
+    PyreLanguageServerApi,
+    PyreLanguageServerDispatcher,
+)
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
 from ..server_state import OpenedDocumentState, ServerState
 
@@ -249,7 +253,7 @@ def create_pyre_language_server_api(
     server_state: ServerState,
     querier: AbstractDaemonQuerier,
 ) -> PyreLanguageServerApi:
-    return PyreLanguageServerApi(
+    return PyreLanguageServer(
         output_channel=output_channel,
         server_state=server_state,
         querier=querier,

@@ -252,7 +252,7 @@ async def async_run_code_navigation_client(
                 client_type_error_handler=client_type_error_handler,
             )
         ),
-        api=pyre_language_server.PyreLanguageServerApi(
+        api=pyre_language_server.PyreLanguageServer(
             output_channel=stdout,
             server_state=server_state,
             querier=querier,
