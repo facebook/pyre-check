@@ -197,12 +197,12 @@ module In = struct
 
 
     let collected_map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
-      let map sofar inputs =
+      let map inputs =
         if Scheduler.is_master () then
-          map sofar inputs, []
+          map inputs, []
         else (
           global := Worker [];
-          let payload = map sofar inputs in
+          let payload = map inputs in
           match !global with
           | Worker keys -> payload, keys
           | Master _ -> failwith "can't set worker back to master")
@@ -219,14 +219,7 @@ module In = struct
 
 
     let collected_iter scheduler ~policy ~f ~inputs =
-      collected_map_reduce
-        scheduler
-        ~policy
-        ~initial:()
-        ~map:(fun _ inputs -> f inputs)
-        ~reduce:(fun _ _ -> ())
-        ~inputs
-        ()
+      collected_map_reduce scheduler ~policy ~initial:() ~map:f ~reduce:(fun _ _ -> ()) ~inputs ()
   end
 end
 

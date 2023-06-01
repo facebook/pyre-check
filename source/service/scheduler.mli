@@ -68,7 +68,7 @@ val map_reduce
   :  t ->
   policy:Policy.t ->
   initial:'state ->
-  map:('state -> 'input list -> 'intermediate) ->
+  map:('input list -> 'intermediate) ->
   reduce:('intermediate -> 'state -> 'state) ->
   inputs:'input list ->
   unit ->

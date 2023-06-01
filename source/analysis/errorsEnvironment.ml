@@ -127,7 +127,7 @@ let populate_for_modules ~scheduler environment qualifiers =
   let timer = Timer.start () in
   let number_of_qualifiers = List.length qualifiers in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_qualifiers;
-  let map _ modules =
+  let map modules =
     List.length modules, List.concat_map modules ~f:(ReadOnly.get_errors_for_qualifier environment)
   in
   let reduce (left_count, left_errors) (right_count, right_errors) =

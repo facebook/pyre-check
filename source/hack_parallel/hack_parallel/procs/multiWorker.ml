@@ -32,7 +32,7 @@ let single_threaded_call job merge neutral next =
            there is no hope for ever getting out of this state *)
         failwith "stuck!"
     | Job l ->
-        let res = job neutral l in
+        let res = job l in
         acc := merge res !acc;
         x := next()
     | Done -> ()
@@ -42,7 +42,7 @@ let single_threaded_call job merge neutral next =
 let multi_threaded_call
     (type a) (type b) (type c)
     workers
-    (job: c -> a -> b)
+    (job: a -> b)
     (merge: b -> c -> c)
     (neutral: c)
     (next: a Hack_bucket.next) =
@@ -64,10 +64,7 @@ let multi_threaded_call
             dispatch [] handles acc
         | Job bucket ->
             (* ... send a job to the worker.*)
-            let handle =
-              Worker.call worker
-                (fun xl -> job neutral xl)
-                bucket in
+            let handle = Worker.call worker job bucket in
             dispatch workers (handle :: handles) acc
   and collect workers handles acc =
     let { Worker.readys; waiters } = Worker.select handles in

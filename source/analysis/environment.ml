@@ -428,12 +428,9 @@ module EnvironmentTable = struct
       let update_only_this_environment ~scheduler { table; upstream_environment } trigger_map =
         Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
         let update ~names_to_update () =
-          let register () =
-            let set (name, dependency) =
-              In.produce_value upstream_environment name ~dependency:(Some dependency)
-              |> Table.add table (In.convert_trigger name)
-            in
-            List.iter ~f:set
+          let register (name, dependency) =
+            In.produce_value upstream_environment name ~dependency:(Some dependency)
+            |> Table.add table (In.convert_trigger name)
           in
           let () =
             SharedMemoryKeys.DependencyKey.Registry.collected_map_reduce
@@ -444,7 +441,7 @@ module EnvironmentTable = struct
                    ~minimum_chunk_size:100
                    ~preferred_chunks_per_worker:5
                    ())
-              ~map:register
+              ~map:(List.iter ~f:register)
               ~reduce:(fun () () -> ())
               ~inputs:names_to_update
               ~initial:()

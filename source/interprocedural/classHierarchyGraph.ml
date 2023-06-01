@@ -148,7 +148,7 @@ module Heap = struct
 
 
   let from_qualifiers ~scheduler ~environment ~qualifiers =
-    let build_class_hierarchy_graph _ qualifiers =
+    let build_class_hierarchy_graph qualifiers =
       List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
           match get_source ~environment qualifier with
           | Some source ->

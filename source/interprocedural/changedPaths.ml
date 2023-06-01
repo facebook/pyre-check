@@ -43,7 +43,7 @@ let hash_of_content analysis_path =
 
 
 let save_current_paths ~scheduler ~configuration ~module_tracker =
-  let save_paths _ module_paths =
+  let save_paths module_paths =
     let save_path module_path =
       let hash = ModulePath.full_path ~configuration module_path |> hash_of_content in
       let qualifier = ModulePath.qualifier module_path in
@@ -81,7 +81,7 @@ end
    `save_current_paths`. *)
 let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
   let timer = Timer.start () in
-  let changed_paths changed new_module_paths =
+  let changed_paths new_module_paths =
     let changed_path module_path =
       let old_hash = SharedMemoryHashes.get (ModulePath.qualifier module_path) in
       let path = ModulePath.full_path ~configuration module_path in
@@ -91,7 +91,7 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
       else
         Some path
     in
-    changed @ List.filter_map new_module_paths ~f:changed_path
+    List.filter_map new_module_paths ~f:changed_path
   in
   let changed_paths =
     Scheduler.map_reduce

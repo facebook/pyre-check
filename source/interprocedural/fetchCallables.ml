@@ -154,7 +154,7 @@ let get_source ~environment qualifier =
 
 let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let map callables qualifiers =
+  let map qualifiers =
     let callables_of_qualifier callables qualifier =
       get_source ~environment qualifier
       >>| (fun source ->
@@ -162,7 +162,7 @@ let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~
       |> Option.value ~default:empty
       |> join callables
     in
-    List.fold qualifiers ~f:callables_of_qualifier ~init:callables
+    List.fold qualifiers ~f:callables_of_qualifier ~init:empty
   in
   Scheduler.map_reduce
     scheduler

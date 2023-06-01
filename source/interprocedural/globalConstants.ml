@@ -68,7 +68,7 @@ module Heap = struct
            ~preferred_chunks_per_worker:1
            ())
       ~initial:empty (* TODO(T153064115): Have each worker write to shared memory directly *)
-      ~map:(fun _ -> List.map ~f:build_per_qualifier)
+      ~map:(List.map ~f:build_per_qualifier)
       ~reduce:(fun results init -> Algorithms.fold_balanced ~f:reduce ~init results)
       ~inputs:qualifiers
       ()

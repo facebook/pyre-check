@@ -2465,7 +2465,7 @@ let build_whole_program_call_graph
            ~preferred_chunk_size:2000
            ())
       ~initial:WholeProgramCallGraph.empty
-      ~map:(fun _ callables ->
+      ~map:(fun callables ->
         List.fold callables ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
       ~reduce:WholeProgramCallGraph.merge_disjoint
       ~inputs:callables

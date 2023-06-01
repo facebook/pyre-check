@@ -106,7 +106,7 @@ let populate_for_definitions ~scheduler environment defines =
   let read_only = read_only environment in
   let number_of_defines = List.length defines in
   Log.info "Checking %d functions..." number_of_defines;
-  let map _ names =
+  let map names =
     let analyze_define number_defines name =
       let () = ReadOnly.get read_only name |> ignore in
       number_defines + 1
@@ -147,7 +147,7 @@ let populate_for_modules ~scheduler environment qualifiers =
       |> AnnotatedGlobalEnvironment.read_only
       |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
     in
-    let map _ qualifiers =
+    let map qualifiers =
       List.concat_map qualifiers ~f:(fun qualifier ->
           UnannotatedGlobalEnvironment.ReadOnly.get_define_names
             unannotated_global_environment

@@ -73,7 +73,7 @@ let run_infer
           |> Option.value ~default:false
   in
   let qualifiers = qualifiers |> List.filter ~f:should_analyze_qualifier in
-  let map _ qualifiers =
+  let map qualifiers =
     let analyze_qualifier qualifier =
       let analyze_source source =
         TypeInference.Local.infer_for_module

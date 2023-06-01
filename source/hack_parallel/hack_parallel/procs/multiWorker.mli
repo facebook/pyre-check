@@ -23,7 +23,7 @@ type 'a bucket = 'a Hack_bucket.bucket =
 
 val call :
   Worker.t list option ->
-  job:('c -> 'a -> 'b) ->
+  job:('a -> 'b) ->
   merge:('b -> 'c -> 'c) -> neutral:'c ->
   next:'a Hack_bucket.next ->
   'c

@@ -1153,14 +1153,13 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     = function
     | [] -> ReadWriteCache.empty
     | write_to_cache_queries ->
-        let map cache targets =
+        let map targets =
           generate_cache_from_queries_on_targets
             ~verbose
             ~resolution
             ~class_hierarchy_graph
             ~targets
             write_to_cache_queries
-          |> ReadWriteCache.merge cache
         in
         Scheduler.map_reduce
           scheduler
@@ -1225,7 +1224,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     = function
     | [] -> ModelQueryRegistryMap.empty
     | regular_queries ->
-        let map model_query_results targets =
+        let map targets =
           generate_models_from_queries_on_targets
             ~verbose
             ~resolution
@@ -1234,7 +1233,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~stubs
             ~targets
             regular_queries
-          |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
         in
         let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
         Scheduler.map_reduce

@@ -153,9 +153,9 @@ let parse_models_and_queries_from_sources
   =
   (* TODO(T117715045): Do not pass all callables and stubs explicitly to map_reduce,
    * since this will marshal-ed between processes and hence is costly. *)
-  let map state sources =
+  let map sources =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-    List.fold sources ~init:state ~f:(fun state (path, source) ->
+    List.fold sources ~init:ModelParseResult.empty ~f:(fun state (path, source) ->
         ModelParser.parse
           ~resolution
           ~path

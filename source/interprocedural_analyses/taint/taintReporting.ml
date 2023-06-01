@@ -83,7 +83,7 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
          ~preferred_chunk_size:2500
          ())
     ~initial:[]
-    ~map:(fun _ callables -> extract_errors callables)
+    ~map:extract_errors
     ~reduce:List.cons
     ~inputs:callables
     ()
@@ -233,7 +233,7 @@ let save_results_to_directory
           scheduler
           ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1)
           ~initial:()
-          ~map:(fun () shards -> List.iter shards ~f:write_json_shard)
+          ~map:(List.iter ~f:write_json_shard)
           ~reduce:(fun () () -> ())
           ~inputs:shards
           ()

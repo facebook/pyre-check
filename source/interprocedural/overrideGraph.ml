@@ -272,7 +272,7 @@ let build_whole_program_overrides
            ~preferred_chunks_per_worker:1
            ())
       ~initial:Heap.empty
-      ~map:(fun _ qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
+      ~map:(fun qualifiers -> List.fold qualifiers ~init:Heap.empty ~f:build_overrides)
       ~reduce:(Target.Map.Tree.merge_skewed ~combine)
       ~inputs:qualifiers
       ()

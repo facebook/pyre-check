@@ -222,7 +222,7 @@ let run ~scheduler ~environment sources =
   let timer = Timer.start () in
   let number_of_sources = List.length sources in
   Log.log ~section:`Progress "Postprocessing %d sources..." number_of_sources;
-  let map _ modules =
+  let map modules =
     List.length modules, List.concat_map modules ~f:(run_on_qualifier environment ~dependency:None)
   in
   let reduce (left_count, left_errors) (right_count, right_errors) =

@@ -146,7 +146,7 @@ let run_process process =
 
 
 let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
-  let sequential_map_reduce () = map initial inputs |> fun mapped -> reduce mapped initial in
+  let sequential_map_reduce () = map inputs |> fun mapped -> reduce mapped initial in
   match scheduler with
   | ParallelScheduler workers ->
       let number_of_workers = List.length workers in
@@ -156,7 +156,7 @@ let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
       if number_of_chunks = 1 then
         sequential_map_reduce ()
       else
-        let map accumulator inputs = (fun () -> map accumulator inputs) |> run_process in
+        let map inputs = (fun () -> map inputs) |> run_process in
         MultiWorker.call
           (Some workers)
           ~job:map
@@ -167,14 +167,7 @@ let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
 
 
 let iter scheduler ~policy ~f ~inputs =
-  map_reduce
-    scheduler
-    ~policy
-    ~initial:()
-    ~map:(fun _ inputs -> f inputs)
-    ~reduce:(fun _ _ -> ())
-    ~inputs
-    ()
+  map_reduce scheduler ~policy ~initial:() ~map:f ~reduce:(fun _ _ -> ()) ~inputs ()
 
 
 let is_parallel = function

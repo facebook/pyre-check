@@ -616,7 +616,7 @@ module Make (Analysis : ANALYSIS) = struct
         let step = { epoch; iteration } in
         let old_batch = State.KeySet.of_list callables_to_analyze in
         let () = State.oldify old_batch in
-        let map _ callables =
+        let map callables =
           one_analysis_pass ~type_environment ~override_graph ~context ~step ~callables
         in
         let reduce left right =
