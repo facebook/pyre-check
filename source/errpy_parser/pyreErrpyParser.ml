@@ -129,7 +129,9 @@ let create_assign ~location ~target ~annotation ~value () =
       Statement.Assign { target; annotation; value }
 
 
-let rec translate_expression (expression : Errpyast.expr) =
+(* TODO(T154719332): Fix this. Error (warning 8 [partial-match]): this pattern-matching is not
+   exhaustive. Here is an example of a case that is not matched: ByteStr _ *)
+let[@warning "-8"] rec translate_expression (expression : Errpyast.expr) =
   let translate_comprehension (comprehension : Errpyast.comprehension) =
     {
       Comprehension.Generator.target = translate_expression comprehension.target;
