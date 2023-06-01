@@ -18,6 +18,7 @@ type t = {
   code: int;
   name: string;
   message_format: string; (* format *)
+  location: JsonParsing.JsonAst.LocationWithPath.t option; (* location where the rule was defined *)
 }
 [@@deriving compare, show]
 

@@ -144,7 +144,10 @@ module Error : sig
         labels: string list;
       }
     | InvalidMultiSink of string
-    | RuleCodeDuplicate of int
+    | RuleCodeDuplicate of {
+        code: int;
+        previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
+      }
     | OptionDuplicate of string
     | SourceDuplicate of string
     | SinkDuplicate of string
