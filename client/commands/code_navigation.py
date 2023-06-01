@@ -198,6 +198,7 @@ async def async_run_code_navigation_client(
         server_options_reader, remote_logging
     )
     stdin, stdout = await connections.create_async_stdin_stdout()
+    LOG.info("Waiting on LSP initialization request")
     initialize_result = await initialization.async_try_initialize_loop(
         stdin,
         stdout,
