@@ -12,6 +12,7 @@ type taint_kind =
 type source_or_sink = {
   name: string;
   kind: taint_kind;
+  location: JsonParsing.JsonAst.LocationWithPath.t option;
 }
 
 val parse_source

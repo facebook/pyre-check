@@ -9,9 +9,9 @@ open OUnit2
 open Core
 open Taint
 
-let named name = { AnnotationParser.name; kind = Named }
+let named name = { AnnotationParser.name; kind = Named; location = None }
 
-let parametric name = { AnnotationParser.name; kind = Parametric }
+let parametric name = { AnnotationParser.name; kind = Parametric; location = None }
 
 let test_parse_source _ =
   let assert_parsed ~allowed ?subkind ~expected source =
