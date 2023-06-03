@@ -93,7 +93,7 @@ class CodeNavigationRange(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DefinitionResponse:
+class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     path: str
     range: CodeNavigationRange
 
