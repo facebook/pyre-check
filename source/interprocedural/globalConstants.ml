@@ -17,6 +17,8 @@ module Heap = struct
 
   let from_source source =
     let extract_string = function
+      (* __module__ affects name resolution, due to __module__ specifying the module something was
+         defined in, so a solution is just to skip __module__ assignments *)
       | {
           Node.value =
             {
@@ -53,7 +55,7 @@ module Heap = struct
     |> Ast.Reference.Map.of_alist_reduce ~f:(fun _old updated -> updated)
 
 
-  let from_qualifiers ~scheduler ~environment ~qualifiers =
+  let from_qualifiers ~environment ~qualifiers =
     let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
     let build_per_qualifier qualifier =
       match Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier with
@@ -77,19 +79,7 @@ module Heap = struct
       in
       Reference.Map.merge ~f:merge
     in
-    Scheduler.map_reduce
-      scheduler
-      ~policy:
-        (Scheduler.Policy.fixed_chunk_count
-           ~minimum_chunks_per_worker:1
-           ~minimum_chunk_size:50
-           ~preferred_chunks_per_worker:1
-           ())
-      ~initial:empty (* TODO(T153064115): Have each worker write to shared memory directly *)
-      ~map:(List.map ~f:build_per_qualifier)
-      ~reduce:(fun results init -> Algorithms.fold_balanced ~f:reduce ~init results)
-      ~inputs:qualifiers
-      ()
+    qualifiers |> List.map ~f:build_per_qualifier |> Algorithms.fold_balanced ~init:empty ~f:reduce
 end
 
 module SharedMemory = struct
@@ -114,5 +104,17 @@ module SharedMemory = struct
   let get Handle = get
 
   let from_qualifiers ~scheduler ~environment ~qualifiers =
-    from_heap (Heap.from_qualifiers ~scheduler ~environment ~qualifiers)
+    Scheduler.iter
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:50
+           ~preferred_chunks_per_worker:1
+           ())
+      ~f:(fun qualifiers ->
+        let (_ : t) = from_heap (Heap.from_qualifiers ~environment ~qualifiers) in
+        ())
+      ~inputs:qualifiers;
+    Handle
 end
