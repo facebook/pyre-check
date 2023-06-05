@@ -740,6 +740,10 @@ module Error = struct
     | SinkDuplicate of string
     | TransformDuplicate of string
     | FeatureDuplicate of string
+    | InvalidRegex of {
+        regex: string;
+        reason: string;
+      }
   [@@deriving equal, compare]
 
   type t = {
@@ -824,6 +828,8 @@ module Error = struct
     | SinkDuplicate name -> Format.fprintf formatter "Duplicate entry for sink: `%s`" name
     | TransformDuplicate name -> Format.fprintf formatter "Duplicate entry for transform: `%s`" name
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
+    | InvalidRegex { regex; reason } ->
+        Format.fprintf formatter "Invalid regex `%s`: `%s`" regex reason
 
 
   let code = function
@@ -847,6 +853,7 @@ module Error = struct
     | FeatureDuplicate _ -> 18
     | UnsupportedTransform _ -> 19
     | TransformDuplicate _ -> 20
+    | InvalidRegex _ -> 21
 
 
   let show_kind = Format.asprintf "%a" pp_kind
@@ -1325,6 +1332,17 @@ let from_json_list source_json_list =
           ~init:CombinedSourceRules.empty
           ~f:(parse_string_combine_rule ~path ~allowed_sources)
   in
+  let parse_regex ~path ~location pattern =
+    try Result.Ok (Re2.create_exn pattern) with
+    | Re2.Exceptions.Regex_compile_failed error ->
+        Result.Error
+          [
+            Error.create_with_location
+              ~path
+              ~location
+              ~kind:(Error.InvalidRegex { regex = pattern; reason = error });
+          ]
+  in
   let parse_implicit_sinks ~allowed_sinks (path, json) =
     match JsonAst.Json.Util.member "implicit_sinks" json with
     | { JsonAst.Node.value = `Null; _ } -> Result.Ok empty_implicit_sinks
@@ -1352,8 +1370,9 @@ let from_json_list source_json_list =
             parse_sink_reference ~path ~allowed_sinks sink
             |> Result.map_error ~f:(fun error -> [error])
             >>= fun sink_kind ->
-            json_string_member ~path "regexp" json
-            >>| fun pattern -> { sink_kind; pattern = Re2.create_exn pattern })
+            json_string_member_with_location ~path "regexp" json
+            >>= fun (raw_pattern, location) ->
+            parse_regex ~path ~location raw_pattern >>| fun pattern -> { sink_kind; pattern })
           literal_strings
         |> Result.combine_errors
         |> Result.map_error ~f:List.concat
@@ -1379,8 +1398,9 @@ let from_json_list source_json_list =
             parse_source_reference ~path ~allowed_sources source
             |> Result.map_error ~f:(fun error -> [error])
             >>= fun source_kind ->
-            json_string_member ~path "regexp" json
-            >>| fun pattern -> { source_kind; pattern = Re2.create_exn pattern })
+            json_string_member_with_location ~path "regexp" json
+            >>= fun (raw_pattern, location) ->
+            parse_regex ~path ~location raw_pattern >>| fun pattern -> { source_kind; pattern })
           literal_strings
         |> Result.combine_errors
         |> Result.map_error ~f:List.concat
