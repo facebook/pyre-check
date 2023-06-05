@@ -20,6 +20,16 @@ module Heap = struct
       | {
           Node.value =
             {
+              Assign.target =
+                { Node.value = Expression.Name (Attribute { attribute = "__module__"; _ }); _ };
+              _;
+            };
+          _;
+        } ->
+          None
+      | {
+          Node.value =
+            {
               Assign.target = { Node.value = Expression.Name (_ as name); _ };
               Assign.value = { Node.value = Expression.Constant (Constant.String (_ as value)); _ };
               _;
@@ -51,11 +61,19 @@ module Heap = struct
       | Some source -> from_source source
     in
     let reduce =
-      let merge ~key:_ = function
-        (* TODO(T152494938): Error here after fixing imports as assign issue *)
-        | `Both (left, _) -> Some left
-        | `Left left -> Some left
-        | `Right right -> Some right
+      let merge ~key = function
+        | `Both (left, right) when not (StringLiteral.equal left right) ->
+            failwith
+              (Format.asprintf
+                 "Two different globals in different modules with the same unqualified name `%s` \
+                  and different values `%s` and `%s`."
+                 (StringLiteral.show left)
+                 (StringLiteral.show right)
+                 (Reference.show key))
+        | `Both (value, _)
+        | `Left value
+        | `Right value ->
+            Some value
       in
       Reference.Map.merge ~f:merge
     in
