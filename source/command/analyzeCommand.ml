@@ -43,6 +43,7 @@ module AnalyzeConfiguration = struct
     maximum_tito_depth: int option;
     no_verify: bool;
     verify_dsl: bool;
+    verify_taint_config_only: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     source_filter: string list option;
@@ -105,6 +106,9 @@ module AnalyzeConfiguration = struct
           let maximum_tito_depth = optional_int_member "maximum_tito_depth" json in
           let no_verify = bool_member "no_verify" ~default:false json in
           let verify_dsl = bool_member "verify_dsl" ~default:false json in
+          let verify_taint_config_only =
+            bool_member "verify_taint_config_only" ~default:false json
+          in
           let repository_root = optional_path_member "repository_root" json in
           let rule_filter = optional_list_member ~f:to_int "rule_filter" json in
           let source_filter = optional_list_member ~f:to_string "source_filter" json in
@@ -140,6 +144,7 @@ module AnalyzeConfiguration = struct
               maximum_tito_depth;
               no_verify;
               verify_dsl;
+              verify_taint_config_only;
               repository_root;
               rule_filter;
               source_filter;
@@ -204,6 +209,7 @@ module AnalyzeConfiguration = struct
         maximum_tito_depth;
         no_verify;
         verify_dsl;
+        verify_taint_config_only;
         rule_filter;
         source_filter;
         sink_filter;
@@ -260,6 +266,7 @@ module AnalyzeConfiguration = struct
       dump_call_graph;
       verify_models = not no_verify;
       verify_dsl;
+      verify_taint_config_only;
       rule_filter;
       source_filter;
       sink_filter;
@@ -305,6 +312,13 @@ let with_performance_tracking ~debug ~f =
   result
 
 
+let verify_configuration ~static_analysis_configuration () =
+  let (_ : Taint.TaintConfiguration.Heap.t) =
+    TaintAnalysis.initialize_configuration ~static_analysis_configuration
+  in
+  ()
+
+
 let run_analyze analyze_configuration =
   let { AnalyzeConfiguration.base = { CommandStartup.BaseConfiguration.source_paths; debug; _ }; _ }
     =
@@ -324,11 +338,14 @@ let run_analyze analyze_configuration =
           | _ -> true)
         ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
-              TaintAnalysis.run_taint_analysis
-                ~static_analysis_configuration
-                ~build_system
-                ~scheduler
-                ());
+              if static_analysis_configuration.verify_taint_config_only then
+                verify_configuration ~static_analysis_configuration ()
+              else
+                TaintAnalysis.run_taint_analysis
+                  ~static_analysis_configuration
+                  ~build_system
+                  ~scheduler
+                  ());
           Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))
 
 

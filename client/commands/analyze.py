@@ -56,6 +56,7 @@ class Arguments:
     maximum_trace_length: Optional[int] = None
     no_verify: bool = False
     verify_dsl: bool = False
+    verify_taint_config_only: bool = False
     repository_root: Optional[str] = None
     rule_filter: Optional[Sequence[int]] = None
     source_filter: Optional[Sequence[str]] = None
@@ -172,6 +173,7 @@ class Arguments:
             ),
             "no_verify": self.no_verify,
             "verify_dsl": self.verify_dsl,
+            "verify_taint_config_only": self.verify_taint_config_only,
             **({} if repository_root is None else {"repository_root": repository_root}),
             **({} if rule_filter is None else {"rule_filter": rule_filter}),
             **({} if source_filter is None else {"source_filter": source_filter}),
@@ -278,6 +280,7 @@ def create_analyze_arguments(
         maximum_trace_length=analyze_arguments.maximum_trace_length,
         no_verify=analyze_arguments.no_verify,
         verify_dsl=analyze_arguments.verify_dsl,
+        verify_taint_config_only=analyze_arguments.verify_taint_config_only,
         repository_root=repository_root,
         rule_filter=None if len(rule) == 0 else rule,
         source_filter=None if len(source) == 0 else source,

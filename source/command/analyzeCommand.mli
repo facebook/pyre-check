@@ -36,6 +36,7 @@ module AnalyzeConfiguration : sig
     maximum_tito_depth: int option;
     no_verify: bool;
     verify_dsl: bool;
+    verify_taint_config_only: bool;
     repository_root: PyrePath.t option;
     rule_filter: int list option;
     source_filter: string list option;

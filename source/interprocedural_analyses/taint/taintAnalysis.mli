@@ -11,3 +11,7 @@ val run_taint_analysis
   scheduler:Scheduler.t ->
   unit ->
   unit
+
+val initialize_configuration
+  :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
+  Taint.TaintConfiguration.Heap.t
