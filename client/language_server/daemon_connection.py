@@ -65,7 +65,7 @@ class AsyncConnection:
     ) -> str:
         LOG.debug(f"Sending `{log.truncate(request, 400)}`")
         response = await self._send_request_no_logging(request)
-        LOG.info(f"Received: `{log.truncate(response, 400)}`")
+        LOG.info(f"Received: `{log.truncate(response, 400).strip()}`")
         return response
 
     @staticmethod
