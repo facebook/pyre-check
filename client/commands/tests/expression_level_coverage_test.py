@@ -203,7 +203,8 @@ class ExpressionLevelTest(testslide.TestCase):
                     ]
                 }
             ).payload,
-            "test.py: 100.0% expressions are covered\nOverall: 100.0% expressions are covered",
+            "test.py: 100.0% expressions are covered\n"
+            "Overall: 100.0% expressions are covered",
         )
         assert_summary_expression_level_coverage(
             daemon_query.Response(
@@ -239,7 +240,8 @@ class ExpressionLevelTest(testslide.TestCase):
                     ]
                 }
             ).payload,
-            "test.py: 71.43% expressions are covered\nOverall: 71.43% expressions are covered",
+            "test.py: 71.43% expressions are covered\n"
+            "Overall: 71.43% expressions are covered",
         )
         assert_summary_expression_level_coverage(
             daemon_query.Response(
@@ -283,7 +285,9 @@ class ExpressionLevelTest(testslide.TestCase):
                     ]
                 }
             ).payload,
-            "library.py: 100.0% expressions are covered\ntest.py: 71.43% expressions are covered\nOverall: 81.82% expressions are covered",
+            "library.py: 100.0% expressions are covered\n"
+            "test.py: 71.43% expressions are covered\n"
+            "Overall: 81.82% expressions are covered",
         )
         assert_summary_expression_level_coverage(
             daemon_query.Response(
