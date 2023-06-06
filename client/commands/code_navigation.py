@@ -98,7 +98,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.DISCONNECTED
             )
-            self.client_status_message_handler.log(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server has stopped.",
                 short_message="Pyre code-nav (stopped)",
                 level=lsp.MessageType.WARNING,
@@ -110,7 +110,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.BUCK_BUILDING
             )
-            self.client_status_message_handler.log(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server is busy re-building the project...",
                 short_message="Pyre code-nav (building)",
                 level=lsp.MessageType.WARNING,
@@ -119,14 +119,14 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.INCREMENTAL_CHECK
             )
-            self.client_status_message_handler.log(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server is busy re-type-checking the project...",
                 short_message="Pyre code-nav (checking)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Idle":
             self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
-            self.client_status_message_handler.log(
+            await self.client_status_message_handler.log_and_show_status_message_to_client(
                 READY_MESSAGE,
                 short_message=READY_SHORT,
                 level=lsp.MessageType.INFO,

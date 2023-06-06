@@ -77,8 +77,8 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         )
 
         client_messages = [x.decode("utf-8") for x in bytes_writer.items()]
-        # We don't forward code-nav updates to the window.
-        self.assertTrue(len(client_messages) == 0)
+        # We forward all 3 code-nav updates to the window.
+        self.assertTrue(len(client_messages) == 3)
 
     @setup.async_test
     async def test_client_setup(self) -> None:

@@ -222,6 +222,7 @@ class ClientStatusMessageHandler:
         fallback_to_notification: bool = False,
     ) -> None:
         if self.get_status_updates_availability().is_disabled():
+            LOG.error("Status updates are disabled, skipping status message.")
             return
         if _client_has_status_bar_support(self.server_state.client_capabilities):
             await _write_status(
