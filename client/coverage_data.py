@@ -466,8 +466,8 @@ def module_from_code(code: str) -> Optional[libcst.MetadataWrapper]:
     try:
         raw_module = libcst.parse_module(code)
         return libcst.MetadataWrapper(raw_module)
-    except libcst.ParserSyntaxError:
-        LOG.exception("Parsing failure")
+    except Exception:
+        LOG.exception("Error reading code at path %s.", code)
         return None
 
 
