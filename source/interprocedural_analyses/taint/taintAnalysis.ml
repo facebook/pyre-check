@@ -371,13 +371,15 @@ let run_taint_analysis
   in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
-  let taint_configuration_shared_memory =
-    TaintConfiguration.SharedMemory.from_heap taint_configuration
-  in
-
   let environment = type_check ~scheduler ~configuration ~decorator_configuration ~cache in
 
   compact_ocaml_heap ~name:"after type check";
+
+  (* We must store the taint configuration into the shared memory after type checking, because type
+     checking may reset the shared memory. *)
+  let taint_configuration_shared_memory =
+    TaintConfiguration.SharedMemory.from_heap taint_configuration
+  in
 
   let module_tracker =
     environment

@@ -49,8 +49,6 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
   let deserialize = Fn.id
 end)
 
-type cached = { type_environment: TypeEnvironment.t }
-
 type error =
   | InvalidByCodeChange
   | InvalidByDecoratorChange
@@ -59,7 +57,7 @@ type error =
   | Disabled
 
 type t = {
-  cache: (cached, error) Result.t;
+  status: (unit, error) Result.t;
   save_cache: bool;
   scheduler: Scheduler.t;
   configuration: Configuration.Analysis.t;
@@ -148,23 +146,22 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
 
 let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
   if not enabled then
-    { cache = Error Disabled; save_cache = false; scheduler; configuration }
+    { status = Error Disabled; save_cache = false; scheduler; configuration }
   else
     let open Result in
-    let type_environment =
+    let status =
       initialize_shared_memory ~configuration
       >>= fun () ->
-      check_decorator_invalidation ~decorator_configuration
-      >>= fun () -> load_type_environment ~scheduler ~configuration
-    in
-    let cache =
-      match type_environment with
-      | Ok type_environment -> Ok { type_environment }
+      match check_decorator_invalidation ~decorator_configuration with
+      | Ok _ -> Ok ()
       | Error error ->
+          (* If there exist updates to certain decorators, it wastes memory and might not be safe to
+             leave the old type environment in the shared memory. *)
+          Log.info "Reset shared memory";
           Memory.reset_shared_memory ();
           Error error
     in
-    { cache; save_cache = true; scheduler; configuration }
+    { status; save_cache = true; scheduler; configuration }
 
 
 let save_type_environment ~scheduler ~configuration ~environment =
@@ -177,14 +174,22 @@ let save_type_environment ~scheduler ~configuration ~environment =
       Ok ())
 
 
-let type_environment { cache; save_cache; scheduler; configuration } f =
-  match cache with
-  | Ok { type_environment } -> type_environment
-  | _ ->
-      let environment = f () in
-      if save_cache then
-        save_type_environment ~scheduler ~configuration ~environment |> ignore_result;
-      environment
+let type_environment { status; save_cache; scheduler; configuration } f =
+  let compute_and_save_environment () =
+    let environment = f () in
+    if save_cache then
+      save_type_environment ~scheduler ~configuration ~environment |> ignore_result;
+    environment
+  in
+  match status with
+  | Ok _ -> (
+      match load_type_environment ~scheduler ~configuration with
+      | Ok environment -> environment
+      | Error _ ->
+          Log.info "Reset shared memory due to failing to load the type environment";
+          Memory.reset_shared_memory ();
+          compute_and_save_environment ())
+  | Error _ -> compute_and_save_environment ()
 
 
 let load_initial_callables () =
@@ -227,11 +232,11 @@ let save_initial_callables ~initial_callables =
       Ok ())
 
 
-let initial_callables { cache; save_cache; _ } f =
+let initial_callables { status; save_cache; _ } f =
   let initial_callables =
-    match cache with
+    match status with
     | Ok _ -> load_initial_callables () |> Result.ok
-    | _ -> None
+    | Error _ -> None
   in
   match initial_callables with
   | Some initial_callables -> initial_callables
@@ -261,11 +266,11 @@ let save_class_hierarchy_graph ~class_hierarchy_graph =
       Ok ())
 
 
-let class_hierarchy_graph { cache; save_cache; _ } f =
+let class_hierarchy_graph { status; save_cache; _ } f =
   let class_hierarchy_graph =
-    match cache with
+    match status with
     | Ok _ -> load_class_hierarchy_graph () |> Result.ok
-    | _ -> None
+    | Error _ -> None
   in
   match class_hierarchy_graph with
   | Some class_hierarchy_graph -> class_hierarchy_graph
