@@ -18,11 +18,10 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Tuple, Union
 
-import dataclasses_json
-
 from .. import (
     coverage_data,
     daemon_socket,
+    dataclasses_json_extensions as json_mixins,
     frontend_configuration,
     identifiers,
     log,
@@ -36,19 +35,19 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 
 @dataclass(frozen=True)
-class Pair(dataclasses_json.DataClassJsonMixin):
+class Pair(json_mixins.CamlCaseAndExcludeJsonMixin):
     line: int
     column: int
 
 
 @dataclass(frozen=True)
-class Location(dataclasses_json.DataClassJsonMixin):
+class Location(json_mixins.CamlCaseAndExcludeJsonMixin):
     start: Pair
     stop: Pair
 
 
 @dataclass(frozen=True)
-class CoverageGap(dataclasses_json.DataClassJsonMixin):
+class CoverageGap(json_mixins.CamlCaseAndExcludeJsonMixin):
     location: Location
     type_: str
     function_name: Optional[str]
@@ -56,30 +55,30 @@ class CoverageGap(dataclasses_json.DataClassJsonMixin):
 
 
 @dataclass(frozen=True)
-class CoverageAtPath(dataclasses_json.DataClassJsonMixin):
+class CoverageAtPath(json_mixins.CamlCaseAndExcludeJsonMixin):
     path: str
     total_expressions: int
     coverage_gaps: List[CoverageGap]
 
 
 @dataclass(frozen=True)
-class CoverageAtPathResponse(dataclasses_json.DataClassJsonMixin):
+class CoverageAtPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     CoverageAtPath: CoverageAtPath
 
 
 @dataclass(frozen=True)
-class ErrorAtPath(dataclasses_json.DataClassJsonMixin):
+class ErrorAtPath(json_mixins.CamlCaseAndExcludeJsonMixin):
     path: str
     error: str
 
 
 @dataclass(frozen=True)
-class ErrorAtPathResponse(dataclasses_json.DataClassJsonMixin):
+class ErrorAtPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     ErrorAtPath: ErrorAtPath
 
 
 @dataclass(frozen=True)
-class ExpressionLevelCoverageResponse(dataclasses_json.DataClassJsonMixin):
+class ExpressionLevelCoverageResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[Union[CoverageAtPathResponse, ErrorAtPathResponse]]
 
 
