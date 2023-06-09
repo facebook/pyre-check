@@ -73,13 +73,8 @@ def run_and_check_output(
         return 0
 
 
-def run_test_no_cache(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
-) -> None:
-    """Run Pysa without the cache argument."""
-    LOG.info("Testing with no --use-cache flag:")
-    returncode = run_and_check_output(
-        [
+def _pysa_command(typeshed_path: str, cache_path: Path, use_cache: bool) -> List[str]:
+    command = [
             "pyre",
             "--dot-pyre-directory",
             str(get_dot_pyre_directory_from_cache_path(cache_path)),
@@ -89,7 +84,20 @@ def run_test_no_cache(
             "analyze",
             "--check-invariants",
             "--inline-decorators",
-        ],
+        ]
+    if use_cache:
+        command.append("--use-cache")
+    return command
+
+
+def run_test_no_cache(
+    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+) -> None:
+    """Run Pysa without the cache argument."""
+    LOG.info("Testing with no --use-cache flag:")
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=False)
+    returncode = run_and_check_output(
+        pysa_command,
         expected,
         output_file_name,
     )
@@ -117,19 +125,9 @@ def run_test_cache_first_and_second_runs(
         pass
 
     LOG.info("Testing behavior with --use-cache flag on initial run:")
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_names[0],
     )
@@ -139,19 +137,9 @@ def run_test_cache_first_and_second_runs(
         sys.exit(returncode)
 
     LOG.info("Testing behavior with --use-cache on subsequent runs:")
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_names[1],
     )
@@ -178,19 +166,9 @@ def run_test_invalid_cache_file(
         pass
     (cache_path / "sharedmem").touch()
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_name,
     )
@@ -218,19 +196,9 @@ def run_test_changed_pysa_file(
 
     test_model_path.touch()
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_name,
     )
@@ -274,19 +242,9 @@ def run_test_changed_taint_config_file(
             "}"
         )
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_name,
     )
@@ -338,19 +296,9 @@ def run_test_changed_models(
         "stop_line": 58,
     }
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected + [new_issue],
         output_file_name,
     )
@@ -383,19 +331,9 @@ def run_test_changed_source_files(
 
     new_file_path.touch()
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected,
         output_file_name,
     )
@@ -448,19 +386,9 @@ def run_test_changed_decorators(
         "stop_line": 23,
     }
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected + [new_issue],
         output_file_name,
     )
@@ -512,19 +440,9 @@ def run_test_changed_overrides(
         "stop_line": 37,
     }
 
+    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
     returncode = run_and_check_output(
-        [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--use-cache",
-            "--check-invariants",
-            "--inline-decorators",
-        ],
+        pysa_command,
         expected + [new_issue],
         "result.cache9",
     )
