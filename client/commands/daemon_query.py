@@ -96,7 +96,7 @@ async def attempt_typed_async_query(
         else:
             if not isinstance(response.payload, dict):
                 raise ValueError(
-                    f"Expected a doct, got {response.payload!r} as response"
+                    f"Expected a dict, got {response.payload!r} as response"
                 )
             if "error" in response.payload:
                 return DaemonQueryFailure(
