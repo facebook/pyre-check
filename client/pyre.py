@@ -1341,8 +1341,7 @@ def report(
     files_and_directories: Iterable[str],
 ) -> int:
     """
-    Subcommands of `pyre report` will provide statistics about the code and
-    how well Pyre can understand types.
+    Report per-module data on strictness, suppressions, and function annotations.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
     configuration = configuration_module.create_configuration(
