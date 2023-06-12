@@ -19,6 +19,7 @@ import os
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 from typing import Any, Dict, List
 
@@ -48,16 +49,20 @@ def normalized_json_dump(normalized: List[Dict[str, Any]]):
 def run_and_check_output(
     command: List[str],
     expected: List[Dict[str, Any]],
+    save_results_to: Path,
     output_file_name: str = "result.actual",
 ) -> int:
     try:
-        output = subprocess.check_output(command).decode()
+        # Print log only if the command failed
+        subprocess.check_output(command, stderr=subprocess.STDOUT)
     except subprocess.CalledProcessError as exception:
         LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
         sys.stdout.write(exception.output.decode())
         return exception.returncode
 
-    output_str = normalized_json_dump(json.loads(output))
+    with open(save_results_to / "errors.json") as file:
+        output_str = json.load(file)
+    output_str = normalized_json_dump(output_str)
     expected_str = normalized_json_dump(expected)
 
     if output_str != expected_str:
@@ -73,32 +78,43 @@ def run_and_check_output(
         return 0
 
 
-def _pysa_command(typeshed_path: str, cache_path: Path, use_cache: bool) -> List[str]:
+def _pysa_command(
+    typeshed_path: str, cache_path: Path, save_results_to: Path, use_cache: bool
+) -> List[str]:
     command = [
-            "pyre",
-            "--dot-pyre-directory",
-            str(get_dot_pyre_directory_from_cache_path(cache_path)),
-            "--typeshed",
-            f"{typeshed_path}",
-            "--noninteractive",
-            "analyze",
-            "--check-invariants",
-            "--inline-decorators",
-        ]
+        "pyre",
+        "--dot-pyre-directory",
+        str(get_dot_pyre_directory_from_cache_path(cache_path)),
+        "--typeshed",
+        f"{typeshed_path}",
+        "--noninteractive",
+        "analyze",
+        "--check-invariants",
+        "--inline-decorators",
+        "--save-results-to",
+        save_results_to,
+    ]
     if use_cache:
         command.append("--use-cache")
     return command
 
 
 def run_test_no_cache(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """Run Pysa without the cache argument."""
     LOG.info("Testing with no --use-cache flag:")
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=False)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=False
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_name,
     )
     if returncode == 0:
@@ -108,7 +124,11 @@ def run_test_no_cache(
 
 
 def run_test_cache_first_and_second_runs(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_names: List[str]
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_names: List[str],
 ) -> None:
     """
     Run Pysa with the cache argument for the first time. This should create
@@ -125,10 +145,13 @@ def run_test_cache_first_and_second_runs(
         pass
 
     LOG.info("Testing behavior with --use-cache flag on initial run:")
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_names[0],
     )
     if returncode == 0:
@@ -137,10 +160,13 @@ def run_test_cache_first_and_second_runs(
         sys.exit(returncode)
 
     LOG.info("Testing behavior with --use-cache on subsequent runs:")
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_names[1],
     )
     if returncode == 0:
@@ -150,7 +176,11 @@ def run_test_cache_first_and_second_runs(
 
 
 def run_test_invalid_cache_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
@@ -166,10 +196,13 @@ def run_test_invalid_cache_file(
         pass
     (cache_path / "sharedmem").touch()
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_name,
     )
 
@@ -180,7 +213,11 @@ def run_test_invalid_cache_file(
 
 
 def run_test_changed_pysa_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -196,10 +233,13 @@ def run_test_changed_pysa_file(
 
     test_model_path.touch()
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_name,
     )
 
@@ -217,7 +257,11 @@ def run_test_changed_pysa_file(
 
 
 def run_test_changed_taint_config_file(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -242,10 +286,13 @@ def run_test_changed_taint_config_file(
             "}"
         )
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_name,
     )
 
@@ -265,7 +312,11 @@ def run_test_changed_taint_config_file(
 
 
 def run_test_changed_models(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -296,10 +347,13 @@ def run_test_changed_models(
         "stop_line": 58,
     }
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected + [new_issue],
+        save_results_to,
         output_file_name,
     )
 
@@ -313,7 +367,11 @@ def run_test_changed_models(
 
 
 def run_test_changed_source_files(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after adding a new file to test cache invalidation.
@@ -331,10 +389,13 @@ def run_test_changed_source_files(
 
     new_file_path.touch()
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected,
+        save_results_to,
         output_file_name,
     )
 
@@ -352,7 +413,11 @@ def run_test_changed_source_files(
 
 
 def run_test_changed_decorators(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
@@ -386,10 +451,13 @@ def run_test_changed_decorators(
         "stop_line": 23,
     }
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected + [new_issue],
+        save_results_to,
         output_file_name,
     )
 
@@ -407,7 +475,11 @@ def run_test_changed_decorators(
 
 
 def run_test_changed_overrides(
-    typeshed_path: str, cache_path: Path, expected: List[Dict[str, Any]], output_file_name: str
+    typeshed_path: str,
+    cache_path: Path,
+    expected: List[Dict[str, Any]],
+    save_results_to: Path,
+    output_file_name: str,
 ) -> None:
     """
     Run Pysa after removing a @SkipOverrides model to test cache invalidation.
@@ -440,10 +512,13 @@ def run_test_changed_overrides(
         "stop_line": 37,
     }
 
-    pysa_command = _pysa_command(typeshed_path, cache_path, use_cache=True)
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
     returncode = run_and_check_output(
         pysa_command,
         expected + [new_issue],
+        save_results_to,
         "result.cache9",
     )
 
@@ -473,15 +548,41 @@ def run_tests() -> None:
     with open("result.json") as file:
         expected = json.load(file)
 
-    run_test_no_cache(typeshed_path, cache_path, expected, "result.no_cache")
-    run_test_cache_first_and_second_runs(typeshed_path, cache_path, expected, ["result.cache1", "result.cache2"])
-    run_test_invalid_cache_file(typeshed_path, cache_path, expected, "result.cache3")
-    run_test_changed_pysa_file(typeshed_path, cache_path, expected, "result.cache4")
-    run_test_changed_taint_config_file(typeshed_path, cache_path, expected, "result.cache5")
-    run_test_changed_models(typeshed_path, cache_path, expected, "result.cache7")
-    run_test_changed_source_files(typeshed_path, cache_path, expected, "result.cache6")
-    run_test_changed_decorators(typeshed_path, cache_path, expected, "result.cache8")
-    run_test_changed_overrides(typeshed_path, cache_path, expected, "result.cache9")
+    with tempfile.TemporaryDirectory() as save_results_to:
+        save_results_to = Path(save_results_to)
+        LOG.info(f"Saving results to directory: `{save_results_to}`")
+
+        run_test_no_cache(
+            typeshed_path, cache_path, expected, save_results_to, "result.no_cache"
+        )
+        run_test_cache_first_and_second_runs(
+            typeshed_path,
+            cache_path,
+            expected,
+            save_results_to,
+            ["result.cache1", "result.cache2"],
+        )
+        run_test_invalid_cache_file(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache3"
+        )
+        run_test_changed_pysa_file(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache4"
+        )
+        run_test_changed_taint_config_file(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache5"
+        )
+        run_test_changed_models(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache7"
+        )
+        run_test_changed_source_files(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache6"
+        )
+        run_test_changed_decorators(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache8"
+        )
+        run_test_changed_overrides(
+            typeshed_path, cache_path, expected, save_results_to, "result.cache9"
+        )
 
     LOG.info("All runs produced expected output.")
 
