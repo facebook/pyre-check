@@ -11,11 +11,7 @@ from typing import Iterable
 import testslide
 
 from ...error import Error
-from ..incremental import (
-    compute_error_statistics_per_code,
-    InvalidServerResponse,
-    parse_type_error_response,
-)
+from ..incremental import InvalidServerResponse, parse_type_error_response
 
 
 class IncrementalTest(testslide.TestCase):
@@ -92,24 +88,4 @@ class IncrementalTest(testslide.TestCase):
                     long_description="Long description 2",
                 ),
             ],
-        )
-
-    def test_compute_error_statistics_per_code(self) -> None:
-        error_42 = Error(
-            line=1,
-            column=1,
-            stop_line=3,
-            stop_column=3,
-            path=Path("test.py"),
-            code=42,
-            name="Fake name",
-            description="Fake description",
-        )
-        error_43 = dataclasses.replace(error_42, code=43)
-        self.assertListEqual(
-            [
-                {"code": 42, "count": 2},
-                {"code": 43, "count": 1},
-            ],
-            list(compute_error_statistics_per_code([error_42, error_43, error_42])),
         )

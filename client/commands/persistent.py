@@ -275,11 +275,6 @@ class ClientTypeErrorHandler:
             "Refreshing type errors received from Pyre server. "
             f"Total number of type errors is {len(type_errors)}."
         )
-        incremental.log_error_statistics(
-            remote_logging=self.remote_logging,
-            type_errors=type_errors,
-            command_name=COMMAND_NAME,
-        )
         self.server_state.diagnostics = type_errors_to_diagnostics(type_errors)
 
     async def clear_type_errors_for_client(self) -> None:

@@ -97,42 +97,6 @@ def _read_type_errors(socket_path: Path) -> List[error.Error]:
         return parse_type_error_response(input_channel.readline())
 
 
-def compute_error_statistics_per_code(
-    type_errors: Sequence[error.Error],
-) -> Iterable[Dict[str, int]]:
-    errors_grouped_by_code: Dict[int, List[error.Error]] = {}
-    for type_error in type_errors:
-        errors_grouped_by_code.setdefault(type_error.code, []).append(type_error)
-
-    for code, errors in errors_grouped_by_code.items():
-        yield {"code": code, "count": len(errors)}
-
-
-def log_error_statistics(
-    remote_logging: Optional[backend_arguments.RemoteLogging],
-    type_errors: Sequence[error.Error],
-    command_name: str,
-) -> None:
-    if remote_logging is None:
-        return
-    logger = remote_logging.logger
-    if logger is None:
-        return
-    log_identifier = remote_logging.identifier
-    for integers in compute_error_statistics_per_code(type_errors):
-        remote_logger.log(
-            category=remote_logger.LoggerCategory.ERROR_STATISTICS,
-            logger=logger,
-            integers=integers,
-            normals={
-                "command": command_name,
-                **(
-                    {"identifier": log_identifier} if log_identifier is not None else {}
-                ),
-            },
-        )
-
-
 def display_type_errors(errors: List[error.Error], output: str) -> None:
     error.print_errors(
         [error.relativize_path(against=Path.cwd()) for error in errors],
@@ -149,11 +113,6 @@ def _show_progress_log_and_display_type_errors(
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
         type_errors = _read_type_errors(socket_path)
-        log_error_statistics(
-            remote_logging=remote_logging,
-            type_errors=type_errors,
-            command_name=COMMAND_NAME,
-        )
         display_type_errors(type_errors, output=output)
         return (
             commands.ExitCode.SUCCESS
