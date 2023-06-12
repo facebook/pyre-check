@@ -54,6 +54,7 @@ DEFAULT_EXCLUDES: Optional[Sequence[str]] = None
 DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
 DEFAULT_USE_ERRPY_PARSER: bool = False
+DEFAULT_REQUEST_ID: int = 42
 
 
 def create_server_options(
@@ -173,7 +174,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, lsp.LspHoverResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
-            raise ValueError("You need to set hover response in the mock querier")
+            raise ValueError("You need to set the hover response in the mock querier")
         else:
             return self.mock_hover_response
 
@@ -184,7 +185,9 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
-            raise ValueError("You need to set hover response in the mock querier")
+            raise ValueError(
+                "You need to set the get definition locations response in the mock querier"
+            )
         else:
             return self.mock_definition_response
 
@@ -195,7 +198,9 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_completion_response is None:
-            raise ValueError("You need to set hover response in the mock querier")
+            raise ValueError(
+                "You need to set the get completions response in the mock querier"
+            )
         else:
             return self.mock_completion_response
 
@@ -206,7 +211,9 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
-            raise ValueError("You need to set hover response in the mock querier")
+            raise ValueError(
+                "You need to set the get reference locations response in the mock querier"
+            )
         else:
             return self.mock_references_response
 
@@ -334,9 +341,6 @@ async def create_input_channel_with_requests(
     for request in requests:
         await lsp.write_json_rpc(AsyncTextWriter(bytes_writer), request)
     return AsyncTextReader(MemoryBytesReader(b"\n".join(bytes_writer.items())))
-
-
-DEFAULT_REQUEST_ID: int = 42
 
 
 def success_response_json(
