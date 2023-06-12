@@ -34,6 +34,7 @@ from ...language_server.features import (
 from ...language_server.protocol import SymbolKind
 from ...tests import setup
 from .. import start, subscription
+from ..daemon_querier import DaemonQuerierSource, GetDefinitionLocationsResponse
 from ..initialization import (
     async_try_initialize,
     InitializationExit,
@@ -1851,15 +1852,18 @@ class DefinitionTest(ApiTestCase):
         tracked_path = Path("/tracked.py")
         lsp_line = 3
         daemon_line = lsp_line + 1
-        expected_response = [
-            lsp.LspLocation(
-                uri="file:///path/to/foo.py",
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=5, character=6),
-                    end=lsp.LspPosition(line=5, character=9),
-                ),
-            )
-        ]
+        expected_response = GetDefinitionLocationsResponse(
+            source=DaemonQuerierSource.PYRE_DAEMON,
+            data=[
+                lsp.LspLocation(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
+                )
+            ],
+        )
         for telemetry in (
             TelemetryAvailability.ENABLED,
             TelemetryAvailability.DISABLED,
@@ -1902,7 +1906,7 @@ class DefinitionTest(ApiTestCase):
                 ],
             )
             raw_expected_response = lsp.LspLocation.cached_schema().dump(
-                expected_response, many=True
+                expected_response.data, many=True
             )
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
@@ -1927,15 +1931,18 @@ class DefinitionTest(ApiTestCase):
         tracked_path = Path("/tracked.py")
         lsp_line = 3
         daemon_line = lsp_line + 1
-        expected_response = [
-            lsp.LspLocation(
-                uri="file:///path/to/foo.py",
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=5, character=6),
-                    end=lsp.LspPosition(line=5, character=9),
-                ),
-            )
-        ]
+        expected_response = GetDefinitionLocationsResponse(
+            source=DaemonQuerierSource.PYRE_DAEMON,
+            data=[
+                lsp.LspLocation(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
+                )
+            ],
+        )
         for telemetry in (
             TelemetryAvailability.ENABLED,
             TelemetryAvailability.DISABLED,
@@ -1980,7 +1987,7 @@ class DefinitionTest(ApiTestCase):
                 ],
             )
             raw_expected_response = lsp.LspLocation.cached_schema().dump(
-                expected_response, many=True
+                expected_response.data, many=True
             )
             expect_correct_response = self._expect_success_message(
                 raw_expected_response
@@ -2006,15 +2013,18 @@ class DefinitionTest(ApiTestCase):
         lsp_line = 3
         daemon_line = lsp_line + 1
         expected_editor_response = []
-        expected_telemetry_response = [
-            lsp.LspLocation(
-                uri="file:///path/to/foo.py",
-                range=lsp.LspRange(
-                    start=lsp.LspPosition(line=5, character=6),
-                    end=lsp.LspPosition(line=5, character=9),
-                ),
-            )
-        ]
+        expected_telemetry_response = GetDefinitionLocationsResponse(
+            source=DaemonQuerierSource.PYRE_DAEMON,
+            data=[
+                lsp.LspLocation(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
+                )
+            ],
+        )
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
         )
@@ -2061,7 +2071,7 @@ class DefinitionTest(ApiTestCase):
                 self._expect_telemetry_event(
                     operation="definition",
                     result=lsp.LspLocation.cached_schema().dump(
-                        expected_telemetry_response, many=True
+                        expected_telemetry_response.data, many=True
                     ),
                 ),
             ],

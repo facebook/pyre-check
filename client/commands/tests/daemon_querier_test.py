@@ -25,7 +25,12 @@ from ...language_server.features import (
     TypeCoverageAvailability,
 )
 from ...tests import setup
-from ..daemon_querier import CodeNavigationDaemonQuerier, PersistentDaemonQuerier
+from ..daemon_querier import (
+    CodeNavigationDaemonQuerier,
+    DaemonQuerierSource,
+    GetDefinitionLocationsResponse,
+    PersistentDaemonQuerier,
+)
 from ..daemon_query import DaemonQueryFailure
 
 from ..tests import server_setup
@@ -301,15 +306,18 @@ class DaemonQuerierTest(testslide.TestCase):
         )
         self.assertEqual(
             response,
-            [
-                lsp.LspLocation(
-                    uri="/foo.py",
-                    range=lsp.LspRange(
-                        start=lsp.LspPosition(line=8, character=6),
-                        end=lsp.LspPosition(line=9, character=11),
-                    ),
-                )
-            ],
+            GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.PYRE_DAEMON,
+                data=[
+                    lsp.LspLocation(
+                        uri="/foo.py",
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=8, character=6),
+                            end=lsp.LspPosition(line=9, character=11),
+                        ),
+                    )
+                ],
+            ),
         )
 
     @setup.async_test

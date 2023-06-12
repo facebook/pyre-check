@@ -14,6 +14,7 @@ the request handler implementation can be mocked.
 
 import abc
 import dataclasses
+import enum
 import json
 import logging
 import os
@@ -34,6 +35,11 @@ from . import daemon_query, expression_level_coverage, server_state as state
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class DaemonQuerierSource(enum.Enum):
+    PYRE_DAEMON = "PYRE_DAEMON"
+    GLEAN_INDEXER = "GLEAN_INDEXER"
+
+
 @dataclasses.dataclass(frozen=True)
 class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: lsp.PyreHoverResponse
@@ -52,6 +58,12 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     response: List[str]
+
+
+@dataclasses.dataclass(frozen=True)
+class GetDefinitionLocationsResponse:
+    source: DaemonQuerierSource
+    data: List[lsp.LspLocation]
 
 
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
@@ -132,7 +144,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -284,7 +296,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
         path_string = f"'{path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
@@ -299,10 +311,13 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
             return daemon_response
         else:
-            return [
-                response.to_lsp_definition_response()
-                for response in daemon_response.response
-            ]
+            return GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.PYRE_DAEMON,
+                data=[
+                    response.to_lsp_definition_response()
+                    for response in daemon_response.response
+                ],
+            )
 
     async def get_completions(
         self,
@@ -431,7 +446,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -443,10 +458,13 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
             return daemon_query.DaemonQueryFailure(response.message)
-        return [
-            definition_location.to_lsp_definition_response()
-            for definition_location in response.definitions
-        ]
+        return GetDefinitionLocationsResponse(
+            source=DaemonQuerierSource.PYRE_DAEMON,
+            data=[
+                definition_location.to_lsp_definition_response()
+                for definition_location in response.definitions
+            ],
+        )
 
     async def get_completions(
         self,
@@ -566,7 +584,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
         return await self.base_querier.get_definition_locations(path, position)
 
     async def get_completions(

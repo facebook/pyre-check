@@ -634,7 +634,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             result = raw_result
         else:
             result = lsp.LspLocation.cached_schema().dump(
-                raw_result,
+                raw_result.data,
                 many=True,
             )
         return QueryResultWithDurations(

@@ -23,7 +23,7 @@ from ...language_server.daemon_connection import DaemonConnectionFailure
 from ...language_server.features import LanguageServerFeatures, TypeCoverageAvailability
 
 from .. import start
-from ..daemon_querier import AbstractDaemonQuerier
+from ..daemon_querier import AbstractDaemonQuerier, GetDefinitionLocationsResponse
 from ..daemon_query import DaemonQueryFailure
 from ..persistent import ClientTypeErrorHandler
 
@@ -142,7 +142,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         mock_type_errors: Optional[List[error.Error]] = None,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
-        mock_definition_response: Optional[List[lsp.LspLocation]] = None,
+        mock_definition_response: Optional[GetDefinitionLocationsResponse] = None,
         mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
     ) -> None:
@@ -182,7 +182,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
             raise ValueError(
