@@ -1356,6 +1356,28 @@ def report(
 
 
 @pyre.command()
+@click.pass_context
+@click.argument("files_and_directories", type=str, nargs=-1)
+def report_any_expressions(
+    context: click.Context,
+    files_and_directories: Iterable[str],
+) -> int:
+    """
+    Report on expressions whose types contain `typing.Any`.
+    """
+    command_argument: command_arguments.CommandArguments = context.obj["arguments"]
+    configuration = configuration_module.create_configuration(
+        command_argument, Path(".")
+    )
+    paths: Optional[Sequence[Path]] = [Path(d) for d in files_and_directories]
+    paths = None if len(paths) == 0 else paths
+    return commands.report_any_expressions.run(
+        frontend_configuration.OpenSource(configuration),
+        paths=paths,
+    )
+
+
+@pyre.command()
 @click.argument("files_and_directories", type=str, nargs=-1)
 @click.option(
     "--log-results",

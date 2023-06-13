@@ -31,6 +31,7 @@ from . import (  # noqa F401
     query,
     rage,
     report,
+    report_any_expressions,
     restart,
     servers,
     start,
