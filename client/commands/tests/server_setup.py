@@ -33,7 +33,7 @@ from ..pyre_language_server import (
     PyreLanguageServerDispatcher,
 )
 from ..pyre_server_options import PyreServerOptions, PyreServerOptionsReader
-from ..server_state import OpenedDocumentState, ServerState
+from ..server_state import ConnectionStatus, OpenedDocumentState, ServerState
 
 
 DEFAULT_BINARY = "/bin/pyre"
@@ -55,6 +55,7 @@ DEFAULT_FLAVOR: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC
 DEFAULT_FILE_CONTENTS: str = "```\nfoo.Foo\n```"
 DEFAULT_USE_ERRPY_PARSER: bool = False
 DEFAULT_REQUEST_ID: int = 42
+DEFAULT_CONNECTION_STATUS: ConnectionStatus = ConnectionStatus.READY
 
 
 def create_server_options(
@@ -275,6 +276,7 @@ def create_pyre_language_server_api_and_output(
     opened_documents: Dict[Path, OpenedDocumentState],
     querier: MockDaemonQuerier,
     server_options: PyreServerOptions = mock_initial_server_options,
+    connection_status: ConnectionStatus = DEFAULT_CONNECTION_STATUS,
 ) -> Tuple[PyreLanguageServerApi, MemoryBytesWriter]:
     output_writer: MemoryBytesWriter = MemoryBytesWriter()
     output_channel = AsyncTextWriter(output_writer)
@@ -282,6 +284,7 @@ def create_pyre_language_server_api_and_output(
         server_options=server_options,
         opened_documents=opened_documents,
     )
+    server_state.status_tracker.set_status(connection_status)
     api = create_pyre_language_server_api(
         output_channel=output_channel,
         server_state=server_state,
