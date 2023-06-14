@@ -61,7 +61,7 @@ from ..pyre_language_server import (
     read_lsp_request,
 )
 from ..pyre_server_options import PyreServerOptions
-from ..server_state import OpenedDocumentState, ServerState
+from ..server_state import ConnectionStatus, OpenedDocumentState, ServerState
 from ..tests import server_setup
 
 
@@ -2077,6 +2077,7 @@ class DefinitionTest(ApiTestCase):
             ],
         )
 
+    @setup.async_test
     async def test_definition__unopened(self) -> None:
         tracked_path = Path("/tracked.py")
         untracked_path = Path("/not_tracked.py")
@@ -2103,6 +2104,76 @@ class DefinitionTest(ApiTestCase):
         self._assert_output_messages(
             output_writer,
             [self._expect_success_message([])],
+        )
+
+    @setup.async_test
+    async def test_definition__indexed(self) -> None:
+        tracked_path = Path("/tracked.py")
+        expected_editor_response = []
+        expected_telemetry_response = GetDefinitionLocationsResponse(
+            source=DaemonQuerierSource.GLEAN_INDEXER,
+            data=[
+                lsp.LspLocation(
+                    uri="file:///path/to/foo.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=5, character=6),
+                        end=lsp.LspPosition(line=5, character=9),
+                    ),
+                )
+            ],
+        )
+        querier = server_setup.MockDaemonQuerier(
+            mock_definition_response=expected_telemetry_response,
+        )
+        api, output_writer = server_setup.create_pyre_language_server_api_and_output(
+            opened_documents={
+                tracked_path: OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
+            },
+            querier=querier,
+            server_options=server_setup.create_server_options(
+                language_server_features=LanguageServerFeatures(
+                    definition=DefinitionAvailability.SHADOW,
+                    telemetry=TelemetryAvailability.ENABLED,
+                ),
+            ),
+            # Pyre daemon not "READY", will serve indexed results
+            connection_status=ConnectionStatus.STARTING,
+        )
+        await api.process_definition_request(
+            parameters=lsp.DefinitionParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=3, character=4),
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            querier.requests,
+            [
+                {
+                    "path": tracked_path,
+                    "position": lsp.PyrePosition(line=4, character=4),
+                },
+            ],
+        )
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    lsp.LspLocation.cached_schema().dump(
+                        expected_editor_response, many=True
+                    )
+                ),
+                self._expect_telemetry_event(
+                    operation="definition",
+                    result=lsp.LspLocation.cached_schema().dump(
+                        expected_telemetry_response.data, many=True
+                    ),
+                ),
+            ],
         )
 
 

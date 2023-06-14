@@ -35,9 +35,9 @@ from . import daemon_query, expression_level_coverage, server_state as state
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
-class DaemonQuerierSource(enum.Enum):
-    PYRE_DAEMON = "PYRE_DAEMON"
-    GLEAN_INDEXER = "GLEAN_INDEXER"
+class DaemonQuerierSource(str, enum.Enum):
+    PYRE_DAEMON: str = "PYRE_DAEMON"
+    GLEAN_INDEXER: str = "GLEAN_INDEXER"
 
 
 @dataclasses.dataclass(frozen=True)

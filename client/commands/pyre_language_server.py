@@ -37,6 +37,8 @@ from .. import background_tasks, json_rpc, log, timer
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import commands, daemon_querier, find_symbols, server_state as state
 
+from .daemon_querier import DaemonQuerierSource
+
 from .daemon_query import DaemonQueryFailure
 
 from .server_state import OpenedDocumentState
@@ -124,6 +126,7 @@ QueryResultType = TypeVar("QueryResultType")
 
 @dataclasses.dataclass(frozen=True)
 class QueryResultWithDurations(Generic[QueryResultType]):
+    source: Optional[DaemonQuerierSource]
     result: Union[QueryResultType, DaemonQueryFailure]
     overlay_update_duration: float
     query_duration: float
@@ -631,13 +634,16 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "definition", str(type(raw_result)), raw_result.error_message
                 ),
             )
+            source = None
             result = raw_result
         else:
+            source = raw_result.source
             result = lsp.LspLocation.cached_schema().dump(
                 raw_result.data,
                 many=True,
             )
         return QueryResultWithDurations(
+            source=source,
             result=result,
             overlay_update_duration=overlay_update_duration,
             query_duration=query_duration,
@@ -713,6 +719,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "count": len(output_result),
                 "response": output_result,
                 "duration_ms": result_with_durations.overall_duration,
+                "query_source": result_with_durations.source,
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "server_state_open_documents_count": len(
