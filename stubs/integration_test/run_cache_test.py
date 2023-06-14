@@ -451,7 +451,7 @@ def run_test_changed_source_files(
 
     LOG.info("Testing cache invalidation after source files change:")
 
-    new_file_path = Path("PYSA_CACHE_TEST__tmp_file.py")
+    new_file_path = Path("fixture_source") / "PYSA_CACHE_TEST__tmp_file.py"
     try:
         new_file_path.unlink()
     except FileNotFoundError:
@@ -463,11 +463,7 @@ def run_test_changed_source_files(
         typeshed_path, cache_path, save_results_to, use_cache=True
     )
     expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "TypeEnvironment": "Used",
-            }
-        },
+        "shared_memory_status": "InvalidByCodeChange",
         "save_cache": True,
     }
     returncode = _run_and_check_output(
