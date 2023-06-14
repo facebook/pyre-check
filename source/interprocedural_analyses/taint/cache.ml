@@ -50,11 +50,20 @@ module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
 end)
 
 module Entry = struct
-  type t = TypeEnvironment [@@deriving compare, show { with_path = false }]
+  type t =
+    | TypeEnvironment
+    | InitialCallables
+    | ClassHierarchyGraph
+  [@@deriving compare, show { with_path = false }]
 end
 
 module EntryUsage = struct
-  type t = Used [@@deriving show { with_path = false }]
+  type error = LoadError [@@deriving show { with_path = false }]
+
+  type t =
+    | Used
+    | Unused of error
+  [@@deriving show { with_path = false }]
 end
 
 module EntryStatus = struct
@@ -246,17 +255,6 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
   environment, { cache with status }
 
 
-let load_initial_callables () =
-  exception_to_error
-    ~error:SharedMemoryStatus.LoadError
-    ~message:"loading initial callables from cache"
-    ~f:(fun () ->
-      Log.info "Loading initial callables from cache...";
-      let initial_callables = InitialCallablesSharedMemory.load () in
-      Log.info "Loaded initial callables from cache.";
-      Ok initial_callables)
-
-
 let ensure_save_directory_exists ~configuration =
   let directory = PyrePath.absolute (get_save_directory ~configuration) in
   try Core_unix.mkdir directory with
@@ -281,6 +279,17 @@ let save { save_cache; configuration; _ } =
     save_shared_memory ~configuration |> ignore
 
 
+let load_initial_callables () =
+  exception_to_error
+    ~error:(EntryUsage.Unused EntryUsage.LoadError)
+    ~message:"loading initial callables from cache"
+    ~f:(fun () ->
+      Log.info "Loading initial callables from cache...";
+      let initial_callables = InitialCallablesSharedMemory.load () in
+      Log.info "Loaded initial callables from cache.";
+      Ok initial_callables)
+
+
 let save_initial_callables ~initial_callables =
   exception_to_error ~error:() ~message:"saving initial callables to cache" ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
@@ -289,24 +298,32 @@ let save_initial_callables ~initial_callables =
       Ok ())
 
 
-let initial_callables { status; save_cache; _ } f =
-  let initial_callables =
+let initial_callables ({ status; save_cache; _ } as cache) f =
+  let initial_callables, status =
     match status with
-    | Loaded _ -> load_initial_callables () |> Result.ok
-    | _ -> None
+    | Loaded entry_status ->
+        let initial_callables, usage =
+          match load_initial_callables () with
+          | Ok initial_callables -> Some initial_callables, EntryUsage.Used
+          | Error error -> None, error
+        in
+        let entry_status = EntryStatus.add ~name:Entry.InitialCallables ~usage entry_status in
+        initial_callables, SharedMemoryStatus.Loaded entry_status
+    | _ -> None, status
   in
+  let cache = { cache with status } in
   match initial_callables with
-  | Some initial_callables -> initial_callables
+  | Some initial_callables -> initial_callables, cache
   | None ->
       let callables = f () in
       if save_cache then
         save_initial_callables ~initial_callables:callables |> ignore_result;
-      callables
+      callables, cache
 
 
 let load_class_hierarchy_graph () =
   exception_to_error
-    ~error:SharedMemoryStatus.LoadError
+    ~error:(EntryUsage.Unused EntryUsage.LoadError)
     ~message:"loading class hierarchy graph from cache"
     ~f:(fun () ->
       Log.info "Loading class hierarchy graph from cache...";
@@ -323,16 +340,24 @@ let save_class_hierarchy_graph ~class_hierarchy_graph =
       Ok ())
 
 
-let class_hierarchy_graph { status; save_cache; _ } f =
-  let class_hierarchy_graph =
+let class_hierarchy_graph ({ status; save_cache; _ } as cache) f =
+  let class_hierarchy_graph, status =
     match status with
-    | Loaded _ -> load_class_hierarchy_graph () |> Result.ok
-    | _ -> None
+    | Loaded entry_status ->
+        let class_hierarchy_graph, usage =
+          match load_class_hierarchy_graph () with
+          | Ok class_hierarchy_graph -> Some class_hierarchy_graph, EntryUsage.Used
+          | Error error -> None, error
+        in
+        let entry_status = EntryStatus.add ~name:ClassHierarchyGraph ~usage entry_status in
+        class_hierarchy_graph, SharedMemoryStatus.Loaded entry_status
+    | _ -> None, status
   in
+  let cache = { cache with status } in
   match class_hierarchy_graph with
-  | Some class_hierarchy_graph -> class_hierarchy_graph
+  | Some class_hierarchy_graph -> class_hierarchy_graph, cache
   | None ->
       let class_hierarchy_graph = f () in
       if save_cache then
         save_class_hierarchy_graph ~class_hierarchy_graph |> ignore_result;
-      class_hierarchy_graph
+      class_hierarchy_graph, cache

@@ -390,7 +390,7 @@ let run_taint_analysis
 
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
 
-  let class_hierarchy_graph =
+  let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
         let timer = Timer.start () in
         let () = Log.info "Computing class hierarchy graph..." in
@@ -423,7 +423,7 @@ let run_taint_analysis
     class_interval_graph
   in
 
-  let initial_callables =
+  let initial_callables, cache =
     Cache.initial_callables cache (fun () ->
         let timer = Timer.start () in
         let () = Log.info "Fetching initial callables to analyze..." in
