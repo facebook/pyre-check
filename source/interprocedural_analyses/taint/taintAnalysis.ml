@@ -371,7 +371,7 @@ let run_taint_analysis
   in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
-  let environment = type_check ~scheduler ~configuration ~decorator_configuration ~cache in
+  let environment, cache = type_check ~scheduler ~configuration ~decorator_configuration ~cache in
 
   compact_ocaml_heap ~name:"after type check";
 
@@ -654,7 +654,8 @@ let run_taint_analysis
           ~skipped_overrides
           ~model_verification_errors
           ~fixpoint_state
-          ~errors;
+          ~errors
+          ~cache;
         []
     | _ -> errors
   in

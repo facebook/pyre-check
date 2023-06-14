@@ -176,6 +176,7 @@ let save_results_to_directory
     ~model_verification_errors
     ~fixpoint_state
     ~errors
+    ~cache
   =
   let timer = Timer.start () in
   let root = local_root |> PyrePath.absolute in
@@ -281,6 +282,7 @@ let save_results_to_directory
             taint_configuration
             |> TaintConfiguration.SharedMemory.get
             |> TaintConfiguration.code_metadata );
+          "cache", Cache.metadata_to_json cache;
         ]
     in
     Json.to_channel out_channel metadata_json;

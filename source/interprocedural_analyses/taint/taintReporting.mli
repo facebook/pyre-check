@@ -50,4 +50,5 @@ val save_results_to_directory
   model_verification_errors:ModelVerificationError.t list ->
   fixpoint_state:TaintFixpoint.t ->
   errors:Yojson.Safe.t list ->
+  cache:Cache.t ->
   unit
