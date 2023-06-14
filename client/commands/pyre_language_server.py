@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-This module is responsible for handling requests from the VScode language server and generating an appropriate response.
+This module is responsible for handling requests from the VSCode language server and generating an appropriate response.
 
 The response typically will be generated through the Pyre daemon, and the name PyreLanguageServer was chosen for this module
 because it illustrates that this is the intermediary between the Language server and the Pyre daemon.
