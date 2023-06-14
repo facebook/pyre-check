@@ -72,6 +72,7 @@ StatusUpdatesAvailability = _Availability
 TypeErrorsAvailability = _Availability
 UnsavedChangesAvailability = _Availability
 CompletionAvailability = _Availability
+CallHierarchyAvailability = _Availability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -89,6 +90,7 @@ class LanguageServerFeatures:
     unsaved_changes: UnsavedChangesAvailability = UnsavedChangesAvailability.DISABLED
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
     completion: CompletionAvailability = CompletionAvailability.DISABLED
+    call_hierarchy: CallHierarchyAvailability = CallHierarchyAvailability.DISABLED
 
     def capabilities(self) -> Dict[str, bool]:
         return {
@@ -97,4 +99,5 @@ class LanguageServerFeatures:
             "document_symbol_provider": not self.document_symbols.is_disabled(),
             "references_provider": not self.references.is_disabled(),
             "completion_provider": not self.completion.is_disabled(),
+            "call_hierarchy_provider": not self.call_hierarchy.is_disabled(),
         }
