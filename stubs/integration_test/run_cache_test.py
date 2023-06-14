@@ -13,6 +13,7 @@ containing directory (or any parent, it is not sensitive to your current
 working directory.)
 """
 
+import argparse
 import json
 import logging
 import os
@@ -110,11 +111,21 @@ def _pysa_command(
     return command
 
 
+def _exit_or_continue(returncode: int, exit_on_error: bool) -> None:
+    if returncode == 0:
+        LOG.info("Run produced expected results\n")
+    else:
+        LOG.info(f"Test failed: {returncode}\n")
+        if exit_on_error:
+            sys.exit(returncode)
+
+
 def run_test_no_cache(
     typeshed_path: str,
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """Run Pysa without the cache argument."""
     LOG.info("Testing with no --use-cache flag:")
@@ -126,10 +137,7 @@ def run_test_no_cache(
         expected,
         save_results_to,
     )
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_cache_first_and_second_runs(
@@ -137,6 +145,7 @@ def run_test_cache_first_and_second_runs(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa with the cache argument for the first time. This should create
@@ -161,10 +170,7 @@ def run_test_cache_first_and_second_runs(
         expected,
         save_results_to,
     )
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
     LOG.info("Testing behavior with --use-cache on subsequent runs:")
     pysa_command = _pysa_command(
@@ -175,10 +181,7 @@ def run_test_cache_first_and_second_runs(
         expected,
         save_results_to,
     )
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_invalid_cache_file(
@@ -186,6 +189,7 @@ def run_test_invalid_cache_file(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
@@ -209,11 +213,7 @@ def run_test_invalid_cache_file(
         expected,
         save_results_to,
     )
-
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_pysa_file(
@@ -221,6 +221,7 @@ def run_test_changed_pysa_file(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -252,10 +253,7 @@ def run_test_changed_pysa_file(
         LOG.warning(f"Could not clean up {test_model_path.absolute()} after test run.")
         pass
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_taint_config_file(
@@ -263,6 +261,7 @@ def run_test_changed_taint_config_file(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -305,10 +304,7 @@ def run_test_changed_taint_config_file(
         )
         pass
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_models(
@@ -316,6 +312,7 @@ def run_test_changed_models(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -358,10 +355,7 @@ def run_test_changed_models(
     # Restore the original model file
     open(test_model_path, "w").write(original_content)
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_source_files(
@@ -369,6 +363,7 @@ def run_test_changed_source_files(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after adding a new file to test cache invalidation.
@@ -402,10 +397,7 @@ def run_test_changed_source_files(
         LOG.warning(f"Could not clean up {new_file_path.absolute()} after test run.")
         pass
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_decorators(
@@ -413,6 +405,7 @@ def run_test_changed_decorators(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
@@ -462,10 +455,7 @@ def run_test_changed_decorators(
         LOG.warning(f"Could not clean up {new_model_path.absolute()} after test run.")
         pass
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
 def run_test_changed_overrides(
@@ -473,6 +463,7 @@ def run_test_changed_overrides(
     cache_path: Path,
     expected: List[Dict[str, Any]],
     save_results_to: Path,
+    exit_on_error: bool,
 ) -> None:
     """
     Run Pysa after removing a @SkipOverrides model to test cache invalidation.
@@ -517,13 +508,10 @@ def run_test_changed_overrides(
     # Restore the original model file
     open(test_model_path, "w").write(original_content)
 
-    if returncode == 0:
-        LOG.info("Run produced expected results\n")
-    else:
-        sys.exit(returncode)
+    _exit_or_continue(returncode, exit_on_error)
 
 
-def run_tests() -> None:
+def run_tests(exit_on_error: bool) -> None:
     logging.basicConfig(
         level=logging.INFO, format="%(asctime)s %(levelname)s %(message)s"
     )
@@ -549,58 +537,74 @@ def run_tests() -> None:
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_cache_first_and_second_runs(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_invalid_cache_file(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_pysa_file(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_taint_config_file(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_models(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_source_files(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_decorators(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
         run_test_changed_overrides(
             typeshed_path,
             cache_path,
             expected,
             save_results_to,
+            exit_on_error,
         )
-
-    LOG.info("All runs produced expected output.")
 
 
 if __name__ == "__main__":
-    run_tests()
+    parser = argparse.ArgumentParser(description="Run pysa cache test")
+    parser.add_argument(
+        "--no-exit-on-error",
+        action="store_true",
+        default=False,
+        help=("Do not stop the test if any subtests fail."),
+    )
+    arguments = parser.parse_args()
+
+    run_tests(exit_on_error=not arguments.no_exit_on_error)
