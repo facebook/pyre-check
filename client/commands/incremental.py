@@ -18,7 +18,7 @@ import enum
 import json
 import logging
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Sequence
+from typing import List, Optional
 
 from .. import (
     backend_arguments,
@@ -27,7 +27,6 @@ from .. import (
     error,
     frontend_configuration,
     identifiers,
-    remote_logger,
 )
 
 from ..language_server import connections
