@@ -56,6 +56,7 @@ module AnalyzeConfiguration = struct
     use_cache: bool;
     check_invariants: bool;
     limit_entrypoints: bool;
+    compact_ocaml_heap: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -123,6 +124,7 @@ module AnalyzeConfiguration = struct
           let use_cache = bool_member "use_cache" ~default:false json in
           let check_invariants = bool_member "check_invariants" ~default:false json in
           let limit_entrypoints = bool_member "limit_entrypoints" ~default:false json in
+          let compact_ocaml_heap = bool_member "compact_ocaml_heap" ~default:false json in
 
           Result.Ok
             {
@@ -157,6 +159,7 @@ module AnalyzeConfiguration = struct
               use_cache;
               check_invariants;
               limit_entrypoints;
+              compact_ocaml_heap;
             }
     with
     | Type_error (message, _)
@@ -223,6 +226,7 @@ module AnalyzeConfiguration = struct
         repository_root;
         check_invariants;
         limit_entrypoints;
+        compact_ocaml_heap;
       }
     =
     let configuration =
@@ -288,6 +292,7 @@ module AnalyzeConfiguration = struct
       maximum_tito_depth;
       check_invariants;
       limit_entrypoints;
+      compact_ocaml_heap;
     }
 end
 

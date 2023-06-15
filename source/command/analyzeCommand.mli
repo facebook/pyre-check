@@ -49,6 +49,7 @@ module AnalyzeConfiguration : sig
     use_cache: bool;
     check_invariants: bool;
     limit_entrypoints: bool;
+    compact_ocaml_heap: bool;
   }
   [@@deriving sexp, compare, hash]
 

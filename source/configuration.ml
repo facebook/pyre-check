@@ -544,6 +544,7 @@ module StaticAnalysis = struct
     maximum_tito_depth: int option;
     check_invariants: bool;
     limit_entrypoints: bool;
+    compact_ocaml_heap: bool;
   }
 
   let create
@@ -576,6 +577,7 @@ module StaticAnalysis = struct
       ?maximum_tito_depth
       ?(check_invariants = false)
       ?(limit_entrypoints = false)
+      ?(compact_ocaml_heap = false)
       ()
     =
     {
@@ -608,5 +610,6 @@ module StaticAnalysis = struct
       maximum_tito_depth;
       check_invariants;
       limit_entrypoints;
+      compact_ocaml_heap;
     }
 end

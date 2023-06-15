@@ -70,6 +70,7 @@ class ArgumentTest(testslide.TestCase):
                 use_cache=True,
                 check_invariants=True,
                 limit_entrypoints=True,
+                compact_ocaml_heap=True,
             ),
             [
                 ("log_path", "/log"),
@@ -104,6 +105,7 @@ class ArgumentTest(testslide.TestCase):
                 ("use_cache", True),
                 ("check_invariants", True),
                 ("limit_entrypoints", True),
+                ("compact_ocaml_heap", True),
             ],
         )
 
@@ -172,6 +174,7 @@ class ArgumentTest(testslide.TestCase):
                         use_cache=True,
                         check_invariants=True,
                         limit_entrypoints=True,
+                        compact_ocaml_heap=True,
                     ),
                 ),
                 Arguments(
@@ -230,5 +233,6 @@ class ArgumentTest(testslide.TestCase):
                     use_cache=True,
                     check_invariants=True,
                     limit_entrypoints=True,
+                    compact_ocaml_heap=True,
                 ),
             )

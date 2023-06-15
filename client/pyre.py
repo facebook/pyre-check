@@ -540,6 +540,12 @@ def pyre(
     default=False,
     help="Only analyze functions within the call graph of entrypoint models.",
 )
+@click.option(
+    "--compact-ocaml-heap",
+    is_flag=True,
+    default=False,
+    help="Compact OCaml heap during the analysis to save memory.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -574,6 +580,7 @@ def analyze(
     maximum_tito_depth: Optional[int],
     check_invariants: bool,
     limit_entrypoints: bool,
+    compact_ocaml_heap: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -627,6 +634,7 @@ def analyze(
             use_cache=use_cache,
             check_invariants=check_invariants,
             limit_entrypoints=limit_entrypoints,
+            compact_ocaml_heap=compact_ocaml_heap,
         ),
     )
 

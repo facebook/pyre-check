@@ -39,6 +39,12 @@ if __name__ == "__main__":
         type=str,
         help=("Directory to write analysis results to. Default: output is not saved"),
     )
+    parser.add_argument(
+        "--compact-ocaml-heap",
+        action="store_true",
+        default=False,
+        help=("Compact OCaml heap during the analysis to save memory."),
+    )
     arguments = parser.parse_args()
 
     logging.basicConfig(
@@ -73,6 +79,8 @@ if __name__ == "__main__":
         ]
         if arguments.save_results_to is not None:
             command.extend(["--save-results-to", arguments.save_results_to])
+        if arguments.compact_ocaml_heap:
+            command.append("--compact-ocaml-heap")
         output = subprocess.check_output(command).decode()
 
         if arguments.save_results_to is not None:

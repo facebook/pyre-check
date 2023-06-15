@@ -57,6 +57,7 @@ let test_json_parsing context =
       verify_taint_config_only = false;
       check_invariants = false;
       limit_entrypoints = false;
+      compact_ocaml_heap = false;
     }
   in
 

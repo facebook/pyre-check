@@ -256,6 +256,7 @@ module StaticAnalysis : sig
     maximum_tito_depth: int option;
     check_invariants: bool;
     limit_entrypoints: bool;
+    compact_ocaml_heap: bool;
   }
 
   val create
@@ -288,6 +289,7 @@ module StaticAnalysis : sig
     ?maximum_tito_depth:int ->
     ?check_invariants:bool ->
     ?limit_entrypoints:bool ->
+    ?compact_ocaml_heap:bool ->
     unit ->
     t
 end

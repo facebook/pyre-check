@@ -289,6 +289,7 @@ class AnalyzeArguments:
     use_cache: bool = False
     check_invariants: bool = False
     limit_entrypoints: bool = False
+    compact_ocaml_heap: bool = False
 
 
 @dataclass(frozen=True)

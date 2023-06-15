@@ -349,6 +349,7 @@ let run_taint_analysis
          repository_root;
          use_cache;
          limit_entrypoints;
+         compact_ocaml_heap = compact_ocaml_heap_flag;
          _;
        } as static_analysis_configuration)
     ~build_system
@@ -373,7 +374,8 @@ let run_taint_analysis
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
   let environment, cache = type_check ~scheduler ~configuration ~decorator_configuration ~cache in
 
-  compact_ocaml_heap ~name:"after type check";
+  if compact_ocaml_heap_flag then
+    compact_ocaml_heap ~name:"after type check";
 
   (* We must store the taint configuration into the shared memory after type checking, because type
      checking may reset the shared memory. *)
@@ -554,7 +556,8 @@ let run_taint_analysis
 
   let () = Cache.save cache in
 
-  compact_ocaml_heap ~name:"before fixpoint";
+  if compact_ocaml_heap_flag then
+    compact_ocaml_heap ~name:"before fixpoint";
 
   Log.info
     "Analysis fixpoint started for %d overrides and %d functions..."
@@ -626,7 +629,8 @@ let run_taint_analysis
       ~fixpoint_state
   in
 
-  compact_ocaml_heap ~name:"before saving results";
+  if compact_ocaml_heap_flag then
+    compact_ocaml_heap ~name:"before saving results";
 
   let {
     Configuration.StaticAnalysis.save_results_to;
