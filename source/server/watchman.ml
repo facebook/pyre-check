@@ -266,6 +266,7 @@ module Subscriber = struct
         `Assoc
           [
             "empty_on_fresh_instance", `Bool true;
+            "defer", `List [`String "hg.update"; `String "hg.transaction"];
             "expression", Filter.watchman_expression_of filter;
             "fields", `List [`String "name"];
           ];
