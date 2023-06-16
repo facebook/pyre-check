@@ -199,17 +199,11 @@ let parse_location_with_module location =
 
 
 let diff ~print format (left, right) =
-  let escape string =
-    String.substr_replace_all string ~pattern:"\"" ~with_:"\\\""
-    |> String.substr_replace_all ~pattern:"'" ~with_:"\\\""
-    |> String.substr_replace_all ~pattern:"`" ~with_:"?"
-    |> String.substr_replace_all ~pattern:"$" ~with_:"@"
-  in
   let input =
     Format.sprintf
-      "bash -c \"diff -u <(echo '%s') <(echo '%s')\""
-      (escape (Format.asprintf "%a" print left))
-      (escape (Format.asprintf "%a" print right))
+      "diff -u <(printf '%s') <(printf '%s')"
+      (Format.asprintf "%a" print left)
+      (Format.asprintf "%a" print right)
     |> Core_unix.open_process_in
   in
   Format.fprintf format "\n%s" (In_channel.input_all input);
