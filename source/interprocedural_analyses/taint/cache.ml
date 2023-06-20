@@ -17,44 +17,17 @@ module AstEnvironment = Analysis.AstEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 
-module InitialCallablesSharedMemory = Memory.Serializer (struct
-  type t = FetchCallables.t
-
-  module Serialized = struct
-    type t = FetchCallables.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Initial callables to analyze"
-  end
-
-  let serialize = Fn.id
-
-  let deserialize = Fn.id
-end)
-
-module ClassHierarchyGraphSharedMemory = Memory.Serializer (struct
-  type t = ClassHierarchyGraph.Heap.t
-
-  module Serialized = struct
-    type t = ClassHierarchyGraph.Heap.t
-
-    let prefix = Prefix.make ()
-
-    let description = "Class hierarchy graph"
-  end
-
-  let serialize = Fn.id
-
-  let deserialize = Fn.id
-end)
-
 module Entry = struct
   type t =
     | TypeEnvironment
     | InitialCallables
     | ClassHierarchyGraph
   [@@deriving compare, show { with_path = false }]
+
+  let show_pretty = function
+    | TypeEnvironment -> "type environment"
+    | InitialCallables -> "initial callables"
+    | ClassHierarchyGraph -> "class hierarchy graph"
 end
 
 module EntryUsage = struct
@@ -131,6 +104,78 @@ let exception_to_error ~error ~message ~f =
 
 
 let ignore_result (_ : ('a, 'b) result) = ()
+
+module type SingleValueSharedMemoryValueType = sig
+  type t
+
+  val entry : Entry.t
+end
+
+(* Support storing / loading a single OCaml value into / from the shared memory, for caching
+   purposes. *)
+module SingleValueSharedMemory (Value : SingleValueSharedMemoryValueType) = struct
+  let value_entry_name = Entry.show_pretty Value.entry
+
+  module T = Memory.Serializer (struct
+    type t = Value.t
+
+    module Serialized = struct
+      type t = Value.t
+
+      let prefix = Prefix.make ()
+
+      let description = value_entry_name
+    end
+
+    let serialize = Fn.id
+
+    let deserialize = Fn.id
+  end)
+
+  let load () =
+    exception_to_error
+      ~error:(EntryUsage.Unused EntryUsage.LoadError)
+      ~message:(Format.asprintf "Loading %s from cache" value_entry_name)
+      ~f:(fun () ->
+        Log.info "Loading %s from cache..." value_entry_name;
+        let value = T.load () in
+        Log.info "Loaded %s from cache." value_entry_name;
+        Ok value)
+
+
+  let save value =
+    exception_to_error
+      ~error:()
+      ~message:(Format.asprintf "Saving %s to cache" value_entry_name)
+      ~f:(fun () ->
+        Memory.SharedMemory.collect `aggressive;
+        T.store value;
+        Log.info "Saved %s to cache." value_entry_name;
+        Ok ())
+
+
+  let load_or_compute ({ status; save_cache; _ } as cache) f =
+    let value, status =
+      match status with
+      | Loaded entry_status ->
+          let value, usage =
+            match load () with
+            | Ok value -> Some value, EntryUsage.Used
+            | Error error -> None, error
+          in
+          let entry_status = EntryStatus.add ~name:Value.entry ~usage entry_status in
+          value, SharedMemoryStatus.Loaded entry_status
+      | _ -> None, status
+    in
+    let cache = { cache with status } in
+    match value with
+    | Some value -> value, cache
+    | None ->
+        let value = f () in
+        if save_cache then
+          save value |> ignore_result;
+        value, cache
+end
 
 let initialize_shared_memory ~configuration =
   let path = get_shared_memory_save_path ~configuration in
@@ -279,85 +324,18 @@ let save { save_cache; configuration; _ } =
     save_shared_memory ~configuration |> ignore
 
 
-let load_initial_callables () =
-  exception_to_error
-    ~error:(EntryUsage.Unused EntryUsage.LoadError)
-    ~message:"loading initial callables from cache"
-    ~f:(fun () ->
-      Log.info "Loading initial callables from cache...";
-      let initial_callables = InitialCallablesSharedMemory.load () in
-      Log.info "Loaded initial callables from cache.";
-      Ok initial_callables)
+module ClassHierarchyGraphSharedMemory = SingleValueSharedMemory (struct
+  type t = ClassHierarchyGraph.Heap.t
 
+  let entry = Entry.ClassHierarchyGraph
+end)
 
-let save_initial_callables ~initial_callables =
-  exception_to_error ~error:() ~message:"saving initial callables to cache" ~f:(fun () ->
-      Memory.SharedMemory.collect `aggressive;
-      InitialCallablesSharedMemory.store initial_callables;
-      Log.info "Saved initial callables to cache shared memory.";
-      Ok ())
+module InitialCallablesSharedMemory = SingleValueSharedMemory (struct
+  type t = FetchCallables.t
 
+  let entry = Entry.InitialCallables
+end)
 
-let initial_callables ({ status; save_cache; _ } as cache) f =
-  let initial_callables, status =
-    match status with
-    | Loaded entry_status ->
-        let initial_callables, usage =
-          match load_initial_callables () with
-          | Ok initial_callables -> Some initial_callables, EntryUsage.Used
-          | Error error -> None, error
-        in
-        let entry_status = EntryStatus.add ~name:Entry.InitialCallables ~usage entry_status in
-        initial_callables, SharedMemoryStatus.Loaded entry_status
-    | _ -> None, status
-  in
-  let cache = { cache with status } in
-  match initial_callables with
-  | Some initial_callables -> initial_callables, cache
-  | None ->
-      let callables = f () in
-      if save_cache then
-        save_initial_callables ~initial_callables:callables |> ignore_result;
-      callables, cache
+let initial_callables = InitialCallablesSharedMemory.load_or_compute
 
-
-let load_class_hierarchy_graph () =
-  exception_to_error
-    ~error:(EntryUsage.Unused EntryUsage.LoadError)
-    ~message:"loading class hierarchy graph from cache"
-    ~f:(fun () ->
-      Log.info "Loading class hierarchy graph from cache...";
-      let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load () in
-      Log.info "Loaded class hierarchy graph from cache.";
-      Ok class_hierarchy_graph)
-
-
-let save_class_hierarchy_graph ~class_hierarchy_graph =
-  exception_to_error ~error:() ~message:"saving class hierarchy graph to cache" ~f:(fun () ->
-      Memory.SharedMemory.collect `aggressive;
-      ClassHierarchyGraphSharedMemory.store class_hierarchy_graph;
-      Log.info "Saved class hierarchy graph to cache shared memory.";
-      Ok ())
-
-
-let class_hierarchy_graph ({ status; save_cache; _ } as cache) f =
-  let class_hierarchy_graph, status =
-    match status with
-    | Loaded entry_status ->
-        let class_hierarchy_graph, usage =
-          match load_class_hierarchy_graph () with
-          | Ok class_hierarchy_graph -> Some class_hierarchy_graph, EntryUsage.Used
-          | Error error -> None, error
-        in
-        let entry_status = EntryStatus.add ~name:ClassHierarchyGraph ~usage entry_status in
-        class_hierarchy_graph, SharedMemoryStatus.Loaded entry_status
-    | _ -> None, status
-  in
-  let cache = { cache with status } in
-  match class_hierarchy_graph with
-  | Some class_hierarchy_graph -> class_hierarchy_graph, cache
-  | None ->
-      let class_hierarchy_graph = f () in
-      if save_cache then
-        save_class_hierarchy_graph ~class_hierarchy_graph |> ignore_result;
-      class_hierarchy_graph, cache
+let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
