@@ -47,7 +47,7 @@ class HoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: List[lsp.PyreDefinitionResponse]
+    response: List[lsp.DefinitionResponse]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -348,7 +348,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             return daemon_response
         else:
             result = [
-                response.to_lsp_definition_response()
+                response.to_lsp_references_response()
                 for response in daemon_response.response
             ]
             return result

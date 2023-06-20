@@ -561,7 +561,7 @@ class ReferencesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     path: str
     range: PyreRange
 
-    def to_lsp_definition_response(
+    def to_lsp_references_response(
         self,
     ) -> "LspLocation":
         return LspLocation(uri=self.path, range=self.range.to_lsp_range())
@@ -600,7 +600,7 @@ class DefinitionParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class PyreDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains one possible definition for a symbol."""
 
     path: str
@@ -626,7 +626,7 @@ class CompletionParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class LspLocation(json_mixins.CamlCaseAndExcludeJsonMixin):
-    """Contains one possible definition for a symbol."""
+    """Contains the start and end column and row for a symbol."""
 
     uri: str
     range: LspRange
@@ -645,7 +645,7 @@ class DocumentSymbolsParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class DocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    """Contains one possible definition for a symbol."""
+    """Contains detailed information about a specified symbol."""
 
     name: str
     detail: Optional[str]
