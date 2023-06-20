@@ -28,4 +28,9 @@ val class_hierarchy_graph
 
 val initial_callables : t -> (unit -> FetchCallables.t) -> FetchCallables.t * t
 
+val class_interval_graph
+  :  t ->
+  (unit -> ClassIntervalSetGraph.Heap.t) ->
+  ClassIntervalSetGraph.Heap.t * t
+
 val metadata_to_json : t -> Yojson.Safe.t

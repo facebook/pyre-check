@@ -16,18 +16,21 @@ module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
+module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
 
 module Entry = struct
   type t =
     | TypeEnvironment
     | InitialCallables
     | ClassHierarchyGraph
+    | ClassIntervalGraph
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
     | TypeEnvironment -> "type environment"
     | InitialCallables -> "initial callables"
     | ClassHierarchyGraph -> "class hierarchy graph"
+    | ClassIntervalGraph -> "class interval graph"
 end
 
 module EntryUsage = struct
@@ -336,6 +339,14 @@ module InitialCallablesSharedMemory = SingleValueSharedMemory (struct
   let entry = Entry.InitialCallables
 end)
 
+module ClassIntervalGraphSharedMemory = SingleValueSharedMemory (struct
+  type t = ClassIntervalSetGraph.Heap.t
+
+  let entry = Entry.ClassIntervalGraph
+end)
+
 let initial_callables = InitialCallablesSharedMemory.load_or_compute
 
 let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
+
+let class_interval_graph = ClassIntervalGraphSharedMemory.load_or_compute

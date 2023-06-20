@@ -410,19 +410,23 @@ let run_taint_analysis
         class_hierarchy_graph)
   in
 
+  let class_interval_graph, cache =
+    Cache.class_interval_graph cache (fun () ->
+        let timer = Timer.start () in
+        let () = Log.info "Computing class intervals..." in
+        let class_interval_graph =
+          Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
+        in
+        Statistics.performance
+          ~name:"Computed class intervals"
+          ~phase_name:"Computing class intervals"
+          ~timer
+          ();
+        class_interval_graph)
+  in
+
   let class_interval_graph =
-    let timer = Timer.start () in
-    let () = Log.info "Computing class intervals..." in
-    let class_interval_graph =
-      Interprocedural.ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
-      |> Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap
-    in
-    Statistics.performance
-      ~name:"Computed class intervals"
-      ~phase_name:"Computing class intervals"
-      ~timer
-      ();
-    class_interval_graph
+    Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap class_interval_graph
   in
 
   let initial_callables, cache =

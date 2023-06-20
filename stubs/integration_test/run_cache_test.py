@@ -217,6 +217,7 @@ def run_test_cache_first_and_second_runs(
         "shared_memory_status": {
             "Loaded": {
                 "ClassHierarchyGraph": "Used",
+                "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
                 "TypeEnvironment": "Used",
             }
@@ -297,6 +298,7 @@ def run_test_changed_pysa_file(
         "shared_memory_status": {
             "Loaded": {
                 "ClassHierarchyGraph": "Used",
+                "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
                 "TypeEnvironment": "Used",
             }
@@ -357,6 +359,7 @@ def run_test_changed_taint_config_file(
         "shared_memory_status": {
             "Loaded": {
                 "ClassHierarchyGraph": "Used",
+                "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
                 "TypeEnvironment": "Used",
             }
@@ -425,6 +428,7 @@ def run_test_changed_models(
         "shared_memory_status": {
             "Loaded": {
                 "ClassHierarchyGraph": "Used",
+                "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
                 "TypeEnvironment": "Used",
             }
