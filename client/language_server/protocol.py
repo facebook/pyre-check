@@ -613,6 +613,36 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class CallHierarchyParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "CallHierarchyParameters":
+        return _parse_parameters(parameters, target=CallHierarchyParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class CallHierarchyItem(json_mixins.CamlCaseAndExcludeJsonMixin):
+    name: str
+    kind: SymbolKind
+    detail: Optional[str]
+    uri: str
+    range: LspRange
+    selection_range: LspRange
+
+    def document_uri(self) -> DocumentUri:
+        return DocumentUri.parse(self.uri)
+
+
+@dataclasses.dataclass(frozen=True)
+class CallHierarchyResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    call_hierarchy_items: List[CallHierarchyItem]
+
+
+@dataclasses.dataclass(frozen=True)
 class CompletionParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
     text_document: TextDocumentIdentifier
     position: LspPosition
