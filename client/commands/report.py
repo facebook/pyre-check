@@ -30,20 +30,58 @@ from . import commands
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+@dataclasses.dataclass(frozen=True)
+class ModulePath:
+    project_root: Path
+    relative_to_root: Path
+
+    def absolute_path(self) -> Path:
+        return self.project_root / self.relative_to_root
+
+    @staticmethod
+    def create(
+        project_root: Path,
+        absolute_path: Path,
+    ) -> Optional[ModulePath]:
+        """
+        Given a project root (always absolute) and a raw module path path which
+        may be either absolute or relative (to the current directory), represent
+        the module path as the project root plus a relative offset.
+
+        If the path is not under `project_root`, return `None`.
+        """
+        try:
+            return ModulePath(
+                project_root=project_root,
+                relative_to_root=absolute_path.relative_to(project_root),
+            )
+        except ValueError:
+            None
+
+
 def get_module_paths(
     configuration: frontend_configuration.Base,
     paths: Optional[List[Path]],
-) -> List[Path]:
+) -> List[ModulePath]:
+    project_root = configuration.get_local_root() or configuration.get_global_root()
     if paths is None:
         paths = [
             configuration.get_local_root() or configuration.get_global_root(),
         ]
-    return list(
-        coverage_data.find_module_paths(
+    maybe_module_paths = [
+        ModulePath.create(
+            project_root=project_root,
+            # (the / operator ignores the left hand side if the right side is already absolute)
+            absolute_path=Path.cwd() / path,
+        )
+        for path in coverage_data.find_module_paths(
             paths=paths,
             excludes=configuration.get_excludes(),
         )
-    )
+    ]
+    return [
+        module_path for module_path in maybe_module_paths if module_path is not None
+    ]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -56,7 +94,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
     @staticmethod
     def collect(
         module: libcst.MetadataWrapper,
-        path: Path,
+        path: ModulePath,
         strict_by_default: bool,
     ) -> ModuleData:
         mode = coverage_data.collect_mode(module, strict_by_default)
@@ -67,7 +105,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
             suppressions=suppressions,
             functions=functions,
             # `path` is relative here so that data isn't tied to one machine.
-            path=str(path.relative_to(Path.cwd())),
+            path=str(path.relative_to_root),
         )
 
     @dataclasses.dataclass(frozen=True)
@@ -78,32 +116,33 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         collect_from_path.
         """
 
-        path: Path
+        path: ModulePath
         strict_by_default: bool
 
     @staticmethod
     def collect_from_path(
         args: ModuleData.CollectFromPathArgs,
     ) -> Optional[ModuleData]:
-        module = coverage_data.module_from_path(args.path)
+        module = coverage_data.module_from_path(args.path.absolute_path())
         if module is None:
             return None
         else:
             return ModuleData.collect(
                 module,
-                args.path,
-                args.strict_by_default,
+                path=args.path,
+                strict_by_default=args.strict_by_default,
             )
 
     @staticmethod
     def collect_from_paths(
-        module_paths: Sequence[Path],
+        module_paths: Sequence[ModulePath],
         strict_by_default: bool,
         number_of_workers: int,
     ) -> List[ModuleData]:
         tasks = [
             ModuleData.CollectFromPathArgs(
-                path=path, strict_by_default=strict_by_default
+                path=path,
+                strict_by_default=strict_by_default,
             )
             for path in module_paths
         ]
