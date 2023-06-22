@@ -145,6 +145,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         mock_hover_response: Optional[lsp.LspHoverResponse] = None,
         mock_definition_response: Optional[GetDefinitionLocationsResponse] = None,
         mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
+        mock_call_hierarchy_response: Optional[List[lsp.CallHierarchyItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
     ) -> None:
         self.requests: List[object] = []
@@ -153,6 +154,7 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         self.mock_hover_response = mock_hover_response
         self.mock_definition_response = mock_definition_response
         self.mock_completion_response = mock_completion_response
+        self.mock_call_hierarchy_response = mock_call_hierarchy_response
         self.mock_references_response = mock_references_response
 
     async def get_type_errors(
@@ -217,6 +219,18 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
             )
         else:
             return self.mock_references_response
+
+    async def get_call_hierarchy(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        if self.mock_call_hierarchy_response is None:
+            raise ValueError(
+                "You need to set the get call hierarchy response in the mock querier"
+            )
+        else:
+            return self.mock_call_hierarchy_response
 
     async def update_overlay(
         self,

@@ -165,6 +165,14 @@ class BlockingPyreLanguageServer(PyreLanguageServerApi):
     ) -> None:
         raise NotImplementedError()
 
+    async def process_call_hierarchy_request(
+        self,
+        parameters: lsp.CallHierarchyParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
 

@@ -249,6 +249,15 @@ class PyreLanguageServerApi(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def process_call_hierarchy_request(
+        self,
+        parameters: lsp.CallHierarchyParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
 
@@ -879,6 +888,56 @@ class PyreLanguageServer(PyreLanguageServerApi):
             ),
         )
 
+    async def process_call_hierarchy_request(
+        self,
+        parameters: lsp.CallHierarchyParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        LOG.info(f"Processing call hierarchy request for {parameters}")
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+
+        call_hierarchy_response = await self.querier.get_call_hierarchy(
+            path=document_path,
+            position=parameters.position.to_pyre_position(),
+        )
+
+        error_message = None
+        if isinstance(call_hierarchy_response, DaemonQueryFailure):
+            LOG.info(
+                daemon_failure_string(
+                    "call_hierarchy",
+                    str(type(call_hierarchy_response)),
+                    call_hierarchy_response.error_message,
+                )
+            )
+            error_message = call_hierarchy_response.error_message
+            call_hierarchy_response = []
+
+        raw_result = lsp.CallHierarchyItem.cached_schema().dump(
+            call_hierarchy_response,
+            many=True,
+        )
+        LOG.info(f"Call hierarchy response: {raw_result}")
+
+        if error_message:
+            LOG.error(
+                f"Error at `process_call_hierarchy_request` message: {error_message}"
+            )
+
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=raw_result,
+            ),
+        )
+
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         await lsp.write_json_rpc_ignore_connection_error(
             self.output_channel,
@@ -1033,6 +1092,14 @@ class PyreLanguageServerDispatcher:
         elif request.method == "textDocument/references":
             await self.api.process_find_all_references_request(
                 lsp.ReferencesParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
+                request.id,
+                request.activity_key,
+            )
+        elif request.method == "textDocument/prepareCallHierarchy":
+            await self.api.process_call_hierarchy_request(
+                lsp.CallHierarchyParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,

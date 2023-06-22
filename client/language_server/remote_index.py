@@ -39,6 +39,12 @@ class AbstractRemoteIndex(abc.ABC):
     ) -> List[lsp.LspLocation]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
+    async def call_hierarchy(
+        self, path: Path, position: lsp.PyrePosition
+    ) -> List[lsp.CallHierarchyItem]:
+        raise NotImplementedError()
+
 
 class EmptyRemoteIndex(AbstractRemoteIndex):
     async def definition(
@@ -54,4 +60,9 @@ class EmptyRemoteIndex(AbstractRemoteIndex):
     async def hover(
         self, path: Path, position: lsp.PyrePosition
     ) -> List[lsp.LspLocation]:
+        return []
+
+    async def call_hierarchy(
+        self, path: Path, position: lsp.PyrePosition
+    ) -> List[lsp.CallHierarchyItem]:
         return []
