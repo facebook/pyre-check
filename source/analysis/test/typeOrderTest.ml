@@ -549,6 +549,10 @@ let default =
     ~predecessor:"CommonNonGenericChild"
     ~successor:"DifferentGenericContainer"
     ~parameters:[Primitive "int"; Primitive "str"];
+  insert order "Child";
+  insert order "Base";
+  connect order ~predecessor:"Child" ~successor:"Base";
+  connect order ~predecessor:"Base" ~successor:"object";
   handler order
 
 
@@ -574,13 +578,21 @@ let test_less_or_equal context =
   assert_true (less_or_equal default ~left:(Type.list Type.integer) ~right:!!"typing.Sized");
 
   (* ReadOnly types. *)
-  assert_false (less_or_equal default ~left:(Type.ReadOnly.create Type.integer) ~right:Type.float);
-  assert_true (less_or_equal default ~left:Type.integer ~right:(Type.ReadOnly.create Type.float));
+  assert_false
+    (less_or_equal
+       default
+       ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
+       ~right:(Type.Primitive "Base"));
   assert_true
     (less_or_equal
        default
-       ~left:(Type.ReadOnly.create Type.integer)
-       ~right:(Type.ReadOnly.create Type.float));
+       ~left:(Type.Primitive "Child")
+       ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
+  assert_true
+    (less_or_equal
+       default
+       ~left:(Type.ReadOnly.create (Type.Primitive "Child"))
+       ~right:(Type.ReadOnly.create (Type.Primitive "Base")));
 
   (* Parametric types. *)
   assert_true
@@ -2081,11 +2093,11 @@ let test_join _ =
     "typing.Callable[[int], typing.Union[int, str]]";
 
   (* We just preserve the `ReadOnly` wrapper if either type has it. *)
-  assert_join "pyre_extensions.ReadOnly[int]" "float" "pyre_extensions.ReadOnly[float]";
+  assert_join "pyre_extensions.ReadOnly[Child]" "Base" "pyre_extensions.ReadOnly[Base]";
   assert_join
-    "pyre_extensions.ReadOnly[int]"
-    "pyre_extensions.ReadOnly[float]"
-    "pyre_extensions.ReadOnly[float]";
+    "pyre_extensions.ReadOnly[Child]"
+    "pyre_extensions.ReadOnly[Base]"
+    "pyre_extensions.ReadOnly[Base]";
 
   (* Variables. *)
   assert_type_equal
@@ -2473,11 +2485,11 @@ let test_meet _ =
     "typing_extensions.Annotated[int]";
 
   (* ReadOnly. *)
-  assert_meet "pyre_extensions.ReadOnly[int]" "float" "int";
+  assert_meet "pyre_extensions.ReadOnly[Child]" "Base" "Child";
   assert_meet
-    "pyre_extensions.ReadOnly[int]"
-    "pyre_extensions.ReadOnly[float]"
-    "pyre_extensions.ReadOnly[int]";
+    "pyre_extensions.ReadOnly[Child]"
+    "pyre_extensions.ReadOnly[Base]"
+    "pyre_extensions.ReadOnly[Child]";
 
   (* Unions. *)
   assert_meet "typing.Union[int, str]" "typing.Union[int, bytes]" "int";

@@ -14,26 +14,30 @@ let test_ignore_readonly context =
     {|
       from pyre_extensions import ReadOnly
 
-      def foo(x: ReadOnly[int]) -> int:
-        y: int = x
-        z: ReadOnly[int] = y
+      class Bar: ...
+
+      def foo(x: ReadOnly[Bar]) -> Bar:
+        y: Bar = x
+        z: ReadOnly[Bar] = y
         return z
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   (* The type checking analysis will check compatibility for the type wrapped by `ReadOnly`. *)
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
 
-      def foo(x: ReadOnly[int]) -> None:
+      class Bar: ...
+
+      def foo(x: ReadOnly[Bar]) -> None:
         y: str = x
     |}
     [
       "Incompatible variable type [9]: y is declared to have type `str` but is used as type \
-       `pyre_extensions.ReadOnly[int]`.";
+       `pyre_extensions.ReadOnly[Bar]`.";
     ];
   assert_type_errors
     {|
@@ -78,26 +82,30 @@ let test_readonly_configuration_flag context =
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       def main() -> None:
-        x: ReadOnly[int]
+        x: ReadOnly[Bar]
         y = x
-        z: int = y
+        z: Bar = y
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   (* Test readonly violations at the top level. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      x: ReadOnly[int]
-      y: int = x
+      class Bar: ...
+
+      x: ReadOnly[Bar]
+      y: Bar = x
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   ()
 
@@ -110,23 +118,27 @@ let test_assignment context =
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       def main() -> None:
-        x: ReadOnly[int]
+        x: ReadOnly[Bar]
         y = x
-        z: int = y
+        z: Bar = y
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: z is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       def main() -> None:
-        x = 42
+        x = Bar()
         y = x
-        z: ReadOnly[int] = y
+        z: ReadOnly[Bar] = y
     |}
     [];
   (* Treat constants, such as `42` or `...`, as assignable to mutable types. *)
@@ -135,40 +147,46 @@ let test_assignment context =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        # This is treated as `some_attribute: int = ...`.
-        some_attribute: int
+        # This is treated as `some_attribute: Bar = ...`.
+        some_attribute: Bar
+
+      class Bar: ...
 
       def main() -> None:
-        x: int = 42
+        x: Bar = Bar()
     |}
     [
       "Uninitialized attribute [13]: Attribute `some_attribute` is declared in class `Foo` to have \
-       type `int` but is never initialized.";
+       type `Bar` but is never initialized.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        mutable_attribute: int = 42
+        mutable_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
 
-        x1: int = readonly_foo.mutable_attribute
-        x2: int = mutable_foo.mutable_attribute
+        x1: Bar = readonly_foo.mutable_attribute
+        x2: Bar = mutable_foo.mutable_attribute
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
+      class Baz: ...
+
       class Bar:
-        bar_attribute: int = 42
+        bar_attribute: Baz = Baz()
 
       class Foo:
         foo_attribute: Bar = Bar()
@@ -177,32 +195,34 @@ let test_assignment context =
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
 
-        x1: int = readonly_foo.foo_attribute.bar_attribute
-        x2: int = mutable_foo.foo_attribute.bar_attribute
+        x1: Baz = readonly_foo.foo_attribute.bar_attribute
+        x2: Baz = mutable_foo.foo_attribute.bar_attribute
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
+       `test.Baz` but is used as type `pyre_extensions.ReadOnly[test.Baz]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       class Foo:
-        readonly_attribute: ReadOnly[int] = 42
+        readonly_attribute: ReadOnly[Bar] = Bar()
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
 
-        x1: int = readonly_foo.readonly_attribute
-        x2: int = mutable_foo.readonly_attribute
+        x1: Bar = readonly_foo.readonly_attribute
+        x2: Bar = mutable_foo.readonly_attribute
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x1 is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x2 is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   (* Handle attribute types that have both `ReadOnly[...]` and `Type[...]`. *)
   assert_type_errors_including_readonly
@@ -211,30 +231,34 @@ let test_assignment context =
       from typing import Type
 
       class Foo:
-        some_attribute: int = 42
+        some_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         readonly_type_foo: ReadOnly[Type[Foo]]
         type_readonly_foo: Type[ReadOnly[Foo]]
-        x: int = readonly_type_foo.some_attribute
-        y: int = type_readonly_foo.some_attribute
+        x: Bar = readonly_type_foo.some_attribute
+        y: Bar = type_readonly_foo.some_attribute
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        some_attribute: int = 42
+        some_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
-        readonly_foo.some_attribute = 99
+        readonly_foo.some_attribute = Bar()
     |}
     [
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
@@ -247,38 +271,44 @@ let test_assignment context =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        readonly_attribute: ReadOnly[int] = 42
-        mutable_attribute: int = 42
+        readonly_attribute: ReadOnly[Bar] = Bar()
+        mutable_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         mutable_foo: Foo
-        mutable_foo.readonly_attribute = 99
-        mutable_foo.mutable_attribute = 99
+        mutable_foo.readonly_attribute = Bar()
+        mutable_foo.mutable_attribute = Bar()
     |}
     [];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       class Foo:
-        readonly_attribute: ReadOnly[int] = 42
-        mutable_attribute: int = 42
+        readonly_attribute: ReadOnly[Bar] = Bar()
+        mutable_attribute: Bar = Bar()
 
         def some_method(self) -> None:
-          self.readonly_attribute = 99
-          self.mutable_attribute = 99
+          self.readonly_attribute = Bar()
+          self.mutable_attribute = Bar()
     |}
     [];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       class Foo:
-        def __init__(self, x: ReadOnly[int], some_bool: bool) -> None:
+        def __init__(self, x: ReadOnly[Bar], some_bool: bool) -> None:
           self.x = x
 
           if some_bool:
-            self.x = 99
+            self.x = Bar()
     |}
     [];
   (* TODO(T130377746): Recognize attribute for `ReadOnly[Type[Foo]]` when it is the target of an
@@ -289,14 +319,16 @@ let test_assignment context =
       from typing import Type
 
       class Foo:
-        some_attribute: int = 42
+        some_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         readonly_type_foo: ReadOnly[Type[Foo]]
-        readonly_type_foo.some_attribute = 99
+        readonly_type_foo.some_attribute = Bar()
 
         type_readonly_foo: Type[ReadOnly[Foo]]
-        type_readonly_foo.some_attribute = 99
+        type_readonly_foo.some_attribute = Bar()
     |}
     [
       "Undefined attribute [16]: `pyre_extensions.ReadOnly[Type[Foo]]` has no attribute \
@@ -310,11 +342,13 @@ let test_assignment context =
       from typing import Type
 
       class Foo:
-        some_attribute: int = 42
+        some_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main() -> None:
         type_readonly_foo: Type[ReadOnly[Foo]]
-        type_readonly_foo.some_attribute = 99
+        type_readonly_foo.some_attribute = Bar()
     |}
     [];
   (* Technically, reassigning to a variable doesn't mutate it. So, we don't emit an error in this
@@ -323,9 +357,11 @@ let test_assignment context =
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       def main() -> None:
-        x: ReadOnly[int] = 42
-        x = 99
+        x: ReadOnly[Bar] = Bar()
+        x = Bar()
     |}
     [];
   assert_type_errors_including_readonly
@@ -333,12 +369,15 @@ let test_assignment context =
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def main(xs: List[ReadOnly[int]]) -> None:
-        y: List[int] = xs
+      class Bar: ...
+
+      def main(xs: List[ReadOnly[Bar]]) -> None:
+        y: List[Bar] = xs
     |}
     [
       "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
-       `typing.List[int]` but is used as type `typing.List[pyre_extensions.ReadOnly[int]]`.";
+       `typing.List[test.Bar]` but is used as type \
+       `typing.List[pyre_extensions.ReadOnly[test.Bar]]`.";
     ];
   (* We cannot assign to any attribute of a readonly object. *)
   assert_type_errors_including_readonly
@@ -346,10 +385,12 @@ let test_assignment context =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        mutable_attribute: int = 42
+        mutable_attribute: Bar = Bar()
+
+      class Bar: ...
 
       def main(readonly_foo: ReadOnly[Foo]) -> None:
-        readonly_foo.mutable_attribute = 99
+        readonly_foo.mutable_attribute = Bar()
     |}
     [
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
@@ -399,101 +440,113 @@ let test_function_call context =
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_mutable_and_readonly(x: int, y: ReadOnly[int]) -> ReadOnly[int]: ...
+      class Bar: ...
+
+      def expect_mutable_and_readonly(x: Bar, y: ReadOnly[Bar]) -> ReadOnly[Bar]: ...
 
       def main() -> None:
-        x: ReadOnly[int]
-        y: int = expect_mutable_and_readonly(x, x)
+        x: ReadOnly[Bar]
+        y: Bar = expect_mutable_and_readonly(x, x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_mutable_and_readonly`, for 1st positional argument, expected `int` but got \
-       `pyre_extensions.ReadOnly[int]`.";
+       `test.expect_mutable_and_readonly`, for 1st positional argument, expected `test.Bar` but \
+       got `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def foo(x: int) -> ReadOnly[int]: ...
+      class Foo: ...
 
-      def main(x: int) -> None:
-        y: int = foo(foo(x))
+      def foo(x: Foo) -> ReadOnly[Foo]: ...
+
+      def main(x: Foo) -> None:
+        y: Foo = foo(foo(x))
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.foo`, for 1st \
-       positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       positional argument, expected `test.Foo` but got `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_mutable(x: int) -> ReadOnly[int]: ...
+      class Bar: ...
+
+      def expect_mutable(x: Bar) -> ReadOnly[Bar]: ...
 
       def main() -> None:
-        x: ReadOnly[int]
+        x: ReadOnly[Bar]
         expect_mutable(x)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       1st positional argument, expected `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def return_readonly(self, x: int) -> ReadOnly[int]: ...
+        def return_readonly(self, x: Bar) -> ReadOnly[Bar]: ...
+
+      class Bar: ...
 
       def main() -> None:
         foo: Foo
-        x: ReadOnly[int]
-        y: int = foo.return_readonly(x)
+        x: ReadOnly[Bar]
+        y: Bar = foo.return_readonly(x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional argument, expected `int` but got \
-       `pyre_extensions.ReadOnly[int]`.";
+       `test.Foo.return_readonly`, for 1st positional argument, expected `test.Bar` but got \
+       `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def return_readonly(self, x: int) -> ReadOnly[int]: ...
+        def return_readonly(self, x: Bar) -> ReadOnly[Bar]: ...
 
-      def return_foo(x: int) -> Foo: ...
+      class Bar: ...
+
+      def return_foo(x: Bar) -> Foo: ...
 
       def main() -> None:
         foo: Foo
-        x: ReadOnly[int]
-        y: int = return_foo(x).return_readonly(x)
+        x: ReadOnly[Bar]
+        y: Bar = return_foo(x).return_readonly(x)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.return_foo`, for 1st \
-       positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       positional argument, expected `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.Foo.return_readonly`, for 1st positional argument, expected `int` but got \
-       `pyre_extensions.ReadOnly[int]`.";
+       `test.Foo.return_readonly`, for 1st positional argument, expected `test.Bar` but got \
+       `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def expect_readonly_self(self: ReadOnly[Foo], x: int) -> None: ...
+        def expect_readonly_self(self: ReadOnly[Foo], x: Bar) -> None: ...
+
+      class Bar: ...
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
-        x: int
+        x: Bar
         readonly_foo.expect_readonly_self(x)
         mutable_foo.expect_readonly_self(x)
     |}
@@ -503,12 +556,14 @@ let test_function_call context =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def expect_mutable_self(self, x: int) -> None: ...
+        def expect_mutable_self(self, x: Bar) -> None: ...
+
+      class Bar: ...
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
-        x: int
+        x: Bar
         readonly_foo.expect_mutable_self(x)
         mutable_foo.expect_mutable_self(x)
     |}
@@ -525,16 +580,17 @@ let test_function_call context =
       from pyre_extensions import ReadOnly
 
       class Foo:
-        def expect_mutable_self(self, x: int) -> None: ...
+        def expect_mutable_self(self, x: Bar) -> None: ...
 
-        def expect_readonly_self(self: ReadOnly["Foo"], x: int) -> None:
+        def expect_readonly_self(self: ReadOnly["Foo"], x: Bar) -> None:
           self.expect_mutable_self(x)
 
+      class Bar: ...
 
       def main() -> None:
         readonly_foo: ReadOnly[Foo]
         mutable_foo: Foo
-        x: int
+        x: Bar
         readonly_foo.expect_readonly_self(x)
         mutable_foo.expect_readonly_self(x)
     |}
@@ -547,86 +603,98 @@ let test_function_call context =
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_positional_mutable_and_readonly(x: int, y: ReadOnly[int], /) -> None:
+      class Bar: ...
+
+      def expect_positional_mutable_and_readonly(x: Bar, y: ReadOnly[Bar], /) -> None:
         reveal_type(x)
         reveal_type(y)
 
-      def main(my_readonly: ReadOnly[int]) -> None:
+      def main(my_readonly: ReadOnly[Bar]) -> None:
         expect_positional_mutable_and_readonly(my_readonly, my_readonly)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Bar`.";
+      "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_positional_mutable_and_readonly`, for 1st positional argument, expected `int` \
-       but got `pyre_extensions.ReadOnly[int]`.";
+       `test.expect_positional_mutable_and_readonly`, for 1st positional argument, expected \
+       `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_keyword_only( *, x: int, y: ReadOnly[int]) -> None:
+      class Bar: ...
+
+      def expect_keyword_only( *, x: Bar, y: ReadOnly[Bar]) -> None:
         reveal_type(x)
         reveal_type(y)
 
-      def main(my_readonly: ReadOnly[int], my_mutable: int) -> None:
+      def main(my_readonly: ReadOnly[Bar], my_mutable: Bar) -> None:
         expect_keyword_only(y=my_mutable, x=my_readonly)
     |}
     [
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
-      "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`.";
+      "Revealed type [-1]: Revealed type for `x` is `Bar`.";
+      "Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
-       `test.expect_keyword_only`, for argument `x`, expected `int` but got \
-       `pyre_extensions.ReadOnly[int]`.";
+       `test.expect_keyword_only`, for argument `x`, expected `test.Bar` but got \
+       `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_kwargs( **kwargs: int) -> None: ...
+      class Bar: ...
 
-      def main(my_readonly: ReadOnly[int], my_mutable: int, **kwargs: ReadOnly[int]) -> None:
+      def expect_kwargs( **kwargs: Bar) -> None: ...
+
+      def main(my_readonly: ReadOnly[Bar], my_mutable: Bar, **kwargs: ReadOnly[Bar]) -> None:
         expect_kwargs(y=my_mutable, x=my_readonly)
         expect_kwargs( **kwargs)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_kwargs`, for \
-       argument `x`, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       argument `x`, expected `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_kwargs`, for \
-       1st positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       1st positional argument, expected `test.Bar` but got `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
       from typing import Callable
 
-      def main(my_readonly: ReadOnly[int], undefined: Callable[..., ReadOnly[int]]) -> None:
-        x: int = undefined(my_readonly)
+      class Bar: ...
+
+      def main(my_readonly: ReadOnly[Bar], undefined: Callable[..., ReadOnly[Bar]]) -> None:
+        x: Bar = undefined(my_readonly)
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: x is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
+
+      class Bar: ...
 
       def expect_mutable(x: object) -> None:
         # pyre-ignore[16]: `object` has no attribute `some_attribute`.
         x.some_attribute = 42
 
-      def main(readonly: ReadOnly[int]) -> None:
+      def main(readonly: ReadOnly[Bar]) -> None:
         expect_mutable(readonly)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `object` but got `pyre_extensions.ReadOnly[int]`.";
+       1st positional argument, expected `object` but got `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_union(x: int | ReadOnly[str]) -> None: ...
+      class Bar: ...
+
+      def expect_union(x: Bar | ReadOnly[str]) -> None: ...
 
       def main(readonly_string: ReadOnly[str]) -> None:
         expect_union(readonly_string)
@@ -637,46 +705,52 @@ let test_function_call context =
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def expect_list_mutable(xs: List[ReadOnly[int]]) -> None: ...
+      class Bar: ...
 
-      def main(xs: List[int]) -> None:
+      def expect_list_mutable(xs: List[ReadOnly[Bar]]) -> None: ...
+
+      def main(xs: List[Bar]) -> None:
         expect_list_mutable(xs)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
        `test.expect_list_mutable`, for 1st positional argument, expected \
-       `typing.List[pyre_extensions.ReadOnly[int]]` but got `typing.List[int]`.";
+       `typing.List[pyre_extensions.ReadOnly[test.Bar]]` but got `typing.List[test.Bar]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def expect_list_list_mutable(xs: List[List[ReadOnly[int]]]) -> None: ...
+      class Bar: ...
 
-      def main(xs: List[List[int]]) -> None:
+      def expect_list_list_mutable(xs: List[List[ReadOnly[Bar]]]) -> None: ...
+
+      def main(xs: List[List[Bar]]) -> None:
         expect_list_list_mutable(xs)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call \
        `test.expect_list_list_mutable`, for 1st positional argument, expected \
-       `typing.List[typing.List[pyre_extensions.ReadOnly[int]]]` but got \
-       `typing.List[typing.List[int]]`.";
+       `typing.List[typing.List[pyre_extensions.ReadOnly[test.Bar]]]` but got \
+       `typing.List[typing.List[test.Bar]]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
       from typing import Union
 
-      def expect_union(xs: Union[int, str]) -> None: ...
+      class Bar: ...
 
-      def main(readonly_int: ReadOnly[int] | ReadOnly[str]) -> None:
-        expect_union(readonly_int)
+      def expect_union(xs: Union[Bar, str]) -> None: ...
+
+      def main(readonly_Bar: ReadOnly[Bar] | ReadOnly[str]) -> None:
+        expect_union(readonly_Bar)
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_union`, for \
-       1st positional argument, expected `typing.Union[int, str]` but got \
-       `typing.Union[pyre_extensions.ReadOnly[int], pyre_extensions.ReadOnly[str]]`.";
+       1st positional argument, expected `typing.Union[str, test.Bar]` but got \
+       `typing.Union[pyre_extensions.ReadOnly[str], pyre_extensions.ReadOnly[test.Bar]]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -706,14 +780,16 @@ let test_await context =
     {|
       from pyre_extensions import ReadOnly
 
-      async def return_readonly() -> ReadOnly[int]: ...
+      class Bar: ...
+
+      async def return_readonly() -> ReadOnly[Bar]: ...
 
       async def main() -> None:
-        y: int = await return_readonly()
+        y: Bar = await return_readonly()
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Bar` but is used as type `pyre_extensions.ReadOnly[test.Bar]`.";
     ];
   ()
 
@@ -726,13 +802,15 @@ let test_parameters context =
     {|
       from pyre_extensions import ReadOnly
 
-      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
-        y: int = my_readonly
-        y2: ReadOnly[int] = my_mutable
+      class Foo: ...
+
+      def main(my_mutable: Foo, my_readonly: ReadOnly[Foo]) -> None:
+        y: Foo = my_readonly
+        y2: ReadOnly[Foo] = my_mutable
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y is declared to have type \
+       `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   assert_type_errors_including_readonly
     {|
@@ -746,48 +824,54 @@ let test_parameters context =
     {|
       from pyre_extensions import ReadOnly
 
-      def main(x: ReadOnly[int], /, y: ReadOnly[int], *, z: ReadOnly[int]) -> None:
-        y1: int = x
-        y2: int = y
-        y3: int = z
+      class Foo: ...
+
+      def main(x: ReadOnly[Foo], /, y: ReadOnly[Foo], *, z: ReadOnly[Foo]) -> None:
+        y1: Foo = x
+        y2: Foo = y
+        y3: Foo = z
     |}
     [
-      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
-      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have type `int` \
-       but is used as type `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y1 is declared to have type \
+       `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y2 is declared to have type \
+       `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
+      "ReadOnly violation - Incompatible variable type [3001]: y3 is declared to have type \
+       `test.Foo` but is used as type `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def main(*args: ReadOnly[int], **kwargs: ReadOnly[int]) -> None:
+      class Foo: ...
+
+      def main(*args: ReadOnly[Foo], **kwargs: ReadOnly[Foo]) -> None:
         reveal_type(args)
         reveal_type(kwargs)
     |}
     [
       "Revealed type [-1]: Revealed type for `args` is \
-       `typing.Tuple[pyre_extensions.ReadOnly[int], ...]`.";
+       `typing.Tuple[pyre_extensions.ReadOnly[Foo], ...]`.";
       "Revealed type [-1]: Revealed type for `kwargs` is `typing.Dict[str, \
-       pyre_extensions.ReadOnly[int]]`.";
+       pyre_extensions.ReadOnly[Foo]]`.";
     ];
   (* Check for errors in constructing the default value of a parameter. *)
   assert_type_errors_including_readonly
     {|
       from pyre_extensions import ReadOnly
 
-      def return_readonly() -> ReadOnly[int]: ...
+      class Foo: ...
 
-      def expect_mutable(x: int) -> int: ...
+      def return_readonly() -> ReadOnly[Foo]: ...
 
-      def main(x: int = expect_mutable(return_readonly())) -> None:
+      def expect_mutable(x: Foo) -> Foo: ...
+
+      def main(x: Foo = expect_mutable(return_readonly())) -> None:
         pass
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       1st positional argument, expected `test.Foo` but got `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   (* Don't consider `x` in scope for the default value of parameter `y`. We don't need to emit an
      error here, because the type checking analysis will. *)
@@ -795,11 +879,13 @@ let test_parameters context =
     {|
       from pyre_extensions import ReadOnly
 
-      def foo(x: ReadOnly[int], y: int = x) -> None:
+      class Foo: ...
+
+      def foo(x: ReadOnly[Foo], y: Foo = x) -> None:
         pass
     |}
     [
-      "Incompatible variable type [9]: y is declared to have type `int` but is used as type \
+      "Incompatible variable type [9]: y is declared to have type `Foo` but is used as type \
        `unknown`.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope.";
     ];
@@ -814,15 +900,17 @@ let test_reveal_type context =
     {|
       from pyre_extensions import ReadOnly
 
-      def main(my_mutable: int, my_readonly: ReadOnly[int]) -> None:
+      class Foo: ...
+
+      def main(my_mutable: Foo, my_readonly: ReadOnly[Foo]) -> None:
         y1 = my_readonly
         y2 = my_mutable
         reveal_type(y1)
         reveal_type(y2)
     |}
     [
-      "Revealed type [-1]: Revealed type for `y1` is `pyre_extensions.ReadOnly[int]`.";
-      "Revealed type [-1]: Revealed type for `y2` is `int`.";
+      "Revealed type [-1]: Revealed type for `y1` is `pyre_extensions.ReadOnly[Foo]`.";
+      "Revealed type [-1]: Revealed type for `y2` is `Foo`.";
     ];
   ()
 
@@ -835,14 +923,16 @@ let test_format_string context =
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_mutable(x: int) -> ReadOnly[int]: ...
+      class Foo: ...
 
-      def main(my_readonly: ReadOnly[int], my_mutable: int) -> None:
+      def expect_mutable(x: Foo) -> ReadOnly[Foo]: ...
+
+      def main(my_readonly: ReadOnly[Foo], my_mutable: Foo) -> None:
         s = f"hello, {expect_mutable(my_readonly)}, {expect_mutable(my_mutable)}"
     |}
     [
       "ReadOnly violation - Incompatible parameter type [3002]: In call `test.expect_mutable`, for \
-       1st positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+       1st positional argument, expected `test.Foo` but got `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   ()
 
@@ -858,11 +948,13 @@ let test_generic_types context =
 
       def identity(x: T) -> T: ...
 
-      def main(readonly: ReadOnly[int]) -> None:
+      class Bar: ...
+
+      def main(readonly: ReadOnly[Bar]) -> None:
         y = identity(readonly)
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[int]`."];
+    ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[Bar]`."];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
@@ -873,31 +965,37 @@ let test_generic_types context =
       class Foo(Generic[T]):
         def get_element(self) -> T: ...
 
-      def main(foo: Foo[ReadOnly[int]]) -> None:
+      class Bar: ...
+
+      def main(foo: Foo[ReadOnly[Bar]]) -> None:
         x = foo.get_element()
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def main(xs: List[ReadOnly[int]]) -> None:
+      class Bar: ...
+
+      def main(xs: List[ReadOnly[Bar]]) -> None:
         x = xs[0]
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def main(xs: List[ReadOnly[int]]) -> None:
+      class Bar: ...
+
+      def main(xs: List[ReadOnly[Bar]]) -> None:
         x = xs[0]
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Bar]`."];
   ()
 
 
@@ -908,7 +1006,9 @@ let test_refinement context =
       from pyre_extensions import ReadOnly
       from typing import Optional
 
-      def main(optional_readonly: ReadOnly[Optional[int]]) -> None:
+      class Foo: ...
+
+      def main(optional_readonly: ReadOnly[Optional[Foo]]) -> None:
         if optional_readonly:
           reveal_type(optional_readonly)
         else:
@@ -916,20 +1016,22 @@ let test_refinement context =
     |}
     [
       "Revealed type [-1]: Revealed type for `optional_readonly` is \
-       `Optional[pyre_extensions.ReadOnly[int]]` (inferred: `pyre_extensions.ReadOnly[int]`).";
+       `Optional[pyre_extensions.ReadOnly[Foo]]` (inferred: `pyre_extensions.ReadOnly[Foo]`).";
       "Revealed type [-1]: Revealed type for `optional_readonly` is \
-       `Optional[pyre_extensions.ReadOnly[int]]`.";
+       `Optional[pyre_extensions.ReadOnly[Foo]]`.";
     ];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
       from typing import Optional
 
-      def main(optional_readonly: ReadOnly[Optional[int]]) -> None:
-        x = optional_readonly if optional_readonly else 99
+      class Foo: ...
+
+      def main(optional_readonly: ReadOnly[Optional[Foo]]) -> None:
+        x = optional_readonly if optional_readonly else Foo()
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[int]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Foo]`."];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
@@ -938,7 +1040,9 @@ let test_refinement context =
 
       class Child(Base): ...
 
-      def main(x: ReadOnly[Base | int]) -> None:
+      class Foo: ...
+
+      def main(x: ReadOnly[Base | Foo]) -> None:
         if isinstance(x, Child):
           reveal_type(x)
         else:
@@ -947,7 +1051,7 @@ let test_refinement context =
     [
       "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Child]`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[pyre_extensions.ReadOnly[Base], \
-       pyre_extensions.ReadOnly[int]]`.";
+       pyre_extensions.ReadOnly[Foo]]`.";
     ];
   (* If the variable has type `Top`, don't pollute the output with `ReadOnly` type. *)
   assert_type_errors
@@ -975,7 +1079,9 @@ let test_refinement context =
 
       class Foo: ...
 
-      def main(x: ReadOnly[Foo] | int) -> None:
+      class Bar: ...
+
+      def main(x: ReadOnly[Foo] | Bar) -> None:
         if isinstance(x, Foo):
           reveal_type(x)
         else:
@@ -983,7 +1089,7 @@ let test_refinement context =
     |}
     [
       "Revealed type [-1]: Revealed type for `x` is `pyre_extensions.ReadOnly[Foo]`.";
-      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `x` is `Bar`.";
     ];
   assert_type_errors
     {|
@@ -991,11 +1097,13 @@ let test_refinement context =
 
       class Foo: ...
 
-      def main(x: ReadOnly[Foo] | int) -> None:
+      class Bar: ...
+
+      def main(x: ReadOnly[Foo] | Bar) -> None:
         if not isinstance(x, Foo):
           reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `int`."];
+    ["Revealed type [-1]: Revealed type for `x` is `Bar`."];
   ()
 
 
@@ -1007,15 +1115,17 @@ let test_captured_variable_for_specially_decorated_functions context =
       from pyre_extensions import ReadOnly
       from readonly_stubs_for_testing import readonly_entrypoint
 
+      class Bar: ...
+
       class Foo:
-        x: int = 42
+        x: Bar = Bar()
 
       def main(parameter: Foo) -> None:
 
         @readonly_entrypoint
         def nested() -> None:
           reveal_type(parameter)
-          parameter.x = 99
+          parameter.x = Bar()
 
         not_captured = parameter
         reveal_type(not_captured)
@@ -1033,8 +1143,10 @@ let test_captured_variable_for_specially_decorated_functions context =
       from pyre_extensions import ReadOnly
       from readonly_stubs_for_testing import readonly_entrypoint
 
+      class Bar: ...
+
       class Foo:
-        x: int = 42
+        x: Bar = Bar()
 
       def main() -> None:
         local_variable: Foo = Foo()
@@ -1042,7 +1154,7 @@ let test_captured_variable_for_specially_decorated_functions context =
         @readonly_entrypoint
         def nested() -> None:
           reveal_type(local_variable)
-          local_variable.x = 99
+          local_variable.x = Bar()
     |}
     [
       "Revealed type [-1]: Revealed type for `local_variable` is `pyre_extensions.ReadOnly[Foo]`.";
@@ -1055,8 +1167,10 @@ let test_captured_variable_for_specially_decorated_functions context =
       from pyre_extensions import ReadOnly
       from readonly_stubs_for_testing import readonly_entrypoint
 
+      class Bar: ...
+
       class Foo:
-        x: int = 42
+        x: Bar = Bar()
 
       def main() -> None:
         local_variable = Foo()
@@ -1064,7 +1178,7 @@ let test_captured_variable_for_specially_decorated_functions context =
         @readonly_entrypoint
         def nested() -> None:
           reveal_type(local_variable)
-          local_variable.x = 99
+          local_variable.x = Bar()
     |}
     [
       "Missing annotation for captured variable [53]: Captured variable `local_variable` is not \
@@ -1078,15 +1192,17 @@ let test_captured_variable_for_specially_decorated_functions context =
       from pyre_extensions import ReadOnly
       from readonly_stubs_for_testing import readonly_entrypoint
 
+      class Bar: ...
+
       class Foo:
-        x: int = 99
+        x: Bar = Bar()
 
         def some_method(self) -> None:
 
           @readonly_entrypoint
           def nested() -> None:
             reveal_type(self)
-            self.x = 99
+            self.x = Bar()
     |}
     [
       "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
@@ -1100,8 +1216,10 @@ let test_captured_variable_for_specially_decorated_functions context =
       from pyre_extensions import ReadOnly
       from readonly_stubs_for_testing import readonly_entrypoint
 
+      class Bar: ...
+
       class Foo:
-        x: int = 99
+        x: Bar = Bar()
 
         @classmethod
         def some_classmethod(cls) -> None:
@@ -1109,7 +1227,7 @@ let test_captured_variable_for_specially_decorated_functions context =
           @readonly_entrypoint
           def nested() -> None:
             reveal_type(cls)
-            cls.x = 99
+            cls.x = Bar()
     |}
     [
       "Revealed type [-1]: Revealed type for `cls` is `pyre_extensions.ReadOnly[typing.Type[Foo]]`.";
@@ -1147,24 +1265,28 @@ let test_return_type context =
     {|
       from pyre_extensions import ReadOnly
 
-      def main(x: ReadOnly[int]) -> int:
+      class Foo: ...
+
+      def main(x: ReadOnly[Foo]) -> Foo:
         return x
     |}
     [
-      "ReadOnly violation - Incompatible return type [3004]: Expected `int` but got \
-       `pyre_extensions.ReadOnly[int]`.";
+      "ReadOnly violation - Incompatible return type [3004]: Expected `test.Foo` but got \
+       `pyre_extensions.ReadOnly[test.Foo]`.";
     ];
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
       from typing import List
 
-      def main(x: List[ReadOnly[int]]) -> List[int]:
+      class Foo: ...
+
+      def main(x: List[ReadOnly[Foo]]) -> List[Foo]:
         return x
     |}
     [
-      "ReadOnly violation - Incompatible return type [3004]: Expected `typing.List[int]` but got \
-       `typing.List[pyre_extensions.ReadOnly[int]]`.";
+      "ReadOnly violation - Incompatible return type [3004]: Expected `typing.List[test.Foo]` but \
+       got `typing.List[pyre_extensions.ReadOnly[test.Foo]]`.";
     ];
   ()
 
@@ -1229,14 +1351,16 @@ let test_typechecking_errors_are_prioritized context =
     {|
       from pyre_extensions import ReadOnly
 
-      def expect_mutable_int(x: ReadOnly[int]) -> None: ...
+      class Foo: ...
+
+      def expect_mutable_int(x: ReadOnly[Foo]) -> None: ...
 
       def main(s: str) -> None:
         expect_mutable_int(s)
     |}
     [
       "Incompatible parameter type [6]: In call `expect_mutable_int`, for 1st positional argument, \
-       expected `pyre_extensions.ReadOnly[int]` but got `str`.";
+       expected `pyre_extensions.ReadOnly[Foo]` but got `str`.";
     ];
   assert_type_errors
     {|
@@ -1261,15 +1385,17 @@ let test_typechecking_errors_are_prioritized context =
     {|
       from pyre_extensions import ReadOnly
 
+      class Bar: ...
+
       class Foo:
-        x: int = 42
+        x: Bar = Bar()
 
       def main(readonly_foo: ReadOnly[Foo]) -> None:
         readonly_foo.x = "wrong type"
     |}
     [
       "Incompatible attribute type [8]: Attribute `x` declared in class `Foo` has type \
-       `pyre_extensions.ReadOnly[int]` but is used as type `str`.";
+       `pyre_extensions.ReadOnly[Bar]` but is used as type `str`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
        since it is readonly.";
     ];
@@ -1354,30 +1480,46 @@ let test_error_message_has_non_any_location context =
     {|
       from pyre_extensions import ReadOnly
 
-      def main(readonly_int: ReadOnly[int], mutable_int: int) -> None:
-        readonly_int == readonly_int
-        readonly_int == mutable_int
-        mutable_int == readonly_int
+      class FooWithCustomEqualityCheck:
+        def __eq__(self, other: object) -> bool: ...
+
+      def main(
+        readonly_foo: ReadOnly[FooWithCustomEqualityCheck],
+        mutable_foo: FooWithCustomEqualityCheck
+      ) -> None:
+        readonly_foo == readonly_foo
+        readonly_foo == mutable_foo
+        mutable_foo == readonly_foo
     |}
     [
-      "5: Unsupported operand [58]: `==` is not supported for operand types \
-       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
-      "5: Unsupported operand [58]: `==` is not supported for operand types \
-       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
-      "6: Unsupported operand [58]: `==` is not supported for operand types \
-       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
-      "7: Unsupported operand [58]: `==` is not supported for operand types `int` and \
-       `pyre_extensions.ReadOnly[int]`.";
+      "11: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+      "11: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+      "12: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and \
+       `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
+      "13: Unsupported operand [58]: `==` is not supported for operand types \
+       `FooWithCustomEqualityCheck` and `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.";
     ];
   (* Test that fixmes are able to suppress the error. *)
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
 
-      def main(readonly_int: ReadOnly[int], mutable_int: int) -> None:
+      class FooWithCustomEqualityCheck:
+        def __eq__(self, other: object) -> bool: ...
+
+      def main(
+        readonly_foo: ReadOnly[FooWithCustomEqualityCheck],
+        mutable_foo: FooWithCustomEqualityCheck
+      ) -> None:
         # pyre-ignore[58]: `==` is not supported for operand types
-        # `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.
-        readonly_int == readonly_int
+        # `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]` and
+        # `pyre_extensions.ReadOnly[FooWithCustomEqualityCheck]`.
+        readonly_foo == readonly_foo
     |}
     [];
   ()
@@ -1408,8 +1550,7 @@ let test_allowlisted_classes_are_not_readonly context =
     |}
     [
       "Revealed type [-1]: Revealed type for `readonly_object` is \
-       `typing.Union[MySafeReadOnlyClass, pyre_extensions.ReadOnly[bool], \
-       pyre_extensions.ReadOnly[str]]`.";
+       `typing.Union[MySafeReadOnlyClass, bool, pyre_extensions.ReadOnly[str]]`.";
     ];
   (* Looking up an attribute of `MySafeReadOnlyClass` even from a readonly object is treated as
      mutable. *)
@@ -1426,6 +1567,19 @@ let test_allowlisted_classes_are_not_readonly context =
     |}
     [
       "Revealed type [-1]: Revealed type for `readonly_foo.some_attribute` is `MySafeReadOnlyClass`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Any
+
+      def main(x: ReadOnly[int], y: ReadOnly[bool]) -> None:
+        reveal_type(x)
+        reveal_type(y)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `x` is `int`.";
+      "Revealed type [-1]: Revealed type for `y` is `bool`.";
     ];
   ()
 

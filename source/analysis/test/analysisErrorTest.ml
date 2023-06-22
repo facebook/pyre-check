@@ -964,13 +964,13 @@ let test_description _ =
             callee = Some !&"my_callee";
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create Type.integer;
-                expected = Type.integer;
+                Error.actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                expected = Type.Primitive "Foo";
                 due_to_invariance = false;
               };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In call `my_callee`, for argument \
-     `my_name`, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+     `my_name`, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
   assert_messages
     (ReadOnlynessMismatch
        (IncompatibleParameterType
@@ -980,13 +980,13 @@ let test_description _ =
             callee = None;
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create Type.integer;
-                expected = Type.integer;
+                Error.actual = Type.ReadOnly.create (Type.Primitive "Foo");
+                expected = Type.Primitive "Foo";
                 due_to_invariance = false;
               };
           }))
     "ReadOnly violation - Incompatible parameter type [3002]: In anonymous call, for 1st \
-     positional argument, expected `int` but got `pyre_extensions.ReadOnly[int]`.";
+     positional argument, expected `Foo` but got `pyre_extensions.ReadOnly[Foo]`.";
   let error =
     Error.ReadOnlynessMismatch
       (CallingMutatingMethodOnReadOnly
@@ -1015,14 +1015,14 @@ let test_description _ =
           {
             mismatch =
               {
-                Error.actual = Type.ReadOnly.create Type.integer;
-                expected = Type.integer;
+                Error.actual = Type.ReadOnly.create (Type.Primitive "test.Foo");
+                expected = Type.Primitive "test.Foo";
                 due_to_invariance = false;
               };
             define_location = Node.location mock_define;
           }))
-    "ReadOnly violation - Incompatible return type [3004]: Expected `int` but got \
-     `pyre_extensions.ReadOnly[int]`.";
+    "ReadOnly violation - Incompatible return type [3004]: Expected `test.Foo` but got \
+     `pyre_extensions.ReadOnly[test.Foo]`.";
   let incompatible_parameter_type_error =
     Error.IncompatibleParameterType
       {

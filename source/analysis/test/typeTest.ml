@@ -1340,20 +1340,25 @@ let test_create_variadic_tuple _ =
 
 
 let test_create_readonly _ =
-  assert_create "pyre_extensions.ReadOnly[int]" (Type.ReadOnly.create Type.integer);
+  assert_create "pyre_extensions.ReadOnly[Foo]" (Type.ReadOnly.create (Type.Primitive "Foo"));
   assert_create
-    "pyre_extensions.ReadOnly[pyre_extensions.ReadOnly[int]]"
-    (Type.ReadOnly.create Type.integer);
+    "pyre_extensions.ReadOnly[pyre_extensions.ReadOnly[Foo]]"
+    (Type.ReadOnly.create (Type.Primitive "Foo"));
   assert_create
-    "typing.List[pyre_extensions.ReadOnly[int]]"
-    (Type.list (Type.ReadOnly.create Type.integer));
+    "typing.List[pyre_extensions.ReadOnly[Foo]]"
+    (Type.list (Type.ReadOnly.create (Type.Primitive "Foo")));
   assert_create "pyre_extensions.ReadOnly[None]" Type.none;
   assert_create
-    "pyre_extensions.ReadOnly[typing.Optional[int]]"
-    (Type.Union [Type.none; Type.ReadOnly Type.integer]);
+    "pyre_extensions.ReadOnly[typing.Optional[Foo]]"
+    (Type.Union [Type.none; Type.ReadOnly (Type.Primitive "Foo")]);
   assert_create
-    "pyre_extensions.ReadOnly[typing.Union[int, str, pyre_extensions.ReadOnly[bool]]]"
-    (Type.Union [Type.ReadOnly Type.integer; Type.ReadOnly Type.string; Type.ReadOnly Type.bool]);
+    "pyre_extensions.ReadOnly[typing.Union[Foo, str, pyre_extensions.ReadOnly[Bar]]]"
+    (Type.Union
+       [
+         Type.ReadOnly (Type.Primitive "Foo");
+         Type.ReadOnly Type.string;
+         Type.ReadOnly (Type.Primitive "Bar");
+       ]);
   ()
 
 
@@ -6448,52 +6453,52 @@ let test_class_data_for_attribute_lookup _ =
        ]);
   (* ReadOnly types. *)
   assert_class_data
-    (Type.ReadOnly.create Type.integer)
+    (Type.ReadOnly.create (Type.Primitive "Foo"))
     (Some
        [
          {
-           instantiated = Type.integer;
+           instantiated = Type.Primitive "Foo";
            accessed_through_class = false;
-           class_name = "int";
+           class_name = "Foo";
            accessed_through_readonly = true;
          };
        ]);
   assert_class_data
-    (Type.union [Type.ReadOnly.create Type.integer; Type.list Type.integer])
+    (Type.union [Type.ReadOnly.create (Type.Primitive "Foo"); Type.list (Type.Primitive "Foo")])
     (Some
        [
          {
-           instantiated = Type.list Type.integer;
+           instantiated = Type.list (Type.Primitive "Foo");
            accessed_through_class = false;
            class_name = "list";
            accessed_through_readonly = false;
          };
          {
-           instantiated = Type.integer;
+           instantiated = Type.Primitive "Foo";
            accessed_through_class = false;
-           class_name = "int";
+           class_name = "Foo";
            accessed_through_readonly = true;
          };
        ]);
   assert_class_data
-    (Type.meta (Type.ReadOnly.create Type.integer))
+    (Type.meta (Type.ReadOnly.create (Type.Primitive "Foo")))
     (Some
        [
          {
-           instantiated = Type.integer;
+           instantiated = Type.Primitive "Foo";
            accessed_through_class = true;
-           class_name = "int";
+           class_name = "Foo";
            accessed_through_readonly = true;
          };
        ]);
   assert_class_data
-    (Type.ReadOnly.create (Type.meta Type.integer))
+    (Type.ReadOnly.create (Type.meta (Type.Primitive "Foo")))
     (Some
        [
          {
-           instantiated = Type.integer;
+           instantiated = Type.Primitive "Foo";
            accessed_through_class = true;
-           class_name = "int";
+           class_name = "Foo";
            accessed_through_readonly = true;
          };
        ]);
