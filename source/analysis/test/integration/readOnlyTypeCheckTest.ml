@@ -1383,6 +1383,53 @@ let test_error_message_has_non_any_location context =
   ()
 
 
+let test_allowlisted_classes_are_not_readonly context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import MySafeReadOnlyClass
+
+      def main(readonly_object: ReadOnly[MySafeReadOnlyClass]) -> None:
+        reveal_type(readonly_object)
+        reveal_type(readonly_object.some_attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `readonly_object` is `MySafeReadOnlyClass`.";
+      "Revealed type [-1]: Revealed type for `readonly_object.some_attribute` is `str`.";
+    ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import MySafeReadOnlyClass
+
+      def main(readonly_object: ReadOnly[str | bool | MySafeReadOnlyClass]) -> None:
+        reveal_type(readonly_object)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `readonly_object` is \
+       `typing.Union[MySafeReadOnlyClass, pyre_extensions.ReadOnly[bool], \
+       pyre_extensions.ReadOnly[str]]`.";
+    ];
+  (* Looking up an attribute of `MySafeReadOnlyClass` even from a readonly object is treated as
+     mutable. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import MySafeReadOnlyClass
+
+      class Foo:
+        some_attribute: MySafeReadOnlyClass = MySafeReadOnlyClass()
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        reveal_type(readonly_foo.some_attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `readonly_foo.some_attribute` is `MySafeReadOnlyClass`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1403,5 +1450,6 @@ let () =
          "typechecking_errors_are_prioritized" >:: test_typechecking_errors_are_prioritized;
          "weaken_readonly_literals" >:: test_weaken_readonly_literals;
          "error_message_has_non_any_location" >:: test_error_message_has_non_any_location;
+         "allowlisted_classes_are_not_readonly" >:: test_allowlisted_classes_are_not_readonly;
        ]
   |> Test.run

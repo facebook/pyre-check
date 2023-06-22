@@ -3722,6 +3722,12 @@ module ReadOnly = struct
     | ReadOnly _ as type_ -> type_
     | NoneType -> NoneType
     | Union elements -> Union (List.map ~f:create elements)
+    | Primitive class_name as type_
+      when String.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
+        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
+           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
+           users. *)
+        type_
     | type_ -> ReadOnly type_
 
 
