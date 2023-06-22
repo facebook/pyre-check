@@ -609,6 +609,15 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+        # Return glean indexed result if Pyre client is not ready
+        if (
+            self.base_querier.server_state.status_tracker.get_status().connection_status
+            != state.ConnectionStatus.READY
+        ):
+            indexed_result = await self.index.definition(path, position)
+            return GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.GLEAN_INDEXER, data=indexed_result
+            )
         return await self.base_querier.get_definition_locations(path, position)
 
     async def get_completions(
