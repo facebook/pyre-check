@@ -3029,10 +3029,10 @@ let run
   let () = State.log "Processing CFG:@.%a" Cfg.pp cfg in
   let exit_state =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - fixpoint" ~f:(fun () ->
-        Interprocedural.Metrics.with_alarm
+        Alarm.with_alarm
           ~max_time_in_seconds:60
           ~event_name:"forward taint analysis"
-          ~callable
+          ~callable:(Interprocedural.Target.show_pretty callable)
           (fun () -> Fixpoint.forward ~cfg ~initial |> Fixpoint.exit)
           ())
   in

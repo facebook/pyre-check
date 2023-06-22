@@ -25,5 +25,6 @@
   pyrelib.scheduler
   pyrelib.specialCallResolution
   pyrelib.statistics
+  pyrelib.alarm
   pyrelib.version
   pyrelib.file))

@@ -22,4 +22,3 @@ module FetchCallables = FetchCallables
 module TargetGraph = TargetGraph
 module GlobalConstants = GlobalConstants
 module ChangedPaths = ChangedPaths
-module Metrics = Metrics

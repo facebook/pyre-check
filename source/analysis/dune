@@ -95,6 +95,7 @@
   pyrelib.pyreNewParser
   pyrelib.recognized
   pyrelib.statistics
+  pyrelib.alarm
   pyrelib.file
   type
   preprocessing

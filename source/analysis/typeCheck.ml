@@ -7706,5 +7706,11 @@ let check_define_by_name
   let global_resolution = GlobalResolution.create global_environment ?dependency in
   (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
   let resolution = resolution global_resolution (module DummyContext) in
-  GlobalResolution.function_definition global_resolution name
-  >>| check_function_definition ~type_check_controls ~call_graph_builder ~resolution ~name
+  Alarm.with_alarm
+    ~max_time_in_seconds:60
+    ~event_name:"type check"
+    ~callable:(Reference.show name)
+    (fun () ->
+      GlobalResolution.function_definition global_resolution name
+      >>| check_function_definition ~type_check_controls ~call_graph_builder ~resolution ~name)
+    ()

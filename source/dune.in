@@ -182,6 +182,12 @@
  (libraries pyrelib.configuration pyrelib.timer pyrelib.profiling yojson))
 
 (library
+ (name alarm)
+ (modules alarm)
+ (public_name pyrelib.alarm)
+ (libraries pyrelib.log pyrelib.statistics))
+
+(library
  (name pyrePath)
  (public_name pyrelib.path)
  (modules pyrePath)

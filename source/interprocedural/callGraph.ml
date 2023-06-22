@@ -2431,10 +2431,10 @@ let build_whole_program_call_graph
         whole_program_call_graph
       else
         let callable_call_graph =
-          Metrics.with_alarm
+          Alarm.with_alarm
             ~max_time_in_seconds:60
             ~event_name:"call graph building"
-            ~callable
+            ~callable:(Target.show_pretty callable)
             (fun () ->
               call_graph_of_callable
                 ~static_analysis_configuration
