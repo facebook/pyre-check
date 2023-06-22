@@ -449,8 +449,6 @@ let run_taint_analysis
           ();
         initial_callables)
   in
-  (* Save the cache here, in case there is a model verification error. *)
-  let () = Cache.save cache in
 
   let { ModelParseResult.models = initial_models; errors = model_verification_errors; _ } =
     initialize_models
