@@ -37,7 +37,7 @@ let assert_taint ~context source expected =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
         ~environment:type_environment
-        ~override_graph:(OverrideGraph.SharedMemory.get_for_testing_only ())
+        ~override_graph:(OverrideGraph.SharedMemory.create ())
         ~attribute_targets:(Registry.object_targets initial_models)
         ~qualifier
         ~define:(Ast.Node.value define)

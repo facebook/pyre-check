@@ -44,8 +44,7 @@ end
 module SharedMemory : sig
   type t
 
-  (** Return the current override graph in shared memory. Only exposed for tests. *)
-  val get_for_testing_only : unit -> t
+  val create : unit -> t
 
   val get_overriding_types : t -> member:Target.t -> Reference.t list option
 
@@ -53,7 +52,7 @@ module SharedMemory : sig
 
   val expand_override_targets : t -> Target.t list -> Target.t list
 
-  (** Records a heap override graph in shared memory. *)
+  (** Record a heap override graph in shared memory and return the handle to the storage location. *)
   val from_heap : Heap.t -> t
 
   (** Remove an override graph from shared memory. This must be called before storing another

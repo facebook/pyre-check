@@ -35,8 +35,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let override_graph =
     OverrideGraph.Heap.from_source ~environment ~include_unit_tests:true ~source
-    |> OverrideGraph.SharedMemory.from_heap
   in
+  let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph in
   let () =
     let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in
     if not (List.is_empty errors) then
@@ -60,14 +60,16 @@ let create_call_graph ?(other_sources = []) ~context source_text =
       CallGraph.call_graph_of_callable
         ~static_analysis_configuration
         ~environment
-        ~override_graph
+        ~override_graph:override_graph_shared_memory
         ~attribute_targets:(Target.HashSet.create ())
         ~callable
       |> CallGraph.DefineCallGraph.all_targets
     in
     CallGraph.WholeProgramCallGraph.add_or_exn call_graph ~callable ~callees
   in
-  List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold callables
+  let call_graph = List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold callables in
+  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph in
+  call_graph
 
 
 let create_callable = function
@@ -332,7 +334,7 @@ let test_construction context =
     |}
     ~expected:
       [
-        `Function "$local_test?foo$bar", [`Method "str.lower"; `Override "str.format"];
+        `Function "$local_test?foo$bar", [`Method "str.lower"; `Method "str.format"];
         `Function "test.$toplevel", [];
         `Function "test.foo", [`Function "$local_test?foo$bar"];
       ];

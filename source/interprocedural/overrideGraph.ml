@@ -178,7 +178,7 @@ end
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory = struct
   module T =
-    Memory.WithCache.Make
+    SharedMemory.FirstClass.WithCache.Make
       (Target.SharedMemoryKey)
       (struct
         type t = Reference.t list
@@ -188,40 +188,40 @@ module SharedMemory = struct
         let description = "overriding types"
       end)
 
-  type t = Handle
+  type t = T.t
 
-  (** Return the current override graph in shared memory. Only exposed for tests. *)
-  let get_for_testing_only () = Handle
+  let create = T.create
 
-  let add_overriding_types Handle ~member ~subtypes = T.add member subtypes
+  let add_overriding_types handle ~member ~subtypes = T.add handle member subtypes
 
-  let get_overriding_types Handle ~member = T.get member
+  let get_overriding_types handle ~member = T.get handle member
 
-  let overrides_exist Handle member = T.mem member
+  let overrides_exist handle member = T.mem handle member
 
   (** Records a heap override graph in shared memory. *)
   let from_heap overrides =
+    let handle = create () in
     let record_override_edge ~key:member ~data:subtypes =
-      add_overriding_types Handle ~member ~subtypes
+      add_overriding_types handle ~member ~subtypes
     in
     let () = Target.Map.Tree.iteri overrides ~f:record_override_edge in
-    Handle
+    handle
 
 
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
-  let cleanup Handle overrides =
-    overrides |> Target.Map.Tree.keys |> T.KeySet.of_list |> T.remove_batch
+  let cleanup handle overrides =
+    overrides |> Target.Map.Tree.keys |> T.KeySet.of_list |> T.remove_batch handle
 
 
-  let expand_override_targets Handle callees =
+  let expand_override_targets handle callees =
     let rec expand_and_gather expanded = function
       | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
       | Target.Override _ as override ->
           let make_override at_type = Target.create_derived_override override ~at_type in
           let overrides =
             let member = Target.get_corresponding_method override in
-            T.get member |> Option.value ~default:[] |> List.map ~f:make_override
+            T.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
           in
           Target.get_corresponding_method override
           :: List.fold overrides ~f:expand_and_gather ~init:expanded
