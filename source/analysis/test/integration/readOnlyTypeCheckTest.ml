@@ -1310,6 +1310,46 @@ let test_weaken_readonly_literals context =
   ()
 
 
+(* Some error messages emit line and column number as -1:-1, which makes the errors unsuppressable
+   and prevents diffs from landing.
+
+   Ensure that readonly doesn't emit errors like those. *)
+let test_error_message_has_non_any_location context =
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    ~include_line_numbers:true
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(readonly_int: ReadOnly[int], mutable_int: int) -> None:
+        readonly_int == readonly_int
+        readonly_int == mutable_int
+        mutable_int == readonly_int
+    |}
+    [
+      "5: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
+      "5: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
+      "6: Unsupported operand [58]: `==` is not supported for operand types \
+       `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.";
+      "7: Unsupported operand [58]: `==` is not supported for operand types `int` and \
+       `pyre_extensions.ReadOnly[int]`.";
+    ];
+  (* Test that fixmes are able to suppress the error. *)
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      def main(readonly_int: ReadOnly[int], mutable_int: int) -> None:
+        # pyre-ignore[58]: `==` is not supported for operand types
+        # `pyre_extensions.ReadOnly[int]` and `pyre_extensions.ReadOnly[int]`.
+        readonly_int == readonly_int
+    |}
+    [];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1329,5 +1369,6 @@ let () =
          "ignored_module" >:: test_ignored_module;
          "typechecking_errors_are_prioritized" >:: test_typechecking_errors_are_prioritized;
          "weaken_readonly_literals" >:: test_weaken_readonly_literals;
+         "error_message_has_non_any_location" >:: test_error_message_has_non_any_location;
        ]
   |> Test.run

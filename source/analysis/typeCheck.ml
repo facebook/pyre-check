@@ -154,8 +154,10 @@ let errors_from_not_found
   | Mismatches mismatches ->
       let convert_to_error = function
         | SignatureSelectionTypes.Mismatch
-            { Node.value = { SignatureSelectionTypes.actual; expected; name; position }; location }
-          ->
+            {
+              Node.value = { SignatureSelectionTypes.actual; expected; name; position };
+              location = mismatch_location;
+            } ->
             let typed_dictionary_error
                 ~mismatch
                 ~method_name
@@ -228,14 +230,14 @@ let errors_from_not_found
                          { self_argument; self_argument_type; method_name }) )
               | _ ->
                   if Type.is_primitive_string actual && Type.is_literal_string expected then
-                    location, Error.NonLiteralString { name; position; callee }
+                    mismatch_location, Error.NonLiteralString { name; position; callee }
                   else if is_readonlyness_mismatch ~global_resolution ~actual ~expected then
-                    ( location,
+                    ( mismatch_location,
                       Error.ReadOnlynessMismatch
                         (IncompatibleParameterType
                            { keyword_argument_name = name; position; callee; mismatch }) )
                   else
-                    ( location,
+                    ( mismatch_location,
                       Error.IncompatibleParameterType
                         { keyword_argument_name = name; position; callee; mismatch } )
             in
@@ -249,13 +251,26 @@ let errors_from_not_found
                     else
                       callee_name |> inverse_operator >>= operator_name_to_symbol
                   in
-                  match operator_symbol, callee_expression >>| Node.value with
-                  | Some operator_name, Some (Expression.Name (Attribute { special = true; _ })) ->
+                  match operator_symbol, callee_expression with
+                  | ( Some operator_name,
+                      Some
+                        {
+                          Node.value = Expression.Name (Attribute { special = true; _ });
+                          location = callee_location;
+                        } ) ->
                       let left_operand, right_operand =
                         if is_uninverted then
                           self_annotation, actual
                         else
                           actual, self_annotation
+                      in
+                      let location =
+                        (* Avoid location being `any`, since that leads to errors having line and
+                           column as -1:-1, making the errors unsuppressable. *)
+                        if Location.equal mismatch_location Location.any then
+                          callee_location
+                        else
+                          mismatch_location
                       in
                       ( location,
                         Error.UnsupportedOperand
@@ -264,7 +279,7 @@ let errors_from_not_found
               | Some (Type.Primitive _ as annotation), Some method_name ->
                   GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
                   >>= typed_dictionary_error ~mismatch ~method_name ~position
-                  >>| (fun kind -> location, kind)
+                  >>| (fun kind -> mismatch_location, kind)
                   |> Option.value ~default:default_location_and_error
               | _ -> default_location_and_error
             in
