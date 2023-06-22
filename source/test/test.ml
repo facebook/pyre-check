@@ -1153,6 +1153,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           F = TypeVar("F", bound=Callable[..., object])
 
           def readonly_entrypoint(f: F) -> F: ...
+
+          class MySafeReadOnlyClass:
+            some_attribute: str
 |}
       );
       ( "readonly_module_to_ignore.pyi",
