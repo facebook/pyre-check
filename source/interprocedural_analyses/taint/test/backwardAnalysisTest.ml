@@ -48,7 +48,7 @@ let assert_taint ~context source expected =
         ?profiler:None
         ~taint_configuration:TaintConfiguration.Heap.default
         ~environment:type_environment
-        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
+        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (Interprocedural.GlobalConstants.SharedMemory.from_heap
              Interprocedural.GlobalConstants.Heap.empty)

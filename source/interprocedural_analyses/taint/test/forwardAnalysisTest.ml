@@ -74,7 +74,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~string_combine_partial_sink_tree:
           (Taint.CallModel.string_combine_partial_sink_tree taint_configuration)
         ~environment:type_environment
-        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.get_for_testing_only ())
+        ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (Interprocedural.GlobalConstants.SharedMemory.from_heap
              Interprocedural.GlobalConstants.Heap.empty)

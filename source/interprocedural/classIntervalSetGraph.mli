@@ -16,10 +16,11 @@ end
 module SharedMemory : sig
   type t
 
-  val from_heap : Heap.t -> t
+  (* Create a "region" in the shared memory to store class interval graphs. *)
+  val create : unit -> t
 
-  (** Return the current class interval graph in shared memory. Only exposed for tests. *)
-  val get_for_testing_only : unit -> t
+  (* Store the class interval graph (as an OCaml value) into shared memory. *)
+  val from_heap : Heap.t -> t
 
   val add : t -> class_name:ClassHierarchyGraph.class_name -> interval:ClassIntervalSet.t -> unit
 
@@ -28,4 +29,6 @@ module SharedMemory : sig
   val of_type : t -> Type.t option -> ClassIntervalSet.t
 
   val of_definition : t -> Ast.Statement.Define.t Ast.Node.t -> ClassIntervalSet.t
+
+  val cleanup : t -> Heap.t -> unit
 end

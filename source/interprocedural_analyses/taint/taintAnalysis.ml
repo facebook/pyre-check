@@ -425,7 +425,7 @@ let run_taint_analysis
         class_interval_graph)
   in
 
-  let class_interval_graph =
+  let class_interval_graph_shared_memory =
     Interprocedural.ClassIntervalSetGraph.SharedMemory.from_heap class_interval_graph
   in
 
@@ -578,7 +578,7 @@ let run_taint_analysis
         {
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           type_environment = Analysis.TypeEnvironment.read_only environment;
-          class_interval_graph;
+          class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs;
           global_constants;
         }

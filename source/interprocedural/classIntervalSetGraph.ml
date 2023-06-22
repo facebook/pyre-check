@@ -12,6 +12,7 @@
  * stored in shared memory using the `SharedMemory` module.
  *)
 
+module HackSharedMemory = SharedMemory
 open ClassHierarchyGraph
 
 type dfs_state =
@@ -111,8 +112,8 @@ end
 
 (** Mapping from a class name to its class interval set, stored in shared memory. *)
 module SharedMemory = struct
-  include
-    Memory.WithCache.Make
+  module Internal =
+    HackSharedMemory.FirstClass.WithCache.Make
       (Analysis.SharedMemoryKeys.StringKey)
       (struct
         type t = ClassIntervalSet.t
@@ -122,33 +123,41 @@ module SharedMemory = struct
         let description = "class intervals of classes"
       end)
 
-  type t = Handle
+  type t = Internal.t
 
-  (** Return the current class interval graph in shared memory. Only exposed for tests. *)
-  let get_for_testing_only () = Handle
+  let create = Internal.create
 
-  let add Handle ~class_name ~interval = add class_name interval
+  let add handle ~class_name ~interval = Internal.add handle class_name interval
 
-  let get Handle ~class_name = get class_name
+  let get handle ~class_name = Internal.get handle class_name
 
   let from_heap intervals =
+    let handle = create () in
     let () =
-      ClassNameMap.iter (fun class_name interval -> add Handle ~class_name ~interval) intervals
+      ClassNameMap.iter (fun class_name interval -> add handle ~class_name ~interval) intervals
     in
-    Handle
+    handle
 
 
-  let of_class Handle class_name =
-    get Handle ~class_name |> Option.value ~default:ClassIntervalSet.top
+  let of_class handle class_name =
+    get handle ~class_name |> Option.value ~default:ClassIntervalSet.top
 
 
-  let of_type Handle = function
-    | Some (Type.Primitive class_name) -> of_class Handle class_name
+  let of_type handle = function
+    | Some (Type.Primitive class_name) -> of_class handle class_name
     | _ -> ClassIntervalSet.top
 
 
-  let of_definition Handle definition =
+  let of_definition handle definition =
     match Target.create definition |> Target.class_name with
-    | Some class_name -> of_class Handle class_name
+    | Some class_name -> of_class handle class_name
     | None -> ClassIntervalSet.top
+
+
+  let cleanup handle intervals =
+    intervals
+    |> ClassNameMap.bindings
+    |> List.map fst
+    |> Internal.KeySet.of_list
+    |> Internal.remove_batch handle
 end

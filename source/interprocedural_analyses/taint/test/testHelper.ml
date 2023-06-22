@@ -451,7 +451,8 @@ type test_environment = {
   stubs: Target.t list;
   initial_models: Registry.t;
   type_environment: TypeEnvironment.ReadOnly.t;
-  class_interval_graph: ClassIntervalSetGraph.SharedMemory.t;
+  class_interval_graph: ClassIntervalSetGraph.Heap.t;
+  class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
   global_constants: GlobalConstants.SharedMemory.t;
 }
 
@@ -641,7 +642,9 @@ let initialize
   in
   let class_interval_graph =
     ClassIntervalSetGraph.Heap.from_class_hierarchy class_hierarchy_graph
-    |> ClassIntervalSetGraph.SharedMemory.from_heap
+  in
+  let class_interval_graph_shared_memory =
+    ClassIntervalSetGraph.SharedMemory.from_heap class_interval_graph
   in
   {
     static_analysis_configuration;
@@ -656,6 +659,7 @@ let initialize
     initial_models;
     type_environment;
     class_interval_graph;
+    class_interval_graph_shared_memory;
     global_constants;
   }
 
@@ -784,6 +788,7 @@ let end_to_end_integration_test path context =
       initial_callables;
       stubs;
       class_interval_graph;
+      class_interval_graph_shared_memory;
       global_constants;
     }
       =
@@ -820,7 +825,7 @@ let end_to_end_integration_test path context =
           {
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
             type_environment;
-            class_interval_graph;
+            class_interval_graph = class_interval_graph_shared_memory;
             define_call_graphs;
             global_constants;
           }
@@ -866,6 +871,11 @@ let end_to_end_integration_test path context =
     in
     let () = TaintFixpoint.cleanup fixpoint_state in
     let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
+    let () =
+      ClassIntervalSetGraph.SharedMemory.cleanup
+        class_interval_graph_shared_memory
+        class_interval_graph
+    in
     divergent_files, serialized_models
   in
   let divergent_files =
