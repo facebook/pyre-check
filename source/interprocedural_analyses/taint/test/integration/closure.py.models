@@ -1,72 +1,76 @@
 @generated
 {
-  "kind": "model",
+  "kind": "issue",
   "data": {
-    "callable": "Obj{ClassWithSinkAttribute.attribute}",
-    "sinks": [
+    "callable": "closure.side_effect_reduction_closure",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 16,
+    "start": 10,
+    "end": 11,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
       {
-        "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Obj{taint._global_sink}",
-    "sinks": [
-      {
-        "port": "formal($global)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_cookies",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "Cookies" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_rce",
-    "sinks": [
-      {
-        "port": "formal(argument)",
-        "taint": [
+        "name": "forward",
+        "roots": [
           {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 11,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 16,
+                "start": 10,
+                "end": 11
+              },
+              "resolves_to": [
+                "closure.side_effect_reduction_closure.inner"
+              ],
+              "port": "formal(z)"
+            }
           }
         ]
       }
     ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_sql",
-    "sinks": [
-      {
-        "port": "formal(argument)",
-        "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
-      }
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
     ],
-    "modes": [ "Obscure" ]
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.side_effect_reduction_closure.inner",
+      "index": 0,
+      "parameter": "formal(z)"
+    },
+    "master_handle": "closure.side_effect_reduction_closure:5002:0:Call|closure.side_effect_reduction_closure.inner|0|formal(z):58177bc5f9daa5ade590e7ce0efd7465"
   }
 }
 {
@@ -118,127 +122,25 @@
 {
   "kind": "model",
   "data": {
-    "callable": "_tito",
-    "tito": [
-      {
-        "port": "formal(**kw)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(*rest0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "tito": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "_user_controlled",
-    "sources": [
-      {
-        "port": "result",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "copy",
-    "tito": [
-      {
-        "port": "formal(obj)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "copy" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "eval",
+    "callable": "closure.side_effect_reduction_closure.inner",
     "sinks": [
       {
-        "port": "formal(arg)",
-        "taint": [
-          {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "getattr",
-    "sinks": [
-      {
-        "port": "formal(name)",
-        "taint": [
-          { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
-        ]
-      }
-    ],
-    "tito": [
-      {
-        "port": "formal(default)",
+        "port": "formal(z)",
         "taint": [
           {
             "kinds": [
               {
-                "features": [ { "always-via": "default" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
               }
             ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(o)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "object" } ],
-                "return_paths": { "": 0 },
-                "kind": "LocalReturn"
-              }
-            ],
-            "tito": null
+            "origin": {
+              "filename": "closure.py",
+              "line": 15,
+              "start": 19,
+              "end": 20
+            }
           }
         ]
       }

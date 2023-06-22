@@ -6,6 +6,16 @@
 from builtins import _test_sink, _test_source
 
 
+def side_effect_reduction_closure():
+    x = _test_source()
+    z = _test_source()
+
+    def inner(z):
+        _test_sink(x)  # TODO(afk): find side effect flow
+        _test_sink(z)
+    inner(z)
+
+
 class Object:
     pass
 
