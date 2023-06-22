@@ -355,6 +355,39 @@ let test_assignment context =
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
        `mutable_attribute` since it is readonly.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        @property
+        def some_property(self) -> str: ...
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        reveal_type(readonly_foo.some_property)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `readonly_foo.some_property` is \
+       `pyre_extensions.ReadOnly[str]` (final).";
+    ];
+  assert_type_errors_including_readonly
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo:
+        @property
+        def some_property(self) -> str: ...
+
+        @some_property.setter
+        def some_property(self, value: str) -> None: ...
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        readonly_foo.some_property = "hello"
+    |}
+    [
+      "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute \
+       `some_property` since it is readonly.";
+    ];
   ()
 
 
