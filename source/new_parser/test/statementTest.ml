@@ -2703,6 +2703,16 @@ let test_match _ =
             ])
       ~expected_guard:None;
     assert_case_parsed
+      "case [y, z, *_]"
+      ~expected_pattern:
+        (+Match.Pattern.MatchSequence
+            [
+              +Match.Pattern.MatchAs { pattern = None; name = "y" };
+              +Match.Pattern.MatchAs { pattern = None; name = "z" };
+              +Match.Pattern.MatchStar None;
+            ])
+      ~expected_guard:None;
+    assert_case_parsed
       "case Foo(5, y=6)"
       ~expected_pattern:
         (+Match.Pattern.MatchClass
