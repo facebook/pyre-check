@@ -75,7 +75,6 @@ def access_variables_in_outer_scope_issue():
     x = _test_source()
 
     def inner():
-        # TODO(T123114236): We should find an issue here
         _test_sink(x)
 
     inner()

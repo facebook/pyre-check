@@ -47,6 +47,7 @@ module ArgumentMatches = struct
     tito_matches: AccessPath.argument_match list;
     sanitize_matches: AccessPath.argument_match list;
   }
+  [@@deriving show]
 end
 
 let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments =

@@ -25,6 +25,7 @@ module ArgumentMatches : sig
     tito_matches: AccessPath.argument_match list;
     sanitize_matches: AccessPath.argument_match list;
   }
+  [@@deriving show]
 end
 
 val match_actuals_to_formals

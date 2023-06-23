@@ -2324,8 +2324,6 @@ let extract_tito_and_sink_models
     ~existing_backward
     entry_taint
   =
-  let { Statement.Define.signature = { parameters; _ }; _ } = define in
-  let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
   let simplify annotation tree =
     let type_breadcrumbs =
@@ -2349,8 +2347,7 @@ let extract_tito_and_sink_models
          ~f:Features.ReturnAccessPathTree.limit_width
   in
 
-  let split_and_simplify model (parameter, name, original) =
-    let annotation = original.Node.value.Parameter.annotation in
+  let split_and_simplify model (parameter, name, annotation) =
     let partition =
       BackwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Sinks.discard_transforms
@@ -2427,7 +2424,27 @@ let extract_tito_and_sink_models
         sink_taint = BackwardState.assign ~root:parameter ~path:[] sink_taint model.sink_taint;
       }
   in
-  List.fold normalized_parameters ~f:split_and_simplify ~init:Model.Backward.empty
+  let { Statement.Define.signature = { parameters; _ }; captures; _ } = define in
+  let normalized_parameters =
+    parameters
+    |> AccessPath.Root.normalize_parameters
+    |> List.map ~f:(fun (parameter, name, original) ->
+           parameter, name, original.Node.value.Parameter.annotation)
+  in
+  let captures =
+    List.mapi captures ~f:(fun index capture ->
+        (* TODO(T156333267): Have closure AccessPath instead of using PositionalParameter *)
+        ( AccessPath.Root.PositionalParameter
+            {
+              position = -(index + 1);
+              name = capture.Statement.Define.Capture.name;
+              positional_only = false;
+            },
+          capture.name,
+          None ))
+  in
+  List.append normalized_parameters captures
+  |> List.fold ~f:split_and_simplify ~init:Model.Backward.empty
 
 
 let run
@@ -2493,10 +2510,13 @@ let run
     State.log "Backward analysis of callable: `%a`" Interprocedural.Target.pp_pretty callable
   in
   let entry_state =
-    match define.value.signature.parameters with
-    | [] ->
-        (* Without parameters, the inferred model will always be empty. *)
-        let () = State.log "Skipping backward analysis since the callable has no parameters" in
+    (* TODO(T156333229): hide side effect work behind feature flag *)
+    match define.value.signature.parameters, define.value.captures with
+    | [], [] ->
+        (* Without parameters or captures, the inferred model will always be empty. *)
+        let () =
+          State.log "Skipping backward analysis since the callable has no parameters or captures"
+        in
         None
     | _ ->
         TaintProfiler.track_duration ~profiler ~name:"Backward analysis - fixpoint" ~f:(fun () ->

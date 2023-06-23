@@ -1504,6 +1504,16 @@
             "tito": null
           }
         ]
+      },
+      {
+        "port": "formal($parameter$f)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": null
+          }
+        ]
       }
     ]
   }

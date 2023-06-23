@@ -11,7 +11,7 @@ def side_effect_reduction_closure():
     z = _test_source()
 
     def inner(z):
-        _test_sink(x)  # TODO(afk): find side effect flow
+        _test_sink(x)
         _test_sink(z)
     inner(z)
 
