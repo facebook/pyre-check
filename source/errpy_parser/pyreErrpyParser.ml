@@ -129,9 +129,7 @@ let create_assign ~location ~target ~annotation ~value () =
       Statement.Assign { target; annotation; value }
 
 
-(* TODO(T154719332): Fix this. Error (warning 8 [partial-match]): this pattern-matching is not
-   exhaustive. Here is an example of a case that is not matched: ByteStr _ *)
-let[@warning "-8"] rec translate_expression (expression : Errpyast.expr) =
+let rec translate_expression (expression : Errpyast.expr) =
   let translate_comprehension (comprehension : Errpyast.comprehension) =
     {
       Comprehension.Generator.target = translate_expression comprehension.target;
@@ -247,12 +245,17 @@ let[@warning "-8"] rec translate_expression (expression : Errpyast.expr) =
                   match constant_desc with
                   | Errpyast.Ellipsis -> Constant.Ellipsis
                   | Errpyast.Bool bool -> if bool then Constant.True else Constant.False
+                  | Errpyast.ByteStr value
                   | Errpyast.Str value ->
                       let open List in
                       let split_value = String.split ~on:'\'' value in
                       let just_string = nth_exn split_value (length split_value - 2) in
-                      let is_bytes = String.contains (nth_exn split_value 0) 'b' in
-                      Constant.String (StringLiteral.create ~bytes:is_bytes just_string)
+                      let bytes =
+                        match constant_desc with
+                        | Errpyast.ByteStr _ -> true
+                        | _ -> false
+                      in
+                      Constant.String (StringLiteral.create ~bytes just_string)
                   | Errpyast.Num num -> (
                       match num with
                       | Int int -> Constant.Integer int

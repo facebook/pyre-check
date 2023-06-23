@@ -46,7 +46,7 @@ DEPENDENCIES = [
     "ounit2-lwt.2.2.7",
     "pyre-ast.0.1.9",
     "mtime.1.4.0",
-    "errpy.0.0.7",
+    "errpy.0.0.8",
 ]
 
 
