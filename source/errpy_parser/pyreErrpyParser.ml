@@ -129,6 +129,32 @@ let create_assign ~location ~target ~annotation ~value () =
       Statement.Assign { target; annotation; value }
 
 
+let translate_constant (constant : Errpyast.constant) =
+  match constant with
+  | None -> Constant.NoneLiteral
+  | Some constant_desc -> (
+      match constant_desc with
+      | Errpyast.Ellipsis -> Constant.Ellipsis
+      | Errpyast.Bool bool -> if bool then Constant.True else Constant.False
+      | Errpyast.ByteStr value
+      | Errpyast.Str value ->
+          let open List in
+          let split_value = String.split ~on:'\'' value in
+          let just_string = nth_exn split_value (length split_value - 2) in
+          let bytes =
+            match constant_desc with
+            | Errpyast.ByteStr _ -> true
+            | _ -> false
+          in
+          Constant.String (StringLiteral.create ~bytes just_string)
+      | Errpyast.Num num -> (
+          match num with
+          | Int int -> Constant.Integer int
+          | Float float -> Constant.Float float
+          | Complex complex -> Constant.Complex complex
+          | Big_int bitint -> Constant.BigInteger bitint))
+
+
 let rec translate_expression (expression : Errpyast.expr) =
   let translate_comprehension (comprehension : Errpyast.comprehension) =
     {
@@ -237,33 +263,7 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.Attribute attribute ->
             let base = translate_expression attribute.value in
             Expression.Name (Name.Attribute { base; attribute = attribute.attr; special = false })
-        | Errpyast.Constant constant ->
-            let const =
-              match constant.value with
-              | None -> Constant.NoneLiteral
-              | Some constant_desc -> (
-                  match constant_desc with
-                  | Errpyast.Ellipsis -> Constant.Ellipsis
-                  | Errpyast.Bool bool -> if bool then Constant.True else Constant.False
-                  | Errpyast.ByteStr value
-                  | Errpyast.Str value ->
-                      let open List in
-                      let split_value = String.split ~on:'\'' value in
-                      let just_string = nth_exn split_value (length split_value - 2) in
-                      let bytes =
-                        match constant_desc with
-                        | Errpyast.ByteStr _ -> true
-                        | _ -> false
-                      in
-                      Constant.String (StringLiteral.create ~bytes just_string)
-                  | Errpyast.Num num -> (
-                      match num with
-                      | Int int -> Constant.Integer int
-                      | Float float -> Constant.Float float
-                      | Complex complex -> Constant.Complex complex
-                      | Big_int bitint -> Constant.BigInteger bitint))
-            in
-            Expression.Constant const
+        | Errpyast.Constant constant -> Expression.Constant (translate_constant constant.value)
         | Errpyast.Await expr -> Expression.Await (translate_expression expr)
         | Errpyast.YieldFrom expr -> Expression.YieldFrom (translate_expression expr)
         | Errpyast.Yield maybe_expr ->
@@ -531,6 +531,72 @@ and translate_arguments (arguments : Errpyast.arguments) =
       keyword_only_parameters;
       Option.to_list kwarg_parameter;
     ]
+
+
+and translate_match_case (match_case : Errpyast.match_case) ~context =
+  let module Node = Ast.Node in
+  let body = translate_statements match_case.body ~context in
+  let guard = Option.map match_case.guard ~f:translate_expression in
+
+  let location =
+    let end_lineno = match_case.pattern.end_lineno in
+    let end_col_offset = match_case.pattern.end_col_offset in
+    {
+      start = { line = match_case.pattern.lineno; column = match_case.pattern.col_offset };
+      stop = { line = end_lineno; column = end_col_offset };
+    }
+  in
+
+  let rec translate_pattern (pattern : Errpyast.pattern) =
+    let translate_patterns patterns = List.map ~f:translate_pattern patterns in
+
+    (match pattern.desc with
+    | Errpyast.MatchValue value -> Match.Pattern.MatchValue (translate_expression value)
+    | Errpyast.MatchSingleton constant -> Match.Pattern.MatchSingleton (translate_constant constant)
+    | Errpyast.MatchSequence patterns -> Match.Pattern.MatchSequence (translate_patterns patterns)
+    | Errpyast.MatchMapping match_mapping ->
+        Match.Pattern.MatchMapping
+          {
+            keys = List.map match_mapping.keys ~f:translate_expression;
+            patterns = translate_patterns match_mapping.patterns;
+            rest = match_mapping.rest;
+          }
+    | Errpyast.MatchClass match_class ->
+        let cls = translate_expression match_class.cls in
+        let class_name =
+          match Node.value cls with
+          | Expression.Name name -> name |> Node.create ~location:(Node.location cls)
+          | _ ->
+              (* TODO(T156257160): AST spec is too broad, should return Name instead of Expression -
+                 ERRPY will flag this as a syntax error*)
+              Name.Identifier "_" |> Node.create ~location:(Node.location cls)
+        in
+        Match.Pattern.MatchClass
+          {
+            class_name;
+            patterns = translate_patterns match_class.patterns;
+            keyword_attributes = match_class.kwd_attrs;
+            keyword_patterns = translate_patterns match_class.kwd_patterns;
+          }
+    | Errpyast.MatchStar rest -> Match.Pattern.MatchStar rest
+    | Errpyast.MatchAs match_as -> (
+        let name = match_as.name in
+        let pattern = match_as.pattern in
+
+        match name, pattern with
+        | None, None -> Match.Pattern.MatchWildcard
+        | _ ->
+            Match.Pattern.MatchAs
+              {
+                name = Option.value match_as.name ~default:"_";
+                pattern = Option.map match_as.pattern ~f:translate_pattern;
+              })
+    | Errpyast.MatchOr patterns -> Match.Pattern.MatchOr (translate_patterns patterns))
+    |> Node.create ~location
+  in
+
+  let pattern = translate_pattern match_case.pattern in
+  { Ast.Statement.Match.Case.pattern; guard; body }
 
 
 and translate_statements
@@ -824,13 +890,10 @@ and translate_statements
                 top_level_unbound_names = [];
               };
           ]
-      | Errpyast.Match _match ->
-          let fail_message =
-            Format.asprintf
-              "not yet implemented statement: %s"
-              (Errpyast.show_stmt_desc statement_desc)
-          in
-          failwith fail_message
+      | Errpyast.Match match_statement ->
+          (* TODO(T156257160): Add refutability checks for Match cases as seen in pyreErrpyParser *)
+          let cases = List.map match_statement.cases ~f:(translate_match_case ~context) in
+          [Statement.Match { Match.subject = translate_expression match_statement.subject; cases }]
     in
     let make_node statement = statement |> Node.create ~location in
     List.map ~f:make_node as_ast_statement
