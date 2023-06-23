@@ -2,6 +2,7 @@ import sys
 from collections.abc import Callable, Iterable, Mapping, Sequence
 from typing import Any, AnyStr, Generic, NamedTuple, TypeVar, overload
 from typing_extensions import Literal, TypeAlias
+from pyre_extenisons import ReadOnly
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -135,7 +136,7 @@ else:
     def unquote(string: str, encoding: str = "utf-8", errors: str = "replace") -> str: ...
 
 def unquote_to_bytes(string: str | bytes | bytearray) -> bytes: ...
-def unquote_plus(string: str, encoding: str = "utf-8", errors: str = "replace") -> str: ...
+def unquote_plus(string: ReadOnly[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
 @overload
 def urldefrag(url: str) -> DefragResult: ...
 @overload
