@@ -628,10 +628,10 @@ class CallHierarchyParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 class CallHierarchyItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     kind: SymbolKind
-    detail: Optional[str]
     uri: str
     range: LspRange
     selection_range: LspRange
+    detail: Optional[str] = None
 
     def document_uri(self) -> DocumentUri:
         return DocumentUri.parse(self.uri)
