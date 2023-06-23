@@ -1086,7 +1086,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         (* Don't lift left_tree's Index branches when AnyIndex branch is present on mold *)
         | Label.Index _, `Left left when has_any_index_on_mold ->
             lifted, LabelMap.add ~key ~data:left result
-        | _, `Left left -> Element.join lifted (collapse ~transform ~widen_depth left), result
+        | _, `Left left -> Element.join lifted (collapse ~widen_depth left |> transform), result
         | _, `Right _ -> lifted, result
       in
       LabelMap.fold2

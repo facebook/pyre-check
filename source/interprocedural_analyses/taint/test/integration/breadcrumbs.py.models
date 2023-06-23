@@ -328,7 +328,9 @@
               { "always-via": "obscure:model" },
               { "always-type": "integer" },
               { "always-type": "scalar" },
-              { "always-via": "tito" }
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "tito_positions": [
               { "line": 57, "start": 27, "end": 61 },

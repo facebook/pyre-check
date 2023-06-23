@@ -241,7 +241,11 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "via-value": "second" } ],
+            "local_features": [
+              { "via-value": "second" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
             "origin": {
               "filename": "add_feature_to_argument.py",
               "line": 38,

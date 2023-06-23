@@ -283,6 +283,7 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 1,
@@ -313,11 +314,16 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "call": {
               "position": {
@@ -339,6 +345,7 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 1,
@@ -348,6 +355,7 @@
             "local_features": [
               { "always-via": "tito-broadening" },
               { "always-via": "broadening" },
+              { "always-via": "widen-broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
             "call": {
@@ -370,11 +378,16 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "call": {
               "position": {
@@ -416,7 +429,10 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
-              { "via": "obscure:model" }, { "via": "tito" }
+              { "via": "obscure:model" },
+              { "via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
             ],
             "tito_positions": [
               { "line": 49, "start": 25, "end": 87 },
@@ -447,6 +463,7 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 1,
@@ -501,7 +518,10 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 34, "start": 25, "end": 28 } ],
             "tito": null
@@ -528,6 +548,7 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
+                  { "via": "widen-broadening" },
                   { "via": "obscure:unknown-callee" }
                 ],
                 "length": 2,
@@ -561,7 +582,10 @@
               }
             ],
             "local_features": [
-              { "via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
             "tito": null
@@ -655,10 +679,18 @@
           {
             "kinds": [
               {
-                "features": [ { "always-via": "special_sink" } ],
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "via": "broadening" },
+                  { "via": "widen-broadening" }
+                ],
                 "length": 1,
                 "kind": "Test"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "call": {
               "position": {
@@ -854,6 +886,10 @@
                 "kind": "RemoteCodeExecution"
               }
             ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
+            ],
             "origin": {
               "filename": "model_simplification.py",
               "line": 97,
@@ -867,6 +903,10 @@
                 "leaves": [ { "port": "leaf:argument", "name": "_rce" } ],
                 "kind": "RemoteCodeExecution"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "origin": {
               "filename": "model_simplification.py",
@@ -945,6 +985,10 @@
                 ],
                 "kind": "UserControlled"
               }
+            ],
+            "local_features": [
+              { "always-via": "broadening" },
+              { "always-via": "widen-broadening" }
             ],
             "origin": {
               "filename": "model_simplification.py",
