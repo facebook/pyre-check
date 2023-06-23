@@ -476,7 +476,7 @@ class str(Sequence[str]):
     @overload
     def lower(self: LiteralString) -> LiteralString: ...
     @overload
-    def lower(self) -> str: ...  # type: ignore[misc]
+    def lower(self: ReadOnly[Self]) -> str: ...  # type: ignore[misc]
     @overload
     def lstrip(self: LiteralString, __chars: LiteralString | None = None) -> LiteralString: ...
     @overload
