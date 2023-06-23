@@ -1104,6 +1104,40 @@ let test_refinement context =
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `Bar`."];
+  assert_type_errors
+    {|
+      from typing import Optional
+      from pyre_extensions import ReadOnly
+
+      class Bar: ...
+
+      class Foo:
+        optional_attribute: Optional[Bar] = None
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        if readonly_foo.optional_attribute is not None:
+          reveal_type(readonly_foo.optional_attribute)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `readonly_foo.optional_attribute` is \
+       `Optional[pyre_extensions.ReadOnly[Bar]]` (inferred: `pyre_extensions.ReadOnly[Bar]`).";
+    ];
+  assert_type_errors
+    {|
+      from typing import Optional
+      from pyre_extensions import ReadOnly
+
+      class Bar:
+        def some_method(self: ReadOnly[Bar]) -> None: ...
+
+      class Foo:
+        optional_attribute: Optional[Bar] = None
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        if readonly_foo.optional_attribute is not None and readonly_foo.optional_attribute.some_method():
+          pass
+    |}
+    [];
   ()
 
 

@@ -3436,20 +3436,23 @@ module State (Context : Context) = struct
       with
       | Some annotation, _ -> Some annotation
       | _, Name.Attribute { base = { Node.value = Name base; _ }; attribute; _ } -> (
-          let attribute =
-            existing_annotation base
-            >>| Annotation.annotation
-            >>= fun parent ->
-            Type.split parent
-            |> fst
-            |> Type.primitive_name
-            >>= GlobalResolution.attribute_from_class_name
-                  ~resolution:global_resolution
-                  ~name:attribute
-                  ~instantiated:parent
-                  ~transitive:true
+          let attribute_from_parent parent =
+            let get_attribute =
+              GlobalResolution.attribute_from_class_name
+                ~resolution:global_resolution
+                ~name:attribute
+                ~instantiated:parent
+                ~transitive:true
+            in
+            let parent_class = Type.split parent |> fst in
+            match parent_class |> Type.ReadOnly.unpack_readonly with
+            | Some class_wrapped_by_readonly ->
+                Type.primitive_name class_wrapped_by_readonly
+                >>= get_attribute ~accessed_through_readonly:true
+            | None ->
+                Type.primitive_name parent_class >>= get_attribute ~accessed_through_readonly:false
           in
-          match attribute with
+          match existing_annotation base >>| Annotation.annotation >>= attribute_from_parent with
           | Some attribute when AnnotatedAttribute.defined attribute ->
               Some (AnnotatedAttribute.annotation attribute)
           | _ -> None)
@@ -3859,7 +3862,11 @@ module State (Context : Context) = struct
         | Some { Annotation.annotation = Type.NoneType; _ } -> Unreachable
         | Some ({ Annotation.annotation = Type.Union parameters; _ } as annotation) ->
             let refined_annotation =
-              List.filter parameters ~f:(fun parameter -> not (Type.is_none parameter))
+              List.filter parameters ~f:(fun parameter ->
+                  let unpacked_readonly_type =
+                    Type.ReadOnly.unpack_readonly parameter |> Option.value ~default:parameter
+                  in
+                  not (Type.is_none unpacked_readonly_type))
             in
             let resolution =
               refine_local
