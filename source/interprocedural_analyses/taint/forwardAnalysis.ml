@@ -698,44 +698,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       tito_effects, state
     in
     let tito_effects, state =
-      let collect_closures call_model =
-        BackwardState.roots call_model.Model.backward.sink_taint
-        |> List.filter_map ~f:(function
-               (* TODO(T156333267): Have closure AccessPath instead of using PositionalParameter *)
-               | AccessPath.Root.PositionalParameter { name; _ } ->
-                   Some (AccessPath.Root.Variable name)
-               | _ -> None)
+      let captures_taint, captures =
+        CallModel.match_captures
+          ~model:taint_model
+          ~captures_taint:initial_state.taint
+          ~location:call_location
       in
-      let match_closures root =
-        match root with
-        | AccessPath.Root.Variable identifier ->
-            Some
-              ( {
-                  Call.Argument.name = Some (Node.create_with_default_location identifier);
-                  value =
-                    Node.create
-                    (* Use location of call expression instead of location of assignment that
-                       introduces taint to resulting frames easier to understand since side effect
-                       variables are not present at call site. *)
-                      ~location:call_location
-                      (Expression.Name (Name.Identifier identifier));
-                },
-                ForwardState.read ~root ~path:[] initial_state.taint )
-        | _ -> None
-      in
-      let matched_closure_arguments_and_taint =
-        List.filter_map ~f:match_closures (collect_closures taint_model)
-      in
-      let matched_closure_arguments, matched_closure_taint =
-        List.unzip matched_closure_arguments_and_taint
-      in
-      let arguments, arguments_taint =
-        arguments @ matched_closure_arguments, arguments_taint @ matched_closure_taint
-      in
-      (* TODO(T156333311): Have CallModel.match_actuals_to_formals take in ~closures instead of
-         making fake Call.Argument.t's *)
-      CallModel.match_actuals_to_formals ~model:taint_model ~arguments
-      |> List.zip_exn arguments_taint
+      CallModel.match_actuals_to_formals ~model:taint_model ~arguments @ captures
+      |> List.zip_exn (arguments_taint @ captures_taint)
       |> List.fold
            ~f:compute_argument_tito_effect
            ~init:(TaintInTaintOutEffects.empty, initial_state)

@@ -608,7 +608,9 @@ let apply_sanitizers
     | StarParameter _
     | StarStarParameter _ ->
         sanitize_parameter (root, sanitizer) (source_taint, taint_in_taint_out, sink_taint)
-    | Variable _ -> failwith "unexpected"
+    | Variable _
+    | CapturedVariable _ ->
+        failwith "unexpected"
   in
   let source_taint, taint_in_taint_out, sink_taint =
     Sanitize.RootMap.fold

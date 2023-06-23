@@ -40,6 +40,7 @@ module Sink = struct
       | StarParameter _ -> StarParameter { position = 0 }
       | StarStarParameter _ -> StarStarParameter { excluded = [] }
       | Variable name -> Variable name
+      | CapturedVariable name -> CapturedVariable name
     in
     let target = Target.override_to_method target in
     Call { callee = target; index; parameter = root }

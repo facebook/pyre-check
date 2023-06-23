@@ -2432,16 +2432,8 @@ let extract_tito_and_sink_models
            parameter, name, original.Node.value.Parameter.annotation)
   in
   let captures =
-    List.mapi captures ~f:(fun index capture ->
-        (* TODO(T156333267): Have closure AccessPath instead of using PositionalParameter *)
-        ( AccessPath.Root.PositionalParameter
-            {
-              position = -(index + 1);
-              name = capture.Statement.Define.Capture.name;
-              positional_only = false;
-            },
-          capture.name,
-          None ))
+    List.map captures ~f:(fun capture ->
+        AccessPath.Root.CapturedVariable capture.name, capture.name, None)
   in
   List.append normalized_parameters captures
   |> List.fold ~f:split_and_simplify ~init:Model.Backward.empty

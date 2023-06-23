@@ -15,6 +15,7 @@ open Pyre
 open Ast
 open Interprocedural
 open Domains
+open Expression
 
 let at_callsite ~resolution ~get_callee_model ~call_target ~arguments =
   match get_callee_model call_target with
@@ -50,26 +51,53 @@ module ArgumentMatches = struct
   [@@deriving show]
 end
 
+let match_captures ~model ~captures_taint ~location =
+  let collect_capture = function
+    | AccessPath.Root.CapturedVariable name as capture ->
+        Some
+          ( ( Node.create
+              (* captured variables are not present at call site, so location of call expression
+                 instead of location of assignment that introduces taint is used *)
+                ~location
+                (Expression.Name (Name.Identifier name)),
+              capture ),
+            ForwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] captures_taint )
+    | _ -> None
+  in
+  let captures, captures_taint =
+    model.Model.backward.sink_taint
+    |> BackwardState.roots
+    |> List.filter_map ~f:collect_capture
+    |> List.unzip
+  in
+  ( captures_taint,
+    List.map captures ~f:(fun (expression, access_path) ->
+        {
+          ArgumentMatches.argument = expression;
+          sink_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
+          tito_matches = [];
+          sanitize_matches = [];
+        }) )
+
+
 let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments =
   let sink_argument_matches =
     BackwardState.roots backward.sink_taint
     |> AccessPath.match_actuals_to_formals arguments
-    |> List.map ~f:(fun (argument, argument_match) ->
-           argument.Expression.Call.Argument.value, argument_match)
+    |> List.map ~f:(fun (argument, argument_match) -> argument.Call.Argument.value, argument_match)
   in
   let tito_argument_matches =
     BackwardState.roots backward.taint_in_taint_out
     |> AccessPath.match_actuals_to_formals arguments
-    |> List.map ~f:(fun (argument, argument_match) ->
-           argument.Expression.Call.Argument.value, argument_match)
+    |> List.map ~f:(fun (argument, argument_match) -> argument.Call.Argument.value, argument_match)
   in
   let sanitize_argument_matches =
     Sanitize.RootMap.roots sanitizers.roots
     |> AccessPath.match_actuals_to_formals arguments
-    |> List.map ~f:(fun (argument, argument_match) ->
-           argument.Expression.Call.Argument.value, argument_match)
+    |> List.map ~f:(fun (argument, argument_match) -> argument.Call.Argument.value, argument_match)
   in
-  List.zip_exn tito_argument_matches sanitize_argument_matches
+  sanitize_argument_matches
+  |> List.zip_exn tito_argument_matches
   |> List.zip_exn sink_argument_matches
   |> List.map ~f:(fun ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))) ->
          { ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches })
@@ -368,7 +396,6 @@ let string_combine_partial_sink_tree { TaintConfiguration.Heap.string_combine_pa
 
 
 let arguments_for_string_format arguments =
-  let open Expression in
   let string_literals =
     List.map arguments ~f:(function
         | { Node.value = Expression.Constant (Constant.String { StringLiteral.value; _ }); _ } ->

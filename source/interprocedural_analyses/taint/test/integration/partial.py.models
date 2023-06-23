@@ -557,6 +557,46 @@
     "callable": "partial.NestedDefineDecorator.__get__.wrapper",
     "tito": [
       {
+        "port": "captured_variable($parameter$self)[_func]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 76, "start": 19, "end": 23 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($parameter$instance)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
         "port": "formal(**kw)[*]",
         "taint": [
           {
@@ -592,46 +632,6 @@
               { "always-via": "obscure:unknown-callee" }
             ],
             "tito_positions": [ { "line": 76, "start": 33, "end": 38 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal($parameter$instance)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal($parameter$self)[_func]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
-            "local_features": [
-              { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" }
-            ],
-            "tito_positions": [ { "line": 76, "start": 19, "end": 23 } ],
             "tito": null
           }
         ]

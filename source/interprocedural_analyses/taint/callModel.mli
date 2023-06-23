@@ -28,6 +28,12 @@ module ArgumentMatches : sig
   [@@deriving show]
 end
 
+val match_captures
+  :  model:Model.t ->
+  captures_taint:ForwardState.t ->
+  location:Location.t ->
+  ForwardState.Tree.t list * ArgumentMatches.t list
+
 val match_actuals_to_formals
   :  model:Model.t ->
   arguments:Expression.Call.Argument.t list ->

@@ -55,7 +55,7 @@
               "resolves_to": [
                 "nested_callables.access_variables_in_outer_scope_issue.inner"
               ],
-              "port": "formal($local_nested_callables?access_variables_in_outer_scope_issue$x)"
+              "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
             }
           }
         ]
@@ -68,9 +68,9 @@
       "kind": "Call",
       "callee": "nested_callables.access_variables_in_outer_scope_issue.inner",
       "index": 0,
-      "parameter": "formal($local_nested_callables?access_variables_in_outer_scope_issue$x)"
+      "parameter": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
     },
-    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|formal($local_nested_callables?access_variables_in_outer_scope_issue$x):57576949ef13246c1192d94ac11a53fd"
+    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x):e2e94a880ca710b3617c4f6867d2a052"
   }
 }
 {
@@ -471,7 +471,7 @@
     "callable": "nested_callables.access_parameter_in_inner_scope_sink.inner",
     "sinks": [
       {
-        "port": "formal($parameter$x)",
+        "port": "captured_variable($parameter$x)",
         "taint": [
           {
             "kinds": [
@@ -499,7 +499,7 @@
     "callable": "nested_callables.access_parameter_in_inner_scope_tito.inner",
     "tito": [
       {
-        "port": "formal($parameter$x)",
+        "port": "captured_variable($parameter$x)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -516,7 +516,7 @@
     "callable": "nested_callables.access_variables_in_outer_scope_issue.inner",
     "sinks": [
       {
-        "port": "formal($local_nested_callables?access_variables_in_outer_scope_issue$x)",
+        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)",
         "taint": [
           {
             "kinds": [
@@ -544,7 +544,7 @@
     "callable": "nested_callables.access_variables_in_outer_scope_source.inner",
     "tito": [
       {
-        "port": "formal($local_nested_callables?access_variables_in_outer_scope_source$x)",
+        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_source$x)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

@@ -35,6 +35,7 @@ module Root = struct
       | StarParameter of { position: int }
       | StarStarParameter of { excluded: Identifier.t list }
       | Variable of Identifier.t
+      | CapturedVariable of Identifier.t
     [@@deriving compare, eq, hash, sexp, show { with_path = false }]
 
     let chop_parameter_prefix name =
@@ -109,6 +110,7 @@ module Root = struct
       | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
       | StarStarParameter _ -> "formal(**kw)"
       | Variable name -> Format.sprintf "local(%s)" name
+      | CapturedVariable name -> Format.sprintf "captured_variable(%s)" name
   end
 
   include T

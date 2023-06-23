@@ -6,6 +6,80 @@
     "callable_line": 9,
     "code": 5002,
     "line": 16,
+    "start": 4,
+    "end": 12,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 10,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 16,
+                "start": 4,
+                "end": 12
+              },
+              "resolves_to": [
+                "closure.side_effect_reduction_closure.inner"
+              ],
+              "port": "captured_variable($local_closure?side_effect_reduction_closure$x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.side_effect_reduction_closure.inner",
+      "index": 0,
+      "parameter": "captured_variable($local_closure?side_effect_reduction_closure$x)"
+    },
+    "master_handle": "closure.side_effect_reduction_closure:5002:0:Call|closure.side_effect_reduction_closure.inner|0|captured_variable($local_closure?side_effect_reduction_closure$x):accea1431f108b6f2202ecb673c503bf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.side_effect_reduction_closure",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 16,
     "start": 10,
     "end": 11,
     "filename": "closure.py",
@@ -74,80 +148,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "closure.side_effect_reduction_closure",
-    "callable_line": 9,
-    "code": 5002,
-    "line": 16,
-    "start": 4,
-    "end": 12,
-    "filename": "closure.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 10,
-              "start": 8,
-              "end": 22
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "closure.py",
-                "line": 16,
-                "start": 4,
-                "end": 12
-              },
-              "resolves_to": [
-                "closure.side_effect_reduction_closure.inner"
-              ],
-              "port": "formal($local_closure?side_effect_reduction_closure$x)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "closure.side_effect_reduction_closure.inner",
-      "index": 0,
-      "parameter": "formal($local_closure?side_effect_reduction_closure$x)"
-    },
-    "master_handle": "closure.side_effect_reduction_closure:5002:0:Call|closure.side_effect_reduction_closure.inner|0|formal($local_closure?side_effect_reduction_closure$x):5d6376f907303d42b8af5b3e988c471a"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -199,7 +199,7 @@
     "callable": "closure.closure.sink",
     "sinks": [
       {
-        "port": "formal($local_closure?closure$obj)[x]",
+        "port": "captured_variable($local_closure?closure$obj)[x]",
         "taint": [
           {
             "kinds": [
@@ -227,7 +227,7 @@
     "callable": "closure.nonlocal_closure.sink",
     "sinks": [
       {
-        "port": "formal($local_closure?nonlocal_closure$obj)",
+        "port": "captured_variable($local_closure?nonlocal_closure$obj)",
         "taint": [
           {
             "kinds": [
@@ -255,6 +255,26 @@
     "callable": "closure.side_effect_reduction_closure.inner",
     "sinks": [
       {
+        "port": "captured_variable($local_closure?side_effect_reduction_closure$x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 14,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
         "port": "formal(z)",
         "taint": [
           {
@@ -268,26 +288,6 @@
             "origin": {
               "filename": "closure.py",
               "line": 15,
-              "start": 19,
-              "end": 20
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal($local_closure?side_effect_reduction_closure$x)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "closure.py",
-              "line": 14,
               "start": 19,
               "end": 20
             }
