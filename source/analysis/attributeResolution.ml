@@ -4649,10 +4649,12 @@ class base class_metadata_environment dependency =
             Ok (Type.Callable { callable with kind })
         | Result.Ok
             (Type.Parametric
-              { name = "typing.ClassMethod"; parameters = [Single (Type.Callable callable)] })
+              {
+                name = ("typing.ClassMethod" | "typing.StaticMethod") as parametric_name;
+                parameters = [Single (Type.Callable callable)];
+              })
           when Type.Callable.equal { callable with kind } undecorated_signature ->
-            Ok
-              (Type.parametric "typing.ClassMethod" [Single (Type.Callable { callable with kind })])
+            Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
         | other -> other
       in
       { undecorated_signature; decorated = Result.bind decorators ~f:apply_decorators }

@@ -1494,6 +1494,102 @@ let test_classmethod_decorator context =
   ()
 
 
+let test_staticmethod_decorator context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* Ensure that a decorated staticmethod preserves its callable name. That way, error messages show
+     the name of the function being called instead of "anonymous call". *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable
+      from pyre_extensions import ParameterSpecification
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      def my_decorator(func: Callable[P, T]) -> Callable[P, T]: ...
+
+      class Foo:
+          @staticmethod
+          @my_decorator
+          def some_staticmethod(x: str) -> None: ...
+
+          @my_decorator
+          def some_method(self, x: str) -> None: ...
+
+      async def main() -> None:
+          Foo.some_staticmethod(42)
+          Foo().some_method(42)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `Foo.some_staticmethod`, for 1st positional \
+       argument, expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional argument, \
+       expected `str` but got `int`.";
+    ];
+  (* The decorator here changes the signature to accept a positional `int` instead of a named `y:
+     int`. So, we don't preserve the callable name. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Type, Callable
+      from pyre_extensions import ParameterSpecification
+      from pyre_extensions.type_variable_operators import Concatenate
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      def my_decorator(
+        func: Callable[Concatenate[int, P], T]
+      ) -> Callable[Concatenate[int, P], T]: ...
+
+      class Foo:
+          @staticmethod
+          @my_decorator
+          def some_staticmethod(y: int, x: str) -> None: ...
+
+      async def main() -> None:
+          y = Foo.some_staticmethod(99, 99)
+          reveal_type(Foo.some_staticmethod)
+    |}
+    [
+      "Incompatible parameter type [6]: In anonymous call, for 2nd positional argument, expected \
+       `str` but got `int`.";
+      "Revealed type [-1]: Revealed type for `test.Foo.some_staticmethod` is \
+       `typing.StaticMethod[typing.Callable[[int, Named(x, str)], None]]` (inferred: \
+       `typing.Callable[[int, Named(x, str)], None]`).";
+    ];
+  (* The decorator here changes the signature, so we don't preserve the callable name. *)
+  assert_type_errors
+    {|
+      from typing import TypeVar, Type, Callable
+      from pyre_extensions import ParameterSpecification
+      from pyre_extensions.type_variable_operators import Concatenate
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      def my_decorator(
+        func: Callable[Concatenate[int, P], T]
+      ) -> Callable[P, T]: ...
+
+      class Foo:
+          @staticmethod
+          @my_decorator
+          def some_staticmethod(y: int, x: str) -> None: ...
+
+      async def main() -> None:
+          Foo.some_staticmethod(42)
+          reveal_type(Foo.some_staticmethod)
+    |}
+    [
+      "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
+       `str` but got `int`.";
+      "Revealed type [-1]: Revealed type for `test.Foo.some_staticmethod` is \
+       `typing.StaticMethod[typing.Callable[[Named(x, str)], None]]` (inferred: \
+       `typing.Callable[[Named(x, str)], None]`).";
+    ];
+  ()
+
+
 let test_named_callable_against_decorator_factory context =
   let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
@@ -1604,6 +1700,7 @@ let () =
          "six_decorators" >:: test_six_decorators;
          "loosely_typed_decorators" >:: test_loosely_typed_decorators;
          "classmethod_decorator" >:: test_classmethod_decorator;
+         "staticmethod_decorator" >:: test_staticmethod_decorator;
          "named_callable_against_decorator_factory"
          >:: test_named_callable_against_decorator_factory;
        ]
