@@ -70,12 +70,8 @@ def _create_document_symbols_response(
 
 def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> SymbolInfo:
     start = PyrePosition(line=node.lineno, character=node.col_offset)
-    try:
-        end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
-    except AttributeError:
-        # Python 3.7's ast does not have these attributes. Degrade grcefully.
-        end_lineno, end_col_offset = None, None
-    end = None
+    end_lineno, end_col_offset = (node.end_lineno, node.end_col_offset)
+    # Degrade gracefully on nodes that don't have end position information
     if end_lineno is not None and end_col_offset is not None:
         end = PyrePosition(line=end_lineno, character=end_col_offset)
     else:
