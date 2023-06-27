@@ -30,6 +30,11 @@ def torch.serialization.load(
     f: TaintSink[ExecDeserializationSink, ViaValueOf[weights_only]],
 ): ...
 
+# Pytorch package method to save a pickle, when unpickled can lead to RCE, when loaded by accompanying method "load_pickle" that is used in another flow.
+def torch.package.package_exporter.PackageExporter.save_pickle(
+    obj: TaintSink[ExecDeserializationSink],
+): ...
+
 # asyncssh module
 async def asyncssh.channel.SSHClientChannel.create(
     command: TaintSink[RemoteCodeExecution],
