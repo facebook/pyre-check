@@ -220,10 +220,24 @@ class MockDaemonQuerier(AbstractDaemonQuerier):
         else:
             return self.mock_references_response
 
-    async def get_call_hierarchy(
+    async def get_init_call_hierarchy(
         self,
         path: Path,
         position: lsp.PyrePosition,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        if self.mock_call_hierarchy_response is None:
+            raise ValueError(
+                "You need to set the get call hierarchy response in the mock querier"
+            )
+        else:
+            return self.mock_call_hierarchy_response
+
+    async def get_call_hierarchy_from_item(
+        self,
+        path: Path,
+        call_hierarchy_item: lsp.CallHierarchyItem,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         if self.mock_call_hierarchy_response is None:
             raise ValueError(

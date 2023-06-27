@@ -40,8 +40,20 @@ class AbstractRemoteIndex(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def call_hierarchy(
-        self, path: Path, position: lsp.PyrePosition
+    async def prepare_call_hierarchy(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> List[lsp.CallHierarchyItem]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def call_hierarchy_from_item(
+        self,
+        path: Path,
+        item: lsp.CallHierarchyItem,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> List[lsp.CallHierarchyItem]:
         raise NotImplementedError()
 
@@ -62,7 +74,18 @@ class EmptyRemoteIndex(AbstractRemoteIndex):
     ) -> List[lsp.LspLocation]:
         return []
 
-    async def call_hierarchy(
-        self, path: Path, position: lsp.PyrePosition
+    async def prepare_call_hierarchy(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> List[lsp.CallHierarchyItem]:
+        return []
+
+    async def call_hierarchy_from_item(
+        self,
+        path: Path,
+        item: lsp.CallHierarchyItem,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> List[lsp.CallHierarchyItem]:
         return []

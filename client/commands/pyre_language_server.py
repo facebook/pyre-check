@@ -901,9 +901,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
 
-        call_hierarchy_response = await self.querier.get_call_hierarchy(
+        call_hierarchy_response = await self.querier.get_init_call_hierarchy(
             path=document_path,
             position=parameters.position.to_pyre_position(),
+            relation_direction=lsp.PyreCallHierarchyRelationDirection.PARENT,
         )
 
         error_message = None
