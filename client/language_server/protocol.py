@@ -19,6 +19,7 @@ import dataclasses
 import enum
 import logging
 import urllib
+from dataclasses import field
 from pathlib import Path
 from typing import Iterable, List, Optional, Type, TypeVar
 
@@ -227,6 +228,17 @@ class SymbolKind(enum.IntEnum):
     EVENT = 24
     OPERATOR = 25
     TYPEPARAMETER = 26
+
+
+class PyreCallHierarchyRelationDirection(str, enum.Enum):
+    PARENT: str = "PARENT"
+    CHILD: str = "CHILD"
+
+    def is_parent(self) -> bool:
+        return self.value == self.PARENT
+
+    def is_child(self) -> bool:
+        return self.value == self.CHILD
 
 
 @dataclasses.dataclass(frozen=True)
@@ -629,17 +641,58 @@ class CallHierarchyItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     kind: SymbolKind
     uri: str
+
+    """
+    The range enclosing this symbol not including leading/trailing whitespace
+    but everything else, e.g. comments and code.
+    """
     range: LspRange
+
+    """
+    The range that should be selected and revealed when this symbol is being
+    picked, e.g. the name of a function. Must be contained by the
+    CallHierarchyItem.range).
+    """
     selection_range: LspRange
-    detail: Optional[str] = None
 
     def document_uri(self) -> DocumentUri:
         return DocumentUri.parse(self.uri)
 
 
 @dataclasses.dataclass(frozen=True)
-class CallHierarchyResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    call_hierarchy_items: List[CallHierarchyItem]
+class CallHierarchyIncomingCallParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    item: CallHierarchyItem
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "CallHierarchyIncomingCallParameters":
+        return _parse_parameters(parameters, target=CallHierarchyIncomingCallParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class CallHierarchyIncomingCall(json_mixins.CamlCaseAndExcludeJsonMixin):
+    from_: CallHierarchyItem = field(
+        metadata=dataclasses_json.config(field_name="from")
+    )
+    from_ranges: List[LspRange]
+
+
+@dataclasses.dataclass(frozen=True)
+class CallHierarchyOutgoingCallParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    item: CallHierarchyItem
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "CallHierarchyOutgoingCallParameters":
+        return _parse_parameters(parameters, target=CallHierarchyOutgoingCallParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class CallHierarchyOutgoingCall(json_mixins.CamlCaseAndExcludeJsonMixin):
+    to: CallHierarchyItem
+    from_ranges: List[LspRange]
 
 
 @dataclasses.dataclass(frozen=True)
