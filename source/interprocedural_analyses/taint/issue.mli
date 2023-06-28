@@ -39,8 +39,7 @@ val canonical_location : t -> Location.WithModule.t
 val to_json
   :  taint_configuration:TaintConfiguration.Heap.t ->
   expand_overrides:OverrideGraph.SharedMemory.t option ->
-  is_valid_callee:
-    (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
+  is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
   filename_lookup:(Reference.t -> string option) ->
   t ->
   Yojson.Safe.t

@@ -453,9 +453,9 @@ module CollapseDepth = struct
 end
 
 module ReturnAccessPath = struct
-  type t = Abstract.TreeDomain.Label.t list
+  type t = AccessPath.Path.t
 
-  let show = Abstract.TreeDomain.Label.show_path
+  let show = AccessPath.Path.show
 end
 
 module ReturnAccessPathTree = struct

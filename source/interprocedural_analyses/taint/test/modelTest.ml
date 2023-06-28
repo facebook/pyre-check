@@ -7206,7 +7206,7 @@ let test_access_path _ =
         assert_bool
           (Format.asprintf "Unexpected access path error: %a" ModelVerificationError.pp error)
           false
-    | Ok path -> assert_equal ~printer:Label.show_path ~cmp:Label.equal_path expected path
+    | Ok path -> assert_equal ~printer:AccessPath.Path.show ~cmp:AccessPath.Path.equal expected path
   in
   let assert_invalid_path ~source ~expected =
     match parse_access_path source with

@@ -117,10 +117,24 @@ module Root = struct
   module Set = Caml.Set.Make (T)
 end
 
+module Path = struct
+  type t = Abstract.TreeDomain.Label.t list
+
+  let pp = Abstract.TreeDomain.Label.pp_path
+
+  let show = Abstract.TreeDomain.Label.show_path
+
+  let compare = Abstract.TreeDomain.Label.compare_path ?cmp:None
+
+  let equal = Abstract.TreeDomain.Label.equal_path
+
+  let is_prefix = Abstract.TreeDomain.Label.is_prefix
+end
+
 type argument_match = {
   root: Root.t;
-  actual_path: Abstract.TreeDomain.Label.path;
-  formal_path: Abstract.TreeDomain.Label.path;
+  actual_path: Path.t;
+  formal_path: Path.t;
 }
 [@@deriving compare, show { with_path = false }]
 
@@ -259,13 +273,11 @@ let match_actuals_to_formals arguments roots =
 
 type t = {
   root: Root.t;
-  path: Abstract.TreeDomain.Label.path;
+  path: Path.t;
 }
 [@@deriving compare]
 
-let pp formatter { root; path } =
-  Format.fprintf formatter "%a%a" Root.pp root Abstract.TreeDomain.Label.pp_path path
-
+let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp root Path.pp path
 
 let show access_path = Format.asprintf "%a" pp access_path
 
@@ -281,7 +293,7 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let to_json { root; path } = `String (Root.to_string root ^ Abstract.TreeDomain.Label.show_path path)
+let to_json { root; path } = `String (Root.to_string root ^ Path.show path)
 
 let of_expression expression =
   let rec of_expression path = function

@@ -16,7 +16,7 @@
  * ForwardState: Map[
  *   key: AccessPath.Root = Variable|NamedParameter|...,
  *   value: Tree[
- *     edges: Abstract.TreeDomain.Label.path = Index of string|Field of string|...,
+ *     edges: Abstract.TreeDomain.Label.t = Index of string|Field of string|...,
  *     nodes: ForwardTaint: Map[
  *       key: CallInfo = Declaration|Origin of location|CallSite of {port; path; callees},
  *       value: LocalTaint: Tuple[
@@ -87,7 +87,7 @@ module CallInfo = struct
     (* Taint propagated from a call. *)
     | CallSite of {
         port: AccessPath.Root.t;
-        path: Abstract.TreeDomain.Label.path;
+        path: AccessPath.Path.t;
         location: Location.WithModule.t;
         callees: Target.t list;
       }
@@ -153,26 +153,6 @@ module CallInfo = struct
         in
         "call", call_json
 
-
-  let less_or_equal ~left ~right =
-    match left, right with
-    | ( CallSite
-          { path = path_left; location = location_left; port = port_left; callees = callees_left },
-        CallSite
-          {
-            path = path_right;
-            location = location_right;
-            port = port_right;
-            callees = callees_right;
-          } ) ->
-        [%compare.equal: AccessPath.Root.t] port_left port_right
-        && Location.WithModule.compare location_left location_right = 0
-        && [%compare.equal: Target.t list] callees_left callees_right
-        && Abstract.TreeDomain.Label.compare_path path_right path_left = 0
-    | _ -> [%compare.equal: t] left right
-
-
-  let widen set = set
 
   let strip_for_callsite = function
     | Origin _ -> Origin Location.WithModule.any
@@ -566,7 +546,7 @@ module type TAINT_DOMAIN = sig
     callee:Target.t option ->
     arguments:Ast.Expression.Call.Argument.t list ->
     port:AccessPath.Root.t ->
-    path:Abstract.TreeDomain.Label.path ->
+    path:AccessPath.Path.t ->
     element:t ->
     is_self_call:bool ->
     caller_class_interval:ClassIntervalSet.t ->
@@ -578,8 +558,7 @@ module type TAINT_DOMAIN = sig
 
   val to_json
     :  expand_overrides:OverrideGraph.SharedMemory.t option ->
-    is_valid_callee:
-      (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
+    is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
     filename_lookup:(Reference.t -> string option) option ->
     export_leaf_names:ExportLeafNames.t ->
     t ->
@@ -1282,7 +1261,7 @@ end = struct
                   in
                   root_name
                   |> Option.map ~f:(fun root ->
-                         Format.asprintf "leaf:%s%a" root Abstract.TreeDomain.Label.pp_path path)
+                         Format.asprintf "leaf:%s%a" root AccessPath.Path.pp path)
                 in
                 LeafName.{ leaf = Target.external_name callee; port } |> LeafNameInterned.intern
               in
@@ -1631,8 +1610,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       in
       let ports =
         Tree.fold Tree.Path ~f:path_to_json tree ~init:[]
-        |> List.dedup_and_sort ~compare:(fun (p1, _) (p2, _) ->
-               Abstract.TreeDomain.Label.compare_path p1 p2)
+        |> List.dedup_and_sort ~compare:(fun (p1, _) (p2, _) -> AccessPath.Path.compare p1 p2)
         |> List.rev_map ~f:(fun (_, fields) -> `Assoc fields)
       in
       List.rev_append ports json_list

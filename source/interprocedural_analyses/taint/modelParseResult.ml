@@ -43,10 +43,10 @@ module TaintFeatures = struct
   type t = {
     breadcrumbs: Features.Breadcrumb.t list;
     via_features: Features.ViaFeature.t list;
-    applies_to: Abstract.TreeDomain.Label.path option;
-    parameter_path: Abstract.TreeDomain.Label.path option;
-    return_path: Abstract.TreeDomain.Label.path option;
-    update_path: Abstract.TreeDomain.Label.path option;
+    applies_to: AccessPath.Path.t option;
+    parameter_path: AccessPath.Path.t option;
+    return_path: AccessPath.Path.t option;
+    update_path: AccessPath.Path.t option;
     leaf_names: Features.LeafName.t list;
     leaf_name_provided: bool;
     trace_length: int option;
@@ -141,7 +141,7 @@ module TaintFeatures = struct
       | None -> features
     in
     let add_path_option ~name path features =
-      add_option ~name ~pp:Abstract.TreeDomain.Label.pp_path path features
+      add_option ~name ~pp:AccessPath.Path.pp path features
     in
     let add_collapse_depth features =
       match collapse_depth with

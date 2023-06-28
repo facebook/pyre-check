@@ -67,7 +67,7 @@ val taint_in_taint_out_mapping
 val return_paths_and_collapse_depths
   :  kind:Sinks.t ->
   tito_taint:BackwardTaint.t ->
-  (Abstract.TreeDomain.Label.path * Features.CollapseDepth.t) list
+  (AccessPath.Path.t * Features.CollapseDepth.t) list
 
 val sink_trees_of_argument
   :  resolution:Resolution.t ->
@@ -88,7 +88,7 @@ module ExtraTraceForTransforms : sig
   (* Collect sink taints that will be used as first hops of extra traces, i.e., whose call info
      matches the given callee roots and whose taint match the given named transforms *)
   val from_sink_trees
-    :  argument_access_path:Abstract.TreeDomain.Label.path ->
+    :  argument_access_path:AccessPath.Path.t ->
     named_transforms:TaintTransform.t list ->
     tito_roots:AccessPath.Root.Set.t ->
     sink_trees:Domains.SinkTreeWithHandle.t list ->

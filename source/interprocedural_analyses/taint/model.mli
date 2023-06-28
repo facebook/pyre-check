@@ -110,8 +110,7 @@ val should_externalize : t -> bool
 
 val to_json
   :  expand_overrides:OverrideGraph.SharedMemory.t option ->
-  is_valid_callee:
-    (port:AccessPath.Root.t -> path:Abstract.TreeDomain.Label.path -> callee:Target.t -> bool) ->
+  is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
   filename_lookup:(Ast.Reference.t -> string option) option ->
   export_leaf_names:ExportLeafNames.t ->
   Target.t ->
