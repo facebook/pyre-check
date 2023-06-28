@@ -268,6 +268,15 @@ def _create_and_check_codenav_configuration(
     ),
 )
 @click.option(
+    "--optional-search-path",
+    type=str,
+    multiple=True,
+    help=(
+        "Additional directory of modules and stubs to include in the type environment. Existence on disk is unnecessary. "
+        "Can be specified multiple times to include multiple directories."
+    ),
+)
+@click.option(
     "--binary", type=str, show_envvar=True, help="Override location of the Pyre binary."
 )
 @click.option("--exclude", type=str, multiple=True, hidden=True)
@@ -326,6 +335,7 @@ def pyre(
     source_directory: Iterable[str],
     only_check_paths: Iterable[str],
     search_path: Iterable[str],
+    optional_search_path: Iterable[str],
     binary: Optional[str],
     exclude: Iterable[str],
     typeshed: Optional[str],
@@ -358,6 +368,7 @@ def pyre(
         buck_mode=None,
         no_saved_state=True,
         search_path=list(search_path),
+        optional_search_path=list(optional_search_path),
         binary=binary,
         exclude=list(exclude),
         typeshed=typeshed,

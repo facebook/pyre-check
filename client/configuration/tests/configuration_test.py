@@ -52,6 +52,7 @@ class PartialConfigurationTest(unittest.TestCase):
                 targets=[],
                 source_directories=[],
                 search_path=["x", "y"],
+                optional_search_path=["z"],
                 binary="binary",
                 buck_mode="opt",
                 exclude=["excludes"],
@@ -76,6 +77,9 @@ class PartialConfigurationTest(unittest.TestCase):
         self.assertListEqual(
             list(configuration.search_path),
             [SimpleRawElement("x"), SimpleRawElement("y")],
+        )
+        self.assertListEqual(
+            list(configuration.optional_search_path), [SimpleRawElement("z")]
         )
         self.assertIsNone(configuration.source_directories)
         self.assertEqual(configuration.strict, None)
@@ -530,21 +534,26 @@ class PartialConfigurationTest(unittest.TestCase):
             .other_critical_files,
             ["baz/foo", "baz/bar"],
         )
+        configuration = PartialConfiguration(
+            search_path=[
+                SimpleRawElement("foo"),
+                SubdirectoryRawElement("bar", "baz"),
+                SitePackageRawElement("package"),
+            ],
+            optional_search_path=[
+                SimpleRawElement("optional"),
+            ],
+        ).expand_relative_paths("root")
         self.assertEqual(
-            PartialConfiguration(
-                search_path=[
-                    SimpleRawElement("foo"),
-                    SubdirectoryRawElement("bar", "baz"),
-                    SitePackageRawElement("package"),
-                ]
-            )
-            .expand_relative_paths("root")
-            .search_path,
+            configuration.search_path,
             [
                 SimpleRawElement("root/foo"),
                 SubdirectoryRawElement("root/bar", "baz"),
                 SitePackageRawElement("package"),
             ],
+        )
+        self.assertEqual(
+            configuration.optional_search_path, [SimpleRawElement("root/optional")]
         )
         self.assertEqual(
             PartialConfiguration(
@@ -629,6 +638,7 @@ class ConfigurationTest(testslide.TestCase):
                 other_critical_files=["critical"],
                 python_version=PythonVersion(major=3, minor=6, micro=7),
                 search_path=[SimpleRawElement("search_path")],
+                optional_search_path=[SimpleRawElement("optional_search_path")],
                 shared_memory=SharedMemory(heap_size=1024),
                 site_package_search_strategy=SearchStrategy.NONE,
                 site_roots=["site_root"],
@@ -662,6 +672,10 @@ class ConfigurationTest(testslide.TestCase):
         self.assertListEqual(list(configuration.other_critical_files), ["critical"])
         self.assertListEqual(
             list(configuration.search_path), [SimpleRawElement("search_path")]
+        )
+        self.assertListEqual(
+            list(configuration.optional_search_path),
+            [SimpleRawElement("optional_search_path")],
         )
         self.assertEqual(
             configuration.python_version, PythonVersion(major=3, minor=6, micro=7)
@@ -902,7 +916,11 @@ class ConfigurationTest(testslide.TestCase):
             write_configuration_file(root_path, {"strict": False}, codenav=True)
             ensure_directories_exists(root_path, ["foo", "bar", "baz"])
             write_configuration_file(
-                root_path, {"strict": False, "search_path": ["foo"]}
+                root_path,
+                {
+                    "strict": False,
+                    "search_path": ["foo"],
+                },
             )
             write_configuration_file(
                 root_path,
@@ -934,7 +952,12 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root).resolve()
             ensure_directories_exists(root_path, ["foo", "bar", "baz"])
             write_configuration_file(
-                root_path, {"strict": False, "search_path": ["foo"]}
+                root_path,
+                {
+                    "strict": False,
+                    "search_path": ["foo"],
+                    "optional_search_path": ["optional"],
+                },
             )
             write_configuration_file(
                 root_path,
@@ -965,6 +988,12 @@ class ConfigurationTest(testslide.TestCase):
                         SimpleRawElement(str(root_path / "bar")),
                         SimpleRawElement(str(root_path / "local/baz")),
                         SimpleRawElement(str(root_path / "foo")),
+                    ],
+                )
+                self.assertListEqual(
+                    list(configuration.optional_search_path),
+                    [
+                        SimpleRawElement(str(root_path / "optional")),
                     ],
                 )
 

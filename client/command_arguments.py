@@ -82,6 +82,7 @@ class CommandArguments:
     buck_mode: Optional[str] = None
     no_saved_state: bool = False
     search_path: List[str] = field(default_factory=list)
+    optional_search_path: List[str] = field(default_factory=list)
     binary: Optional[str] = None
     exclude: List[str] = field(default_factory=list)
     typeshed: Optional[str] = None

@@ -140,6 +140,10 @@ class PartialConfiguration:
         default_factory=list,
         metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
     )
+    optional_search_path: Sequence[search_path_module.RawElement] = field(
+        default_factory=list,
+        metadata={"merge_policy": dataclasses_merge.Policy.PREPEND},
+    )
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
@@ -218,6 +222,10 @@ class PartialConfiguration:
             search_path=[
                 search_path_module.SimpleRawElement(element)
                 for element in arguments.search_path
+            ],
+            optional_search_path=[
+                search_path_module.SimpleRawElement(element)
+                for element in arguments.optional_search_path
             ],
             shared_memory=shared_memory_module.SharedMemory(
                 heap_size=arguments.shared_memory_heap_size,
@@ -311,14 +319,9 @@ class PartialConfiguration:
                 f"Configuration field `{name}` is expected to be a list but got `{result}`."
             )
 
-        try:
-            configuration_json = json.loads(contents)
-
-            dot_pyre_directory = ensure_option_type(
-                configuration_json, "dot_pyre_directory", str
-            )
-
-            search_path_json = configuration_json.pop("search_path", [])
+        def create_search_paths(
+            search_path_json: Union[Dict[str, object], str],
+        ) -> List[search_path_module.RawElement]:
             if isinstance(search_path_json, list):
                 search_path = [
                     search_path_module.create_raw_element(json)
@@ -326,6 +329,19 @@ class PartialConfiguration:
                 ]
             else:
                 search_path = [search_path_module.create_raw_element(search_path_json)]
+            return search_path
+
+        try:
+            configuration_json = json.loads(contents)
+
+            dot_pyre_directory = ensure_option_type(
+                configuration_json, "dot_pyre_directory", str
+            )
+
+            search_path, optional_search_path = (
+                create_search_paths(configuration_json.pop(json_name, []))
+                for json_name in ("search_path", "optional_search_path")
+            )
 
             python_version_json = configuration_json.pop("python_version", None)
             if python_version_json is None:
@@ -445,6 +461,7 @@ class PartialConfiguration:
                 ),
                 python_version=python_version,
                 search_path=search_path,
+                optional_search_path=optional_search_path,
                 shared_memory=shared_memory,
                 site_package_search_strategy=site_package_search_strategy,
                 site_roots=ensure_optional_string_list(
@@ -514,6 +531,9 @@ class PartialConfiguration:
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
             search_path=[path.expand_relative_root(root) for path in self.search_path],
+            optional_search_path=[
+                path.expand_relative_root(root) for path in self.optional_search_path
+            ],
             site_package_search_strategy=self.site_package_search_strategy,
             source_directories=[
                 path.expand_relative_root(root) for path in self.source_directories
@@ -564,6 +584,9 @@ class Configuration:
     python_version: Optional[python_version_module.PythonVersion] = None
     relative_local_root: Optional[str] = None
     search_path: Sequence[search_path_module.RawElement] = field(default_factory=list)
+    optional_search_path: Sequence[search_path_module.RawElement] = field(
+        default_factory=list
+    )
     shared_memory: shared_memory_module.SharedMemory = (
         shared_memory_module.SharedMemory()
     )
@@ -588,6 +611,7 @@ class Configuration:
         partial_configuration: PartialConfiguration,
     ) -> "Configuration":
         search_path = partial_configuration.search_path
+        optional_search_path = partial_configuration.optional_search_path
         ignore_all_errors = partial_configuration.ignore_all_errors
         only_check_paths = partial_configuration.only_check_paths
 
@@ -622,6 +646,10 @@ class Configuration:
             relative_local_root=relative_local_root,
             search_path=[
                 path.expand_global_root(str(global_root)) for path in search_path
+            ],
+            optional_search_path=[
+                path.expand_global_root(str(global_root))
+                for path in optional_search_path
             ],
             shared_memory=partial_configuration.shared_memory,
             site_package_search_strategy=partial_configuration.site_package_search_strategy
@@ -730,6 +758,7 @@ class Configuration:
                 else {}
             ),
             "search_path": [str(path) for path in self.search_path],
+            "optional_search_path": [str(path) for path in self.optional_search_path],
             **(
                 {"shared_memory": self.shared_memory.to_json()}
                 if self.shared_memory != shared_memory_module.SharedMemory()
