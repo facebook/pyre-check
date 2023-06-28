@@ -918,6 +918,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        request_timer = timer.Timer()
 
         call_hierarchy_response = await self.querier.get_init_call_hierarchy(
             path=document_path,
@@ -942,13 +944,32 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Error at `process_call_hierarchy_request` message: {error_message}"
             )
 
+        raw_result = [c.to_dict() for c in call_hierarchy_response]
+
         await lsp.write_json_rpc(
             self.output_channel,
             json_rpc.SuccessResponse(
                 id=request_id,
                 activity_key=activity_key,
-                result=[c.to_dict() for c in call_hierarchy_response],
+                result=raw_result,
             ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "prepare_call_hierarchy",
+                "filepath": str(document_path),
+                "non_empty": len(call_hierarchy_response) > 0,
+                "response": raw_result,
+                "duration_ms": request_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error_message": error_message,
+                "position": parameters.position.to_dict(),
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
         )
 
     async def process_call_hierarchy_incoming_call(
@@ -964,6 +985,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.item.document_uri()}"
             )
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        request_timer = timer.Timer()
 
         call_hierarchy_items = await self.querier.get_call_hierarchy_from_item(
             path=document_path,
@@ -1004,6 +1027,23 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 result=raw_result,
             ),
         )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "call_hierarchy_incoming_call",
+                "filepath": str(document_path),
+                "non_empty": len(raw_result) > 0,
+                "response": raw_result,
+                "duration_ms": request_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error_message": error_message,
+                "call_hierarchy_items": parameters.item.to_dict(),
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
+        )
 
     async def process_call_hierarchy_outgoing_call(
         self,
@@ -1018,6 +1058,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.item.document_uri()}"
             )
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        request_timer = timer.Timer()
 
         call_hierarchy_items = await self.querier.get_call_hierarchy_from_item(
             path=document_path,
@@ -1057,6 +1099,23 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 activity_key=activity_key,
                 result=raw_result,
             ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "call_hierarchy_outgoing_call",
+                "filepath": str(document_path),
+                "non_empty": len(raw_result) > 0,
+                "response": raw_result,
+                "duration_ms": request_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error_message": error_message,
+                "call_hierarchy_items": parameters.item.to_dict(),
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
         )
 
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
