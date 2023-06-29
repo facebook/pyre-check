@@ -16,6 +16,39 @@ def side_effect_reduction_closure():
     inner(z)
 
 
+def taint_propagation():
+    # TODO(T156971937): False negative for taint propagation
+    x = _test_source()
+    z = _test_source()
+    wrapper_for_taint_propagation(x, z)
+
+
+def wrapper_for_taint_propagation(x, z):
+    def inner(z):
+        _test_sink(x)
+        _test_sink(z)
+    inner(z)
+
+
+def taint_propagation_hof():
+    # TODO(T156971935): False negative for taint propagation with hof
+    x = _test_source()
+    z = _test_source()
+    wrapper_for_taint_propagation_hof(x, z)
+
+
+def wrapper_for_taint_propagation_hof(x, z):
+    def inner(z):
+        _test_sink(x)
+        _test_sink(z)
+
+    higher_order_function(inner, z)
+
+
+def higher_order_function(f, z):
+    f(z)
+
+
 class Object:
     pass
 
