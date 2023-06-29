@@ -17,7 +17,6 @@ def side_effect_reduction_closure():
 
 
 def taint_propagation():
-    # TODO(T156971937): False negative for taint propagation
     x = _test_source()
     z = _test_source()
     wrapper_for_taint_propagation(x, z)

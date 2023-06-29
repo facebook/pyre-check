@@ -220,6 +220,80 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "nested_callables.test_access_parameter_in_inner_scope_sink",
+    "callable_line": 104,
+    "code": 5002,
+    "line": 106,
+    "start": 41,
+    "end": 55,
+    "filename": "nested_callables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "nested_callables.py",
+              "line": 106,
+              "start": 41,
+              "end": 55
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "nested_callables.py",
+                "line": 106,
+                "start": 41,
+                "end": 55
+              },
+              "resolves_to": [
+                "nested_callables.access_parameter_in_inner_scope_sink"
+              ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "nested_callables.access_parameter_in_inner_scope_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "nested_callables.test_access_parameter_in_inner_scope_sink:5002:0:Call|nested_callables.access_parameter_in_inner_scope_sink|0|formal(x):6f37b9035aeced73df178723beb57fca"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -459,6 +533,40 @@
               }
             ],
             "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "nested_callables.access_parameter_in_inner_scope_sink",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "nested_callables.py",
+                "line": 101,
+                "start": 4,
+                "end": 11
+              },
+              "resolves_to": [
+                "nested_callables.access_parameter_in_inner_scope_sink.inner"
+              ],
+              "port": "captured_variable($parameter$x)"
+            }
           }
         ]
       }

@@ -80,6 +80,11 @@ let match_captures ~model ~captures_taint ~location =
         }) )
 
 
+let captures_as_arguments =
+  List.map ~f:(fun capture ->
+      { Call.Argument.name = None; value = capture.ArgumentMatches.argument })
+
+
 let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments =
   let sink_argument_matches =
     BackwardState.roots backward.sink_taint

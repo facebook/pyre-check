@@ -263,6 +263,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     arguments_taint: BackwardState.Tree.t list;
     self_taint: BackwardState.Tree.t option;
     callee_taint: BackwardState.Tree.t option;
+    captures_taint: BackwardState.Tree.t list;
+    captures: CallModel.ArgumentMatches.t list;
     state: t;
   }
 
@@ -271,17 +273,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         arguments_taint = left_arguments_taint;
         self_taint = left_self_taint;
         callee_taint = left_callee_taint;
+        captures_taint = left_captures_taint;
+        captures = left_captures;
         state = left_state;
       }
       {
         arguments_taint = right_arguments_taint;
         self_taint = right_self_taint;
         callee_taint = right_callee_taint;
+        captures_taint = right_captures_taint;
+        captures = right_captures;
         state = right_state;
       }
     =
     let arguments_taint =
       List.map2_exn left_arguments_taint right_arguments_taint ~f:BackwardState.Tree.join
+    in
+    let captures_taint =
+      if List.length left_captures_taint > List.length right_captures_taint then
+        left_captures_taint
+      else
+        right_captures_taint
     in
     let join_option left right =
       match left, right with
@@ -293,7 +305,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let self_taint = join_option left_self_taint right_self_taint in
     let callee_taint = join_option left_callee_taint right_callee_taint in
     let state = join left_state right_state in
-    { arguments_taint; self_taint; callee_taint; state }
+    let captures =
+      if List.length left_captures > List.length right_captures then
+        left_captures
+      else
+        right_captures
+    in
+    { arguments_taint; self_taint; callee_taint; captures_taint; captures; state }
 
 
   let add_extra_traces_for_transforms
@@ -556,6 +574,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       taint :: arguments_taint, state
     in
+    let _, captures =
+      CallModel.match_captures
+        ~model:taint_model
+        ~captures_taint:ForwardState.empty
+        ~location:call_location
+    in
+    let captures_taint, _ = List.fold ~f:analyze_argument ~init:([], initial_state) captures in
+
     let arguments_taint, state =
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments
       |> List.rev
@@ -574,7 +600,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         None, None, arguments_taint
     in
-    { arguments_taint; self_taint; callee_taint; state }
+    { arguments_taint; self_taint; callee_taint; captures_taint; captures; state }
 
 
   let apply_obscure_call ~apply_tito ~callee ~arguments ~state:initial_state ~call_taint =
@@ -616,7 +642,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint
     in
     let arguments_taint = List.map ~f:compute_argument_taint arguments in
-    { arguments_taint; self_taint = None; callee_taint = Some obscure_taint; state = initial_state }
+    {
+      arguments_taint;
+      self_taint = None;
+      callee_taint = Some obscure_taint;
+      captures_taint = [];
+      captures = [];
+      state = initial_state;
+    }
 
 
   let apply_constructor_targets
@@ -636,12 +669,22 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      * class (e.g, `class X: ...`), in which case, we treat it as an obscure call. *)
 
     (* Call `__init__`. Add the `self` implicit argument. *)
-    let { arguments_taint = init_arguments_taint; self_taint; callee_taint = _; state } =
+    let {
+      arguments_taint = init_arguments_taint;
+      self_taint;
+      callee_taint = _;
+      captures_taint = _;
+      captures = _;
+      state;
+    }
+      =
       if is_object_init && not is_object_new then
         {
           arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
           self_taint = Some call_taint;
           callee_taint = None;
+          captures_taint = [];
+          captures = [];
           state = initial_state;
         }
       else
@@ -665,6 +708,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                  self_taint = None;
                  callee_taint = None;
+                 captures_taint = [];
+                 captures = [];
                  state = bottom;
                }
     in
@@ -673,12 +718,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Call `__new__`. *)
     let call_target_result =
       if is_object_new then
-        { arguments_taint = init_arguments_taint; self_taint = None; callee_taint = None; state }
+        {
+          arguments_taint = init_arguments_taint;
+          self_taint = None;
+          callee_taint = None;
+          captures_taint = [];
+          captures = [];
+          state;
+        }
       else (* Add the `cls` implicit argument. *)
         let {
           arguments_taint = new_arguments_taint;
           self_taint = callee_taint;
           callee_taint = _;
+          captures_taint = _;
+          captures = _;
           state;
         }
           =
@@ -699,6 +753,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                    arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                    self_taint = None;
                    callee_taint = None;
+                   captures_taint = [];
+                   captures = [];
                    state = bottom;
                  }
         in
@@ -707,6 +763,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             List.map2_exn init_arguments_taint new_arguments_taint ~f:BackwardState.Tree.join;
           self_taint = None;
           callee_taint;
+          captures_taint = [];
+          captures = [];
           state;
         }
     in
@@ -811,6 +869,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
                self_taint = None;
                callee_taint = None;
+               captures_taint = [];
+               captures = [];
                state = bottom;
              }
     in
@@ -915,7 +975,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let base_taint_property_call, state_property_call =
       match attribute_access_callees with
       | Some { property_targets = _ :: _ as property_targets; _ } ->
-          let { arguments_taint = _; self_taint; callee_taint = _; state } =
+          let {
+            arguments_taint = _;
+            self_taint;
+            callee_taint = _;
+            captures_taint = _;
+            captures = _;
+            state;
+          }
+            =
             apply_callees_and_return_arguments_taint
               ~resolution
               ~callee:expression
@@ -1057,7 +1125,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             };
           ]
         in
-        let { arguments_taint; self_taint; callee_taint; state } =
+        let { arguments_taint; self_taint; callee_taint; captures_taint; captures; state } =
           apply_callees_and_return_arguments_taint
             ~resolution
             ~callee:argument
@@ -1067,6 +1135,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state
             (CallGraph.CallCallees.create ~call_targets ~unresolved ())
         in
+        (* TODO(afk): use captures *)
+        ignore captures_taint;
+        ignore captures;
         let state =
           analyze_callee
             ~resolution
@@ -1122,7 +1193,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_taint
       callees
     =
-    let { arguments_taint; self_taint; callee_taint; state } =
+    let { arguments_taint; self_taint; callee_taint; captures_taint; captures; state } =
       apply_callees_and_return_arguments_taint
         ~apply_tito
         ~resolution
@@ -1133,15 +1204,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_taint
         callees
     in
-
     let state =
       if CallGraph.HigherOrderParameterMap.is_empty callees.higher_order_parameters then
-        analyze_arguments ~resolution ~arguments ~arguments_taint ~state
+        analyze_arguments
+          ~resolution
+          ~arguments:(arguments @ CallModel.captures_as_arguments captures)
+          ~arguments_taint:(arguments_taint @ captures_taint)
+          ~state
       else
         analyze_arguments_with_higher_order_parameters
           ~resolution
-          ~arguments
-          ~arguments_taint
+          ~arguments:(arguments @ CallModel.captures_as_arguments captures)
+          ~arguments_taint:(arguments_taint @ captures_taint)
           ~state
           ~higher_order_parameters:callees.higher_order_parameters
     in
@@ -1895,7 +1969,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~base
         ~base_state
       =
-      let { arguments_taint = _; self_taint; callee_taint; state = new_state } =
+      let {
+        arguments_taint = _;
+        self_taint;
+        callee_taint;
+        captures_taint = _;
+        captures = _;
+        state = new_state;
+      }
+        =
         let callees = CallGraph.CallCallees.create ~call_targets:[call_target] () in
         let callee =
           let callee_from_method_name method_name =

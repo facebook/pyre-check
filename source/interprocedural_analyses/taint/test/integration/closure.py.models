@@ -153,7 +153,7 @@
     "callable": "closure.taint_propagation",
     "callable_line": 19,
     "code": 5002,
-    "line": 23,
+    "line": 22,
     "start": 37,
     "end": 38,
     "filename": "closure.py",
@@ -174,7 +174,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 22,
+              "line": 21,
               "start": 8,
               "end": 22
             }
@@ -196,7 +196,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 23,
+                "line": 22,
                 "start": 37,
                 "end": 38
               },
@@ -222,10 +222,82 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure.taint_propagation_hof",
-    "callable_line": 33,
+    "callable": "closure.taint_propagation",
+    "callable_line": 19,
     "code": 5002,
-    "line": 37,
+    "line": 22,
+    "start": 34,
+    "end": 35,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 20,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 22,
+                "start": 34,
+                "end": 35
+              },
+              "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.wrapper_for_taint_propagation",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "closure.taint_propagation:5002:0:Call|closure.wrapper_for_taint_propagation|0|formal(x):37d12eccf218ca05f3b929330fc4b1f7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.taint_propagation_hof",
+    "callable_line": 32,
+    "code": 5002,
+    "line": 36,
     "start": 41,
     "end": 42,
     "filename": "closure.py",
@@ -246,7 +318,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 36,
+              "line": 35,
               "start": 8,
               "end": 22
             }
@@ -271,7 +343,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 37,
+                "line": 36,
                 "start": 41,
                 "end": 42
               },
@@ -360,7 +432,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 63,
+              "line": 62,
               "start": 19,
               "end": 24
             }
@@ -388,7 +460,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 89,
+              "line": 88,
               "start": 19,
               "end": 22
             }
@@ -465,7 +537,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 30,
+                "line": 29,
                 "start": 10,
                 "end": 11
               },
@@ -473,6 +545,32 @@
                 "closure.wrapper_for_taint_propagation.inner"
               ],
               "port": "formal(z)"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 29,
+                "start": 4,
+                "end": 12
+              },
+              "resolves_to": [
+                "closure.wrapper_for_taint_propagation.inner"
+              ],
+              "port": "captured_variable($parameter$x)"
             }
           }
         ]
@@ -498,7 +596,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 28,
+              "line": 27,
               "start": 19,
               "end": 20
             }
@@ -518,7 +616,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 29,
+              "line": 28,
               "start": 19,
               "end": 20
             }
@@ -548,7 +646,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 45,
+                "line": 44,
                 "start": 26,
                 "end": 31
               },
@@ -581,7 +679,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 42,
+              "line": 41,
               "start": 19,
               "end": 20
             }
@@ -601,7 +699,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 43,
+              "line": 42,
               "start": 19,
               "end": 20
             }

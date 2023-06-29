@@ -34,6 +34,8 @@ val match_captures
   location:Location.t ->
   ForwardState.Tree.t list * ArgumentMatches.t list
 
+val captures_as_arguments : ArgumentMatches.t list -> Expression.Call.Argument.t list
+
 val match_actuals_to_formals
   :  model:Model.t ->
   arguments:Expression.Call.Argument.t list ->
