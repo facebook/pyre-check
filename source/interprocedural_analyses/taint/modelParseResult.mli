@@ -26,12 +26,19 @@ module CollapseDepth : sig
   [@@deriving equal]
 end
 
+module TaintPath : sig
+  type t =
+    | Regular of AccessPath.Path.t
+    | AllStaticFields
+  [@@deriving equal, show]
+end
+
 module TaintFeatures : sig
   type t = {
     breadcrumbs: Features.Breadcrumb.t list;
     via_features: Features.ViaFeature.t list;
     applies_to: AccessPath.Path.t option;
-    parameter_path: AccessPath.Path.t option;
+    parameter_path: TaintPath.t option;
     return_path: AccessPath.Path.t option;
     update_path: AccessPath.Path.t option;
     leaf_names: Features.LeafName.t list;
@@ -68,7 +75,7 @@ module TaintKindsWithFeatures : sig
 
   val from_via_feature : Features.ViaFeature.t -> t
 
-  val from_parameter_path : AccessPath.Path.t -> t
+  val from_parameter_path : TaintPath.t -> t
 
   val from_return_path : AccessPath.Path.t -> t
 

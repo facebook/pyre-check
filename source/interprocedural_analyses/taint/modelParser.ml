@@ -103,7 +103,7 @@ let base_name expression =
   | _ -> None
 
 
-let rec parse_access_path ~path ~location expression =
+let parse_access_path ~path ~location expression =
   let module Label = Abstract.TreeDomain.Label in
   let open Core.Result in
   let annotation_error reason =
@@ -112,52 +112,75 @@ let rec parse_access_path ~path ~location expression =
       ~location
       (InvalidAccessPath { access_path = expression; reason })
   in
-  match Node.value expression with
-  | Expression.Name (Name.Identifier "_") -> Ok []
-  | Expression.Name (Name.Identifier _) ->
-      Error (annotation_error "access path must start with `_`")
-  | Expression.Name (Name.Attribute { base; attribute; _ }) ->
-      (* The analysis does not currently distinguish between fields and indices.
-       * Silently convert fields to indices to prevent confusion. *)
-      parse_access_path ~path ~location base
-      >>| fun base -> base @ [Label.create_name_index attribute]
-  | Expression.Call
-      {
-        callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-        arguments = [{ Call.Argument.value = argument; _ }];
-      } -> (
-      parse_access_path ~path ~location base
-      >>= fun base ->
-      match Node.value argument with
-      | Expression.Constant (Constant.Integer index) -> Ok (base @ [Label.create_int_index index])
-      | Expression.Constant (Constant.String { StringLiteral.value = key; _ }) ->
-          Ok (base @ [Label.create_name_index key])
-      | _ ->
-          Error
-            (annotation_error
-               (Format.sprintf
-                  "expected int or string literal argument for index access, got `%s`"
-                  (Expression.show argument))))
-  | Expression.Call
-      {
-        callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
-        arguments = [];
-      } ->
-      parse_access_path ~path ~location base >>| fun base -> base @ [AccessPath.dictionary_keys]
-  | Expression.Call
-      {
-        callee = { Node.value = Name (Name.Attribute { base; attribute = "all"; _ }); _ };
-        arguments = [];
-      } ->
-      parse_access_path ~path ~location base >>| fun base -> base @ [Label.AnyIndex]
-  | Expression.Call { callee = { Node.value = Name (Name.Attribute { base; attribute; _ }); _ }; _ }
-    ->
-      parse_access_path ~path ~location base
-      >>= fun _ ->
-      Error
-        (annotation_error
-           (Format.sprintf "unexpected method call `%s` (allowed: `keys`, `all`)" attribute))
-  | _ -> Error (annotation_error "unexpected expression")
+  let rec parse_expression expression =
+    match Node.value expression with
+    | Expression.Name (Name.Identifier "_") -> Ok (TaintPath.Regular [])
+    | Expression.Name (Name.Identifier _) ->
+        Error (annotation_error "access path must start with `_`")
+    | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+        (* The analysis does not currently distinguish between fields and indices.
+         * Silently convert fields to indices to prevent confusion. *)
+        parse_regular_path base
+        >>| fun base -> TaintPath.Regular (base @ [Label.create_name_index attribute])
+    | Expression.Call
+        {
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
+          arguments = [{ Call.Argument.value = argument; _ }];
+        } -> (
+        parse_regular_path base
+        >>= fun base ->
+        match Node.value argument with
+        | Expression.Constant (Constant.Integer index) ->
+            Ok (TaintPath.Regular (base @ [Label.create_int_index index]))
+        | Expression.Constant (Constant.String { StringLiteral.value = key; _ }) ->
+            Ok (TaintPath.Regular (base @ [Label.create_name_index key]))
+        | _ ->
+            Error
+              (annotation_error
+                 (Format.sprintf
+                    "expected int or string literal argument for index access, got `%s`"
+                    (Expression.show argument))))
+    | Expression.Call
+        {
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
+          arguments = [];
+        } ->
+        parse_regular_path base
+        >>| fun base -> TaintPath.Regular (base @ [AccessPath.dictionary_keys])
+    | Expression.Call
+        {
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "all"; _ }); _ };
+          arguments = [];
+        } ->
+        parse_regular_path base >>| fun base -> TaintPath.Regular (base @ [Label.AnyIndex])
+    | Expression.Call
+        {
+          callee =
+            { Node.value = Name (Name.Attribute { base; attribute = "all_static_fields"; _ }); _ };
+          arguments = [];
+        } -> (
+        parse_regular_path base
+        >>= function
+        | [] -> Ok TaintPath.AllStaticFields
+        | _ -> Error (annotation_error "`all_static_fields()` can only be used on `_`"))
+    | Expression.Call
+        { callee = { Node.value = Name (Name.Attribute { base; attribute; _ }); _ }; _ } ->
+        parse_expression base
+        >>= fun _ ->
+        Error
+          (annotation_error
+             (Format.sprintf
+                "unexpected method call `%s` (allowed: `keys`, `all`, `all_static_fields`)"
+                attribute))
+    | _ -> Error (annotation_error "unexpected expression")
+  and parse_regular_path expression =
+    match parse_expression expression with
+    | Ok (TaintPath.Regular path) -> Ok path
+    | Ok TaintPath.AllStaticFields ->
+        Error (annotation_error "cannot access attributes or methods of `all_static_fields()`")
+    | Error _ as error -> error
+  in
+  parse_expression expression
 
 
 let rec parse_annotations
@@ -338,10 +361,20 @@ let rec parse_annotations
         | Some "ParameterPath" ->
             parse_access_path ~path ~location expression
             >>| TaintKindsWithFeatures.from_parameter_path
-        | Some "ReturnPath" ->
-            parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_return_path
-        | Some "UpdatePath" ->
-            parse_access_path ~path ~location expression >>| TaintKindsWithFeatures.from_update_path
+        | Some "ReturnPath" -> (
+            parse_access_path ~path ~location expression
+            >>= function
+            | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_return_path path)
+            | TaintPath.AllStaticFields ->
+                Error
+                  (annotation_error "`all_static_fields()` is not allowed within `ReturnPath[]`"))
+        | Some "UpdatePath" -> (
+            parse_access_path ~path ~location expression
+            >>= function
+            | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_update_path path)
+            | TaintPath.AllStaticFields ->
+                Error
+                  (annotation_error "`all_static_fields()` is not allowed within `UpdatePath[]`"))
         | Some "CollapseDepth" ->
             extract_collapse_depth expression
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
@@ -832,13 +865,16 @@ let path_for_source_or_sink ~kind ~root ~features =
     in
     match features with
     | {
-     TaintFeatures.parameter_path = Some parameter_path;
+     TaintFeatures.parameter_path = Some (TaintPath.Regular parameter_path);
      applies_to = None;
      return_path = None;
      update_path = None;
      _;
     } ->
         Ok parameter_path
+    | { parameter_path = Some TaintPath.AllStaticFields; _ } ->
+        (* TODO(T148742302): implement all_static_fields() *)
+        Error "`all_static_fields()` is not currently implemented"
     | { return_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ReturnPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -990,7 +1026,10 @@ let introduce_taint_in_taint_out
   let input_path =
     match features with
     | { applies_to; parameter_path = None; _ } -> Ok (Option.value ~default:[] applies_to)
-    | { parameter_path = Some parameter_path; applies_to = None; _ } -> Ok parameter_path
+    | { parameter_path = Some (TaintPath.Regular parameter_path); applies_to = None; _ } ->
+        Ok parameter_path
+    | { parameter_path = Some TaintPath.AllStaticFields; _ } ->
+        Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`"
     | _ ->
         Error
           (Format.asprintf

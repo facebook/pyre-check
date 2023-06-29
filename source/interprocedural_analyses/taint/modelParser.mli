@@ -39,7 +39,7 @@ val parse_access_path
   :  path:PyrePath.t option ->
   location:Ast.Location.t ->
   Ast.Expression.t ->
-  (AccessPath.Path.t, ModelVerificationError.t) result
+  (ModelParseResult.TaintPath.t, ModelVerificationError.t) result
 
 val parse_decorator_modes
   :  path:PyrePath.t ->
