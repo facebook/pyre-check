@@ -913,8 +913,17 @@ let path_for_source_or_sink ~kind ~root ~features =
   | _ -> path_for_parameter ()
 
 
+let type_breadcrumbs_from_annotations ~resolution annotations =
+  List.fold annotations ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar annotation ->
+      CallGraph.ReturnType.from_annotation ~resolution annotation
+      |> Features.type_breadcrumbs
+      |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+
+
 let introduce_sink_taint
+    ~resolution
     ~root
+    ~root_annotations
     ~features:
       ({
          TaintFeatures.breadcrumbs;
@@ -928,7 +937,6 @@ let introduce_sink_taint
          trace_length;
          collapse_depth = _;
        } as features)
-    ~signature_breadcrumbs
     ~source_sink_filter
     ({ Model.backward = { sink_taint; _ }; _ } as model)
     taint_sink_kind
@@ -962,12 +970,13 @@ let introduce_sink_taint
     let leaf_names =
       leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
     in
+    let type_breadcrumbs = type_breadcrumbs_from_annotations ~resolution root_annotations in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
       |> List.map ~f:Features.BreadcrumbSet.inject
       |> Features.BreadcrumbSet.of_approximation
-      |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
+      |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let leaf_taint =
@@ -989,7 +998,10 @@ let introduce_sink_taint
 
 
 let introduce_taint_in_taint_out
+    ~resolution
     ~root
+    ~root_annotations
+    ~result_annotations
     ~features:
       ({
          TaintFeatures.breadcrumbs;
@@ -1003,17 +1015,20 @@ let introduce_taint_in_taint_out
          trace_length = _;
          collapse_depth;
        } as features)
-    ~signature_breadcrumbs
     ({ Model.backward = { taint_in_taint_out; sink_taint }; _ } as model)
     taint_sink_kind
   =
   let open Core.Result in
+  (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
+  let type_breadcrumbs =
+    List.append root_annotations result_annotations |> type_breadcrumbs_from_annotations ~resolution
+  in
   let breadcrumbs =
     breadcrumbs
     |> List.map ~f:Features.BreadcrumbInterned.intern
     |> List.map ~f:Features.BreadcrumbSet.inject
     |> Features.BreadcrumbSet.of_approximation
-    |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
+    |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
   in
   let via_features = Features.ViaFeatureSet.of_list via_features in
   let collapse_depth =
@@ -1124,7 +1139,9 @@ let introduce_taint_in_taint_out
 
 
 let introduce_source_taint
+    ~resolution
     ~root
+    ~root_annotations
     ~features:
       ({
          TaintFeatures.breadcrumbs;
@@ -1138,7 +1155,6 @@ let introduce_source_taint
          trace_length;
          collapse_depth = _;
        } as features)
-    ~signature_breadcrumbs
     ~source_sink_filter
     ({ Model.forward = { source_taint }; _ } as model)
     taint_source_kind
@@ -1156,12 +1172,13 @@ let introduce_source_taint
            SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind)
     |> Option.value ~default:true
   then
+    let type_breadcrumbs = type_breadcrumbs_from_annotations ~resolution root_annotations in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
       |> List.map ~f:Features.BreadcrumbSet.inject
       |> Features.BreadcrumbSet.of_approximation
-      |> Features.BreadcrumbSet.add_set ~to_add:signature_breadcrumbs
+      |> Features.BreadcrumbSet.add_set ~to_add:type_breadcrumbs
     in
     let via_features = Features.ViaFeatureSet.of_list via_features in
     let transform_call_information taint =
@@ -2088,22 +2105,18 @@ let parameters_of_callable_annotation { Type.Callable.implementation; overloads;
   @ (List.map overloads ~f:parameters_of_overload |> List.concat)
 
 
-let signature_based_breadcrumbs ~resolution root ~callable_annotation =
+(* Return all type annotations on the given port.
+ * Note that there could be multiple annotations because of type overloads. *)
+let port_annotations_from_signature ~root ~callable_annotation =
   match callable_annotation with
-  | None -> Features.BreadcrumbSet.empty
+  | None -> []
   | Some callable_annotation -> (
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } ->
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (parameter_position, parameter) ->
-                 Option.some_if (parameter_position = position) parameter)
-          |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
-                 parameter
-                 |> Type.Callable.Parameter.annotation
-                 >>| CallGraph.ReturnType.from_annotation ~resolution
-                 |> Option.value ~default:CallGraph.ReturnType.none
-                 |> Features.type_breadcrumbs
-                 |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+                 Option.some_if (Int.equal parameter_position position) parameter)
+          |> List.filter_map ~f:Type.Callable.Parameter.annotation
       | AccessPath.Root.NamedParameter { name; _ } ->
           parameters_of_callable_annotation callable_annotation
           |> List.filter_map ~f:(fun (_, parameter) ->
@@ -2115,21 +2128,13 @@ let signature_based_breadcrumbs ~resolution root ~callable_annotation =
                    when String.equal parameter_name name ->
                      Some parameter
                  | _ -> None)
-          |> List.fold ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar parameter ->
-                 parameter
-                 |> Type.Callable.Parameter.annotation
-                 >>| CallGraph.ReturnType.from_annotation ~resolution
-                 |> Option.value ~default:CallGraph.ReturnType.none
-                 |> Features.type_breadcrumbs
-                 |> Features.BreadcrumbSet.add_set ~to_add:sofar)
+          |> List.filter_map ~f:Type.Callable.Parameter.annotation
       | AccessPath.Root.LocalResult ->
           let { Type.Callable.implementation = { Type.Callable.annotation; _ }; _ } =
             callable_annotation
           in
-          annotation
-          |> CallGraph.ReturnType.from_annotation ~resolution
-          |> Features.type_breadcrumbs
-      | _ -> Features.BreadcrumbSet.empty)
+          [annotation]
+      | _ -> [])
 
 
 let parse_parameter_taint
@@ -2178,19 +2183,23 @@ let add_taint_annotation_to_model
       let root = AccessPath.Root.LocalResult in
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
-          let signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
-          in
-          introduce_sink_taint ~root ~features ~signature_breadcrumbs ~source_sink_filter model sink
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
+          introduce_sink_taint
+            ~resolution
+            ~root
+            ~root_annotations
+            ~features
+            ~source_sink_filter
+            model
+            sink
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Source { source; features } ->
-          let signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
-          in
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_source_taint
+            ~resolution
             ~root
+            ~root_annotations
             ~features
-            ~signature_breadcrumbs
             ~source_sink_filter
             model
             source
@@ -2212,46 +2221,48 @@ let add_taint_annotation_to_model
   | ModelAnnotation.ParameterAnnotation (root, annotation) -> (
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
-          let signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
-          in
-          introduce_sink_taint ~root ~features ~signature_breadcrumbs ~source_sink_filter model sink
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
+          introduce_sink_taint
+            ~resolution
+            ~root
+            ~root_annotations
+            ~features
+            ~source_sink_filter
+            model
+            sink
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Source { source; features } ->
-          let signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
-          in
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_source_taint
+            ~resolution
             ~root
+            ~root_annotations
             ~features
-            ~signature_breadcrumbs
             ~source_sink_filter
             model
             source
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.Tito { tito; features } ->
-          (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
-          let parameter_signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
+          let result_annotations =
+            port_annotations_from_signature ~root:AccessPath.Root.LocalResult ~callable_annotation
           in
-          let return_signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution AccessPath.Root.LocalResult ~callable_annotation
-          in
-          let signature_breadcrumbs =
-            Features.BreadcrumbSet.add_set
-              ~to_add:return_signature_breadcrumbs
-              parameter_signature_breadcrumbs
-          in
-          introduce_taint_in_taint_out ~root ~features ~signature_breadcrumbs model tito
+          introduce_taint_in_taint_out
+            ~resolution
+            ~root
+            ~root_annotations
+            ~result_annotations
+            ~features
+            model
+            tito
           |> map_error ~f:invalid_model_for_taint
       | TaintAnnotation.AddFeatureToArgument { features } ->
-          let signature_breadcrumbs =
-            signature_based_breadcrumbs ~resolution root ~callable_annotation
-          in
+          let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_sink_taint
+            ~resolution
             ~root
+            ~root_annotations
             ~features
-            ~signature_breadcrumbs
             ~source_sink_filter
             model
             Sinks.AddFeatureToArgument
