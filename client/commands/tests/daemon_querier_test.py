@@ -11,7 +11,7 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 
-from ...language_server import connections, protocol as lsp
+from ...language_server import connections, protocol as lsp, remote_index
 from ...language_server.connections import (
     AsyncTextReader,
     AsyncTextWriter,
@@ -19,6 +19,7 @@ from ...language_server.connections import (
     MemoryBytesWriter,
 )
 from ...language_server.features import (
+    DefinitionAvailability,
     HoverAvailability,
     LanguageServerFeatures,
     ReferencesAvailability,
@@ -30,8 +31,11 @@ from ..daemon_querier import (
     DaemonQuerierSource,
     GetDefinitionLocationsResponse,
     PersistentDaemonQuerier,
+    RemoteIndexBackedQuerier,
 )
 from ..daemon_query import DaemonQueryFailure
+
+from ..server_state import ConnectionStatus
 
 from ..tests import server_setup
 
@@ -366,6 +370,35 @@ class DaemonQuerierTest(testslide.TestCase):
                 "location_of_definition(path='bar.py', line=4, column=10)",
                 result.error_message,
             )
+
+    @setup.async_test
+    async def test_query_definition_fall_back_to_glean(self) -> None:
+        base_querier = PersistentDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                language_server_features=LanguageServerFeatures(
+                    definition=DefinitionAvailability.ENABLED
+                )
+            ),
+        )
+        base_querier.server_state.status_tracker.set_status(
+            ConnectionStatus.DISCONNECTED
+        )
+        querier = RemoteIndexBackedQuerier(
+            base_querier=base_querier,
+            index=remote_index.EmptyRemoteIndex(),
+        )
+
+        response = await querier.get_definition_locations(
+            path=Path("bar.py"),
+            position=lsp.PyrePosition(line=42, character=10),
+        )
+        self.assertEqual(
+            response,
+            GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.GLEAN_INDEXER,
+                data=[],
+            ),
+        )
 
     @setup.async_test
     async def test_query_references(self) -> None:

@@ -109,6 +109,13 @@ def path_to_expression_coverage_response(
     )
 
 
+def should_fall_back_to_glean(server_state: state.ServerState) -> bool:
+    return (
+        server_state.status_tracker.get_status().connection_status
+        == state.ConnectionStatus.DISCONNECTED
+    )
+
+
 class AbstractDaemonQuerier(abc.ABC):
     def __init__(
         self,
@@ -639,11 +646,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
-        # Return glean indexed result if Pyre client is not ready
-        if (
-            self.base_querier.server_state.status_tracker.get_status().connection_status
-            != state.ConnectionStatus.READY
-        ):
+        if should_fall_back_to_glean(self.base_querier.server_state):
             indexed_result = await self.index.definition(path, position)
             return GetDefinitionLocationsResponse(
                 source=DaemonQuerierSource.GLEAN_INDEXER, data=indexed_result
