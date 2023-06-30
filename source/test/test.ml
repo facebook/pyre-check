@@ -7,6 +7,8 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+(* `open Core` hides this module, and does not provide a replacement for `open_process_args_in`. *)
+module CamlUnix = Unix
 open Core
 open OUnit2
 open Analysis
@@ -200,11 +202,13 @@ let parse_location_with_module location =
 
 let diff ~print format (left, right) =
   let input =
-    Format.sprintf
-      "diff -u <(printf '%s') <(printf '%s')"
-      (Format.asprintf "%a" print left)
-      (Format.asprintf "%a" print right)
-    |> Core_unix.open_process_in
+    let command =
+      Format.sprintf
+        "diff -u <(printf '%s') <(printf '%s')"
+        (Format.asprintf "%a" print left)
+        (Format.asprintf "%a" print right)
+    in
+    CamlUnix.open_process_args_in "/bin/bash" [| "/bin/bash"; "-c"; command |]
   in
   Format.fprintf format "\n%s" (In_channel.input_all input);
   In_channel.close input
