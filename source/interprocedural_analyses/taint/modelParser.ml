@@ -856,8 +856,75 @@ let rec parse_annotations
   parse_annotation (Node.value annotation)
 
 
-let path_for_source_or_sink ~kind ~root ~features =
-  let path_for_parameter () =
+let rec class_names_from_annotation = function
+  | Type.Bottom
+  | Type.Top
+  | Type.Any
+  | Type.Literal _
+  | Type.Callable _
+  | Type.Tuple _
+  | Type.NoneType
+  | Type.TypeOperation _
+  | Type.Variable _
+  | Type.IntExpression _
+  | Type.RecursiveType _
+  | Type.ParameterVariadicComponent _ ->
+      []
+  | Type.Primitive class_name
+  | Type.Parametric { name = class_name; _ } ->
+      [class_name]
+  | Type.Union members ->
+      List.fold
+        ~init:[]
+        ~f:(fun sofar annotation -> List.rev_append (class_names_from_annotation annotation) sofar)
+        members
+  | Type.ReadOnly annotation -> class_names_from_annotation annotation
+
+
+let get_class_attributes ~resolution = function
+  | "object" -> Some []
+  | class_name ->
+      GlobalResolution.class_summary resolution (Type.Primitive class_name)
+      >>| Node.value
+      >>| fun class_summary ->
+      let attributes = ClassSummary.attributes ~include_generated_attributes:false class_summary in
+      let constructor_attributes = ClassSummary.constructor_attributes class_summary in
+      let all_attributes =
+        Identifier.SerializableMap.union (fun _ x _ -> Some x) attributes constructor_attributes
+      in
+      let get_attribute attribute_name attribute accumulator =
+        match Node.value attribute with
+        | { ClassSummary.Attribute.kind = Simple _; _ } -> attribute_name :: accumulator
+        | _ -> accumulator
+      in
+      Identifier.SerializableMap.fold get_attribute all_attributes []
+
+
+let get_class_attributes_transitive ~resolution class_name =
+  let successors =
+    GlobalResolution.class_metadata resolution (Type.Primitive class_name)
+    >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
+    |> Option.value ~default:[]
+  in
+  class_name :: successors |> List.filter_map ~f:(get_class_attributes ~resolution) |> List.concat
+
+
+let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features =
+  let all_static_field_paths () =
+    let attributes =
+      root_annotations
+      |> List.map ~f:class_names_from_annotation
+      |> List.concat
+      |> List.map ~f:(get_class_attributes_transitive ~resolution)
+      |> List.concat
+      |> List.dedup_and_sort ~compare:Identifier.compare
+    in
+    match attributes with
+    | [] -> (* no attributes found *) [AccessPath.Path.empty]
+    | attributes ->
+        List.map ~f:(fun attribute -> [Abstract.TreeDomain.Label.Index attribute]) attributes
+  in
+  let paths_for_parameter () =
     let kind =
       match kind with
       | "source" -> "parameter source"
@@ -871,10 +938,8 @@ let path_for_source_or_sink ~kind ~root ~features =
      update_path = None;
      _;
     } ->
-        Ok parameter_path
-    | { parameter_path = Some TaintPath.AllStaticFields; _ } ->
-        (* TODO(T148742302): implement all_static_fields() *)
-        Error "`all_static_fields()` is not currently implemented"
+        Ok [parameter_path]
+    | { parameter_path = Some TaintPath.AllStaticFields; _ } -> Ok (all_static_field_paths ())
     | { return_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ReturnPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -882,7 +947,7 @@ let path_for_source_or_sink ~kind ~root ~features =
     | _ ->
         Error (Format.sprintf "Invalid mix of AppliesTo and ParameterPath annotation for %s" kind)
   in
-  let path_for_return () =
+  let paths_for_return () =
     let kind =
       match kind with
       | "sink" -> "return sink"
@@ -896,7 +961,7 @@ let path_for_source_or_sink ~kind ~root ~features =
      update_path = None;
      _;
     } ->
-        Ok return_path
+        Ok [return_path]
     | { parameter_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ParameterPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -908,9 +973,9 @@ let path_for_source_or_sink ~kind ~root ~features =
       { TaintFeatures.applies_to; parameter_path = None; return_path = None; update_path = None; _ }
     ) ->
       (* AppliesTo works for both parameter and return sources/sinks. *)
-      Ok (Option.value ~default:[] applies_to)
-  | AccessPath.Root.LocalResult, _ -> path_for_return ()
-  | _ -> path_for_parameter ()
+      Ok [Option.value ~default:[] applies_to]
+  | AccessPath.Root.LocalResult, _ -> paths_for_return ()
+  | _ -> paths_for_parameter ()
 
 
 let type_breadcrumbs_from_annotations ~resolution annotations =
@@ -989,9 +1054,12 @@ let introduce_sink_taint
       |> transform_call_information
       |> BackwardState.Tree.create_leaf
     in
-    path_for_source_or_sink ~kind:"sink" ~root ~features
-    >>| fun path ->
-    let sink_taint = BackwardState.assign ~weak:true ~root ~path leaf_taint sink_taint in
+    paths_for_source_or_sink ~resolution ~kind:"sink" ~root ~root_annotations ~features
+    >>| fun paths ->
+    let sink_taint =
+      List.fold paths ~init:sink_taint ~f:(fun sink_taint path ->
+          BackwardState.assign ~weak:true ~root ~path leaf_taint sink_taint)
+    in
     { model with backward = { model.backward with sink_taint } }
   else
     Ok model
@@ -1211,9 +1279,12 @@ let introduce_source_taint
       |> transform_call_information
       |> ForwardState.Tree.create_leaf
     in
-    path_for_source_or_sink ~kind:"source" ~root ~features
-    >>| fun path ->
-    let source_taint = ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint in
+    paths_for_source_or_sink ~resolution ~kind:"source" ~root ~root_annotations ~features
+    >>| fun paths ->
+    let source_taint =
+      List.fold paths ~init:source_taint ~f:(fun source_taint path ->
+          ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint)
+    in
     { model with forward = { source_taint } }
   else
     Ok model

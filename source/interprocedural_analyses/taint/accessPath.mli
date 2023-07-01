@@ -36,6 +36,8 @@ end
 module Path : sig
   type t = Abstract.TreeDomain.Label.t list [@@deriving compare, eq, show]
 
+  val empty : t
+
   val is_prefix : prefix:t -> t -> bool
 end
 

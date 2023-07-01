@@ -1,0 +1,8 @@
+@generated
+Overrides
+all_static_fields.A::__init__ (override) -> [all_static_fields.A::__init__ (method) all_static_fields.D::__init__ (override)]
+all_static_fields.C::__init__ (override) -> [all_static_fields.C::__init__ (method)]
+all_static_fields.D::__init__ (override) -> [all_static_fields.D::__init__ (method)]
+all_static_fields.RegularClass::__init__ (override) -> [all_static_fields.RegularClass::__init__ (method)]
+object::__init__ (override) -> [all_static_fields.A::__init__ (override) all_static_fields.RegularClass::__init__ (override) object::__init__ (method)]
+type::__init__ (override) -> [all_static_fields.C::__init__ (override) type::__init__ (method)]

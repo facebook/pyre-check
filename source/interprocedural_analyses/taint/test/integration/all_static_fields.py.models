@@ -1,0 +1,482 @@
+@generated
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.A.__init__",
+    "tito": [
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.C.__init__",
+    "tito": [
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 71, "start": 25, "end": 26 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 71, "start": 8, "end": 15 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.D.__init__",
+    "tito": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[a]": 3 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 79, "start": 25, "end": 26 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "via": "tito" } ],
+            "tito_positions": [ { "line": 79, "start": 8, "end": 15 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.Dataclass.__init__",
+    "tito": [
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.RegularClass.__init__",
+    "tito": [
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[b]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 3 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.builtin_parameters",
+    "sinks": [
+      {
+        "port": "formal(t)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "bool" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(z)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.dataclass",
+    "sinks": [
+      {
+        "port": "formal(parameter)[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.optional_dataclass",
+    "sinks": [
+      {
+        "port": "formal(parameter)[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.optional_regular_class",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.regular_class",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.test_b",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.test_c",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.test_d",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.test_type",
+    "sinks": [
+      {
+        "port": "formal(parameter)[__name__]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.test_union_c_d",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.union_dataclass_regular",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(parameter)[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.unnannotated",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}

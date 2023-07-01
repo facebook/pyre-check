@@ -128,6 +128,8 @@ module Path = struct
 
   let equal = Abstract.TreeDomain.Label.equal_path
 
+  let empty = []
+
   let is_prefix = Abstract.TreeDomain.Label.is_prefix
 end
 
