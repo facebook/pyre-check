@@ -84,7 +84,10 @@ return value (depending on the context). The underscore can be followed by attri
 accesses (e.g, `_.foo.bar`) and index accesses (e.g, `_["foo"][0]["bar"]`), or a
 combination of both (e.g, `_.foo[0]`).
 
-In addition to these, two special calls can be used: `.all()` and `.keys()`.
+In addition to these, three special calls can be used: `.all()`, `.keys()` and
+`.all_static_fields()`.
+
+#### all()
 
 `.all()` is used to represent that any index might be tainted. This is usually when
 the index cannot be known statically. For instance:
@@ -100,6 +103,8 @@ This can be represented by the model:
 def foo(): TaintSource[Test, ReturnPath[_.all()]]: ...
 ```
 
+#### keys()
+
 `.keys()` is used to represent that any key of the dictionary might be tainted.
 For instance:
 
@@ -112,6 +117,34 @@ This can be represented by the model:
 ```python
 def foo(): TaintSource[Test, ReturnPath[_.keys()]]: ...
 ```
+
+#### all_static_fields()
+
+`.all_static_fields()` is used to mark all statically-known attributes of the
+given parameter as a source or sink. The set of attributes is determined using
+the type annotation of the parameter. If the parameter is not annotated or that
+we could not find any attributes, the whole parameter will be marked as a source
+or sink instead.
+
+For instance:
+```python
+class A:
+  x: str
+  y: str
+
+def foo(a: A): ...
+```
+
+Using the following model:
+```python
+def foo(a: TaintSink[Test, ParameterPath[_.all_static_fields()]]): ...
+```
+
+This will add a sink on `a.x` and `a.y`.
+
+In general, we recommend to **mark the whole parameter** as a source or sink.
+This feature is **only useful** for power users that post process the result of
+the analysis and extract leaf ports. It is also very **computationally expensive**.
 
 ### Taint In Taint Out
 
