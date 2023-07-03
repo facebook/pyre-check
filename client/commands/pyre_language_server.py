@@ -59,7 +59,7 @@ async def read_lsp_request(
             message = await lsp.read_json_rpc(input_channel)
             return message
         except json_rpc.JSONRPCException as json_rpc_error:
-            LOG.debug(f"Exception occurred while reading JSON RPC: {json_rpc_error}")
+            LOG.error(f"Exception occurred while reading JSON RPC: {json_rpc_error}")
             await lsp.write_json_rpc_ignore_connection_error(
                 output_channel,
                 json_rpc.ErrorResponse(
@@ -1363,7 +1363,7 @@ class PyreLanguageServerDispatcher:
                 if return_code is not None:
                     return return_code
             except json_rpc.JSONRPCException as json_rpc_error:
-                LOG.debug(
+                LOG.error(
                     f"Exception occurred while processing request: {json_rpc_error}"
                 )
                 await lsp.write_json_rpc_ignore_connection_error(

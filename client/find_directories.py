@@ -208,7 +208,7 @@ def find_typeshed() -> Optional[Path]:
 
         return Path(typeshed.typeshed)
     except ImportError:
-        LOG.debug("`import typeshed` failed.")
+        LOG.error("`import typeshed` failed.")
 
     return None
 

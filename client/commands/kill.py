@@ -75,7 +75,7 @@ def _kill_processes_by_name(name: str) -> None:
             LOG.info(f"Killing process {name} with pid {pid_to_kill}.")
             os.kill(pid_to_kill, signal.SIGKILL)
         except (ProcessLookupError, PermissionError) as exception:
-            LOG.debug(
+            LOG.error(
                 f"Failed to kill process {name} with pid {pid_to_kill} "
                 + f"due to exception {exception}"
             )
