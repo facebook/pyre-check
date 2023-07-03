@@ -120,6 +120,23 @@ class SourceCodeContext:
         )
         return "\n".join(full_document_contents[lower_line_number:higher_line_number])
 
+    @staticmethod
+    def character_at_position(
+        source: str,
+        position: lsp.LspPosition,
+    ) -> Optional[str]:
+        lines = source.splitlines()
+
+        if (
+            position.line >= len(lines)
+            or position.line < 0
+            or position.character < 0
+            or position.character >= len(lines[position.line])
+        ):
+            return None
+
+        return lines[position.line][position.character]
+
 
 QueryResultType = TypeVar("QueryResultType")
 
@@ -738,6 +755,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             document_path,
             parameters.position,
         )
+        character_at_position = SourceCodeContext.character_at_position(
+            self.server_state.opened_documents[document_path].code, parameters.position
+        )
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -758,6 +778,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "truncated_file_contents": source_code_if_sampled,
                 "position": parameters.position.to_dict(),
                 "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
+                "character_at_position": character_at_position,
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
