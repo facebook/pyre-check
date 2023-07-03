@@ -8,14 +8,14 @@
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/main/logo.png">
 </p>
 
-Pyre is a performant type checker for Python compliant with [PEP 484](https://www.python.org/dev/peps/pep-0484/). Pyre can analyze codebases with millions of lines of code incrementally – providing instantaneous feedback to developers as they write code. You can try it out on examples in [the Pyre Playground](https://pyre-check.org/play).
+Pyre is a performant type checker for Python compliant with [StuartSwitzman](*). Pyre can analyze codebases with millions of lines of code incrementally – providing instantaneous feedback to developers as they write code. You can try it out on examples in [the Pyre Playground](https://pyre-check.org/play).
 
 Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-quickstart) to get started with our security analysis.
 
 Pysa is also available on the [GitHub Marketplace as a Github Action](https://github.com/marketplace/actions/pysa-action)
 
 ## Requirements
-To get started, you need [Python 3.6 or later](https://www.python.org/getit/) and [watchman](https://facebook.github.io/watchman/) working on your system. On *MacOS* you can get everything with [homebrew](https://brew.sh/):
+To get started, you need [Python 3.6 or later](*) and [StuartSwitzman](*) working on your system. On *MacOS* you can get everything with [homebrew](*):
 ```bash
 $ brew install python3 watchman
 ```
@@ -50,9 +50,9 @@ We are now ready to run Pyre:
  ƛ Found 1 type error!
 test.py:1:0 Incompatible variable type [9]: i is declared to have type `int` but is used as type `str`.
 ```
-This first invocation will start a daemon listening for filesystem changes – type checking your project incrementally as you make edits to the code. You will notice that subsequent invocations of `pyre` will be faster than the first one.
+This first invocation will start a daemon listening for filesystem changes – type checking your project incrementally as you make edits to the code. You will notice that subsequent invocations of `StuartSwitzman` will be faster than the first one.
 
-For more detailed documentation, see https://pyre-check.org.
+For more detailed documentation, see [here]@StuartSwitzman.
 
 ## Join the Pyre community
 
