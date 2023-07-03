@@ -13,7 +13,13 @@ from typing import Callable, Dict, List, Optional, Union
 
 import testslide
 
-from ... import backend_arguments, background_tasks, error, json_rpc
+from ... import (
+    backend_arguments,
+    background_tasks,
+    error,
+    json_rpc,
+    status_message_handler,
+)
 from ...language_server import protocol as lsp
 from ...language_server.connections import (
     AsyncTextReader,
@@ -46,7 +52,6 @@ from ..launch_and_subscribe_handler import (
     PyreDaemonShutdown,
 )
 from ..persistent import (
-    ClientStatusMessageHandler,
     ClientTypeErrorHandler,
     process_initialize_request,
     PyrePersistentDaemonLaunchAndSubscribeHandler,
@@ -981,7 +986,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1047,7 +1052,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1091,7 +1096,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_setup.mock_server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_setup.mock_server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1120,7 +1125,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1161,7 +1166,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
         server_handler = PyrePersistentDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1202,7 +1207,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 ),
             ),
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(
@@ -1264,7 +1269,7 @@ class PyreDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 ),
             ),
             server_state=server_state,
-            client_status_message_handler=ClientStatusMessageHandler(
+            client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
             client_type_error_handler=ClientTypeErrorHandler(

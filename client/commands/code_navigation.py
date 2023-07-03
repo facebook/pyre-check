@@ -19,9 +19,15 @@ import traceback
 
 from typing import Optional
 
-from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
+from .. import (
+    backend_arguments,
+    background_tasks,
+    log_lsp_event,
+    status_message_handler,
+    timer,
+    version,
+)
 from ..language_server import connections, features, protocol as lsp, remote_index
-
 from . import (
     daemon_querier,
     initialization,
@@ -61,7 +67,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         self,
         server_options_reader: pyre_server_options.PyreServerOptionsReader,
         server_state: state.ServerState,
-        client_status_message_handler: persistent.ClientStatusMessageHandler,
+        client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: persistent.ClientTypeErrorHandler,
         querier: daemon_querier.AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
@@ -245,7 +251,7 @@ async def async_run_code_navigation_client(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,
                 server_state=server_state,
-                client_status_message_handler=persistent.ClientStatusMessageHandler(
+                client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                     stdout, server_state
                 ),
                 querier=querier,

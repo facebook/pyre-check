@@ -13,15 +13,10 @@ The meaning of "persistent" in this context is to illustrate that the
 connection to the pyre server is non-transient and is designed to stay alive
 during the entire duration of a user's interaction with Vscode.
 
-The main responsibilities of this class are:
+The main responsibilities of this class is to:
 
-1. Instantiating an instance of the persistent Pyre client and ensuring
-re-launch of the Pyre server in the scenario that it goes down.
-
-2. Handling subscriptions to the Pyre server - listening to events and status
-updates from the server, and sending updates back to the LSP to display
-appropriate notifications to the user. These events include type errors,
-status updates, and error messages.
+-   Instantiate an instance of the persistent Pyre client and ensure
+    re-launch of the Pyre server in the scenario that it goes down.
 
 """
 
@@ -42,6 +37,7 @@ from .. import (
     error,
     json_rpc,
     log_lsp_event,
+    status_message_handler,
     timer,
     version,
 )
@@ -137,133 +133,6 @@ def type_errors_to_diagnostics(
     return result
 
 
-def _client_has_status_bar_support(
-    client_capabilities: lsp.ClientCapabilities,
-) -> bool:
-    window_capabilities = client_capabilities.window
-    if window_capabilities is not None:
-        return window_capabilities.status is not None
-    else:
-        return False
-
-
-async def _write_status(
-    output_channel: connections.AsyncTextWriter,
-    message: str,
-    short_message: Optional[str] = None,
-    level: lsp.MessageType = lsp.MessageType.INFO,
-) -> None:
-    await lsp.write_json_rpc(
-        output_channel,
-        json_rpc.Request(
-            id=0,  # the value doesn't matter but the existence does
-            method="window/showStatus",
-            parameters=json_rpc.ByNameParameters(
-                {
-                    "type": int(level),
-                    "message": message,
-                    **(
-                        {} if short_message is None else {"shortMessage": short_message}
-                    ),
-                }
-            ),
-        ),
-    )
-
-
-async def _write_notification(
-    output_channel: connections.AsyncTextWriter,
-    message: str,
-    short_message: Optional[str] = None,
-    level: lsp.MessageType = lsp.MessageType.INFO,
-) -> None:
-    await lsp.write_json_rpc(
-        output_channel,
-        json_rpc.Request(
-            method="window/showMessage",
-            parameters=json_rpc.ByNameParameters(
-                {
-                    "type": int(level),
-                    "message": (
-                        message
-                        if short_message is None
-                        else f"{short_message}: {message}"
-                    ),
-                }
-            ),
-        ),
-    )
-
-
-class ClientStatusMessageHandler:
-    def __init__(
-        self,
-        client_output_channel: connections.AsyncTextWriter,
-        server_state: ServerState,
-    ) -> None:
-        self.client_output_channel = client_output_channel
-        self.server_state = server_state
-
-    def get_status_updates_availability(self) -> features.StatusUpdatesAvailability:
-        return self.server_state.server_options.language_server_features.status_updates
-
-    async def show_notification_message_to_client(
-        self,
-        message: str,
-        level: lsp.MessageType = lsp.MessageType.INFO,
-    ) -> None:
-        await _write_notification(self.client_output_channel, message, level=level)
-
-    async def show_status_message_to_client(
-        self,
-        message: str,
-        short_message: Optional[str] = None,
-        level: lsp.MessageType = lsp.MessageType.INFO,
-        fallback_to_notification: bool = False,
-    ) -> None:
-        if self.get_status_updates_availability().is_disabled():
-            LOG.error("Status updates are disabled, skipping status message.")
-            return
-        if _client_has_status_bar_support(self.server_state.client_capabilities):
-            await _write_status(
-                self.client_output_channel, message, short_message, level
-            )
-        elif fallback_to_notification:
-            await _write_notification(
-                self.client_output_channel, message, short_message, level
-            )
-
-    def log(
-        self,
-        message: str,
-        short_message: Optional[str] = None,
-        level: lsp.MessageType = lsp.MessageType.INFO,
-    ) -> None:
-        log_message = (
-            message if short_message is None else f"[{short_message}] {message}"
-        )
-        if level == lsp.MessageType.ERROR:
-            LOG.error(log_message)
-        elif level == lsp.MessageType.WARNING:
-            LOG.warning(log_message)
-        elif level == lsp.MessageType.INFO:
-            LOG.info(log_message)
-        else:
-            LOG.debug(log_message)
-
-    async def log_and_show_status_message_to_client(
-        self,
-        message: str,
-        short_message: Optional[str] = None,
-        level: lsp.MessageType = lsp.MessageType.INFO,
-        fallback_to_notification: bool = False,
-    ) -> None:
-        self.log(message, short_message, level)
-        await self.show_status_message_to_client(
-            message, short_message, level, fallback_to_notification
-        )
-
-
 @dataclasses.dataclass(frozen=True)
 class ClientTypeErrorHandler:
     client_output_channel: connections.AsyncTextWriter
@@ -317,7 +186,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         self,
         server_options_reader: pyre_server_options.PyreServerOptionsReader,
         server_state: ServerState,
-        client_status_message_handler: ClientStatusMessageHandler,
+        client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
@@ -496,7 +365,7 @@ async def run_persistent(
                 server_options_reader=server_options_reader,
                 remote_logging=remote_logging,
                 server_state=server_state,
-                client_status_message_handler=ClientStatusMessageHandler(
+                client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                     stdout, server_state
                 ),
                 client_type_error_handler=client_type_error_handler,

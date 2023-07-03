@@ -19,7 +19,13 @@ import traceback
 from pathlib import Path
 from typing import Dict, Optional, TYPE_CHECKING
 
-from .. import backend_arguments, background_tasks, log_lsp_event, timer
+from .. import (
+    backend_arguments,
+    background_tasks,
+    log_lsp_event,
+    status_message_handler,
+    timer,
+)
 from ..language_server import connections, features, protocol as lsp
 from . import pyre_server_options, server_state as state, subscription
 from .initialization import (
@@ -32,7 +38,7 @@ from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
 
 if TYPE_CHECKING:
-    from .persistent import ClientStatusMessageHandler, ClientTypeErrorHandler
+    from .persistent import ClientTypeErrorHandler
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -53,7 +59,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     server_options_reader: PyreServerOptionsReader
     remote_logging: Optional[backend_arguments.RemoteLogging]
     server_state: ServerState
-    client_status_message_handler: ClientStatusMessageHandler
+    client_status_message_handler: status_message_handler.ClientStatusMessageHandler
     client_type_error_handler: ClientTypeErrorHandler
     subscription_response_parser: PyreSubscriptionResponseParser
 
@@ -61,7 +67,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         self,
         server_options_reader: PyreServerOptionsReader,
         server_state: ServerState,
-        client_status_message_handler: ClientStatusMessageHandler,
+        client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
