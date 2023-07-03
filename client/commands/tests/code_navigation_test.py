@@ -9,10 +9,11 @@ from typing import Set, Union
 
 import testslide
 
-from ... import status_message_handler
+from ... import status_message_handler, type_error_handler
 from ...language_server import connections, daemon_connection, protocol as lsp
 from ...tests import setup
-from .. import persistent, pyre_server_options, server_state as state, subscription
+
+from .. import pyre_server_options, server_state as state, subscription
 from ..code_navigation import PyreCodeNavigationDaemonLaunchAndSubscribeHandler
 from ..tests import server_setup
 
@@ -61,7 +62,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
-            client_type_error_handler=persistent.ClientTypeErrorHandler(
+            client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
             querier=server_setup.MockDaemonQuerier(),
@@ -105,7 +106,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                 client_output_channel, server_state
             ),
-            client_type_error_handler=persistent.ClientTypeErrorHandler(
+            client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
             querier=querier,

@@ -38,7 +38,7 @@ from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
 
 if TYPE_CHECKING:
-    from .persistent import ClientTypeErrorHandler
+    from .. import type_error_handler
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -60,7 +60,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     remote_logging: Optional[backend_arguments.RemoteLogging]
     server_state: ServerState
     client_status_message_handler: status_message_handler.ClientStatusMessageHandler
-    client_type_error_handler: ClientTypeErrorHandler
+    client_type_error_handler: type_error_handler.ClientTypeErrorHandler
     subscription_response_parser: PyreSubscriptionResponseParser
 
     def __init__(
@@ -68,7 +68,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         server_options_reader: PyreServerOptionsReader,
         server_state: ServerState,
         client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
-        client_type_error_handler: ClientTypeErrorHandler,
+        client_type_error_handler: type_error_handler.ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:

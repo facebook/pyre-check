@@ -8,7 +8,14 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import backend_arguments, background_tasks, error, identifiers, json_rpc
+from ... import (
+    backend_arguments,
+    background_tasks,
+    error,
+    identifiers,
+    json_rpc,
+    type_error_handler,
+)
 
 from ...language_server import protocol as lsp
 
@@ -25,7 +32,6 @@ from ...language_server.features import LanguageServerFeatures, TypeCoverageAvai
 from .. import start
 from ..daemon_querier import AbstractDaemonQuerier, GetDefinitionLocationsResponse
 from ..daemon_query import DaemonQueryFailure
-from ..persistent import ClientTypeErrorHandler
 
 from ..pyre_language_server import (
     PyreLanguageServer,
@@ -293,7 +299,7 @@ def create_pyre_language_server_api(
         output_channel=output_channel,
         server_state=server_state,
         querier=querier,
-        client_type_error_handler=ClientTypeErrorHandler(
+        client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
             client_output_channel=output_channel,
             server_state=server_state,
         ),

@@ -44,7 +44,7 @@ from .daemon_query import DaemonQueryFailure
 from .server_state import OpenedDocumentState
 
 if TYPE_CHECKING:
-    from . import persistent
+    from .. import type_error_handler
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5
@@ -290,7 +290,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
     server_state: state.ServerState
 
     querier: daemon_querier.AbstractDaemonQuerier
-    client_type_error_handler: persistent.ClientTypeErrorHandler
+    client_type_error_handler: type_error_handler.ClientTypeErrorHandler
 
     async def write_telemetry(
         self,
