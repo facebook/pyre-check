@@ -62,6 +62,7 @@ from ..pyre_language_server import (
     PyreLanguageServerDispatcher,
     QueryResultWithDurations,
     read_lsp_request,
+    SourceCodeContext,
 )
 from ..pyre_server_options import PyreServerOptions
 from ..server_state import ConnectionStatus, OpenedDocumentState, ServerState
@@ -194,6 +195,34 @@ class BlockingPyreLanguageServer(PyreLanguageServerApi):
 
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
+
+
+class SourceCodeContextTest(testslide.TestCase):
+    def test_character_at_position(self) -> None:
+        self.assertEqual(
+            SourceCodeContext.character_at_position(
+                "", lsp.LspPosition(line=0, character=1)
+            ),
+            None,
+        )
+        self.assertEqual(
+            SourceCodeContext.character_at_position(
+                " ", lsp.LspPosition(line=1, character=0)
+            ),
+            None,
+        )
+        self.assertEqual(
+            SourceCodeContext.character_at_position(
+                " ", lsp.LspPosition(line=0, character=0)
+            ),
+            " ",
+        )
+        self.assertEqual(
+            SourceCodeContext.character_at_position(
+                "\nt", lsp.LspPosition(line=1, character=0)
+            ),
+            "t",
+        )
 
 
 class ReadLspRequestTest(testslide.TestCase):
