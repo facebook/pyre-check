@@ -66,6 +66,12 @@ class GetDefinitionLocationsResponse:
     data: List[lsp.LspLocation]
 
 
+@dataclasses.dataclass(frozen=True)
+class GetHoverResponse:
+    source: DaemonQuerierSource
+    data: lsp.LspHoverResponse
+
+
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
     return lsp.TypeCoverageResponse(
         covered_percent=0.0,
@@ -143,7 +149,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -300,7 +306,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
         path_string = f"'{path}'"
         query_text = (
             f"hover_info_for_position(path={path_string},"
@@ -315,7 +321,10 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
             return daemon_response
         else:
-            return daemon_response.response.to_lsp_hover_response()
+            return GetHoverResponse(
+                source=DaemonQuerierSource.PYRE_DAEMON,
+                data=daemon_response.response.to_lsp_hover_response(),
+            )
 
     async def get_definition_locations(
         self,
@@ -466,7 +475,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -477,13 +486,16 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             hover_request,
         )
         if isinstance(response, code_navigation_request.HoverResponse):
-            return lsp.LspHoverResponse(
+            lsp_hover_response = lsp.LspHoverResponse(
                 "\n".join(
                     [
                         hover.to_lsp_hover_response().contents
                         for hover in response.contents
                     ]
                 )
+            )
+            return GetHoverResponse(
+                source=DaemonQuerierSource.PYRE_DAEMON, data=lsp_hover_response
             )
         return daemon_query.DaemonQueryFailure(response.message)
 
@@ -638,7 +650,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
         return await self.base_querier.get_hover(path, position)
 
     async def get_definition_locations(

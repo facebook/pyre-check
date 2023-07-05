@@ -1716,7 +1716,10 @@ class HoverTest(ApiTestCase):
             features.TelemetryAvailability.DISABLED,
         ):
             querier = server_setup.MockDaemonQuerier(
-                mock_hover_response=expected_response,
+                mock_hover_response=daemon_querier.GetHoverResponse(
+                    source=daemon_querier.DaemonQuerierSource.PYRE_DAEMON,
+                    data=expected_response,
+                )
             )
             (
                 api,
@@ -1786,7 +1789,10 @@ class HoverTest(ApiTestCase):
             features.TelemetryAvailability.DISABLED,
         ):
             querier = server_setup.MockDaemonQuerier(
-                mock_hover_response=expected_response,
+                mock_hover_response=daemon_querier.GetHoverResponse(
+                    source=daemon_querier.DaemonQuerierSource.PYRE_DAEMON,
+                    data=expected_response,
+                ),
             )
             (
                 api,

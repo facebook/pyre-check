@@ -132,7 +132,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         mock_type_errors: Optional[List[error.Error]] = None,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
-        mock_hover_response: Optional[lsp.LspHoverResponse] = None,
+        mock_hover_response: Optional[querier.GetHoverResponse] = None,
         mock_definition_response: Optional[
             querier.GetDefinitionLocationsResponse
         ] = None,
@@ -166,7 +166,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, lsp.LspHoverResponse]:
+    ) -> Union[daemon_query.DaemonQueryFailure, querier.GetHoverResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
             raise ValueError("You need to set the hover response in the mock querier")

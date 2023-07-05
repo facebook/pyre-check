@@ -624,10 +624,12 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 daemon_failure_string("hover", str(type(result)), result.error_message)
             )
             error_message = result.error_message
-            result = lsp.LspHoverResponse.empty()
-        raw_result = lsp.LspHoverResponse.cached_schema().dump(
-            result,
-        )
+            raw_result = None
+        else:
+            raw_result = lsp.LspHoverResponse.cached_schema().dump(
+                result.data,
+            )
+
         await lsp.write_json_rpc(
             self.output_channel,
             json_rpc.SuccessResponse(
@@ -641,7 +643,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "type": "LSP",
                 "operation": "hover",
                 "filePath": str(document_path),
-                "nonEmpty": len(result.contents) > 0,
+                "nonEmpty": raw_result is not None,
                 "response": raw_result,
                 "duration_ms": hover_timer.stop_in_millisecond(),
                 "server_state_open_documents_count": len(

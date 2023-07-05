@@ -30,6 +30,7 @@ from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
     GetDefinitionLocationsResponse,
+    GetHoverResponse,
     PersistentDaemonQuerier,
     RemoteIndexBackedQuerier,
 )
@@ -227,11 +228,13 @@ class DaemonQuerierTest(testslide.TestCase):
             result = await querier.get_hover(
                 path=Path("bar.py"), position=lsp.PyrePosition(line=42, character=10)
             )
-
         self.assertEqual(
             result,
-            lsp.LspHoverResponse(
-                contents="```\nfoo.bar.Bar\n```\ntest docstring",
+            GetHoverResponse(
+                source=DaemonQuerierSource.PYRE_DAEMON,
+                data=lsp.LspHoverResponse(
+                    contents="```\nfoo.bar.Bar\n```\ntest docstring",
+                ),
             ),
         )
         self.assertEqual(
