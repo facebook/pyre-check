@@ -646,6 +646,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "nonEmpty": raw_result is not None,
                 "response": raw_result,
                 "duration_ms": hover_timer.stop_in_millisecond(),
+                "query_source": result.source
+                if not isinstance(result, DaemonQueryFailure)
+                else None,
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
