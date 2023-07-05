@@ -826,6 +826,8 @@ class Configuration:
         site_roots = self.get_site_roots()
         existent_paths = search_path_module.process_raw_elements(
             self.search_path, site_roots
+        ) + search_path_module.process_raw_elements(
+            self.optional_search_path, site_roots
         )
 
         site_packages_paths = site_packages.search_for_paths(

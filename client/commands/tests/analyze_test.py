@@ -123,7 +123,8 @@ class ArgumentTest(testslide.TestCase):
                     "exclude": ["exclude"],
                     "extensions": [".ext"],
                     "workers": 42,
-                    "search_path": ["search", "nonexistent"],
+                    "search_path": ["search"],
+                    "optional_search_path": ["nonexistent"],
                 },
             )
             setup.write_configuration_file(

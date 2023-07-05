@@ -1166,6 +1166,29 @@ class ConfigurationTest(testslide.TestCase):
                 )
             )
 
+    def test_optional_search_path_comes_last(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root)
+            ensure_directories_exists(root_path, ["a1", "a2"])
+            source_directories = Configuration(
+                global_root=Path("irrelevant"),
+                dot_pyre_directory=Path(".pyre"),
+                search_path=[
+                    SimpleRawElement(str(root_path / "a1")),
+                ],
+                optional_search_path=[
+                    SimpleRawElement(str(root_path / "a2")),
+                ],
+            ).expand_and_get_existent_search_paths()
+            self.assertIsNotNone(source_directories)
+            self.assertListEqual(
+                list(source_directories),
+                [
+                    SimpleElement(str(root_path / "a1")),
+                    SimpleElement(str(root_path / "a2")),
+                ],
+            )
+
     def test_source_directories_glob(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)

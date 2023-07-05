@@ -78,7 +78,8 @@ class CheckTest(testslide.TestCase):
                     "exclude": ["exclude"],
                     "extensions": [".ext", "invalid_extension"],
                     "workers": 42,
-                    "search_path": ["search", "nonexistent"],
+                    "search_path": ["search"],
+                    "optional_search_path": ["nonexistent"],
                     "strict": True,
                 },
             )
