@@ -651,6 +651,11 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+        if should_fall_back_to_glean(self.base_querier.server_state):
+            index_result = await self.index.hover(path, position)
+            return GetHoverResponse(
+                source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
+            )
         return await self.base_querier.get_hover(path, position)
 
     async def get_definition_locations(
