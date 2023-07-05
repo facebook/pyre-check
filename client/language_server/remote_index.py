@@ -30,7 +30,7 @@ class AbstractRemoteIndex(abc.ABC):
     @abc.abstractmethod
     async def hover(
         self, path: Path, position: lsp.PyrePosition
-    ) -> List[lsp.LspLocation]:
+    ) -> lsp.LspHoverResponse:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -71,8 +71,8 @@ class EmptyRemoteIndex(AbstractRemoteIndex):
 
     async def hover(
         self, path: Path, position: lsp.PyrePosition
-    ) -> List[lsp.LspLocation]:
-        return []
+    ) -> lsp.LspHoverResponse:
+        return lsp.LspHoverResponse.empty()
 
     async def prepare_call_hierarchy(
         self,
