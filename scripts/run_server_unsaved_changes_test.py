@@ -141,7 +141,7 @@ class Repository:
                 {
                     "source_directories": ["."],
                     "typeshed": str(typeshed_path.absolute()),
-                    "search_path": ["stubs"],
+                    "optional_search_path": ["stubs"],
                 }
             )
         )

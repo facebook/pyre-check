@@ -824,7 +824,7 @@ class Configuration:
         self,
     ) -> List[search_path_module.Element]:
         site_roots = self.get_site_roots()
-        existent_paths = search_path_module.process_raw_elements(
+        existent_paths = search_path_module.process_required_raw_elements(
             self.search_path, site_roots
         ) + search_path_module.process_raw_elements(
             self.optional_search_path, site_roots

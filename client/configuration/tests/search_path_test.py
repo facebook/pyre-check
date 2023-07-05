@@ -13,6 +13,7 @@ from ..exceptions import InvalidConfiguration
 from ..search_path import (
     create_raw_element,
     process_raw_elements,
+    process_required_raw_elements,
     SimpleElement,
     SimpleRawElement,
     SitePackageElement,
@@ -201,4 +202,65 @@ class SearchPathTest(testslide.TestCase):
                         site_root=str(root_path / "user"), package_name="foo"
                     ),
                 ],
+            )
+
+    def test_process_required_raw_elements_existence(self) -> None:
+        with tempfile.TemporaryDirectory() as root:
+            root_path = Path(root).resolve()
+            ensure_directories_exists(
+                root_path, ["a", "b/c", "d/e/f", "venv/lib/pythonX/site-packages"]
+            )
+
+            self.assertListEqual(
+                process_required_raw_elements(
+                    [
+                        SimpleRawElement(str(root_path / "a")),
+                        SubdirectoryRawElement(
+                            root=str(root_path / "b"), subdirectory="c"
+                        ),
+                        SitePackageRawElement(package_name="f"),
+                    ],
+                    site_roots=[str(root_path / "d/e"), str(root_path / "u/v")],
+                ),
+                [
+                    SimpleElement(str(root_path / "a")),
+                    SubdirectoryElement(root=str(root_path / "b"), subdirectory="c"),
+                    SitePackageElement(
+                        site_root=str(root_path / "d/e"), package_name="f"
+                    ),
+                ],
+            )
+
+    def test_process_required_raw_elements_nonexistence(self) -> None:
+        with self.assertRaises(InvalidConfiguration):
+            process_required_raw_elements(
+                [
+                    SimpleRawElement("/tmp/does-not-exist"),
+                ],
+                site_roots=[],
+            )
+
+    def test_process_required_raw_elements_glob_nonexistence(self) -> None:
+        with self.assertRaises(InvalidConfiguration):
+            process_required_raw_elements(
+                [
+                    SimpleRawElement("/tmp/does-not-exist/*"),
+                ],
+                site_roots=[],
+            )
+
+    def test_process_required_raw_elements_subdirectory_nonexistence(self) -> None:
+        with self.assertRaises(InvalidConfiguration):
+            process_required_raw_elements(
+                [
+                    SubdirectoryRawElement(root="/tmp", subdirectory="does-not-exist"),
+                ],
+                site_roots=[],
+            )
+
+    def test_process_required_raw_elements_site_package_nonexistence(self) -> None:
+        with self.assertRaises(InvalidConfiguration):
+            process_required_raw_elements(
+                [SitePackageRawElement(package_name="f")],
+                site_roots=[],
             )
