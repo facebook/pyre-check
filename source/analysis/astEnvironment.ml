@@ -368,17 +368,49 @@ module FromReadOnlyUpstream = struct
       ~module_tracker
       ({ ModulePath.qualifier; _ } as module_path)
     =
+    let timer = Timer.start () in
+
     let parse raw_code =
+      let log_errpy_ok ~recovered_count =
+        let integers = ["recovered_count", recovered_count] in
+        let normals =
+          match recovered_count with
+          | 0 -> []
+          | _ -> (
+              match Int.equal (Random.int 100) 0 with
+              | false -> []
+              | true ->
+                  (*so as to avoid a torrent of data we only log 1/100 of the sources where there is
+                    error recovery for the purposes of error recovery quality management *)
+                  ["raw_code", raw_code])
+        in
+        Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
+      in
+
+      let log_errpy_error ~error_string =
+        Statistics.errpy_call
+          ~flush:true
+          ~name:"error"
+          ~timer
+          ~integers:[]
+          ~normals:["raw_code", raw_code; "error", error_string]
+          ()
+      in
+
       let typecheck_flags =
         Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
       in
       match PyreErrpyParser.parse_module raw_code with
-      | Ok statements -> Success (create_source ~typecheck_flags ~module_path statements)
+      | Ok statements ->
+          log_errpy_ok ~recovered_count:0;
+          Success (create_source ~typecheck_flags ~module_path statements)
       | Error parserError -> (
           match parserError with
           | Recoverable recoverable ->
+              log_errpy_ok ~recovered_count:(List.length recoverable.errors);
               Success (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
           | Unrecoverable error_string ->
+              log_errpy_error ~error_string;
               create_parse_result
                 ~configuration
                 ~typecheck_flags
