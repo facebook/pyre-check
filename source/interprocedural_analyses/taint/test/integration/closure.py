@@ -30,7 +30,6 @@ def wrapper_for_taint_propagation(x, z):
 
 
 def taint_propagation_hof():
-    # TODO(T156971935): False negative for taint propagation with hof
     x = _test_source()
     z = _test_source()
     wrapper_for_taint_propagation_hof(x, z)

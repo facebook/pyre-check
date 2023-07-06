@@ -1135,9 +1135,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~state
             (CallGraph.CallCallees.create ~call_targets ~unresolved ())
         in
-        (* TODO(afk): use captures *)
-        ignore captures_taint;
-        ignore captures;
         let state =
           analyze_callee
             ~resolution
@@ -1146,6 +1143,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~self_taint
             ~callee_taint
             ~state
+        in
+        let state =
+          List.fold
+            ~init:state
+            ~f:(fun state (capture, capture_taint) ->
+              analyze_expression ~resolution ~taint:capture_taint ~state ~expression:capture.value)
+            (List.zip_exn (CallModel.captures_as_arguments captures) captures_taint)
         in
         let all_taint =
           arguments_taint

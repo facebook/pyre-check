@@ -297,7 +297,7 @@
     "callable": "closure.taint_propagation_hof",
     "callable_line": 32,
     "code": 5002,
-    "line": 36,
+    "line": 35,
     "start": 41,
     "end": 42,
     "filename": "closure.py",
@@ -318,7 +318,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 35,
+              "line": 34,
               "start": 8,
               "end": 22
             }
@@ -343,7 +343,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 36,
+                "line": 35,
                 "start": 41,
                 "end": 42
               },
@@ -366,6 +366,78 @@
       "parameter": "formal(z)"
     },
     "master_handle": "closure.taint_propagation_hof:5002:0:Call|closure.wrapper_for_taint_propagation_hof|0|formal(z):eac53eed0b45978a97e003f1e9fb5a30"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.taint_propagation_hof",
+    "callable_line": 32,
+    "code": 5002,
+    "line": 35,
+    "start": 38,
+    "end": 39,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 33,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 35,
+                "start": 38,
+                "end": 39
+              },
+              "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
+              "port": "formal(x)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.wrapper_for_taint_propagation_hof",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "closure.taint_propagation_hof:5002:0:Call|closure.wrapper_for_taint_propagation_hof|0|formal(x):954ed00d9a632d6ac7dbe83d70048d86"
   }
 }
 {
@@ -432,7 +504,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 62,
+              "line": 61,
               "start": 19,
               "end": 24
             }
@@ -460,7 +532,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 88,
+              "line": 87,
               "start": 19,
               "end": 22
             }
@@ -646,7 +718,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 44,
+                "line": 43,
                 "start": 26,
                 "end": 31
               },
@@ -654,6 +726,32 @@
                 "closure.wrapper_for_taint_propagation_hof.inner"
               ],
               "port": "formal(z)"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 43,
+                "start": 26,
+                "end": 31
+              },
+              "resolves_to": [
+                "closure.wrapper_for_taint_propagation_hof.inner"
+              ],
+              "port": "captured_variable($parameter$x)"
             }
           }
         ]
@@ -679,7 +777,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 41,
+              "line": 40,
               "start": 19,
               "end": 20
             }
@@ -699,7 +797,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 42,
+              "line": 41,
               "start": 19,
               "end": 20
             }
