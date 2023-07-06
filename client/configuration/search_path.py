@@ -236,10 +236,12 @@ def process_raw_elements(
             )
         for expanded_raw_element in expanded_raw_elements:
             if isinstance(expanded_raw_element, SitePackageRawElement):
-                added = any(
-                    add_if_exists(expanded_raw_element.to_element(site_root))
-                    for site_root in site_roots
-                )
+                added = False
+                for site_root in site_roots:
+                    if added := add_if_exists(
+                        expanded_raw_element.to_element(site_root)
+                    ):
+                        break
                 if not added:
                     if required:
                         raise exceptions.InvalidConfiguration(
