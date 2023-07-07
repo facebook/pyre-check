@@ -245,5 +245,11 @@ def run(
     check_arguments: command_arguments.CheckArguments,
 ) -> commands.ExitCode:
     check_result = run_check(configuration, check_arguments)
-    incremental.display_type_errors(check_result.errors, output=check_arguments.output)
+    if check_result.exit_code in (
+        commands.ExitCode.SUCCESS,
+        commands.ExitCode.FOUND_ERRORS,
+    ):
+        incremental.display_type_errors(
+            check_result.errors, output=check_arguments.output
+        )
     return check_result.exit_code
