@@ -209,7 +209,7 @@ class ReadLspRequestTest(testslide.TestCase):
         actual_request = await pyre_language_server.read_lsp_request(
             input_channel, output_channel
         )
-        self.assertEquals(actual_request, expected_request)
+        self.assertEqual(actual_request, expected_request)
         self.assertEqual(len(bytes_writer.items()), 0)
 
     @setup.async_test
@@ -245,7 +245,7 @@ class ReadLspRequestTest(testslide.TestCase):
         actual_request = await pyre_language_server.read_lsp_request(
             input_channel, output_channel
         )
-        self.assertEquals(actual_request, expected_request)
+        self.assertEqual(actual_request, expected_request)
         # Two messages for two failed reads
         self.assertEqual(len(bytes_writer.items()), 2)
 
