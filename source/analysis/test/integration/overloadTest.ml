@@ -168,6 +168,11 @@ let test_check_implementation context =
           return 1
     |}
     [];
+  ()
+
+
+let test_check_inferred_return_type context =
+  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import overload, Union
@@ -392,6 +397,7 @@ let () =
   "overload"
   >::: [
          "check_implementation" >:: test_check_implementation;
+         "check_inferred_return_type" >:: test_check_inferred_return_type;
          "decorated_overloads" >:: test_check_decorated_overloads;
          "typing_extensions_overloads" >:: test_typing_extensions_overloads;
        ]
