@@ -215,6 +215,7 @@ module.exports = {
     ...fbInternalOnly([
       {
         'Roadmaps': [
+          'fb/pysa_roadmaps/pysa-h2-2023',
           'fb/pysa_roadmaps/pysa-h1-2023',
           'fb/pysa_roadmaps/pysa-h2-2022',
           'fb/pysa_roadmaps/pysa-h1-2022',
