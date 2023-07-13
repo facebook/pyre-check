@@ -125,11 +125,14 @@ module BuckBuildSystem = struct
     let timer = Timer.start () in
     Lwt.catch
       (fun () ->
+        let start_timestamp = Core_unix.time () |> Int.of_float in
         f ()
         >>= fun result ->
         let millisecond = Timer.stop_in_ms timer in
         let normals = ("version", Version.version ()) :: normals () in
-        let integers = ("runtime", millisecond) :: integers result in
+        let integers =
+          ("start time", start_timestamp) :: ("runtime", millisecond) :: integers result
+        in
         Statistics.buck_event ~normals ~integers ();
         Lwt.return result)
       (fun exn ->
