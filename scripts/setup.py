@@ -163,6 +163,7 @@ class Setup(NamedTuple):
                 self.opam_root.as_posix(),
                 "--set-root",
                 "--set-switch",
+                "--cli=2.1",
             ]
         )
         opam_environment_variables: Dict[str, str] = {}
@@ -185,6 +186,7 @@ class Setup(NamedTuple):
             [
                 "opam",
                 "init",
+                "--cli=2.1",
                 "--bare",
                 "--yes",
                 "--disable-sandboxing",
@@ -194,7 +196,7 @@ class Setup(NamedTuple):
                 "https://opam.ocaml.org",
             ]
         )
-        self.run(["opam", "update", "--root", self.opam_root.as_posix()])
+        self.run(["opam", "update", "--root", self.opam_root.as_posix(), "--cli=2.1"])
         self.run(
             [
                 "opam",
