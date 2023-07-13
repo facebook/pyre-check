@@ -205,6 +205,7 @@ class Setup(NamedTuple):
                 "--yes",
                 "--root",
                 self.opam_root.as_posix(),
+                "--cli=2.1",
             ]
         )
         opam_environment_variables = self.opam_environment_variables()
