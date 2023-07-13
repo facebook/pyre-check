@@ -26,34 +26,27 @@ In addition to [Python and watchman](getting_started.md#requirements), we need a
 [Opam](https://opam.ocaml.org/) to manage our compiler and libraries. You can get Opam via various
 package management systems. Please follow their instructions for your particular operating system.
 
-Once you have Opam on your system, switch to a current compiler with
-
-```bash
-$ opam switch 4.10.2
-```
-
-This will compile the compiler from scratch and is likely going to take some time on your system.
-
-### Building OCaml changes
-With a working OCaml, you can clone the source from [GitHub](https://github.com/facebook/pyre-check) with
+### Building the OCaml binary
+First, clone the repository from [GitHub](https://github.com/facebook/pyre-check) using:
 ```bash
 $ git clone https://github.com/facebook/pyre-check
 ```
 
-You can complete the setup of your development environment with
+You can complete the setup of your development environment with:
 
 ```bash
 $ cd pyre-check
 $ ./scripts/setup.sh --local
 ```
 
-This will generate a `Makefile` in the `source` directory. You can subsequently build and test
-`pyre` with
+This will compile Pyre and run all the unit tests. This is likely going to take some time on your system.
 
+You can now make changes to the code. Run the following commands to compile and test your changes:
 ```bash
 $ make
 $ make test
 ```
+
 ### Testing changes to the Python Client
 In a virtualenv, install dependencies with `requirements.txt` and run python tests to make sure everything is set up correctly
 

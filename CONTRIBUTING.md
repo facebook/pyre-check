@@ -83,11 +83,9 @@ On a high level, Pyre goes through the following steps to when "pyre" is called 
 ## Development Tips and Tricks
 
 ### Getting Started
-- Install `opam` and run `opam switch install "4.10.2"`
-- Run ` ./scripts/setup.sh`
-- After the setup script runs successfully, you should be able to `cd` into `source` and run `make` to build the Pyre binary
+Please refer to the [Getting Started](https://pyre-check.org/docs/installation.html) page for more information on building pyre from source.
 
-Alternatively, you can also set up using [the Docker image](https://pyre-check.org/docs/installation/#building-from-docker) to build from source.
+Alternatively, you can also set up using [the Docker image](https://pyre-check.org/docs/installation/#building-from-docker).
 
 ### How do I test my OCaml changes against real code?
 When you run pyre on the command line, what runs under the hood is a shim which finds and runs a suitable pyre binary. This works well for production use, but isn't great for testing out your own build of Pyre.
