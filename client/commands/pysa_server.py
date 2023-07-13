@@ -212,7 +212,7 @@ class PysaServer:
                 if request.method == "exit":
                     return commands.ExitCode.FAILURE
                 elif request.method == "shutdown":
-                    lsp.write_json_rpc(
+                    await lsp.write_json_rpc(
                         self.output_channel,
                         json_rpc.SuccessResponse(id=request.id, result=None),
                     )

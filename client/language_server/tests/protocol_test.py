@@ -171,7 +171,7 @@ class LSPInputOutputTest(testslide.TestCase):
     @setup.async_test
     async def test_write_json_rpc_ignore_connection_error(self) -> None:
         # This invocation should not raise
-        write_json_rpc_ignore_connection_error(
+        await write_json_rpc_ignore_connection_error(
             AsyncTextWriter(ExceptionRaisingBytesWriter(ConnectionResetError())),
             json_rpc.ErrorResponse(
                 id=None,
