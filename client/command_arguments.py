@@ -51,6 +51,12 @@ class ProfileOutput(enum.Enum):
         return self.value
 
 
+class VersionKind(str, enum.Enum):
+    NONE: str = "none"
+    CLIENT: str = "client"
+    CLIENT_AND_BINARY: str = "client_and_binary"
+
+
 class MissingFlowsKind(str, enum.Enum):
     OBSCURE: str = "obscure"
     TYPE: str = "type"
@@ -64,7 +70,7 @@ class TaintOutputFormat(str, enum.Enum):
 @dataclass(frozen=True)
 class CommandArguments:
     local_configuration: Optional[str] = None
-    version: bool = False
+    version: VersionKind = VersionKind.NONE
     debug: bool = False
     sequential: bool = False
     strict: bool = False

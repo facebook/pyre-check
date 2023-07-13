@@ -194,9 +194,11 @@ def _create_and_check_codenav_configuration(
 @click.pass_context
 @click.option(
     "--version",
-    is_flag=True,
-    default=False,
-    help="Print the client and binary versions of Pyre.",
+    is_flag=False,
+    type=click.Choice([kind.value for kind in command_arguments.VersionKind]),
+    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY,
+    default=command_arguments.VersionKind.NONE,
+    help="Print the versions of Pyre.",
 )
 @click.option("--debug/--no-debug", default=False, hidden=True)
 @click.option(
@@ -320,7 +322,7 @@ def _create_and_check_codenav_configuration(
 @click.option("--number-of-workers", type=int, help="Number of parallel workers to use")
 def pyre(
     context: click.Context,
-    version: bool,
+    version: command_arguments.VersionKind,
     debug: bool,
     sequential: Optional[bool],
     strict: Optional[bool],
@@ -418,9 +420,10 @@ def pyre(
 )
 @click.option(
     "--version",
-    is_flag=True,
-    default=False,
-    help="Print the client and binary versions of Pysa.",
+    is_flag=False,
+    type=click.Choice([kind.value for kind in command_arguments.VersionKind]),
+    flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY,
+    default=command_arguments.VersionKind.NONE,
 )
 @click.option(
     "--save-results-to",
@@ -565,7 +568,7 @@ def analyze(
     no_verify: bool,
     verify_dsl: bool,
     verify_taint_config_only: bool,
-    version: bool,
+    version: command_arguments.VersionKind,
     save_results_to: Optional[str],
     output_format: Optional[str],
     dump_call_graph: Optional[str],
@@ -597,7 +600,7 @@ def analyze(
     Run Pysa, the inter-procedural static analysis tool.
     """
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    if version:
+    if version != command_arguments.VersionKind.NONE:
         _show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
 
