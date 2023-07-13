@@ -33,6 +33,7 @@ jobs:
           echo "CAML_LD_LIBRARY_PATH=$HOME/.opam/4.14.0/lib/stublibs:$HOME/.opam/4.14.0/lib/ocaml/stublibs:$HOME/.opam/4.14.0/lib/ocam" >> $GITHUB_ENV
           echo "$HOME/.opam/4.14.0/bin" >> $GITHUB_PATH
           echo "/home/opam/.opam/4.14.0/bin" >> $GITHUB_PATH
+          echo "OPAMCLI=2.1" >> $GITHUB_ENV
 
       - name: Build Pyre (and Pysa)
         run: |

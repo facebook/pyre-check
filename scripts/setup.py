@@ -209,7 +209,7 @@ class Setup(NamedTuple):
         )
         opam_environment_variables = self.opam_environment_variables()
 
-        opam_install_command = ["opam", "install", "--yes"]
+        opam_install_command = ["opam", "install", "--yes", "--cli=2.1"]
 
         if sys.platform == "linux":
             # setting `--assume-depexts` means that opam will not require a "system"
@@ -233,6 +233,7 @@ class Setup(NamedTuple):
                 self.switch_name(),
                 "--root",
                 self.opam_root.as_posix(),
+                "--cli=2.1",
             ]
         )
 
@@ -240,7 +241,7 @@ class Setup(NamedTuple):
         if rust_path is not None:
             environment_variables["PATH"] = str(rust_path) + ":" + environment_variables["PATH"]
 
-        opam_install_command = ["opam", "install", "--yes"]
+        opam_install_command = ["opam", "install", "--yes", "--cli=2.1"]
 
         if sys.platform == "linux":
             # osx fails on sandcastle with exit status 2 (illegal argument) with this.
