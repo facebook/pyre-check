@@ -398,7 +398,6 @@
    ppx_sexp_conv))
  (ocamlc_flags
   (:standard -custom))
- %CUSTOM_LINKER_OPTION%
  (libraries core_unix.command_unix pyrelib))
 
 (alias

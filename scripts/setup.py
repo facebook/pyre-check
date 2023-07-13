@@ -63,19 +63,6 @@ class BuildType(Enum):
     FACEBOOK = "facebook"
 
 
-def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
-    # HACK: This is a temporary workaround for inconsistent OS installations
-    # in FB-internal CI. Can be removed once all fleets are upgraded.
-    if build_type == BuildType.FACEBOOK and sys.platform == "linux":
-        return (
-            (pyre_directory / "facebook" / "scripts" / "custom_linker_options.txt")
-            .read_text()
-            .rstrip()
-        )
-    else:
-        return ""
-
-
 class Setup(NamedTuple):
     opam_root: Path
 
@@ -117,10 +104,7 @@ class Setup(NamedTuple):
             with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
                 dune.write(
-                    dune_data.replace("%VERSION%", build_type.value).replace(
-                        "%CUSTOM_LINKER_OPTION%",
-                        _custom_linker_option(pyre_directory, build_type),
-                    )
+                    dune_data.replace("%VERSION%", build_type.value)
                 )
 
     def check_if_preinstalled(self) -> None:
