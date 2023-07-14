@@ -424,6 +424,7 @@ def pyre(
     type=click.Choice([kind.value for kind in command_arguments.VersionKind]),
     flag_value=command_arguments.VersionKind.CLIENT_AND_BINARY,
     default=command_arguments.VersionKind.NONE,
+    help="Print the versions of Pysa.",
 )
 @click.option(
     "--save-results-to",
