@@ -373,8 +373,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         document_path: Path,
         position: lsp.LspPosition,
     ) -> Optional[str]:
-        downsample_rate = 100
-        if random.randrange(0, downsample_rate) != 0:
+        sample_percent = 5
+        if random.randrange(0, 100) >= sample_percent:
             LOG.debug("Skipping file content sampling.")
             return None
         if document_path not in self.server_state.opened_documents:
@@ -756,9 +756,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=output_result,
                 ),
             )
-        source_code_if_sampled = self.sample_source_code(
-            document_path,
-            parameters.position,
+        # Only sample if response is empty
+        source_code_if_sampled = (
+            self.sample_source_code(
+                document_path,
+                parameters.position,
+            )
+            if len(output_result) == 0
+            else None
         )
         character_at_position = SourceCodeContext.character_at_position(
             self.server_state.opened_documents[document_path].code, parameters.position
