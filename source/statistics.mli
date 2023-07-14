@@ -76,8 +76,7 @@ val buck_event
 val log_worker_exception : pid:int -> origin:string -> Unix.process_status -> unit
 
 val errpy_call
-  :  flush:bool ->
-  name:string ->
+  :  name:string ->
   timer:Timer.t ->
   integers:(string * int) list ->
   normals:(string * string) list ->
