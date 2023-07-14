@@ -41,9 +41,10 @@ class Info(dataclasses_json.DataClassJsonMixin):
     current_codenav_server_logs: str
 
     def display(self) -> str:
+        max_key_length = max(len(key) for key, _ in self.to_dict().items()) + 1
         return "\n".join(
             [
-                f"{key}: {value}"
+                f"{str(key).ljust(max_key_length)}: {value}"
                 for key, value in self.to_dict().items()
                 if value is not None
             ]
@@ -103,6 +104,7 @@ def run_info(
         configuration=configuration,
         arguments=arguments,
     )
+
     if arguments.output == command_arguments.JSON:
         print(info.to_json(indent=2))
     else:
