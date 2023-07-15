@@ -1554,7 +1554,7 @@ def run_default_command(
     **kwargs: object,
 ) -> commands.ExitCode:
     command_argument: command_arguments.CommandArguments = context.obj["arguments"]
-    if command_argument.version:
+    if command_argument.version != command_arguments.VersionKind.NONE:
         _show_pyre_version(command_argument)
         return commands.ExitCode.SUCCESS
     elif context.invoked_subcommand is None:
