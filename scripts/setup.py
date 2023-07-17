@@ -103,9 +103,7 @@ class Setup(NamedTuple):
         with open(pyre_directory / "source" / "dune.in") as dune_in:
             with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
-                dune.write(
-                    dune_data.replace("%VERSION%", build_type.value)
-                )
+                dune.write(dune_data.replace("%VERSION%", build_type.value))
 
     def check_if_preinstalled(self) -> None:
         if self.environment_variables.get(
@@ -208,7 +206,9 @@ class Setup(NamedTuple):
 
         return opam_environment_variables
 
-    def set_opam_switch_and_install_dependencies(self, rust_path: Optional[Path]) -> Mapping[str, str]:
+    def set_opam_switch_and_install_dependencies(
+        self, rust_path: Optional[Path]
+    ) -> Mapping[str, str]:
         self.run(
             [
                 "opam",
@@ -222,7 +222,9 @@ class Setup(NamedTuple):
 
         environment_variables = self.opam_environment_variables()
         if rust_path is not None:
-            environment_variables["PATH"] = str(rust_path) + ":" + environment_variables["PATH"]
+            environment_variables["PATH"] = (
+                str(rust_path) + ":" + environment_variables["PATH"]
+            )
 
         opam_install_command = ["opam", "install", "--yes"]
 
@@ -233,10 +235,7 @@ class Setup(NamedTuple):
 
         opam_install_command += DEPENDENCIES
 
-        self.run(
-            opam_install_command,
-            add_environment_variables=environment_variables
-        )
+        self.run(opam_install_command, add_environment_variables=environment_variables)
         return environment_variables
 
     def full_setup(
@@ -246,7 +245,7 @@ class Setup(NamedTuple):
         run_tests: bool = False,
         run_clean: bool = False,
         build_type_override: Optional[BuildType] = None,
-        rust_path: Optional[Path] = None
+        rust_path: Optional[Path] = None,
     ) -> None:
         opam_environment_variables: Mapping[
             str, str
@@ -298,9 +297,11 @@ class Setup(NamedTuple):
                 env=environment_variables,
             )
         except CalledProcessError as called_process_error:
-            LOG.info(f'Command: {command} returned non zero exit code.\n\
-            stdout: {called_process_error.stdout}\n\
-            stderr: {called_process_error.stderr}')
+            LOG.info(
+                f"Command: {command} returned non zero exit code.\n"
+                f"stdout: {called_process_error.stdout}\n"
+                f"stderr: {called_process_error.stderr}"
+            )
             raise called_process_error
 
         if output.endswith("\n"):
@@ -364,7 +365,7 @@ def setup(runner_type: Type[Setup]) -> None:
             pyre_directory,
             run_tests=not parsed.no_tests,
             build_type_override=parsed.build_type,
-            rust_path=parsed.rust_path
+            rust_path=parsed.rust_path,
         )
 
 
