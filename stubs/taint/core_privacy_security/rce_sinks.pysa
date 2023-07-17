@@ -19,7 +19,7 @@ def pickle.loads(
   buffers,
 ): ...
 def pickle.load(
-    file: TaintSink[ExecDeserializationSink],
+    file: TaintSink[FileContentDeserializationSink],
     *,
     fix_imports,
     encoding,
@@ -28,7 +28,7 @@ def pickle.load(
   ): ...
 def pickle.Unpickler.__init__(
     self,
-    file: TaintSink[ExecDeserializationSink],
+    file: TaintSink[FileContentDeserializationSink],
     fix_imports,
     encoding,
     errors
@@ -240,7 +240,7 @@ def marshal.loads(__bytes: TaintSink[ExecDeserializationSink]): ...
 def marshal.load(__file: TaintSink[FileSystem_Other]): ...
 
 # shelve library https://docs.python.org/3/library/shelve.html
-def shelve.open(filename: TaintSink[ExecDeserializationSink], flag, protocol, writeback): ...
+def shelve.open(filename: TaintSink[FileContentDeserializationSink], flag, protocol, writeback): ...
 
 # Features https://docs.python.org/3/library/shlex.html#shlex.quote
 @SkipObscure
