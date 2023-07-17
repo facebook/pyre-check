@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
-from typing import Dict, List, Mapping, NamedTuple, Optional, Type
+from typing import Dict, List, Mapping, NamedTuple, Tuple, Optional, Type
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -58,15 +58,41 @@ class OldOpam(Exception):
     pass
 
 
+class OpamVersionParseError(Exception):
+    pass
+
+
 class BuildType(Enum):
     EXTERNAL = "external"
     FACEBOOK = "facebook"
 
 
+def detect_opam_version() -> Tuple[int]:
+    LOG.info(["opam", "--version"])
+    version = subprocess.check_output(["opam", "--version"], universal_newlines=True)
+
+    try:
+        version = tuple(map(int, version.strip().split(".")))
+    except ValueError:
+        LOG.error("Failed to parse output of `opam --version`: `{}`", version.strip())
+        raise OpamVersionParseError
+
+    LOG.info(f"Found opam version {'.'.join(map(str, version))}")
+
+    if version[0] != 2:
+        LOG.error(
+            "Pyre only supports opam 2.0.0 and above, please update your "
+            + "opam version."
+        )
+        raise OldOpam
+
+    return version
+
+
 class Setup(NamedTuple):
     opam_root: Path
-
-    release: bool = False
+    opam_version: Tuple[int]
+    release: bool
 
     def switch_name(self) -> str:
         return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
@@ -87,6 +113,17 @@ class Setup(NamedTuple):
                     "ocaml-options-only-flambda",
                 ]
             )
+
+    def opam_command(self) -> List[str]:
+        command = ["opam"]
+
+        # We need to explicitly set the opam cli version we are using,
+        # otherwise it automatically uses `2.0` which means we can't use
+        # some options from 2.1 such as `--assume-depexts`.
+        if self.opam_version >= (2, 1):
+            command.append("--cli=2.1")
+
+        return command
 
     @property
     def environment_variables(self) -> Mapping[str, str]:
@@ -123,20 +160,11 @@ class Setup(NamedTuple):
     def already_initialized(self) -> bool:
         return Path(self.opam_root.as_posix()).is_dir()
 
-    def validate_opam_version(self) -> None:
-        version = self.run(["opam", "--version"])
-        if version[:1] != "2":
-            LOG.error(
-                "Pyre only supports opam 2.0.0 and above, please update your "
-                + "opam version."
-            )
-            raise OldOpam
-
     def opam_environment_variables(self) -> Dict[str, str]:
         LOG.info("Activating opam")
         opam_env_result = self.run(
-            [
-                "opam",
+            self.opam_command()
+            + [
                 "env",
                 "--yes",
                 "--switch",
@@ -162,10 +190,9 @@ class Setup(NamedTuple):
     def initialize_opam_switch(self) -> Mapping[str, str]:
         self.check_if_preinstalled()
 
-        self.validate_opam_version()
         self.run(
-            [
-                "opam",
+            self.opam_command()
+            + [
                 "init",
                 "--bare",
                 "--yes",
@@ -176,10 +203,17 @@ class Setup(NamedTuple):
                 "https://opam.ocaml.org",
             ]
         )
-        self.run(["opam", "update", "--root", self.opam_root.as_posix()])
         self.run(
-            [
-                "opam",
+            self.opam_command()
+            + [
+                "update",
+                "--root",
+                self.opam_root.as_posix(),
+            ]
+        )
+        self.run(
+            self.opam_command()
+            + [
                 "switch",
                 "create",
                 self.switch_name(),
@@ -191,9 +225,9 @@ class Setup(NamedTuple):
         )
         opam_environment_variables = self.opam_environment_variables()
 
-        opam_install_command = ["opam", "install", "--yes"]
+        opam_install_command = self.opam_command() + ["install", "--yes"]
 
-        if sys.platform == "linux":
+        if sys.platform == "linux" and self.opam_version >= (2, 1):
             # setting `--assume-depexts` means that opam will not require a "system"
             # installed version of Rust (e.g. via `dnf`` or `yum`) but will instead
             # accept a version referenced on the system `$PATH`
@@ -210,8 +244,8 @@ class Setup(NamedTuple):
         self, rust_path: Optional[Path]
     ) -> Mapping[str, str]:
         self.run(
-            [
-                "opam",
+            self.opam_command()
+            + [
                 "switch",
                 "set",
                 self.switch_name(),
@@ -226,7 +260,7 @@ class Setup(NamedTuple):
                 str(rust_path) + ":" + environment_variables["PATH"]
             )
 
-        opam_install_command = ["opam", "install", "--yes"]
+        opam_install_command = self.opam_command() + ["install", "--yes"]
 
         if sys.platform == "linux":
             # osx fails on sandcastle with exit status 2 (illegal argument) with this.
@@ -351,7 +385,9 @@ def setup(runner_type: Type[Setup]) -> None:
 
     opam_root = _make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
 
-    runner = runner_type(opam_root=opam_root, release=parsed.release)
+    runner = runner_type(
+        opam_root=opam_root, opam_version=detect_opam_version(), release=parsed.release
+    )
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
     elif parsed.environment_only:
