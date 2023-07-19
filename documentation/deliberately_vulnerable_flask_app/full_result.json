@@ -11,6 +11,17 @@
     "define": "app.definite_pt"
   },
   {
+    "line": 40,
+    "column": 4,
+    "stop_line": 40,
+    "stop_column": 15,
+    "path": "app.py",
+    "code": 5015,
+    "name": "User input returned to user",
+    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
+    "define": "app.definite_pt"
+  },
+  {
     "line": 38,
     "column": 13,
     "stop_line": 38,
@@ -77,15 +88,15 @@
     "define": "app.definite_xss"
   },
   {
-    "line": 62,
-    "column": 21,
-    "stop_line": 62,
-    "stop_column": 28,
+    "line": 45,
+    "column": 4,
+    "stop_line": 45,
+    "stop_column": 35,
     "path": "app.py",
-    "code": 5007,
-    "name": "User data to XML Parser.",
-    "description": "User data to XML Parser. [5007]: Data from [UserControlled] source(s) may reach [XMLParser] sink(s)",
-    "define": "app.definite_xxe"
+    "code": 5015,
+    "name": "User input returned to user",
+    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
+    "define": "app.definite_xss"
   },
   {
     "line": 81,
@@ -165,6 +176,17 @@
     "define": "app.user_data_to_filesystem_read_write_tp"
   },
   {
+    "line": 77,
+    "column": 4,
+    "stop_line": 77,
+    "stop_column": 15,
+    "path": "app.py",
+    "code": 5015,
+    "name": "User input returned to user",
+    "description": "User input returned to user [5015]: Data from [UserControlled] source(s) may reach [ReturnedToUser] sink(s)",
+    "define": "app.user_data_to_filesystem_read_write_tp"
+  },
+  {
     "line": 75,
     "column": 14,
     "stop_line": 75,
@@ -187,20 +209,9 @@
     "define": "app.user_data_to_getattr_tp"
   },
   {
-    "line": 66,
+    "line": 497,
     "column": 35,
-    "stop_line": 66,
-    "stop_column": 42,
-    "path": "app.py",
-    "code": 5010,
-    "name": "User data to getattr",
-    "description": "User data to getattr [5010]: Attacker may control at least one argument to getattr(,).",
-    "define": "app.user_data_to_getattr_tp"
-  },
-  {
-    "line": 708,
-    "column": 35,
-    "stop_line": 708,
+    "stop_line": 497,
     "stop_column": 39,
     "path": "*",
     "code": 5046,
@@ -209,9 +220,9 @@
     "define": "flask.app.Flask.__init__"
   },
   {
-    "line": 708,
+    "line": 497,
     "column": 35,
-    "stop_line": 708,
+    "stop_line": 497,
     "stop_column": 39,
     "path": "*",
     "code": 5018,
@@ -220,9 +231,9 @@
     "define": "flask.app.Flask.__init__"
   },
   {
-    "line": 1826,
+    "line": 1487,
     "column": 37,
-    "stop_line": 1826,
+    "stop_line": 1487,
     "stop_column": 39,
     "path": "*",
     "code": 5046,
@@ -231,9 +242,9 @@
     "define": "flask.app.Flask.full_dispatch_request"
   },
   {
-    "line": 1826,
+    "line": 1487,
     "column": 37,
-    "stop_line": 1826,
+    "stop_line": 1487,
     "stop_column": 39,
     "path": "*",
     "code": 5046,
@@ -242,9 +253,9 @@
     "define": "flask.app.Flask.full_dispatch_request"
   },
   {
-    "line": 1826,
+    "line": 1487,
     "column": 37,
-    "stop_line": 1826,
+    "stop_line": 1487,
     "stop_column": 39,
     "path": "*",
     "code": 5018,
@@ -253,9 +264,9 @@
     "define": "flask.app.Flask.full_dispatch_request"
   },
   {
-    "line": 1826,
+    "line": 1487,
     "column": 37,
-    "stop_line": 1826,
+    "stop_line": 1487,
     "stop_column": 39,
     "path": "*",
     "code": 5018,
@@ -264,9 +275,9 @@
     "define": "flask.app.Flask.full_dispatch_request"
   },
   {
-    "line": 2343,
+    "line": 2005,
     "column": 48,
-    "stop_line": 2343,
+    "stop_line": 2005,
     "stop_column": 52,
     "path": "*",
     "code": 5046,
@@ -275,9 +286,9 @@
     "define": "flask.app.Flask.process_response"
   },
   {
-    "line": 2343,
+    "line": 2005,
     "column": 48,
-    "stop_line": 2343,
+    "stop_line": 2005,
     "stop_column": 52,
     "path": "*",
     "code": 5018,
@@ -286,9 +297,9 @@
     "define": "flask.app.Flask.process_response"
   },
   {
-    "line": 2527,
+    "line": 2189,
     "column": 16,
-    "stop_line": 2527,
+    "stop_line": 2189,
     "stop_column": 19,
     "path": "*",
     "code": 5046,
@@ -297,9 +308,9 @@
     "define": "flask.app.Flask.wsgi_app"
   },
   {
-    "line": 2544,
+    "line": 2206,
     "column": 12,
-    "stop_line": 2544,
+    "stop_line": 2206,
     "stop_column": 15,
     "path": "*",
     "code": 5046,
@@ -308,9 +319,9 @@
     "define": "flask.app.Flask.wsgi_app"
   },
   {
-    "line": 2527,
+    "line": 2189,
     "column": 16,
-    "stop_line": 2527,
+    "stop_line": 2189,
     "stop_column": 19,
     "path": "*",
     "code": 5018,
@@ -319,36 +330,14 @@
     "define": "flask.app.Flask.wsgi_app"
   },
   {
-    "line": 2544,
+    "line": 2206,
     "column": 12,
-    "stop_line": 2544,
+    "stop_line": 2206,
     "stop_column": 15,
     "path": "*",
     "code": 5018,
     "name": "Open redirect",
     "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
     "define": "flask.app.Flask.wsgi_app"
-  },
-  {
-    "line": 380,
-    "column": 40,
-    "stop_line": 380,
-    "stop_column": 43,
-    "path": "*",
-    "code": 5046,
-    "name": "XSS",
-    "description": "XSS [5046]: Data from [UserControlled] source(s) may reach [TriggeredPartialSink[UserControlledAndStringMayBeHTML[main]]] sink(s)",
-    "define": "flask.sessions.SecureCookieSessionInterface.save_session"
-  },
-  {
-    "line": 380,
-    "column": 40,
-    "stop_line": 380,
-    "stop_column": 43,
-    "path": "*",
-    "code": 5018,
-    "name": "Open redirect",
-    "description": "Open redirect [5018]: Data from [UserControlled] source(s) may be used in an open redirect via [Redirect] sink(s)",
-    "define": "flask.sessions.SecureCookieSessionInterface.save_session"
   }
 ]
