@@ -12,96 +12,7 @@ open Pyre
 open Ast
 open Statement
 
-module Attribute : sig
-  type getter_property = {
-    self: Expression.t option;
-    return: Expression.t option;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type setter_property = {
-    self: Expression.t option;
-    value: Expression.t option;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type property_kind =
-    | ReadOnly of { getter: getter_property }
-    | ReadWrite of {
-        getter: getter_property;
-        setter: setter_property;
-      }
-  [@@deriving compare, sexp, show, hash]
-
-  type origin =
-    | Explicit
-    | Implicit
-  [@@deriving compare, sexp, show, hash]
-
-  type value_and_origin = {
-    value: Expression.t;
-    origin: origin;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type simple = {
-    annotation: Expression.t option;
-    values: value_and_origin list;
-    primitive: bool;
-    frozen: bool;
-    toplevel: bool;
-    implicit: bool;
-    nested_class: bool;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type method_ = {
-    signatures: Define.Signature.t list;
-    static: bool;
-    final: bool;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type property = {
-    async: bool;
-    class_property: bool;
-    kind: property_kind;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type kind =
-    | Simple of simple
-    | Method of method_
-    | Property of property
-  [@@deriving compare, sexp, show, hash]
-
-  type attribute = {
-    kind: kind;
-    name: Identifier.t;
-  }
-  [@@deriving compare, sexp, show, hash]
-
-  type t = attribute Node.t [@@deriving compare, sexp, show, hash]
-
-  val create_simple
-    :  location:Location.t ->
-    ?annotation:Expression.t ->
-    ?value_and_origin:value_and_origin ->
-    ?primitive:bool ->
-    ?frozen:bool ->
-    ?toplevel:bool ->
-    ?implicit:bool ->
-    ?nested_class:bool ->
-    name:string ->
-    unit ->
-    t
-
-  val name : parent:Reference.t -> Expression.t -> string option
-
-  val location_insensitive_compare : t -> t -> int
-
-  val location_insensitive_compare_kind : kind -> kind -> int
-end = struct
+module Attribute = struct
   type getter_property = {
     self: Expression.t option;
     return: Expression.t option;
@@ -1027,156 +938,144 @@ module ClassAttributes = struct
   end
 end
 
-module ClassSummary = struct
-  type bases = {
-    base_classes: Expression.t list;
-    metaclass: Expression.t option;
-    init_subclass_arguments: Expression.Call.Argument.t list;
-  }
-  [@@deriving compare, sexp, show, hash, to_yojson]
+type bases = {
+  base_classes: Expression.t list;
+  metaclass: Expression.t option;
+  init_subclass_arguments: Expression.Call.Argument.t list;
+}
+[@@deriving compare, sexp, show, hash, to_yojson]
 
-  type t = {
-    name: Reference.t;
-    qualifier: Reference.t;
-    bases: bases;
-    decorators: Expression.t list;
-    class_attributes: ClassAttributes.t;
-  }
-  [@@deriving compare, sexp, show, hash]
+type t = {
+  name: Reference.t;
+  qualifier: Reference.t;
+  bases: bases;
+  decorators: Expression.t list;
+  class_attributes: ClassAttributes.t;
+}
+[@@deriving compare, sexp, show, hash]
 
-  let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
-    let bases =
-      {
-        base_classes = Ast.Statement.Class.base_classes class_definition;
-        metaclass = Ast.Statement.Class.metaclass class_definition;
-        init_subclass_arguments = Ast.Statement.Class.init_subclass_arguments class_definition;
-      }
-    in
+let create ~qualifier ({ Ast.Statement.Class.name; decorators; _ } as class_definition) =
+  let bases =
     {
-      name;
-      qualifier;
-      bases;
-      decorators;
-      class_attributes = ClassAttributes.create class_definition;
+      base_classes = Ast.Statement.Class.base_classes class_definition;
+      metaclass = Ast.Statement.Class.metaclass class_definition;
+      init_subclass_arguments = Ast.Statement.Class.init_subclass_arguments class_definition;
     }
+  in
+  { name; qualifier; bases; decorators; class_attributes = ClassAttributes.create class_definition }
 
 
-  let is_protocol { bases = { base_classes; _ }; _ } =
-    let is_protocol { Node.value; _ } =
-      let open Expression in
-      match value with
-      | Expression.Call
-          {
-            callee =
-              {
-                Node.value =
-                  Name
-                    (Attribute
-                      {
-                        base =
-                          {
-                            Node.value =
-                              Name
-                                (Attribute
-                                  {
-                                    base = { Node.value = Name (Identifier typing); _ };
-                                    attribute = "Protocol";
-                                    _;
-                                  });
-                            _;
-                          };
-                        attribute = "__getitem__";
-                        _;
-                      });
-                _;
-              };
-            _;
-          }
-      | Name
-          (Attribute
-            { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ })
-        when String.equal typing "typing" || String.equal typing "typing_extensions" ->
-          true
-      | _ -> false
-    in
-    List.exists ~f:is_protocol base_classes
-
-
-  let has_decorator { decorators; _ } decorator =
-    Expression.exists_in_list ~expression_list:decorators decorator
-
-
-  let is_final definition =
-    has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
-
-
-  let is_abstract { bases = { base_classes; metaclass; _ }; _ } =
+let is_protocol { bases = { base_classes; _ }; _ } =
+  let is_protocol { Node.value; _ } =
     let open Expression in
-    let is_abstract_base_class { Node.value; _ } =
-      match value with
-      | Expression.Name
-          (Attribute { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABC"; _ })
-        ->
-          true
-      | _ -> false
-    in
-    let is_abstract_metaclass = function
-      | Some
-          {
-            Node.value =
-              Expression.Name
-                (Attribute
-                  { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABCMeta"; _ });
-            _;
-          } ->
-          true
-      | _ -> false
-    in
-    List.exists base_classes ~f:is_abstract_base_class || is_abstract_metaclass metaclass
-
-
-  let fields_tuple_value { class_attributes; _ } =
-    let attributes =
-      ClassAttributes.attributes ~include_generated_attributes:false ~in_test:false class_attributes
-    in
-    match Identifier.SerializableMap.find_opt "_fields" attributes with
-    | Some
+    match value with
+    | Expression.Call
         {
-          Node.value =
+          callee =
             {
-              kind =
-                Simple
-                  { values = [{ origin = Explicit; value = { Node.value = Tuple fields; _ } }]; _ };
+              Node.value =
+                Name
+                  (Attribute
+                    {
+                      base =
+                        {
+                          Node.value =
+                            Name
+                              (Attribute
+                                {
+                                  base = { Node.value = Name (Identifier typing); _ };
+                                  attribute = "Protocol";
+                                  _;
+                                });
+                          _;
+                        };
+                      attribute = "__getitem__";
+                      _;
+                    });
               _;
             };
           _;
+        }
+    | Name
+        (Attribute
+          { base = { Node.value = Name (Identifier typing); _ }; attribute = "Protocol"; _ })
+      when String.equal typing "typing" || String.equal typing "typing_extensions" ->
+        true
+    | _ -> false
+  in
+  List.exists ~f:is_protocol base_classes
+
+
+let has_decorator { decorators; _ } decorator =
+  Expression.exists_in_list ~expression_list:decorators decorator
+
+
+let is_final definition =
+  has_decorator definition "typing.final" || has_decorator definition "typing_extensions.final"
+
+
+let is_abstract { bases = { base_classes; metaclass; _ }; _ } =
+  let open Expression in
+  let is_abstract_base_class { Node.value; _ } =
+    match value with
+    | Expression.Name
+        (Attribute { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABC"; _ }) ->
+        true
+    | _ -> false
+  in
+  let is_abstract_metaclass = function
+    | Some
+        {
+          Node.value =
+            Expression.Name
+              (Attribute
+                { base = { Node.value = Name (Identifier "abc"); _ }; attribute = "ABCMeta"; _ });
+          _;
         } ->
-        let name = function
-          | {
-              Node.value =
-                Ast.Expression.(Expression.Constant (Constant.String { StringLiteral.value; _ }));
-              _;
-            } ->
-              Some value
-          | _ -> None
-        in
-        Some (List.filter_map fields ~f:name)
-    | _ -> None
+        true
+    | _ -> false
+  in
+  List.exists base_classes ~f:is_abstract_base_class || is_abstract_metaclass metaclass
 
 
-  let name { name; _ } = name
+let fields_tuple_value { class_attributes; _ } =
+  let attributes =
+    ClassAttributes.attributes ~include_generated_attributes:false ~in_test:false class_attributes
+  in
+  match Identifier.SerializableMap.find_opt "_fields" attributes with
+  | Some
+      {
+        Node.value =
+          {
+            kind =
+              Simple
+                { values = [{ origin = Explicit; value = { Node.value = Tuple fields; _ } }]; _ };
+            _;
+          };
+        _;
+      } ->
+      let name = function
+        | {
+            Node.value =
+              Ast.Expression.(Expression.Constant (Constant.String { StringLiteral.value; _ }));
+            _;
+          } ->
+            Some value
+        | _ -> None
+      in
+      Some (List.filter_map fields ~f:name)
+  | _ -> None
 
-  let bases { bases; _ } = bases
 
-  let base_classes { bases = { base_classes; _ }; _ } = base_classes
+let name { name; _ } = name
 
-  let constructor_attributes { class_attributes = { ClassAttributes.constructor_attributes; _ }; _ }
-    =
-    constructor_attributes
+let bases { bases; _ } = bases
+
+let base_classes { bases = { base_classes; _ }; _ } = base_classes
+
+let constructor_attributes { class_attributes = { ClassAttributes.constructor_attributes; _ }; _ } =
+  constructor_attributes
 
 
-  let attributes ?(include_generated_attributes = true) ?(in_test = false) { class_attributes; _ } =
-    ClassAttributes.attributes ~include_generated_attributes ~in_test class_attributes
-end
-
-include ClassSummary
+let attributes ?(include_generated_attributes = true) ?(in_test = false) { class_attributes; _ } =
+  ClassAttributes.attributes ~include_generated_attributes ~in_test class_attributes
