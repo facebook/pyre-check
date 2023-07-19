@@ -75,7 +75,13 @@ let assert_rules_equal ~actual ~expected =
     expected
 
 
-let named name = { AnnotationParser.name; kind = Named }
+let without_locations sources_or_sinks =
+  List.map
+    ~f:(fun source_or_sink -> { source_or_sink with AnnotationParser.location = None })
+    sources_or_sinks
+
+
+let named name = { AnnotationParser.name; kind = Named; location = None }
 
 let test_simple _ =
   let configuration =
@@ -108,8 +114,8 @@ let test_simple _ =
     }
   |}
   in
-  assert_equal configuration.sources [named "A"; named "B"];
-  assert_equal configuration.sinks [named "C"; named "D"];
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"];
+  assert_equal (without_locations configuration.sinks) [named "C"; named "D"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
   assert_equal (List.hd_exn configuration.rules).code 2001;
@@ -345,7 +351,7 @@ let test_combined_source_rules _ =
     }
   |}
   in
-  assert_equal configuration.sources [named "A"; named "B"];
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"];
   assert_equal configuration.sinks [];
   assert_rules_equal
     ~actual:configuration.rules
@@ -413,7 +419,7 @@ let test_combined_source_rules _ =
     }
   |}
   in
-  assert_equal configuration.sources [named "A"; named "B"; named "C"];
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal configuration.sinks [];
   assert_equal
     (TaintConfiguration.PartialSinkLabelsMap.to_alist configuration.partial_sink_labels)
@@ -565,7 +571,7 @@ let test_string_combine_rules _ =
     }
   |}
   in
-  assert_equal configuration.sources [named "A"; named "B"; named "C"];
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"; named "C"];
   assert_equal
     [
       ( "UserDefinedPartialSink",
@@ -744,8 +750,8 @@ let test_multiple_configurations _ =
     | Error _ -> assert_failure "Failed to parse configuration"
     | Ok configuration -> configuration
   in
-  assert_equal configuration.sources [named "A"; named "B"];
-  assert_equal configuration.sinks [named "C"; named "D"];
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"];
+  assert_equal (without_locations configuration.sinks) [named "C"; named "D"];
   assert_equal configuration.features ["E"; "F"];
   assert_equal (List.length configuration.rules) 1;
   assert_equal (List.hd_exn configuration.rules).code 2001;
@@ -776,7 +782,24 @@ let test_validate _ =
     assert_equal ~printer (Error [error]) result
   in
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.SourceDuplicate "UserControlled"]
+    ~errors:
+      [
+        TaintConfiguration.Error.SourceDuplicate
+          {
+            name = "UserControlled";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 4; column = 18 };
+                      stop = { line = 4; column = 33 };
+                    };
+                };
+          };
+      ]
     {|
     {
       "sources": [
@@ -830,7 +853,21 @@ let test_validate _ =
   assert_parse_error
     ~errors:
       [
-        TaintConfiguration.Error.SourceDuplicate "UserControlled";
+        TaintConfiguration.Error.SourceDuplicate
+          {
+            name = "UserControlled";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 4; column = 18 };
+                      stop = { line = 4; column = 33 };
+                    };
+                };
+          };
         TaintConfiguration.Error.SinkDuplicate "Test";
         TaintConfiguration.Error.FeatureDuplicate "concat";
       ]
@@ -851,7 +888,24 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.SourceDuplicate "UserControlled"]
+    ~errors:
+      [
+        TaintConfiguration.Error.SourceDuplicate
+          {
+            name = "UserControlled";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 5; column = 18 };
+                      stop = { line = 5; column = 33 };
+                    };
+                };
+          };
+      ]
     {|
     {
       "sources": [
@@ -1131,7 +1185,7 @@ let test_implicit_sources _ =
            }
        |}
   in
-  assert_equal configuration.sources [named "StringDigit"];
+  assert_equal (without_locations configuration.sources) [named "StringDigit"];
   match configuration.implicit_sources with
   | { TaintConfiguration.literal_strings = [{ pattern; source_kind }] } ->
       assert_equal ~cmp:Sources.equal source_kind (Sources.NamedSource "StringDigit");
@@ -1169,7 +1223,7 @@ let test_implicit_sinks _ =
            }
      |}
   in
-  assert_equal configuration.sinks [named "HTMLContainer"];
+  assert_equal (without_locations configuration.sinks) [named "HTMLContainer"];
   match configuration.implicit_sinks with
   | { TaintConfiguration.literal_string_sinks = [{ pattern; sink_kind }]; _ } ->
       assert_equal ~cmp:Sinks.equal sink_kind (Sinks.NamedSink "HTMLContainer");

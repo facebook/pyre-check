@@ -30,14 +30,14 @@ let set_up_environment
   in
   let project = ScratchProject.setup ~context ["test.py", source] in
   let taint_configuration =
-    let named name = { AnnotationParser.name; kind = Named } in
+    let named name = { AnnotationParser.name; kind = Named; location = None } in
     let sources =
       [
         named "TestTest";
         named "UserControlled";
         named "Test";
         named "Demo";
-        { AnnotationParser.name = "WithSubkind"; kind = Parametric };
+        { AnnotationParser.name = "WithSubkind"; kind = Parametric; location = None };
       ]
     in
     let sinks =
@@ -47,7 +47,7 @@ let set_up_environment
         named "Test";
         named "Demo";
         named "XSS";
-        { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric };
+        { AnnotationParser.name = "TestSinkWithSubkind"; kind = Parametric; location = None };
       ]
     in
     let transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"] in
@@ -183,8 +183,13 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       {
         empty with
         sources =
-          List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["A"; "B"; "Test"];
-        sinks = List.map ~f:(fun name -> { AnnotationParser.name; kind = Named }) ["X"; "Y"; "Test"];
+          List.map
+            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ["A"; "B"; "Test"];
+        sinks =
+          List.map
+            ~f:(fun name -> { AnnotationParser.name; kind = Named; location = None })
+            ["X"; "Y"; "Test"];
         features = ["featureA"; "featureB"];
         rules = [];
         partial_sink_labels =

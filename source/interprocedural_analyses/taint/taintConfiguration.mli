@@ -149,7 +149,10 @@ module Error : sig
         previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
       }
     | OptionDuplicate of string
-    | SourceDuplicate of string
+    | SourceDuplicate of {
+        name: string;
+        previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
+      }
     | SinkDuplicate of string
     | TransformDuplicate of string
     | FeatureDuplicate of string
