@@ -159,16 +159,35 @@ class TaintConfigurationError:
     path: Optional[Path]
     description: str
     code: int
+    start_line: Optional[int]
+    start_column: Optional[int]
+    stop_line: Optional[int]
+    stop_column: Optional[int]
 
     @staticmethod
     def from_json(error_json: Dict[str, Any]) -> "TaintConfigurationError":
         try:
+            error_location = error_json["location"]
+            if error_location is not None:
+                start_line = error_location["start"]["line"]
+                start_column = error_location["start"]["column"]
+                stop_line = error_location["stop"]["line"]
+                stop_column = error_location["stop"]["column"]
+            else:
+                start_line = None
+                start_column = None
+                stop_line = None
+                stop_column = None
             return TaintConfigurationError(
                 path=Path(error_json["path"])
                 if error_json["path"] is not None
                 else None,
                 description=error_json["description"],
                 code=error_json["code"],
+                start_line=start_line,
+                start_column=start_column,
+                stop_line=stop_line,
+                stop_column=stop_column,
             )
         except KeyError as key_error:
             message = f"Missing field from error json: {key_error}"
@@ -190,11 +209,21 @@ class TaintConfigurationError:
             "path": str(self.path) if self.path is not None else None,
             "description": self.description,
             "code": self.code,
+            "start_line": self.start_line,
+            "start_column": self.start_column,
+            "stop_line": self.stop_line,
+            "stop_column": self.stop_column,
         }
 
     def to_text(self) -> str:
         path = click.style(str(self.path or "?"), fg="red")
-        return f"{path} {self.description}"
+        location = click.style(
+            f":{self.start_line}:{self.start_column}"
+            if (self.start_line is not None) and (self.start_column is not None)
+            else "",
+            fg="red",
+        )
+        return f"{path}{location} {self.description}"
 
     def to_sarif(self) -> Dict[str, Any]:
         return {
@@ -210,10 +239,18 @@ class TaintConfigurationError:
                             "uri": str(self.path) if self.path is not None else None,
                         },
                         "region": {
-                            "startLine": 0,
-                            "startColumn": 0,
-                            "endLine": 0,
-                            "endColumn": 1,
+                            "startLine": self.start_line
+                            if self.start_line is not None
+                            else 0,
+                            "startColumn": self.start_column
+                            if self.start_column is not None
+                            else 0,
+                            "endLine": self.stop_line
+                            if self.stop_line is not None
+                            else 0,
+                            "endColumn": self.stop_column
+                            if self.stop_column is not None
+                            else 1,
                         },
                     },
                 },
