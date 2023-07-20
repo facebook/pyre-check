@@ -210,13 +210,13 @@ module V2 = struct
         (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
       (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
          operating system. Pass all the user-supplied arguments via a temporary file instead. *)
-      Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
-          Lwt_io.write_lines output_channel (Lwt_stream.of_list user_supplied_arguments)
-          >>= fun () ->
-          Lwt_io.flush output_channel
+      Lwt_io.with_temp_dir ~prefix:"pyre_buck" (fun directory_name ->
+          let argument_filename = Stdlib.Filename.concat directory_name "arguments" in
+          Lwt_io.with_file ~mode:Lwt_io.Output argument_filename (fun output_channel ->
+              Lwt_io.write_lines output_channel (Lwt_stream.of_list user_supplied_arguments))
           >>= fun () ->
           let actual_buck_arguments =
-            List.concat [common_buck_arguments; [Stdlib.Format.sprintf "@%s" filename]]
+            List.concat [common_buck_arguments; [Stdlib.Format.sprintf "@%s" argument_filename]]
           in
           let consume_stderr = consume_stderr ~log_buffer in
           LwtSubprocess.run buck2 ~arguments:actual_buck_arguments ~consume_stderr)
