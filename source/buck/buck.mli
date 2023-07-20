@@ -544,7 +544,7 @@ module Builder : sig
 
     (** {1 Build} *)
 
-    (** The return type for incremental builds. It contains a build map, a list of buck targets that
+    (** The result type for incremental builds. It contains a build map, a list of buck targets that
         are successfully included in the build, and a list of artifact files whose contents may be
         altered by the build . *)
     module IncrementalBuildResult : sig
@@ -554,6 +554,14 @@ module Builder : sig
         changed_artifacts: ArtifactPath.Event.t list;
       }
     end
+
+    (** A type representing the result of builds, along with some metadata about the build
+        (Buck2-only). *)
+    type build_result_t = (Interface.BuildResult.t, string) Interface.WithMetadata.t
+
+    (** A type representing the result of incremental builds, along with some metadata about the
+        build (Buck2-only). *)
+    type incremental_build_result_t = (IncrementalBuildResult.t, string) Interface.WithMetadata.t
 
     (** Given a list of buck target specificaitons to build, construct a build map for the targets
         and create a Python link tree at the given artifact root according to the build map. Return
@@ -578,7 +586,7 @@ module Builder : sig
         Note this API does not ensure the artifact root to be empty before the build starts. If
         cleaness of the artifact directory is desirable, it is expected that the caller would take
         care of that before its invocation. *)
-    val build : targets:string list -> t -> Interface.BuildResult.t Lwt.t
+    val build : targets:string list -> t -> build_result_t Lwt.t
 
     (** Given a build map, create the corresponding Python link tree at the given artifact root
         accordingly.
@@ -615,7 +623,7 @@ module Builder : sig
       :  old_build_map:BuildMap.t ->
       targets:string list ->
       t ->
-      IncrementalBuildResult.t Lwt.t
+      incremental_build_result_t Lwt.t
 
     (** Given a list of normalized targets to build, fully construct a new build map for the targets
         and incrementally update the Python link tree at the given artifact root according to how
@@ -633,7 +641,7 @@ module Builder : sig
       :  old_build_map:BuildMap.t ->
       targets:Target.t list ->
       t ->
-      IncrementalBuildResult.t Lwt.t
+      incremental_build_result_t Lwt.t
 
     (** Given a list of normalized targets and changed/removed files, incrementally construct a new
         build map for the targets and incrementally update the Python link tree at the given
@@ -653,7 +661,7 @@ module Builder : sig
       changed_paths:PyrePath.t list ->
       removed_paths:PyrePath.t list ->
       t ->
-      IncrementalBuildResult.t Lwt.t
+      incremental_build_result_t Lwt.t
 
     (** {1 Lookup} *)
 

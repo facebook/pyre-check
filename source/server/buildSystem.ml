@@ -45,6 +45,7 @@ let create_for_testing
 
 
 module ClassicBuckBuilder = Buck.Builder.Classic
+module WithMetadata = Buck.Interface.WithMetadata
 
 module BuckBuildSystem = struct
   module State = struct
@@ -77,7 +78,11 @@ module BuckBuildSystem = struct
     let create_from_scratch ~builder ~targets () =
       let open Lwt.Infix in
       ClassicBuckBuilder.build builder ~targets
-      >>= fun { Buck.Interface.BuildResult.targets = normalized_targets; build_map } ->
+      >>= fun Buck.Interface.
+                {
+                  WithMetadata.data = { BuildResult.targets = normalized_targets; build_map };
+                  metadata = _;
+                } ->
       Lwt.return (create ~targets ~builder ~normalized_targets ~build_map ())
 
 
@@ -176,9 +181,13 @@ module BuckBuildSystem = struct
         let rebuild_and_update_state rebuild () =
           rebuild state.builder
           >>= fun {
-                    ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
-                    build_map;
-                    changed_artifacts;
+                    WithMetadata.data =
+                      {
+                        ClassicBuckBuilder.IncrementalBuildResult.targets = normalized_targets;
+                        build_map;
+                        changed_artifacts;
+                      };
+                    metadata = _;
                   } ->
           State.update ~normalized_targets ~build_map state;
           Lwt.return changed_artifacts
