@@ -53,7 +53,9 @@ exception
   }
 [@@deriving sexp_of]
 
-type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+module Command = struct
+  type t = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+end
 
 let mode_to_buck_arguments = function
   | None -> []
@@ -118,8 +120,8 @@ let on_completion ~buck_command ~arguments ~log_buffer = function
 
 module V1 = struct
   type t = {
-    query: buck_command;
-    build: buck_command;
+    query: Command.t;
+    build: Command.t;
   }
 
   let create_for_testing ~query ~build () = { query; build }
@@ -179,7 +181,7 @@ module V1 = struct
 end
 
 module V2 = struct
-  type t = { bxl: buck_command }
+  type t = { bxl: Command.t }
 
   let create_for_testing ~bxl () = { bxl }
 

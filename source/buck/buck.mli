@@ -309,12 +309,15 @@ module Raw : sig
     }
   [@@deriving sexp_of]
 
-  (** Utility type to represent the argument and return type for common command-line Buck
-      interaction.
+  (** This module contains utility structure to interact with Buck on command-line. *)
+  module Command : sig
+    (** Utility type to represent the argument and return type for common command-line Buck
+        interaction.
 
-      Note that mode and isolation prefix are intentionally required to be specified separately,
-      since Buck interpret them a bit differently from the rest of the arguments. *)
-  type buck_command = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+        Note that mode and isolation prefix are intentionally required to be specified separately,
+        since Buck interpret them a bit differently from the rest of the arguments. *)
+    type t = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+  end
 
   (** This module contains APIs specific to Buck1 *)
   module V1 : sig
@@ -326,15 +329,15 @@ module Raw : sig
     val create : ?additional_log_size:int -> unit -> t
 
     (** Create an instance of [t] from custom [query] and [build] behavior. Useful for unit testing. *)
-    val create_for_testing : query:buck_command -> build:buck_command -> unit -> t
+    val create_for_testing : query:Command.t -> build:Command.t -> unit -> t
 
     (** Shell out to `buck1 query` with the given cli arguments. Returns the content of stdout. If
         the return code is not 0, raise [BuckError]. *)
-    val query : t -> buck_command
+    val query : t -> Command.t
 
     (** Shell out to `buck1 build` with the given cli arguments. Returns the content of stdout. If
         the return code is not 0, raise [BuckError]. *)
-    val build : t -> buck_command
+    val build : t -> Command.t
   end
 
   (** This module contains APIs specific to Buck2 *)
@@ -347,11 +350,11 @@ module Raw : sig
     val create : ?additional_log_size:int -> unit -> t
 
     (** Create an instance of [t] from custom [bxl] behavior. Useful for unit testing. *)
-    val create_for_testing : bxl:buck_command -> unit -> t
+    val create_for_testing : bxl:Command.t -> unit -> t
 
     (** Shell out to `buck2 bxl` with the given cli arguments. Returns the content of stdout. If the
         return code is not 0, raise [BuckError]. *)
-    val bxl : t -> buck_command
+    val bxl : t -> Command.t
   end
 end
 
