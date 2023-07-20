@@ -14,20 +14,7 @@ open Base
 module ArgumentList = struct
   type t = string list [@@deriving sexp_of]
 
-  let to_buck_command ~buck_command arguments =
-    let open Core in
-    let escaped_arguments =
-      let quote argument =
-        if String.contains argument ' ' then
-          (* This makes sure that the buck command gets properly escaped by the shell. *)
-          Stdlib.Format.sprintf "'%s'" argument
-        else
-          argument
-      in
-      List.map arguments ~f:quote
-    in
-    String.concat ~sep:" " (buck_command :: escaped_arguments)
-
+  let to_buck_command ~buck_command arguments = Stdlib.Filename.quote_command buck_command arguments
 
   let length = List.length
 end
@@ -148,10 +135,6 @@ module V1 = struct
     let buck1 = "buck1" in
     let open Lwt.Infix in
     let invoke_buck ?mode ?isolation_prefix ~command user_supplied_arguments =
-      command :: user_supplied_arguments
-      |> Core.List.map ~f:(Stdlib.Format.sprintf "'%s'")
-      |> Core.String.concat ~sep:" "
-      |> Log.debug "Running buck command: buck1 %s";
       (* Preserve the last several lines of Buck log for error reporting purpose. *)
       let log_buffer = BoundedQueue.create additional_log_size in
       let common_buck_arguments =
@@ -163,6 +146,9 @@ module V1 = struct
           ]
       in
       let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
+      Log.debug
+        "Running command: %s"
+        (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
       (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
          operating system. Pass all the user-supplied arguments via a temporary file instead. *)
       Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
@@ -208,10 +194,6 @@ module V2 = struct
     let buck2 = "buck2" in
     let open Lwt.Infix in
     let invoke_buck ?mode ?isolation_prefix ~command user_supplied_arguments =
-      command :: user_supplied_arguments
-      |> Core.List.map ~f:(Stdlib.Format.sprintf "'%s'")
-      |> Core.String.concat ~sep:" "
-      |> Log.debug "Running buck2 command: buck2 %s";
       (* Preserve the last several lines of Buck log for error reporting purpose. *)
       let log_buffer = BoundedQueue.create additional_log_size in
       let common_buck_arguments =
@@ -223,6 +205,9 @@ module V2 = struct
           ]
       in
       let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
+      Log.debug
+        "Running command: %s"
+        (Stdlib.Filename.quote_command "buck2" expanded_buck_arguments);
       (* Sometimes the total length of buck cli arguments can go beyond the limit of the underlying
          operating system. Pass all the user-supplied arguments via a temporary file instead. *)
       Lwt_io.with_temp_file ~prefix:"buck_arguments_" (fun (filename, output_channel) ->
