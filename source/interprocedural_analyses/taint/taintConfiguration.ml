@@ -737,7 +737,10 @@ module Error = struct
         name: string;
         previous_location: JsonAst.LocationWithPath.t option;
       }
-    | SinkDuplicate of string
+    | SinkDuplicate of {
+        name: string;
+        previous_location: JsonAst.LocationWithPath.t option;
+      }
     | TransformDuplicate of string
     | FeatureDuplicate of string
   [@@deriving equal, compare]
@@ -821,7 +824,17 @@ module Error = struct
           previous_location.path
           JsonAst.Location.pp_start
           previous_location.location
-    | SinkDuplicate name -> Format.fprintf formatter "Duplicate entry for sink: `%s`" name
+    | SinkDuplicate { name; previous_location = None } ->
+        Format.fprintf formatter "Duplicate entry for sink: `%s`" name
+    | SinkDuplicate { name; previous_location = Some previous_location } ->
+        Format.fprintf
+          formatter
+          "Duplicate entry for sink: `%s`, previous entry was at `%a:%a`"
+          name
+          PyrePath.pp
+          previous_location.path
+          JsonAst.Location.pp_start
+          previous_location.location
     | TransformDuplicate name -> Format.fprintf formatter "Duplicate entry for transform: `%s`" name
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
 
@@ -1606,9 +1619,11 @@ let validate ({ Heap.sources; sinks; transforms; features; rules; _ } as configu
         ~get_error:(fun { AnnotationParser.name; _ } previous_location ->
           Error.SourceDuplicate { name; previous_location })
         sources;
-      ensure_list_unique
-        ~get_name:(fun { AnnotationParser.name; _ } -> name)
-        ~get_error:(fun name -> Error.SinkDuplicate name)
+      ensure_list_unique_with_location
+        ~get_key:(fun { AnnotationParser.name; _ } -> name)
+        ~get_location:(fun { AnnotationParser.location; _ } -> location)
+        ~get_error:(fun { AnnotationParser.name; _ } previous_location ->
+          Error.SinkDuplicate { name; previous_location })
         sinks;
       ensure_list_unique
         ~get_name:TaintTransform.show
