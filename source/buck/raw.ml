@@ -54,7 +54,16 @@ exception
 [@@deriving sexp_of]
 
 module Command = struct
-  type t = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+  module Output = struct
+    type t = {
+      stdout: string;
+      build_id: string option;
+    }
+
+    let create ?build_id stdout = { stdout; build_id }
+  end
+
+  type t = ?mode:string -> ?isolation_prefix:string -> string list -> Output.t Lwt.t
 end
 
 let mode_to_buck_arguments = function
@@ -80,7 +89,7 @@ let consume_stderr ~log_buffer stderr_channel =
   consume_line stderr_channel
 
 
-let on_completion ~buck_command ~arguments ~log_buffer = function
+let on_completion ?build_id ~buck_command ~arguments ~log_buffer = function
   | { LwtSubprocess.Completed.status; stdout; _ } -> (
       Log.debug "buck command finished";
       let fail_with_error ?exit_code description =
@@ -95,7 +104,7 @@ let on_completion ~buck_command ~arguments ~log_buffer = function
              })
       in
       match status with
-      | Unix.WEXITED 0 -> Lwt.return stdout
+      | Unix.WEXITED 0 -> Lwt.return (Command.Output.create ?build_id stdout)
       | Unix.WEXITED 127 ->
           let description = Stdlib.Format.sprintf "Cannot find buck exectuable under PATH." in
           fail_with_error ~exit_code:127 description

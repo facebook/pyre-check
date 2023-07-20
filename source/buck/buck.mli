@@ -311,12 +311,20 @@ module Raw : sig
 
   (** This module contains utility structure to interact with Buck on command-line. *)
   module Command : sig
+    module Output : sig
+      (** Utility type to represent the result obtained via a Buck command invocation. *)
+      type t = {
+        stdout: string;
+        build_id: string option;
+      }
+    end
+
     (** Utility type to represent the argument and return type for common command-line Buck
         interaction.
 
         Note that mode and isolation prefix are intentionally required to be specified separately,
         since Buck interpret them a bit differently from the rest of the arguments. *)
-    type t = ?mode:string -> ?isolation_prefix:string -> string list -> string Lwt.t
+    type t = ?mode:string -> ?isolation_prefix:string -> string list -> Output.t Lwt.t
   end
 
   (** This module contains APIs specific to Buck1 *)

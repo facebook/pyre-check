@@ -138,6 +138,7 @@ module V1 = struct
             target_specifications;
           ]
         |> Raw.V1.query ?mode ?isolation_prefix raw
+        |> Lwt.map (fun { Raw.Command.Output.stdout; _ } -> stdout)
 
 
   let query_buck_for_changed_targets
@@ -172,7 +173,8 @@ module V1 = struct
                    paths. *)
                 ["--output-attributes"; "srcs"; "buck.base_path"; "buck.base_module"; "base_module"];
               ]
-            |> Raw.V1.query ?mode ?isolation_prefix raw)
+            |> Raw.V1.query ?mode ?isolation_prefix raw
+            |> Lwt.map (fun { Raw.Command.Output.stdout; _ } -> stdout))
 
 
   let run_buck_build_for_targets { BuckOptions.raw; mode; isolation_prefix } targets =
@@ -189,6 +191,7 @@ module V1 = struct
                 Stdlib.Format.sprintf "%s%s" (BuckTarget.show target) source_database_suffix);
           ]
         |> Raw.V1.build ?mode ?isolation_prefix raw
+        |> Lwt.map (fun { Raw.Command.Output.stdout; _ } -> stdout)
 
 
   let parse_buck_normalized_targets_query_output query_output =
@@ -513,6 +516,7 @@ module V2 = struct
             dropped_targets_key, `Assoc [];
           ]
         |> Yojson.Safe.to_string
+        |> Raw.Command.Output.create
         |> Lwt.return
     | _ ->
         List.concat
@@ -563,8 +567,8 @@ module V2 = struct
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
     run_bxl_for_targets ~bxl_builder ~buck_options target_patterns
-    >>= fun output ->
-    let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output output in
+    >>= fun { Raw.Command.Output.stdout; _ } ->
+    let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output stdout in
     warn_on_conflicts conflicts;
     Log.info "Loaded source databases for %d targets" target_count;
     Lwt.return build_map
@@ -633,7 +637,7 @@ module Lazy = struct
             List.bind target_patterns ~f:(fun source_path -> ["--source"; source_path]);
           ]
         |> Raw.V2.bxl ?mode ?isolation_prefix raw
-        >>= fun output -> Lwt.return (parse_bxl_output output)
+        >>= fun { Raw.Command.Output.stdout; _ } -> Lwt.return (parse_bxl_output stdout)
 
 
   let construct_build_map_with_options ~bxl_builder ~buck_options source_paths =
