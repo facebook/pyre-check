@@ -29,6 +29,15 @@ module BuildResult = struct
   }
 end
 
+module WithMetadata = struct
+  type ('data, 'metadata) t = {
+    data: 'data;
+    metadata: 'metadata option;
+  }
+
+  let create ?metadata data = { data; metadata }
+end
+
 module V1 = struct
   module IncompatibleMergeItem = struct
     type t = {
@@ -431,7 +440,7 @@ module V1 = struct
 end
 
 module V2 = struct
-  type t = { construct_build_map: string list -> BuildMap.t Lwt.t }
+  type t = { construct_build_map: string list -> (BuildMap.t, string) WithMetadata.t Lwt.t }
 
   let create_for_testing ~construct_build_map () = { construct_build_map }
 
@@ -567,11 +576,11 @@ module V2 = struct
     let open Lwt.Infix in
     Log.info "Building Buck source databases...";
     run_bxl_for_targets ~bxl_builder ~buck_options target_patterns
-    >>= fun { Raw.Command.Output.stdout; _ } ->
+    >>= fun { Raw.Command.Output.stdout; build_id } ->
     let { BuckBxlBuilderOutput.build_map; target_count; conflicts } = parse_bxl_output stdout in
     warn_on_conflicts conflicts;
     Log.info "Loaded source databases for %d targets" target_count;
-    Lwt.return build_map
+    Lwt.return (WithMetadata.create ?metadata:build_id build_map)
 
 
   let create ?mode ?isolation_prefix ?bxl_builder raw =
@@ -582,7 +591,7 @@ module V2 = struct
         { construct_build_map = construct_build_map_with_options ~bxl_builder ~buck_options }
 
 
-  let construct_build_map { construct_build_map; _ } target_patterns =
+  let construct_build_map { construct_build_map } target_patterns =
     construct_build_map target_patterns
 end
 

@@ -382,6 +382,17 @@ module Interface : sig
     }
   end
 
+  (** This module provides a utility type that attach a piece of metadata to an optional piece of
+      data. The metadata part is mostly useful for telemetry purpose. *)
+  module WithMetadata : sig
+    type ('data, 'metadata) t = {
+      data: 'data;
+      metadata: 'metadata option;
+    }
+
+    val create : ?metadata:'metadata -> 'data -> ('data, 'metadata) t
+  end
+
   (** This module contains APIs specific to Buck1 *)
   module V1 : sig
     type t
@@ -457,7 +468,10 @@ module Interface : sig
 
     (** Create an instance of [t] from custom [construct_build_map] behavior. Useful for unit
         testing. *)
-    val create_for_testing : construct_build_map:(string list -> BuildMap.t Lwt.t) -> unit -> t
+    val create_for_testing
+      :  construct_build_map:(string list -> (BuildMap.t, string) WithMetadata.t Lwt.t) ->
+      unit ->
+      t
 
     (** Given a list of Buck targets or target expressions, invoke [buck] to construct the link tree
         as well as source databases. It then loads all generated source databases, and merge all of
@@ -470,7 +484,7 @@ module Interface : sig
 
         May raise {!Raw.BuckError} when `buck` invocation fails, or {!JsonError} when `buck` itself
         succeeds but its output cannot be parsed. *)
-    val construct_build_map : t -> string list -> BuildMap.t Lwt.t
+    val construct_build_map : t -> string list -> (BuildMap.t, string) WithMetadata.t Lwt.t
   end
 
   (** This module contains APIs specific to lazy Buck building.

@@ -271,7 +271,7 @@ module Classic = struct
     let build ~interface ~source_root ~artifact_root targets =
       let open Lwt.Infix in
       Interface.V2.construct_build_map interface targets
-      >>= fun build_map ->
+      >>= fun { Interface.WithMetadata.data = build_map; metadata = _ } ->
       Log.info "Constructing Python link-tree for type checking...";
       Artifacts.populate ~source_root ~artifact_root build_map
       >>= function
@@ -282,7 +282,7 @@ module Classic = struct
     let full_incremental_build ~interface ~source_root ~artifact_root ~old_build_map targets =
       let open Lwt.Infix in
       Interface.V2.construct_build_map interface targets
-      >>= fun build_map ->
+      >>= fun { Interface.WithMetadata.data = build_map; metadata = _ } ->
       do_incremental_build ~source_root ~artifact_root ~old_build_map ~new_build_map:build_map ()
       >>= fun changed_artifacts ->
       Lwt.return { IncrementalBuildResult.targets; build_map; changed_artifacts }
