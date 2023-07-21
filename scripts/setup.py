@@ -173,6 +173,7 @@ class Setup(NamedTuple):
                 self.opam_root.as_posix(),
                 "--set-root",
                 "--set-switch",
+                "--shell=bash",
             ]
         )
         opam_environment_variables: Dict[str, str] = {}
