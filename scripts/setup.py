@@ -22,7 +22,7 @@ from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
 from tempfile import mkdtemp
-from typing import Dict, List, Mapping, NamedTuple, Tuple, Optional, Type
+from typing import Dict, List, Mapping, NamedTuple, Tuple, Optional, Type, Sequence
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -114,8 +114,11 @@ class Setup(NamedTuple):
                 ]
             )
 
-    def opam_command(self) -> List[str]:
-        command = ["opam"]
+    def get_opam_command(self, opam_command: Sequence[str], options: Sequence[str] = ()) -> List[str]:
+        # We need a sequence to save "opam_command" is because there may be a few subcommand in a full command
+        command = ["opam"] + list(opam_command) + list(options)
+        # The opam commands below need to declare the output type as Bash explicitly
+        OUTPUT_NEED_CHANGE = ("config", "env", "init")
 
         # We need to explicitly set the opam cli version we are using,
         # otherwise it automatically uses `2.0` which means we can't use
@@ -123,6 +126,8 @@ class Setup(NamedTuple):
         if self.opam_version >= (2, 1):
             command.append("--cli=2.1")
 
+        if opam_command[0] in OUTPUT_NEED_CHANGE:  # We use "opam_command[0]" to get the top command
+            command.append("--shell=bash")
         return command
 
     @property
@@ -163,17 +168,18 @@ class Setup(NamedTuple):
     def opam_environment_variables(self) -> Dict[str, str]:
         LOG.info("Activating opam")
         opam_env_result = self.run(
-            self.opam_command()
-            + [
-                "env",
-                "--yes",
-                "--switch",
-                self.switch_name(),
-                "--root",
-                self.opam_root.as_posix(),
-                "--set-root",
-                "--set-switch",
-            ]
+            self.get_opam_command(
+                ["env"],
+                [
+                    "--yes",
+                    "--switch",
+                    self.switch_name(),
+                    "--root",
+                    self.opam_root.as_posix(),
+                    "--set-root",
+                    "--set-switch",
+                ]
+            )
         )
         opam_environment_variables: Dict[str, str] = {}
         # `opam env` produces lines of two forms:
@@ -191,41 +197,46 @@ class Setup(NamedTuple):
         self.check_if_preinstalled()
 
         self.run(
-            self.opam_command()
-            + [
-                "init",
-                "--bare",
-                "--yes",
-                "--disable-sandboxing",
-                "--root",
-                self.opam_root.as_posix(),
-                "default",
-                "https://opam.ocaml.org",
-            ]
+            self.get_opam_command(
+                ["init"],
+                [
+                    "--bare",
+                    "--yes",
+                    "--disable-sandboxing",
+                    "--root",
+                    self.opam_root.as_posix(),
+                    "default",
+                    "https://opam.ocaml.org",
+                ]
+            )
         )
         self.run(
-            self.opam_command()
-            + [
-                "update",
-                "--root",
-                self.opam_root.as_posix(),
-            ]
+            self.get_opam_command(
+                ["update"],
+                [
+                    "--root",
+                    self.opam_root.as_posix(),
+                ]
+            )
         )
         self.run(
-            self.opam_command()
-            + [
-                "switch",
-                "create",
-                self.switch_name(),
-                self.compiler_specification(),
-                "--yes",
-                "--root",
-                self.opam_root.as_posix(),
-            ]
+            self.get_opam_command(
+                [
+                    "switch",
+                    "create"
+                ],
+                [
+                    self.switch_name(),
+                    self.compiler_specification(),
+                    "--yes",
+                    "--root",
+                    self.opam_root.as_posix(),
+                ]
+            )
         )
         opam_environment_variables = self.opam_environment_variables()
 
-        opam_install_command = self.opam_command() + ["install", "--yes"]
+        opam_install_command = self.get_opam_command(["install"], ["--yes"])
 
         if sys.platform == "linux" and self.opam_version >= (2, 1):
             # setting `--assume-depexts` means that opam will not require a "system"
@@ -244,14 +255,17 @@ class Setup(NamedTuple):
         self, rust_path: Optional[Path]
     ) -> Mapping[str, str]:
         self.run(
-            self.opam_command()
-            + [
-                "switch",
-                "set",
-                self.switch_name(),
-                "--root",
-                self.opam_root.as_posix(),
-            ]
+            self.get_opam_command(
+                [
+                    "switch",
+                    "set"
+                ],
+                [
+                    self.switch_name(),
+                    "--root",
+                    self.opam_root.as_posix(),
+                ]
+            )
         )
 
         environment_variables = self.opam_environment_variables()
@@ -260,7 +274,7 @@ class Setup(NamedTuple):
                 str(rust_path) + ":" + environment_variables["PATH"]
             )
 
-        opam_install_command = self.opam_command() + ["install", "--yes"]
+        opam_install_command = self.get_opam_command(["install"], ["--yes"])
 
         if sys.platform == "linux":
             # osx fails on sandcastle with exit status 2 (illegal argument) with this.
