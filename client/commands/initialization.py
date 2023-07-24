@@ -223,7 +223,7 @@ async def async_start_pyre_server(
                 flavor=flavor,
             ) as server_stderr:
                 server_start_command = (
-                    "code-navigation" if is_code_navigation_server else "newserver"
+                    "code-navigation" if is_code_navigation_server else "server"
                 )
                 server_process = await asyncio.create_subprocess_exec(
                     binary_location,

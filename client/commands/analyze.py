@@ -398,7 +398,7 @@ def run(
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
             analyze_command = [
                 str(binary_location),
-                "newanalyze",
+                "analyze",
                 str(argument_file_path),
             ]
             environment = None

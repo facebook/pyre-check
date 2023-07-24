@@ -536,7 +536,7 @@ def run(
         server_arguments
     ) as argument_file_path:
         server_subcommand = (
-            "newserver"
+            "server"
             if start_arguments.flavor != identifiers.PyreFlavor.CODE_NAVIGATION
             else "code-navigation"
         )

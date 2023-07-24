@@ -236,7 +236,7 @@ def run_check(
         configuration, check_arguments
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            check_command = [str(binary_location), "newcheck", str(argument_file_path)]
+            check_command = [str(binary_location), "check", str(argument_file_path)]
             return _run_check_command(check_command)
 
 

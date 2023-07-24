@@ -843,7 +843,7 @@ def _get_infer_command_output(
         configuration, infer_arguments
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            infer_command = [str(binary_location), "newinfer", str(argument_file_path)]
+            infer_command = [str(binary_location), "infer", str(argument_file_path)]
             return _run_infer_command_get_output(command=infer_command)
 
 
