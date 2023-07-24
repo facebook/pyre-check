@@ -809,7 +809,24 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.SinkDuplicate "Test"]
+    ~errors:
+      [
+        TaintConfiguration.Error.SinkDuplicate
+          {
+            name = "Test";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 6; column = 18 };
+                      stop = { line = 6; column = 23 };
+                    };
+                };
+          };
+      ]
     {|
     {
       "sources": [
@@ -868,7 +885,21 @@ let test_validate _ =
                     };
                 };
           };
-        TaintConfiguration.Error.SinkDuplicate "Test";
+        TaintConfiguration.Error.SinkDuplicate
+          {
+            name = "Test";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 8; column = 18 };
+                      stop = { line = 8; column = 23 };
+                    };
+                };
+          };
         TaintConfiguration.Error.FeatureDuplicate "concat";
       ]
     {|
@@ -921,7 +952,24 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.SinkDuplicate "Test"]
+    ~errors:
+      [
+        TaintConfiguration.Error.SinkDuplicate
+          {
+            name = "Test";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 5; column = 18 };
+                      stop = { line = 5; column = 23 };
+                    };
+                };
+          };
+      ]
     {|
     {
       "sinks": [

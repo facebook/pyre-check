@@ -153,7 +153,10 @@ module Error : sig
         name: string;
         previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
       }
-    | SinkDuplicate of string
+    | SinkDuplicate of {
+        name: string;
+        previous_location: JsonParsing.JsonAst.LocationWithPath.t option;
+      }
     | TransformDuplicate of string
     | FeatureDuplicate of string
     | InvalidRegex of {
