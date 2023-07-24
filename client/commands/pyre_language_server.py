@@ -1156,6 +1156,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
 
+@dataclasses.dataclass(frozen=True)
 class CodeNavigationServerApi(PyreLanguageServer):
     pass
 
