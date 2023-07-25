@@ -1252,8 +1252,7 @@ let test_captured_variable_for_specially_decorated_functions context =
     [
       "Missing annotation for captured variable [53]: Captured variable `local_variable` is not \
        annotated.";
-      "Revealed type [-1]: Revealed type for `local_variable` is \
-       `pyre_extensions.ReadOnly[typing.Any]`.";
+      "Revealed type [-1]: Revealed type for `local_variable` is `typing.Any`.";
     ];
   (* `self` captured in a nested entrypoint should be marked as readonly. *)
   assert_type_errors
@@ -1653,8 +1652,7 @@ let test_allowlisted_classes_are_not_readonly context =
   assert_type_errors
     {|
       from pyre_extensions import ReadOnly
-      from readonly_stubs_for_testing import MySafeReadOnlyClass
-      from typing import Any, TypeVar
+      from typing import TypeVar
 
       T = TypeVar("T")
 
@@ -1665,6 +1663,20 @@ let test_allowlisted_classes_are_not_readonly context =
           reveal_type(x)
     |}
     ["Revealed type [-1]: Revealed type for `x` is `int`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Any, TypeVar
+
+      T = TypeVar("T")
+
+      def lookup(d: ReadOnly[dict[str, T]], key: str) -> ReadOnly[T]: ...
+
+      def main(d: ReadOnly[dict[str, Any]]) -> None:
+          x = lookup(d, "foo")
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
   ()
 
 

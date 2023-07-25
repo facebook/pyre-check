@@ -2660,6 +2660,7 @@ let rec create_readonly = function
          reduce noisy errors on classes that are never mutated and reduces the adoption burden on
          users. *)
       type_
+  | Any -> Any
   | type_ -> ReadOnly type_
 
 
