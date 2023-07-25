@@ -665,7 +665,7 @@ and weaken_against_readonly
   let comparator_ignoring_readonly =
     comparator_ignoring_readonly_without_override ~get_typed_dictionary_override:(fun _ -> None)
   in
-  let weaken_parametric_type ~parametric_name expected_parameter_types =
+  let weaken_parametric_type ?(resolved = resolved) ~parametric_name expected_parameter_types =
     let ({ resolved = weakened_resolved_type; _ } as weakened_type) =
       let expected =
         expected_parameter_types
@@ -687,7 +687,7 @@ and weaken_against_readonly
       weakened_type
   in
   match expression, resolved, expected with
-  | ( Some { Node.value = Expression.List _ | ListComprehension _; _ },
+  | ( Some { Node.value = Expression.ListComprehension _; _ },
       Type.Parametric { name = "list" as parametric_name; parameters = [Single _] },
       Type.ReadOnly
         (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type]; _ }) )
@@ -703,6 +703,15 @@ and weaken_against_readonly
           { name = "dict"; parameters = [Single expected_key_type; Single expected_value_type] }) )
     ->
       weaken_parametric_type ~parametric_name [expected_key_type; expected_value_type]
+  | ( Some { Node.value = Expression.List _; _ },
+      Type.ReadOnly
+        (Type.Parametric { name = "list" as parametric_name; parameters = [Single parameter_type] }),
+      Type.ReadOnly
+        (Type.Parametric { name = "list"; parameters = [Single expected_parameter_type]; _ }) ) ->
+      weaken_parametric_type
+        ~resolved:(Type.list (Type.ReadOnly.create parameter_type))
+        ~parametric_name
+        [expected_parameter_type]
   | _ -> make_weakened_type resolved
 
 

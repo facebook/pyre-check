@@ -1546,6 +1546,17 @@ let test_weaken_readonly_literals context =
         expect_readonly_nested_dict({ Foo(): { "foo": readonly_foo }})
     |}
     [];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo: ...
+
+      def main(readonly_foo: ReadOnly[Foo]) -> None:
+        xs = [readonly_foo, readonly_foo]
+        reveal_type(xs)
+    |}
+    ["Revealed type [-1]: Revealed type for `xs` is `pyre_extensions.ReadOnly[typing.List[Foo]]`."];
   ()
 
 

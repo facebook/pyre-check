@@ -3027,7 +3027,7 @@ module State (Context : Context) = struct
         {
           resolution;
           errors;
-          resolved = Type.list resolved;
+          resolved = Type.ReadOnly.lift_readonly_if_possible ~make_container:Type.list resolved;
           resolved_annotation = None;
           base = None;
         }
