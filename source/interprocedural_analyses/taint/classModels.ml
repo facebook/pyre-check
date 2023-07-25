@@ -66,18 +66,31 @@ let infer ~environment ~user_models =
         BackwardState.assign ~weak:true ~root ~path:[] taint existing_state
     | None -> existing_state
   in
-  let attributes class_name =
-    GlobalResolution.attributes
-      ~resolution:global_resolution
-      ~transitive:false
-      ~accessed_through_class:false
-      ~include_generated_attributes:false
-      class_name
+  let get_attributes_in_alphabetical_order class_name =
+    GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
+    >>| Node.value
+    >>| ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
+    |> Option.value ~default:Identifier.SerializableMap.empty
+  in
+  let has_attribute class_name name =
+    let attributes = get_attributes_in_alphabetical_order class_name in
+    Identifier.SerializableMap.mem name attributes
+  in
+  let get_attributes_in_declaration_order class_name =
+    let compare_by_location left right =
+      Ast.Location.compare (Node.location left) (Node.location right)
+    in
+    get_attributes_in_alphabetical_order class_name
+    |> Identifier.SerializableMap.bindings
+    |> List.unzip
+    |> snd
+    |> List.sort ~compare:compare_by_location
   in
 
   let compute_dataclass_models class_name =
     let attributes =
-      attributes class_name >>| List.map ~f:AnnotatedAttribute.name |> Option.value ~default:[]
+      get_attributes_in_declaration_order class_name
+      |> List.map ~f:(fun { Node.value = { ClassSummary.Attribute.name; _ }; _ } -> name)
     in
     let taint_in_taint_out =
       List.foldi
@@ -104,13 +117,8 @@ let infer ~environment ~user_models =
   (* We always generate a special `_fields` attribute for NamedTuples which is a tuple containing
      field names. *)
   let compute_named_tuple_models class_name =
-    let attributes = attributes class_name |> Option.value ~default:[] in
-    let has_attribute name =
-      List.exists attributes ~f:(fun attribute ->
-          String.equal (AnnotatedAttribute.name attribute) name)
-    in
     (* If a user-specified __new__ exist, don't override it. *)
-    if has_attribute "__new__" then
+    if has_attribute class_name "__new__" then
       []
     else
       (* Should not omit this model. Otherwise the mode is "obscure", thus leading to a tito model,

@@ -508,22 +508,14 @@
     "callable": "dataclass_taint.DataClassSwapArguments.__init__",
     "tito": [
       {
-        "port": "formal(foo)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[foo]": 999999 }, "kind": "LocalReturn" }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
         "port": "formal(bar)",
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[foo]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[foo]": 3, "[bar]": 999999 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -534,18 +526,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[bar]": 3 }, "kind": "LocalReturn" }
-            ],
-            "tito": null
-          }
-        ]
-      },
-      {
-        "port": "formal(bar)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[bar]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[foo]": 999999, "[bar]": 3 },
+                "kind": "LocalReturn"
+              }
             ],
             "tito": null
           }
@@ -715,12 +699,12 @@
     "callable": "dataclass_taint.DataClassWithOtherSource.__init__",
     "tito": [
       {
-        "port": "formal(tainted)",
+        "port": "formal(not_tainted)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[tainted]": 999999 },
+                "return_paths": { "[not_tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
@@ -729,12 +713,12 @@
         ]
       },
       {
-        "port": "formal(not_tainted)",
+        "port": "formal(tainted)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[not_tainted]": 999999 },
+                "return_paths": { "[tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
@@ -751,12 +735,12 @@
     "callable": "dataclass_taint.DataClassWithSource.__init__",
     "tito": [
       {
-        "port": "formal(tainted)",
+        "port": "formal(not_tainted)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[tainted]": 999999 },
+                "return_paths": { "[not_tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
@@ -765,12 +749,12 @@
         ]
       },
       {
-        "port": "formal(not_tainted)",
+        "port": "formal(tainted)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": { "[not_tainted]": 999999 },
+                "return_paths": { "[tainted]": 999999 },
                 "kind": "LocalReturn"
               }
             ],
