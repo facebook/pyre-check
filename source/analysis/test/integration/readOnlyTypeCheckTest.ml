@@ -1557,6 +1557,17 @@ let test_weaken_readonly_literals context =
         reveal_type(xs)
     |}
     ["Revealed type [-1]: Revealed type for `xs` is `pyre_extensions.ReadOnly[typing.List[Foo]]`."];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo: ...
+
+      def main(readonly_list: ReadOnly[list[Foo]]) -> None:
+        xs = [x for x in readonly_list]
+        reveal_type(xs)
+    |}
+    ["Revealed type [-1]: Revealed type for `xs` is `pyre_extensions.ReadOnly[typing.List[Foo]]`."];
   ()
 
 
