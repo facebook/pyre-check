@@ -143,3 +143,7 @@ class DataClassSwapArguments:
 
 def test_dataclass_parameter_path(dc: DataClass):
     _test_sink(dc.bad)
+
+
+def test_dataclass_positional_parameter(x: int, y: str) -> None:
+    _test_sink(DataClass(x, y))

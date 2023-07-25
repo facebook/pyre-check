@@ -80,7 +80,10 @@ let infer ~environment ~user_models =
       attributes class_name >>| List.map ~f:AnnotatedAttribute.name |> Option.value ~default:[]
     in
     let taint_in_taint_out =
-      List.foldi ~f:(add_parameter_tito ~positional:true) ~init:BackwardState.empty attributes
+      List.foldi
+        ~f:(fun position -> add_parameter_tito ~positional:true (position + 1))
+        ~init:BackwardState.empty
+        attributes
     in
     let sink_taint =
       List.foldi
