@@ -464,10 +464,26 @@ module Testing : sig
     end
 
     module CompletionItem : sig
-      (** A type representing a completion (autocomplete) result.
+      (** A type representing a completion (autocomplete) result. A list of [CompletionItems] are
+          sent from the server to its clients via the [Completion] response.
 
           TODO(T151099563): support other CompletionItem attributes *)
-      type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+
+      module CompletionItemKind : sig
+        (* TODO(T159253974): extend to support remaining CompletionItemKinds when local/global
+           variable autocomplete are supported *)
+        type t =
+          | Simple
+          | Method
+          | Property
+        [@@deriving sexp, compare, yojson { strict = false }]
+      end
+
+      type t = {
+        label: string;
+        kind: CompletionItemKind.t;
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
     end
 
     module Status : sig
