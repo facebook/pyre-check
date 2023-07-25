@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-open Hack_core
+module List = Hack_core_list
 
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)

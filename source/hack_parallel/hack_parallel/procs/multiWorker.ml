@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-open Hack_core
+module List = Hack_core_list
 
 type 'a nextlist = 'a list Hack_bucket.next
 

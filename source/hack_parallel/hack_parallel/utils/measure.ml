@@ -76,7 +76,7 @@
  * sent across pipes.
 *)
 
-module List = Hack_core.List
+module List = Hack_core_list
 module FloatMap = MyMap.Make(struct type t = float let compare = compare end)
 
 type distribution = {
