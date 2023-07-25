@@ -9,10 +9,7 @@
 
 
 module Std = struct
-
   module SharedMemory = SharedMemory
-
-  module String_utils = String_utils
 
   module MultiWorker = MultiWorker
 
@@ -21,8 +18,6 @@ module Std = struct
   module Daemon = Daemon
 
   module Bucket = Hack_bucket
-
-  module Marshal_tools = Marshal_tools
 
   module Measure = Measure
 end
