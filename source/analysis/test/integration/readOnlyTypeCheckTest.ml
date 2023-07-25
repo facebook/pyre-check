@@ -1650,6 +1650,21 @@ let test_allowlisted_classes_are_not_readonly context =
       "Revealed type [-1]: Revealed type for `x` is `int`.";
       "Revealed type [-1]: Revealed type for `y` is `bool`.";
     ];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import MySafeReadOnlyClass
+      from typing import Any, TypeVar
+
+      T = TypeVar("T")
+
+      def lookup(d: ReadOnly[dict[str, T]], key: str) -> ReadOnly[T]: ...
+
+      def main(d: ReadOnly[dict[str, int]]) -> None:
+          x = lookup(d, "foo")
+          reveal_type(x)
+    |}
+    ["Revealed type [-1]: Revealed type for `x` is `int`."];
   ()
 
 

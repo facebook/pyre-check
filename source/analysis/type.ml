@@ -2650,6 +2650,19 @@ let rec expression annotation =
   Node.create_with_default_location value
 
 
+let rec create_readonly = function
+  | ReadOnly _ as type_ -> type_
+  | NoneType -> NoneType
+  | Union elements -> Union (List.map ~f:create_readonly elements)
+  | Primitive class_name as type_
+    when String.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
+      (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
+         reduce noisy errors on classes that are never mutated and reduces the adoption burden on
+         users. *)
+      type_
+  | type_ -> ReadOnly type_
+
+
 module Transform = struct
   type 'state visit_result = {
     transformed_annotation: t;
@@ -2750,7 +2763,7 @@ module Transform = struct
               | Unpacked (Broadcast broadcast) -> Unpacked (Broadcast (visit_broadcast broadcast))
             in
             Parametric { name; parameters = List.map parameters ~f:visit }
-        | ReadOnly type_ -> ReadOnly (visit_annotation type_ ~state)
+        | ReadOnly type_ -> create_readonly (visit_annotation type_ ~state)
         | RecursiveType { name; body } ->
             RecursiveType { name; body = visit_annotation ~state body }
         | Tuple ordered_type -> Tuple (visit_ordered_types ordered_type)
@@ -3718,18 +3731,7 @@ module TypeOperation = struct
 end
 
 module ReadOnly = struct
-  let rec create = function
-    | ReadOnly _ as type_ -> type_
-    | NoneType -> NoneType
-    | Union elements -> Union (List.map ~f:create elements)
-    | Primitive class_name as type_
-      when String.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
-        (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
-           reduce noisy errors on classes that are never mutated and reduces the adoption burden on
-           users. *)
-        type_
-    | type_ -> ReadOnly type_
-
+  let create = create_readonly
 
   let unpack_readonly = function
     | ReadOnly type_ -> Some type_

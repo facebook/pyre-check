@@ -1526,7 +1526,16 @@ let test_instantiate _ =
   assert_instantiate
     [Type.variable "_T", Type.integer; Type.variable "_VT", Type.NoneType]
     ~generic:(Type.Union [Type.variable "_T"; Type.variable "_VT"])
-    ~expected:(Type.optional Type.integer)
+    ~expected:(Type.optional Type.integer);
+  assert_instantiate
+    [Type.variable "_T", Type.integer]
+    ~generic:(Type.ReadOnly.create (Type.variable "_T"))
+    ~expected:Type.integer;
+  assert_instantiate
+    [Type.variable "_T", Type.Primitive "Foo"]
+    ~generic:(Type.ReadOnly.create (Type.variable "_T"))
+    ~expected:(Type.ReadOnly.create (Type.Primitive "Foo"));
+  ()
 
 
 let test_expression _ =
