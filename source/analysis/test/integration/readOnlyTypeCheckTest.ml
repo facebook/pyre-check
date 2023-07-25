@@ -769,6 +769,41 @@ let test_function_call context =
        `test.Foo.mutable_method` may modify its object. Cannot call it on readonly expression \
        `self` of type `pyre_extensions.ReadOnly[Variable[_Self_test_Foo__ (bound to Foo)]]`.";
     ];
+  assert_type_errors_including_readonly
+    {|
+      from typing import Awaitable, TypeVar, Callable
+      from pyre_extensions import ParameterSpecification, ReadOnly
+      from readonly_stubs_for_testing import readonly_entrypoint
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      def my_decorator(func: Callable[P, T]) -> Callable[P, T]: ...
+
+      class Foo:
+          @classmethod
+          @my_decorator
+          async def some_classmethod(cls, x: str) -> None: ...
+
+          @my_decorator
+          async def some_method(self, x: str) -> None: ...
+
+          async def outer_method(self) -> None:
+            @readonly_entrypoint
+            def inner() -> None:
+              await self.some_method(42)
+              await self.some_classmethod(42)
+    |}
+    [
+      "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
+       `test.Foo.some_method` may modify its object. Cannot call it on readonly expression `self` \
+       of type `pyre_extensions.ReadOnly[Foo]`.\n\
+       Note that this is a zone entrypoint and any captured variables are treated as readonly";
+      "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional argument, \
+       expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
+       argument, expected `str` but got `int`.";
+    ];
   ()
 
 

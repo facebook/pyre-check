@@ -1491,6 +1491,68 @@ let test_classmethod_decorator context =
        `typing.ClassMethod[typing.Callable[[Type[Foo], Named(x, str)], None]]` (inferred: \
        `BoundMethod[typing.Callable[[Type[Foo], Named(x, str)], None], Type[Foo]]`).";
     ];
+  (* Preserve the function name if a decorator expects and preserves `Awaitable`. *)
+  assert_type_errors
+    {|
+      from typing import Awaitable, TypeVar, Callable
+      from pyre_extensions import ParameterSpecification
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      def my_decorator(func: Callable[P, Awaitable[T]]) -> Callable[P, Awaitable[T]]: ...
+
+      class Foo:
+          @classmethod
+          @my_decorator
+          async def some_classmethod(cls, x: str) -> None: ...
+
+          @my_decorator
+          async def some_method(self, x: str) -> None: ...
+
+      async def main() -> None:
+          await Foo.some_classmethod(42)
+          await Foo().some_method(42)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
+       argument, expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional argument, \
+       expected `str` but got `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import TypeVar, Callable, Awaitable
+      from pyre_extensions import ParameterSpecification
+
+      T = TypeVar("T")
+      P = ParameterSpecification("P")
+
+      class MyDecorator:
+        def __call__(
+            self, fn: Callable[P, Awaitable[T]]
+        ) -> Callable[P, Awaitable[T]]: ...
+
+      def my_decorator() -> MyDecorator: ...
+
+      class Foo:
+        @classmethod
+        @my_decorator()
+        async def some_classmethod(cls, x: str) -> None: ...
+
+        @my_decorator()
+        async def some_method(self, x: str) -> None: ...
+
+      async def main() -> None:
+        await Foo.some_classmethod(42)
+        await Foo().some_method(42)
+    |}
+    [
+      "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
+       argument, expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional argument, \
+       expected `str` but got `int`.";
+    ];
   ()
 
 

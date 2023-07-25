@@ -4643,9 +4643,22 @@ class base class_metadata_environment dependency =
         (* If the decorator preserves the function's type signature, preserve the function name.
            This leads to better error messages, since we can print the function's name instead of
            considering it an "anonymous call". *)
+        let should_preserve_function_name ~undecorated_signature ~kind callable =
+          (* Some decorators expect and return `Callable[P, Awaitable[T]]`. But the return type for
+             `async def` is `Coroutine[_, _, X]`, which means that the signatures are slightly
+             different before and after decorating. Ignore the difference. *)
+          let replace_coroutine_with_awaitable return_type =
+            Type.coroutine_value return_type >>| Type.awaitable |> Option.value ~default:return_type
+          in
+          let signature_with_awaitable_return_type =
+            Type.Callable.map_annotation undecorated_signature ~f:replace_coroutine_with_awaitable
+          in
+          Type.Callable.equal { callable with kind } undecorated_signature
+          || Type.Callable.equal { callable with kind } signature_with_awaitable_return_type
+        in
         match applied with
         | Result.Ok (Type.Callable callable)
-          when Type.Callable.equal { callable with kind } undecorated_signature ->
+          when should_preserve_function_name ~undecorated_signature ~kind callable ->
             Ok (Type.Callable { callable with kind })
         | Result.Ok
             (Type.Parametric
@@ -4653,7 +4666,7 @@ class base class_metadata_environment dependency =
                 name = ("typing.ClassMethod" | "typing.StaticMethod") as parametric_name;
                 parameters = [Single (Type.Callable callable)];
               })
-          when Type.Callable.equal { callable with kind } undecorated_signature ->
+          when should_preserve_function_name ~undecorated_signature ~kind callable ->
             Ok (Type.parametric parametric_name [Single (Type.Callable { callable with kind })])
         | other -> other
       in
