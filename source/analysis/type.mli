@@ -1123,6 +1123,8 @@ module ReadOnly : sig
   val strip_readonly : t -> t
 
   val contains_readonly : t -> bool
+
+  val lift_readonly_if_possible : make_container:(t -> t) -> t -> t
 end
 
 val infer_transform : t -> t

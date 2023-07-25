@@ -6632,6 +6632,22 @@ let test_is_falsy _ =
   ()
 
 
+let test_lift_readonly_if_possible _ =
+  let assert_lifted ~make_container ~expected element_type =
+    element_type
+    |> parse_single_expression
+    |> Type.create ~aliases:Type.empty_aliases
+    |> Type.ReadOnly.lift_readonly_if_possible ~make_container
+    |> assert_equal ~printer:Type.show ~cmp:Type.equal expected
+  in
+  assert_lifted
+    ~expected:(Type.ReadOnly (Type.list (Type.Primitive "Foo")))
+    ~make_container:Type.list
+    "pyre_extensions.ReadOnly[Foo]";
+  assert_lifted ~expected:(Type.list (Type.Primitive "Foo")) ~make_container:Type.list "Foo";
+  ()
+
+
 let () =
   "type"
   >::: [
@@ -6723,4 +6739,6 @@ let () =
          "parameter_create" >:: test_parameter_create;
          "resolve_getitem_callee" >:: test_resolve_getitem_callee;
        ]
-  |> Test.run
+  |> Test.run;
+  "readOnly" >::: ["lift_readonly_for_container" >:: test_lift_readonly_if_possible] |> Test.run;
+  ()

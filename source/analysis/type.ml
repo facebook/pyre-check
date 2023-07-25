@@ -3744,6 +3744,14 @@ module ReadOnly = struct
   let strip_readonly type_ = instantiate type_ ~constraints:unpack_readonly
 
   let contains_readonly type_ = exists type_ ~predicate:is_readonly
+
+  (* Lift `ReadOnly` from `element_type` to the overall container.
+
+     i.e., turn `make_container ReadOnly[Foo]` to `ReadOnly[make_container Foo]`. *)
+  let lift_readonly_if_possible ~make_container element_type =
+    unpack_readonly element_type
+    >>| (fun inner_type -> create (make_container inner_type))
+    |> Option.value ~default:(make_container element_type)
 end
 
 let parameters_from_unpacked_annotation annotation ~variable_aliases =
