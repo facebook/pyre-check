@@ -95,5 +95,5 @@ let test_method_overrides context =
 
 
 let () =
-  Scheduler.Daemon.check_entry_point ();
+  Scheduler.initialize ();
   "overrideGraph" >::: ["overrides" >:: test_method_overrides] |> Test.run

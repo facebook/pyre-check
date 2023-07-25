@@ -685,7 +685,7 @@ let test_prune_callables _ =
 
 
 let () =
-  Scheduler.Daemon.check_entry_point ();
+  Scheduler.initialize ();
   "callGraph"
   >::: [
          "type_collection" >:: test_type_collection;

@@ -15,9 +15,9 @@ module Std = struct
 
   module Worker = Worker
 
-  module Daemon = Daemon
-
   module Bucket = Hack_bucket
 
   module Measure = Measure
+
+  let daemon_check_entry_point = Daemon.check_entry_point
 end

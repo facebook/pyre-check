@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Hack_parallel.Std
-module Daemon = Daemon
+val initialize : unit -> unit
 
 val is_master : unit -> bool
 

@@ -7,9 +7,9 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-open Hack_parallel.Std
-module Daemon = Daemon
 open Core
+
+let initialize () = Hack_parallel.Std.daemon_check_entry_point ()
 
 let is_master () = Int.equal 0 (Worker.current_worker_id ())
 
@@ -162,7 +162,7 @@ let map_reduce scheduler ~policy ~initial ~map ~reduce ~inputs () =
           ~job:map
           ~merge:reduce
           ~neutral:initial
-          ~next:(Bucket.make ~num_workers:number_of_chunks inputs)
+          ~next:(Hack_parallel.Std.Bucket.make ~num_workers:number_of_chunks inputs)
   | SequentialScheduler -> sequential_map_reduce ()
 
 

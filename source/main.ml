@@ -29,7 +29,7 @@ let commands =
 let () =
   try
     Random.self_init ();
-    Scheduler.Daemon.check_entry_point ();
+    Scheduler.initialize ();
     Command.group ~summary:"Analyze Python files" commands
     |> Command_unix.run ~build_info:(Version.build_info ()) ~version:(Version.version ())
   with
