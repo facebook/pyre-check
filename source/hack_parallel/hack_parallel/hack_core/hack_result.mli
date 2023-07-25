@@ -1,3 +1,10 @@
+(*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
 (** [Result] is often used to handle error messages. *)
 
 (** ['a] is a function's expected return type, and ['b] is often an error message string.

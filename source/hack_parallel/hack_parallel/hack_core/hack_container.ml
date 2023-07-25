@@ -1,3 +1,10 @@
+(*
+ * Copyright (c) Meta Platforms, Inc. and affiliates.
+ *
+ * This source code is licensed under the MIT license found in the
+ * LICENSE file in the root directory of this source tree.
+ *)
+
 let fold_count fold t ~f = fold t ~init:0 ~f:(fun n a -> if f a then n + 1 else n)
 
 let fold_sum (type a) (module M : Hack_commutative_group.S with type t = a) fold t ~f =
