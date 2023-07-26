@@ -106,6 +106,11 @@ val location_of_definition
   Location.position ->
   Location.WithModule.t option
 
+val resolve_completions_for_symbol
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  symbol_and_cfg_data ->
+  ClassSummary.Attribute.t Identifier.SerializableMap.t option
+
 val resolve_type_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   symbol_and_cfg_data ->

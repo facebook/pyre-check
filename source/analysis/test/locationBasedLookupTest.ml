@@ -1686,6 +1686,140 @@ let test_resolve_definition_for_symbol context =
   ()
 
 
+let test_resolve_completions_for_symbol context =
+  let default_external_sources =
+    [
+      ( "library.py",
+        {|
+      class Base: ...
+
+      def return_str() -> str:
+          return "hello"
+      def contains_kw_args(foo: str, **kwargs) -> str:
+          return "hello"
+    |}
+      );
+    ]
+  in
+  let module_reference = !&"test" in
+  let assert_resolved_completion_items
+      ?(external_sources = default_external_sources)
+      ~source
+      expected
+    =
+    let type_environment =
+      let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        |> ScratchProject.build_type_environment
+      in
+      type_environment
+    in
+    let symbol_data =
+      LocationBasedLookup.find_narrowest_spanning_symbol
+        ~type_environment
+        ~module_reference
+        (find_indicator_position ~source "cursor")
+    in
+    let attributes =
+      match
+        symbol_data >>= LocationBasedLookup.resolve_completions_for_symbol ~type_environment
+      with
+      | Some attributes_map -> attributes_map
+      | None -> Identifier.SerializableMap.empty
+    in
+    let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
+    assert_equal
+      ~cmp:(fun left right ->
+        let sort_str_list = List.sort ~compare:String.compare in
+        List.equal String.equal (sort_str_list left) (sort_str_list right))
+      ~printer:(String.concat ~sep:", ")
+      ~pp_diff:(diff ~print:list_diff)
+      expected
+      (attributes |> Identifier.SerializableMap.bindings |> List.map ~f:(fun (attr, _) -> attr))
+  in
+  assert_resolved_completion_items
+    ~source:
+      {|
+        def getint() -> int:
+                      # ^- cursor
+          return 42
+      |}
+    (* TODO(T158922360) not an attribute, modify this testcase when we support local autocomplete *)
+    [];
+  assert_resolved_completion_items
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          attribute: Foo = Foo()
+          attribute2: Foo = Foo()
+          attribute3: Foo = Foo()
+
+
+        Bar().attribute
+        #       ^- cursor
+    |}
+    (* Single layer class attribute completion *)
+    ["attribute3"; "attribute2"; "attribute"];
+  assert_resolved_completion_items
+    ~source:
+      {|
+        class Foo:
+          foo_attribute: int = 1
+          foo_attribute2: int = 2
+          foo_attribute3: int = 3
+
+
+        class Bar:
+          attribute: Foo = Foo()
+          attribute2: Foo = Foo()
+          attribute3: Foo = Foo()
+
+
+        Bar().attribute.foo_attribute
+        #                ^- cursor
+    |}
+    (* Multi layer class attribute completion *)
+    ["foo_attribute"; "foo_attribute2"; "foo_attribute3"];
+  assert_resolved_completion_items
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          attribute: Foo = Foo()
+          attribute2: Foo = Foo()
+          attribute3: Foo = Foo()
+
+
+        Bar().attr
+        #      ^- cursor
+    |}
+    (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
+    ["attribute"; "attribute2"; "attribute3"];
+  assert_resolved_completion_items
+    ~source:
+      {|
+        class Foo: ...
+
+        class Bar:
+          attribute: Foo = Foo()
+          attribute2: Foo = Foo()
+          attribute3: Foo = Foo()
+
+
+        Bar().attr
+        #        ^- cursor
+    |}
+    (* Incomplete attribute string + cursor at end of line, attribute completion *)
+    ["attribute"; "attribute2"; "attribute3"];
+  ()
+
+
+(* TODO(T159483467) Add trailing period attribute autocomplete testcase after ERRPY update
+   released *)
+
 (* Annotations *)
 
 let test_lookup_attributes context =
@@ -3685,6 +3819,7 @@ let () =
          "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
+         "resolve_completions_for_symbol" >:: test_resolve_completions_for_symbol;
          "lookup_attributes" >:: test_lookup_attributes;
          "lookup_assign" >:: test_lookup_assign;
          "lookup_call_arguments" >:: test_lookup_call_arguments;
