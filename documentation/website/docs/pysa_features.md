@@ -284,24 +284,46 @@ instead of a single attribute of that object.
 Pysa also provides more fine grained features for all scenario where we make
 approximations.
 
-#### `widen-broadening` Feature
+#### `model-broadening` Feature
 
-The `widen-broadening` feature is added when number of tainted attributes of an
-object reaches a certain threshold. For scalability reasons, Pysa cannot track
-an infinite amount of attributes or indexes, and thus makes the approximation
-that the whole object is tainted.
+The `model-broadening` feature is added when the model of a callable has been
+simplified because the source, sink or tito taint tree hit a width or depth
+threshold.
+
+For instance, this can happen when the number of tainted key-value pairs of a
+dictionary hit a certain threshold. For scalability reasons, Pysa cannot track
+an infinite amount of indexes, and thus makes the approximation that the whole
+object is tainted.
 
 ```python
-d = {}
-if condition:
-  d["a"] = source()
-  d["b"] = source()
-  # c, d, e, etc.
-else:
-  d["1"] = source()
-  d["2"] = source()
-  # etc.
-sink(d) # too many indexes, the whole `d` variable becomes tainted.
+def foo(condition):
+    d = {}
+    if condition:
+        d["a"] = source()
+        d["b"] = source()
+        # c, d, e, etc.
+    else:
+        d["1"] = source()
+        d["2"] = source()
+        # etc.
+    return d # too many indexes, the whole return value is considered tainted.
+```
+
+See [tune the taint tree width and depth](pysa_advanced.md#tune-the-taint-tree-width-and-depth)
+for more information.
+
+#### `widen-broadening` Feature
+
+The `widen-broadening` feature is added when a taint tree is exceeding
+the maximum depth within a loop.
+
+For instance:
+```python
+def foo(person):
+    while person.parent is not None:
+        person = person.parent
+        # Infer sinks on person.name, person.parent.name, person.parent.parent.name, etc.
+        sink(person.name)
 ```
 
 #### `tito-broadening` Feature

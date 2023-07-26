@@ -327,10 +327,10 @@
             "local_features": [
               { "always-via": "obscure:model" },
               { "always-type": "integer" },
+              { "always-via": "model-broadening" },
               { "always-type": "scalar" },
               { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
+              { "always-via": "broadening" }
             ],
             "tito_positions": [
               { "line": 57, "start": 27, "end": 61 },

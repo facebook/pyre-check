@@ -2932,10 +2932,10 @@ let extract_source_model
     tree
     |> ForwardState.Tree.shape
          ~mold_with_return_access_paths:false
-         ~breadcrumbs:(Features.widen_broadening_set ())
+         ~breadcrumbs:(Features.model_broadening_set ())
     |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
     |> ForwardState.Tree.limit_to
-         ~breadcrumbs:(Features.widen_broadening_set ())
+         ~breadcrumbs:(Features.model_broadening_set ())
          ~width:maximum_model_source_tree_width
   in
   let return_taint =

@@ -46,9 +46,9 @@
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
+                  { "via": "model-broadening" },
                   { "via": "tito" },
-                  { "via": "broadening" },
-                  { "via": "widen-broadening" }
+                  { "via": "broadening" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
@@ -64,9 +64,9 @@
                   { "via": "c_feature" },
                   { "via": "split" },
                   { "via": "b_feature" },
+                  { "via": "model-broadening" },
                   { "via": "tito" },
-                  { "via": "broadening" },
-                  { "via": "widen-broadening" }
+                  { "via": "broadening" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
@@ -120,9 +120,9 @@
       { "via": "c_feature" },
       { "via": "split" },
       { "via": "b_feature" },
+      { "via": "model-broadening" },
       { "via": "tito" },
-      { "via": "broadening" },
-      { "via": "widen-broadening" }
+      { "via": "broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -186,9 +186,9 @@
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
+                  { "via": "model-broadening" },
                   { "via": "tito" },
-                  { "via": "broadening" },
-                  { "via": "widen-broadening" }
+                  { "via": "broadening" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
@@ -204,9 +204,9 @@
                   { "via": "c_feature" },
                   { "via": "split" },
                   { "via": "b_feature" },
+                  { "via": "model-broadening" },
                   { "via": "tito" },
-                  { "via": "broadening" },
-                  { "via": "widen-broadening" }
+                  { "via": "broadening" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
@@ -260,9 +260,9 @@
       { "via": "c_feature" },
       { "via": "split" },
       { "via": "b_feature" },
+      { "via": "model-broadening" },
       { "always-via": "tito" },
       { "via": "broadening" },
-      { "via": "widen-broadening" },
       { "via": "issue-broadening" }
     ],
     "sink_handle": {
@@ -775,8 +775,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" }
             ],
             "call": {
               "position": {
@@ -840,8 +840,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" }
             ],
             "call": {
               "position": {
@@ -874,8 +874,8 @@
               }
             ],
             "local_features": [
-              { "always-via": "broadening" },
-              { "always-via": "widen-broadening" }
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" }
             ],
             "call": {
               "position": {

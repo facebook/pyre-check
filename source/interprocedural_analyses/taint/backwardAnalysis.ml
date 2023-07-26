@@ -2421,10 +2421,10 @@ let extract_tito_and_sink_models
     tree
     |> BackwardState.Tree.shape
          ~mold_with_return_access_paths:is_constructor
-         ~breadcrumbs:(Features.widen_broadening_set ())
+         ~breadcrumbs:(Features.model_broadening_set ())
     |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     |> BackwardState.Tree.limit_to
-         ~breadcrumbs:(Features.widen_broadening_set ())
+         ~breadcrumbs:(Features.model_broadening_set ())
          ~width:maximum_model_sink_tree_width
     |> BackwardState.Tree.transform_call_info
          CallInfo.Tito
@@ -2462,7 +2462,7 @@ let extract_tito_and_sink_models
         |> BackwardState.Tree.add_via_features via_features_to_attach
       in
       BackwardState.Tree.limit_to
-        ~breadcrumbs:(Features.widen_broadening_set ())
+        ~breadcrumbs:(Features.model_broadening_set ())
         ~width:maximum_model_tito_tree_width
         candidate_tree
     in

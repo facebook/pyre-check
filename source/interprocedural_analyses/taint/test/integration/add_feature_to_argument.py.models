@@ -243,8 +243,8 @@
             ],
             "local_features": [
               { "via-value": "second" },
-              { "via": "broadening" },
-              { "via": "widen-broadening" }
+              { "via": "model-broadening" },
+              { "via": "broadening" }
             ],
             "origin": {
               "filename": "add_feature_to_argument.py",
