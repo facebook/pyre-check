@@ -284,7 +284,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
@@ -315,7 +316,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
@@ -323,7 +325,8 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "call": {
               "position": {
@@ -346,7 +349,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
@@ -356,7 +360,8 @@
               { "always-via": "model-broadening" },
               { "always-via": "tito-broadening" },
               { "always-via": "broadening" },
-              { "always-via": "obscure:unknown-callee" }
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "model-sink-broadening" }
             ],
             "call": {
               "position": {
@@ -379,7 +384,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
@@ -387,7 +393,8 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "call": {
               "position": {
@@ -432,7 +439,8 @@
               { "via": "obscure:model" },
               { "via": "model-broadening" },
               { "via": "tito" },
-              { "via": "broadening" }
+              { "via": "broadening" },
+              { "via": "model-tito-broadening" }
             ],
             "tito_positions": [
               { "line": 49, "start": 25, "end": 87 },
@@ -464,7 +472,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "GetAttr"
@@ -521,7 +530,8 @@
               { "via": "obscure:model" },
               { "via": "model-broadening" },
               { "always-via": "tito" },
-              { "via": "broadening" }
+              { "via": "broadening" },
+              { "via": "model-tito-broadening" }
             ],
             "tito_positions": [ { "line": 34, "start": 25, "end": 28 } ],
             "tito": null
@@ -549,7 +559,8 @@
                   { "always-via": "tito-broadening" },
                   { "always-via": "tito" },
                   { "always-via": "broadening" },
-                  { "via": "obscure:unknown-callee" }
+                  { "via": "obscure:unknown-callee" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 2,
                 "kind": "GetAttr"
@@ -585,7 +596,8 @@
               { "via": "obscure:model" },
               { "via": "model-broadening" },
               { "always-via": "tito" },
-              { "via": "broadening" }
+              { "via": "broadening" },
+              { "via": "model-tito-broadening" }
             ],
             "tito_positions": [ { "line": 75, "start": 18, "end": 21 } ],
             "tito": null
@@ -682,7 +694,8 @@
                 "features": [
                   { "always-via": "special_sink" },
                   { "via": "model-broadening" },
-                  { "via": "broadening" }
+                  { "via": "broadening" },
+                  { "via": "model-sink-broadening" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -690,7 +703,8 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "call": {
               "position": {
@@ -888,7 +902,8 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "origin": {
               "filename": "model_simplification.py",
@@ -906,7 +921,8 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "origin": {
               "filename": "model_simplification.py",
@@ -988,6 +1004,7 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
+              { "always-via": "model-source-broadening" },
               { "always-via": "broadening" }
             ],
             "origin": {
@@ -1008,6 +1025,7 @@
             ],
             "local_features": [
               { "always-via": "model-broadening" },
+              { "always-via": "model-source-broadening" },
               { "always-via": "broadening" }
             ],
             "origin": {

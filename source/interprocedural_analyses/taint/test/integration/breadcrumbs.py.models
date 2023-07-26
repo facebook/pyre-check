@@ -330,7 +330,8 @@
               { "always-via": "model-broadening" },
               { "always-type": "scalar" },
               { "always-via": "tito" },
-              { "always-via": "broadening" }
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
             ],
             "tito_positions": [
               { "line": 57, "start": 27, "end": 61 },
