@@ -1036,7 +1036,7 @@ end = struct
         [
           (* using an always-feature here would break the widening invariant: a <= a widen b *)
           { element = Features.broadening (); in_under = false };
-          { element = Features.issue_broadening (); in_under = false };
+          { element = Features.widen_broadening (); in_under = false };
         ]
     in
     taint

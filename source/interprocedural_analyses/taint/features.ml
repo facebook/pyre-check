@@ -537,6 +537,8 @@ let type_enumeration = memoize_breadcrumb_interned (Breadcrumb.Type "enumeration
 
 let broadening = memoize_breadcrumb_interned Breadcrumb.Broadening
 
+let widen_broadening = memoize_breadcrumb_interned Breadcrumb.WidenBroadening
+
 let issue_broadening = memoize_breadcrumb_interned Breadcrumb.IssueBroadening
 
 let string_concat_left_hand_side =

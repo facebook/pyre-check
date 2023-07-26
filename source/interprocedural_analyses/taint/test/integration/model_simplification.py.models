@@ -823,7 +823,7 @@
               }
             ],
             "local_features": [
-              { "via": "broadening" }, { "via": "issue-broadening" }
+              { "via": "broadening" }, { "via": "widen-broadening" }
             ],
             "call": {
               "position": {
@@ -844,14 +844,14 @@
                 "features": [
                   { "always-via": "special_sink" },
                   { "via": "broadening" },
-                  { "via": "issue-broadening" }
+                  { "via": "widen-broadening" }
                 ],
                 "length": 5,
                 "kind": "Test"
               }
             ],
             "local_features": [
-              { "via": "broadening" }, { "via": "issue-broadening" }
+              { "via": "broadening" }, { "via": "widen-broadening" }
             ],
             "call": {
               "position": {

@@ -1161,7 +1161,7 @@
               { "first-index": "<numeric>" },
               { "via": "tito" },
               { "via": "broadening" },
-              { "via": "issue-broadening" }
+              { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 67, "start": 35, "end": 41 } ],
             "tito": null
@@ -1684,7 +1684,7 @@
             "local_features": [
               { "always-via": "tito" },
               { "via": "broadening" },
-              { "via": "issue-broadening" }
+              { "via": "widen-broadening" }
             ],
             "tito_positions": [ { "line": 71, "start": 21, "end": 27 } ],
             "tito": null
