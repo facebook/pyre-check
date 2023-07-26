@@ -931,7 +931,9 @@ def foo():
 ```
 
 The source tree for `foo` has a width of 3. Above the provided threshold, pysa
-will collapse the taint and consider the whole dictionary tainted.
+will collapse the taint and consider the whole dictionary tainted. When that
+happens, the breadcrumbs `model-broadening` and `model-source-broadening` will
+be added to the flow.
 
 ### Maximum model sink tree width
 
@@ -951,7 +953,8 @@ def foo(arg):
 
 The sink tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
-whole argument leads to a sink.
+whole argument leads to a sink. When that happens, the breadcrumbs
+`model-broadening` and `model-sink-broadening` will be added to the flow.
 
 ### Maximum model tito tree width
 
@@ -969,7 +972,9 @@ def foo(arg):
 
 The taint-in-taint-out tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
-taint on the whole argument is propagated to the return value.
+taint on the whole argument is propagated to the return value. When that
+happens, the breadcrumbs `model-broadening` and `model-tito-broadening` will be
+added to the flow.
 
 ### Maximum tree depth after widening
 
@@ -991,6 +996,7 @@ def foo():
 The source tree for `variable` has a depth of 3 (i.e, `a` -> `b` -> `c`).
 Within a loop, pysa limits the depth to the provided threshold. For instance,
 if that threshold is 1, we would consider that `variable.a` is entirely tainted.
+When that happens, the breadcrumb `widen-broadening` will be added to the flow.
 
 ### Maximum return access path width
 
@@ -1008,7 +1014,9 @@ def foo(arg):
 
 The return access path tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
-whole return value is tainted whenever `arg` is tainted.
+whole return value is tainted whenever `arg` is tainted. When that happens,
+the breadcrumbs `model-broadening` and `model-tito-broadering` will be added to
+the flow.
 
 ### Maximum return access path depth after widening
 
@@ -1030,7 +1038,8 @@ def foo(arg):
 The return access path tree for `foo` and parameter `arg` has a depth  of 3
 (i.e, `a` -> `b` -> `c`). Within a loop, pysa limits the depth to the provided
 threshold. For instance, if that threshold is 2, we would cut the output path
-to just `a.b`.
+to just `a.b`. When that happens, the breadcrumb `model-broadening` and
+`model-tito-broadening` will be added to the flow.
 
 ### Maximum tito collapse depth
 
