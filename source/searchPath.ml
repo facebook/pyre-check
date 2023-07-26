@@ -5,7 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* The SearchPath.t datatype represents somewhere Pyre will look for
+ * source code. There are three varieties:
+ * - A Root, which corresponds to a top-level package root like site-packages
+ * - A Subdirectory, which is a directory of source files where the module
+ *   paths should be interpreted as relative to some possibly-higher root.
+ *   This is useful, for example, when only including a couple of packages
+ *   as search roots from a much bigger site-packages directory; we need a way
+ *   to only include relative packages, but set
+ * - A Submodule, which is like a Subdirectory but for a single source file.
+ *   This is needed to handle single-file packages in the same scenarios where
+ *   we might otherwise have used Subdirectory.
+ *)
 
 open Core
 
