@@ -340,6 +340,40 @@ then, is to make them as specific as possible. It's recommended to sanitize
 specific sources and sinks over using the general `@Sanitize`, `-> Sanitize` or
 `: Sanitize` annotations.
 
+### TITO Sanitizers vs Source/Sink Sanitizers
+Source/Sink sanitizers are used to sanitize functions belonging to the source/sink trace. Example
+```python
+def render_string_safe(string: str):
+  safe_strings_list = ["safe", "string", "list"]
+  if string in safe_strings_list:
+    return render(string)
+
+def render_input_view(request: HttpRequest):
+  user_input = request.GET["user_input"]
+  return render_string_safe(user_input)
+```
+Without any sanitizer this code would raise a pysa issue since the UserControlled input is flowing into the `render` function (imagining that the `render` function is an XSS sink).
+To avoid this we can create a model:
+```python
+def render_string_safe(string: Sanitize[TaintSink[XSS]]): ...
+```
+This will instruct pysa to remove the XSS taint on the string parameter in this way even if we have a XSS sink (`render`) inside the `render_string_safe` function we will not trigger an issue.
+
+TITO Sanitizers instead are used to remove the taint when tainted value is flowing into (TaintIn) a function as a parameter and then it is returned (TaintOut) by the same function.
+```python
+def sanitize_string(string: str):
+  return re.sub('[^0-9a-z]+', '*', string)
+
+def render_input_view(request: HttpRequest):
+  user_input = request.GET["user_input"]
+  safe_str = sanitize_string(user_input)
+  return render(safe_str)
+```
+Like in the example before this code would generate a Pysa XSS issue. To avoid this we can create a model:
+```python
+def sanitize_string(string: Sanitize[TaintInTaintOut[TaintSink[XSS]]]): ...
+```
+This will instruct pysa to remove the XSS taint from the value returned by the `sanitize_string` when a tainted value is passed as `string` parameter to the `sanitize_string` function.
 ## Taint Propagation
 
 Sometimes, Pysa is unable to infer that tainted data provided as an argument to a function will be returned by that function. In such cases, Pysa models can be annotated with `TaintInTaintOut[LocalReturn]` to encode this information for using during the analysis. This annotation can be applied to any parameter, including `self`, and is useful in scenarios such as when retrieving a value from a collection containting tainted data:
