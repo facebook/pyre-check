@@ -504,7 +504,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 68,
+              "line": 79,
               "start": 19,
               "end": 24
             }
@@ -532,7 +532,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 94,
+              "line": 105,
               "start": 19,
               "end": 22
             }
@@ -548,6 +548,30 @@
     "callable": "closure.parameter_order_swap",
     "sinks": [
       {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 55,
+                "start": 4,
+                "end": 11
+              },
+              "resolves_to": [ "closure.parameter_order_swap.inner" ],
+              "port": "captured_variable($parameter$z)"
+            }
+          }
+        ]
+      },
+      {
         "port": "formal(y)",
         "taint": [
           {
@@ -561,12 +585,12 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 54,
+                "line": 55,
                 "start": 4,
-                "end": 13
+                "end": 11
               },
-              "resolves_to": [ "closure.parameter_order_swap.wrapper" ],
-              "port": "captured_variable($parameter$x)"
+              "resolves_to": [ "closure.parameter_order_swap.inner" ],
+              "port": "captured_variable($parameter$y)"
             }
           }
         ]
@@ -585,12 +609,12 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 54,
+                "line": 55,
                 "start": 4,
-                "end": 13
+                "end": 11
               },
-              "resolves_to": [ "closure.parameter_order_swap.wrapper" ],
-              "port": "captured_variable($parameter$y)"
+              "resolves_to": [ "closure.parameter_order_swap.inner" ],
+              "port": "captured_variable($parameter$x)"
             }
           }
         ]
@@ -601,8 +625,28 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure.parameter_order_swap.wrapper",
+    "callable": "closure.parameter_order_swap.inner",
     "sinks": [
+      {
+        "port": "captured_variable($parameter$z)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 54,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      },
       {
         "port": "captured_variable($parameter$y)",
         "taint": [
@@ -637,6 +681,160 @@
             "origin": {
               "filename": "closure.py",
               "line": 53,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.parameter_order_swap_different_variable_names",
+    "sinks": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 65,
+                "start": 4,
+                "end": 11
+              },
+              "resolves_to": [
+                "closure.parameter_order_swap_different_variable_names.inner"
+              ],
+              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$c)"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 65,
+                "start": 4,
+                "end": 11
+              },
+              "resolves_to": [
+                "closure.parameter_order_swap_different_variable_names.inner"
+              ],
+              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$b)"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 65,
+                "start": 4,
+                "end": 11
+              },
+              "resolves_to": [
+                "closure.parameter_order_swap_different_variable_names.inner"
+              ],
+              "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$a)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.parameter_order_swap_different_variable_names.inner",
+    "sinks": [
+      {
+        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$c)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 64,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 62,
+              "start": 19,
+              "end": 20
+            }
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 63,
               "start": 19,
               "end": 20
             }

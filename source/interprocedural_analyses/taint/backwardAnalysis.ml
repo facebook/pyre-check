@@ -580,7 +580,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~captures_taint:ForwardState.empty
         ~location:call_location
     in
-    let captures_taint, _ = List.fold ~f:analyze_argument ~init:([], initial_state) captures in
+    let captures_taint, _ =
+      captures |> List.rev |> List.fold ~f:analyze_argument ~init:([], initial_state)
+    in
 
     let arguments_taint, state =
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments
