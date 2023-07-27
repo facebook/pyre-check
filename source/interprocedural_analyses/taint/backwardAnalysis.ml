@@ -574,20 +574,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       taint :: arguments_taint, state
     in
+    let analyze_argument_matches argument_matches initial_state =
+      argument_matches |> List.rev |> List.fold ~f:analyze_argument ~init:([], initial_state)
+    in
     let _, captures =
       CallModel.match_captures
         ~model:taint_model
         ~captures_taint:ForwardState.empty
         ~location:call_location
     in
-    let captures_taint, _ =
-      captures |> List.rev |> List.fold ~f:analyze_argument ~init:([], initial_state)
-    in
+    let captures_taint, _ = analyze_argument_matches captures initial_state in
 
     let arguments_taint, state =
-      CallModel.match_actuals_to_formals ~model:taint_model ~arguments
-      |> List.rev
-      |> List.fold ~f:analyze_argument ~init:([], initial_state)
+      analyze_argument_matches
+        (CallModel.match_actuals_to_formals ~model:taint_model ~arguments)
+        initial_state
     in
     (* Extract the taint for self. *)
     let self_taint, callee_taint, arguments_taint =
