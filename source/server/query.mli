@@ -22,10 +22,6 @@ module Request : sig
         parse_errors: string list;
       }
     | LessOrEqual of Expression.t * Expression.t
-    | LocationOfDefinition of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | ModelQuery of {
         path: PyrePath.t;
         query_name: string;
@@ -163,7 +159,6 @@ module Response : sig
       | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundLocationsOfDefinitions of code_location list
       | FoundModels of taint_model list
       | FoundModules of Ast.Reference.t list
       | FoundPath of string

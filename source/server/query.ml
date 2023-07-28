@@ -30,10 +30,6 @@ module Request = struct
         parse_errors: string list;
       }
     | LessOrEqual of Expression.t * Expression.t
-    | LocationOfDefinition of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | ModelQuery of {
         path: PyrePath.t;
         query_name: string;
@@ -179,7 +175,6 @@ module Response = struct
       | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list
       | FoundDefines of define list
-      | FoundLocationsOfDefinitions of code_location list
       | FoundModels of taint_model list
       | FoundModules of Reference.t list
       | FoundPath of string
@@ -274,8 +269,6 @@ module Response = struct
               ]
           in
           `List (List.map defines ~f:define_to_yojson)
-      | FoundLocationsOfDefinitions locations ->
-          `List (List.map locations ~f:code_location_to_yojson)
       | FoundModels models -> `List (List.map ~f:taint_model_to_yojson models)
       | FoundModules references ->
           let reference_to_yojson reference = `String (Reference.show reference) in
@@ -434,12 +427,6 @@ let rec parse_request_exn query =
           |> List.partition_result
           |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
-      | "location_of_definition", [path; line; column] ->
-          Request.LocationOfDefinition
-            {
-              path = PyrePath.create_absolute (string path);
-              position = { line = integer line; column = integer column };
-            }
       | "model_query", [path; model_query_name] ->
           Request.ModelQuery
             { path = PyrePath.create_absolute (string path); query_name = string model_query_name }
@@ -942,37 +929,6 @@ let rec process_request ~type_environment ~build_system request =
         let right = parse_and_validate right in
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
-    | LocationOfDefinition { path; position } -> (
-        let module_reference = module_of_path path in
-        match module_reference with
-        | Some module_reference -> (
-            (* Performing check on whether source contains parse error for telemetry purposes -
-               understanding whether the file was parsed correct to gauge the usefulness of an error
-               recoverable parser.
-
-               This can be removed when we either no longer need telemetry data or if we can
-               separate symbol resolution from location finding logic. *)
-            let raw_source =
-              AstEnvironment.ReadOnly.get_raw_source
-                (TypeEnvironment.ReadOnly.ast_environment type_environment)
-                module_reference
-            in
-            match raw_source with
-            | Some (Result.Error error) ->
-                Error
-                  (Format.sprintf
-                     "Parse error in location request. Location: %s, message: %s"
-                     (Location.show error.location)
-                     error.message)
-            | _ ->
-                LocationBasedLookup.location_of_definition
-                  ~type_environment
-                  ~module_reference
-                  position
-                >>= instantiate_range
-                |> Option.to_list
-                |> fun definitions -> Single (Base.FoundLocationsOfDefinitions definitions))
-        | None -> Single (Base.FoundLocationsOfDefinitions []))
     | PathOfModule module_name ->
         ModuleTracker.ReadOnly.lookup_module_path module_tracker module_name
         >>= (fun source_path ->
