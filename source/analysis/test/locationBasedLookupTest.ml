@@ -1714,11 +1714,15 @@ let test_resolve_completions_for_symbol context =
       in
       type_environment
     in
+    let right_inclusive_cursor_position =
+      find_indicator_position ~source "cursor"
+      |> fun { line; column } -> { Ast.Location.line; column = max 0 column - 1 }
+    in
     let symbol_data =
       LocationBasedLookup.find_narrowest_spanning_symbol
         ~type_environment
         ~module_reference
-        (find_indicator_position ~source "cursor")
+        right_inclusive_cursor_position
     in
     let attributes =
       match
@@ -1810,10 +1814,18 @@ let test_resolve_completions_for_symbol context =
 
 
         Bar().attr
-        #        ^- cursor
+        #         ^- cursor
     |}
     (* Incomplete attribute string + cursor at end of line, attribute completion *)
     ["attribute"; "attribute2"; "attribute3"];
+  assert_resolved_completion_items
+    ~source:{|
+        class Foo: ...
+
+       #^- cursor
+      |}
+    (* Cursor at column 0 on newline *)
+    [];
   ()
 
 
