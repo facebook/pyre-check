@@ -437,11 +437,13 @@ class ModuleModeCollector(VisitorWithPositionData):
 def collect_mode(
     module: libcst.MetadataWrapper,
     strict_by_default: bool,
+    ignored: bool = False,  # means the module was ignored in the pyre configuration
 ) -> ModuleModeInfo:
     visitor = ModuleModeCollector(strict_by_default)
     module.visit(visitor)
+    mode = ModuleMode.IGNORE_ALL if ignored else visitor.mode
     return ModuleModeInfo(
-        mode=visitor.mode,
+        mode=mode,
         explicit_comment_line=visitor.explicit_comment_line,
     )
 

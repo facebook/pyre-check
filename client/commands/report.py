@@ -96,8 +96,9 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         module: libcst.MetadataWrapper,
         path: ModulePath,
         strict_by_default: bool,
+        ignored: bool,
     ) -> ModuleData:
-        mode = coverage_data.collect_mode(module, strict_by_default)
+        mode = coverage_data.collect_mode(module, strict_by_default, ignored)
         suppressions = coverage_data.collect_suppressions(module)
         functions = coverage_data.collect_functions(module)
         return ModuleData(
@@ -118,6 +119,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
 
         path: ModulePath
         strict_by_default: bool
+        ignored: bool
 
     @staticmethod
     def collect_from_path(
@@ -131,6 +133,7 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
                 module,
                 path=args.path,
                 strict_by_default=args.strict_by_default,
+                ignored=args.ignored,
             )
 
     @staticmethod
@@ -138,14 +141,16 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         module_paths: Sequence[ModulePath],
         strict_by_default: bool,
         number_of_workers: int,
+        ignored_modules: Sequence[ModulePath],
     ) -> List[ModuleData]:
-        tasks = [
-            ModuleData.CollectFromPathArgs(
-                path=path,
-                strict_by_default=strict_by_default,
+        tasks = []
+        for path in module_paths:
+            ignored = path in ignored_modules
+            tasks.append(
+                ModuleData.CollectFromPathArgs(
+                    path=path, strict_by_default=strict_by_default, ignored=ignored
+                )
             )
-            for path in module_paths
-        ]
         with multiprocessing.Pool(number_of_workers) as pool:
             return [
                 module_data
@@ -169,10 +174,13 @@ def run(
         configuration=configuration,
         paths=paths,
     )
+    ignored_paths = [Path(path) for path in configuration.get_ignore_all_errors()]
     data = ModuleData.collect_from_paths(
         module_paths,
         strict_by_default=configuration.is_strict(),
         number_of_workers=configuration.get_number_of_workers(),
+        ignored_modules=get_module_paths(configuration, ignored_paths),
     )
+
     print_data_as_json(data)
     return commands.ExitCode.SUCCESS
