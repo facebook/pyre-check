@@ -666,7 +666,7 @@ module SharedMemory = struct
       (struct
         type t = Heap.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "Taint configuration"
       end)

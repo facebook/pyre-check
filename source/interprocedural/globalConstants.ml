@@ -89,7 +89,7 @@ module SharedMemory = struct
       (struct
         type t = StringLiteral.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "Mapping from fully qualified global name to expression"
       end)

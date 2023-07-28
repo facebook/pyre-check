@@ -143,7 +143,7 @@ module In = struct
       module Serialized = struct
         type nonrec t = key list
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "Decoder storage"
       end

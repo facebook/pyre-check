@@ -178,12 +178,12 @@ end
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory = struct
   module T =
-    SharedMemory.FirstClass.WithCache.Make
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
       (Target.SharedMemoryKey)
       (struct
         type t = Reference.t list
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "overriding types"
       end)

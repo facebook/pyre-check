@@ -10,6 +10,7 @@
 open Core
 module Gc = Caml.Gc
 module Set = Caml.Set
+module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module type KeyType = SharedMemory.KeyType
 
@@ -280,5 +281,3 @@ module Interner (Value : InternerValueType) = struct
 
   let compare = Int.compare
 end
-
-module SharedMemory = Hack_parallel.Std.SharedMemory

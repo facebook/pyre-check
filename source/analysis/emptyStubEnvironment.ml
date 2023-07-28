@@ -32,7 +32,7 @@ module EmptyStubCache = ManagedCache.Make (struct
   module Value = struct
     type t = bool
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "is from empty stub result"
 

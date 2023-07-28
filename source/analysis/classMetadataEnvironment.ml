@@ -36,7 +36,7 @@ type class_metadata = {
 module ClassMetadataValue = struct
   type t = class_metadata option
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Class metadata"
 

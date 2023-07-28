@@ -113,7 +113,7 @@ module BuckBuildSystem = struct
     module Serialized = struct
       type nonrec t = t
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Buck Builder States"
     end

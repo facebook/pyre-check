@@ -214,7 +214,7 @@ module Make (Analysis : ANALYSIS) = struct
         (struct
           type t = Model.t
 
-          let prefix = Prefix.make ()
+          let prefix = Hack_parallel.Std.Prefix.make ()
 
           let description = "InterproceduralFixpointModel"
         end)
@@ -225,7 +225,7 @@ module Make (Analysis : ANALYSIS) = struct
         (struct
           type t = Result.t
 
-          let prefix = Prefix.make ()
+          let prefix = Hack_parallel.Std.Prefix.make ()
 
           let description = "InterproceduralFixpointResults"
         end)
@@ -242,7 +242,7 @@ module Make (Analysis : ANALYSIS) = struct
         (struct
           type t = meta_data
 
-          let prefix = Prefix.make ()
+          let prefix = Hack_parallel.Std.Prefix.make ()
 
           let description = "InterproceduralFixpointMetadata"
         end)
@@ -256,7 +256,7 @@ module Make (Analysis : ANALYSIS) = struct
         (struct
           type t = KeySet.t
 
-          let prefix = Prefix.make ()
+          let prefix = Hack_parallel.Std.Prefix.make ()
 
           let description = "InterproceduralFixpointTarget"
         end)
@@ -745,7 +745,7 @@ struct
       "Iteration #%n, %d callables, heap size %.3fGB took %.2fs"
       iteration
       number_of_callables
-      (Int.to_float (SharedMemory.heap_size ()) /. 1000000000.0)
+      (Int.to_float (Hack_parallel.Std.SharedMemory.heap_size ()) /. 1000000000.0)
       (Timer.stop_in_sec timer)
 
 

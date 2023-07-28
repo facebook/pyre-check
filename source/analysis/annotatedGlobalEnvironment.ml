@@ -34,7 +34,7 @@ module PreviousEnvironment = AttributeResolution
 module GlobalLocationValue = struct
   type t = Location.WithModule.t option
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Global Locations"
 

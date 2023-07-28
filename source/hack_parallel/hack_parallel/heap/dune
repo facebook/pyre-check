@@ -6,10 +6,8 @@
    (:standard
     -I%{project_root}/hack_parallel/hack_parallel/third-party/lz4
     -I%{project_root}/hack_parallel/hack_parallel/third-party/sqlite3)))
- (name heap)
+ (name hack_heap)
  (public_name hack_parallel.heap)
- (wrapped false)
- (modules (:standard))
  (libraries
   hack_parallel.collections
   hack_parallel.lz4

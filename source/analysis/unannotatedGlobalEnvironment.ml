@@ -376,7 +376,7 @@ module FromReadOnlyUpstream = struct
     module ClassKeyValue = struct
       type t = Identifier.t list [@@deriving compare]
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Class keys"
     end
@@ -384,7 +384,7 @@ module FromReadOnlyUpstream = struct
     module UnannotatedGlobalKeyValue = struct
       type t = Reference.t list [@@deriving compare]
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Class keys"
     end
@@ -462,7 +462,7 @@ module FromReadOnlyUpstream = struct
   module ModuleValue = struct
     type t = Module.t
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Module"
 
@@ -484,7 +484,7 @@ module FromReadOnlyUpstream = struct
   module DefineNamesValue = struct
     type t = Reference.t list [@@deriving equal]
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "DefineListing"
   end
@@ -510,7 +510,7 @@ module FromReadOnlyUpstream = struct
   module ClassSummaryValue = struct
     type t = ClassSummary.t Node.t
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "ClassSummary"
 
@@ -534,7 +534,7 @@ module FromReadOnlyUpstream = struct
 
     let description = "FunctionDefinition"
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let equal definition0 definition1 =
       Int.equal 0 (FunctionDefinition.compare definition0 definition1)
@@ -555,7 +555,7 @@ module FromReadOnlyUpstream = struct
   module UnannotatedGlobalValue = struct
     type t = UnannotatedGlobal.t
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "UnannotatedGlobal"
 

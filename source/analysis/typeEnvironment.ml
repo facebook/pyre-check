@@ -28,7 +28,7 @@ module Error = AnalysisError
 module CheckResultValue = struct
   type t = TypeCheck.CheckResult.t option [@@deriving equal]
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "CheckResult"
 end

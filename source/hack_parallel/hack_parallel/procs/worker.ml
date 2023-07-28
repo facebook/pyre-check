@@ -16,6 +16,7 @@ module Measure = Hack_utils.Measure
 module PrintSignal = Hack_utils.PrintSignal
 module String_utils = Hack_utils.String_utils
 module Utils = Hack_utils.Utils
+open Hack_heap
 
 (*****************************************************************************
  * Module building workers

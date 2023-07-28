@@ -6,6 +6,7 @@
  *)
 
 open OUnit2
+module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module IntKey = struct
   type t = int
@@ -20,7 +21,7 @@ end
 module MockAnnotationValue = struct
   type t = string
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Annotations"
 end
@@ -53,7 +54,7 @@ let test_interner _ =
 
     let to_string x = x
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "string"
   end)

@@ -125,7 +125,7 @@ module SingleValueSharedMemory (Value : SingleValueSharedMemoryValueType) = stru
     module Serialized = struct
       type t = Value.t
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = value_entry_name
     end

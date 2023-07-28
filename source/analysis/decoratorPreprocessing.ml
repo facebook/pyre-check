@@ -51,7 +51,7 @@ module ConfigurationSharedMemory =
     (struct
       type t = Configuration.t
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Configuration for decorator preprocessing."
     end)
@@ -62,7 +62,7 @@ module OptionsSharedMemory =
     (struct
       type t = bool
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Options for decorator preprocessing."
     end)
@@ -73,7 +73,7 @@ module DecoratorActionsSharedMemory =
     (struct
       type t = Action.t
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "What action to take on a given decorator."
     end)
@@ -105,7 +105,7 @@ let kwargs_local_variable_name = "_kwargs"
 module DecoratorModuleValue = struct
   type t = Ast.Reference.t
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Module for a decorator that has been inlined."
 end
@@ -128,7 +128,7 @@ let original_name_from_inlined_name = InlinedNameToOriginalName.get
 module DecoratorListValue = struct
   type t = Ast.Expression.t list
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Original decorators for a decorated function that has been preprocessed."
 end
@@ -824,7 +824,7 @@ let postprocess
 module Decorators = struct
   type t = Define.t list
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Decorators from a module."
 end

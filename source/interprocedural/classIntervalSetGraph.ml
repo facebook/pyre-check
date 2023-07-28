@@ -12,7 +12,7 @@
  * stored in shared memory using the `SharedMemory` module.
  *)
 
-module HackSharedMemory = SharedMemory
+module HackSharedMemory = Hack_parallel.Std.SharedMemory
 open ClassHierarchyGraph
 
 type dfs_state =
@@ -118,7 +118,7 @@ module SharedMemory = struct
       (struct
         type t = ClassIntervalSet.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "class intervals of classes"
       end)

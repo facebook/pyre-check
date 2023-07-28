@@ -9,11 +9,15 @@
 
 
 module Std = struct
-  module SharedMemory = SharedMemory
+  module SharedMemory = Hack_heap.SharedMemory
+
+  module Prefix = Hack_heap.Prefix
 
   module MultiWorker = MultiWorker
 
   module Worker = Worker
+
+  module WorkerCancel = Hack_heap.WorkerCancel
 
   module Bucket = Hack_bucket
 

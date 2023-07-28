@@ -9,6 +9,7 @@
 
 open Core
 open Pyre
+module SharedMemory = Hack_parallel.Std.SharedMemory
 
 type t = {
   root: ErrorsEnvironment.t;

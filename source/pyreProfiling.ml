@@ -9,6 +9,7 @@
 
 open Core
 module Worker = Hack_parallel.Std.Worker
+module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module GlobalState = struct
   type t = {

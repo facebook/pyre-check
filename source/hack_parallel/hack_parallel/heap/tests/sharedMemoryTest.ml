@@ -22,12 +22,12 @@ end
 module StringValue = struct
   type t = string
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "string for testing"
 end
 
-module StringStringTable = SharedMemory.FirstClass.WithCache.Make (StringKey) (StringValue)
+module StringStringTable = Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make (StringKey) (StringValue)
 
 let test_first_class _ =
   (* Initialize a table, set and check a value *)

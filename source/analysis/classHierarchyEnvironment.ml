@@ -43,7 +43,7 @@ type edges = {
 module EdgesValue = struct
   type t = edges option
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Edges"
 

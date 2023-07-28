@@ -48,7 +48,7 @@ end)
 module OrderIndexValue = struct
   type t = int
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Order indices"
 end
@@ -56,7 +56,7 @@ end
 module OrderAnnotationValue = struct
   type t = string
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Order annotations"
 end

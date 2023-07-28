@@ -328,7 +328,7 @@ let produce_errors
       ~integers:
         [
           "iterations", iterations;
-          "heap size", SharedMemory.heap_size ();
+          "heap size", Hack_parallel.Std.SharedMemory.heap_size ();
           "issues", List.length errors;
         ]
       ()

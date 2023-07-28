@@ -35,7 +35,7 @@ module Error = AnalysisError
 module QualifierErrorsValue = struct
   type t = Error.t list [@@deriving compare]
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "QualifierErrorsValue"
 

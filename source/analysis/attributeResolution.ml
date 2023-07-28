@@ -4980,7 +4980,7 @@ module ParseAnnotationCache = struct
     module Value = struct
       type t = Type.t [@@deriving eq]
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "parse annotation"
     end
@@ -5045,7 +5045,7 @@ module MetaclassCache = struct
     module Value = struct
       type t = Type.t option [@@deriving equal]
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "metaclasses"
     end
@@ -5100,7 +5100,7 @@ module AttributeCache = struct
     module Value = struct
       type t = UninstantiatedAttributeTable.t option [@@deriving compare]
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "attributes"
 
@@ -5195,7 +5195,7 @@ module GlobalAnnotationCache = struct
     module Value = struct
       type t = Global.t option
 
-      let prefix = Prefix.make ()
+      let prefix = Hack_parallel.Std.Prefix.make ()
 
       let description = "Global"
 

@@ -184,7 +184,7 @@ static sqlite3_stmt* get_select_stmt = NULL;
  * with an strerr(errno) of "Function not implemented" if the
  * kernel is < 3.17, and that's good enough.
  */
-static int memfd_create(const char* name, unsigned int flags) {
+static int my_memfd_create(const char* name, unsigned int flags) {
   return syscall(SYS_memfd_create, name, flags);
 }
 #endif
@@ -642,7 +642,7 @@ void memfd_init(
   if (shm_dir == NULL) {
     // This means that we should try to use the anonymous-y system calls
 #if defined(MEMFD_CREATE)
-    memfd = memfd_create("fb_heap", 0);
+    memfd = my_memfd_create("fb_heap", 0);
 #endif
 #if defined(__APPLE__)
     if (memfd < 0) {

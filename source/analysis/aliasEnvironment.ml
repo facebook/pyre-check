@@ -35,7 +35,7 @@ let preprocess_alias_value value =
 module AliasValue = struct
   type t = Type.alias option
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Alias"
 

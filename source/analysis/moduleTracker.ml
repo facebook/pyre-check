@@ -197,12 +197,12 @@ module ModulePaths = struct
 
 
     module Cache =
-      SharedMemory.FirstClass.WithCache.Make
+      Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
         (SharedMemoryKeys.ReferenceKey)
         (struct
           type t = ModulePath.t list Reference.Map.Tree.t
 
-          let prefix = Prefix.make ()
+          let prefix = Hack_parallel.Std.Prefix.make ()
 
           let description = "CachedDirectoryRead"
         end)
@@ -337,7 +337,7 @@ module LazyTracking = struct
           (struct
             type t = Value.t [@@deriving compare]
 
-            let prefix = Prefix.make ()
+            let prefix = Hack_parallel.Std.Prefix.make ()
 
             let description = Value.description
           end)
@@ -899,7 +899,7 @@ module Layouts = struct
       module Serialized = struct
         type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "Module tracker"
       end

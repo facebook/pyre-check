@@ -179,7 +179,7 @@ module SharedMemory = struct
       (struct
         type t = ClassNameSet.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "direct children of classes"
       end)
@@ -190,7 +190,7 @@ module SharedMemory = struct
       (struct
         type t = ClassNameSet.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "transitive children of classes"
       end)

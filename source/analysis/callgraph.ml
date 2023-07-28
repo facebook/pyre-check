@@ -81,7 +81,7 @@ let callee_to_yojson ?locations callee =
 module CalleeValue = struct
   type t = callee_with_locations list
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Reference List"
 end

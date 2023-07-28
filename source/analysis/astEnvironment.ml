@@ -233,7 +233,7 @@ module FromReadOnlyUpstream = struct
   module RawSourceValue = struct
     type t = (Source.t, ParserError.t) Result.t option
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Unprocessed source"
 

@@ -51,7 +51,7 @@ module StringDependencyKey = DependencyTrackedMemory.DependencyKey.Make (StringK
 module StringValue = struct
   type t = string
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Test1"
 
@@ -61,7 +61,7 @@ end
 module OtherStringValue = struct
   type t = string
 
-  let prefix = Prefix.make ()
+  let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Test2"
 

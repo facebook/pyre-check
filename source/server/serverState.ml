@@ -46,7 +46,7 @@ module StoredConfiguration = Memory.Serializer (struct
   module Serialized = struct
     type t = Configuration.Analysis.t
 
-    let prefix = Prefix.make ()
+    let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Configuration"
   end

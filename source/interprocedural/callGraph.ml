@@ -2359,7 +2359,7 @@ module DefineCallGraphSharedMemory = struct
       (struct
         type t = LocationCallees.t Location.Map.Tree.t
 
-        let prefix = Prefix.make ()
+        let prefix = Hack_parallel.Std.Prefix.make ()
 
         let description = "call graphs of defines"
       end)
