@@ -928,6 +928,27 @@ let resolve_completions_for_symbol
   completions
 
 
+let completion_info_for_position ~type_environment ~module_reference position =
+  let right_inclusive_cursor_position =
+    position
+    |> fun { Ast.Location.line; column } -> { Ast.Location.line; column = max 0 column - 1 }
+  in
+  let symbol_data =
+    find_narrowest_spanning_symbol
+      ~type_environment
+      ~module_reference
+      right_inclusive_cursor_position
+  in
+  let completions = symbol_data >>= resolve_completions_for_symbol ~type_environment in
+  Log.log
+    ~section:`Server
+    "Completions for symbol at position `%s:%s`: %s"
+    (Reference.show module_reference)
+    ([%show: Location.position] position)
+    ([%show: ClassSummary.Attribute.t Identifier.SerializableMap.t option] completions);
+  completions
+
+
 let classify_coverage_data { expression; type_ } =
   let make_coverage_gap reason = Some { coverage_data = { expression; type_ }; reason } in
   match type_ with

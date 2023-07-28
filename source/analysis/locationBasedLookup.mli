@@ -111,6 +111,12 @@ val resolve_completions_for_symbol
   symbol_and_cfg_data ->
   ClassSummary.Attribute.t Identifier.SerializableMap.t option
 
+val completion_info_for_position
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  module_reference:Reference.t ->
+  Location.position ->
+  ClassSummary.Attribute.t Identifier.SerializableMap.t option
+
 val resolve_type_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   symbol_and_cfg_data ->
