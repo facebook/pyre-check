@@ -21,10 +21,6 @@ module Request : sig
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | HoverInfoForPosition of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -76,12 +72,6 @@ module Response : sig
     type types_at_path = {
       path: string;
       types: type_at_location list;
-    }
-    [@@deriving equal, to_yojson]
-
-    type hover_info = {
-      value: string option;
-      docstring: string option;
     }
     [@@deriving equal, to_yojson]
 
@@ -179,7 +169,6 @@ module Response : sig
       | FoundPath of string
       | FoundReferences of code_location list
       | GlobalLeakErrors of global_leak_errors
-      | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
       | Success of string

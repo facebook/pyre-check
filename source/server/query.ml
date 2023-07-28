@@ -29,10 +29,6 @@ module Request = struct
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | HoverInfoForPosition of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -84,12 +80,6 @@ module Response = struct
     type types_at_path = {
       path: string;
       types: type_at_location list;
-    }
-    [@@deriving equal, to_yojson]
-
-    type hover_info = {
-      value: string option;
-      docstring: string option;
     }
     [@@deriving equal, to_yojson]
 
@@ -195,7 +185,6 @@ module Response = struct
       | FoundPath of string
       | FoundReferences of code_location list
       | GlobalLeakErrors of global_leak_errors
-      | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
       | Success of string
@@ -293,7 +282,6 @@ module Response = struct
           `List (List.map references ~f:reference_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
       | FoundReferences locations -> `List (List.map locations ~f:code_location_to_yojson)
-      | HoverInfoForPosition hover_info -> hover_info_to_yojson hover_info
       | ReferenceTypesInPath referenceTypesInPath -> types_at_path_to_yojson referenceTypesInPath
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
@@ -445,12 +433,6 @@ let rec parse_request_exn query =
           List.map ~f:single_argument_to_reference arguments
           |> List.partition_result
           |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
-      | "hover_info_for_position", [path; line; column] ->
-          Request.HoverInfoForPosition
-            {
-              path = PyrePath.create_absolute (string path);
-              position = { Location.line = integer line; column = integer column };
-            }
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "location_of_definition", [path; line; column] ->
           Request.LocationOfDefinition
@@ -862,16 +844,6 @@ let rec process_request ~type_environment ~build_system request =
         List.map ~f:find_leak_errors_for_qualifier qualifiers
         |> List.partition_result
         |> construct_result
-    | HoverInfoForPosition { path; position } ->
-        module_of_path path
-        >>| (fun module_reference ->
-              LocationBasedLookup.hover_info_for_position
-                ~type_environment
-                ~module_reference
-                position)
-        >>| (fun { value; docstring } -> Single (Base.HoverInfoForPosition { value; docstring }))
-        |> Option.value
-             ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
     | ModelQuery { path; query_name } -> (
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
