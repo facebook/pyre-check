@@ -135,6 +135,46 @@ let handle_location_of_definition
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
 
+let get_completion_for_module ~overlay ~position module_reference =
+  let open Option in
+  let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
+  LocationBasedLookup.completion_info_for_position ~type_environment ~module_reference position
+  >>| Ast.Identifier.SerializableMap.bindings
+  >>| List.map ~f:(fun (identifier, attribute) ->
+          let attribute_kind =
+            match Ast.Node.value attribute with
+            | { ClassSummary.Attribute.kind = Simple _; _ } ->
+                Response.CompletionItem.CompletionItemKind.Simple
+            | { ClassSummary.Attribute.kind = Method _; _ } ->
+                Response.CompletionItem.CompletionItemKind.Method
+            | { ClassSummary.Attribute.kind = Property _; _ } ->
+                Response.CompletionItem.CompletionItemKind.Property
+          in
+          { Response.CompletionItem.label = identifier; kind = attribute_kind })
+
+
+let get_completion_in_overlay ~overlay ~build_system ~position path =
+  let open Result in
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
+  get_modules ~module_tracker ~build_system path
+  >>| List.filter_map ~f:(get_completion_for_module ~overlay ~position)
+
+
+let handle_completion
+    ~path
+    ~position
+    ~client_id
+    { State.environment; build_system; client_states; _ }
+  =
+  let open Result in
+  get_overlay_id ~path ~client_id client_states
+  >>= fun overlay_id ->
+  let overlay = get_overlay ~environment overlay_id in
+  get_completion_in_overlay ~overlay ~build_system ~position path
+  >>| List.concat
+  >>| fun completions -> Response.(Completion { completions })
+
+
 let handle_superclasses
     ~class_:{ Request.ClassExpression.module_; qualified_name }
     { State.environment; _ }
@@ -468,11 +508,9 @@ let handle_query
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
-  | Request.Query.Completion _ ->
-      let f _state =
-        let response =
-          Response.Error (Response.ErrorKind.InvalidRequest "Autocomplete not yet implemented")
-        in
+  | Request.Query.Completion { path; position; client_id } ->
+      let f state =
+        let response = handle_completion ~path ~position ~client_id state |> response_from_result in
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f
