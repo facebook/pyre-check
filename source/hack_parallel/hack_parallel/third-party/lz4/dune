@@ -3,4 +3,4 @@
   (language c)
   (names lz4 lz4frame lz4hc xxhash))
  (name lz4)
- (public_name hack_parallel.lz4))
+ (package hack_parallel))

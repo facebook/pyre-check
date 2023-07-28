@@ -3,4 +3,4 @@
   (language c)
   (names sqlite3))
  (name sqlite3)
- (public_name hack_parallel.sqlite3))
+ (package hack_parallel))
