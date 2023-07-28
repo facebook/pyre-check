@@ -635,7 +635,9 @@ let test_handle_query_basic context =
     ~query:(Format.sprintf "save_server_state('%s/state')" temporary_directory)
     (Single (Base.Success "Saved state."))
   >>= fun () ->
-  assert_equal `Yes (Sys_unix.is_file (temporary_directory ^/ "state"));
+  assert_true
+    PyrePath.(
+      file_exists (create_relative ~root:(create_absolute temporary_directory) ~relative:"state"));
   Lwt.return_unit
 
 

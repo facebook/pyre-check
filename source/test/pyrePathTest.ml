@@ -34,9 +34,7 @@ let test_create context =
   assert_equal
     (PyrePath.create_relative ~root ~relative:"/other/root/some/path" |> PyrePath.show)
     (path ^/ "other/root/some/path");
-
-  (* Current directory. *)
-  assert_equal (PyrePath.current_working_directory () |> PyrePath.show) (Sys_unix.getcwd ())
+  ()
 
 
 let test_absolute context =
@@ -169,8 +167,8 @@ let test_remove context =
 let test_remove_contents_of_directory context =
   let assert_success path =
     PyrePath.remove_contents_of_directory path |> Result.ok_or_failwith;
-    let elements = Sys_unix.readdir (PyrePath.absolute path) in
-    assert_true (Array.is_empty elements)
+    let elements = PyrePath.read_directory_ordered path in
+    assert_true (List.is_empty elements)
   in
   let assert_failure path =
     match PyrePath.remove_contents_of_directory path with

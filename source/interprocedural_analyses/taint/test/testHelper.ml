@@ -685,7 +685,7 @@ let end_to_end_integration_test path context =
           failwith (Format.asprintf "Could not write `%s` file for %a" suffix PyrePath.pp path)
     in
     let remove_old_output ~suffix =
-      try output_filename ~suffix ~initial:false |> PyrePath.show |> Sys_unix.remove with
+      try output_filename ~suffix ~initial:false |> PyrePath.remove with
       | Sys_error _ ->
           (* be silent *)
           ()
