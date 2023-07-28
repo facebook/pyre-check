@@ -13,8 +13,8 @@ let assert_string_equal = assert_equal ~cmp:String.equal ~printer:Fn.id
 
 let assert_int_equal = assert_equal ~cmp:Int.equal ~printer:Int.to_string
 
-let assert_event ?name ?event_type ?timestamp ?tags log_file =
-  let event_json = Json.from_file log_file in
+let assert_event ?name ?event_type ?timestamp ?tags log_path =
+  let event_json = Json.from_file (PyrePath.absolute log_path) in
   let assert_tag ((key, value), json) =
     match Json.Util.to_list json with
     | [key_json; value_json] ->
@@ -40,13 +40,15 @@ let assert_event ?name ?event_type ?timestamp ?tags log_file =
       |> List.iter ~f:assert_tag)
 
 
-let test_event_format _ =
-  let output_name = Filename_unix.temp_file "event_format" "test" in
+let test_event_format context =
+  let test_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let output_path = PyrePath.create_relative ~root:test_root ~relative:"event_format_test" in
+  let output_name = PyrePath.absolute output_path in
   PyreProfiling.GlobalState.initialize ~profiling_output:output_name ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
-    PyrePath.(remove_if_exists (create_absolute output_name));
+    PyrePath.remove_if_exists output_path;
     PyreProfiling.log_performance_event event;
-    assert_event ~name ~event_type ~timestamp ~tags output_name
+    assert_event ~name ~event_type ~timestamp ~tags output_path
   in
   assert_event
     (fun () -> PyreProfiling.Event.create "foo" ~event_type:(Duration 42) ~timestamp:0)
@@ -76,31 +78,31 @@ let test_event_format _ =
     ~event_type:"[\"Counter\", \"[Luck 7] Ice Cream\"]"
     ~timestamp:1
     ~tags:["hello", "42"];
-
-  Sys_unix.remove output_name;
   ()
 
 
-let test_event_track _ =
-  let output_name = Filename_unix.temp_file "event_track" "test" in
+let test_event_track context =
+  let test_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let output_path = PyrePath.create_relative ~root:test_root ~relative:"event_format_test" in
+  let output_name = PyrePath.absolute output_path in
   PyreProfiling.GlobalState.initialize ~profiling_output:output_name ();
   let foo x =
     PyreProfiling.track_duration_event "foo" ~tags:["hello", "world"] ~f:(fun _ -> x + 1)
   in
   let y = foo 42 in
   assert_int_equal 43 y;
-  assert_event output_name ~name:"foo" ~tags:["hello", "world"];
-
-  Sys_unix.remove output_name;
+  assert_event output_path ~name:"foo" ~tags:["hello", "world"];
   ()
 
 
-let test_memory_profiling _ =
-  let output_name = Filename_unix.temp_file "event_track" "test" in
+let test_memory_profiling context =
+  let test_root = bracket_tmpdir context |> PyrePath.create_absolute in
+  let output_path = PyrePath.create_relative ~root:test_root ~relative:"event_format_test" in
+  let output_name = PyrePath.absolute output_path in
   PyreProfiling.GlobalState.initialize ~memory_profiling_output:output_name ();
   PyreProfiling.track_shared_memory_usage ~name:"foo" ();
   assert_event
-    output_name
+    output_path
     ~name:"Shared Memory Usage"
     ~tags:
       [
@@ -110,8 +112,6 @@ let test_memory_profiling _ =
         "used_hash_slots", "0";
         "used_dependency_slots", "0";
       ];
-
-  Sys_unix.remove output_name;
   ()
 
 
