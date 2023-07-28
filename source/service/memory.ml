@@ -118,8 +118,8 @@ let heap_size () =
 
 
 let report_statistics () =
-  Measure.print_stats ();
-  Measure.print_distributions ()
+  Hack_parallel.Std.Measure.print_stats ();
+  Hack_parallel.Std.Measure.print_distributions ()
 
 
 let is_initialized () = Option.is_some !configuration

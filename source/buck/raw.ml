@@ -10,6 +10,7 @@
    queries we use for Pyre can be found in `interface.ml` *)
 
 open Base
+module PrintSignal = Hack_parallel.Std.PrintSignal
 
 module ArgumentList = struct
   type t = string list [@@deriving sexp_of]

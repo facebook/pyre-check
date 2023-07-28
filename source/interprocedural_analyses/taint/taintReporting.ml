@@ -244,8 +244,8 @@ let save_results_to_directory
       PyrePath.read_directory_ordered result_directory
       |> List.filter ~f:(fun path ->
              let filename = PyrePath.last path in
-             String_utils.string_starts_with filename "taint-output@"
-             && String_utils.string_ends_with filename ".json")
+             String.is_prefix filename ~prefix:"taint-output@"
+             && String.is_suffix filename ~suffix:".json")
       |> List.iter ~f:PyrePath.remove
   in
   let save_errors () =

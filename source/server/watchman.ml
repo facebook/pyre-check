@@ -9,6 +9,7 @@
    on pyre. *)
 
 open Core
+module PrintSignal = Hack_parallel.Std.PrintSignal
 
 exception ConnectionError of string
 
@@ -83,11 +84,7 @@ module Raw = struct
         in
         Lwt.return socket_name
     | WEXITED 127 ->
-        let message =
-          Format.sprintf
-            "Cannot find watchman exectuable under PATH: %s"
-            (Option.value (Sys_utils.getenv_path ()) ~default:"(not set)")
-        in
+        let message = Format.sprintf "Cannot find watchman exectuable under PATH" in
         raise (ConnectionError message)
     | WEXITED code ->
         let message = Format.sprintf "Watchman exited code %d, stderr = %S" code stderr in

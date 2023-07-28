@@ -17,7 +17,7 @@ open Interprocedural
 
 (* Returns true if the given target is a symbolic target that represents an unknown callee. *)
 let is_unknown_callee = function
-  | Target.Object name when String_utils.string_starts_with name "unknown-callee:" -> true
+  | Target.Object name when String.is_prefix name ~prefix:"unknown-callee:" -> true
   | _ -> false
 
 

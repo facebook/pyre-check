@@ -17,9 +17,11 @@ module Std = struct
 
   module Bucket = Hack_bucket
 
-  module Measure = Measure
+  module Measure = Hack_utils.Measure
 
   module MyMap = Hack_collections.MyMap
 
-  let daemon_check_entry_point = Daemon.check_entry_point
+  module PrintSignal = Hack_utils.PrintSignal
+
+  let daemon_check_entry_point = Hack_utils.Daemon.check_entry_point
 end
