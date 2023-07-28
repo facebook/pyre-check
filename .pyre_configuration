@@ -48,10 +48,12 @@
       "site-package": "testslide"
     },
     {
-      "site-package": "typing_extensions"
+      "site-package": "typing_extensions",
+      "is_toplevel_module": true
     },
     {
-      "site-package": "typing_inspect"
+      "site-package": "typing_inspect",
+      "is_toplevel_module": true
     }
   ],
   "source_directories": [
