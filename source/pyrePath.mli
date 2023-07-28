@@ -9,20 +9,7 @@ open Core
 
 type path = string [@@deriving compare, show, sexp, hash]
 
-module AbsolutePath : sig
-  type t [@@deriving compare, show, sexp, hash]
-end
-
-module RelativePath : sig
-  type t [@@deriving compare, show, sexp, hash]
-
-  val relative : t -> path
-end
-
-type t =
-  | Absolute of AbsolutePath.t
-  | Relative of RelativePath.t
-[@@deriving compare, show, sexp, hash, to_yojson]
+type t [@@deriving compare, show, sexp, hash, to_yojson]
 
 val equal : t -> t -> bool
 
