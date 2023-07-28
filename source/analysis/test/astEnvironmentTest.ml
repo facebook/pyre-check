@@ -156,7 +156,7 @@ let test_parse_sources context =
     File.create ~content (PyrePath.create_relative ~root ~relative) |> File.write
   in
   let source_handles, ast_environment =
-    Sys_utils.mkdir_p (PyrePath.absolute typeshed_root);
+    PyrePath.create_directory_recursively typeshed_root |> Result.ok_or_failwith;
     write_file local_root "a.pyi";
     write_file local_root "a.py";
     write_file module_root "b.pyi";

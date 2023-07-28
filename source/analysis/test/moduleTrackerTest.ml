@@ -57,7 +57,7 @@ module TestFiles = struct
     | File relative -> create_file root relative
     | Directory { relative; children } ->
         let path = PyrePath.create_relative ~root ~relative in
-        PyrePath.absolute path |> Sys_utils.mkdir_no_fail;
+        PyrePath.create_directory_recursively path |> Result.ok_or_failwith;
         List.iter ~f:(create path) children
 end
 
@@ -316,11 +316,8 @@ let test_module_path_search_path_subdirectory context =
   let search_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
-  let search_subdirectory_path = PyrePath.absolute search_root ^ "/sub" in
-  Sys_utils.mkdir_no_fail search_subdirectory_path;
-  let search_subdirectory =
-    PyrePath.create_absolute ~follow_symbolic_links:true search_subdirectory_path
-  in
+  let search_subdirectory = PyrePath.create_relative ~root:search_root ~relative:"sub" in
+  PyrePath.create_directory_recursively search_subdirectory |> Result.ok_or_failwith;
   create_file local_root "a.py";
   create_file search_root "b.py";
   create_file search_subdirectory "c.py";
@@ -397,12 +394,10 @@ let test_module_path_directory_filter context =
   let search_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
   in
-  let derp_path = PyrePath.absolute search_root ^ "/derp" in
-  Sys_utils.mkdir_no_fail derp_path;
-  let durp_path = PyrePath.absolute search_root ^ "/durp" in
-  Sys_utils.mkdir_no_fail durp_path;
-  let derp = PyrePath.create_absolute ~follow_symbolic_links:true derp_path in
-  let durp = PyrePath.create_absolute ~follow_symbolic_links:true durp_path in
+  let derp = PyrePath.create_relative ~root:search_root ~relative:"derp" in
+  PyrePath.create_directory_recursively derp |> Result.ok_or_failwith;
+  let durp = PyrePath.create_relative ~root:search_root ~relative:"durp" in
+  PyrePath.create_directory_recursively durp |> Result.ok_or_failwith;
   create_file local_root "a.py";
   create_file search_root "b.py";
   create_file derp "c.py";
@@ -537,12 +532,10 @@ let test_module_path_overlapping context =
    * - external_root1 lives under external_root0
    * Module resolution boils down to which root comes first in the search path *)
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let external_root0_path = PyrePath.absolute local_root ^ "/external0" in
-  Sys_utils.mkdir_no_fail external_root0_path;
-  let external_root1_path = external_root0_path ^ "/external1" in
-  Sys_utils.mkdir_no_fail external_root1_path;
-  let external_root0 = PyrePath.create_absolute ~follow_symbolic_links:true external_root0_path in
-  let external_root1 = PyrePath.create_absolute ~follow_symbolic_links:true external_root1_path in
+  let external_root0 = PyrePath.create_relative ~root:local_root ~relative:"external0" in
+  PyrePath.create_directory_recursively external_root0 |> Result.ok_or_failwith;
+  let external_root1 = PyrePath.create_relative ~root:external_root0 ~relative:"external1" in
+  PyrePath.create_directory_recursively external_root1 |> Result.ok_or_failwith;
   create_file external_root0 "a.py";
   create_file external_root1 "a.py";
   create_file local_root "a.py";
@@ -694,9 +687,8 @@ let test_module_path_overlapping2 context =
    * - venv_root lives outside local_root (project-external stubs)
    *)
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let stubs_path = PyrePath.absolute local_root ^ "/stubs" in
-  Sys_utils.mkdir_no_fail stubs_path;
-  let stubs_root = PyrePath.create_absolute ~follow_symbolic_links:true stubs_path in
+  let stubs_root = PyrePath.create_relative ~root:local_root ~relative:"stubs" in
+  PyrePath.create_directory_recursively stubs_root |> Result.ok_or_failwith;
   let venv_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
   create_file local_root "a.py";
   create_file local_root "b.pyi";
@@ -969,12 +961,10 @@ let test_priority context =
 
 let test_priority_multi_source_paths context =
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  let source_root0_path = PyrePath.absolute local_root ^ "/source0" in
-  Sys_utils.mkdir_no_fail source_root0_path;
-  let source_root0 = PyrePath.create_absolute source_root0_path in
-  let source_root1_path = PyrePath.absolute local_root ^ "/source1" in
-  Sys_utils.mkdir_no_fail source_root1_path;
-  let source_root1 = PyrePath.create_absolute source_root1_path in
+  let source_root0 = PyrePath.create_relative ~root:local_root ~relative:"source0" in
+  PyrePath.create_directory_recursively source_root0 |> Result.ok_or_failwith;
+  let source_root1 = PyrePath.create_relative ~root:local_root ~relative:"source1" in
+  PyrePath.create_directory_recursively source_root1 |> Result.ok_or_failwith;
   let source_paths0 = ["a.py"; "b.py"; "c.pyi"; "d.py"; "e.pyi"; "f.pyi"; "g.pyi"] in
   List.iter ~f:(create_file source_root0) source_paths0;
   let source_paths1 = ["a.py"; "b.py"; "c.py"; "d.pyi"; "e.py"; "f.pyi"; "g.pyi"] in
@@ -1104,7 +1094,9 @@ let test_root_independence context =
 
 let test_hidden_files context =
   let local_root = bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true in
-  List.iter ~f:Sys_utils.mkdir_no_fail [PyrePath.absolute local_root ^ "/b"];
+  PyrePath.create_relative ~root:local_root ~relative:"b"
+  |> PyrePath.create_directory_recursively
+  |> Result.ok_or_failwith;
   List.iter ~f:(create_file local_root) [".a.py"; ".b/c.py"];
   let module_tracker =
     Configuration.Analysis.create

@@ -49,9 +49,14 @@ let test_show_search_path _ =
 
 let test_normalize context =
   let good_root = bracket_tmpdir context in
-  let bad_root = "nonexist/directory" in
-  let good_subroot = good_root ^ "/subroot" in
-  Sys_utils.mkdir_no_fail good_subroot;
+  let good_root_path = PyrePath.create_absolute good_root in
+  let bad_root_path =
+    PyrePath.create_relative ~root:good_root_path ~relative:"nonexist/directory"
+  in
+  let bad_root = PyrePath.absolute bad_root_path in
+  let good_subroot_path = PyrePath.create_relative ~root:good_root_path ~relative:"subroot" in
+  PyrePath.create_directory_recursively good_subroot_path |> Base.Result.ok_or_failwith;
+  let good_subroot = PyrePath.absolute good_subroot_path in
   let create_input ?subdirectory ?submodule root =
     let search_path =
       match subdirectory, submodule with
