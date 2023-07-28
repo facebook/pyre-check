@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
 type t [@@deriving show, hash]
 
 val create : ?content:string -> PyrePath.t -> t
@@ -26,5 +24,3 @@ val hash : t -> int option
 val write : t -> unit
 
 val append : lines:string list -> PyrePath.t -> unit
-
-module Set : Set.S with type Elt.t = t
