@@ -8,7 +8,8 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Hack_core_list
+module List = Hack_core.Hack_core_list
+module Hack_option = Hack_core.Hack_option
 
 let () = Random.self_init ()
 let debug = ref false

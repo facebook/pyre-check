@@ -7,6 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module Hack_option = Hack_core.Hack_option
 
 exception Timeout
 

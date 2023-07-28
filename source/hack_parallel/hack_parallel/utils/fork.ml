@@ -8,7 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 
-module List = Hack_core_list
+module List = Hack_core.Hack_core_list
 
 (* Forking duplicates data in all buffers, so we flush them beforehand to avoid
  * writing the same thing twice.
