@@ -8,6 +8,8 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core
+module Worker = Hack_parallel.Std.Worker
+module MultiWorker = Hack_parallel.Std.MultiWorker
 
 let initialize () = Hack_parallel.Std.daemon_check_entry_point ()
 

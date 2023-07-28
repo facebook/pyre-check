@@ -796,5 +796,5 @@ struct
         Target.pp_pretty
         callable
     in
-    Log.log_exception message exn (Worker.exception_backtrace exn)
+    Log.log_exception message exn (Hack_parallel.Std.Worker.exception_backtrace exn)
 end

@@ -231,8 +231,8 @@ let on_exception = function
   | Server.ChecksumMap.LoadError message ->
       Log.error "Cannot load external wheel properly. %s" message;
       ExitStatus.PyreError
-  | Worker.Worker_exited_abnormally (pid, status)
-  | Base.Exn.Finally (Worker.Worker_exited_abnormally (pid, status), _) ->
+  | Hack_parallel.Std.Worker.Worker_exited_abnormally (pid, status)
+  | Base.Exn.Finally (Hack_parallel.Std.Worker.Worker_exited_abnormally (pid, status), _) ->
       let message =
         match status with
         | Caml_unix.WEXITED return_code -> Format.sprintf "exited with return code %d" return_code

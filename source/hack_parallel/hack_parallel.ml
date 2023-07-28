@@ -13,13 +13,13 @@ module Std = struct
 
   module Prefix = Hack_heap.Prefix
 
-  module MultiWorker = MultiWorker
+  module MultiWorker = Hack_procs.MultiWorker
 
-  module Worker = Worker
+  module Worker = Hack_procs.Worker
 
   module WorkerCancel = Hack_heap.WorkerCancel
 
-  module Bucket = Hack_bucket
+  module Bucket = Hack_procs.Hack_bucket
 
   module Measure = Hack_utils.Measure
 

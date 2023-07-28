@@ -1,5 +1,4 @@
 (library
- (name procs)
+ (name hack_procs)
  (public_name hack_parallel.procs)
- (wrapped false)
  (libraries hack_parallel.heap))

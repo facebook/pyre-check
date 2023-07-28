@@ -1,6 +1,5 @@
 (library
  (name hack_parallel)
- (wrapped false)
  (public_name hack_parallel)
  (library_flags
   (-cclib -l -cclib pthread))
