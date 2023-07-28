@@ -41,26 +41,13 @@ module T = struct
 
   let hash file = lines file >>| fun lines -> [%hash: string list] lines
 
-  let existing_directories = String.Table.create ()
-
   let write { path; content } =
-    let path = PyrePath.absolute path in
-    let make_directories () =
-      let directory = Filename.dirname path in
-      if not (Hashtbl.mem existing_directories directory) then
-        match Sys_unix.is_directory directory with
-        | `Yes -> Hashtbl.set existing_directories ~key:directory ~data:()
-        | _ -> (
-            try
-              Core_unix.mkdir_p directory;
-              Hashtbl.set existing_directories ~key:directory ~data:()
-            with
-            | Sys_error _ -> Log.info "Could not create directory `%s`" directory)
-    in
-    make_directories ();
+    (* TODO: Make a variant of the `write` API that writes directly to file without ensuring parent
+       dir exists. *)
+    PyrePath.ensure_parent_directory_exists path |> ignore;
     match content with
-    | Some content -> Core.Out_channel.write_all ~data:content path |> ignore
-    | None -> Log.error "No contents to write to `%s`" path
+    | Some content -> Core.Out_channel.write_all ~data:content (PyrePath.absolute path) |> ignore
+    | None -> Log.error "No contents to write to `%a`" PyrePath.pp path
 
 
   let append ~lines path =
