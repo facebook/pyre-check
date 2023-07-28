@@ -814,7 +814,7 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
 
 let resolve_attributes_for_name ~resolution expression =
   match Node.value expression with
-  | Expression.Name (Name.Attribute { base; _ }) -> (
+  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       (* Resolve prefix to check if this is a method. *)
       let base_type =
         match resolve ~resolution base with
@@ -830,7 +830,12 @@ let resolve_attributes_for_name ~resolution expression =
         >>| Node.value
       in
       match parent_class_summary with
-      | Some base_class_summary -> base_class_summary |> ClassSummary.attributes |> Option.some
+      | Some base_class_summary ->
+          base_class_summary
+          |> ClassSummary.attributes
+          |> Identifier.SerializableMap.filter (fun attr_str _attr_value ->
+                 String.is_prefix ~prefix:attribute attr_str)
+          |> Option.some
       | None -> None)
   | _ -> None
 
