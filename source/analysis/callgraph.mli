@@ -47,7 +47,7 @@ module SharedMemory :
     with type value = CalleeValue.t
      and type key = caller
      and module KeySet = Caml.Set.Make(CallerKey)
-     and module KeyMap = MyMap.Make(CallerKey)
+     and module KeyMap = Hack_parallel.Std.MyMap.Make(CallerKey)
 
 val set : caller:caller -> callees:callee_with_locations list -> unit
 

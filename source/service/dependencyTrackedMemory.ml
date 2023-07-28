@@ -10,6 +10,7 @@
 open Core
 module Hashtbl = Caml.Hashtbl
 module Set = Caml.Set
+module MyMap = Hack_parallel.Std.MyMap
 
 module EncodedDependency = struct
   type t = int [@@deriving compare, sexp]

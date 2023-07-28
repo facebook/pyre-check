@@ -173,7 +173,7 @@ module TableTypes : sig
     type key
     type value
     module KeySet : Set.S with type elt = key
-    module KeyMap : MyMap.S with type key = key
+    module KeyMap : Hack_collections.MyMap.S with type key = key
   end
 
   module Make :
@@ -182,7 +182,7 @@ module TableTypes : sig
       S with type value = Value.t
               and type key = KeyType.t
               and module KeySet = Set.Make (KeyType)
-              and module KeyMap = MyMap.Make (KeyType)
+              and module KeyMap = Hack_collections.MyMap.Make (KeyType)
 end
 
 
@@ -236,7 +236,7 @@ module NoCache : sig
       S with type value = Value.t
               and type key = KeyType.t
               and module KeySet = Set.Make (KeyType)
-              and module KeyMap = MyMap.Make (KeyType)
+              and module KeyMap = Hack_collections.MyMap.Make (KeyType)
 end
 
 (*****************************************************************************)
@@ -257,7 +257,7 @@ module WithCache : sig
       S with type value = Value.t
                 and type key = KeyType.t
                 and module KeySet = Set.Make (KeyType)
-                and module KeyMap = MyMap.Make (KeyType)
+                and module KeyMap = Hack_collections.MyMap.Make (KeyType)
 end
 
 module type CacheType = sig
@@ -291,7 +291,7 @@ module FirstClass : sig
 
       module KeySet : Set.S with type elt = key
 
-      module KeyMap : MyMap.S with type key = key
+      module KeyMap : Hack_collections.MyMap.S with type key = key
 
       (* The create function must be run on the main ocaml process, and is not thread-safe. *)
       val create : unit -> t
@@ -325,7 +325,7 @@ module FirstClass : sig
         S with type value = Value.t
                 and type key = KeyType.t
                 and module KeySet = Set.Make (KeyType)
-                and module KeyMap = MyMap.Make (KeyType)
+                and module KeyMap = Hack_collections.MyMap.Make (KeyType)
 
   end
 
@@ -344,7 +344,7 @@ module FirstClass : sig
         S with type value = Value.t
                 and type key = KeyType.t
                 and module KeySet = Set.Make (KeyType)
-                and module KeyMap = MyMap.Make (KeyType)
+                and module KeyMap = Hack_collections.MyMap.Make (KeyType)
 
   end
 end

@@ -10,6 +10,9 @@
 
 module List = Hack_core.Hack_core_list
 module Hack_option = Hack_core.Hack_option
+module SMap = Hack_collections.SMap
+module IMap = Hack_collections.IMap
+module SSet = Hack_collections.SSet
 
 let () = Random.self_init ()
 let debug = ref false

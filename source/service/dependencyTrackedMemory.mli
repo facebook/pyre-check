@@ -7,6 +7,7 @@
 
 open Core
 module Set = Caml.Set
+module MyMap = Hack_parallel.Std.MyMap
 
 (* Deliberately left abstract to prevent calls to DependencyKey.Transaction.add from outside this
    module *)

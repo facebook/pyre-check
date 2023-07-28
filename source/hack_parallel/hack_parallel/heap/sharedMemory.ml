@@ -9,6 +9,8 @@
 
 
 module List = Hack_core.Hack_core_list
+module ISet = Hack_collections.ISet
+module MyMap = Hack_collections.MyMap
 
 (* Don't change the ordering of this record without updating hh_shared_init in
  * hh_shared.c, which indexes into config objects *)

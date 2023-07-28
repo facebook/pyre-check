@@ -76,6 +76,8 @@
  * sent across pipes.
 *)
 
+module SMap = Hack_collections.SMap
+module MyMap = Hack_collections.MyMap
 module List = Hack_core.Hack_core_list
 module FloatMap = MyMap.Make(struct type t = float let compare = compare end)
 

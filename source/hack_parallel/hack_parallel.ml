@@ -19,5 +19,7 @@ module Std = struct
 
   module Measure = Measure
 
+  module MyMap = Hack_collections.MyMap
+
   let daemon_check_entry_point = Daemon.check_entry_point
 end
