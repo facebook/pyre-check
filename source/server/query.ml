@@ -36,10 +36,6 @@ module Request = struct
       }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
-    | FindReferences of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | ReferencesUsedByFile of string
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
@@ -144,12 +140,6 @@ module Response = struct
       `Assoc ["start", position_to_yojson start; "end", position_to_yojson end_]
 
 
-    type code_location = {
-      path: string;
-      range: range;
-    }
-    [@@deriving equal, to_yojson]
-
     type global_leak_errors = {
       global_leaks: Analysis.AnalysisError.Instantiated.t list;
       query_errors: string list;
@@ -178,7 +168,6 @@ module Response = struct
       | FoundModels of taint_model list
       | FoundModules of Reference.t list
       | FoundPath of string
-      | FoundReferences of code_location list
       | GlobalLeakErrors of global_leak_errors
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
@@ -274,7 +263,6 @@ module Response = struct
           let reference_to_yojson reference = `String (Reference.show reference) in
           `List (List.map references ~f:reference_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
-      | FoundReferences locations -> `List (List.map locations ~f:code_location_to_yojson)
       | ReferenceTypesInPath referenceTypesInPath -> types_at_path_to_yojson referenceTypesInPath
       | Success message -> `Assoc ["message", `String message]
       | Superclasses class_to_superclasses_mapping ->
@@ -382,13 +370,6 @@ let rec parse_request_exn query =
         in
         Request.ValidateTaintModels { path; verify_dsl }
       in
-      let integer argument =
-        let integer_of_expression = function
-          | { Node.value = Expression.Constant (Constant.Integer value); _ } -> value
-          | _ -> raise (InvalidQuery "expected integer")
-        in
-        argument |> expression |> integer_of_expression
-      in
       match String.lowercase name, arguments with
       | "attributes", [name] -> Request.Attributes (reference name)
       | "batch", queries ->
@@ -432,12 +413,6 @@ let rec parse_request_exn query =
             { path = PyrePath.create_absolute (string path); query_name = string model_query_name }
       | "modules_of_path", [path] -> Request.ModulesOfPath (PyrePath.create_absolute (string path))
       | "path_of_module", [module_access] -> Request.PathOfModule (reference module_access)
-      | "find_references", [path; line; column] ->
-          Request.FindReferences
-            {
-              path = PyrePath.create_absolute (string path);
-              position = { line = integer line; column = integer column };
-            }
       | "references_used_by_file", [path] -> Request.ReferencesUsedByFile (string path)
       | "save_server_state", [path] ->
           Request.SaveServerState (PyrePath.create_absolute (string path))
@@ -535,25 +510,6 @@ let rec process_request ~type_environment ~build_system request =
             (print_reason error_reason))
         errors
     in
-    let instantiate_range
-        Location.WithModule.
-          {
-            start = { line = start_line; column = start_column };
-            stop = { line = stop_line; column = stop_column };
-            module_reference;
-          }
-      =
-      PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker module_reference
-      >>| fun path ->
-      {
-        Response.Base.path;
-        range =
-          {
-            start = { line = start_line; character = start_column };
-            end_ = { line = stop_line; character = stop_column };
-          };
-      }
-    in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
         let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
@@ -588,20 +544,6 @@ let rec process_request ~type_environment ~build_system request =
         ~configuration
         ~should_log_exception:(fun _ -> true)
         ~f:scheduler_wrapper
-    in
-    let module_of_path path =
-      let relative_path =
-        let { Configuration.Analysis.local_root = root; _ } = configuration in
-        PyrePath.create_relative ~root ~relative:(PyrePath.absolute path) |> SourcePath.create
-      in
-      match
-        PathLookup.modules_of_source_path_with_build_system
-          ~build_system
-          ~module_tracker
-          relative_path
-      with
-      | [found_module] -> Some found_module
-      | _ -> None
     in
     let open Response in
     let get_program_call_graph () =
@@ -941,79 +883,6 @@ let rec process_request ~type_environment ~build_system request =
         |> Option.value
              ~default:
                (Error (Format.sprintf "No path found for module `%s`" (Reference.show module_name)))
-    | FindReferences { path; position } -> (
-        let find_references_local ~reference ~define_name =
-          let is_match identifier =
-            let requested_name =
-              Reference.delocalize reference |> Reference.last |> Identifier.sanitized
-            in
-            let name = Identifier.sanitized identifier in
-            String.equal requested_name name
-          in
-          match GlobalResolution.function_definition global_resolution define_name with
-          | Some { FunctionDefinition.body = Some define; qualifier; _ } ->
-              let location_to_result location =
-                Location.with_module ~module_reference:qualifier location |> instantiate_range
-              in
-              let all_local_bindings =
-                Scope.Scope.of_define_exn define.value
-                |> UninitializedLocalCheck.local_bindings
-                |> Identifier.Map.filter_keys ~f:is_match
-                |> Identifier.Map.data
-                |> List.map ~f:(fun { Scope.Binding.location; _ } -> location)
-                |> Location.Set.of_list
-              in
-              let all_access_reads =
-                let { Statement.Define.body; _ } = Node.value define in
-                List.map ~f:UninitializedLocalCheck.extract_reads_in_statement body
-                |> List.concat
-                |> List.filter ~f:(fun { Node.value; _ } -> is_match value)
-                |> List.map ~f:Node.location
-                |> Location.Set.of_list
-              in
-              let all_local_references =
-                Set.union all_local_bindings all_access_reads
-                |> Location.Set.to_list
-                |> List.filter_map ~f:location_to_result
-              in
-              Single (Base.FoundReferences all_local_references)
-          | _ -> Single (Base.FoundReferences [])
-        in
-        let find_references_global ~reference =
-          (* TODO(T114362295): Support find all references. *)
-          let _ = reference in
-          Single (Base.FoundReferences [])
-        in
-        let symbol =
-          module_of_path path
-          >>= fun module_reference ->
-          LocationBasedLookup.find_narrowest_spanning_symbol
-            ~type_environment
-            ~module_reference
-            position
-        in
-        match symbol with
-        | Some
-            {
-              symbol_with_definition = Expression { Node.value = Name name; _ };
-              cfg_data = { define_name; _ };
-              _;
-            }
-        | Some
-            {
-              symbol_with_definition = TypeAnnotation { Node.value = Name name; _ };
-              cfg_data = { define_name; _ };
-              _;
-            }
-          when Expression.is_simple_name name ->
-            let reference = Expression.name_to_reference_exn name in
-            if Reference.is_local reference || Reference.is_parameter reference then
-              find_references_local ~reference ~define_name
-            else
-              find_references_global ~reference
-        | _ ->
-            (* Find-all-references is not supported for syntax, keywords, or literal values. *)
-            Single (Base.FoundReferences []))
     | ReferencesUsedByFile path ->
         if
           TypeEnvironment.ReadOnly.controls type_environment

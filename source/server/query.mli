@@ -28,10 +28,6 @@ module Request : sig
       }
     | ModulesOfPath of PyrePath.t
     | PathOfModule of Reference.t
-    | FindReferences of {
-        path: PyrePath.t;
-        position: Location.position;
-      }
     | ReferencesUsedByFile of string
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
@@ -132,12 +128,6 @@ module Response : sig
     }
     [@@deriving equal, to_yojson]
 
-    type code_location = {
-      path: string;
-      range: range;
-    }
-    [@@deriving equal, to_yojson]
-
     type global_leak_errors = {
       global_leaks: Analysis.AnalysisError.Instantiated.t list;
       query_errors: string list;
@@ -162,7 +152,6 @@ module Response : sig
       | FoundModels of taint_model list
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
-      | FoundReferences of code_location list
       | GlobalLeakErrors of global_leak_errors
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path

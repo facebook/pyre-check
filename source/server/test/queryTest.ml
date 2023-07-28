@@ -125,13 +125,6 @@ let test_parse_query context =
   assert_fails_to_parse "model_query(/a.py, 'model_query_name')";
   assert_fails_to_parse "model_query('/a.py', model_query_name)";
   assert_parses "modules_of_path('/a.py')" (ModulesOfPath (PyrePath.create_absolute "/a.py"));
-  assert_parses
-    "find_references(path='/foo.py', line=42, column=10)"
-    (FindReferences
-       { path = PyrePath.create_absolute "/foo.py"; position = Location.{ line = 42; column = 10 } });
-  assert_fails_to_parse "find_references(path='/foo.py', line=42)";
-  assert_fails_to_parse "find_references(path='/foo.py', column=10)";
-  assert_fails_to_parse "find_references(path=99, line=42, column=10)";
   assert_parses "expression_level_coverage(path='a.py')" (ExpressionLevelCoverage ["a.py"]);
   assert_parses "expression_level_coverage(path='a.pyi')" (ExpressionLevelCoverage ["a.pyi"]);
   assert_parses "expression_level_coverage('a.py')" (ExpressionLevelCoverage ["a.py"]);
@@ -2107,184 +2100,6 @@ let test_handle_query_pysa context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
-let test_find_references context =
-  let sources =
-    [
-      "stubbed_library.py", {|
-              def identity(a):
-                return a
-            |};
-      "stubbed_library.pyi", {|
-              def identity(a: int) -> int: ...
-            |};
-      ( "foo.py",
-        {|
-              def foo(a: int) -> int:
-                x = a
-                return x
-
-              class Base:
-                def __init__(self, x: int) -> None:
-                  self.x = x
-            |}
-      );
-      ( "bar.py",
-        {|
-              from foo import foo, Base
-              from stubbed_library import identity
-
-              class Child(Base): ...
-
-              def bar() -> int:
-                return foo(0)
-            |}
-      );
-    ]
-  in
-  let custom_source_root =
-    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
-  in
-  let queries_and_expected_responses =
-    [
-      ( Format.sprintf
-          "find_references(path='%s', line=3, column=2)"
-          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 3,
-                      "character": 2
-                    },
-                    "end": {
-                      "line": 3,
-                      "character": 3
-                    }
-                  }
-                },
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 4,
-                      "character": 9
-                    },
-                    "end": {
-                      "line": 4,
-                      "character": 10
-                    }
-                  }
-                }
-              ]
-            }
-          |}
-          (PyrePath.absolute custom_source_root)
-          (PyrePath.absolute custom_source_root) );
-      (* Find all references on function parameter `foo.a`. *)
-      ( Format.sprintf
-          "find_references(path='%s', line=2, column=8)"
-          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 2,
-                      "character": 8
-                    },
-                    "end": {
-                      "line": 2,
-                      "character": 14
-                    }
-                  }
-                },
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 3,
-                      "character": 6
-                    },
-                    "end": {
-                      "line": 3,
-                      "character": 7
-                    }
-                  }
-                }
-              ]
-            }
-          |}
-          (PyrePath.absolute custom_source_root)
-          (PyrePath.absolute custom_source_root) );
-      ( Format.sprintf
-          "find_references(path='%s', line=3, column=6)"
-          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        Format.asprintf
-          {|
-            {
-              "response": [
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 2,
-                      "character": 8
-                    },
-                    "end": {
-                      "line": 2,
-                      "character": 14
-                    }
-                  }
-                },
-                {
-                  "path": "%s/foo.py",
-                  "range": {
-                    "start": {
-                      "line": 3,
-                      "character": 6
-                    },
-                    "end": {
-                      "line": 3,
-                      "character": 7
-                    }
-                  }
-                }
-              ]
-            }
-          |}
-          (PyrePath.absolute custom_source_root)
-          (PyrePath.absolute custom_source_root) );
-      (* Find all references on keyword / syntax *)
-      ( Format.sprintf
-          "find_references(path='%s', line=2, column=1)"
-          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        {|{"response": []}|} );
-      ( Format.sprintf
-          "find_references(path='%s', line=2, column=7)"
-          (PyrePath.append custom_source_root ~element:"foo.py" |> PyrePath.absolute),
-        {|{"response": []}|} );
-      (* TODO(T114362295): Support global find all references. *)
-    ]
-  in
-  assert_queries_with_local_root
-    ~custom_source_root
-    ~context
-    ~sources
-    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
-         ( query,
-           fun _ ->
-             response
-             |> Yojson.Safe.from_string
-             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
-
-
 let test_expression_level_coverage context =
   let sources =
     [
@@ -2875,7 +2690,6 @@ let () =
          "handle_query_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
-         "find_references" >:: OUnitLwt.lwt_wrapper test_find_references;
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
          "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
          "global_leaks" >:: OUnitLwt.lwt_wrapper test_global_leaks;
