@@ -33,10 +33,6 @@ module Request = struct
         path: PyrePath.t;
         position: Location.position;
       }
-    | InlineDecorators of {
-        function_reference: Reference.t;
-        decorators_to_skip: Reference.t list;
-      }
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -62,9 +58,6 @@ module Request = struct
         verify_dsl: bool;
       }
   [@@deriving equal, show]
-
-  let inline_decorators ?(decorators_to_skip = []) function_reference =
-    InlineDecorators { function_reference; decorators_to_skip }
 end
 
 module Response = struct
@@ -201,7 +194,6 @@ module Response = struct
       | FoundModules of Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list
-      | FunctionDefinition of Statement.Define.t
       | GlobalLeakErrors of global_leak_errors
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
@@ -301,14 +293,6 @@ module Response = struct
           `List (List.map references ~f:reference_to_yojson)
       | FoundPath path -> `Assoc ["path", `String path]
       | FoundReferences locations -> `List (List.map locations ~f:code_location_to_yojson)
-      | FunctionDefinition define ->
-          `Assoc
-            [
-              ( "definition",
-                `String
-                  (Statement.show
-                     (Statement.Statement.Define define |> Node.create_with_default_location)) );
-            ]
       | HoverInfoForPosition hover_info -> hover_info_to_yojson hover_info
       | ReferenceTypesInPath referenceTypesInPath -> types_at_path_to_yojson referenceTypesInPath
       | Success message -> `Assoc ["message", `String message]
@@ -373,38 +357,6 @@ let rec parse_request_exn query =
           } ->
             value
         | _ -> raise (InvalidQuery "expected string")
-      in
-      let parse_inline_decorators arguments =
-        match arguments with
-        | [name] -> Request.inline_decorators (reference name)
-        | [
-         name;
-         {
-           Call.Argument.name = Some { Node.value = "decorators_to_skip"; _ };
-           value = { Node.value = Expression.List decorators; _ };
-         };
-        ] -> (
-            let decorator_to_reference = function
-              | { Node.value = Expression.Name name; _ } as decorator ->
-                  name_to_reference name |> Result.of_option ~error:decorator
-              | decorator -> Result.Error decorator
-            in
-            let valid_decorators, invalid_decorators =
-              List.map decorators ~f:decorator_to_reference |> List.partition_result
-            in
-            match valid_decorators, invalid_decorators with
-            | decorators_to_skip, [] ->
-                InlineDecorators { function_reference = reference name; decorators_to_skip }
-            | _, invalid_decorators ->
-                InvalidQuery
-                  (Format.asprintf
-                     "inline_decorators: invalid decorators `(%s)`"
-                     (List.map invalid_decorators ~f:Expression.show |> String.concat ~sep:", "))
-                |> raise)
-        | _ ->
-            raise
-              (InvalidQuery
-                 "inline_decorators expects qualified name and optional `decorators_to_skip=[...]`")
       in
       let string argument = argument |> expression |> string_of_expression in
       let boolean argument =
@@ -499,7 +451,6 @@ let rec parse_request_exn query =
               path = PyrePath.create_absolute (string path);
               position = { Location.line = integer line; column = integer column };
             }
-      | "inline_decorators", arguments -> parse_inline_decorators arguments
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "location_of_definition", [path; line; column] ->
           Request.LocationOfDefinition
@@ -534,38 +485,6 @@ let parse_request query =
   try Result.Ok (parse_request_exn query) with
   | InvalidQuery reason -> Result.Error reason
 
-
-module InlineDecorators = struct
-  let inline_decorators ~type_environment ~decorators_to_skip function_reference =
-    let define =
-      GlobalResolution.define
-        (TypeEnvironment.ReadOnly.global_resolution type_environment)
-        function_reference
-    in
-    match define with
-    | Some define -> (
-        let get_source =
-          AstEnvironment.ReadOnly.get_processed_source
-            (TypeEnvironment.ReadOnly.ast_environment type_environment)
-        in
-        let define_with_inlining =
-          DecoratorPreprocessing.inline_decorators_for_define
-            ~get_source
-            ~get_decorator_action:(fun reference ->
-              if Set.mem decorators_to_skip reference then
-                Some DecoratorPreprocessing.Action.DoNotInline
-              else
-                None)
-            ~location:Location.any
-            define
-        in
-        match Statement.Statement.Define define_with_inlining |> Transform.sanitize_statement with
-        | Statement.Statement.Define define -> Response.Single (FunctionDefinition define)
-        | _ -> failwith "Expected define")
-    | None ->
-        Response.Error
-          (Format.asprintf "Could not find function `%s`" (Reference.show function_reference))
-end
 
 let rec process_request ~type_environment ~build_system request =
   let process_request () =
@@ -953,11 +872,6 @@ let rec process_request ~type_environment ~build_system request =
         >>| (fun { value; docstring } -> Single (Base.HoverInfoForPosition { value; docstring }))
         |> Option.value
              ~default:(Error (Format.sprintf "No module found for path `%s`" (PyrePath.show path)))
-    | InlineDecorators { function_reference; decorators_to_skip } ->
-        InlineDecorators.inline_decorators
-          ~type_environment
-          ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
-          function_reference
     | ModelQuery { path; query_name } -> (
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))

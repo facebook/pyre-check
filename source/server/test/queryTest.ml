@@ -116,17 +116,6 @@ let test_parse_query context =
   assert_parses
     "batch(defines(a.b), types(path='a.py'))"
     (Batch [Defines [Reference.create "a.b"]; TypesInFiles ["a.py"]]);
-  assert_parses "inline_decorators(a.b.c)" (inline_decorators !&"a.b.c");
-  assert_parses
-    "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, a.b.decorator2])"
-    (InlineDecorators
-       {
-         function_reference = !&"a.b.c";
-         decorators_to_skip = [!&"a.b.decorator1"; !&"a.b.decorator2"];
-       });
-  assert_fails_to_parse "inline_decorators(a.b.c, a.b.d)";
-  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=a.b.decorator1)";
-  assert_fails_to_parse "inline_decorators(a.b.c, decorators_to_skip=[a.b.decorator1, 1 + 1])";
   assert_parses
     "model_query('/a.py', 'model_query_name')"
     (ModelQuery { path = PyrePath.create_absolute "/a.py"; query_name = "model_query_name" });
@@ -2132,131 +2121,6 @@ let test_handle_query_pysa context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
-let test_inline_decorators context =
-  let queries_and_expected_responses =
-    [
-      ( "inline_decorators(test.foo)",
-        {|
-      {
-      "response": {
-        "definition": "def test.foo(a: int) -> int:
-        def _original_function(a: int) -> int:
-          return a|}
-        ^ "\n        "
-        ^ {|
-        def _inlined_identity(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          return _original_function(a)|}
-        ^ "\n        "
-        ^ {|
-        def _inlined_with_logging(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          print(_args, _kwargs)
-          return _inlined_identity(a)|}
-        ^ "\n        "
-        ^ {|
-        return _inlined_with_logging(a)
-      "
-      }
-      }
-    |} );
-      ( "inline_decorators(test.non_existent)",
-        {|
-      {
-        "error": "Could not find function `test.non_existent`"
-      }
-        |}
-      );
-      ( "inline_decorators(test.not_decorated)",
-        {|
-      {
-        "response": {
-          "definition": "def test.not_decorated(a: int) -> int:
-        return a
-      "  }
-      }
-        |}
-      );
-      ( "inline_decorators(test.foo, decorators_to_skip=[decorators.identity, \
-         some.non_existent.decorator])",
-        {|
-      {
-        "response": {
-          "definition": "def test.foo(a: int) -> int:
-        def _original_function(a: int) -> int:
-          return a|}
-        ^ "\n        "
-        ^ {|
-        def _inlined_with_logging(a: int) -> int:
-          _args = (a)
-          _kwargs = { \"a\":a }
-          print(_args, _kwargs)
-          return _original_function(a)|}
-        ^ "\n        "
-        ^ {|
-        return _inlined_with_logging(a)
-      "
-        }
-      }
-        |} );
-    ]
-  in
-  assert_queries_with_local_root
-    ~context
-    ~sources:
-      [
-        ( "test.py",
-          {|
-              from logging import with_logging
-              from decorators import identity, not_inlinable
-
-              @with_logging
-              @not_inlinable
-              @identity
-              def foo(a: int) -> int:
-                return a
-
-              def not_decorated(a: int) -> int:
-                return a
-            |}
-        );
-        ( "logging.py",
-          {|
-              def with_logging(f):
-                def inner( *args, **kwargs) -> int:
-                  print(args, kwargs)
-                  return f( *args, **kwargs)
-
-                return inner
-            |}
-        );
-        ( "decorators.py",
-          {|
-              def identity(f):
-                def inner( *args, **kwargs) -> int:
-                  return f( *args, **kwargs)
-
-                return inner
-
-              def not_inlinable(f):
-                return f
-            |}
-        );
-      ]
-    (List.map queries_and_expected_responses ~f:(fun (query, response) ->
-         ( query,
-           fun _ ->
-             let indentation = 6 in
-             response
-             |> String.split ~on:'\n'
-             |> List.map ~f:(fun s -> String.drop_prefix s indentation)
-             |> String.concat ~sep:"\n"
-             |> Yojson.Safe.from_string
-             |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
-
-
 let test_location_of_definition context =
   let sources =
     [
@@ -3320,7 +3184,6 @@ let () =
          "handle_query_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_handle_query_with_build_system;
          "handle_query_pysa" >:: OUnitLwt.lwt_wrapper test_handle_query_pysa;
-         "inline_decorators" >:: OUnitLwt.lwt_wrapper test_inline_decorators;
          "location_of_definition" >:: OUnitLwt.lwt_wrapper test_location_of_definition;
          "location_of_definition_with_build_system"
          >:: OUnitLwt.lwt_wrapper test_location_of_definition_with_build_system;

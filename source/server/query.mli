@@ -25,10 +25,6 @@ module Request : sig
         path: PyrePath.t;
         position: Location.position;
       }
-    | InlineDecorators of {
-        function_reference: Reference.t;
-        decorators_to_skip: Reference.t list;
-      }
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -54,8 +50,6 @@ module Request : sig
         verify_dsl: bool;
       }
   [@@deriving equal, show]
-
-  val inline_decorators : ?decorators_to_skip:Reference.t list -> Reference.t -> t
 end
 
 module Response : sig
@@ -184,7 +178,6 @@ module Response : sig
       | FoundModules of Ast.Reference.t list
       | FoundPath of string
       | FoundReferences of code_location list
-      | FunctionDefinition of Statement.Define.t
       | GlobalLeakErrors of global_leak_errors
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
