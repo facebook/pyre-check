@@ -146,7 +146,7 @@ end
  * to avoid the client having to poll or guess the server's state during initialization. These
  * events are written to ~output_channel, which is only stdout in practice at the moment. *)
 module Event = struct
-  type t = SocketCreated of PyrePath.t [@@deriving sexp, compare, hash, to_yojson]
+  type t = SocketCreated of string [@@deriving sexp, compare, hash, to_yojson]
 
   let serialize event = to_yojson event |> Yojson.Safe.to_string
 
@@ -174,7 +174,7 @@ let start_server_and_wait code_navigation_configuration =
       CodeNavigationServer.Start.start_server
         start_options
         ~on_started:(fun { Server.ServerProperties.socket_path; _ } _ ->
-          write_event (Event.SocketCreated socket_path)
+          write_event (Event.SocketCreated (PyrePath.absolute socket_path))
           >>= fun () ->
           let wait_forever, _ = Lwt.wait () in
           wait_forever))

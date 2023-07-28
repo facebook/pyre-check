@@ -9,7 +9,7 @@ open Core
 
 type path = string [@@deriving compare, show, sexp, hash]
 
-type t [@@deriving compare, show, sexp, hash, to_yojson]
+type t [@@deriving compare, show, sexp, hash]
 
 val equal : t -> t -> bool
 

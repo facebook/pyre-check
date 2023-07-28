@@ -42,8 +42,6 @@ let create_relative ~root ~relative =
 
 let show = absolute
 
-let to_yojson path = `String (show path)
-
 let equal left right = String.equal (absolute left) (absolute right)
 
 let compare left right = String.compare (absolute left) (absolute right)

@@ -218,7 +218,7 @@ end
 
 module ServerEvent = struct
   type t =
-    | SocketCreated of PyrePath.t
+    | SocketCreated of string
     | ServerInitialized
     | Exception of string * Server.ServerError.Kind.t
   [@@deriving sexp, compare, hash, to_yojson]
@@ -252,7 +252,7 @@ let start_server_and_wait ~event_channel server_configuration =
     start_options
     ~on_server_socket_ready:(fun socket_path ->
       (* An empty message signals that server socket has been created. *)
-      write_event (ServerEvent.SocketCreated socket_path))
+      write_event (ServerEvent.SocketCreated (PyrePath.absolute socket_path)))
     ~on_started:(fun _ server_state ->
       ExclusiveLock.Lazy.force server_state
       >>= fun _ ->
