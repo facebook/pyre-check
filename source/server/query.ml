@@ -29,7 +29,6 @@ module Request = struct
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
         position: Location.position;
@@ -213,7 +212,6 @@ module Response = struct
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | GlobalLeakErrors of global_leak_errors
-      | Help of string
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
@@ -268,7 +266,6 @@ module Response = struct
                      ~f:(fun error -> AnalysisError.Instantiated.to_yojson error)
                      global_leaks) );
             ]
-      | Help string -> `Assoc ["help", `String string]
       | ModelVerificationErrors errors ->
           `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
       | FoundAttributes attributes ->
@@ -356,118 +353,6 @@ module Response = struct
 
   let create_type_at_location (location, annotation) = { Base.location; annotation }
 end
-
-let help () =
-  let open Request in
-  let open Expression in
-  let help = function
-    | Batch _ ->
-        Some
-          "batch(query1(arg), query2(arg)): Runs a batch of queries and returns a map of \
-           responses. List of given queries may include any combination of other valid queries \
-           except for `batch` itself."
-    | Attributes _ ->
-        Some
-          "attributes(class_name): Returns a list of attributes, including functions, for a class."
-    | Callees _ -> Some "callees(function): calls from a given function."
-    | CalleesWithLocation _ ->
-        Some
-          "callees_with_location(function): calls from a given function, including the locations \
-           at which they are called."
-    | Defines _ ->
-        Some
-          "defines(module_or_class_name): Returns a JSON with the signature of all defines for \
-           given module or class."
-    | DumpCallGraph ->
-        Some "dump_call_graph(): Returns a comprehensive JSON of caller -> list of callees."
-    | ExpressionLevelCoverage _ ->
-        Some
-          "expression_level_coverage(path='path') or expression_level_coverage('path1', 'path2', \
-           ...): Return JSON output containing the number of covered and uncovered expressions \
-           from above, along with a list of known coverage gaps."
-    | GlobalLeaks _ ->
-        Some
-          "global_leaks(function1, ...): analyzes the given function(s) and emits errors when \
-           global variables are mutated."
-    | HoverInfoForPosition _ ->
-        Some
-          "hover_info_for_position(path='<absolute path>', line=<line>, character=<character>): \
-           Return JSON output containing the type of the symbol at the given position."
-    | InlineDecorators _ ->
-        Some
-          "inline_decorators(qualified_function_name, optional decorators_to_skip=[decorator1, \
-           decorator2]): Shows the function definition after decorators have been inlined."
-    | IsCompatibleWith _ -> None
-    | LessOrEqual _ -> Some "less_or_equal(T1, T2): Returns whether T1 is a subtype of T2."
-    | LocationOfDefinition _ ->
-        Some
-          "location_of_definition(path='<absolute path>', line=<line>, character=<character>): \
-           Returns the location of the definition for the symbol at the given line and character."
-    | ModelQuery _ ->
-        Some
-          "model_query(path='<absolute path>', query_name=<model_query_name>): Returns in JSON a \
-           list of all models generated from the query with the name `query_name` in the directory \
-           `path`."
-    | ModulesOfPath _ ->
-        Some "modules_of_path(path): Returns the modules of a file pointed to by path."
-    | PathOfModule _ -> Some "path_of_module(module): Gives an absolute path for `module`."
-    | FindReferences _ ->
-        Some
-          "find_references(path='<absolute path>', line=<line>, character=<character>): Returns \
-           the locations of all references to the symbol at the given line and character."
-    | ReferencesUsedByFile _ ->
-        Some
-          "references_used_by_file(path='<absolute path>'): Similar to the `types` query, this \
-           query will return all the types of every symbol (for a given path). Unlike the `types` \
-           query response, types that are defined outside this project will be treated as valid \
-           types & also be included in the query response."
-    | SaveServerState _ ->
-        Some "save_server_state('path'): Saves Pyre's serialized state into `path`."
-    | Superclasses _ ->
-        Some
-          "superclasses(class_name1, class_name2, ...): Returns a mapping of class_name to the \
-           list of superclasses for `class_name`."
-    | Type _ -> Some "type(expression): Evaluates the type of `expression`."
-    | TypesInFiles _ ->
-        Some
-          "types(path='path') or types('path1', 'path2', ...): Returns a map from each given path \
-           to a list of all types for that path."
-    | ValidateTaintModels _ ->
-        Some
-          "validate_taint_models('optional path', verify_dsl=<bool>): Validates models and returns \
-           errors. Defaults to model path in configuration if no parameter is passed in, and \
-           verify_dsl=False. Pass in verify_dsl=True to validate ModelQueries as well."
-    | Help _ -> None
-  in
-  let path = PyrePath.current_working_directory () in
-  let empty = Expression.Name (Name.Identifier "") |> Node.create_with_default_location in
-  List.filter_map
-    ~f:help
-    [
-      Batch [];
-      Attributes (Reference.create "");
-      Callees (Reference.create "");
-      CalleesWithLocation (Reference.create "");
-      Defines [Reference.create ""];
-      DumpCallGraph;
-      ExpressionLevelCoverage [""];
-      HoverInfoForPosition { path; position = Location.any_position };
-      IsCompatibleWith (empty, empty);
-      LessOrEqual (empty, empty);
-      ModelQuery { path; query_name = "" };
-      ModulesOfPath path;
-      PathOfModule (Reference.create "");
-      SaveServerState path;
-      Superclasses [Reference.empty];
-      Type (Node.create_with_default_location (Expression.Constant Constant.True));
-      TypesInFiles [""];
-      ValidateTaintModels { path = None; verify_dsl = false };
-      Request.inline_decorators (Reference.create "");
-    ]
-  |> List.sort ~compare:String.compare
-  |> String.concat ~sep:"\n  "
-  |> Format.sprintf "Possible queries:\n  %s"
-
 
 let rec parse_request_exn query =
   let open Expression in
@@ -624,7 +509,6 @@ let rec parse_request_exn query =
           List.map ~f:single_argument_to_reference arguments
           |> List.partition_result
           |> fun (qualifiers, parse_errors) -> Request.GlobalLeaks { qualifiers; parse_errors }
-      | "help", _ -> Request.Help (help ())
       | "hover_info_for_position", [path; line; column] ->
           Request.HoverInfoForPosition
             {
@@ -659,7 +543,6 @@ let rec parse_request_exn query =
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "validate_taint_models", arguments -> parse_validate_taint_models arguments
       | _ -> raise (InvalidQuery "unexpected query"))
-  | Ok _ when String.equal query "help" -> Help (help ())
   | Ok _ -> raise (InvalidQuery "unexpected query")
   | Error _ -> raise (InvalidQuery "failed to parse query")
 
@@ -1077,7 +960,6 @@ let rec process_request ~type_environment ~build_system request =
         List.map ~f:find_leak_errors_for_qualifier qualifiers
         |> List.partition_result
         |> construct_result
-    | Help help_list -> Single (Base.Help help_list)
     | HoverInfoForPosition { path; position } ->
         module_of_path path
         >>| (fun module_reference ->

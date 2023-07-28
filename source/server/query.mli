@@ -21,7 +21,6 @@ module Request : sig
         qualifiers: Reference.t list;
         parse_errors: string list;
       }
-    | Help of string
     | HoverInfoForPosition of {
         path: PyrePath.t;
         position: Location.position;
@@ -196,7 +195,6 @@ module Response : sig
       | FoundReferences of code_location list
       | FunctionDefinition of Statement.Define.t
       | GlobalLeakErrors of global_leak_errors
-      | Help of string
       | HoverInfoForPosition of hover_info
       | ModelVerificationErrors of Taint.ModelVerificationError.t list
       | ReferenceTypesInPath of types_at_path
@@ -215,8 +213,6 @@ module Response : sig
 
   val create_type_at_location : Location.t * Type.t -> Base.type_at_location
 end
-
-val help : unit -> string
 
 val parse_request : string -> (Request.t, string) Core.Result.t
 
