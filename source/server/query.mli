@@ -29,7 +29,6 @@ module Request : sig
         function_reference: Reference.t;
         decorators_to_skip: Reference.t list;
       }
-    | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -110,13 +109,6 @@ module Response : sig
       | ErrorAtPath of error_at_path
     [@@deriving equal, to_yojson]
 
-    type compatibility = {
-      actual: Type.t;
-      expected: Type.t;
-      result: bool;
-    }
-    [@@derving equal]
-
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
@@ -183,7 +175,6 @@ module Response : sig
       | Callees of Analysis.Callgraph.callee list
       | CalleesWithLocation of callee_with_instantiated_locations list
       | Callgraph of callees list
-      | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list

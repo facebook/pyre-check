@@ -17,9 +17,8 @@ let test_parse_query context =
     let type_query_request_equal left right =
       let expression_equal left right = Expression.location_insensitive_compare left right = 0 in
       match left, right with
-      | ( Query.Request.IsCompatibleWith (left_first, left_second),
-          Query.Request.IsCompatibleWith (right_first, right_second) )
-      | LessOrEqual (left_first, left_second), LessOrEqual (right_first, right_second) ->
+      | ( Query.Request.LessOrEqual (left_first, left_second),
+          Query.Request.LessOrEqual (right_first, right_second) ) ->
           expression_equal left_first right_first && expression_equal left_second right_second
       | Superclasses left, Superclasses right ->
           List.for_all2_exn ~f:(fun left right -> Reference.equal left right) left right
@@ -63,10 +62,6 @@ let test_parse_query context =
   assert_parses "less_or_equal (int, bool)" (LessOrEqual (!"int", !"bool"));
   assert_parses "less_or_equal(  int, int)" (LessOrEqual (!"int", !"int"));
   assert_parses "Less_Or_Equal(  int, int)" (LessOrEqual (!"int", !"int"));
-  assert_parses "is_compatible_with(int, bool)" (IsCompatibleWith (!"int", !"bool"));
-  assert_parses "is_compatible_with (int, bool)" (IsCompatibleWith (!"int", !"bool"));
-  assert_parses "is_compatible_with(  int, int)" (IsCompatibleWith (!"int", !"int"));
-  assert_parses "Is_Compatible_With(  int, int)" (IsCompatibleWith (!"int", !"int"));
   assert_fails_to_parse "less_or_equal()";
   assert_fails_to_parse "less_or_equal(int, int, int)";
   assert_fails_to_parse "less_or_eq(int, bool)";
@@ -290,12 +285,6 @@ let test_handle_query_basic context =
     assert_type_query_response_with_local_root ?custom_source_root ?handle ~source ~query (fun _ ->
         response)
   in
-  let assert_compatibility_response ~source ~query ~actual ~expected result =
-    assert_type_query_response
-      ~source
-      ~query
-      (Single (Base.Compatibility { actual; expected; result }))
-  in
   let open Lwt.Infix in
   let open Test in
   assert_type_query_response
@@ -389,91 +378,6 @@ let test_handle_query_basic context =
     (Single
        (Base.ExpressionLevelCoverageResponse
           [CoverageAtPath { Base.path = "foo.pyi"; total_expressions = 0; coverage_gaps = [] }]))
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:""
-    ~query:"is_compatible_with(int, str)"
-    ~actual:Type.integer
-    ~expected:Type.string
-    false
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:{|
-        A = int
-      |}
-    ~query:"is_compatible_with(int, test.A)"
-    ~actual:Type.integer
-    ~expected:Type.integer
-    true
-  >>= fun () ->
-  assert_type_query_response
-    ~source:""
-    ~query:"is_compatible_with(int, Unknown)"
-    (Error "Type `Unknown` was not found in the type order.")
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:"class unknown: ..."
-    ~query:"is_compatible_with(int, $unknown)"
-    ~actual:Type.integer
-    ~expected:Type.Top
-    true
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:"class unknown: ..."
-    ~query:"is_compatible_with(typing.List[int], typing.List[unknown])"
-    ~actual:(Type.list Type.integer)
-    ~expected:(Type.list Type.Top)
-    true
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:"class unknown: ..."
-    ~query:"is_compatible_with(int, typing.List[unknown])"
-    ~actual:Type.integer
-    ~expected:(Type.list Type.Top)
-    false
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:""
-    ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, int])"
-    ~actual:Type.integer
-    ~expected:Type.integer
-    true
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:""
-    ~query:"is_compatible_with(int, typing.Coroutine[typing.Any, typing.Any, str])"
-    ~actual:Type.integer
-    ~expected:Type.string
-    false
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:"A = int"
-    ~query:"is_compatible_with(test.A, typing.Coroutine[typing.Any, typing.Any, test.A])"
-    ~actual:Type.integer
-    ~expected:Type.integer
-    true
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:{|
-         class A: ...
-         class B(A): ...
-      |}
-    ~query:"is_compatible_with(test.B, typing.Coroutine[typing.Any, typing.Any, test.A])"
-    ~actual:(Type.Primitive "test.B")
-    ~expected:(Type.Primitive "test.A")
-    true
-  >>= fun () ->
-  assert_compatibility_response
-    ~source:{|
-         class A: ...
-         class B(A): ...
-      |}
-    ~query:
-      ("is_compatible_with(typing.Type[test.B],"
-      ^ "typing.Coroutine[typing.Any, typing.Any, typing.Type[test.A]])")
-    ~actual:(Type.meta (Type.Primitive "test.B"))
-    ~expected:(Type.meta (Type.Primitive "test.A"))
-    true
   >>= fun () ->
   assert_type_query_response
     ~source:""

@@ -37,7 +37,6 @@ module Request = struct
         function_reference: Reference.t;
         decorators_to_skip: Reference.t list;
       }
-    | IsCompatibleWith of Expression.t * Expression.t
     | LessOrEqual of Expression.t * Expression.t
     | LocationOfDefinition of {
         path: PyrePath.t;
@@ -119,13 +118,6 @@ module Response = struct
       | ErrorAtPath of error_at_path
     [@@deriving equal, to_yojson]
 
-    type compatibility = {
-      actual: Type.t;
-      expected: Type.t;
-      result: bool;
-    }
-    [@@deriving equal]
-
     type callee_with_instantiated_locations = {
       callee: Analysis.Callgraph.callee;
       locations: Location.WithPath.t list;
@@ -200,7 +192,6 @@ module Response = struct
       | Callees of Analysis.Callgraph.callee list
       | CalleesWithLocation of callee_with_instantiated_locations list
       | Callgraph of callees list
-      | Compatibility of compatibility
       | Errors of Analysis.AnalysisError.Instantiated.t list
       | ExpressionLevelCoverageResponse of coverage_response_at_path list
       | FoundAttributes of attribute list
@@ -239,13 +230,6 @@ module Response = struct
           `Assoc
             (List.map callees ~f:(fun { caller; callees } ->
                  Reference.show caller, `List (List.map callees ~f:callee_to_yojson)))
-      | Compatibility { actual; expected; result } ->
-          `Assoc
-            [
-              "actual", Type.to_yojson actual;
-              "expected", Type.to_yojson expected;
-              "boolean", `Bool result;
-            ]
       | Errors errors ->
           `Assoc
             [
@@ -516,7 +500,6 @@ let rec parse_request_exn query =
               position = { Location.line = integer line; column = integer column };
             }
       | "inline_decorators", arguments -> parse_inline_decorators arguments
-      | "is_compatible_with", [left; right] -> Request.IsCompatibleWith (access left, access right)
       | "less_or_equal", [left; right] -> Request.LessOrEqual (access left, access right)
       | "location_of_definition", [path; line; column] ->
           Request.LocationOfDefinition
@@ -975,18 +958,6 @@ let rec process_request ~type_environment ~build_system request =
           ~type_environment
           ~decorators_to_skip:(Reference.Set.of_list decorators_to_skip)
           function_reference
-    | IsCompatibleWith (left, right) ->
-        (* We need a special version of parse_and_validate to handle the "unknown" type that
-           Monkeycheck may send us *)
-        let left = parse_and_validate ~unknown_is_top:true left in
-        let right = parse_and_validate ~unknown_is_top:true right in
-        let right =
-          match Type.coroutine_value right with
-          | None -> right
-          | Some unwrapped -> unwrapped
-        in
-        GlobalResolution.is_compatible_with global_resolution ~left ~right
-        |> fun result -> Single (Base.Compatibility { actual = left; expected = right; result })
     | ModelQuery { path; query_name } -> (
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
