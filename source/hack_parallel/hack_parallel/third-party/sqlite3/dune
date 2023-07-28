@@ -3,6 +3,4 @@
   (language c)
   (names sqlite3))
  (name sqlite3)
- (modules)
- (public_name hack_parallel.sqlite3)
- (wrapped false))
+ (public_name hack_parallel.sqlite3))
