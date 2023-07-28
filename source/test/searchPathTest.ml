@@ -118,7 +118,7 @@ let test_search_for_path context =
     assert_equal
       (Some expected)
       (SearchPath.search_for_path ~search_paths path
-      >>| fun SearchPath.{ relative_path; _ } -> PyrePath.RelativePath.relative relative_path)
+      >>| fun SearchPath.{ relative_path; _ } -> relative_path)
   in
   let search_paths =
     [

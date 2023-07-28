@@ -25,8 +25,7 @@ module Raw = struct
     let create ~configuration path =
       let search_paths = Configuration.Analysis.search_paths configuration in
       SearchPath.search_for_path ~search_paths path
-      >>| fun SearchPath.{ relative_path; priority } ->
-      { relative = PyrePath.RelativePath.relative relative_path; priority }
+      >>| fun SearchPath.{ relative_path; priority } -> { relative = relative_path; priority }
 
 
     let full_path ~configuration { relative; priority; _ } =

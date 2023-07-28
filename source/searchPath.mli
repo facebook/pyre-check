@@ -18,8 +18,7 @@ type t =
 [@@deriving sexp, compare, hash, show, eq]
 
 type search_result = {
-  relative_path: PyrePath.RelativePath.t;
-      (** The searched path relative to one of the search root *)
+  relative_path: string;  (** The relative path to one of the search root *)
   priority: int;  (** Smaller int means higher priority *)
 }
 
