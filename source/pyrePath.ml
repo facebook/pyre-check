@@ -246,26 +246,6 @@ let remove_contents_of_directory path =
   | Sys_error message -> Result.Error message
 
 
-module Map = Map.Make (struct
-  type nonrec t = t
-
-  let compare left right = String.compare (absolute left) (absolute right)
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
-
-module Set = Set.Make (struct
-  type nonrec t = t
-
-  let compare left right = String.compare (absolute left) (absolute right)
-
-  let sexp_of_t = sexp_of_t
-
-  let t_of_sexp = t_of_sexp
-end)
-
 let with_suffix path ~suffix =
   match path with
   | Absolute prefix -> Absolute (prefix ^ suffix)
