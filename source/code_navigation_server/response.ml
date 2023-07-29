@@ -46,6 +46,11 @@ module CompletionItem = struct
       | Method
       | Property
     [@@deriving sexp, compare, yojson { strict = false }]
+
+    let to_yojson = function
+      | Simple -> `String "SIMPLE"
+      | Method -> `String "METHOD"
+      | Property -> `String "PROPERTY"
   end
 
   type t = {

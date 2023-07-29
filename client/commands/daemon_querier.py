@@ -706,7 +706,10 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
             return daemon_query.DaemonQueryFailure(response.message)
-        return response.completions
+        return [
+            completion_item.to_lsp_completion_item()
+            for completion_item in response.completions
+        ]
 
     async def get_reference_locations(
         self,

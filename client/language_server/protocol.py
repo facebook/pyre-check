@@ -790,6 +790,8 @@ class CompletionRequest:
 class CompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     label: str
     kind: Optional[CompletionItemKind]
+    sortText: str
+    filterText: str
 
 
 @dataclasses.dataclass(frozen=True)

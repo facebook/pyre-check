@@ -10,6 +10,7 @@ server and gets a response.
 """
 
 import dataclasses
+import enum
 import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
@@ -104,6 +105,43 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     definitions: List[DefinitionResponse]
+
+
+class PyreCompletionItemKind(str, enum.Enum):
+    # TODO(T159253974): extend to support remaining CompletionItemKinds when local/global variable autocomplete are supported
+    SIMPLE = "SIMPLE"
+    METHOD = "METHOD"
+    PROPERTY = "PROPERTY"
+
+    def to_lsp_completion_item_kind(self) -> lsp.CompletionItemKind:
+        match self:
+            case self.SIMPLE:
+                return lsp.CompletionItemKind.TEXT
+            case self.METHOD:
+                return lsp.CompletionItemKind.METHOD
+            case self.PROPERTY:
+                return lsp.CompletionItemKind.PROPERTY
+            case _:
+                return lsp.CompletionItemKind.TEXT
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreCompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
+    label: str
+    kind: PyreCompletionItemKind
+
+    def to_lsp_completion_item(self) -> lsp.CompletionItem:
+        return lsp.CompletionItem(
+            label=self.label,
+            kind=self.kind.to_lsp_completion_item_kind(),
+            filterText=self.label,
+            sortText=self.label,
+        )
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreCompletionsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    completions: List[PyreCompletionItem]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -277,7 +315,7 @@ async def async_handle_definition_request(
 async def async_handle_completion_request(
     socket_path: Path,
     completion_request: lsp.CompletionRequest,
-) -> Union[lsp.CompletionResponse, ErrorResponse]:
+) -> Union[PyreCompletionsResponse, ErrorResponse]:
     raw_request = json.dumps(["Query", completion_request.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_request
@@ -287,7 +325,7 @@ async def async_handle_completion_request(
     return parse_raw_response(
         response,
         expected_response_kind="Completion",
-        response_type=lsp.CompletionResponse,
+        response_type=PyreCompletionsResponse,
     )
 
 

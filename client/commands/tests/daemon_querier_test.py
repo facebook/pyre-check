@@ -515,11 +515,15 @@ class DaemonQuerierTest(testslide.TestCase):
             "completions": [
                 {
                     "label": "completion_1",
-                    "kind": null
+                    "kind": "SIMPLE"
                 },
                 {
                     "label": "completion_2",
-                    "kind": null
+                    "kind": "METHOD"
+                },
+                {
+                    "label": "completion_2",
+                    "kind": "PROPERTY"
                 }
             ]
         }
@@ -551,11 +555,21 @@ class DaemonQuerierTest(testslide.TestCase):
             [
                 lsp.CompletionItem(
                     label="completion_1",
-                    kind=None,
+                    kind=lsp.CompletionItemKind.TEXT,
+                    sortText="completion_1",
+                    filterText="completion_1",
                 ),
                 lsp.CompletionItem(
                     label="completion_2",
-                    kind=None,
+                    kind=lsp.CompletionItemKind.METHOD,
+                    sortText="completion_2",
+                    filterText="completion_2",
+                ),
+                lsp.CompletionItem(
+                    label="completion_2",
+                    kind=lsp.CompletionItemKind.PROPERTY,
+                    sortText="completion_2",
+                    filterText="completion_2",
                 ),
             ],
         )
