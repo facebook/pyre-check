@@ -99,10 +99,8 @@ let infer ~environment ~user_models =
         attributes
     in
     let sink_taint =
-      List.foldi
-        attributes
-        ~init:BackwardState.empty
-        ~f:(add_sink_from_attribute_model ~positional:true (Reference.create class_name))
+      List.foldi attributes ~init:BackwardState.empty ~f:(fun position ->
+          add_sink_from_attribute_model ~positional:true (Reference.create class_name) (position + 1))
     in
     [
       ( Target.Method { Target.class_name; method_name = "__init__"; kind = Normal },

@@ -821,6 +821,10 @@
     ],
     "sinks": [
       {
+        "port": "formal(bad_sink)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
         "port": "formal(another)",
         "taint": [
           {
@@ -848,10 +852,6 @@
             }
           }
         ]
-      },
-      {
-        "port": "formal(bad_sink)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
