@@ -514,10 +514,12 @@ class DaemonQuerierTest(testslide.TestCase):
         {
             "completions": [
                 {
-                    "label": "completion_1"
+                    "label": "completion_1",
+                    "kind": null
                 },
                 {
-                    "label": "completion_2"
+                    "label": "completion_2",
+                    "kind": null
                 }
             ]
         }
@@ -543,14 +545,17 @@ class DaemonQuerierTest(testslide.TestCase):
             str(items[0]),
             """["Query", ["Completion", {"path": "bar.py", "client_id": "codenav_pid_[0-9]{6}", "position": {"line": 42, "column": 10}}]]""",
         )
+        print(response)
         self.assertEqual(
             response,
             [
                 lsp.CompletionItem(
                     label="completion_1",
+                    kind=None,
                 ),
                 lsp.CompletionItem(
                     label="completion_2",
+                    kind=None,
                 ),
             ],
         )

@@ -179,6 +179,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             "completions": [
                 {
                     "label": "completion",
+                    "kind": None,
                 }
             ]
         }
@@ -188,7 +189,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 response_type=lsp.CompletionResponse,
             ),
             lsp.CompletionResponse(
-                completions=[lsp.CompletionItem(label="completion")]
+                completions=[lsp.CompletionItem(label="completion", kind=None)]
             ),
         )
 
