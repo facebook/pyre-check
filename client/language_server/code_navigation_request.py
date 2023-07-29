@@ -114,15 +114,14 @@ class PyreCompletionItemKind(str, enum.Enum):
     PROPERTY = "PROPERTY"
 
     def to_lsp_completion_item_kind(self) -> lsp.CompletionItemKind:
-        match self:
-            case self.SIMPLE:
-                return lsp.CompletionItemKind.TEXT
-            case self.METHOD:
-                return lsp.CompletionItemKind.METHOD
-            case self.PROPERTY:
-                return lsp.CompletionItemKind.PROPERTY
-            case _:
-                return lsp.CompletionItemKind.TEXT
+        if self == self.SIMPLE:
+            return lsp.CompletionItemKind.TEXT
+        elif self == self.METHOD:
+            return lsp.CompletionItemKind.METHOD
+        elif self == self.PROPERTY:
+            return lsp.CompletionItemKind.PROPERTY
+        else:
+            return lsp.CompletionItemKind.TEXT
 
 
 @dataclasses.dataclass(frozen=True)
