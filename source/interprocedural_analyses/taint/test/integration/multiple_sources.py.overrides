@@ -1,4 +1,0 @@
-@generated
-Overrides
-multiple_sources.Node::__init__ (override) -> [multiple_sources.Node::__init__ (method)]
-object::__init__ (override) -> [multiple_sources.Node::__init__ (override) object::__init__ (method)]
