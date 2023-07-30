@@ -1,4 +1,0 @@
-@generated
-Overrides
-long_access_path_taint.C::__init__ (override) -> [long_access_path_taint.C::__init__ (method)]
-object::__init__ (override) -> [long_access_path_taint.C::__init__ (override) object::__init__ (method)]

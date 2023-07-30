@@ -1,6 +1,0 @@
-(library
- (foreign_stubs
-  (language c)
-  (names sqlite3))
- (name sqlite3)
- (package hack_parallel))

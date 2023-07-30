@@ -1,6 +1,0 @@
-(library
- (name hack_parallel)
- (public_name hack_parallel)
- (library_flags
-  (-cclib -l -cclib pthread))
- (libraries hack_collections hack_heap hack_procs))

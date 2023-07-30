@@ -1,5 +1,0 @@
-Flask
-lxml
-jsonpickle
-requests
-Werkzeug
