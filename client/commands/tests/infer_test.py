@@ -19,33 +19,13 @@ from ... import (
 )
 from ...configuration import search_path
 from ...tests import setup
-from ..infer import (
-    AnnotateModuleInPlace,
-    Arguments,
-    AttributeAnnotation,
-    create_infer_arguments,
-    create_module_annotations,
-    FunctionAnnotation,
-    GlobalAnnotation,
-    MethodAnnotation,
-    ModuleAnnotations,
-    RawAnnotationLocation,
-    RawAttributeAnnotation,
-    RawDefineAnnotation,
-    RawGlobalAnnotation,
-    RawInferOutput,
-    RawInferOutputForPath,
-    RawParameter,
-    should_annotate_in_place,
-    StubGenerationOptions,
-    TypeAnnotation,
-)
+from .. import infer
 
 
 class ArgumentTest(testslide.TestCase):
     def test_serialize_arguments(self) -> None:
         def assert_serialized(
-            arguments: Arguments, items: Iterable[Tuple[str, object]]
+            arguments: infer.Arguments, items: Iterable[Tuple[str, object]]
         ) -> None:
             serialized = arguments.serialize()
             for key, value in items:
@@ -55,7 +35,7 @@ class ArgumentTest(testslide.TestCase):
                     self.assertEqual(value, serialized[key])
 
         assert_serialized(
-            Arguments(
+            infer.Arguments(
                 base_arguments=backend_arguments.BaseArguments(
                     log_path="/log",
                     global_root="/project",
@@ -111,7 +91,7 @@ class InferTest(testslide.TestCase):
             )
 
             self.assertEqual(
-                create_infer_arguments(
+                infer.create_infer_arguments(
                     infer_configuration,
                     command_arguments.InferArguments(
                         working_directory=Path("/some/directory"),
@@ -120,7 +100,7 @@ class InferTest(testslide.TestCase):
                         paths_to_modify={Path("path/to/module.py")},
                     ),
                 ),
-                Arguments(
+                infer.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
                         log_path=str(root_path / ".pyre/local"),
                         global_root=str(root_path),
@@ -150,20 +130,22 @@ class InferTest(testslide.TestCase):
             )
 
     def test_parse_raw_infer_output(self) -> None:
-        def assert_parsed(input: Dict[str, object], expected: RawInferOutput) -> None:
-            self.assertEqual(RawInferOutput.create_from_json(input), expected)
+        def assert_parsed(
+            input: Dict[str, object], expected: infer.RawInferOutput
+        ) -> None:
+            self.assertEqual(infer.RawInferOutput.create_from_json(input), expected)
 
         def assert_not_parsed(input: str) -> None:
-            with self.assertRaises(RawInferOutput.ParsingError):
-                RawInferOutput.create_from_string(input)
+            with self.assertRaises(infer.RawInferOutput.ParsingError):
+                infer.RawInferOutput.create_from_string(input)
 
         assert_not_parsed("")
         assert_not_parsed("[]")
         assert_not_parsed("42")
         assert_not_parsed('"abc"')
 
-        assert_parsed({}, RawInferOutput())
-        assert_parsed({"irrelevant": 42}, RawInferOutput())
+        assert_parsed({}, infer.RawInferOutput())
+        assert_parsed({"irrelevant": 42}, infer.RawInferOutput())
         assert_parsed(
             {
                 "globals": [
@@ -174,11 +156,11 @@ class InferTest(testslide.TestCase):
                     }
                 ]
             },
-            RawInferOutput(
+            infer.RawInferOutput(
                 global_annotations=[
-                    RawGlobalAnnotation(
+                    infer.RawGlobalAnnotation(
                         name="x",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=4
                         ),
                         annotation="int",
@@ -197,12 +179,12 @@ class InferTest(testslide.TestCase):
                     }
                 ]
             },
-            RawInferOutput(
+            infer.RawInferOutput(
                 attribute_annotations=[
-                    RawAttributeAnnotation(
+                    infer.RawAttributeAnnotation(
                         parent="Foo",
                         name="x",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=3
                         ),
                         annotation="int",
@@ -223,11 +205,11 @@ class InferTest(testslide.TestCase):
                     }
                 ]
             },
-            RawInferOutput(
+            infer.RawInferOutput(
                 define_annotations=[
-                    RawDefineAnnotation(
+                    infer.RawDefineAnnotation(
                         name="test.foo",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=1
                         ),
                         is_async=False,
@@ -261,18 +243,18 @@ class InferTest(testslide.TestCase):
                     }
                 ]
             },
-            RawInferOutput(
+            infer.RawInferOutput(
                 define_annotations=[
-                    RawDefineAnnotation(
+                    infer.RawDefineAnnotation(
                         name="test.Foo.foo",
                         parent="test.Foo",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=1
                         ),
                         return_="int",
                         parameters=[
-                            RawParameter(name="self", index=0),
-                            RawParameter(
+                            infer.RawParameter(name="self", index=0),
+                            infer.RawParameter(
                                 name="x", index=1, annotation="int", value="42"
                             ),
                         ],
@@ -284,9 +266,9 @@ class InferTest(testslide.TestCase):
 
     def test_raw_infer_output_split(self) -> None:
         def assert_split(given: Dict[str, object], expected: Dict[str, Any]) -> None:
-            input_infer_output = RawInferOutput.create_from_json(given)
+            input_infer_output = infer.RawInferOutput.create_from_json(given)
             expected_infer_output = {
-                path: RawInferOutputForPath.create_from_json(output)
+                path: infer.RawInferOutputForPath.create_from_json(output)
                 for (path, output) in expected.items()
             }
             self.assertDictEqual(
@@ -384,7 +366,9 @@ class InferTest(testslide.TestCase):
             paths_to_modify: Optional[Set[Path]],
             expected: bool,
         ) -> None:
-            self.assertEqual(should_annotate_in_place(path, paths_to_modify), expected)
+            self.assertEqual(
+                infer.should_annotate_in_place(path, paths_to_modify), expected
+            )
 
         assert_should_annotate_in_place(
             paths_to_modify=None,
@@ -416,7 +400,7 @@ class InferTest(testslide.TestCase):
 @dataclasses.dataclass(frozen=True)
 class ExpectedModuleAnnotationItem:
     path: str
-    infer_output: RawInferOutputForPath
+    infer_output: infer.RawInferOutputForPath
 
 
 class ModuleAnnotationTest(testslide.TestCase):
@@ -426,56 +410,58 @@ class ModuleAnnotationTest(testslide.TestCase):
     def test_module_annotations_from_infer_output(self) -> None:
         def assert_result(
             path: str,
-            infer_output: RawInferOutputForPath,
-            options: StubGenerationOptions,
-            expected: ModuleAnnotations,
+            infer_output: infer.RawInferOutputForPath,
+            options: infer.StubGenerationOptions,
+            expected: infer.ModuleAnnotations,
         ) -> None:
             self.assertEqual(
-                ModuleAnnotations.from_infer_output(path, infer_output, options),
+                infer.ModuleAnnotations.from_infer_output(path, infer_output, options),
                 expected,
             )
 
         default_path = "test.py"
         default_qualifier = "test"
-        default_options = StubGenerationOptions()
+        default_options = infer.StubGenerationOptions()
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutputForPath(qualifier=default_qualifier),
+            infer_output=infer.RawInferOutputForPath(qualifier=default_qualifier),
             options=default_options,
-            expected=ModuleAnnotations(path=default_path, options=default_options),
+            expected=infer.ModuleAnnotations(
+                path=default_path, options=default_options
+            ),
         )
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutputForPath(
+            infer_output=infer.RawInferOutputForPath(
                 qualifier=default_qualifier,
                 define_annotations=[
-                    RawDefineAnnotation(
+                    infer.RawDefineAnnotation(
                         name="test.Foo.foo",
                         parent="test.Foo",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=1
                         ),
                         return_="int",
                         is_async=True,
                     ),
-                    RawDefineAnnotation(
+                    infer.RawDefineAnnotation(
                         name="test.bar",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=2
                         ),
                     ),
                 ],
             ),
             options=default_options,
-            expected=ModuleAnnotations(
+            expected=infer.ModuleAnnotations(
                 path=default_path,
                 options=default_options,
                 functions=[
-                    FunctionAnnotation(
+                    infer.FunctionAnnotation(
                         name="test.bar",
-                        return_annotation=TypeAnnotation.from_raw(
+                        return_annotation=infer.TypeAnnotation.from_raw(
                             None,
                             qualifier=default_qualifier,
                             options=default_options,
@@ -485,10 +471,10 @@ class ModuleAnnotationTest(testslide.TestCase):
                     )
                 ],
                 methods=[
-                    MethodAnnotation(
+                    infer.MethodAnnotation(
                         parent="test.Foo",
                         name="test.Foo.foo",
-                        return_annotation=TypeAnnotation.from_raw(
+                        return_annotation=infer.TypeAnnotation.from_raw(
                             "int",
                             qualifier=default_qualifier,
                             options=default_options,
@@ -502,12 +488,12 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutputForPath(
+            infer_output=infer.RawInferOutputForPath(
                 qualifier=default_qualifier,
                 global_annotations=[
-                    RawGlobalAnnotation(
+                    infer.RawGlobalAnnotation(
                         name="x",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=3
                         ),
                         annotation="int",
@@ -515,13 +501,13 @@ class ModuleAnnotationTest(testslide.TestCase):
                 ],
             ),
             options=default_options,
-            expected=ModuleAnnotations(
+            expected=infer.ModuleAnnotations(
                 path=default_path,
                 options=default_options,
                 globals_=[
-                    GlobalAnnotation(
+                    infer.GlobalAnnotation(
                         name="x",
-                        annotation=TypeAnnotation.from_raw(
+                        annotation=infer.TypeAnnotation.from_raw(
                             "int",
                             qualifier=default_qualifier,
                             options=default_options,
@@ -533,13 +519,13 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         assert_result(
             path=default_path,
-            infer_output=RawInferOutputForPath(
+            infer_output=infer.RawInferOutputForPath(
                 qualifier=default_qualifier,
                 attribute_annotations=[
-                    RawAttributeAnnotation(
+                    infer.RawAttributeAnnotation(
                         parent="Foo",
                         name="x",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=3
                         ),
                         annotation="int",
@@ -547,24 +533,24 @@ class ModuleAnnotationTest(testslide.TestCase):
                 ],
             ),
             options=default_options,
-            expected=ModuleAnnotations(
+            expected=infer.ModuleAnnotations(
                 path=default_path,
                 options=default_options,
             ),
         )
 
-        annotate_attribute_options = StubGenerationOptions(
+        annotate_attribute_options = infer.StubGenerationOptions(
             annotate_attributes=True,
         )
         assert_result(
             path=default_path,
-            infer_output=RawInferOutputForPath(
+            infer_output=infer.RawInferOutputForPath(
                 qualifier=default_qualifier,
                 attribute_annotations=[
-                    RawAttributeAnnotation(
+                    infer.RawAttributeAnnotation(
                         parent="Foo",
                         name="x",
-                        location=RawAnnotationLocation(
+                        location=infer.RawAnnotationLocation(
                             qualifier="test", path="test.py", line=3
                         ),
                         annotation="int",
@@ -572,14 +558,14 @@ class ModuleAnnotationTest(testslide.TestCase):
                 ],
             ),
             options=annotate_attribute_options,
-            expected=ModuleAnnotations(
+            expected=infer.ModuleAnnotations(
                 path=default_path,
                 options=annotate_attribute_options,
                 attributes=[
-                    AttributeAnnotation(
+                    infer.AttributeAnnotation(
                         parent="Foo",
                         name="x",
-                        annotation=TypeAnnotation.from_raw(
+                        annotation=infer.TypeAnnotation.from_raw(
                             "int",
                             qualifier=default_qualifier,
                             options=annotate_attribute_options,
@@ -591,15 +577,17 @@ class ModuleAnnotationTest(testslide.TestCase):
 
     def test_create_module_annotations(self) -> None:
         def assert_created(
-            infer_output: RawInferOutput,
+            infer_output: infer.RawInferOutput,
             base_path: Path,
             expected: List[ExpectedModuleAnnotationItem],
         ) -> None:
-            default_options = StubGenerationOptions()
+            default_options = infer.StubGenerationOptions()
             self.assertCountEqual(
-                create_module_annotations(infer_output, base_path, default_options),
+                infer.create_module_annotations(
+                    infer_output, base_path, default_options
+                ),
                 [
-                    ModuleAnnotations.from_infer_output(
+                    infer.ModuleAnnotations.from_infer_output(
                         path=item.path,
                         infer_output=item.infer_output,
                         options=default_options,
@@ -608,31 +596,31 @@ class ModuleAnnotationTest(testslide.TestCase):
                 ],
             )
 
-        foo_global0 = RawGlobalAnnotation(
+        foo_global0 = infer.RawGlobalAnnotation(
             name="x",
-            location=RawAnnotationLocation(
+            location=infer.RawAnnotationLocation(
                 qualifier="p0.foo", path="/root/p0/foo.py", line=1
             ),
             annotation="int",
         )
-        foo_global1 = RawGlobalAnnotation(
+        foo_global1 = infer.RawGlobalAnnotation(
             name="y",
-            location=RawAnnotationLocation(
+            location=infer.RawAnnotationLocation(
                 qualifier="p0.foo", path="/root/p0/foo.py", line=2
             ),
             annotation="str",
         )
-        bar_global0 = RawGlobalAnnotation(
+        bar_global0 = infer.RawGlobalAnnotation(
             name="x",
-            location=RawAnnotationLocation(
+            location=infer.RawAnnotationLocation(
                 qualifier="p1.bar", path="/root/p1/bar.py", line=1
             ),
             annotation="int",
         )
-        bar_attribute0 = RawAttributeAnnotation(
+        bar_attribute0 = infer.RawAttributeAnnotation(
             parent="bar.Foo",
             name="a",
-            location=RawAnnotationLocation(
+            location=infer.RawAnnotationLocation(
                 qualifier="p1.bar", path="/root/p1/bar.py", line=2
             ),
             annotation="bool",
@@ -640,12 +628,14 @@ class ModuleAnnotationTest(testslide.TestCase):
 
         # Empty case
         assert_created(
-            infer_output=RawInferOutput(), base_path=Path("irrelevant"), expected=[]
+            infer_output=infer.RawInferOutput(),
+            base_path=Path("irrelevant"),
+            expected=[],
         )
 
         # Test proper splits by paths
         assert_created(
-            infer_output=RawInferOutput(
+            infer_output=infer.RawInferOutput(
                 global_annotations=[
                     foo_global0,
                     bar_global0,
@@ -659,14 +649,14 @@ class ModuleAnnotationTest(testslide.TestCase):
             expected=[
                 ExpectedModuleAnnotationItem(
                     path="p0/foo.py",
-                    infer_output=RawInferOutputForPath(
+                    infer_output=infer.RawInferOutputForPath(
                         qualifier="p0.foo",
                         global_annotations=[foo_global0, foo_global1],
                     ),
                 ),
                 ExpectedModuleAnnotationItem(
                     path="p1/bar.py",
-                    infer_output=RawInferOutputForPath(
+                    infer_output=infer.RawInferOutputForPath(
                         qualifier="p1.bar",
                         global_annotations=[bar_global0],
                         attribute_annotations=[bar_attribute0],
@@ -682,7 +672,7 @@ class ModuleAnnotationTest(testslide.TestCase):
         # project, in which case the qualifier is still relative to the
         # project root.
         assert_created(
-            infer_output=RawInferOutput(
+            infer_output=infer.RawInferOutput(
                 global_annotations=[
                     foo_global0,
                     bar_global0,
@@ -693,7 +683,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             expected=[
                 ExpectedModuleAnnotationItem(
                     path="bar.py",
-                    infer_output=RawInferOutputForPath(
+                    infer_output=infer.RawInferOutputForPath(
                         qualifier="p1.bar",
                         global_annotations=[bar_global0],
                     ),
@@ -703,9 +693,9 @@ class ModuleAnnotationTest(testslide.TestCase):
 
     def test_module_annotation_stubs_path(self) -> None:
         self.assertEqual(
-            ModuleAnnotations(
+            infer.ModuleAnnotations(
                 path="derp.py",
-                options=StubGenerationOptions(),
+                options=infer.StubGenerationOptions(),
             ).stubs_path(Path("/root")),
             Path("/root/derp.pyi"),
         )
@@ -730,10 +720,10 @@ class TypeAnnotationTest(testslide.TestCase):
         runtime_defined: bool = True,
         **stub_generation_options_kwargs: Any,
     ) -> None:
-        actual = TypeAnnotation(
+        actual = infer.TypeAnnotation(
             annotation=raw_annotation,
             qualifier=qualifier,
-            options=StubGenerationOptions(
+            options=infer.StubGenerationOptions(
                 **stub_generation_options_kwargs,
             ),
             runtime_defined=runtime_defined,
@@ -817,7 +807,7 @@ class StubGenerationTest(testslide.TestCase):
         simple_annotations: bool = False,
     ) -> None:
         test_path = "/root/test.py"
-        infer_output = RawInferOutput.create_from_json(
+        infer_output = infer.RawInferOutput.create_from_json(
             {
                 category: [
                     {
@@ -833,10 +823,10 @@ class StubGenerationTest(testslide.TestCase):
                 for category, values in data.items()
             }
         )
-        module_annotations = create_module_annotations(
+        module_annotations = infer.create_module_annotations(
             infer_output=infer_output,
             base_path=Path("/root"),
-            options=StubGenerationOptions(
+            options=infer.StubGenerationOptions(
                 annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
                 quote_annotations=quote_annotations,
@@ -1387,14 +1377,14 @@ class StubApplicationTest(testslide.TestCase):
         code_file_contents: str,
         expected_annotated_code_file_contents: Optional[str],
     ) -> None:
-        options = StubGenerationOptions(
+        options = infer.StubGenerationOptions(
             annotate_attributes=True,
             use_future_annotations=False,
             dequalify=False,
             quote_annotations=False,
             simple_annotations=False,
         )
-        annotated_code = AnnotateModuleInPlace._annotated_code(
+        annotated_code = infer.AnnotateModuleInPlace._annotated_code(
             code_path="code_path.py",
             stub=self._normalize(stub_file_contents),
             code=self._normalize(code_file_contents),
