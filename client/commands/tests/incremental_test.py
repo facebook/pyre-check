@@ -9,18 +9,20 @@ from typing import Iterable
 
 import testslide
 
-from ...error import Error
-from ..incremental import InvalidServerResponse, parse_type_error_response
+from ... import error
+from .. import incremental
 
 
 class IncrementalTest(testslide.TestCase):
     def test_parse_response(self) -> None:
-        def assert_parsed(response: str, expected: Iterable[Error]) -> None:
-            self.assertListEqual(parse_type_error_response(response), list(expected))
+        def assert_parsed(response: str, expected: Iterable[error.Error]) -> None:
+            self.assertListEqual(
+                incremental.parse_type_error_response(response), list(expected)
+            )
 
         def assert_not_parsed(response: str) -> None:
-            with self.assertRaises(InvalidServerResponse):
-                parse_type_error_response(response)
+            with self.assertRaises(incremental.InvalidServerResponse):
+                incremental.parse_type_error_response(response)
 
         assert_not_parsed("derp")
         assert_not_parsed("{}")
@@ -64,7 +66,7 @@ class IncrementalTest(testslide.TestCase):
                 ]
             ),
             expected=[
-                Error(
+                error.Error(
                     line=1,
                     column=1,
                     stop_line=3,
@@ -74,7 +76,7 @@ class IncrementalTest(testslide.TestCase):
                     name="Fake name",
                     description="Fake description",
                 ),
-                Error(
+                error.Error(
                     line=2,
                     column=2,
                     stop_line=4,
