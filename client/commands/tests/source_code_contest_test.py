@@ -9,13 +9,13 @@ import testslide
 
 from ...language_server import protocol as lsp
 
-from ..pyre_language_server import SourceCodeContext
+from .. import pyre_language_server
 
 
 class SourceCodeContextTest(testslide.TestCase):
     def test_source_code_context_for_position(self) -> None:
         self.assertEqual(
-            SourceCodeContext.from_source_and_position(
+            pyre_language_server.SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
             ),
@@ -23,7 +23,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            SourceCodeContext.from_source_and_position(
+            pyre_language_server.SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
                 max_lines_before_or_after=2,
@@ -32,7 +32,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            SourceCodeContext.from_source_and_position(
+            pyre_language_server.SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=2, character=5),
                 max_lines_before_or_after=3000,
@@ -41,7 +41,7 @@ class SourceCodeContextTest(testslide.TestCase):
         )
 
         self.assertEqual(
-            SourceCodeContext.from_source_and_position(
+            pyre_language_server.SourceCodeContext.from_source_and_position(
                 source="\n".join(f"line {i}" for i in range(1, 10)),
                 position=lsp.LspPosition(line=50, character=5),
             ),
