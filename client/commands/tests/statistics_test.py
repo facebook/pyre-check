@@ -6,24 +6,15 @@
 import tempfile
 import textwrap
 from pathlib import Path
-
 from typing import Dict, List
 
 import libcst
-
 import testslide
 
 from ... import coverage_data
-
 from ...tests import setup
-from ..statistics import (
-    aggregate_statistics,
-    AggregatedStatisticsData,
-    AnnotationCountCollector,
-    collect_statistics,
-    FixmeCountCollector,
-    IgnoreCountCollector,
-)
+
+from .. import statistics
 
 
 def parse_code(code: str) -> libcst.MetadataWrapper:
@@ -41,7 +32,7 @@ class FixmeCountCollectorTest(testslide.TestCase):
         expected_no_codes: List[int],
     ) -> None:
         source_module = parse_code(source.replace("FIXME", "pyre-fixme"))
-        result = FixmeCountCollector().collect(source_module)
+        result = statistics.FixmeCountCollector().collect(source_module)
         self.assertEqual(expected_codes, result.code)
         self.assertEqual(expected_no_codes, result.no_code)
 
@@ -134,7 +125,7 @@ class IgnoreCountCollectorTest(testslide.TestCase):
         expected_no_codes: List[int],
     ) -> None:
         source_module = parse_code(source.replace("IGNORE", "pyre-ignore"))
-        result = IgnoreCountCollector().collect(source_module)
+        result = statistics.IgnoreCountCollector().collect(source_module)
         self.assertEqual(expected_codes, result.code)
         self.assertEqual(expected_no_codes, result.no_code)
 
@@ -163,7 +154,7 @@ class IgnoreCountCollectorTest(testslide.TestCase):
 class AnnotationCountCollectorTest(testslide.TestCase):
     def assert_counts(self, source: str, expected: Dict[str, int]) -> None:
         source_module = parse_code(source)
-        result = AnnotationCountCollector().collect(source_module)
+        result = statistics.AnnotationCountCollector().collect(source_module)
         self.assertDictEqual(
             expected,
             result.to_count_dict(),
@@ -595,7 +586,9 @@ class StatisticsTest(testslide.TestCase):
             foo_path = root_path / "foo.py"
             bar_path = root_path / "bar.py"
 
-            data = collect_statistics([foo_path, bar_path], strict_default=False)
+            data = statistics.collect_statistics(
+                [foo_path, bar_path], strict_default=False
+            )
             self.assertIn(str(foo_path), data)
             self.assertIn(str(bar_path), data)
 
@@ -615,10 +608,10 @@ class StatisticsTest(testslide.TestCase):
             )
 
             self.assertEqual(
-                aggregate_statistics(
-                    collect_statistics([a_path], strict_default=False)
+                statistics.aggregate_statistics(
+                    statistics.collect_statistics([a_path], strict_default=False)
                 ),
-                AggregatedStatisticsData(
+                statistics.AggregatedStatisticsData(
                     annotations={
                         "return_count": 1,
                         "annotated_return_count": 0,
@@ -667,10 +660,12 @@ class StatisticsTest(testslide.TestCase):
             )
 
             self.assertEqual(
-                aggregate_statistics(
-                    collect_statistics([a_path, b_path], strict_default=False)
+                statistics.aggregate_statistics(
+                    statistics.collect_statistics(
+                        [a_path, b_path], strict_default=False
+                    )
                 ),
-                AggregatedStatisticsData(
+                statistics.AggregatedStatisticsData(
                     annotations={
                         "return_count": 2,
                         "annotated_return_count": 1,
