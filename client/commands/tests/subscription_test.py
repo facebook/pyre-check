@@ -9,21 +9,21 @@ from pathlib import Path
 import testslide
 
 from ... import error
-from ..incremental import InvalidServerResponse
-from ..subscription import Error, Response, StatusUpdate, TypeErrors
+
+from .. import incremental, subscription
 
 
 class SubscriptionTest(testslide.TestCase):
     def test_parse_response(self) -> None:
-        def assert_parsed(response: str, expected: Response) -> None:
+        def assert_parsed(response: str, expected: subscription.Response) -> None:
             self.assertEqual(
-                Response.parse(response),
+                subscription.Response.parse(response),
                 expected,
             )
 
         def assert_not_parsed(response: str) -> None:
-            with self.assertRaises(InvalidServerResponse):
-                Response.parse(response)
+            with self.assertRaises(incremental.InvalidServerResponse):
+                subscription.Response.parse(response)
 
         assert_not_parsed("derp")
         assert_not_parsed("{}")
@@ -38,7 +38,7 @@ class SubscriptionTest(testslide.TestCase):
 
         assert_parsed(
             json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
-            expected=Response(body=TypeErrors()),
+            expected=subscription.Response(body=subscription.TypeErrors()),
         )
         assert_parsed(
             json.dumps(
@@ -61,8 +61,8 @@ class SubscriptionTest(testslide.TestCase):
                     ],
                 }
             ),
-            expected=Response(
-                body=TypeErrors(
+            expected=subscription.Response(
+                body=subscription.TypeErrors(
                     [
                         error.Error(
                             line=1,
@@ -85,8 +85,8 @@ class SubscriptionTest(testslide.TestCase):
                     "body": ["StatusUpdate", ["derp"]],
                 }
             ),
-            expected=Response(
-                body=StatusUpdate(kind="derp"),
+            expected=subscription.Response(
+                body=subscription.StatusUpdate(kind="derp"),
             ),
         )
         assert_parsed(
@@ -96,21 +96,21 @@ class SubscriptionTest(testslide.TestCase):
                     "body": ["Error", "rip and tear!"],
                 }
             ),
-            expected=Response(
-                body=Error(message="rip and tear!"),
+            expected=subscription.Response(
+                body=subscription.Error(message="rip and tear!"),
             ),
         )
 
     def test_parse_code_navigation_response(self) -> None:
-        def assert_parsed(response: str, expected: Response) -> None:
+        def assert_parsed(response: str, expected: subscription.Response) -> None:
             self.assertEqual(
-                Response.parse_code_navigation_response(response),
+                subscription.Response.parse_code_navigation_response(response),
                 expected,
             )
 
         def assert_not_parsed(response: str) -> None:
-            with self.assertRaises(InvalidServerResponse):
-                Response.parse_code_navigation_response(response)
+            with self.assertRaises(incremental.InvalidServerResponse):
+                subscription.Response.parse_code_navigation_response(response)
 
         assert_not_parsed("derp")
         assert_not_parsed("{}")
@@ -121,7 +121,9 @@ class SubscriptionTest(testslide.TestCase):
 
         assert_parsed(
             json.dumps(["ServerStatus", ["BusyChecking"]]),
-            expected=Response(body=StatusUpdate(kind="BusyChecking")),
+            expected=subscription.Response(
+                body=subscription.StatusUpdate(kind="BusyChecking")
+            ),
         )
         assert_parsed(
             json.dumps(
@@ -135,8 +137,8 @@ class SubscriptionTest(testslide.TestCase):
                     ],
                 ]
             ),
-            expected=Response(
-                body=StatusUpdate(
+            expected=subscription.Response(
+                body=subscription.StatusUpdate(
                     kind="Stop",
                     message="Pyre server stopped because one client explicitly sent a `stop` request",
                 )
@@ -161,8 +163,8 @@ class SubscriptionTest(testslide.TestCase):
                     ],
                 ]
             ),
-            expected=Response(
-                body=TypeErrors(
+            expected=subscription.Response(
+                body=subscription.TypeErrors(
                     [
                         error.Error(
                             line=1,
@@ -181,19 +183,19 @@ class SubscriptionTest(testslide.TestCase):
         assert_not_parsed(json.dumps(["Error", "Needs more cowbell"]))
         assert_parsed(
             json.dumps(["Error", ["InvalidRequest", "some request string"]]),
-            expected=Response(
-                body=Error(message='InvalidRequest: "some request string"')
+            expected=subscription.Response(
+                body=subscription.Error(message='InvalidRequest: "some request string"')
             ),
         )
         assert_parsed(
             json.dumps(["Error", ["ModuleNotTracked", {"path": "a/b.py"}]]),
-            expected=Response(
-                body=Error(message='ModuleNotTracked: {"path": "a/b.py"}')
+            expected=subscription.Response(
+                body=subscription.Error(message='ModuleNotTracked: {"path": "a/b.py"}')
             ),
         )
         assert_parsed(
             json.dumps(["Error", ["OverlayNotFound", {"overlay_id": "A"}]]),
-            expected=Response(
-                body=Error(message='OverlayNotFound: {"overlay_id": "A"}')
+            expected=subscription.Response(
+                body=subscription.Error(message='OverlayNotFound: {"overlay_id": "A"}')
             ),
         )
