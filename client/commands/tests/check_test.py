@@ -14,23 +14,17 @@ from ... import (
     backend_arguments,
     command_arguments,
     configuration,
+    error,
     frontend_configuration,
+    tests,
 )
-from ...configuration import search_path
-from ...error import Error
-from ...tests import setup
-from ..check import (
-    Arguments,
-    create_check_arguments,
-    InvalidCheckResponse,
-    parse_type_error_response,
-)
+from .. import check
 
 
 class ArgumentTest(testslide.TestCase):
     def test_serialize_arguments(self) -> None:
         def assert_serialized(
-            arguments: Arguments, items: Iterable[Tuple[str, object]]
+            arguments: check.Arguments, items: Iterable[Tuple[str, object]]
         ) -> None:
             serialized = arguments.serialize()
             for key, value in items:
@@ -40,12 +34,12 @@ class ArgumentTest(testslide.TestCase):
                     self.assertEqual(value, serialized[key])
 
         assert_serialized(
-            Arguments(
+            check.Arguments(
                 base_arguments=backend_arguments.BaseArguments(
                     log_path="/log",
                     global_root="/project",
                     source_paths=backend_arguments.SimpleSourcePath(
-                        [search_path.SimpleElement("source")]
+                        [configuration.search_path.SimpleElement("source")]
                     ),
                 ),
                 additional_logging_sections=["foo", "bar"],
@@ -67,10 +61,10 @@ class CheckTest(testslide.TestCase):
     def test_create_check_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            setup.ensure_directories_exists(
+            tests.setup.ensure_directories_exists(
                 root_path, [".pyre", "allows", "blocks", "search", "local/src"]
             )
-            setup.write_configuration_file(
+            tests.setup.write_configuration_file(
                 root_path,
                 {
                     "only_check_paths": ["allows", "nonexistent"],
@@ -83,7 +77,7 @@ class CheckTest(testslide.TestCase):
                     "strict": True,
                 },
             )
-            setup.write_configuration_file(
+            tests.setup.write_configuration_file(
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
@@ -98,7 +92,7 @@ class CheckTest(testslide.TestCase):
             )
 
             self.assertEqual(
-                create_check_arguments(
+                check.create_check_arguments(
                     check_configuration,
                     command_arguments.CheckArguments(
                         debug=True,
@@ -106,7 +100,7 @@ class CheckTest(testslide.TestCase):
                         show_error_traces=True,
                     ),
                 ),
-                Arguments(
+                check.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
                         log_path=str(root_path / ".pyre/local"),
                         global_root=str(root_path),
@@ -126,10 +120,16 @@ class CheckTest(testslide.TestCase):
                         parallel=True,
                         python_version=check_configuration.get_python_version(),
                         search_paths=[
-                            search_path.SimpleElement(str(root_path / "search"))
+                            configuration.search_path.SimpleElement(
+                                str(root_path / "search")
+                            )
                         ],
                         source_paths=backend_arguments.SimpleSourcePath(
-                            [search_path.SimpleElement(str(root_path / "local/src"))]
+                            [
+                                configuration.search_path.SimpleElement(
+                                    str(root_path / "local/src")
+                                )
+                            ]
                         ),
                     ),
                     show_error_traces=True,
@@ -140,16 +140,16 @@ class CheckTest(testslide.TestCase):
     def test_create_check_arguments_artifact_root_no_conflict(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            setup.ensure_directories_exists(root_path, [".pyre", "project"])
-            setup.ensure_files_exist(root_path, ["project/.buckconfig"])
-            setup.write_configuration_file(
+            tests.setup.ensure_directories_exists(root_path, [".pyre", "project"])
+            tests.setup.ensure_files_exist(root_path, ["project/.buckconfig"])
+            tests.setup.write_configuration_file(
                 root_path / "project",
                 {
                     "targets": ["//foo:bar"],
                 },
             )
 
-            arguments = create_check_arguments(
+            arguments = check.create_check_arguments(
                 frontend_configuration.OpenSource(
                     configuration.create_configuration(
                         command_arguments.CommandArguments(
@@ -172,14 +172,14 @@ class CheckTest(testslide.TestCase):
             log_path = root_path / ".pyre"
             logger_path = root_path / "logger"
 
-            setup.ensure_directories_exists(root_path, [".pyre", "src"])
-            setup.ensure_files_exist(root_path, ["logger"])
-            setup.write_configuration_file(
+            tests.setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            tests.setup.ensure_files_exist(root_path, ["logger"])
+            tests.setup.write_configuration_file(
                 root_path,
                 {"source_directories": ["src"], "logger": str(logger_path)},
             )
 
-            arguments = create_check_arguments(
+            arguments = check.create_check_arguments(
                 frontend_configuration.OpenSource(
                     configuration.create_configuration(
                         command_arguments.CommandArguments(dot_pyre_directory=log_path),
@@ -214,12 +214,14 @@ class CheckTest(testslide.TestCase):
             )
 
     def test_parse_response(self) -> None:
-        def assert_parsed(response: str, expected: Iterable[Error]) -> None:
-            self.assertListEqual(parse_type_error_response(response), list(expected))
+        def assert_parsed(response: str, expected: Iterable[error.Error]) -> None:
+            self.assertListEqual(
+                check.parse_type_error_response(response), list(expected)
+            )
 
         def assert_not_parsed(response: str) -> None:
-            with self.assertRaises(InvalidCheckResponse):
-                parse_type_error_response(response)
+            with self.assertRaises(check.InvalidCheckResponse):
+                check.parse_type_error_response(response)
 
         assert_not_parsed("derp")
         assert_not_parsed("[]")
@@ -263,7 +265,7 @@ class CheckTest(testslide.TestCase):
                 }
             ),
             expected=[
-                Error(
+                error.Error(
                     line=1,
                     column=1,
                     stop_line=3,
@@ -273,7 +275,7 @@ class CheckTest(testslide.TestCase):
                     name="Fake name",
                     description="Fake description",
                 ),
-                Error(
+                error.Error(
                     line=2,
                     column=2,
                     stop_line=4,
