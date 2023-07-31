@@ -5,22 +5,13 @@
 
 import testslide
 
-from ..profile import (
-    CounterEvent,
-    DurationEvent,
-    EventMetadata,
-    parse_event,
-    StatisticsOverTime,
-    TableStatistics,
-    to_cold_start_phases,
-    to_incremental_updates,
-)
+from .. import profile
 
 
 class ProfileTest(testslide.TestCase):
     def test_parse_event(self) -> None:
         self.assertEqual(
-            parse_event(
+            profile.parse_event(
                 """
                 {
                   "name": "Kara",
@@ -32,9 +23,9 @@ class ProfileTest(testslide.TestCase):
                 }
                 """
             ),
-            DurationEvent(
+            profile.DurationEvent(
                 duration=11,
-                metadata=EventMetadata(
+                metadata=profile.EventMetadata(
                     name="Kara",
                     worker_id=579102694,
                     pid=400,
@@ -44,7 +35,7 @@ class ProfileTest(testslide.TestCase):
             ),
         )
         self.assertEqual(
-            parse_event(
+            profile.parse_event(
                 """
                 {
                   "name": "Conor",
@@ -56,9 +47,9 @@ class ProfileTest(testslide.TestCase):
                 }
                 """
             ),
-            CounterEvent(
+            profile.CounterEvent(
                 description=None,
-                metadata=EventMetadata(
+                metadata=profile.EventMetadata(
                     name="Conor",
                     worker_id=313248317,
                     pid=800,
@@ -68,7 +59,7 @@ class ProfileTest(testslide.TestCase):
             ),
         )
         self.assertEqual(
-            parse_event(
+            profile.parse_event(
                 """
                 {
                   "name": "Marcus",
@@ -79,36 +70,36 @@ class ProfileTest(testslide.TestCase):
                 }
                 """
             ),
-            CounterEvent(
+            profile.CounterEvent(
                 description="ra9",
-                metadata=EventMetadata(
+                metadata=profile.EventMetadata(
                     name="Marcus", worker_id=684842971, pid=200, timestamp=44, tags={}
                 ),
             ),
         )
 
         with self.assertRaises(Exception):
-            parse_event("{}")
+            profile.parse_event("{}")
         with self.assertRaises(Exception):
-            parse_event('{ name: "foo" }')
+            profile.parse_event('{ name: "foo" }')
         with self.assertRaises(Exception):
-            parse_event('{ "name": "foo", "pid": 42, "timestamp": 100}')
+            profile.parse_event('{ "name": "foo", "pid": 42, "timestamp": 100}')
         with self.assertRaises(Exception):
-            parse_event(
+            profile.parse_event(
                 '{ "name": "foo", "pid": 42, "event_type": "wat", "timestamp": 100}'
             )
         with self.assertRaises(Exception):
-            parse_event(
+            profile.parse_event(
                 '{ "name": "foo", "pid": 42, "event_type": [ "Duration", "10" ]}'
             )
 
     def test_to_incremental_updates(self) -> None:
         self.assertEqual(
-            to_incremental_updates(
+            profile.to_incremental_updates(
                 [
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=11,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -116,9 +107,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase1"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=11,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="initialization",
                             worker_id=1,
                             pid=400,
@@ -126,9 +117,9 @@ class ProfileTest(testslide.TestCase):
                             tags={},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=11,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=2,
                             pid=400,
@@ -136,9 +127,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase1"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=12,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=3,
                             pid=400,
@@ -146,9 +137,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase2"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=13,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -156,9 +147,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase3"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=1,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="incremental check",
                             worker_id=1,
                             pid=400,
@@ -166,9 +157,9 @@ class ProfileTest(testslide.TestCase):
                             tags={},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=21,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=2,
                             pid=400,
@@ -176,9 +167,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase1"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=22,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=3,
                             pid=400,
@@ -186,9 +177,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase2"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=2,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="incremental check",
                             worker_id=0,
                             pid=400,
@@ -196,9 +187,9 @@ class ProfileTest(testslide.TestCase):
                             tags={},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=31,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=1,
                             pid=400,
@@ -216,11 +207,11 @@ class ProfileTest(testslide.TestCase):
 
     def test_to_cold_start_phases(self) -> None:
         self.assertEqual(
-            to_cold_start_phases(
+            profile.to_cold_start_phases(
                 [
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=11,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -228,9 +219,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase1"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=14,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -238,9 +229,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase2"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=12,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="initialization",
                             worker_id=1,
                             pid=400,
@@ -248,9 +239,9 @@ class ProfileTest(testslide.TestCase):
                             tags={},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=40,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -258,9 +249,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase1"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=50,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="SomeUpdate",
                             worker_id=0,
                             pid=400,
@@ -268,9 +259,9 @@ class ProfileTest(testslide.TestCase):
                             tags={"phase_name": "phase2"},
                         ),
                     ),
-                    DurationEvent(
+                    profile.DurationEvent(
                         duration=1,
-                        metadata=EventMetadata(
+                        metadata=profile.EventMetadata(
                             name="incremental check",
                             worker_id=1,
                             pid=400,
@@ -284,7 +275,7 @@ class ProfileTest(testslide.TestCase):
         )
 
     def test_table_statistics(self) -> None:
-        statistics = TableStatistics()
+        statistics = profile.TableStatistics()
         lines = [
             "(ALL cache hit rate) stats -- samples: 183.378K, total: 143.256K, "
             "avg: 0.781206, stddev: 0.413429, max: 1, min: 0)",
@@ -359,7 +350,7 @@ class ProfileTest(testslide.TestCase):
         )
 
     def test_statistics_over_time(self) -> None:
-        statistics = StatisticsOverTime()
+        statistics = profile.StatisticsOverTime()
         lines = [
             "2020-04-27 20:08:35 MEMORY Shared memory size post-typecheck (size: 42)",
             "2020-02-19 10:35:57 PERFORMANCE Check_TypeCheck: 1.767435s",
