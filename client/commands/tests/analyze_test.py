@@ -17,13 +17,13 @@ from ... import (
 )
 from ...configuration import search_path
 from ...tests import setup
-from ..analyze import Arguments, create_analyze_arguments
+from .. import analyze
 
 
 class ArgumentTest(testslide.TestCase):
     def test_serialize_arguments(self) -> None:
         def assert_serialized(
-            arguments: Arguments, items: Iterable[Tuple[str, object]]
+            arguments: analyze.Arguments, items: Iterable[Tuple[str, object]]
         ) -> None:
             serialized = arguments.serialize()
             for key, value in items:
@@ -33,7 +33,7 @@ class ArgumentTest(testslide.TestCase):
                     self.assertEqual(value, serialized[key])
 
         assert_serialized(
-            Arguments(
+            analyze.Arguments(
                 base_arguments=backend_arguments.BaseArguments(
                     log_path="/log",
                     global_root="/project",
@@ -143,7 +143,7 @@ class ArgumentTest(testslide.TestCase):
             )
 
             self.assertEqual(
-                create_analyze_arguments(
+                analyze.create_analyze_arguments(
                     analyze_configuration,
                     command_arguments.AnalyzeArguments(
                         debug=True,
@@ -178,7 +178,7 @@ class ArgumentTest(testslide.TestCase):
                         compact_ocaml_heap=True,
                     ),
                 ),
-                Arguments(
+                analyze.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
                         log_path=str(root_path / ".pyre/local"),
                         global_root=str(root_path),
