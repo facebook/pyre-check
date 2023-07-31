@@ -9,22 +9,25 @@ from typing import Iterable
 
 import testslide
 
-from ...error import ModelVerificationError
+from ... import error
+
 from ...tests import setup
-from ..daemon_query import InvalidQueryResponse
-from ..validate_models import parse_validation_errors_response
+from .. import daemon_query, validate_models
 
 
 class ValidateModelsTest(testslide.TestCase):
     def test_parse_response(self) -> None:
         def assert_parsed(
-            payload: object, expected: Iterable[ModelVerificationError]
+            payload: object, expected: Iterable[error.ModelVerificationError]
         ) -> None:
-            self.assertEqual(parse_validation_errors_response(payload), list(expected))
+            self.assertEqual(
+                validate_models.parse_validation_errors_response(payload),
+                list(expected),
+            )
 
         def assert_not_parsed(payload: object) -> None:
-            with self.assertRaises(InvalidQueryResponse):
-                parse_validation_errors_response(payload)
+            with self.assertRaises(daemon_query.InvalidQueryResponse):
+                validate_models.parse_validation_errors_response(payload)
 
         assert_not_parsed(42)
         assert_not_parsed("derp")
@@ -65,7 +68,7 @@ class ValidateModelsTest(testslide.TestCase):
                         }
                     },
                     expected=[
-                        ModelVerificationError(
+                        error.ModelVerificationError(
                             line=3,
                             column=3,
                             stop_line=4,
@@ -74,7 +77,7 @@ class ValidateModelsTest(testslide.TestCase):
                             description="Some description",
                             code=1001,
                         ),
-                        ModelVerificationError(
+                        error.ModelVerificationError(
                             line=1,
                             column=1,
                             stop_line=2,
