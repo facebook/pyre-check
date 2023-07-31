@@ -13,12 +13,7 @@ import unittest
 from pathlib import Path
 from unittest.mock import call, mock_open, patch
 
-from ...tests.setup import (
-    ensure_directories_exists,
-    ensure_files_exist,
-    switch_working_directory,
-)
-
+from ...tests import setup
 from .. import initialize
 
 
@@ -98,9 +93,9 @@ class InitializeTest(unittest.TestCase):
     def test_create_source_directory_element(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            with switch_working_directory(root_path):
-                ensure_directories_exists(root_path, "a")
-                ensure_files_exist(root_path, ["a/__init__.py"])
+            with setup.switch_working_directory(root_path):
+                setup.ensure_directories_exists(root_path, "a")
+                setup.ensure_files_exist(root_path, ["a/__init__.py"])
                 self.assertEqual(
                     initialize._create_source_directory_element("a"),
                     {"import_root": ".", "source": "a"},
@@ -108,8 +103,8 @@ class InitializeTest(unittest.TestCase):
 
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            with switch_working_directory(root_path):
-                ensure_directories_exists(root_path, "a")
+            with setup.switch_working_directory(root_path):
+                setup.ensure_directories_exists(root_path, "a")
                 self.assertEqual(
                     initialize._create_source_directory_element("a"),
                     "a",
