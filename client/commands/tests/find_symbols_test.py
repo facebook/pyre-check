@@ -9,24 +9,19 @@ from typing import List, Optional
 
 import testslide
 
-from ...language_server.protocol import (
-    DocumentSymbolsResponse,
-    LspPosition,
-    LspRange,
-    SymbolKind,
-)
+from ...language_server import protocol as lsp
 
-from ..find_symbols import parse_source_and_collect_symbols, UnparseableError
+from .. import find_symbols
 
 
 def make_document_symbol(
     name: str,
     detail: str,
-    kind: SymbolKind,
-    range: LspRange,
-    children: Optional[List[DocumentSymbolsResponse]] = None,
-) -> DocumentSymbolsResponse:
-    return DocumentSymbolsResponse(
+    kind: lsp.SymbolKind,
+    range: lsp.LspRange,
+    children: Optional[List[lsp.DocumentSymbolsResponse]] = None,
+) -> lsp.DocumentSymbolsResponse:
+    return lsp.DocumentSymbolsResponse(
         name=name,
         detail=detail,
         kind=kind,
@@ -44,11 +39,11 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
 
     class FindSymbolTests(testslide.TestCase):
         def assert_collected_symbols(
-            self, source: str, expected_symbols: List[DocumentSymbolsResponse]
+            self, source: str, expected_symbols: List[lsp.DocumentSymbolsResponse]
         ) -> None:
             self.maxDiff = None
             self.assertListEqual(
-                parse_source_and_collect_symbols(textwrap.dedent(source)),
+                find_symbols.parse_source_and_collect_symbols(textwrap.dedent(source)),
                 expected_symbols,
             )
 
@@ -62,10 +57,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    pass")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    pass")),
                         ),
                     )
                 ],
@@ -87,73 +82,73 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=6, character=len("    pass")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    pass")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=3, character=5),
-                                    end=LspPosition(line=3, character=6),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=3, character=5),
+                                    end=lsp.LspPosition(line=3, character=6),
                                 ),
                             ),
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=3, character=8),
-                                    end=LspPosition(line=3, character=9),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=3, character=8),
+                                    end=lsp.LspPosition(line=3, character=9),
                                 ),
                             ),
                             make_document_symbol(
                                 name="c",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=3, character=12),
-                                    end=LspPosition(line=3, character=13),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=3, character=12),
+                                    end=lsp.LspPosition(line=3, character=13),
                                 ),
                             ),
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=5),
-                                    end=LspPosition(line=4, character=6),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=5),
+                                    end=lsp.LspPosition(line=4, character=6),
                                 ),
                             ),
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=8),
-                                    end=LspPosition(line=4, character=9),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=8),
+                                    end=lsp.LspPosition(line=4, character=9),
                                 ),
                             ),
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=5),
                                 ),
                             ),
                         ],
@@ -174,19 +169,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    return x")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    return x")),
                         ),
                     ),
                     make_document_symbol(
                         name="bar",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=4, character=len("    return y")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=4, character=len("    return y")),
                         ),
                     ),
                 ],
@@ -202,19 +197,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    x:int = 1")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    x:int = 1")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                         ],
@@ -234,19 +229,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    x = 1")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    x = 1")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                         ],
@@ -254,19 +249,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="bar",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=4, character=len("    y = 2")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=4, character=len("    y = 2")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="y",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=5),
                                 ),
                             ),
                         ],
@@ -291,19 +286,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("class foo")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("class foo")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="w",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                         ],
@@ -311,37 +306,39 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="bar",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=4, character=0),
-                            end=LspPosition(line=7, character=len('    c[0] = "yes"')),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=4, character=0),
+                            end=lsp.LspPosition(
+                                line=7, character=len('    c[0] = "yes"')
+                            ),
                         ),
                         children=[
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="c",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=7, character=4),
-                                    end=LspPosition(line=7, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=7, character=4),
+                                    end=lsp.LspPosition(line=7, character=5),
                                 ),
                             ),
                         ],
@@ -369,19 +366,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="inner",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    c = 3")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    c = 3")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="c",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                         ],
@@ -389,28 +386,28 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="middle",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=4, character=0),
-                            end=LspPosition(line=6, character=len("    b.c = 4")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=4, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    b.c = 4")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=5),
                                 ),
                             ),
                         ],
@@ -418,28 +415,30 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="outer",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=8, character=0),
-                            end=LspPosition(line=10, character=len("    a.b.c = 5")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=8, character=0),
+                            end=lsp.LspPosition(
+                                line=10, character=len("    a.b.c = 5")
+                            ),
                         ),
                         children=[
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=9, character=4),
-                                    end=LspPosition(line=9, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=9, character=4),
+                                    end=lsp.LspPosition(line=9, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=10, character=4),
-                                    end=LspPosition(line=10, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=10, character=4),
+                                    end=lsp.LspPosition(line=10, character=5),
                                 ),
                             ),
                         ],
@@ -465,19 +464,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("class foo")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("class foo")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="w",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                         ],
@@ -485,10 +484,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="bar",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=4, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=4, character=0),
+                            end=lsp.LspPosition(
                                 line=8,
                                 character=len(
                                     "    [[g, h, [j]], [j, [k, [l]]]] = [[5, 6, [7]], [8, [9, [10]]]]"
@@ -499,109 +498,109 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="a",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="b",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=7),
-                                    end=LspPosition(line=5, character=8),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=7),
+                                    end=lsp.LspPosition(line=5, character=8),
                                 ),
                             ),
                             make_document_symbol(
                                 name="c",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=5),
-                                    end=LspPosition(line=6, character=6),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=5),
+                                    end=lsp.LspPosition(line=6, character=6),
                                 ),
                             ),
                             make_document_symbol(
                                 name="d",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=8),
-                                    end=LspPosition(line=6, character=9),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=8),
+                                    end=lsp.LspPosition(line=6, character=9),
                                 ),
                             ),
                             make_document_symbol(
                                 name="e",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=7, character=5),
-                                    end=LspPosition(line=7, character=6),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=7, character=5),
+                                    end=lsp.LspPosition(line=7, character=6),
                                 ),
                             ),
                             make_document_symbol(
                                 name="f",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=7, character=9),
-                                    end=LspPosition(line=7, character=10),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=7, character=9),
+                                    end=lsp.LspPosition(line=7, character=10),
                                 ),
                             ),
                             make_document_symbol(
                                 name="g",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=6),
-                                    end=LspPosition(line=8, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=6),
+                                    end=lsp.LspPosition(line=8, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="h",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=9),
-                                    end=LspPosition(line=8, character=10),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=9),
+                                    end=lsp.LspPosition(line=8, character=10),
                                 ),
                             ),
                             make_document_symbol(
                                 name="i",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=13),
-                                    end=LspPosition(line=8, character=14),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=13),
+                                    end=lsp.LspPosition(line=8, character=14),
                                 ),
                             ),
                             make_document_symbol(
                                 name="j",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=19),
-                                    end=LspPosition(line=8, character=20),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=19),
+                                    end=lsp.LspPosition(line=8, character=20),
                                 ),
                             ),
                             make_document_symbol(
                                 name="k",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=23),
-                                    end=LspPosition(line=8, character=24),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=23),
+                                    end=lsp.LspPosition(line=8, character=24),
                                 ),
                             ),
                             make_document_symbol(
                                 name="l",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=8, character=27),
-                                    end=LspPosition(line=8, character=28),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=8, character=27),
+                                    end=lsp.LspPosition(line=8, character=28),
                                 ),
                             ),
                         ],
@@ -623,28 +622,28 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    x = z = 1")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    x = z = 1")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="x",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(line=2, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(line=2, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="z",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=8),
-                                    end=LspPosition(line=2, character=9),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=8),
+                                    end=lsp.LspPosition(line=2, character=9),
                                 ),
                             ),
                         ],
@@ -652,28 +651,28 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="bar",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=4, character=len("    y = w = 2")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=4, character=len("    y = w = 2")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="y",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=5),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=5),
                                 ),
                             ),
                             make_document_symbol(
                                 name="w",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=8),
-                                    end=LspPosition(line=4, character=9),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=8),
+                                    end=lsp.LspPosition(line=4, character=9),
                                 ),
                             ),
                         ],
@@ -694,10 +693,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(
                                 line=4, character=len("        return self")
                             ),
                         ),
@@ -705,10 +704,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="bar",
                                 detail="",
-                                kind=SymbolKind.FUNCTION,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(
+                                kind=lsp.SymbolKind.FUNCTION,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(
                                         line=4, character=len("        return self")
                                     ),
                                 ),
@@ -716,10 +715,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                                     make_document_symbol(
                                         name="w",
                                         detail="",
-                                        kind=SymbolKind.VARIABLE,
-                                        range=LspRange(
-                                            start=LspPosition(line=3, character=8),
-                                            end=LspPosition(line=3, character=9),
+                                        kind=lsp.SymbolKind.VARIABLE,
+                                        range=lsp.LspRange(
+                                            start=lsp.LspPosition(line=3, character=8),
+                                            end=lsp.LspPosition(line=3, character=9),
                                         ),
                                     )
                                 ],
@@ -741,10 +740,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(
                                 line=3, character=len("        return self")
                             ),
                         ),
@@ -752,10 +751,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="bar",
                                 detail="",
-                                kind=SymbolKind.FUNCTION,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(
+                                kind=lsp.SymbolKind.FUNCTION,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(
                                         line=3, character=len("        return self")
                                     ),
                                 ),
@@ -777,10 +776,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(
                                 line=4, character=len("            return self")
                             ),
                         ),
@@ -788,10 +787,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                             make_document_symbol(
                                 name="bar",
                                 detail="",
-                                kind=SymbolKind.CLASS,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(
+                                kind=lsp.SymbolKind.CLASS,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(
                                         line=4, character=len("            return self")
                                     ),
                                 ),
@@ -799,10 +798,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                                     make_document_symbol(
                                         name="foobar",
                                         detail="",
-                                        kind=SymbolKind.FUNCTION,
-                                        range=LspRange(
-                                            start=LspPosition(line=3, character=8),
-                                            end=LspPosition(
+                                        kind=lsp.SymbolKind.FUNCTION,
+                                        range=lsp.LspRange(
+                                            start=lsp.LspPosition(line=3, character=8),
+                                            end=lsp.LspPosition(
                                                 line=4,
                                                 character=len(
                                                     "            return self"
@@ -831,19 +830,21 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=6, character=len("    return bar(x)")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(
+                                line=6, character=len("    return bar(x)")
+                            ),
                         ),
                         children=[
                             make_document_symbol(
                                 name="bar",
                                 detail="",
-                                kind=SymbolKind.FUNCTION,
-                                range=LspRange(
-                                    start=LspPosition(line=2, character=4),
-                                    end=LspPosition(
+                                kind=lsp.SymbolKind.FUNCTION,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=4),
+                                    end=lsp.LspPosition(
                                         line=5, character=len("        foobar(y)")
                                     ),
                                 ),
@@ -851,10 +852,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                                     make_document_symbol(
                                         name="foobar",
                                         detail="",
-                                        kind=SymbolKind.FUNCTION,
-                                        range=LspRange(
-                                            start=LspPosition(line=3, character=8),
-                                            end=LspPosition(
+                                        kind=lsp.SymbolKind.FUNCTION,
+                                        range=lsp.LspRange(
+                                            start=lsp.LspPosition(line=3, character=8),
+                                            end=lsp.LspPosition(
                                                 line=4,
                                                 character=len(
                                                     "            return x * y * xy"
@@ -879,10 +880,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="foo",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=2, character=len("    await x")),
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=2, character=len("    await x")),
                         ),
                     )
                 ],
@@ -890,8 +891,8 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
 
         def test_parse_source_and_collect_symbols_invalid_syntax(self) -> None:
             self.assertRaises(
-                UnparseableError,
-                parse_source_and_collect_symbols,
+                find_symbols.UnparseableError,
+                find_symbols.parse_source_and_collect_symbols,
                 "thisIsNotValidPython x = x",
             )
 
@@ -906,10 +907,10 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                         make_document_symbol(
                             name="foo",
                             detail="",
-                            kind=SymbolKind.FUNCTION,
-                            range=LspRange(
-                                start=LspPosition(line=1, character=0),
-                                end=LspPosition(line=2, character=len("    pass")),
+                            kind=lsp.SymbolKind.FUNCTION,
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=1, character=0),
+                                end=lsp.LspPosition(line=2, character=len("    pass")),
                             ),
                         )
                     ],
@@ -930,37 +931,37 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="Animal",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    lion = 3")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="cat",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="dog",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="lion",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=8),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=8),
                                 ),
                             ),
                         ],
@@ -983,37 +984,37 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="Animal",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    lion = 3")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="cat",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="dog",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="lion",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=8),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=8),
                                 ),
                             ),
                         ],
@@ -1036,37 +1037,37 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="Animal",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    lion = 3")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="cat",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="dog",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="lion",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=8),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=8),
                                 ),
                             ),
                         ],
@@ -1089,37 +1090,37 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="Animal",
                         detail="",
-                        kind=SymbolKind.CLASS,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=6, character=len("    lion = 3")),
+                        kind=lsp.SymbolKind.CLASS,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=6, character=len("    lion = 3")),
                         ),
                         children=[
                             make_document_symbol(
                                 name="cat",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=4, character=4),
-                                    end=LspPosition(line=4, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=4, character=4),
+                                    end=lsp.LspPosition(line=4, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="dog",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=5, character=4),
-                                    end=LspPosition(line=5, character=7),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=4),
+                                    end=lsp.LspPosition(line=5, character=7),
                                 ),
                             ),
                             make_document_symbol(
                                 name="lion",
                                 detail="",
-                                kind=SymbolKind.VARIABLE,
-                                range=LspRange(
-                                    start=LspPosition(line=6, character=4),
-                                    end=LspPosition(line=6, character=8),
+                                kind=lsp.SymbolKind.VARIABLE,
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=6, character=4),
+                                    end=lsp.LspPosition(line=6, character=8),
                                 ),
                             ),
                         ],
@@ -1142,19 +1143,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="T",
                         detail="",
-                        kind=SymbolKind.VARIABLE,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(line=3, character=1),
+                        kind=lsp.SymbolKind.VARIABLE,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(line=3, character=1),
                         ),
                     ),
                     make_document_symbol(
                         name="get_first_item",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=5, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=5, character=0),
+                            end=lsp.LspPosition(
                                 line=6,
                                 character=len(
                                     "    return items[0] if len(items) > 0 else None"
@@ -1178,19 +1179,19 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
                     make_document_symbol(
                         name="cost",
                         detail="",
-                        kind=SymbolKind.VARIABLE,
-                        range=LspRange(
-                            start=LspPosition(line=1, character=0),
-                            end=LspPosition(line=1, character=4),
+                        kind=lsp.SymbolKind.VARIABLE,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=1, character=0),
+                            end=lsp.LspPosition(line=1, character=4),
                         ),
                     ),
                     make_document_symbol(
                         name="get_total_cost",
                         detail="",
-                        kind=SymbolKind.FUNCTION,
-                        range=LspRange(
-                            start=LspPosition(line=3, character=0),
-                            end=LspPosition(
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=3, character=0),
+                            end=lsp.LspPosition(
                                 line=4,
                                 character=len("    return num_items * cost"),
                             ),
