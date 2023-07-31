@@ -9,16 +9,10 @@ from pathlib import Path
 from typing import List
 
 import libcst as cst
-
 import testslide
 
 from ...tests import setup
-from ..coverage import (
-    collect_coverage_for_module,
-    collect_coverage_for_paths,
-    FileCoverage,
-    find_root_path,
-)
+from .. import coverage
 
 
 class CoverageTest(testslide.TestCase):
@@ -31,7 +25,7 @@ class CoverageTest(testslide.TestCase):
         module = cst.MetadataWrapper(
             cst.parse_module(textwrap.dedent(file_content).strip())
         )
-        actual_coverage = collect_coverage_for_module(
+        actual_coverage = coverage.collect_coverage_for_module(
             "test.py", module, strict_default=False
         )
         self.assertEqual(
@@ -110,7 +104,9 @@ class CoverageTest(testslide.TestCase):
         module = cst.MetadataWrapper(
             cst.parse_module(textwrap.dedent(file_content).strip())
         )
-        actual_coverage = collect_coverage_for_module("test.py", module, strict_default)
+        actual_coverage = coverage.collect_coverage_for_module(
+            "test.py", module, strict_default
+        )
         return len(actual_coverage.uncovered_lines) > 0
 
     def test_coverage_strict(self) -> None:
@@ -153,14 +149,14 @@ class CoverageTest(testslide.TestCase):
 
     def test_find_root(self) -> None:
         self.assertEqual(
-            find_root_path(
+            coverage.find_root_path(
                 local_root=Path("/root/local"),
                 working_directory=Path("/irrelevant"),
             ),
             Path("/root/local"),
         )
         self.assertEqual(
-            find_root_path(
+            coverage.find_root_path(
                 local_root=None,
                 working_directory=Path("/working/dir"),
             ),
@@ -175,7 +171,7 @@ class CoverageTest(testslide.TestCase):
             bar_path = root_path / "bar.py"
             baz_path = root_path / "baz.py"
 
-            data: List[FileCoverage] = collect_coverage_for_paths(
+            data: List[coverage.FileCoverage] = coverage.collect_coverage_for_paths(
                 [foo_path, bar_path, baz_path],
                 working_directory=root,
                 strict_default=False,
