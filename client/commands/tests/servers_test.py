@@ -13,13 +13,8 @@ import testslide
 from ... import identifiers
 
 from ...tests import setup
-from ..servers import (
-    AllServerStatus,
-    DefunctServerStatus,
-    find_all_servers,
-    InvalidServerResponse,
-    RunningServerStatus,
-)
+
+from .. import servers
 
 
 class MockServerRequestHandler(socketserver.StreamRequestHandler):
@@ -50,16 +45,17 @@ class ServersTest(testslide.TestCase):
     def test_parse_running_server_status(self) -> None:
         def assert_parsed(
             input: str,
-            expected: RunningServerStatus,
+            expected: servers.RunningServerStatus,
             flavor: identifiers.PyreFlavor = identifiers.PyreFlavor.CLASSIC,
         ) -> None:
             self.assertEqual(
-                RunningServerStatus.from_server_response(input, flavor), expected
+                servers.RunningServerStatus.from_server_response(input, flavor),
+                expected,
             )
 
         def assert_raises(input: str) -> None:
-            with self.assertRaises(InvalidServerResponse):
-                RunningServerStatus.from_server_response(
+            with self.assertRaises(servers.InvalidServerResponse):
+                servers.RunningServerStatus.from_server_response(
                     input, identifiers.PyreFlavor.CLASSIC
                 )
 
@@ -109,7 +105,7 @@ class ServersTest(testslide.TestCase):
                     },
                 ]
             ),
-            expected=RunningServerStatus(
+            expected=servers.RunningServerStatus(
                 pid=42,
                 version="abc",
                 global_root="/global",
@@ -128,7 +124,7 @@ class ServersTest(testslide.TestCase):
                     },
                 ]
             ),
-            expected=RunningServerStatus(
+            expected=servers.RunningServerStatus(
                 pid=42,
                 version="abc",
                 global_root="/global",
@@ -147,7 +143,7 @@ class ServersTest(testslide.TestCase):
                     },
                 ]
             ),
-            expected=RunningServerStatus(
+            expected=servers.RunningServerStatus(
                 pid=42,
                 version="abc",
                 global_root="/global",
@@ -166,7 +162,7 @@ class ServersTest(testslide.TestCase):
                     },
                 ]
             ),
-            expected=RunningServerStatus(
+            expected=servers.RunningServerStatus(
                 pid=42,
                 version="abc",
                 global_root="/global",
@@ -187,7 +183,7 @@ class ServersTest(testslide.TestCase):
                 ]
             ),
             flavor=identifiers.PyreFlavor.CODE_NAVIGATION,
-            expected=RunningServerStatus(
+            expected=servers.RunningServerStatus(
                 pid=42,
                 version="abc",
                 global_root="/global",
@@ -205,11 +201,11 @@ class ServersTest(testslide.TestCase):
             ):
                 bad_socket = socket_root_path / "bad.sock"
                 bad_socket.touch()
-                servers = find_all_servers([good_socket, bad_socket])
+                all_server_status = servers.find_all_servers([good_socket, bad_socket])
                 self.assertListEqual(
-                    servers.running,
+                    all_server_status.running,
                     [
-                        RunningServerStatus(
+                        servers.RunningServerStatus(
                             pid=42,
                             version="abc",
                             global_root="/global",
@@ -218,23 +214,23 @@ class ServersTest(testslide.TestCase):
                     ],
                 )
                 self.assertCountEqual(
-                    servers.defunct,
+                    all_server_status.defunct,
                     [
-                        DefunctServerStatus(str(bad_socket)),
+                        servers.DefunctServerStatus(str(bad_socket)),
                     ],
                 )
 
     def test_to_json(self) -> None:
         self.assertCountEqual(
-            AllServerStatus(
+            servers.AllServerStatus(
                 running=[
-                    RunningServerStatus(
+                    servers.RunningServerStatus(
                         pid=123,
                         version="abc",
                         global_root="/g0",
                         flavor=identifiers.PyreFlavor.CLASSIC.value,
                     ),
-                    RunningServerStatus(
+                    servers.RunningServerStatus(
                         pid=456,
                         version="xyz",
                         global_root="/g1",
@@ -243,8 +239,8 @@ class ServersTest(testslide.TestCase):
                     ),
                 ],
                 defunct=[
-                    DefunctServerStatus(socket_path="/p0.sock"),
-                    DefunctServerStatus("/p1.sock"),
+                    servers.DefunctServerStatus(socket_path="/p0.sock"),
+                    servers.DefunctServerStatus("/p1.sock"),
                 ],
             ).to_json(),
             [
