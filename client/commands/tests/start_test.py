@@ -21,20 +21,7 @@ from ...configuration import search_path
 from ...find_directories import CODENAV_CONFIGURATION_FILE
 from ...identifiers import PyreFlavor
 from ...tests import setup
-from ..start import (
-    Arguments,
-    background_server_log_file,
-    create_server_arguments,
-    CriticalFile,
-    daemon_log_path,
-    datetime_from_log_path,
-    get_critical_files,
-    get_saved_state_action,
-    LoadSavedStateFromFile,
-    LoadSavedStateFromProject,
-    MatchPolicy,
-    StoreSavedStateToFile,
-)
+from .. import start
 
 
 class TestSavedStateConfiguration(frontend_configuration.OpenSource):
@@ -60,25 +47,31 @@ class TestSavedStateConfiguration(frontend_configuration.OpenSource):
 class ArgumentTest(testslide.TestCase):
     def test_serialize_critical_file(self) -> None:
         self.assertDictEqual(
-            CriticalFile(policy=MatchPolicy.BASE_NAME, path="foo").serialize(),
+            start.CriticalFile(
+                policy=start.MatchPolicy.BASE_NAME, path="foo"
+            ).serialize(),
             {"base_name": "foo"},
         )
         self.assertDictEqual(
-            CriticalFile(policy=MatchPolicy.EXTENSION, path="foo").serialize(),
+            start.CriticalFile(
+                policy=start.MatchPolicy.EXTENSION, path="foo"
+            ).serialize(),
             {"extension": "foo"},
         )
         self.assertDictEqual(
-            CriticalFile(policy=MatchPolicy.FULL_PATH, path="/foo/bar").serialize(),
+            start.CriticalFile(
+                policy=start.MatchPolicy.FULL_PATH, path="/foo/bar"
+            ).serialize(),
             {"full_path": "/foo/bar"},
         )
 
     def test_serialize_saved_state_action(self) -> None:
         self.assertTupleEqual(
-            LoadSavedStateFromFile(shared_memory_path="/foo/bar").serialize(),
+            start.LoadSavedStateFromFile(shared_memory_path="/foo/bar").serialize(),
             ("load_from_file", {"shared_memory_path": "/foo/bar"}),
         )
         self.assertTupleEqual(
-            LoadSavedStateFromFile(
+            start.LoadSavedStateFromFile(
                 shared_memory_path="/foo/bar", changed_files_path="derp.txt"
             ).serialize(),
             (
@@ -87,11 +80,11 @@ class ArgumentTest(testslide.TestCase):
             ),
         )
         self.assertTupleEqual(
-            LoadSavedStateFromProject(project_name="my_project").serialize(),
+            start.LoadSavedStateFromProject(project_name="my_project").serialize(),
             ("load_from_project", {"project_name": "my_project"}),
         )
         self.assertTupleEqual(
-            LoadSavedStateFromProject(
+            start.LoadSavedStateFromProject(
                 project_name="my_project", project_metadata="my_metadata"
             ).serialize(),
             (
@@ -100,13 +93,13 @@ class ArgumentTest(testslide.TestCase):
             ),
         )
         self.assertTupleEqual(
-            StoreSavedStateToFile(shared_memory_path="/foo/bar").serialize(),
+            start.StoreSavedStateToFile(shared_memory_path="/foo/bar").serialize(),
             ("save_to_file", {"shared_memory_path": "/foo/bar"}),
         )
 
     def test_serialize_arguments(self) -> None:
         def assert_serialized(
-            arguments: Arguments, items: Iterable[Tuple[str, object]]
+            arguments: start.Arguments, items: Iterable[Tuple[str, object]]
         ) -> None:
             serialized = arguments.serialize()
             for key, value in items:
@@ -116,7 +109,7 @@ class ArgumentTest(testslide.TestCase):
                     self.assertEqual(value, serialized[key])
 
         assert_serialized(
-            Arguments(
+            start.Arguments(
                 base_arguments=backend_arguments.BaseArguments(
                     log_path="foo",
                     global_root="bar",
@@ -129,12 +122,16 @@ class ArgumentTest(testslide.TestCase):
                 show_error_traces=True,
                 store_type_check_resolution=True,
                 critical_files=[
-                    CriticalFile(policy=MatchPolicy.BASE_NAME, path="foo.py"),
-                    CriticalFile(policy=MatchPolicy.EXTENSION, path="txt"),
-                    CriticalFile(policy=MatchPolicy.FULL_PATH, path="/home/bar.txt"),
+                    start.CriticalFile(
+                        policy=start.MatchPolicy.BASE_NAME, path="foo.py"
+                    ),
+                    start.CriticalFile(policy=start.MatchPolicy.EXTENSION, path="txt"),
+                    start.CriticalFile(
+                        policy=start.MatchPolicy.FULL_PATH, path="/home/bar.txt"
+                    ),
                 ],
                 watchman_root=Path("/project"),
-                saved_state_action=LoadSavedStateFromProject(
+                saved_state_action=start.LoadSavedStateFromProject(
                     project_name="my_project", project_metadata="my_metadata"
                 ),
                 socket_path=Path("not_relevant_for_this_test.sock"),
@@ -174,7 +171,7 @@ class StartTest(testslide.TestCase):
     def test_daemon_log_path(self) -> None:
         now = datetime.datetime(2018, 5, 6)
         # classic flavor has empty suffix
-        path = daemon_log_path(
+        path = start.daemon_log_path(
             log_directory=Path("some_directory"),
             flavor=PyreFlavor.CLASSIC,
             now=now,
@@ -183,9 +180,9 @@ class StartTest(testslide.TestCase):
             path,
             Path("some_directory/server.stderr.2018_05_06_00_00_00_000000"),
         )
-        self.assertEqual(datetime_from_log_path(path), now)
+        self.assertEqual(start.datetime_from_log_path(path), now)
         # other flavors have nonempty suffix
-        path = daemon_log_path(
+        path = start.daemon_log_path(
             log_directory=Path("some_directory"),
             flavor=PyreFlavor.SHADOW,
             now=now,
@@ -194,7 +191,7 @@ class StartTest(testslide.TestCase):
             path,
             Path("some_directory/server__shadow.stderr.2018_05_06_00_00_00_000000"),
         )
-        self.assertEqual(datetime_from_log_path(path), now)
+        self.assertEqual(start.datetime_from_log_path(path), now)
 
     def test_get_critical_files(self) -> None:
         with tempfile.TemporaryDirectory() as root:
@@ -209,7 +206,7 @@ class StartTest(testslide.TestCase):
             setup.ensure_files_exist(root_path, ["foo", "bar/baz"])
 
             self.assertCountEqual(
-                get_critical_files(
+                start.get_critical_files(
                     frontend_configuration.OpenSource(
                         configuration_module.create_configuration(
                             command_arguments.CommandArguments(
@@ -220,15 +217,20 @@ class StartTest(testslide.TestCase):
                     )
                 ),
                 [
-                    CriticalFile(
-                        MatchPolicy.FULL_PATH, str(root_path / ".pyre_configuration")
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH,
+                        str(root_path / ".pyre_configuration"),
                     ),
-                    CriticalFile(
-                        MatchPolicy.FULL_PATH,
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH,
                         str(root_path / "local/.pyre_configuration.local"),
                     ),
-                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "foo")),
-                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "bar/baz")),
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH, str(root_path / "foo")
+                    ),
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH, str(root_path / "bar/baz")
+                    ),
                 ],
             )
 
@@ -245,7 +247,7 @@ class StartTest(testslide.TestCase):
             setup.ensure_files_exist(root_path, ["foo", "bar/baz"])
 
             self.assertCountEqual(
-                get_critical_files(
+                start.get_critical_files(
                     frontend_configuration.OpenSource(
                         configuration_module.create_overridden_configuration(
                             command_arguments.CommandArguments(
@@ -260,12 +262,16 @@ class StartTest(testslide.TestCase):
                     PyreFlavor.CODE_NAVIGATION,
                 ),
                 [
-                    CriticalFile(
-                        MatchPolicy.FULL_PATH,
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH,
                         str(root_path / ".pyre_configuration.codenav"),
                     ),
-                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "foo")),
-                    CriticalFile(MatchPolicy.FULL_PATH, str(root_path / "bar/baz")),
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH, str(root_path / "foo")
+                    ),
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH, str(root_path / "bar/baz")
+                    ),
                 ],
             )
 
@@ -276,7 +282,7 @@ class StartTest(testslide.TestCase):
             setup.write_configuration_file(root_path, {"targets": ["//foo:bar"]})
 
             self.assertCountEqual(
-                get_critical_files(
+                start.get_critical_files(
                     frontend_configuration.OpenSource(
                         configuration_module.create_configuration(
                             command_arguments.CommandArguments(),
@@ -285,11 +291,12 @@ class StartTest(testslide.TestCase):
                     )
                 ),
                 [
-                    CriticalFile(
-                        MatchPolicy.FULL_PATH, str(root_path / ".pyre_configuration")
+                    start.CriticalFile(
+                        start.MatchPolicy.FULL_PATH,
+                        str(root_path / ".pyre_configuration"),
                     ),
-                    CriticalFile(
-                        MatchPolicy.EXTENSION,
+                    start.CriticalFile(
+                        start.MatchPolicy.EXTENSION,
                         "thrift",
                     ),
                 ],
@@ -300,7 +307,7 @@ class StartTest(testslide.TestCase):
             global_root=Path("irrelevant"), dot_pyre_directory=Path("irrelevant")
         )
         self.assertIsNone(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(),
                 TestSavedStateConfiguration(empty_configuration),
             )
@@ -313,47 +320,51 @@ class StartTest(testslide.TestCase):
             ),
         )
         self.assertEqual(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(),
                 saved_state_configuration,
             ),
-            LoadSavedStateFromProject(project_name="test_saved_state"),
+            start.LoadSavedStateFromProject(project_name="test_saved_state"),
         )
 
         self.assertEqual(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(load_initial_state_from="foo"),
                 saved_state_configuration,
             ),
-            LoadSavedStateFromFile(shared_memory_path="foo"),
+            start.LoadSavedStateFromFile(shared_memory_path="foo"),
         )
         self.assertEqual(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(
                     load_initial_state_from="foo",
                     changed_files_path="bar",
                 ),
                 saved_state_configuration,
             ),
-            LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
+            start.LoadSavedStateFromFile(
+                shared_memory_path="foo", changed_files_path="bar"
+            ),
         )
 
         self.assertEqual(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(
                     load_initial_state_from="foo", changed_files_path="bar"
                 ),
                 saved_state_configuration,
                 relative_local_root="local/root",
             ),
-            LoadSavedStateFromFile(shared_memory_path="foo", changed_files_path="bar"),
+            start.LoadSavedStateFromFile(
+                shared_memory_path="foo", changed_files_path="bar"
+            ),
         )
         self.assertEqual(
-            get_saved_state_action(
+            start.get_saved_state_action(
                 command_arguments.StartArguments(save_initial_state_to="/foo"),
                 saved_state_configuration,
             ),
-            StoreSavedStateToFile(shared_memory_path="/foo"),
+            start.StoreSavedStateToFile(shared_memory_path="/foo"),
         )
 
     def test_create_server_arguments(self) -> None:
@@ -392,7 +403,7 @@ class StartTest(testslide.TestCase):
                 )
             )
             self.assertEqual(
-                create_server_arguments(
+                start.create_server_arguments(
                     server_configuration,
                     command_arguments.StartArguments(
                         debug=True,
@@ -402,7 +413,7 @@ class StartTest(testslide.TestCase):
                         store_type_check_resolution=True,
                     ),
                 ),
-                Arguments(
+                start.Arguments(
                     base_arguments=backend_arguments.BaseArguments(
                         log_path=str(root_path / ".pyre/local"),
                         global_root=str(root_path),
@@ -430,16 +441,16 @@ class StartTest(testslide.TestCase):
                     ),
                     additional_logging_sections=["server"],
                     critical_files=[
-                        CriticalFile(
-                            MatchPolicy.FULL_PATH,
+                        start.CriticalFile(
+                            start.MatchPolicy.FULL_PATH,
                             str(root_path / ".pyre_configuration"),
                         ),
-                        CriticalFile(
-                            MatchPolicy.FULL_PATH,
+                        start.CriticalFile(
+                            start.MatchPolicy.FULL_PATH,
                             str(root_path / "local/.pyre_configuration.local"),
                         ),
-                        CriticalFile(
-                            MatchPolicy.FULL_PATH, str(root_path / "critical")
+                        start.CriticalFile(
+                            start.MatchPolicy.FULL_PATH, str(root_path / "critical")
                         ),
                     ],
                     saved_state_action=None,
@@ -463,7 +474,7 @@ class StartTest(testslide.TestCase):
                 root_path,
                 {"source_directories": ["src"]},
             )
-            arguments = create_server_arguments(
+            arguments = start.create_server_arguments(
                 frontend_configuration.OpenSource(
                     configuration_module.create_configuration(
                         command_arguments.CommandArguments(
@@ -486,7 +497,7 @@ class StartTest(testslide.TestCase):
                 root_path,
                 {"source_directories": ["src"]},
             )
-            arguments = create_server_arguments(
+            arguments = start.create_server_arguments(
                 frontend_configuration.OpenSource(
                     configuration_module.create_configuration(
                         command_arguments.CommandArguments(
@@ -507,7 +518,7 @@ class StartTest(testslide.TestCase):
                 root_path,
                 {"source_directories": ["src"]},
             )
-            arguments = create_server_arguments(
+            arguments = start.create_server_arguments(
                 frontend_configuration.OpenSource(
                     configuration_module.create_configuration(
                         command_arguments.CommandArguments(
@@ -535,7 +546,7 @@ class StartTest(testslide.TestCase):
                 {"source_directories": ["src"], "logger": str(logger_path)},
             )
 
-            arguments = create_server_arguments(
+            arguments = start.create_server_arguments(
                 frontend_configuration.OpenSource(
                     configuration_module.create_configuration(
                         command_arguments.CommandArguments(dot_pyre_directory=log_path),
@@ -572,7 +583,7 @@ class StartTest(testslide.TestCase):
     def test_background_server_log_placement(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            with background_server_log_file(
+            with start.background_server_log_file(
                 root_path, flavor=PyreFlavor.CLASSIC
             ) as log_file:
                 print("foo", file=log_file)
