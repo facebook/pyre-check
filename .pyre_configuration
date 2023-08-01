@@ -12,9 +12,6 @@
   ],
   "search_path": [
     {
-      "site-package": "async_generator"
-    },
-    {
       "site-package": "click"
     },
     {
