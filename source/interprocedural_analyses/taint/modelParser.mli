@@ -27,7 +27,7 @@ val parse
   source:string ->
   taint_configuration:TaintConfiguration.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
-  callables:Interprocedural.Target.HashSet.t option ->
+  definitions:Interprocedural.Target.HashSet.t option ->
   stubs:Interprocedural.Target.HashSet.t ->
   python_version:PythonVersion.t ->
   unit ->

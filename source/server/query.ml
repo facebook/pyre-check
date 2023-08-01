@@ -533,8 +533,8 @@ let rec process_request ~type_environment ~build_system request =
           ~class_hierarchy_graph
           ~source_sink_filter:None
           ~verbose:false
-          ~callables_and_stubs:
-            (Interprocedural.FetchCallables.get_callables_and_stubs initial_callables)
+          ~definitions_and_stubs:
+            (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
           ~stubs:
             (Interprocedural.Target.HashSet.of_list
                (Interprocedural.FetchCallables.get_stubs initial_callables))
@@ -792,7 +792,7 @@ let rec process_request ~type_environment ~build_system request =
                   ~source
                   ~taint_configuration
                   ~source_sink_filter:None
-                  ~callables:None
+                  ~definitions:None
                   ~stubs:(Interprocedural.Target.HashSet.create ())
                   ~python_version
                   ()
@@ -1008,7 +1008,7 @@ let rec process_request ~type_environment ~build_system request =
               ~source
               ~taint_configuration
               ~source_sink_filter:None
-              ~callables:None
+              ~definitions:None
               ~stubs:(Interprocedural.Target.HashSet.create ())
               ~python_version
               ()

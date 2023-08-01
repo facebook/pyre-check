@@ -64,7 +64,7 @@ let assert_fixpoint
           define_call_graphs;
           global_constants;
         }
-      ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
+      ~initial_callables:(FetchCallables.get_definitions initial_callables)
       ~stubs
       ~override_targets
       ~callables_to_analyze

@@ -18,25 +18,32 @@ module TypeEnvironment = Analysis.TypeEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 
 type t = {
-  (* Non-stub callables that are in files within the source paths
-   * (as opposed to being in the search path). *)
+  (* All callables:
+   * - With an explicit definition (i.e, existing `def <name>():`)
+   * - That are not stubs (i.e, NOT `def <name>(): ...`)
+   * - That are in files within the source paths (as opposed to being in the
+   * search path).
+   *)
   internals: Target.t list;
-  (* All non-stub callables. *)
-  callables: Target.t list;
+  (* All non-stub callables with a definition. *)
+  definitions: Target.t list;
+  (* All stub callables. *)
   stubs: Target.t list;
 }
 
-let empty = { internals = []; callables = []; stubs = [] }
+let empty = { internals = []; definitions = []; stubs = [] }
 
 let join left right =
   {
     internals = List.rev_append right.internals left.internals;
-    callables = List.rev_append right.callables left.callables;
+    definitions = List.rev_append right.definitions left.definitions;
     stubs = List.rev_append right.stubs left.stubs;
   }
 
 
-let gather_raw_callables ~resolution ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
+let gather_raw_definitions
+    ~resolution
+    ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
   =
   (* Ignoring parameters that are also function definitions,
    * i.e def f(g): if not g: def g(): ...; g() *)
@@ -114,37 +121,35 @@ let gather_raw_callables ~resolution ~source:{ Source.module_path = { ModulePath
 
 (** Traverse the AST to find all callables (functions and methods). *)
 let from_source ~configuration ~resolution ~include_unit_tests ~source =
-  let callables =
-    if include_unit_tests || not (GlobalResolution.source_is_unit_test resolution ~source) then
-      gather_raw_callables ~resolution ~source
-    else
-      Target.Map.empty
-  in
-  let callables =
-    if Ast.ModulePath.is_stub source.module_path then
-      Target.Map.filter callables ~f:(fun { Node.value = define; _ } ->
-          not (Define.is_toplevel define || Define.is_class_toplevel define))
-    else
-      callables
-  in
-  let is_internal =
-    Ast.ModulePath.is_internal_path
-      ~configuration
-      (Ast.ModulePath.full_path ~configuration source.module_path)
-  in
-  let add_callable ~key:callable ~data:{ Node.value = define; _ } result =
-    if Define.is_stub define then
-      { result with stubs = callable :: result.stubs }
-    else if is_internal then
-      {
-        result with
-        internals = callable :: result.internals;
-        callables = callable :: result.callables;
-      }
-    else
-      { result with callables = callable :: result.callables }
-  in
-  Target.Map.fold ~init:empty ~f:add_callable callables
+  if (not include_unit_tests) && GlobalResolution.source_is_unit_test resolution ~source then
+    empty
+  else
+    let definitions = gather_raw_definitions ~resolution ~source in
+    let definitions =
+      if Ast.ModulePath.is_stub source.module_path then
+        Target.Map.filter definitions ~f:(fun { Node.value = define; _ } ->
+            not (Define.is_toplevel define || Define.is_class_toplevel define))
+      else
+        definitions
+    in
+    let is_internal =
+      Ast.ModulePath.is_internal_path
+        ~configuration
+        (Ast.ModulePath.full_path ~configuration source.module_path)
+    in
+    let add_definition ~key:definition ~data:{ Node.value = define; _ } result =
+      if Define.is_stub define then
+        { result with stubs = definition :: result.stubs }
+      else if is_internal then
+        {
+          result with
+          internals = definition :: result.internals;
+          definitions = definition :: result.definitions;
+        }
+      else
+        { result with definitions = definition :: result.definitions }
+    in
+    Target.Map.fold ~init:empty ~f:add_definition definitions
 
 
 let get_source ~environment qualifier =
@@ -179,19 +184,31 @@ let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~
     ()
 
 
-(* Return non-stub callables that are in files within the source paths (as opposed to being in the
-   search path). *)
-let get_internal_callables { internals; _ } = internals
+let get_internal_definitions { internals; _ } = internals
 
-let get_non_stub_callables { callables; _ } = callables
+let get_definitions { definitions; _ } = definitions
 
 let get_stubs { stubs; _ } = stubs
 
-let get_callables_and_stubs { callables; stubs; _ } = List.rev_append stubs callables
+let get { definitions; stubs; _ } ~definitions:include_definitions ~stubs:include_stubs =
+  let targets =
+    if include_definitions then
+      definitions
+    else
+      []
+  in
+  let targets =
+    if include_stubs then
+      List.rev_append stubs targets
+    else
+      targets
+  in
+  targets
 
-let get_stats { internals; callables; stubs } =
+
+let get_stats { internals; definitions; stubs } =
   [
-    "callables", List.length callables;
+    "definitions", List.length definitions;
     "internals", List.length internals;
     "stubs", List.length stubs;
   ]

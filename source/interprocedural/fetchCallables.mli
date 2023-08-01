@@ -25,14 +25,18 @@ val from_qualifiers
   qualifiers:Reference.t list ->
   t
 
-(* Return non-stub callables that are in files within the source paths (as opposed to being in the
-   search path). *)
-val get_internal_callables : t -> Target.t list
+(* Return all callables:
+ * - With an explicit definition (i.e, existing `def <name>():`)
+ * - That are not stubs (i.e, NOT `def <name>(): ...`)
+ * - That are in files within the source paths (as opposed to being in the
+ * search path).
+ *)
+val get_internal_definitions : t -> Target.t list
 
-val get_non_stub_callables : t -> Target.t list
+val get_definitions : t -> Target.t list
 
 val get_stubs : t -> Target.t list
 
-val get_callables_and_stubs : t -> Target.t list
+val get : t -> definitions:bool -> stubs:bool -> Target.t list
 
 val get_stats : t -> (string * int) list

@@ -294,5 +294,5 @@ val build_whole_program_call_graph
   store_shared_memory:bool ->
   attribute_targets:Target.HashSet.t ->
   skip_analysis_targets:Target.Set.t ->
-  callables:Target.t list ->
+  definitions:Target.t list ->
   call_graphs

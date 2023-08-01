@@ -2422,7 +2422,7 @@ let build_whole_program_call_graph
     ~store_shared_memory
     ~attribute_targets
     ~skip_analysis_targets
-    ~callables
+    ~definitions
   =
   let define_call_graphs = DefineCallGraphSharedMemory.Handle in
   let whole_program_call_graph =
@@ -2465,10 +2465,10 @@ let build_whole_program_call_graph
            ~preferred_chunk_size:2000
            ())
       ~initial:WholeProgramCallGraph.empty
-      ~map:(fun callables ->
-        List.fold callables ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
+      ~map:(fun definitions ->
+        List.fold definitions ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
       ~reduce:WholeProgramCallGraph.merge_disjoint
-      ~inputs:callables
+      ~inputs:definitions
       ()
   in
   let () =

@@ -1784,7 +1784,7 @@ let generate_models_from_queries
     ~class_hierarchy_graph
     ~source_sink_filter
     ~verbose
-    ~callables_and_stubs
+    ~definitions_and_stubs
     ~stubs
     queries
   =
@@ -1811,7 +1811,7 @@ let generate_models_from_queries
         ~class_hierarchy_graph
         ~source_sink_filter
         ~stubs
-        ~targets:callables_and_stubs
+        ~targets:definitions_and_stubs
         callable_queries
     else
       ModelQueryRegistryMap.empty

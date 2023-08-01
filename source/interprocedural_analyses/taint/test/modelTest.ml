@@ -100,7 +100,7 @@ let set_up_environment
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-      ~callables:None
+      ~definitions:None
       ~stubs:(Target.HashSet.create ())
       ~python_version:ModelParser.PythonVersion.default
       ()
@@ -205,7 +205,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
       ~source_sink_filter:None
       ?path
       ~source:(Test.trim_extra_indentation model_source)
-      ~callables:None
+      ~definitions:None
       ~stubs:(Target.HashSet.create ())
       ~python_version:ModelParser.PythonVersion.default
       ()

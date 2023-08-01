@@ -426,7 +426,7 @@ let get_initial_models ~context =
       ~source:initial_models_source
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
-      ~callables:None
+      ~definitions:None
       ~stubs:(Target.HashSet.create ())
       ~python_version:ModelParser.PythonVersion.default
       ()
@@ -530,7 +530,7 @@ let initialize
       ~source
   in
   let stubs = FetchCallables.get_stubs initial_callables in
-  let callables = FetchCallables.get_non_stub_callables initial_callables in
+  let definitions = FetchCallables.get_definitions initial_callables in
   let class_hierarchy_graph =
     ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
   in
@@ -552,7 +552,7 @@ let initialize
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-            ~callables:(Some (Target.HashSet.of_list callables))
+            ~definitions:(Some (Target.HashSet.of_list definitions))
             ~stubs:(Target.HashSet.of_list stubs)
             ~python_version:ModelParser.PythonVersion.default
             ()
@@ -571,7 +571,7 @@ let initialize
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false
-            ~callables_and_stubs:(List.rev_append stubs callables)
+            ~definitions_and_stubs:(List.rev_append stubs definitions)
             ~stubs:(Target.HashSet.of_list stubs)
             queries
         in
@@ -632,7 +632,7 @@ let initialize
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~skip_analysis_targets:Target.Set.empty
-      ~callables
+      ~definitions
   in
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -829,7 +829,7 @@ let end_to_end_integration_test path context =
             define_call_graphs;
             global_constants;
           }
-        ~initial_callables:(FetchCallables.get_non_stub_callables initial_callables)
+        ~initial_callables:(FetchCallables.get_definitions initial_callables)
         ~stubs
         ~override_targets
         ~callables_to_analyze

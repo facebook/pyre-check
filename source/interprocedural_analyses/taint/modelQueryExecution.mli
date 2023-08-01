@@ -158,7 +158,7 @@ val generate_models_from_queries
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   verbose:bool ->
-  callables_and_stubs:Interprocedural.Target.t list ->
+  definitions_and_stubs:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
   ModelParseResult.ModelQuery.t list ->
   ModelQueryRegistryMap.t * ModelVerificationError.t list

@@ -44,7 +44,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~source:models
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
-        ~callables:None
+        ~definitions:None
         ~stubs:(Target.HashSet.create ())
         ~python_version:ModelParser.PythonVersion.default
         ()

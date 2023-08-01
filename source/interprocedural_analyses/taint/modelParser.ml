@@ -2909,14 +2909,14 @@ let create_model_from_attribute
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
-let is_obscure ~callables ~stubs call_target =
+let is_obscure ~definitions ~stubs call_target =
   (* The callable is obscure if and only if it is a type stub or it is not in the set of known
-     callables. *)
+     definitions. *)
   Hash_set.mem stubs call_target
-  || callables >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
+  || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 
-let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables ~stubs models =
+let parse_models ~resolution ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
   let open Core.Result in
   List.map
     models
@@ -2926,7 +2926,7 @@ let parse_models ~resolution ~taint_configuration ~source_sink_filter ~callables
         ~path:None
         ~taint_configuration
         ~source_sink_filter
-        ~is_obscure:(is_obscure ~callables ~stubs call_target)
+        ~is_obscure:(is_obscure ~definitions ~stubs call_target)
         parsed_signature
       >>| fun model_or_query ->
       match model_or_query with
@@ -3017,7 +3017,7 @@ let rec parse_statement
     ~path
     ~taint_configuration
     ~source_sink_filter
-    ~callables
+    ~definitions
     ~stubs
     ~python_version
     statement
@@ -3352,7 +3352,7 @@ let rec parse_statement
                        ~path
                        ~taint_configuration
                        ~source_sink_filter
-                       ~callables
+                       ~definitions
                        ~stubs
                        ~python_version)
             >>| List.concat
@@ -3408,7 +3408,7 @@ let rec parse_statement
                       ~resolution
                       ~taint_configuration
                       ~source_sink_filter
-                      ~callables
+                      ~definitions
                       ~stubs
                       parsed_signatures))
       in
@@ -3516,7 +3516,7 @@ let rec parse_statement
                       ~path
                       ~taint_configuration
                       ~source_sink_filter
-                      ~callables
+                      ~definitions
                       ~stubs
                       ~python_version)
             |> List.concat
@@ -3552,7 +3552,7 @@ let create
     ~path
     ~taint_configuration
     ~source_sink_filter
-    ~callables
+    ~definitions
     ~stubs
     ~python_version
     source
@@ -3570,7 +3570,7 @@ let create
                ~path
                ~taint_configuration
                ~source_sink_filter
-               ~callables
+               ~definitions
                ~stubs
                ~python_version)
     >>| List.concat
@@ -3589,7 +3589,7 @@ let create
           ~path
           ~taint_configuration
           ~source_sink_filter
-          ~is_obscure:(is_obscure ~callables ~stubs call_target)
+          ~is_obscure:(is_obscure ~definitions ~stubs call_target)
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
@@ -3682,7 +3682,7 @@ let parse
     ~source
     ~taint_configuration
     ~source_sink_filter
-    ~callables
+    ~definitions
     ~stubs
     ~python_version
     ()
@@ -3693,7 +3693,7 @@ let parse
       ~path
       ~taint_configuration
       ~source_sink_filter
-      ~callables
+      ~definitions
       ~stubs
       ~python_version
       source
