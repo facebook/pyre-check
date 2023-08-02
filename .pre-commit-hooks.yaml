@@ -1,0 +1,8 @@
+- id: pyre-check
+  name: pyre-check
+  description: "pyre-check: Performant type-checking for python."
+  entry: pyre check
+  language: python
+  minimum_pre_commit_version: 2.9.2
+  require_serial: true
+  types_or: [python, pyi]
