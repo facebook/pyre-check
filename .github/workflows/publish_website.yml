@@ -15,7 +15,7 @@ jobs:
         python-version: [3.6]
     steps:
     - name: Checkout
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
     - name: Build the Website
       run: |
         cd documentation/website
@@ -26,7 +26,7 @@ jobs:
       run: echo "The time was ${{ steps.build.outputs.time }}"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
-      uses: JamesIves/github-pages-deploy-action@releases/v3
+      uses: JamesIves/github-pages-deploy-action@releases/v4
       with:
           ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
