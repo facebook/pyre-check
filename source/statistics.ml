@@ -251,7 +251,7 @@ let event
       sample ~integers ~normals:(("name", name) :: normals) () |> log ~flush "perfpipe_pyre_events"
 
 
-let errpy_call ~name ~timer ~integers ~normals () =
+let errpy_call ~flush ~name ~timer ~integers ~normals () =
   let time_in_seconds = Timer.stop_in_sec timer in
   let integer_time_in_microseconds = time_in_seconds *. 1e6 |> Int.of_float in
 
@@ -259,7 +259,7 @@ let errpy_call ~name ~timer ~integers ~normals () =
   let normals = ("name", name) :: normals in
 
   Log.log ~section:`Errpy "%s%s" (String.capitalize name) (format_as_text ~integers ~normals ());
-  sample ~integers ~normals () |> log ~flush:true "perfpipe_errpy_calls"
+  sample ~integers ~normals () |> log ~flush "perfpipe_errpy_calls"
 
 
 let log_model_query_outputs

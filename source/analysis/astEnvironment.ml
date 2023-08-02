@@ -384,11 +384,12 @@ module FromReadOnlyUpstream = struct
                     error recovery for the purposes of error recovery quality management *)
                   ["raw_code", raw_code])
         in
-        Statistics.errpy_call ~name:"ok" ~timer ~integers ~normals ()
+        Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
       in
 
       let log_errpy_error ~error_string =
         Statistics.errpy_call
+          ~flush:true
           ~name:"error"
           ~timer
           ~integers:[]
