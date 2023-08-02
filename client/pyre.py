@@ -240,7 +240,11 @@ def _create_and_check_codenav_configuration(
     help="The granularity of the messages the Pyre client will log. Default is 'DEBUG'.",
 )
 @click.option("--logging-sections", type=str, hidden=True)
-@click.option("--dot-pyre-directory", type=str, hidden=True)
+@click.option(
+    "--dot-pyre-directory",
+    type=str,
+    help="The directory Pyre will use for log output and cache.",
+)
 @click.option(
     "--source-directory",
     type=str,
