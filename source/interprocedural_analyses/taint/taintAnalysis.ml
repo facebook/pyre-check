@@ -564,6 +564,13 @@ let run_taint_analysis
     (List.length override_targets)
     (List.length callables_kept);
   let fixpoint_timer = Timer.start () in
+  let shared_models =
+    TaintFixpoint.record_initial_models
+      ~initial_models
+      ~initial_callables:(Interprocedural.FetchCallables.get_definitions initial_callables)
+      ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
+      ~override_targets
+  in
   let fixpoint_state =
     Taint.TaintFixpoint.compute
       ~scheduler
@@ -578,13 +585,10 @@ let run_taint_analysis
           define_call_graphs;
           global_constants;
         }
-      ~initial_callables:(Interprocedural.FetchCallables.get_definitions initial_callables)
-      ~stubs:(Interprocedural.FetchCallables.get_stubs initial_callables)
-      ~override_targets
       ~callables_to_analyze
-      ~initial_models
       ~max_iterations:100
       ~epoch:Taint.TaintFixpoint.Epoch.initial
+      ~shared_models
   in
 
   let filename_lookup path_reference =

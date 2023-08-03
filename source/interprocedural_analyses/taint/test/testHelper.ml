@@ -815,6 +815,13 @@ let end_to_end_integration_test path context =
         ~call_graph:whole_program_call_graph
         ~overrides:override_graph_heap
     in
+    let shared_models =
+      TaintFixpoint.record_initial_models
+        ~initial_models
+        ~initial_callables:(FetchCallables.get_definitions initial_callables)
+        ~stubs
+        ~override_targets
+    in
     let fixpoint_state =
       TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
@@ -829,13 +836,10 @@ let end_to_end_integration_test path context =
             define_call_graphs;
             global_constants;
           }
-        ~initial_callables:(FetchCallables.get_definitions initial_callables)
-        ~stubs
-        ~override_targets
         ~callables_to_analyze
-        ~initial_models
         ~max_iterations:100
         ~epoch:TaintFixpoint.Epoch.initial
+        ~shared_models
     in
     let filename_lookup =
       TypeEnvironment.ReadOnly.module_tracker type_environment

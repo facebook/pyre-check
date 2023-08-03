@@ -174,19 +174,25 @@ module Make (Analysis : ANALYSIS) : sig
 
   type t
 
+  type shared_models
+
+  val record_initial_models
+    :  initial_models:Registry.t ->
+    initial_callables:Target.t list ->
+    stubs:Target.t list ->
+    override_targets:Target.t list ->
+    shared_models
+
   val compute
     :  scheduler:Scheduler.t ->
     type_environment:TypeEnvironment.ReadOnly.t ->
     override_graph:OverrideGraph.SharedMemory.t ->
     dependency_graph:DependencyGraph.t ->
     context:Analysis.context ->
-    initial_callables:Target.t list ->
-    stubs:Target.t list ->
-    override_targets:Target.t list ->
     callables_to_analyze:Target.t list ->
-    initial_models:Registry.t ->
     max_iterations:int ->
     epoch:Epoch.t ->
+    shared_models:shared_models ->
     t
 
   val get_result : t -> Target.t -> Analysis.Result.t

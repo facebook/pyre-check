@@ -60,6 +60,13 @@ let assert_fixpoint
       ~call_graph:whole_program_call_graph
       ~overrides:override_graph_heap
   in
+  let shared_models =
+    TaintFixpoint.record_initial_models
+      ~initial_models
+      ~initial_callables:(FetchCallables.get_definitions initial_callables)
+      ~stubs
+      ~override_targets
+  in
   let fixpoint_state =
     TaintFixpoint.compute
       ~scheduler
@@ -74,13 +81,10 @@ let assert_fixpoint
           define_call_graphs;
           global_constants = GlobalConstants.SharedMemory.from_heap GlobalConstants.Heap.empty;
         }
-      ~initial_callables:(FetchCallables.get_definitions initial_callables)
-      ~stubs
-      ~override_targets
       ~callables_to_analyze
-      ~initial_models
       ~max_iterations:100
       ~epoch:TaintFixpoint.Epoch.initial
+      ~shared_models
   in
   assert_bool
     "Call graph is empty!"

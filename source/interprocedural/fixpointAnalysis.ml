@@ -377,8 +377,10 @@ module Make (Analysis : ANALYSIS) = struct
       ()
   end
 
+  type shared_models = State.SharedModels.t
+
   (* Save initial models in the shared memory. *)
-  let record_initial_models ~models ~callables ~stubs ~override_targets =
+  let record_initial_models ~initial_models ~initial_callables ~stubs ~override_targets =
     let timer = Timer.start () in
     (* TODO(T117715045): Use a map reduce to make this faster. *)
     let record_models models =
@@ -389,7 +391,7 @@ module Make (Analysis : ANALYSIS) = struct
     in
     (* Augment models with initial inferred and obscure models *)
     let add_missing_initial_models models =
-      callables
+      initial_callables
       |> List.filter ~f:(fun target -> not (Target.Map.mem models target))
       |> List.fold ~init:models ~f:(fun models target ->
              Registry.set models ~target ~model:Analysis.initial_model)
@@ -407,7 +409,7 @@ module Make (Analysis : ANALYSIS) = struct
         override_targets
     in
     let shared_models_handle =
-      models
+      initial_models
       |> add_missing_initial_models
       |> add_missing_obscure_models
       |> add_override_models
@@ -631,23 +633,11 @@ module Make (Analysis : ANALYSIS) = struct
       ~override_graph
       ~dependency_graph
       ~context
-      ~initial_callables
-      ~stubs
-      ~override_targets
       ~callables_to_analyze:initial_callables_to_analyze
-      ~initial_models
       ~max_iterations
       ~epoch
+      ~shared_models:shared_models_handle
     =
-    let shared_models_handle =
-      record_initial_models
-        ~models:initial_models
-        ~callables:initial_callables
-        ~stubs
-        ~override_targets
-    in
-
-    (* TODO: Save the handle into the shared memory and save the cache. *)
     let rec iterate ~iteration callables_to_analyze =
       let number_of_callables = List.length callables_to_analyze in
       if number_of_callables = 0 then (* Fixpoint. *)
