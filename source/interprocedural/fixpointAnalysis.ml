@@ -208,16 +208,26 @@ module Make (Analysis : ANALYSIS) = struct
 
   (* The fixpoint state, stored in shared memory. *)
   module State = struct
-    module SharedModels =
-      Memory.WithCache.Make
-        (Target.SharedMemoryKey)
-        (struct
-          type t = Model.t
+    module SharedModels = struct
+      module FirstClass =
+        Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+          (Target.SharedMemoryKey)
+          (struct
+            type t = Model.t
 
-          let prefix = Hack_parallel.Std.Prefix.make ()
+            let prefix = Hack_parallel.Std.Prefix.make ()
 
-          let description = "InterproceduralFixpointModel"
-        end)
+            let description = "InterproceduralFixpointModel"
+          end)
+
+      include FirstClass
+
+      let from_alist list =
+        let save_entry ~handle (key, value) = FirstClass.add handle key value in
+        let handle = FirstClass.create () in
+        List.iter list ~f:(save_entry ~handle);
+        handle
+    end
 
     module SharedResults =
       Memory.WithCache.Make
@@ -261,14 +271,16 @@ module Make (Analysis : ANALYSIS) = struct
           let description = "InterproceduralFixpointTarget"
         end)
 
-    let get_new_model callable = SharedModels.get callable
+    let get_new_model shared_models_handle callable = SharedModels.get shared_models_handle callable
 
-    let get_old_model callable = SharedModels.get_old callable
+    let get_old_model shared_models_handle callable =
+      SharedModels.get_old shared_models_handle callable
 
-    let get_model callable =
-      match get_new_model callable with
+
+    let get_model shared_models_handle callable =
+      match get_new_model shared_models_handle callable with
       | Some _ as model -> model
-      | None -> get_old_model callable
+      | None -> get_old_model shared_models_handle callable
 
 
     let get_result callable = SharedResults.get callable |> Option.value ~default:Result.empty
@@ -306,10 +318,10 @@ module Make (Analysis : ANALYSIS) = struct
       result: Result.t;
     }
 
-    let add step callable state =
+    let add ~shared_models_handle step callable state =
       (* Separate diagnostics from state to speed up lookups, and cache fixpoint state
          separately. *)
-      let () = SharedModels.add callable state.model in
+      let () = SharedModels.add shared_models_handle callable state.model in
       (* Skip result writing unless necessary (e.g. overrides don't have results) *)
       let () =
         match callable with
@@ -321,22 +333,21 @@ module Make (Analysis : ANALYSIS) = struct
       SharedFixpoint.add callable { is_partial = state.is_partial; step }
 
 
-    let add_predefined epoch callable model =
-      let () = SharedModels.add callable model in
+    let add_predefined epoch callable =
       let step = { epoch; iteration = 0 } in
       SharedFixpoint.add callable { is_partial = false; step }
 
 
-    let oldify callable_set =
-      SharedModels.oldify_batch callable_set;
+    let oldify shared_models_handle callable_set =
+      SharedModels.oldify_batch shared_models_handle callable_set;
       SharedFixpoint.oldify_batch callable_set;
 
       (* Old results are never looked up, so remove them. *)
       SharedResults.remove_batch callable_set
 
 
-    let remove_old callable_set =
-      SharedModels.remove_old_batch callable_set;
+    let remove_old shared_models_handle callable_set =
+      SharedModels.remove_old_batch shared_models_handle callable_set;
       SharedFixpoint.remove_old_batch callable_set
 
 
@@ -356,10 +367,10 @@ module Make (Analysis : ANALYSIS) = struct
 
     (** Remove the fixpoint state from the shared memory. This must be called before computing
         another fixpoint. *)
-    let cleanup () =
+    let cleanup shared_models_handle =
       let targets = targets () in
-      let () = SharedModels.remove_batch targets in
-      let () = SharedModels.remove_old_batch targets in
+      let () = SharedModels.remove_batch shared_models_handle targets in
+      let () = SharedModels.remove_old_batch shared_models_handle targets in
       let () = SharedResults.remove_batch targets in
       let () = SharedFixpoint.remove_batch targets in
       let () = SharedFixpoint.remove_old_batch targets in
@@ -371,9 +382,10 @@ module Make (Analysis : ANALYSIS) = struct
     let timer = Timer.start () in
     (* TODO(T117715045): Use a map reduce to make this faster. *)
     let record_models models =
-      let add_model_to_memory ~target ~model = State.add_predefined Epoch.initial target model in
+      let add_model_to_memory ~target ~model:_ = State.add_predefined Epoch.initial target in
       Registry.iteri models ~f:add_model_to_memory;
-      State.set_targets (models |> Registry.targets |> State.KeySet.of_list)
+      State.set_targets (models |> Registry.targets |> State.KeySet.of_list);
+      State.SharedModels.from_alist (Registry.to_alist models)
     in
     (* Augment models with initial inferred and obscure models *)
     let add_missing_initial_models models =
@@ -394,14 +406,15 @@ module Make (Analysis : ANALYSIS) = struct
         ~f:(fun models target -> Registry.set models ~target ~model:Analysis.empty_model)
         override_targets
     in
-    let () =
+    let shared_models_handle =
       models
       |> add_missing_initial_models
       |> add_missing_obscure_models
       |> add_override_models
       |> record_models
     in
-    Logger.initial_models_stored ~timer
+    Logger.initial_models_stored ~timer;
+    shared_models_handle
 
 
   let widen_if_necessary ~step ~callable ~previous_model ~new_model ~result =
@@ -415,9 +428,16 @@ module Make (Analysis : ANALYSIS) = struct
       State.{ is_partial = true; model; result }
 
 
-  let analyze_define ~context ~step:({ iteration; _ } as step) ~callable ~qualifier ~define =
+  let analyze_define
+      ~shared_models_handle
+      ~context
+      ~step:({ iteration; _ } as step)
+      ~callable
+      ~qualifier
+      ~define
+    =
     let previous_model =
-      match State.get_old_model callable with
+      match State.get_old_model shared_models_handle callable with
       | Some model -> model
       | None ->
           Format.asprintf "No initial model found for `%a`" Target.pp_pretty callable |> failwith
@@ -430,7 +450,7 @@ module Make (Analysis : ANALYSIS) = struct
           ~callable
           ~define
           ~previous_model
-          ~get_callee_model:State.get_model
+          ~get_callee_model:(State.get_model shared_models_handle)
       with
       | exn ->
           let () = Logger.on_analyze_define_exception ~iteration ~callable ~exn in
@@ -439,7 +459,12 @@ module Make (Analysis : ANALYSIS) = struct
     widen_if_necessary ~step ~callable ~previous_model ~new_model ~result
 
 
-  let analyze_overrides ~override_graph ~step:({ iteration; _ } as step) ~callable =
+  let analyze_overrides
+      ~shared_models_handle
+      ~override_graph
+      ~step:({ iteration; _ } as step)
+      ~callable
+    =
     let timer = Timer.start () in
     let overrides =
       OverrideGraph.SharedMemory.get_overriding_types
@@ -450,7 +475,7 @@ module Make (Analysis : ANALYSIS) = struct
     in
     let new_model =
       let lookup override =
-        match State.get_model override with
+        match State.get_model shared_models_handle override with
         | None ->
             Format.asprintf
               "During override analysis, can't find model for %a"
@@ -460,7 +485,7 @@ module Make (Analysis : ANALYSIS) = struct
         | Some model -> model |> Model.strip_for_callsite
       in
       let direct_model =
-        State.get_model (Target.get_corresponding_method callable)
+        State.get_model shared_models_handle (Target.get_corresponding_method callable)
         |> Option.value ~default:Analysis.empty_model
         |> Model.strip_for_callsite
       in
@@ -469,7 +494,7 @@ module Make (Analysis : ANALYSIS) = struct
       |> Algorithms.fold_balanced ~f:(Model.join ~iteration) ~init:direct_model
     in
     let previous_model =
-      match State.get_old_model callable with
+      match State.get_old_model shared_models_handle callable with
       | Some model -> model
       | None ->
           Format.asprintf "No initial model found for `%a`" Target.pp_pretty callable |> failwith
@@ -517,11 +542,26 @@ module Make (Analysis : ANALYSIS) = struct
   }
 
   (* Called on a worker with a set of targets to analyze. *)
-  let one_analysis_pass ~type_environment ~override_graph ~context ~step ~callables =
+  let one_analysis_pass
+      ~shared_models_handle
+      ~type_environment
+      ~override_graph
+      ~context
+      ~step
+      ~callables
+    =
     let analyze_target expensive_callables callable =
       let timer = Timer.start () in
-      let result = analyze_callable ~type_environment ~override_graph ~context ~step ~callable in
-      State.add step callable result;
+      let result =
+        analyze_callable
+          ~shared_models_handle
+          ~type_environment
+          ~override_graph
+          ~context
+          ~step
+          ~callable
+      in
+      State.add ~shared_models_handle step callable result;
       (* Log outliers. *)
       if Logger.is_expensive_callable ~callable ~timer then
         { time_to_analyze_in_ms = Timer.stop_in_ms timer; callable } :: expensive_callables
@@ -580,7 +620,10 @@ module Make (Analysis : ANALYSIS) = struct
     callables_to_reanalyze
 
 
-  type t = FixpointReached of { iterations: int }
+  type t = {
+    fixpoint_reached_iterations: int;
+    shared_models_handle: State.SharedModels.t;
+  }
 
   let compute
       ~scheduler
@@ -596,7 +639,7 @@ module Make (Analysis : ANALYSIS) = struct
       ~max_iterations
       ~epoch
     =
-    let () =
+    let shared_models_handle =
       record_initial_models
         ~models:initial_models
         ~callables:initial_callables
@@ -604,6 +647,7 @@ module Make (Analysis : ANALYSIS) = struct
         ~override_targets
     in
 
+    (* TODO: Save the handle into the shared memory and save the cache. *)
     let rec iterate ~iteration callables_to_analyze =
       let number_of_callables = List.length callables_to_analyze in
       if number_of_callables = 0 then (* Fixpoint. *)
@@ -615,9 +659,15 @@ module Make (Analysis : ANALYSIS) = struct
         let timer = Timer.start () in
         let step = { epoch; iteration } in
         let old_batch = State.KeySet.of_list callables_to_analyze in
-        let () = State.oldify old_batch in
+        let () = State.oldify shared_models_handle old_batch in
         let map callables =
-          one_analysis_pass ~type_environment ~override_graph ~context ~step ~callables
+          one_analysis_pass
+            ~shared_models_handle
+            ~type_environment
+            ~override_graph
+            ~context
+            ~step
+            ~callables
         in
         let reduce left right =
           let callables_processed = left.callables_processed + right.callables_processed in
@@ -642,7 +692,7 @@ module Make (Analysis : ANALYSIS) = struct
             ~inputs:callables_to_analyze
             ()
         in
-        let () = State.remove_old old_batch in
+        let () = State.remove_old shared_models_handle old_batch in
         let callables_to_analyze =
           compute_callables_to_reanalyze
             ~dependency_graph
@@ -654,20 +704,20 @@ module Make (Analysis : ANALYSIS) = struct
         iterate ~iteration:(iteration + 1) callables_to_analyze
     in
     let iterations = iterate ~iteration:0 initial_callables_to_analyze in
-    FixpointReached { iterations }
+    { fixpoint_reached_iterations = iterations; shared_models_handle }
 
 
-  let get_model (FixpointReached _) target = State.get_model target
+  let get_model { shared_models_handle; _ } target = State.get_model shared_models_handle target
 
-  let get_result (FixpointReached _) target = State.get_result target
+  let get_result _ target = State.get_result target
 
-  let set_result (FixpointReached _) target result = State.set_result target result
+  let set_result _ target result = State.set_result target result
 
-  let clear_results (FixpointReached _) = State.clear_results ()
+  let clear_results _ = State.clear_results ()
 
-  let get_iterations (FixpointReached { iterations }) = iterations
+  let get_iterations { fixpoint_reached_iterations; _ } = fixpoint_reached_iterations
 
-  let cleanup (FixpointReached _) = State.cleanup ()
+  let cleanup { shared_models_handle; _ } = State.cleanup shared_models_handle
 end
 
 module WithoutLogging = struct
