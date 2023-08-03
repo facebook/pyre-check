@@ -301,7 +301,7 @@ def find_typeshed_search_paths(
     return search_path
 
 
-def find_pyre_path() -> Optional[Path]:
+def find_pyre_directory() -> Optional[Path]:
     install_root = Path(sys.prefix)
     excepted_pyre_path = install_root / "lib/pyre_check/"
     if excepted_pyre_path.is_dir():
@@ -310,7 +310,7 @@ def find_pyre_path() -> Optional[Path]:
 
 
 def find_taint_models_directory() -> Optional[Path]:
-    pyre_check_path = find_pyre_path()
+    pyre_check_path = find_pyre_directory()
     if pyre_check_path is not None:
         bundled_taint_models = pyre_check_path / "taint/"
         if bundled_taint_models.is_dir():

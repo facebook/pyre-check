@@ -18,7 +18,7 @@ import sys
 from pathlib import Path
 
 from .. import log
-from ..find_directories import find_pyre_path
+from ..find_directories import find_pyre_directory
 
 from . import commands
 from .initialize import (
@@ -73,7 +73,7 @@ def _setup_environment() -> None:
     run_infer = log.get_yes_no_input("Would you like to generate type annotations?")
     if run_infer:
         subprocess.run(["pyre", "infer", "-i"], check=True)
-    pyre_check_path = find_pyre_path()
+    pyre_check_path = find_pyre_directory()
     if pyre_check_path is not None:
         LOG.info("Importing filters to sapp")
         subprocess.run(["sapp", "filter", "import", pyre_check_path], check=True)
