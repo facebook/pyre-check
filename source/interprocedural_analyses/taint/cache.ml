@@ -17,6 +17,8 @@ module AstEnvironment = Analysis.AstEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
+module SaveLoadSharedMemory = Interprocedural.SaveLoadSharedMemory
+module Usage = SaveLoadSharedMemory.Usage
 
 module Entry = struct
   type t =
@@ -33,28 +35,17 @@ module Entry = struct
     | ClassIntervalGraph -> "class interval graph"
 end
 
-module EntryUsage = struct
-  type error = LoadError [@@deriving show { with_path = false }]
-
-  type t =
-    | Used
-    | Unused of error
-  [@@deriving show { with_path = false }]
-end
-
 module EntryStatus = struct
   module Map = Caml.Map.Make (Entry)
 
-  type t = EntryUsage.t Map.t
+  type t = Usage.t Map.t
 
   let empty = Map.empty
 
   let add ~name ~usage = Map.add name usage
 
   let to_json entry_status =
-    let accumulate name usage so_far =
-      (Entry.show name, `String (EntryUsage.show usage)) :: so_far
-    in
+    let accumulate name usage so_far = (Entry.show name, `String (Usage.show usage)) :: so_far in
     `Assoc (Map.fold accumulate entry_status [])
 end
 
@@ -99,86 +90,7 @@ let get_shared_memory_save_path ~configuration =
   PyrePath.append (get_save_directory ~configuration) ~element:"sharedmem"
 
 
-let exception_to_error ~error ~message ~f =
-  try f () with
-  | exception_ ->
-      Log.error "Error %s:\n%s" message (Exn.to_string exception_);
-      Error error
-
-
 let ignore_result (_ : ('a, 'b) result) = ()
-
-module type SingleValueSharedMemoryValueType = sig
-  type t
-
-  val entry : Entry.t
-end
-
-(* Support storing / loading a single OCaml value into / from the shared memory, for caching
-   purposes. *)
-module SingleValueSharedMemory (Value : SingleValueSharedMemoryValueType) = struct
-  let value_entry_name = Entry.show_pretty Value.entry
-
-  module T = Memory.Serializer (struct
-    type t = Value.t
-
-    module Serialized = struct
-      type t = Value.t
-
-      let prefix = Hack_parallel.Std.Prefix.make ()
-
-      let description = value_entry_name
-    end
-
-    let serialize = Fn.id
-
-    let deserialize = Fn.id
-  end)
-
-  let load () =
-    exception_to_error
-      ~error:(EntryUsage.Unused EntryUsage.LoadError)
-      ~message:(Format.asprintf "Loading %s from cache" value_entry_name)
-      ~f:(fun () ->
-        Log.info "Loading %s from cache..." value_entry_name;
-        let value = T.load () in
-        Log.info "Loaded %s from cache." value_entry_name;
-        Ok value)
-
-
-  let save value =
-    exception_to_error
-      ~error:()
-      ~message:(Format.asprintf "Saving %s to cache" value_entry_name)
-      ~f:(fun () ->
-        Memory.SharedMemory.collect `aggressive;
-        T.store value;
-        Log.info "Saved %s to cache." value_entry_name;
-        Ok ())
-
-
-  let load_or_compute ({ status; save_cache; _ } as cache) f =
-    let value, status =
-      match status with
-      | Loaded entry_status ->
-          let value, usage =
-            match load () with
-            | Ok value -> Some value, EntryUsage.Used
-            | Error error -> None, error
-          in
-          let entry_status = EntryStatus.add ~name:Value.entry ~usage entry_status in
-          value, SharedMemoryStatus.Loaded entry_status
-      | _ -> None, status
-    in
-    let cache = { cache with status } in
-    match value with
-    | Some value -> value, cache
-    | None ->
-        let value = f () in
-        if save_cache then
-          save value |> ignore_result;
-        value, cache
-end
 
 let initialize_shared_memory ~configuration =
   let path = get_shared_memory_save_path ~configuration in
@@ -186,7 +98,7 @@ let initialize_shared_memory ~configuration =
     Log.warning "Could not find a cached state.";
     Error SharedMemoryStatus.NotFound)
   else
-    exception_to_error
+    SaveLoadSharedMemory.exception_to_error
       ~error:SharedMemoryStatus.LoadError
       ~message:"loading cached state"
       ~f:(fun () ->
@@ -241,7 +153,7 @@ let load_type_environment ~scheduler ~configuration =
   let open Result in
   let controls = Analysis.EnvironmentControls.create configuration in
   Log.info "Determining if source files have changed since cache was created.";
-  exception_to_error
+  SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
     ~f:(fun () -> Ok (TypeEnvironment.load controls))
@@ -269,7 +181,10 @@ let load_type_environment ~scheduler ~configuration =
 
 
 let save_type_environment ~scheduler ~configuration ~environment =
-  exception_to_error ~error:() ~message:"saving type environment to cache" ~f:(fun () ->
+  SaveLoadSharedMemory.exception_to_error
+    ~error:()
+    ~message:"saving type environment to cache"
+    ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
       let module_tracker = TypeEnvironment.module_tracker environment in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
@@ -291,7 +206,7 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
         match load_type_environment ~scheduler ~configuration with
         | Ok environment ->
             let entry_status =
-              EntryStatus.add ~name:Entry.TypeEnvironment ~usage:EntryUsage.Used entry_status
+              EntryStatus.add ~name:Entry.TypeEnvironment ~usage:Usage.Used entry_status
             in
             environment, SharedMemoryStatus.Loaded entry_status
         | Error error_status ->
@@ -312,7 +227,10 @@ let ensure_save_directory_exists ~configuration =
 
 
 let save_shared_memory ~configuration =
-  exception_to_error ~error:() ~message:"saving cached state to file" ~f:(fun () ->
+  SaveLoadSharedMemory.exception_to_error
+    ~error:()
+    ~message:"saving cached state to file"
+    ~f:(fun () ->
       let path = get_shared_memory_save_path ~configuration in
       Log.info "Saving shared memory state to cache file...";
       ensure_save_directory_exists ~configuration;
@@ -327,19 +245,44 @@ let save { save_cache; configuration; _ } =
     save_shared_memory ~configuration |> ignore
 
 
-module ClassHierarchyGraphSharedMemory = SingleValueSharedMemory (struct
+module type CacheEntryType = sig
+  type t
+
+  val entry : Entry.t
+end
+
+module MakeCacheEntry (CacheEntry : CacheEntryType) = struct
+  module T = SaveLoadSharedMemory.MakeSingleValue (struct
+    type t = CacheEntry.t
+
+    let name = Entry.show_pretty CacheEntry.entry
+  end)
+
+  let load_or_compute ({ status; save_cache; _ } as cache) f =
+    let value, usage = T.load_or_compute ~should_save:save_cache f in
+    let status =
+      match status with
+      | Loaded entry_status ->
+          let entry_status = EntryStatus.add ~name:CacheEntry.entry ~usage entry_status in
+          SharedMemoryStatus.Loaded entry_status
+      | _ -> status
+    in
+    value, { cache with status }
+end
+
+module ClassHierarchyGraphSharedMemory = MakeCacheEntry (struct
   type t = ClassHierarchyGraph.Heap.t
 
   let entry = Entry.ClassHierarchyGraph
 end)
 
-module InitialCallablesSharedMemory = SingleValueSharedMemory (struct
+module InitialCallablesSharedMemory = MakeCacheEntry (struct
   type t = FetchCallables.t
 
   let entry = Entry.InitialCallables
 end)
 
-module ClassIntervalGraphSharedMemory = SingleValueSharedMemory (struct
+module ClassIntervalGraphSharedMemory = MakeCacheEntry (struct
   type t = ClassIntervalSetGraph.Heap.t
 
   let entry = Entry.ClassIntervalGraph
