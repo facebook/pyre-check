@@ -147,6 +147,14 @@ def _exit_or_continue(returncode: int, exit_on_error: bool) -> None:
             sys.exit(returncode)
 
 
+def _remove_cache_file(cache_path: Path) -> None:
+    cache_file = cache_path / "sharedmem"
+    try:
+        cache_file.unlink()
+    except FileNotFoundError:
+        pass
+
+
 def run_test_no_cache(
     typeshed_path: str,
     cache_path: Path,
@@ -247,11 +255,7 @@ def run_test_invalid_cache_file(
 
     LOG.info("Testing fallback behavior with invalid cache file:")
 
-    cache_file = cache_path / "sharedmem"
-    try:
-        cache_file.unlink()
-    except FileNotFoundError:
-        pass
+    _remove_cache_file(cache_path=cache_path)
     (cache_path / "sharedmem").touch()
 
     pysa_command = _pysa_command(
@@ -571,7 +575,23 @@ def run_test_changed_overrides(
     to doing a clean run.
     """
 
-    LOG.info("Testing cache invalidation after skip override change:")
+    _remove_cache_file(cache_path=cache_path)
+
+    LOG.info("Testing cache invalidation after skip override change (initial run):")
+    pysa_command = _pysa_command(
+        typeshed_path, cache_path, save_results_to, use_cache=True
+    )
+    expected_cache_usage = {
+        "shared_memory_status": "NotFound",
+        "save_cache": True,
+    }
+    returncode = _run_and_check_output(
+        pysa_command,
+        expected,
+        save_results_to,
+        expected_cache_usage,
+    )
+    _exit_or_continue(returncode, exit_on_error)
 
     # Remove a test taint file
     test_model_path = Path("test_taint/skip_overrides.pysa")
@@ -596,11 +616,19 @@ def run_test_changed_overrides(
         "stop_line": 37,
     }
 
+    LOG.info("Testing cache invalidation after skip override change (second run):")
     pysa_command = _pysa_command(
         typeshed_path, cache_path, save_results_to, use_cache=True
     )
     expected_cache_usage = {
-        "shared_memory_status": "InvalidByDecoratorChange",
+        "shared_memory_status": {
+            "Loaded": {
+                "ClassHierarchyGraph": "Used",
+                "ClassIntervalGraph": "Used",
+                "InitialCallables": "Used",
+                "TypeEnvironment": "Used",
+            }
+        },
         "save_cache": True,
     }
     returncode = _run_and_check_output(
