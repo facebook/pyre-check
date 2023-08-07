@@ -1360,6 +1360,7 @@ let test_create_readonly _ =
          Type.ReadOnly (Type.Primitive "Bar");
        ]);
   assert_create "pyre_extensions.ReadOnly[typing.Any]" Type.Any;
+  assert_create "pyre_extensions.ReadOnly[float]" Type.float;
   ()
 
 

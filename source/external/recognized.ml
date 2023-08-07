@@ -43,4 +43,4 @@ let readonly_entrypoint_decorators =
 let readonly_modules_to_ignore = String.Set.of_list ["readonly_module_to_ignore"]
 
 let classes_safe_to_coerce_readonly_to_mutable =
-  String.Set.of_list ["readonly_stubs_for_testing.MySafeReadOnlyClass"; "int"; "bool"]
+  String.Set.of_list ["readonly_stubs_for_testing.MySafeReadOnlyClass"; "int"; "bool"; "float"]
