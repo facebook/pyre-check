@@ -1068,6 +1068,20 @@ let test_add_constraint_readonly context =
   assert_add_direct ~left:Type.Bottom ~right:(Type.ReadOnly.create (Type.Primitive "C")) [[]];
   assert_add_direct ~left:(Type.ReadOnly.create (Type.Primitive "C")) ~right:Type.Bottom [];
   assert_add_direct ~left:Type.Top ~right:(Type.ReadOnly.create Type.object_primitive) [[]];
+  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[object]" [[]];
+  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[C]" [];
+  assert_add
+    ~left:"typing.Union[pyre_extensions.ReadOnly[C], pyre_extensions.ReadOnly[D]]"
+    ~right:"pyre_extensions.ReadOnly[C]"
+    [[]];
+  assert_add
+    ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
+    ~right:"pyre_extensions.ReadOnly[object]"
+    [[]];
+  assert_add
+    ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
+    ~right:"pyre_extensions.ReadOnly[C]"
+    [];
   ()
 
 

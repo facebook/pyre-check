@@ -515,7 +515,6 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         let pair = Type.Variable.UnaryPair (variable, bound) in
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
     | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
-    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.Bottom -> impossible
     | Type.Bottom, _ -> [constraints]
     | _, Type.NoneType -> impossible
@@ -556,6 +555,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Concrete lefts)
           ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
           ~constraints
+    | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | Type.Top, _ -> impossible
     | Type.NoneType, Type.Union rights when List.exists rights ~f:Type.is_none ->
         (* Technically speaking, removing this special-case still leads to correct, but somewhat
