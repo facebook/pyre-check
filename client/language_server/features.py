@@ -73,6 +73,7 @@ TypeErrorsAvailability = _Availability
 UnsavedChangesAvailability = _Availability
 CompletionAvailability = _Availability
 CallHierarchyAvailability = _Availability
+RenameAvailability = _Availability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -91,6 +92,7 @@ class LanguageServerFeatures:
     telemetry: TelemetryAvailability = TelemetryAvailability.DISABLED
     completion: CompletionAvailability = CompletionAvailability.DISABLED
     call_hierarchy: CallHierarchyAvailability = CallHierarchyAvailability.DISABLED
+    rename: RenameAvailability = RenameAvailability.DISABLED
 
     def capabilities(self) -> Dict[str, bool]:
         return {
@@ -100,4 +102,5 @@ class LanguageServerFeatures:
             "references_provider": not self.references.is_disabled(),
             "completion_provider": not self.completion.is_disabled(),
             "call_hierarchy_provider": not self.call_hierarchy.is_disabled(),
+            "rename_provider": not self.rename.is_disabled(),
         }
