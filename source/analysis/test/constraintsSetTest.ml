@@ -77,19 +77,22 @@ let make_assert_functions context =
         {|
       from typing import overload, Any, Generic
 
-      class C: ...
-      class D(C): ...
-      class Q: ...
+      class Base: ...
+      class Child(Base): ...
+      class Unrelated: ...
       T_Unconstrained = typing.TypeVar('T_Unconstrained')
-      T_Bound_C = typing.TypeVar('T_Bound_C', bound=C)
-      T_Bound_D = typing.TypeVar('T_Bound_D', bound=D)
+      T_Bound_Base = typing.TypeVar('T_Bound_Base', bound=Base)
+      T_Bound_Child = typing.TypeVar('T_Bound_Child', bound=Child)
       T_Bound_Union = typing.TypeVar('T_Bound_Union', bound=typing.Union[int, str])
-      T_Bound_Union_C_Q = typing.TypeVar('T_Bound_Union_C_Q', bound=typing.Union[C, Q])
-      T_C_Q = typing.TypeVar('T_C_Q', C, Q)
+      T_Bound_Union_Base_Unrelated = typing.TypeVar(
+          'T_Bound_Union_Base_Unrelated',
+          bound=typing.Union[Base, Unrelated]
+      )
+      T_Base_Unrelated = typing.TypeVar('T_Base_Unrelated', Base, Unrelated)
       T_Bound_ReadOnly = typing.TypeVar('T_Bound_ReadOnly', bound=pyre_extensions.ReadOnly[object])
       T_Bound_object = typing.TypeVar("T", object)
-      T_D_Q = typing.TypeVar('T_D_Q', D, Q)
-      T_C_Q_int = typing.TypeVar('T_C_Q_int', C, Q, int)
+      T_Child_Unrelated = typing.TypeVar('T_Child_Unrelated', Child, Unrelated)
+      T_Base_Unrelated_int = typing.TypeVar('T_Base_Unrelated_int', Base, Unrelated, int)
       V = pyre_extensions.ParameterSpecification("V")
       P = pyre_extensions.ParameterSpecification("P")
       P2 = pyre_extensions.ParameterSpecification("P2")
@@ -101,8 +104,8 @@ let make_assert_functions context =
       T4 = typing.TypeVar('T4')
       class G_invariant(typing.Generic[T]):
         pass
-      T_Covariant = typing.TypeVar('T_Cov', covariant=True)
-      class G_covariant(typing.Generic[T_Covariant]):
+      T_Baseovariant = typing.TypeVar('T_Baseov', covariant=True)
+      class G_covariant(typing.Generic[T_Baseovariant]):
         pass
 
       class Constructable:
@@ -139,19 +142,19 @@ let make_assert_functions context =
     let aliases ?replace_unbound_parameters_with_any:_ a =
       let s =
         [
-          "C";
-          "D";
-          "Q";
+          "Base";
+          "Child";
+          "Unrelated";
           "T_Unconstrained";
-          "T_Bound_C";
-          "T_Bound_D";
-          "T_Bound_Union_C_Q";
+          "T_Bound_Base";
+          "T_Bound_Child";
+          "T_Bound_Union_Base_Unrelated";
           "T_Bound_Union";
           "T_Bound_ReadOnly";
           "T_Bound_object";
-          "T_C_Q";
-          "T_D_Q";
-          "T_C_Q_int";
+          "T_Base_Unrelated";
+          "T_Child_Unrelated";
+          "T_Base_Unrelated_int";
           "V";
           "P";
           "P2";
@@ -162,7 +165,7 @@ let make_assert_functions context =
           "T4";
           "G_invariant";
           "G_covariant";
-          "T_Covariant";
+          "T_Baseovariant";
           "ClassWithOverloadedConstructor";
           "Constructable";
           "UserDefinedVariadic";
@@ -391,25 +394,37 @@ let test_add_constraint context =
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"C"
+    ~left:"Base"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"D"
+    ~left:"Child"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "D"]]
+    ~expected_solutions:[["T_Unconstrained", "Child"]]
     ();
   assert_less_or_equal
-    ~left:"Q"
+    ~left:"Unrelated"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "Q"]]
+    ~expected_solutions:[["T_Unconstrained", "Unrelated"]]
     ();
-  assert_less_or_equal ~left:"C" ~right:"T_Bound_C" ~expected_solutions:[["T_Bound_C", "C"]] ();
-  assert_less_or_equal ~left:"D" ~right:"T_Bound_C" ~expected_solutions:[["T_Bound_C", "D"]] ();
-  assert_less_or_equal ~left:"Q" ~right:"T_Bound_C" ~expected_solutions:[] ();
-  assert_less_or_equal ~left:"C" ~right:"T_Bound_D" ~expected_solutions:[] ();
-  assert_less_or_equal ~left:"C" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
+  assert_less_or_equal
+    ~left:"Base"
+    ~right:"T_Bound_Base"
+    ~expected_solutions:[["T_Bound_Base", "Base"]]
+    ();
+  assert_less_or_equal
+    ~left:"Child"
+    ~right:"T_Bound_Base"
+    ~expected_solutions:[["T_Bound_Base", "Child"]]
+    ();
+  assert_less_or_equal ~left:"Unrelated" ~right:"T_Bound_Base" ~expected_solutions:[] ();
+  assert_less_or_equal ~left:"Base" ~right:"T_Bound_Child" ~expected_solutions:[] ();
+  assert_less_or_equal
+    ~left:"Base"
+    ~right:"T_Base_Unrelated"
+    ~expected_solutions:[["T_Base_Unrelated", "Base"]]
+    ();
 
   assert_less_or_equal
     ~leave_unbound_in_left:["T_Unconstrained"]
@@ -418,16 +433,16 @@ let test_add_constraint context =
     ~expected_solutions:[["T_Unconstrained", "typing.Any"]]
     ();
   assert_less_or_equal
-    ~leave_unbound_in_left:["T_Bound_C"]
-    ~left:"T_Bound_C"
+    ~leave_unbound_in_left:["T_Bound_Base"]
+    ~left:"T_Bound_Base"
     ~right:"typing.Any"
-    ~expected_solutions:[["T_Bound_C", "typing.Any"]]
+    ~expected_solutions:[["T_Bound_Base", "typing.Any"]]
     ();
   assert_less_or_equal
-    ~leave_unbound_in_left:["T_C_Q"]
-    ~left:"T_C_Q"
+    ~leave_unbound_in_left:["T_Base_Unrelated"]
+    ~left:"T_Base_Unrelated"
     ~right:"typing.Any"
-    ~expected_solutions:[["T_C_Q", "typing.Any"]]
+    ~expected_solutions:[["T_Base_Unrelated", "typing.Any"]]
     ();
 
   assert_less_or_equal
@@ -451,13 +466,13 @@ let test_add_constraint context =
     ();
   assert_less_or_equal
     ~left:"typing.Any"
-    ~right:"T_Bound_C"
-    ~expected_solutions:[["T_Bound_C", "typing.Any"]]
+    ~right:"T_Bound_Base"
+    ~expected_solutions:[["T_Bound_Base", "typing.Any"]]
     ();
   assert_less_or_equal
     ~left:"typing.Any"
-    ~right:"T_C_Q"
-    ~expected_solutions:[["T_C_Q", "typing.Any"]]
+    ~right:"T_Base_Unrelated"
+    ~expected_solutions:[["T_Base_Unrelated", "typing.Any"]]
     ();
 
   assert_less_or_equal
@@ -474,86 +489,90 @@ let test_add_constraint context =
 
   (* Annotated types. *)
   assert_less_or_equal
-    ~left:"typing.Annotated[C]"
+    ~left:"typing.Annotated[Base]"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"C"
+    ~left:"Base"
     ~right:"typing.Annotated[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
 
   assert_less_or_equal
-    ~left:"typing_extensions.Annotated[C]"
+    ~left:"typing_extensions.Annotated[Base]"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"C"
+    ~left:"Base"
     ~right:"typing_extensions.Annotated[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
 
   (* An explicit type variable can only be bound to its constraints *)
-  assert_less_or_equal ~left:"D" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
-  assert_less_or_equal ~left:"C" ~right:"T_D_Q" ~expected_solutions:[] ();
+  assert_less_or_equal
+    ~left:"Child"
+    ~right:"T_Base_Unrelated"
+    ~expected_solutions:[["T_Base_Unrelated", "Base"]]
+    ();
+  assert_less_or_equal ~left:"Base" ~right:"T_Child_Unrelated" ~expected_solutions:[] ();
   assert_less_or_equal
     ~left:"typing.Union[int, G_invariant[str], str]"
     ~right:"T_Unconstrained"
     ~expected_solutions:[["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Union[D, C]"
-    ~right:"T_Bound_C"
-    ~expected_solutions:[["T_Bound_C", "typing.Union[D, C]"]]
+    ~left:"typing.Union[Child, Base]"
+    ~right:"T_Bound_Base"
+    ~expected_solutions:[["T_Bound_Base", "typing.Union[Child, Base]"]]
     ();
   assert_less_or_equal
-    ~constraints:["T_Unconstrained", (Some "Q", None)]
-    ~left:"G_invariant[C]"
+    ~constraints:["T_Unconstrained", (Some "Unrelated", None)]
+    ~left:"G_invariant[Base]"
     ~right:"G_invariant[T_Unconstrained]"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
-    ~constraints:["T_Unconstrained", (Some "Q", None)]
-    ~left:"G_covariant[C]"
+    ~constraints:["T_Unconstrained", (Some "Unrelated", None)]
+    ~left:"G_covariant[Base]"
     ~right:"G_covariant[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "typing.Union[Q, C]"]]
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[Unrelated, Base]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Optional[C]"
+    ~left:"typing.Optional[Base]"
     ~right:"typing.Optional[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"C"
+    ~left:"Base"
     ~right:"typing.Optional[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[C, ...]"
+    ~left:"typing.Tuple[Base, ...]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[C, Q, D]"
-    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    ~expected_solutions:[["T_Unconstrained", "typing.Union[C, Q]"]]
+    ~left:"typing.Tuple[Base, Unrelated, Child]"
+    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, Base]"
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[Base, Unrelated]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[D, ...]"
-    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    ~expected_solutions:[["T_Unconstrained", "D"]]
+    ~left:"typing.Tuple[Child, ...]"
+    ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, Base]"
+    ~expected_solutions:[["T_Unconstrained", "Child"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[C, Q, D]"
+    ~left:"typing.Tuple[Base, Unrelated, Child]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    ~expected_solutions:[["T_Unconstrained", "typing.Union[C, Q]"]]
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[Base, Unrelated]"]]
     ();
   assert_less_or_equal
-    ~left:"G_covariant[C]"
+    ~left:"G_covariant[Base]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   (* `ClassWithOverloadedConstructor.__new__` has two overloads, one accepting zero arguments and
      another accepting one argument. *)
@@ -576,14 +595,14 @@ let test_add_constraint context =
       ]
     ();
   assert_less_or_equal
-    ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
+    ~left:"typing.Optional[typing.Tuple[Base, Unrelated, typing.Callable[[Child, int], Base]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
-    ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
+    ~left:"typing.Optional[typing.Tuple[Base, Base, typing.Callable[[Base, Base], Base]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    ~expected_solutions:[["T", "C"]]
+    ~expected_solutions:[["T", "Base"]]
     ();
   assert_less_or_equal
     ~left:"T_Unconstrained"
@@ -598,11 +617,11 @@ let test_add_constraint context =
 
   (* Bound => Bound *)
   assert_less_or_equal
-    ~left:"T_Bound_D"
-    ~right:"T_Bound_C"
-    ~expected_solutions:[["T_Bound_C", "T_Bound_D"]]
+    ~left:"T_Bound_Child"
+    ~right:"T_Bound_Base"
+    ~expected_solutions:[["T_Bound_Base", "T_Bound_Child"]]
     ();
-  assert_less_or_equal ~left:"T_Bound_C" ~right:"T_Bound_D" ~expected_solutions:[] ();
+  assert_less_or_equal ~left:"T_Bound_Base" ~right:"T_Bound_Child" ~expected_solutions:[] ();
   assert_less_or_equal
     ~left:"T_Bound_Union"
     ~right:"T_Bound_Union"
@@ -610,28 +629,36 @@ let test_add_constraint context =
     ();
 
   (* Bound => Explicit *)
-  assert_less_or_equal ~left:"T_Bound_D" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
-  assert_less_or_equal ~left:"T_Bound_C" ~right:"T_D_Q" ~expected_solutions:[] ();
+  assert_less_or_equal
+    ~left:"T_Bound_Child"
+    ~right:"T_Base_Unrelated"
+    ~expected_solutions:[["T_Base_Unrelated", "Base"]]
+    ();
+  assert_less_or_equal ~left:"T_Bound_Base" ~right:"T_Child_Unrelated" ~expected_solutions:[] ();
 
   (* Explicit => Bound *)
   assert_less_or_equal
-    ~left:"T_D_Q"
-    ~right:"T_Bound_Union_C_Q"
-    ~expected_solutions:[["T_Bound_Union_C_Q", "T_D_Q"]]
+    ~left:"T_Child_Unrelated"
+    ~right:"T_Bound_Union_Base_Unrelated"
+    ~expected_solutions:[["T_Bound_Union_Base_Unrelated", "T_Child_Unrelated"]]
     ();
-  assert_less_or_equal ~left:"T_D_Q" ~right:"T_Bound_D" ~expected_solutions:[] ();
+  assert_less_or_equal ~left:"T_Child_Unrelated" ~right:"T_Bound_Child" ~expected_solutions:[] ();
 
   (* Explicit => Explicit *)
   assert_less_or_equal
-    ~left:"T_C_Q"
-    ~right:"T_C_Q_int"
-    ~expected_solutions:[["T_C_Q_int", "T_C_Q"]]
+    ~left:"T_Base_Unrelated"
+    ~right:"T_Base_Unrelated_int"
+    ~expected_solutions:[["T_Base_Unrelated_int", "T_Base_Unrelated"]]
     ();
 
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
-   *  T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
-  assert_less_or_equal ~left:"T_D_Q" ~right:"T_C_Q_int" ~expected_solutions:[] ();
+   *  T_Base_Unrelated_int => T_new <: Base if T_Child_Unrelated is Child, Unrelated if T_Child_Unrelated is Unrelated *)
+  assert_less_or_equal
+    ~left:"T_Child_Unrelated"
+    ~right:"T_Base_Unrelated_int"
+    ~expected_solutions:[]
+    ();
   assert_less_or_equal
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
@@ -1305,46 +1332,54 @@ let test_add_constraint_type_variable_tuple context =
 
 let test_add_constraint_readonly context =
   let assert_less_or_equal, assert_less_or_equal_direct, _, _ = make_assert_functions context in
-  assert_less_or_equal ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" ~expected_solutions:[] ();
-  assert_less_or_equal ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" ~expected_solutions:[[]] ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[D]"
-    ~right:"pyre_extensions.ReadOnly[C]"
+    ~left:"pyre_extensions.ReadOnly[Base]"
+    ~right:"Base"
+    ~expected_solutions:[]
+    ();
+  assert_less_or_equal
+    ~left:"Child"
+    ~right:"pyre_extensions.ReadOnly[Base]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[D]"
-    ~right:"typing.Union[int, pyre_extensions.ReadOnly[C]]"
+    ~left:"pyre_extensions.ReadOnly[Child]"
+    ~right:"pyre_extensions.ReadOnly[Base]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[C]"
+    ~left:"pyre_extensions.ReadOnly[Child]"
+    ~right:"typing.Union[int, pyre_extensions.ReadOnly[Base]]"
+    ~expected_solutions:[[]]
+    ();
+  assert_less_or_equal
+    ~left:"pyre_extensions.ReadOnly[Base]"
     ~right:"T_Unconstrained"
-    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]]
+    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[Base]"]]
     ();
   assert_less_or_equal
-    ~left:"C"
+    ~left:"Base"
     ~right:"pyre_extensions.ReadOnly[T_Unconstrained]"
-    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ~expected_solutions:[["T_Unconstrained", "Base"]]
     ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[C]"
+    ~left:"pyre_extensions.ReadOnly[Base]"
     ~right:"T_Bound_ReadOnly"
-    ~expected_solutions:[["T_Bound_ReadOnly", "pyre_extensions.ReadOnly[C]"]]
+    ~expected_solutions:[["T_Bound_ReadOnly", "pyre_extensions.ReadOnly[Base]"]]
     ();
   assert_less_or_equal
     ~left:"T_Unconstrained"
-    ~right:"pyre_extensions.ReadOnly[C]"
+    ~right:"pyre_extensions.ReadOnly[Base]"
     ~leave_unbound_in_left:["T_Unconstrained"]
-    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]]
+    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[Base]"]]
     ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[C]"
+    ~left:"pyre_extensions.ReadOnly[Base]"
     ~right:"T_Bound_object"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
-    ~left:"pyre_extensions.ReadOnly[C]"
+    ~left:"pyre_extensions.ReadOnly[Base]"
     ~right:"typing.Any"
     ~expected_solutions:[[]]
     ();
@@ -1353,9 +1388,13 @@ let test_add_constraint_readonly context =
     ~right:"pyre_extensions.ReadOnly[T]"
     ~expected_solutions:[["T", "typing.Any"]]
     ();
-  assert_less_or_equal ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" ~expected_solutions:[] ();
   assert_less_or_equal
-    ~left:"typing.Union[pyre_extensions.ReadOnly[C], str]"
+    ~left:"pyre_extensions.ReadOnly[Base]"
+    ~right:"object"
+    ~expected_solutions:[]
+    ();
+  assert_less_or_equal
+    ~left:"typing.Union[pyre_extensions.ReadOnly[Base], str]"
     ~right:"object"
     ~expected_solutions:[]
     ();
@@ -1366,11 +1405,11 @@ let test_add_constraint_readonly context =
     ();
   assert_less_or_equal_direct
     ~left:Type.Bottom
-    ~right:(Type.ReadOnly.create (Type.Primitive "C"))
+    ~right:(Type.ReadOnly.create (Type.Primitive "Base"))
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal_direct
-    ~left:(Type.ReadOnly.create (Type.Primitive "C"))
+    ~left:(Type.ReadOnly.create (Type.Primitive "Base"))
     ~right:Type.Bottom
     ~expected_solutions:[]
     ();
@@ -1384,20 +1423,24 @@ let test_add_constraint_readonly context =
     ~right:"pyre_extensions.ReadOnly[object]"
     ~expected_solutions:[[]]
     ();
-  assert_less_or_equal ~left:"None" ~right:"pyre_extensions.ReadOnly[C]" ~expected_solutions:[] ();
   assert_less_or_equal
-    ~left:"typing.Union[pyre_extensions.ReadOnly[C], pyre_extensions.ReadOnly[D]]"
-    ~right:"pyre_extensions.ReadOnly[C]"
+    ~left:"None"
+    ~right:"pyre_extensions.ReadOnly[Base]"
+    ~expected_solutions:[]
+    ();
+  assert_less_or_equal
+    ~left:"typing.Union[pyre_extensions.ReadOnly[Base], pyre_extensions.ReadOnly[Child]]"
+    ~right:"pyre_extensions.ReadOnly[Base]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
+    ~left:"typing.Optional[pyre_extensions.ReadOnly[Base]]"
     ~right:"pyre_extensions.ReadOnly[object]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
-    ~right:"pyre_extensions.ReadOnly[C]"
+    ~left:"typing.Optional[pyre_extensions.ReadOnly[Base]]"
+    ~right:"pyre_extensions.ReadOnly[Base]"
     ~expected_solutions:[]
     ();
   ()
