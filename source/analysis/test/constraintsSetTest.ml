@@ -196,7 +196,8 @@ let make_assert_functions context =
       ?constraints
       ?(postprocess = default_postprocess)
       ?(do_prep = true)
-      expected
+      ~expected_solutions
+      ()
     =
     let handler =
       let class_hierarchy =
@@ -277,7 +278,7 @@ let make_assert_functions context =
         in
         List.map pairs ~f:parse_pair
       in
-      List.map expected ~f:parse_pairs |> List.map ~f:TypeConstraints.Solution.create
+      List.map expected_solutions ~f:parse_pairs |> List.map ~f:TypeConstraints.Solution.create
     in
     let constraints =
       let add_bounds sofar (key, (lower_bound, upper_bound)) =
@@ -383,225 +384,299 @@ let test_add_constraint context =
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Optional[T_Unconstrained]"
     ~right:"object"
-    [[]];
-  assert_add ~left:"C" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
-  assert_add ~left:"D" ~right:"T_Unconstrained" [["T_Unconstrained", "D"]];
-  assert_add ~left:"Q" ~right:"T_Unconstrained" [["T_Unconstrained", "Q"]];
-  assert_add ~left:"C" ~right:"T_Bound_C" [["T_Bound_C", "C"]];
-  assert_add ~left:"D" ~right:"T_Bound_C" [["T_Bound_C", "D"]];
-  assert_add ~left:"Q" ~right:"T_Bound_C" [];
-  assert_add ~left:"C" ~right:"T_Bound_D" [];
-  assert_add ~left:"C" ~right:"T_C_Q" [["T_C_Q", "C"]];
+    ~expected_solutions:[[]]
+    ();
+  assert_add ~left:"C" ~right:"T_Unconstrained" ~expected_solutions:[["T_Unconstrained", "C"]] ();
+  assert_add ~left:"D" ~right:"T_Unconstrained" ~expected_solutions:[["T_Unconstrained", "D"]] ();
+  assert_add ~left:"Q" ~right:"T_Unconstrained" ~expected_solutions:[["T_Unconstrained", "Q"]] ();
+  assert_add ~left:"C" ~right:"T_Bound_C" ~expected_solutions:[["T_Bound_C", "C"]] ();
+  assert_add ~left:"D" ~right:"T_Bound_C" ~expected_solutions:[["T_Bound_C", "D"]] ();
+  assert_add ~left:"Q" ~right:"T_Bound_C" ~expected_solutions:[] ();
+  assert_add ~left:"C" ~right:"T_Bound_D" ~expected_solutions:[] ();
+  assert_add ~left:"C" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
 
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"T_Unconstrained"
     ~right:"typing.Any"
-    [["T_Unconstrained", "typing.Any"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Any"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T_Bound_C"]
     ~left:"T_Bound_C"
     ~right:"typing.Any"
-    [["T_Bound_C", "typing.Any"]];
+    ~expected_solutions:[["T_Bound_C", "typing.Any"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T_C_Q"]
     ~left:"T_C_Q"
     ~right:"typing.Any"
-    [["T_C_Q", "typing.Any"]];
+    ~expected_solutions:[["T_C_Q", "typing.Any"]]
+    ();
 
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.List[T_Unconstrained]"
     ~right:"typing.Any"
-    [["T_Unconstrained", "typing.Any"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Any"]]
+    ();
 
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Tuple[T_Unconstrained, T_Unconstrained]"
     ~right:"typing.Tuple[typing.Any, int]"
-    [["T_Unconstrained", "int"]];
+    ~expected_solutions:[["T_Unconstrained", "int"]]
+    ();
 
-  assert_add ~left:"typing.Any" ~right:"T_Unconstrained" [["T_Unconstrained", "typing.Any"]];
-  assert_add ~left:"typing.Any" ~right:"T_Bound_C" [["T_Bound_C", "typing.Any"]];
-  assert_add ~left:"typing.Any" ~right:"T_C_Q" [["T_C_Q", "typing.Any"]];
+  assert_add
+    ~left:"typing.Any"
+    ~right:"T_Unconstrained"
+    ~expected_solutions:[["T_Unconstrained", "typing.Any"]]
+    ();
+  assert_add
+    ~left:"typing.Any"
+    ~right:"T_Bound_C"
+    ~expected_solutions:[["T_Bound_C", "typing.Any"]]
+    ();
+  assert_add ~left:"typing.Any" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "typing.Any"]] ();
 
   assert_add
     ~left:"typing.Any"
     ~right:"typing.List[T_Unconstrained]"
-    [["T_Unconstrained", "typing.Any"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Any"]]
+    ();
 
   assert_add
     ~left:"typing.Tuple[typing.Any, int]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained]"
-    [["T_Unconstrained", "int"]];
+    ~expected_solutions:[["T_Unconstrained", "int"]]
+    ();
 
   (* Annotated types. *)
-  assert_add ~left:"typing.Annotated[C]" ~right:"T_Unconstrained" [["T_Unconstrained", "C"]];
-  assert_add ~left:"C" ~right:"typing.Annotated[T_Unconstrained]" [["T_Unconstrained", "C"]];
+  assert_add
+    ~left:"typing.Annotated[C]"
+    ~right:"T_Unconstrained"
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
+  assert_add
+    ~left:"C"
+    ~right:"typing.Annotated[T_Unconstrained]"
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
 
   assert_add
     ~left:"typing_extensions.Annotated[C]"
     ~right:"T_Unconstrained"
-    [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
   assert_add
     ~left:"C"
     ~right:"typing_extensions.Annotated[T_Unconstrained]"
-    [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
 
   (* An explicit type variable can only be bound to its constraints *)
-  assert_add ~left:"D" ~right:"T_C_Q" [["T_C_Q", "C"]];
-  assert_add ~left:"C" ~right:"T_D_Q" [];
+  assert_add ~left:"D" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
+  assert_add ~left:"C" ~right:"T_D_Q" ~expected_solutions:[] ();
   assert_add
     ~left:"typing.Union[int, G_invariant[str], str]"
     ~right:"T_Unconstrained"
-    [["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]];
-  assert_add ~left:"typing.Union[D, C]" ~right:"T_Bound_C" [["T_Bound_C", "typing.Union[D, C]"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[int, G_invariant[str], str]"]]
+    ();
+  assert_add
+    ~left:"typing.Union[D, C]"
+    ~right:"T_Bound_C"
+    ~expected_solutions:[["T_Bound_C", "typing.Union[D, C]"]]
+    ();
   assert_add
     ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_invariant[C]"
     ~right:"G_invariant[T_Unconstrained]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~constraints:["T_Unconstrained", (Some "Q", None)]
     ~left:"G_covariant[C]"
     ~right:"G_covariant[T_Unconstrained]"
-    [["T_Unconstrained", "typing.Union[Q, C]"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[Q, C]"]]
+    ();
   assert_add
     ~left:"typing.Optional[C]"
     ~right:"typing.Optional[T_Unconstrained]"
-    [["T_Unconstrained", "C"]];
-  assert_add ~left:"C" ~right:"typing.Optional[T_Unconstrained]" [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
+  assert_add
+    ~left:"C"
+    ~right:"typing.Optional[T_Unconstrained]"
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
   assert_add
     ~left:"typing.Tuple[C, ...]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
   assert_add
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    [["T_Unconstrained", "typing.Union[C, Q]"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[C, Q]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[D, ...]"
     ~right:"typing.Tuple[T_Unconstrained, T_Unconstrained, C]"
-    [["T_Unconstrained", "D"]];
+    ~expected_solutions:[["T_Unconstrained", "D"]]
+    ();
   assert_add
     ~left:"typing.Tuple[C, Q, D]"
     ~right:"typing.Tuple[T_Unconstrained, ...]"
-    [["T_Unconstrained", "typing.Union[C, Q]"]];
+    ~expected_solutions:[["T_Unconstrained", "typing.Union[C, Q]"]]
+    ();
   assert_add
     ~left:"G_covariant[C]"
     ~right:"typing.Union[G_covariant[T_Unconstrained], int]"
-    [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
   (* `ClassWithOverloadedConstructor.__new__` has two overloads, one accepting zero arguments and
      another accepting one argument. *)
   assert_add
     ~left:"typing.Type[ClassWithOverloadedConstructor]"
     ~right:"typing.Callable[[], T_Unconstrained]"
-    [
-      ["T_Unconstrained", "ClassWithOverloadedConstructor[str]"];
-      ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
-    ];
+    ~expected_solutions:
+      [
+        ["T_Unconstrained", "ClassWithOverloadedConstructor[str]"];
+        ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
+      ]
+    ();
   assert_add
     ~left:"typing.Type[ClassWithOverloadedConstructor]"
     ~right:"typing.Callable[[int], T_Unconstrained]"
-    [
-      ["T_Unconstrained", "ClassWithOverloadedConstructor[int]"];
-      ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
-    ];
+    ~expected_solutions:
+      [
+        ["T_Unconstrained", "ClassWithOverloadedConstructor[int]"];
+        ["T_Unconstrained", "ClassWithOverloadedConstructor[typing.Any]"];
+      ]
+    ();
   assert_add
     ~left:"typing.Optional[typing.Tuple[C, Q, typing.Callable[[D, int], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Optional[typing.Tuple[C, C, typing.Callable[[C, C], C]]]"
     ~right:"typing.Optional[typing.Tuple[T, T, typing.Callable[[T, T], T]]]"
-    [["T", "C"]];
+    ~expected_solutions:[["T", "C"]]
+    ();
   assert_add
     ~left:"T_Unconstrained"
     ~right:"typing.Optional[T_Unconstrained]"
-    [["T_Unconstrained", "T_Unconstrained"]; ["T_Unconstrained", "object"]];
-  assert_add ~left:"T_Bound_Union" ~right:"typing.Union[int, str]" [[]];
+    ~expected_solutions:[["T_Unconstrained", "T_Unconstrained"]; ["T_Unconstrained", "object"]]
+    ();
+  assert_add ~left:"T_Bound_Union" ~right:"typing.Union[int, str]" ~expected_solutions:[[]] ();
 
   (* Bound => Bound *)
-  assert_add ~left:"T_Bound_D" ~right:"T_Bound_C" [["T_Bound_C", "T_Bound_D"]];
-  assert_add ~left:"T_Bound_C" ~right:"T_Bound_D" [];
-  assert_add ~left:"T_Bound_Union" ~right:"T_Bound_Union" [["T_Bound_Union", "T_Bound_Union"]];
+  assert_add
+    ~left:"T_Bound_D"
+    ~right:"T_Bound_C"
+    ~expected_solutions:[["T_Bound_C", "T_Bound_D"]]
+    ();
+  assert_add ~left:"T_Bound_C" ~right:"T_Bound_D" ~expected_solutions:[] ();
+  assert_add
+    ~left:"T_Bound_Union"
+    ~right:"T_Bound_Union"
+    ~expected_solutions:[["T_Bound_Union", "T_Bound_Union"]]
+    ();
 
   (* Bound => Explicit *)
-  assert_add ~left:"T_Bound_D" ~right:"T_C_Q" [["T_C_Q", "C"]];
-  assert_add ~left:"T_Bound_C" ~right:"T_D_Q" [];
+  assert_add ~left:"T_Bound_D" ~right:"T_C_Q" ~expected_solutions:[["T_C_Q", "C"]] ();
+  assert_add ~left:"T_Bound_C" ~right:"T_D_Q" ~expected_solutions:[] ();
 
   (* Explicit => Bound *)
-  assert_add ~left:"T_D_Q" ~right:"T_Bound_Union_C_Q" [["T_Bound_Union_C_Q", "T_D_Q"]];
-  assert_add ~left:"T_D_Q" ~right:"T_Bound_D" [];
+  assert_add
+    ~left:"T_D_Q"
+    ~right:"T_Bound_Union_C_Q"
+    ~expected_solutions:[["T_Bound_Union_C_Q", "T_D_Q"]]
+    ();
+  assert_add ~left:"T_D_Q" ~right:"T_Bound_D" ~expected_solutions:[] ();
 
   (* Explicit => Explicit *)
-  assert_add ~left:"T_C_Q" ~right:"T_C_Q_int" [["T_C_Q_int", "T_C_Q"]];
+  assert_add ~left:"T_C_Q" ~right:"T_C_Q_int" ~expected_solutions:[["T_C_Q_int", "T_C_Q"]] ();
 
   (* This one is theoretically solvable, but only if we're willing to introduce dependent variables
      as the only sound solution here would be
    *  T_C_Q_int => T_new <: C if T_D_Q is D, Q if T_D_Q is Q *)
-  assert_add ~left:"T_D_Q" ~right:"T_C_Q_int" [];
+  assert_add ~left:"T_D_Q" ~right:"T_C_Q_int" ~expected_solutions:[] ();
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
     ~right:"typing.Callable[[int], int]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Callable[[int], int]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    [["T_Unconstrained", "int"]];
+    ~expected_solutions:[["T_Unconstrained", "int"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], G_invariant[T]]"
     ~right:"typing.Callable[[T_Unconstrained], T_Unconstrained]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~leave_unbound_in_left:["T1"]
     ~left:"typing.Callable[[T1], typing.Tuple[T1, T2]]"
     ~right:"typing.Callable[[T3], typing.Tuple[T3, T4]]"
-    [["T4", "T2"]];
+    ~expected_solutions:[["T4", "T2"]]
+    ();
   assert_add
     ~left:"typing.Type[Constructable]"
     ~right:"typing.Callable[[T3], T4]"
-    [["T3", "int"; "T4", "Constructable"]];
+    ~expected_solutions:[["T3", "int"; "T4", "Constructable"]]
+    ();
   assert_add
     ~left:"typing.Callable[[typing.Union[int, str]], str]"
     ~right:"typing.Callable[[int], T4]"
-    [["T4", "str"]];
+    ~expected_solutions:[["T4", "str"]]
+    ();
   assert_add
     ~left:"typing.Callable[[typing.Union[int, str], int], str]"
     ~right:"typing.Callable[[int, T3], T4]"
-    [["T3", "int"; "T4", "str"]];
+    ~expected_solutions:[["T3", "int"; "T4", "str"]]
+    ();
   assert_add
     ~do_prep:false
     ~leave_unbound_in_left:["T3"]
     ~left:"typing.Callable[[test.T3], test.T3]"
     ~right:"typing.Callable[[typing.Union[int, str]], object][[[int], test.T1][[str], test.T2]] "
-    [["test.T2", "str"; "test.T1", "int"]];
+    ~expected_solutions:[["test.T2", "str"; "test.T1", "int"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:"typing.Callable[[Variable(T_Unconstrained), Keywords(T_Unconstrained)], T_Unconstrained]"
     ~right:"typing.Callable[[Named(a, int), Named(b, str)], T1]"
-    [["test.T1", "typing.Union[int, str]"]];
+    ~expected_solutions:[["test.T1", "typing.Union[int, str]"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:
       "typing.Callable[[Variable(typing.Sequence[T_Unconstrained]), \
        Keywords(typing.Sequence[T_Unconstrained])], T_Unconstrained]"
     ~right:"typing.Callable[[Named(a, int), Named(b, str)], T1]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~leave_unbound_in_left:["T_Unconstrained"]
     ~left:
       "typing.Callable[[Variable(typing.Sequence[T_Unconstrained]), \
        Keywords(typing.Sequence[T_Unconstrained])], T_Unconstrained]"
     ~right:"typing.Callable[[Named(a, typing.List[int]), Named(b, typing.List[str])], T1]"
-    [["test.T1", "typing.Union[int, str]"]];
+    ~expected_solutions:[["test.T1", "typing.Union[int, str]"]]
+    ();
 
   (* Callback protocols *)
   let parse_annotation annotation =
@@ -629,7 +704,8 @@ let test_add_constraint context =
     ~attributes
     ~left:"typing.Callable[[int], str]"
     ~right:"G_invariant[T1]"
-    [["T1", "int"]];
+    ~expected_solutions:[["T1", "int"]]
+    ();
   let attributes annotation ~assumptions:_ =
     match annotation with
     | Type.Primitive "HasBoundMethodCall" ->
@@ -640,36 +716,59 @@ let test_add_constraint context =
              ["__call__", "BoundMethod[typing.Callable[[int, str], bool], int]"])
     | _ -> None
   in
-  assert_add ~attributes ~left:"HasBoundMethodCall" ~right:"typing.Callable[[str], bool]" [[]];
-  assert_add ~attributes ~left:"HasBoundMethodCall" ~right:"typing.Callable[[int], bool]" [];
+  assert_add
+    ~attributes
+    ~left:"HasBoundMethodCall"
+    ~right:"typing.Callable[[str], bool]"
+    ~expected_solutions:[[]]
+    ();
+  assert_add
+    ~attributes
+    ~left:"HasBoundMethodCall"
+    ~right:"typing.Callable[[int], bool]"
+    ~expected_solutions:[]
+    ();
 
   (* Multiple options *)
-  assert_add ~left:"int" ~right:"typing.Union[T1, T2]" [["T1", "int"]; ["T2", "int"]];
-  assert_add ~left:"int" ~right:"typing.Union[T1, T2, int]" [[]];
+  assert_add
+    ~left:"int"
+    ~right:"typing.Union[T1, T2]"
+    ~expected_solutions:[["T1", "int"]; ["T2", "int"]]
+    ();
+  assert_add ~left:"int" ~right:"typing.Union[T1, T2, int]" ~expected_solutions:[[]] ();
   assert_add
     ~left:"typing.List[int]"
     ~right:"typing.Union[typing.List[T1], T1]"
-    [["T1", "int"]; ["T1", "typing.List[int]"]];
-  assert_add ~left:"typing.List[int]" ~right:"typing.Union[typing.List[int], T1]" [[]];
+    ~expected_solutions:[["T1", "int"]; ["T1", "typing.List[int]"]]
+    ();
+  assert_add
+    ~left:"typing.List[int]"
+    ~right:"typing.Union[typing.List[int], T1]"
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
     ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
-    [["T1", "typing.List[int]"]];
+    ~expected_solutions:[["T1", "typing.List[int]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[typing.List[int], typing.List[int]]"
     ~right:"typing.Tuple[typing.Union[typing.List[T1], T1], T1]"
-    [["T1", "typing.List[int]"]];
+    ~expected_solutions:[["T1", "typing.List[int]"]]
+    ();
   assert_add
     ~do_prep:false
     ~left:
       ("typing.Callable[[typing.Union[int, str]], typing.Union[int, str]]"
       ^ "[[[int], str][[str], int]]")
     ~right:"typing.Callable[[test.T3], test.T4]"
-    [
-      ["test.T3", "int"; "test.T4", "str"];
-      ["test.T3", "str"; "test.T4", "int"];
-      ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"];
-    ];
+    ~expected_solutions:
+      [
+        ["test.T3", "int"; "test.T4", "str"];
+        ["test.T3", "str"; "test.T4", "int"];
+        ["test.T3", "typing.Union[int, str]"; "test.T4", "typing.Union[int, str]"];
+      ]
+    ();
 
   (* Free Variable <-> Free Variable constraints *)
   assert_add
@@ -677,79 +776,101 @@ let test_add_constraint context =
     ~leave_unbound_in_left:["T1"]
     ~left:"T1"
     ~right:"T2"
-    [["T2", "T1"]; ["T1", "T2"]];
+    ~expected_solutions:[["T2", "T1"]; ["T1", "T2"]]
+    ();
   assert_add
     ~postprocess:Fn.id
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Callable[[T], T]"
     ~right:"typing.Callable[[T1], T2]"
-    [["T2", "T1"]; ["T1", "T2"]];
+    ~expected_solutions:[["T2", "T1"]; ["T1", "T2"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["T"]
     ~left:"typing.Tuple[typing.Callable[[T], T], int]"
     ~right:"typing.Tuple[typing.Callable[[T1], T2], T1]"
-    [["T2", "int"; "T1", "int"]];
+    ~expected_solutions:[["T2", "int"; "T1", "int"]]
+    ();
   assert_add
     ~left:"typing.Callable[[int, int], int]"
     ~right:"typing.Callable[V, int]"
-    [["V", "[int, int]"]];
+    ~expected_solutions:[["V", "[int, int]"]]
+    ();
 
   (* We need to ensure that return values are still checked *)
-  assert_add ~left:"typing.Callable[[int, int], int]" ~right:"typing.Callable[V, str]" [];
+  assert_add
+    ~left:"typing.Callable[[int, int], int]"
+    ~right:"typing.Callable[V, str]"
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Callable[[int, int], int]"
     ~right:"typing.Callable[V, T1]"
-    [["T1", "int"; "V", "[int, int]"]];
+    ~expected_solutions:[["T1", "int"; "V", "[int, int]"]]
+    ();
 
   (* We should be able to capture the same parameter set twice *)
   assert_add
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, int], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
-    [["V", "[int, int]"]];
+    ~expected_solutions:[["V", "[int, int]"]]
+    ();
 
   (* We currently do not find a way to take both [int, int] and [int, str]. A correct solution would
      be [int, Intersection[int, str]]. This is probably not desired *)
   assert_add
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int, str], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
-    [];
+    ~expected_solutions:[]
+    ();
 
   (* There is no common interface between a callable that requires exactly two arguments and one
      that requires exactly one *)
   assert_add
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Tuple[typing.Callable[[int, int], int], typing.Callable[[int], int]]"
     ~right:"typing.Tuple[typing.Callable[V, int], typing.Callable[V, int]]"
-    [];
+    ~expected_solutions:[]
+    ();
 
-  assert_add ~left:"typing.Callable[..., int]" ~right:"typing.Callable[..., object]" [[]];
+  assert_add
+    ~left:"typing.Callable[..., int]"
+    ~right:"typing.Callable[..., object]"
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Callable[..., int]"
     ~right:"typing.Callable[[Named(a, int), Named(b, str)], int]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Callable[[Named(a, int), Named(b, str)], int]"
     ~right:"typing.Callable[[int, str], int]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
 
   assert_add
     ~left:"typing.Union[typing.Type[test.ChildA], typing.Type[test.ChildB]]"
     ~right:"typing.Callable[[], test.Parent]"
-    [[]];
-  assert_add ~left:"typing.Type[test.ChildA]" ~right:"test.Meta" [];
-  assert_add ~left:"typing.Type[test.HasMeta]" ~right:"test.Meta" [[]];
+    ~expected_solutions:[[]]
+    ();
+  assert_add ~left:"typing.Type[test.ChildA]" ~right:"test.Meta" ~expected_solutions:[] ();
+  assert_add ~left:"typing.Type[test.HasMeta]" ~right:"test.Meta" ~expected_solutions:[[]] ();
   (* BoundMethods are Callable, but Callables can't replace a BoundMethod *)
   assert_add
     ~left:"BoundMethod[typing.Callable[[int, str], bool], int]"
     ~right:"typing.Callable[[str], bool]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Callable[[str], bool]"
     ~right:"BoundMethod[typing.Callable[[int, str], bool], int]"
-    [];
+    ~expected_solutions:[]
+    ();
 
   let { Type.Variable.Variadic.Parameters.Components.positional_component; keyword_component } =
     Type.Variable.Variadic.Parameters.create "TParams"
@@ -759,39 +880,53 @@ let test_add_constraint context =
   assert_add_direct
     ~left:positional_component
     ~right:(parse_annotation "typing.Tuple[object, ...]")
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add_direct
     ~left:positional_component
     ~right:(parse_annotation "typing.Iterable[object]")
-    [[]];
-  assert_add_direct ~left:positional_component ~right:(parse_annotation "typing.Iterable[int]") [];
+    ~expected_solutions:[[]]
+    ();
+  assert_add_direct
+    ~left:positional_component
+    ~right:(parse_annotation "typing.Iterable[int]")
+    ~expected_solutions:[]
+    ();
 
   assert_add_direct
     ~left:keyword_component
     ~right:(parse_annotation "typing.Mapping[str, object]")
-    [[]];
-  assert_add_direct ~left:keyword_component ~right:(parse_annotation "typing.Mapping[str, int]") [];
+    ~expected_solutions:[[]]
+    ();
+  assert_add_direct
+    ~left:keyword_component
+    ~right:(parse_annotation "typing.Mapping[str, int]")
+    ~expected_solutions:[]
+    ();
 
   (* Literals. *)
-  assert_add ~left:{| typing_extensions.Literal["hello"] |} ~right:"str" [[]];
+  assert_add ~left:{| typing_extensions.Literal["hello"] |} ~right:"str" ~expected_solutions:[[]] ();
   assert_add
     ~left:{| typing_extensions.Literal["hello"] |}
     ~right:{| typing_extensions.Literal["world"] |}
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:{| typing_extensions.Literal["hello"] |}
     ~right:"typing_extensions.Literal[str]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:{| typing_extensions.Literal[str] |}
     ~right:{| typing_extensions.Literal[str] |}
-    [[]];
-  assert_add ~left:{| typing_extensions.Literal[str] |} ~right:"str" [[]];
-  assert_add ~left:"str" ~right:{| typing_extensions.Literal["hello"] |} [];
-  assert_add ~left:"str" ~right:{| typing_extensions.Literal[str] |} [];
+    ~expected_solutions:[[]]
+    ();
+  assert_add ~left:{| typing_extensions.Literal[str] |} ~right:"str" ~expected_solutions:[[]] ();
+  assert_add ~left:"str" ~right:{| typing_extensions.Literal["hello"] |} ~expected_solutions:[] ();
+  assert_add ~left:"str" ~right:{| typing_extensions.Literal[str] |} ~expected_solutions:[] ();
 
   (* Top type. *)
-  assert_add_direct ~left:Type.Top ~right:Type.none [];
+  assert_add_direct ~left:Type.Top ~right:Type.none ~expected_solutions:[] ();
   ()
 
 
@@ -804,27 +939,38 @@ let test_add_constraint_recursive_type context =
         (Type.union
            [Type.integer; Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"]])
   in
-  assert_add_direct ~left:tree_annotation ~right:tree_annotation [[]];
-  assert_add_direct ~left:Type.integer ~right:tree_annotation [[]];
-  assert_add_direct ~left:Type.string ~right:tree_annotation [];
-  assert_add_direct ~left:Type.Top ~right:tree_annotation [];
-  assert_add_direct ~left:(Type.tuple [Type.integer; Type.integer]) ~right:tree_annotation [[]];
+  assert_add_direct ~left:tree_annotation ~right:tree_annotation ~expected_solutions:[[]] ();
+  assert_add_direct ~left:Type.integer ~right:tree_annotation ~expected_solutions:[[]] ();
+  assert_add_direct ~left:Type.string ~right:tree_annotation ~expected_solutions:[] ();
+  assert_add_direct ~left:Type.Top ~right:tree_annotation ~expected_solutions:[] ();
+  assert_add_direct
+    ~left:(Type.tuple [Type.integer; Type.integer])
+    ~right:tree_annotation
+    ~expected_solutions:[[]]
+    ();
   assert_add_direct
     ~left:(Type.union [Type.integer; Type.tuple [Type.integer; Type.integer]])
     ~right:tree_annotation
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add_direct
     ~left:(Type.tuple [Type.integer; Type.tuple [Type.integer; Type.integer]])
     ~right:tree_annotation
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   (* Should fail because of the string. *)
   assert_add_direct
     ~left:(Type.tuple [Type.integer; Type.tuple [Type.integer; Type.string]])
     ~right:tree_annotation
-    [];
+    ~expected_solutions:[]
+    ();
 
-  assert_add_direct ~left:tree_annotation ~right:Type.integer [];
-  assert_add_direct ~left:tree_annotation ~right:(Type.union [Type.integer; tree_annotation]) [[]];
+  assert_add_direct ~left:tree_annotation ~right:Type.integer ~expected_solutions:[] ();
+  assert_add_direct
+    ~left:tree_annotation
+    ~right:(Type.union [Type.integer; tree_annotation])
+    ~expected_solutions:[[]]
+    ();
   let isomorphic_tree_annotation =
     Type.RecursiveType.create
       ~name:"test.IsomorphicTree"
@@ -835,7 +981,11 @@ let test_add_constraint_recursive_type context =
              Type.tuple [Type.Primitive "test.IsomorphicTree"; Type.Primitive "test.IsomorphicTree"];
            ])
   in
-  assert_add_direct ~left:tree_annotation ~right:isomorphic_tree_annotation [[]];
+  assert_add_direct
+    ~left:tree_annotation
+    ~right:isomorphic_tree_annotation
+    ~expected_solutions:[[]]
+    ();
 
   let json_annotation =
     Type.RecursiveType.create
@@ -849,20 +999,22 @@ let test_add_constraint_recursive_type context =
                [Single Type.string; Single (Type.Primitive "test.JSON")];
            ])
   in
-  assert_add_direct ~left:json_annotation ~right:json_annotation [[]];
-  assert_add_direct ~left:Type.integer ~right:json_annotation [[]];
-  assert_add_direct ~left:Type.string ~right:json_annotation [];
+  assert_add_direct ~left:json_annotation ~right:json_annotation ~expected_solutions:[[]] ();
+  assert_add_direct ~left:Type.integer ~right:json_annotation ~expected_solutions:[[]] ();
+  assert_add_direct ~left:Type.string ~right:json_annotation ~expected_solutions:[] ();
   assert_add_direct
     ~left:(Type.dictionary ~key:Type.string ~value:Type.integer)
     ~right:json_annotation
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add_direct
     ~left:
       (Type.dictionary
          ~key:Type.string
          ~value:(Type.dictionary ~key:Type.string ~value:Type.integer))
     ~right:json_annotation
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   let readonly_tree_annotation =
     Type.RecursiveType.create
       ~name:"test.Tree"
@@ -873,7 +1025,11 @@ let test_add_constraint_recursive_type context =
              Type.tuple [Type.Primitive "test.Tree"; Type.Primitive "test.Tree"];
            ])
   in
-  assert_add_direct ~left:(Type.ReadOnly.create Type.string) ~right:readonly_tree_annotation [[]];
+  assert_add_direct
+    ~left:(Type.ReadOnly.create Type.string)
+    ~right:readonly_tree_annotation
+    ~expected_solutions:[[]]
+    ();
   ()
 
 
@@ -882,52 +1038,63 @@ let test_add_constraint_type_variable_tuple context =
   assert_add
     ~left:"typing.Tuple[int, str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
-    [["Ts", "typing.Tuple[str, bool]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
-    [["Ts", "typing.Tuple[str]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[str]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, bool]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], T]"
-    [["Ts", "typing.Tuple[int, str]"; "T", "bool"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[int, str]"; "T", "bool"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["Ts"]
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
     ~right:"typing.Tuple[int, str, bool]"
-    [["Ts", "typing.Tuple[str, bool]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
+    ();
   (* Ts is bound on the left side. We fail because Ts could be any tuple. *)
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
     ~right:"typing.Tuple[int, str, bool]"
-    [];
+    ~expected_solutions:[]
+    ();
   (* This ends up checking `[int, str] <: *Ts (bound)`, which is not valid. *)
   assert_add
     ~left:"typing.Callable[[typing.Tuple[pyre_extensions.Unpack[Ts]]], bool]"
     ~right:"typing.Callable[[typing.Tuple[int, str]], bool]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
-    [["Ts2", "typing.Tuple[pyre_extensions.Unpack[Ts]]"]];
+    ~expected_solutions:[["Ts2", "typing.Tuple[pyre_extensions.Unpack[Ts]]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
-    [["Ts2", "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"]];
+    ~expected_solutions:[["Ts2", "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"
-    [["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]];
+    ~expected_solutions:[["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]]
+    ();
   (* No solution because the middle portion is `[*Ts (bound)] <: [bool, *Ts2 (free), bool]`. The
      bound `Ts` may not start with `bool`. *)
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
     ~right:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts2], bool, str]"
-    [];
+    ~expected_solutions:[]
+    ();
   let variadic = Type.Variable.Variadic.Tuple.create "test.Ts" in
   let variadic2 = Type.Variable.Variadic.Tuple.create "test.Ts2" in
   assert_add_direct
@@ -943,172 +1110,251 @@ let test_add_constraint_type_variable_tuple context =
                ~suffix:[Type.string]
                variadic2))
       |> Type.Variable.mark_all_variables_as_bound)
-    [["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]]
+    ();
   (* Tuple is covariant. *)
-  assert_add ~left:"typing.Tuple[int, str]" ~right:"typing.Tuple[float, str]" [[]];
+  assert_add
+    ~left:"typing.Tuple[int, str]"
+    ~right:"typing.Tuple[float, str]"
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
     ~right:"typing.Tuple[object, ...]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
 
   (* Parametric types. *)
   assert_add
     ~left:"test.Tensor[str, bool, str]"
     ~right:"test.Tensor[str, pyre_extensions.Unpack[Ts]]"
-    [["Ts", "typing.Tuple[bool, str]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[bool, str]"]]
+    ();
   (* Tensor is invariant in the datatype. *)
-  assert_add ~left:"Tensor[int, int]" ~right:"Tensor[float, int]" [];
+  assert_add ~left:"Tensor[int, int]" ~right:"Tensor[float, int]" ~expected_solutions:[] ();
   (* Tensor is covariant in the shape, since the shape is immutable. *)
-  assert_add ~left:"Tensor[int, int, int]" ~right:"Tensor[int, float, float]" [[]];
+  assert_add
+    ~left:"Tensor[int, int, int]"
+    ~right:"Tensor[int, float, float]"
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"test.Tensor[str, int]"
     ~right:"test.Tensor[str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
 
   (* Callable. *)
   assert_add
     ~left:"typing.Callable[[int, str, bool], None]"
     ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts]], None]"
-    [["Ts", "typing.Tuple[str, bool]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
+    ();
   assert_add
     ~left:"typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]"
     ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts2], str], None]"
-    [["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]];
+    ~expected_solutions:[["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]]
+    ();
   (* List of empty list means we found a satisfying solution. *)
   assert_add
     ~left:
       "typing.Callable[[int, pyre_extensions.Unpack[Ts]], typing.Tuple[pyre_extensions.Unpack[Ts]]]"
     ~right:"typing.Callable[[int, str, bool], typing.Tuple[str, bool]]"
     ~leave_unbound_in_left:["Ts"]
-    [[]];
+    ~expected_solutions:[[]]
+    ();
 
   (* Unbounded tuples. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
-    [["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]];
-  assert_add ~left:"typing.Tuple[int, ...]" ~right:"typing.Tuple[T]" [["T", "int"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]]
+    ();
+  assert_add
+    ~left:"typing.Tuple[int, ...]"
+    ~right:"typing.Tuple[T]"
+    ~expected_solutions:[["T", "int"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
-    [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]];
+    ~expected_solutions:
+      [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
     ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~leave_unbound_in_left:["Ts"]
-    [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]];
+    ~expected_solutions:
+      [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
-    [["T", "str"]];
+    ~expected_solutions:[["T", "str"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str]"
     ~right:"typing.Tuple[T1, T2, T3, T4]"
-    [["T4", "str"; "T3", "str"; "T2", "str"; "T1", "int"]];
-  assert_add ~left:"typing.Tuple[int, int]" ~right:"typing.Tuple[int, ...]" [[]];
-  assert_add ~left:"typing.Tuple[str, ...]" ~right:"typing.Tuple[int]" [];
+    ~expected_solutions:[["T4", "str"; "T3", "str"; "T2", "str"; "T1", "int"]]
+    ();
+  assert_add
+    ~left:"typing.Tuple[int, int]"
+    ~right:"typing.Tuple[int, ...]"
+    ~expected_solutions:[[]]
+    ();
+  assert_add ~left:"typing.Tuple[str, ...]" ~right:"typing.Tuple[int]" ~expected_solutions:[] ();
 
   (* Stretch the unbounded tuple to meet the expected length. *)
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
-    [["Ts", "typing.Tuple[int, ...]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[int, ...]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], int]"
-    [["Ts", "typing.Tuple[int, ...]"]];
+    ~expected_solutions:[["Ts", "typing.Tuple[int, ...]"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, ...]"
     ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], str]"
-    [];
+    ~expected_solutions:[]
+    ();
   assert_add
     ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], T, bool]"
-    [["T", "str"]];
+    ~expected_solutions:[["T", "str"]]
+    ();
   assert_add
     ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
     ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int, bool]"
-    [];
+    ~expected_solutions:[]
+    ();
   ()
 
 
 let test_add_constraint_readonly context =
   let assert_add, assert_add_direct, _, _ = make_assert_functions context in
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" [];
-  assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" [[]];
-  assert_add ~left:"pyre_extensions.ReadOnly[D]" ~right:"pyre_extensions.ReadOnly[C]" [[]];
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"C" ~expected_solutions:[] ();
+  assert_add ~left:"D" ~right:"pyre_extensions.ReadOnly[C]" ~expected_solutions:[[]] ();
+  assert_add
+    ~left:"pyre_extensions.ReadOnly[D]"
+    ~right:"pyre_extensions.ReadOnly[C]"
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"pyre_extensions.ReadOnly[D]"
     ~right:"typing.Union[int, pyre_extensions.ReadOnly[C]]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"pyre_extensions.ReadOnly[C]"
     ~right:"T_Unconstrained"
-    [["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]];
-  assert_add ~left:"C" ~right:"pyre_extensions.ReadOnly[T_Unconstrained]" [["T_Unconstrained", "C"]];
+    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]]
+    ();
+  assert_add
+    ~left:"C"
+    ~right:"pyre_extensions.ReadOnly[T_Unconstrained]"
+    ~expected_solutions:[["T_Unconstrained", "C"]]
+    ();
   assert_add
     ~left:"pyre_extensions.ReadOnly[C]"
     ~right:"T_Bound_ReadOnly"
-    [["T_Bound_ReadOnly", "pyre_extensions.ReadOnly[C]"]];
+    ~expected_solutions:[["T_Bound_ReadOnly", "pyre_extensions.ReadOnly[C]"]]
+    ();
   assert_add
     ~left:"T_Unconstrained"
     ~right:"pyre_extensions.ReadOnly[C]"
     ~leave_unbound_in_left:["T_Unconstrained"]
-    [["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]];
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_object" [];
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"typing.Any" [[]];
-  assert_add ~left:"typing.Any" ~right:"pyre_extensions.ReadOnly[T]" [["T", "typing.Any"]];
-  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" [];
-  assert_add ~left:"typing.Union[pyre_extensions.ReadOnly[C], str]" ~right:"object" [];
-  assert_add ~left:"object" ~right:"pyre_extensions.ReadOnly[object]" [[]];
-  assert_add_direct ~left:Type.Bottom ~right:(Type.ReadOnly.create (Type.Primitive "C")) [[]];
-  assert_add_direct ~left:(Type.ReadOnly.create (Type.Primitive "C")) ~right:Type.Bottom [];
-  assert_add_direct ~left:Type.Top ~right:(Type.ReadOnly.create Type.object_primitive) [[]];
-  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[object]" [[]];
-  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[C]" [];
+    ~expected_solutions:[["T_Unconstrained", "pyre_extensions.ReadOnly[C]"]]
+    ();
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"T_Bound_object" ~expected_solutions:[] ();
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"typing.Any" ~expected_solutions:[[]] ();
+  assert_add
+    ~left:"typing.Any"
+    ~right:"pyre_extensions.ReadOnly[T]"
+    ~expected_solutions:[["T", "typing.Any"]]
+    ();
+  assert_add ~left:"pyre_extensions.ReadOnly[C]" ~right:"object" ~expected_solutions:[] ();
+  assert_add
+    ~left:"typing.Union[pyre_extensions.ReadOnly[C], str]"
+    ~right:"object"
+    ~expected_solutions:[]
+    ();
+  assert_add ~left:"object" ~right:"pyre_extensions.ReadOnly[object]" ~expected_solutions:[[]] ();
+  assert_add_direct
+    ~left:Type.Bottom
+    ~right:(Type.ReadOnly.create (Type.Primitive "C"))
+    ~expected_solutions:[[]]
+    ();
+  assert_add_direct
+    ~left:(Type.ReadOnly.create (Type.Primitive "C"))
+    ~right:Type.Bottom
+    ~expected_solutions:[]
+    ();
+  assert_add_direct
+    ~left:Type.Top
+    ~right:(Type.ReadOnly.create Type.object_primitive)
+    ~expected_solutions:[[]]
+    ();
+  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[object]" ~expected_solutions:[[]] ();
+  assert_add ~left:"None" ~right:"pyre_extensions.ReadOnly[C]" ~expected_solutions:[] ();
   assert_add
     ~left:"typing.Union[pyre_extensions.ReadOnly[C], pyre_extensions.ReadOnly[D]]"
     ~right:"pyre_extensions.ReadOnly[C]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
     ~right:"pyre_extensions.ReadOnly[object]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Optional[pyre_extensions.ReadOnly[C]]"
     ~right:"pyre_extensions.ReadOnly[C]"
-    [];
+    ~expected_solutions:[]
+    ();
   ()
 
 
 let test_add_constraint_parameter_specification context =
   let assert_add, _, _, _ = make_assert_functions context in
-  assert_add ~left:"typing.Callable[P, None]" ~right:"typing.Callable[P2, None]" [["P2", "P"]];
+  assert_add
+    ~left:"typing.Callable[P, None]"
+    ~right:"typing.Callable[P2, None]"
+    ~expected_solutions:[["P2", "P"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["P"]
     ~left:"typing.Callable[P, None]"
     ~right:"typing.Callable[P2, None]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, P], None]"
     ~right:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, P2], None]"
-    [["P2", "P"]];
+    ~expected_solutions:[["P2", "P"]]
+    ();
   assert_add
     ~leave_unbound_in_left:["P"]
     ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P], None]"
     ~right:
       "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
-    [[]];
+    ~expected_solutions:[[]]
+    ();
   assert_add
     ~leave_unbound_in_left:["P"]
     ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, int, P], None]"
     ~right:
       "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
-    [];
+    ~expected_solutions:[]
+    ();
   ()
 
 
