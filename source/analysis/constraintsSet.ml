@@ -516,9 +516,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
         OrderedConstraints.add_lower_bound constraints ~order ~pair |> Option.to_list
     | Type.ReadOnly left, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
     | _, Type.ReadOnly right -> solve_less_or_equal order ~constraints ~left ~right
-    | _, Type.Bottom
-    | Type.Top, _ ->
-        impossible
+    | _, Type.Bottom -> impossible
     | Type.Bottom, _ -> [constraints]
     | _, Type.NoneType -> impossible
     | _, Type.RecursiveType recursive_type ->
@@ -558,6 +556,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           ~left:(Concrete lefts)
           ~right:(Concrete (List.map lefts ~f:(fun _ -> right)))
           ~constraints
+    | Type.Top, _ -> impossible
     | Type.NoneType, Type.Union rights when List.exists rights ~f:Type.is_none ->
         (* Technically speaking, removing this special-case still leads to correct, but somewhat
            redundant solutions, when `rights` contains both None and type varaibles *)

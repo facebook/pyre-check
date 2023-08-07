@@ -789,6 +789,9 @@ let test_add_constraint context =
   assert_add ~left:{| typing_extensions.Literal[str] |} ~right:"str" [[]];
   assert_add ~left:"str" ~right:{| typing_extensions.Literal["hello"] |} [];
   assert_add ~left:"str" ~right:{| typing_extensions.Literal[str] |} [];
+
+  (* Top type. *)
+  assert_add_direct ~left:Type.Top ~right:Type.none [];
   ()
 
 
@@ -804,6 +807,7 @@ let test_add_constraint_recursive_type context =
   assert_add_direct ~left:tree_annotation ~right:tree_annotation [[]];
   assert_add_direct ~left:Type.integer ~right:tree_annotation [[]];
   assert_add_direct ~left:Type.string ~right:tree_annotation [];
+  assert_add_direct ~left:Type.Top ~right:tree_annotation [];
   assert_add_direct ~left:(Type.tuple [Type.integer; Type.integer]) ~right:tree_annotation [[]];
   assert_add_direct
     ~left:(Type.union [Type.integer; Type.tuple [Type.integer; Type.integer]])
