@@ -21,7 +21,7 @@ import logging
 import urllib
 from dataclasses import field
 from pathlib import Path
-from typing import Iterable, List, Optional, Type, TypeVar
+from typing import Dict, Iterable, List, Optional, Type, TypeVar
 
 import dataclasses_json
 from pyre_extensions import override
@@ -798,3 +798,27 @@ class CompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class CompletionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     completions: List[CompletionItem]
+
+
+@dataclasses.dataclass(frozen=True)
+class TextEdit(json_mixins.CamlCaseAndExcludeJsonMixin):
+    range: LspRange
+    new_text: str
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceEdit(json_mixins.CamlCaseAndExcludeJsonMixin):
+    changes: Optional[Dict[str, List[TextEdit]]]
+
+
+@dataclasses.dataclass(frozen=True)
+class RenameParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text_document: TextDocumentIdentifier
+    position: LspPosition
+    new_name: str
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "RenameParameters":
+        return _parse_parameters(parameters, target=RenameParameters)

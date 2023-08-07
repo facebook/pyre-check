@@ -139,6 +139,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
         mock_call_hierarchy_response: Optional[List[lsp.CallHierarchyItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
+        mock_rename_response: Optional[lsp.WorkspaceEdit] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_errors = mock_type_errors
@@ -148,6 +149,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self.mock_completion_response = mock_completion_response
         self.mock_call_hierarchy_response = mock_call_hierarchy_response
         self.mock_references_response = mock_references_response
+        self.mock_rename_response = mock_rename_response
 
     async def get_type_errors(
         self,
@@ -237,6 +239,19 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
             )
         else:
             return self.mock_call_hierarchy_response
+
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        if self.mock_rename_response is None:
+            raise ValueError(
+                "You need to set the get rename response in the mock querier"
+            )
+        else:
+            return self.mock_rename_response
 
     async def update_overlay(
         self,

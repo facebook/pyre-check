@@ -196,6 +196,15 @@ class AbstractDaemonQuerier(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def handle_file_opened(
         self,
         path: Path,
@@ -408,6 +417,16 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             "Call hierarchy (from item) is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        return daemon_query.DaemonQueryFailure(
+            "Rename is not supported in the pyre persistent client. Please use code-navigation. "
+        )
+
     async def handle_file_opened(
         self,
         path: Path,
@@ -565,6 +584,19 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
             await self.base_querier.get_call_hierarchy_from_item(
                 path, call_hierarchy_item, relation_direction
             )
+            if failure is None
+            else failure
+        )
+
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        failure = self.get_query_failure(str(path))
+        return (
+            await self.base_querier.get_rename(path, position, new_text)
             if failure is None
             else failure
         )
@@ -749,6 +781,14 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return []
 
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        return None
+
     async def handle_file_opened(
         self,
         path: Path,
@@ -874,6 +914,14 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         return await self.index.call_hierarchy_from_item(
             path, call_hierarchy_item, relation_direction
         )
+
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        return None
 
     async def handle_file_opened(
         self,
