@@ -3444,13 +3444,15 @@ module State (Context : Context) = struct
                 ~instantiated:parent
                 ~transitive:true
             in
-            let parent_class = Type.split parent |> fst in
-            match parent_class |> Type.ReadOnly.unpack_readonly with
-            | Some class_wrapped_by_readonly ->
-                Type.primitive_name class_wrapped_by_readonly
-                >>= get_attribute ~accessed_through_readonly:true
+            match Type.class_data_for_attribute_lookup parent with
+            | Some [{ Type.class_name; accessed_through_readonly; accessed_through_class; _ }] ->
+                get_attribute ~accessed_through_readonly ~accessed_through_class class_name
+            | Some []
+            | Some (_ :: _ :: _)
+            (* TODO(T159930161): Refine attribute of union in ternary expression. In that case,
+               `class_data_for_attribute_lookup` will return multiple class_data items. *)
             | None ->
-                Type.primitive_name parent_class >>= get_attribute ~accessed_through_readonly:false
+                None
           in
           match existing_annotation base >>| Annotation.annotation >>= attribute_from_parent with
           | Some attribute when AnnotatedAttribute.defined attribute ->

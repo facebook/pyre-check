@@ -1173,6 +1173,23 @@ let test_refinement context =
           pass
     |}
     [];
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from typing import Optional
+      from typing_extensions import Self
+
+      class Bar:
+        some_attribute: str = ""
+
+      class Foo:
+        bar: Optional[Bar] = None
+
+        def some_method(self: ReadOnly[Self]) -> None:
+          y = self.bar.some_attribute if self.bar else ""
+          reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `pyre_extensions.ReadOnly[str]`."];
   ()
 
 

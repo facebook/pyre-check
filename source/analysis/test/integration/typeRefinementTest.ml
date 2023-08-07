@@ -1745,7 +1745,77 @@ let test_check_is_typeddict context =
       "Revealed type [-1]: Revealed type for `x` is `Type[typing.Any]`.";
       "Revealed type [-1]: Revealed type for `x` is `Type[typing.Any]`.";
     ];
+  ()
 
+
+let test_ternary_expression context =
+  let assert_type_errors = assert_type_errors ~context in
+  (* The type of `self` in the ternary condition is `Self (bound to Foo)`. We should be able to
+     refine `self.bar` to be `str` in the if-branch. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+      from typing_extensions import Self
+
+      class Foo:
+        bar: Optional[str] = None
+
+        def some_method(self) -> Self:
+          y = self.bar.capitalize() if self.bar else ""
+          reveal_type(y)
+
+          return self
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `str`."];
+  assert_type_errors
+    {|
+      from typing import Type, Optional
+
+      class Foo:
+        bar: Optional[str] = None
+
+      def main(x: Type[Foo]) -> None:
+          y = x.bar.capitalize() if x.bar else ""
+          reveal_type(y)
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `str`."];
+  assert_type_errors
+    {|
+      from typing import Any, Optional
+
+      class Foo1:
+        bar: Optional[str] = None
+
+      class Foo2:
+        bar: Optional[str] = None
+
+      def main(x: Any) -> None:
+          y = x.bar.capitalize() if x.bar else ""
+          reveal_type(y)
+    |}
+    [
+      "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+    ];
+  (* TODO(T159930161): Refine attribute of union in ternary expression. *)
+  assert_type_errors
+    {|
+      from typing import Optional
+
+      class Foo1:
+        bar: Optional[str] = None
+
+      class Foo2:
+        bar: Optional[str] = None
+
+      def main(my_union: Foo1 | Foo2) -> None:
+          y = my_union.bar.capitalize() if my_union.bar else ""
+          reveal_type(y)
+    |}
+    [
+      "Undefined attribute [16]: `Optional` has no attribute `capitalize`.";
+      "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
+    ];
   ()
 
 
@@ -1762,5 +1832,6 @@ let () =
          "check_final_attribute_refinement" >:: test_check_final_attribute_refinement;
          "check_temporary_refinement" >:: test_check_temporary_refinement;
          "check_is_typeddict" >:: test_check_is_typeddict;
+         "ternary_expression" >:: test_ternary_expression;
        ]
   |> Test.run
