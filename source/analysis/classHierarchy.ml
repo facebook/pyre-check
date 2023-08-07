@@ -5,8 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* `edges` mapping from type index to a set of targets. `indices` mapping from annotation to its
-   vertex index. `annotations` inverse of `indices`. *)
+(* The classHierarchy module contains an implementation of the C3 superclass linearization
+   algorithm. This algorithm (atopted in Python 2.3) is a way to determine an MRO (method resolution
+   order) which maintains certain properties. More can be found on
+   [wikipedia](https://en.wikipedia.org/wiki/C3_linearization) *)
 open Core
 open Ast
 open Pyre
