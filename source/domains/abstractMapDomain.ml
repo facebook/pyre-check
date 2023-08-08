@@ -34,16 +34,7 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
     let to_alist = Map.bindings
 
-    let merge left right ~f =
-      let f key left right =
-        match left, right with
-        | Some left, None -> f ~key (`Left left)
-        | None, Some right -> f ~key (`Right right)
-        | Some left, Some right -> f ~key (`Both (left, right))
-        | None, None -> None
-      in
-      Map.merge f left right
-
+    let union left right ~f = Map.union f left right
 
     let fold ~f map ~init = Map.fold (fun key data acc -> f ~key ~data acc) map init
 
@@ -113,16 +104,11 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
     type _ part += Self : t part
 
     let join x y =
-      let merge ~key:_ = function
-        | `Both (a, b) -> Some (Element.join a b)
-        | `Left e
-        | `Right e ->
-            Some e
-      in
       if x == y || is_bottom y then
         x
       else
-        Map.merge ~f:merge x y
+        let union _ a b = Some (Element.join a b) in
+        Map.union ~f:union x y
 
 
     let less_or_equal ~left ~right =
@@ -151,16 +137,11 @@ module Make (Key : KEY) (Element : AbstractDomainCore.S) = struct
 
 
     let widen ~iteration ~prev ~next =
-      let merge ~key:_ = function
-        | `Both (prev, next) -> Some (Element.widen ~iteration ~prev ~next)
-        | `Left e
-        | `Right e ->
-            Some e
-      in
       if prev == next then
         prev
       else
-        Map.merge ~f:merge prev next
+        let widen _ prev next = Some (Element.widen ~iteration ~prev ~next) in
+        Map.union ~f:widen prev next
 
 
     let transform : type a f. a part -> ([ `Transform ], a, f, _) operation -> f:f -> t -> t =
