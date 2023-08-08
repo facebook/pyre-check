@@ -1288,7 +1288,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
             def __len__(self) -> int: ...
         class Sequence(_Collection[_T_co], Generic[_T_co]): pass
 
-        class Generator(Generic[_T_co, _T_contra, _V_co], Iterator[_T_co]):
+        class Generator(Iterator[_T_co], Generic[_T_co, _T_contra, _V_co]):
           pass
 
         class AbstractSet(_Collection[_T_co], Generic[_T_co]):

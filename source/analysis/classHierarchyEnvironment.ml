@@ -82,8 +82,8 @@ let get_parents alias_environment name ~dependency =
     | _ -> None
   in
   let bases ({ Node.value = { ClassSummary.bases = { base_classes; _ }; _ }; _ } as definition) =
-    let inferred_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
-    inferred_base @ base_classes
+    let inferred_generic_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
+    base_classes @ inferred_generic_base
   in
   let add_special_parents parents =
     let simples = List.map ~f:(fun parent -> parent, []) in

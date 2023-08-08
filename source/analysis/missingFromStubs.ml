@@ -210,10 +210,10 @@ let missing_builtin_classes =
     make
       ~bases:
         [
+          Type.Primitive "typing.Callable";
           Type.parametric
             "typing.Generic"
             [Single (Type.variable "typing._T"); Single (Type.variable "typing._S")];
-          Type.Primitive "typing.Callable";
         ]
       "BoundMethod";
   ]

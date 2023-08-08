@@ -161,7 +161,7 @@ let test_inferred_generic_base context =
          pass
      |}
     "test.C"
-    (Some ["typing.Generic", [Type.variable "test._T"]; "test.List", [Type.variable "test._T"]]);
+    (Some ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]);
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -183,8 +183,8 @@ let test_inferred_generic_base context =
     "test.Foo"
     (Some
        [
-         "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
          "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
+         "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
        ]);
   assert_registers
     {|
@@ -197,8 +197,8 @@ let test_inferred_generic_base context =
     "test.Foo"
     (Some
        [
-         "typing.Generic", [Type.variable "test._T1"];
          "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
+         "typing.Generic", [Type.variable "test._T1"];
        ]);
   ()
 
