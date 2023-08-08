@@ -293,6 +293,15 @@ class PyreLanguageServerApi(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def process_rename_request(
+        self,
+        parameters: lsp.RenameParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
 
@@ -1153,6 +1162,65 @@ class PyreLanguageServer(PyreLanguageServerApi):
             activity_key,
         )
 
+    async def process_rename_request(
+        self,
+        parameters: lsp.RenameParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        document_path: Optional[
+            Path
+        ] = parameters.text_document.document_uri().to_file_path()
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        request_timer = timer.Timer()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        rename_edits = await self.querier.get_rename(
+            document_path, parameters.position.to_pyre_position(), parameters.new_name
+        )
+        error_message = None
+        if isinstance(rename_edits, DaemonQueryFailure):
+            LOG.info(
+                daemon_failure_string(
+                    "rename",
+                    str(type(rename_edits)),
+                    rename_edits.error_message,
+                )
+            )
+            error_message = rename_edits.error_message
+
+        raw_response = (
+            None
+            if rename_edits is None
+            else lsp.WorkspaceEdit.cached_schema().dump(rename_edits)
+        )
+        LOG.info(f"Rename response: {raw_response}")
+
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id, activity_key=activity_key, result=raw_response
+            ),
+        )
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "rename",
+                "filepath": str(document_path),
+                "non_empty": rename_edits is not None,
+                "response": raw_response,
+                "duration_ms": request_timer.stop_in_millisecond(),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error_message": error_message,
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
+        )
+
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         await lsp.write_json_rpc_ignore_connection_error(
             self.output_channel,
@@ -1333,6 +1401,14 @@ class PyreLanguageServerDispatcher:
         elif request.method == "callHierarchy/outgoingCalls":
             await self.api.process_call_hierarchy_outgoing_call(
                 lsp.CallHierarchyOutgoingCallParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
+                request.id,
+                request.activity_key,
+            )
+        elif request.method == "textDocument/rename":
+            await self.api.process_rename_request(
+                lsp.RenameParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,

@@ -686,3 +686,113 @@ class FailableDaemonQuerierTest(testslide.TestCase):
                 "bar10.py",
             ],
         )
+
+
+class MockGleanRemoteIndex(remote_index.AbstractRemoteIndex):
+    definition_response: List[lsp.LspLocation] = []
+    references_response: List[lsp.LspLocation] = []
+
+    async def definition(
+        self, path: Path, position: lsp.PyrePosition
+    ) -> List[lsp.LspLocation]:
+        return self.definition_response
+
+    async def hover(
+        self, path: Path, position: lsp.PyrePosition
+    ) -> lsp.LspHoverResponse:
+        raise NotImplementedError()
+
+    async def references(
+        self, path: Path, position: lsp.PyrePosition
+    ) -> List[lsp.LspLocation]:
+        return self.references_response
+
+    async def prepare_call_hierarchy(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> List[lsp.CallHierarchyItem]:
+        raise NotImplementedError()
+
+    async def call_hierarchy_from_item(
+        self,
+        path: Path,
+        item: lsp.CallHierarchyItem,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> List[lsp.CallHierarchyItem]:
+        raise NotImplementedError()
+
+
+class RefactoringTest(testslide.TestCase):
+    @setup.async_test
+    async def test_rename(self) -> None:
+        """
+        Validates the following:
+            1. Valid WorkspaceEdit response is returned
+            2. TextEdits return the locations from definitions and references
+        """
+
+        # Setup test data
+        mocked_glean_index = MockGleanRemoteIndex()
+        foo_file = "file:///foo.py"
+        bar_file = "file:///bar.py"
+        mocked_glean_index.definition_response = [
+            lsp.LspLocation(
+                uri=foo_file,
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=3, character=2),
+                    end=lsp.LspPosition(line=3, character=7),
+                ),
+            )
+        ]
+        mocked_glean_index.references_response = [
+            lsp.LspLocation(
+                uri=foo_file,
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=9, character=6),
+                    end=lsp.LspPosition(line=9, character=11),
+                ),
+            ),
+            lsp.LspLocation(
+                uri=foo_file,
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=20, character=4),
+                    end=lsp.LspPosition(line=20, character=9),
+                ),
+            ),
+            lsp.LspLocation(
+                uri=bar_file,
+                range=lsp.LspRange(
+                    start=lsp.LspPosition(line=5, character=1),
+                    end=lsp.LspPosition(line=5, character=6),
+                ),
+            ),
+        ]
+        querier = RemoteIndexBackedQuerier(
+            CodeNavigationDaemonQuerier(
+                server_state=server_setup.create_server_state_with_options(
+                    language_server_features=LanguageServerFeatures(),
+                ),
+            ),
+            index=mocked_glean_index,
+        )
+
+        workspaceEdits = await querier.get_rename(
+            Path("test.py"), lsp.PyrePosition(10, 0), "test"
+        )
+
+        self.assertIsNotNone(workspaceEdits)
+        self.assertFalse(isinstance(workspaceEdits, DaemonQueryFailure))
+
+        textEdits = workspaceEdits.changes
+        self.assertIsNotNone(textEdits)
+
+        # foo.py and bar.py
+        self.assertEqual(len(textEdits.keys()), 2)
+        foo_edits = textEdits[foo_file]
+        bar_edits = textEdits[bar_file]
+
+        self.assertEqual(len(foo_edits), 2)
+        self.assertEqual(len(bar_edits), 1)
+        self.assertEqual(bar_edits[0].new_text, "test")

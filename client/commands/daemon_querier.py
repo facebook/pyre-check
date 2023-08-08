@@ -18,8 +18,9 @@ import enum
 import json
 import logging
 import os
+from collections import defaultdict
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, DefaultDict, List, Optional, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
 
@@ -921,7 +922,14 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         position: lsp.PyrePosition,
         new_text: str,
     ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        return None
+        references = await self.index.references(path, position)
+        if len(references) == 0:
+            return None
+        changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
+        for reference in references:
+            changes[reference.uri].append(lsp.TextEdit(reference.range, new_text))
+
+        return lsp.WorkspaceEdit(changes=changes)
 
     async def handle_file_opened(
         self,

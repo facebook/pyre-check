@@ -162,6 +162,14 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
     ) -> None:
         raise NotImplementedError()
 
+    async def process_rename_request(
+        self,
+        parameters: lsp.RenameParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
 
