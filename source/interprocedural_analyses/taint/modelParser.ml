@@ -333,7 +333,7 @@ let rec parse_annotations
     | Expression.Name (Name.Identifier taint_kind) ->
         Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind))
     | Name (Name.Attribute { base; _ }) -> extract_kinds_with_features base
-    | Call { callee; arguments = { Call.Argument.value = expression; _ } :: _ } -> (
+    | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
         match base_name callee with
         | Some "Via" -> extract_breadcrumbs expression >>| TaintKindsWithFeatures.from_breadcrumbs
         | Some "ViaDynamicFeature" ->
@@ -388,7 +388,6 @@ let rec parse_annotations
                   | kind -> kind)
             in
             { TaintKindsWithFeatures.kinds; features })
-    | Call { callee; _ } -> extract_kinds_with_features callee
     | Tuple expressions ->
         List.map ~f:extract_kinds_with_features expressions
         |> all
