@@ -575,6 +575,26 @@ let test_source_models context =
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
     ();
   assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:{|def test.f(x) -> TaintSource[Test, ViaValueOf[x, WithTag["tag"]]]: ...|}
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[Test, ViaTypeOf[x]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f() -> TaintSource[Test, ViaTypeOf[x]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:{|def test.f(x) -> TaintSource[Test, ViaTypeOf[x, WithTag["tag"]]]: ...|}
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_model
     ~source:
       {|
     class C:
@@ -1713,8 +1733,12 @@ let test_sink_models context =
     ();
   assert_model
     ~model_source:
-      "def test.sink(parameter0: TaintSink[Test], parameter1: TaintSink[Test, \
-       ViaValueOf[parameter0]]): ..."
+      {|
+      def test.sink(
+        parameter0: TaintSink[Test],
+        parameter1: TaintSink[Test, ViaValueOf[parameter0]]
+      ): ...
+    |}
     ~expect:
       [
         outcome
@@ -1724,6 +1748,54 @@ let test_sink_models context =
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
+          "test.sink";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.sink(
+        parameter0,
+        parameter1: TaintSink[Test, ViaValueOf[parameter0, WithTag["tag"]]]
+      ): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          "test.sink";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.sink(
+        parameter0,
+        parameter1: TaintSink[Test, ViaTypeOf[parameter0]]
+      ): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          "test.sink";
+      ]
+    ();
+  assert_model
+    ~model_source:
+      {|
+      def test.sink(
+        parameter0,
+        parameter1: TaintSink[Test, ViaTypeOf[parameter0, WithTag["tag"]]]
+      ): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           "test.sink";
       ]
     ();
@@ -4696,6 +4768,18 @@ Unexpected statement: `food(y)`
     ~model_source:{|
       test.C.x: TaintInTaintOut[ViaTypeOf] = ...
     |}
+    ();
+  (* TODO(T159692443): support ViaTypeOf and WithTag on attributes *)
+  assert_invalid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: ViaTypeOf[WithTag["tag"]] = ...
+    |}
+    ~expect:
+      {|`ViaTypeOf[WithTag["tag"]]` is an invalid taint annotation: Unsupported annotation for attributes|}
     ();
   assert_valid_model
     ~source:{|
