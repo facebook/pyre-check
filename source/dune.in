@@ -382,7 +382,6 @@
   ounit2
   test
   pyrelib.integrationTest
-  pyrelib.internalTaintIntegrationTestFiles
   pyrelib.taintTestHelper))
 
 (executable
