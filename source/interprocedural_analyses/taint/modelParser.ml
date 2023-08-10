@@ -105,6 +105,9 @@ let base_name expression =
   | _ -> None
 
 
+(* Return true if the expression has the form `name[X]`. *)
+let is_base_name expression name = Option.equal String.equal (base_name expression) (Some name)
+
 let parse_access_path ~path ~location expression =
   let module Label = Abstract.TreeDomain.Label in
   let open Core.Result in
@@ -257,8 +260,7 @@ let rec parse_annotations
           >>| fun position ->
           [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
       | Tuple expressions -> List.map ~f:parse_expression expressions |> all >>| List.concat
-      | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") ->
-          Ok []
+      | Call { callee; _ } when is_base_name callee "WithTag" -> Ok []
       | _ -> Error (annotation_error "Invalid expression for ViaValueOf or ViaTypeOf")
     in
     parse_expression expression
@@ -283,7 +285,7 @@ let rec parse_annotations
               };
             ];
         }
-      when Option.equal String.equal (base_name callee) (Some "WithTag") ->
+      when is_base_name callee "WithTag" ->
         Ok (Some value)
     | Expression.Call _ ->
         Error
@@ -656,7 +658,7 @@ let rec parse_annotations
         >>| List.concat
     | Expression.Call
         { Call.callee; arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }] }
-      when [%compare.equal: string option] (base_name callee) (Some "TaintInTaintOut") ->
+      when is_base_name callee "TaintInTaintOut" ->
         let gather_sources_sinks (sources, sinks) = function
           | TaintAnnotation.Source { source; features } when TaintFeatures.is_empty features ->
               Ok (source :: sources, sinks)
@@ -2497,7 +2499,7 @@ let adjust_sanitize_and_modes_and_skipped_override
         [
           { Call.Argument.value = { Node.value = Expression.Call { Call.callee; arguments }; _ }; _ };
         ]
-      when [%compare.equal: string option] (base_name callee) (Some "Parameters") ->
+      when is_base_name callee "Parameters" ->
         parse_sanitize_annotations ~location ~original_expression arguments
         >>| fun parameters_sanitize ->
         { sanitizers with parameters = Sanitize.join sanitizers.parameters parameters_sanitize }
