@@ -449,10 +449,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -476,10 +473,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -503,10 +497,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -530,10 +521,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -557,10 +545,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -584,10 +569,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }

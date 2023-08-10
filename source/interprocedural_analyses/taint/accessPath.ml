@@ -103,14 +103,21 @@ module Root = struct
       | _ -> None
 
 
-    let to_string = function
-      | LocalResult -> "result"
-      | PositionalParameter { position = _; name; _ } -> Format.sprintf "formal(%s)" name
-      | NamedParameter { name } -> Format.sprintf "formal(%s)" name
-      | StarParameter { position } -> Format.sprintf "formal(*rest%d)" position
-      | StarStarParameter _ -> "formal(**kw)"
-      | Variable name -> Format.sprintf "local(%s)" name
-      | CapturedVariable name -> Format.sprintf "captured_variable(%s)" name
+    let pp_external formatter = function
+      | LocalResult -> Format.fprintf formatter "result"
+      | PositionalParameter { position = _; name; _ } -> Format.fprintf formatter "formal(%s)" name
+      | NamedParameter { name } -> Format.fprintf formatter "formal(%s)" name
+      | StarParameter { position } -> Format.fprintf formatter "formal(*rest%d)" position
+      | StarStarParameter _ -> Format.fprintf formatter "formal(**kw)"
+      | Variable name -> Format.fprintf formatter "local(%s)" name
+      | CapturedVariable name -> Format.fprintf formatter "captured_variable(%s)" name
+
+
+    let show_external = Format.asprintf "%a" pp_external
+
+    let pp_internal = pp
+
+    let show_internal = Format.asprintf "%a" pp_internal
   end
 
   include T
@@ -279,7 +286,7 @@ type t = {
 }
 [@@deriving compare]
 
-let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp root Path.pp path
+let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp_external root Path.pp path
 
 let show access_path = Format.asprintf "%a" pp access_path
 
@@ -295,7 +302,7 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let to_json { root; path } = `String (Root.to_string root ^ Path.show path)
+let to_json { root; path } = `String (Format.asprintf "%a%a" Root.pp_external root Path.pp path)
 
 let of_expression expression =
   let rec of_expression path = function

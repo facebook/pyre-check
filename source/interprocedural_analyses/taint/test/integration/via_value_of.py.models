@@ -37,10 +37,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"feature\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(feature)" }
                 ],
                 "kind": "Attach"
               }
@@ -51,10 +48,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"feature\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(feature)" }
                 ],
                 "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
                 "kind": "Test"
@@ -84,10 +78,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
                 ],
                 "kind": "Attach"
               }
@@ -98,10 +89,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
                 ],
                 "leaves": [
                   { "port": "leaf:return", "name": "_test_source" }
@@ -305,7 +293,7 @@
                   {
                     "tag": "parameter",
                     "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
+                    "parameter": "formal(parameter)"
                   }
                 ],
                 "kind": "Test"
@@ -330,10 +318,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(parameter)" }
                 ],
                 "kind": "Test"
               }
@@ -357,10 +342,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"second\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(second)" }
                 ],
                 "kind": "Test"
               }
@@ -384,10 +366,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"y\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(y)" }
                 ],
                 "kind": "Test"
               }
@@ -1408,10 +1387,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"other\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(other)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"

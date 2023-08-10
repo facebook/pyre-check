@@ -22,13 +22,22 @@ module Root : sig
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
     | CapturedVariable of Identifier.t
-  [@@deriving compare, eq, hash, sexp, show]
+  [@@deriving compare, eq, hash, sexp]
 
   val normalize_parameters : Parameter.t list -> (t * Identifier.t * Parameter.t) list
 
   val parameter_name : t -> string option
 
-  val to_string : t -> string
+  val pp_external : Format.formatter -> t -> unit
+
+  val show_external : t -> string
+
+  val pp_internal : Format.formatter -> t -> unit
+
+  val show_internal : t -> string
+
+  (* Equivalent to pp_internal. Required by @@deriving. *)
+  val pp : Format.formatter -> t -> unit
 
   module Set : Caml.Set.S with type elt = t
 end

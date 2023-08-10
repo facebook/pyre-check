@@ -125,10 +125,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"name\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(name)" }
                 ],
                 "kind": "MySource"
               }

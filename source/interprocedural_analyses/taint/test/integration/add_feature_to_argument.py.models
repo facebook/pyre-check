@@ -177,10 +177,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"second\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(second)" }
                 ],
                 "kind": "AddFeatureToArgument"
               }

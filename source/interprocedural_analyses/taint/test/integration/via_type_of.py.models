@@ -851,10 +851,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
@@ -879,10 +876,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
@@ -910,7 +904,7 @@
                   {
                     "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
+                    "parameter": "formal($global)"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -936,10 +930,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
@@ -964,10 +955,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"
@@ -995,7 +983,7 @@
                   {
                     "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
+                    "parameter": "formal($global)"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -1021,10 +1009,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -1048,10 +1033,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -1078,7 +1060,7 @@
                   {
                     "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
+                    "parameter": "formal($global)"
                   }
                 ],
                 "kind": "Test"
@@ -1103,10 +1085,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -1130,10 +1109,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal($global)" }
                 ],
                 "kind": "Test"
               }
@@ -1160,7 +1136,7 @@
                   {
                     "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
+                    "parameter": "formal($global)"
                   }
                 ],
                 "kind": "Test"
@@ -1244,10 +1220,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 0; name = \"parameter\";\n  positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal(parameter)" }
                 ],
                 "kind": "Test"
               }
@@ -1274,7 +1247,7 @@
                   {
                     "tag": "TheY",
                     "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"y\"; positional_only = false}"
+                    "parameter": "formal(y)"
                   }
                 ],
                 "kind": "Test"
@@ -1998,10 +1971,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaTypeOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"other\"; positional_only = false}"
-                  }
+                  { "kind": "ViaTypeOf", "parameter": "formal(other)" }
                 ],
                 "return_paths": { "": 0 },
                 "kind": "LocalReturn"

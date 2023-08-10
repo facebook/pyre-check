@@ -11,10 +11,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"arg\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
                 ],
                 "kind": "Test"
               }
@@ -39,10 +36,7 @@
             "kinds": [
               {
                 "via_features": [
-                  {
-                    "kind": "ViaValueOf",
-                    "parameter": "PositionalParameter {position = 1; name = \"arg\"; positional_only = false}"
-                  }
+                  { "kind": "ViaValueOf", "parameter": "formal(arg)" }
                 ],
                 "kind": "Test"
               }
