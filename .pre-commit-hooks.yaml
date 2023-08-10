@@ -1,7 +1,15 @@
-- id: pyre-check
+- id: pyre
   name: pyre-check
-  description: "pyre-check: Performant type-checking for python."
+  description: "Pyre: Performant type-checking for python."
   entry: pyre check
+  language: python
+  minimum_pre_commit_version: 2.9.2
+  require_serial: true
+  types_or: [python, pyi]
+- id: pysa
+  name: pyre-analyze
+  description: "Pysa: A security focused static analysis tool"
+  entry: pyre analyze
   language: python
   minimum_pre_commit_version: 2.9.2
   require_serial: true
