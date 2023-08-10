@@ -2374,8 +2374,7 @@ type parsed_signature = {
 
 type parsed_attribute = {
   name: Reference.t;
-  source_annotation: Expression.t option;
-  sink_annotation: Expression.t option;
+  annotations: TaintAnnotation.t list;
   decorators: Decorator.t list;
   location: Location.t;
   call_target: Target.t;
@@ -2845,50 +2844,26 @@ let create_model_from_attribute
     ~path
     ~taint_configuration
     ~source_sink_filter
-    { name; source_annotation; sink_annotation; decorators; location; call_target }
+    { name; annotations; decorators; location; call_target }
   =
   let open Core.Result in
-  let is_object_target = true in
   ModelVerifier.verify_global ~path ~location ~resolution ~name
   >>= fun () ->
-  source_annotation
-  |> Option.map
-       ~f:
-         (parse_return_taint
-            ~path
-            ~location
-            ~model_name:(Reference.show name)
-            ~taint_configuration
-            ~parameters:[]
-            ~callable_parameter_names_to_positions:None
-            ~is_object_target)
-  |> Option.value ~default:(Ok [])
-  >>= fun source_taint ->
-  let parse_sink_taint annotation =
-    let root =
-      AccessPath.Root.PositionalParameter
-        { position = 0; name = attribute_symbolic_parameter; positional_only = false }
-    in
-    let parameter =
-      Parameter.create ~location:Location.any ~annotation ~name:attribute_symbolic_parameter ()
-    in
-    parse_parameter_taint
-      ~path
-      ~location
-      ~model_name:(Reference.show name)
-      ~taint_configuration
-      ~parameters:[]
-      ~callable_parameter_names_to_positions:None
-      ~is_object_target
-      (root, attribute_symbolic_parameter, parameter)
-  in
-  sink_annotation
-  |> Option.map ~f:parse_sink_taint
-  |> Option.value ~default:(Ok [])
-  >>= fun sink_taint ->
-  Ok (List.rev_append source_taint sink_taint)
-  >>= fun annotations ->
   List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
+      let model_annotation =
+        match annotation with
+        | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
+        | TaintAnnotation.Sink _
+        | TaintAnnotation.Tito _ ->
+            Ok
+              (ModelAnnotation.ParameterAnnotation
+                 ( AccessPath.Root.PositionalParameter
+                     { position = 0; name = attribute_symbolic_parameter; positional_only = false },
+                   annotation ))
+        | _ -> failwith "unreachable"
+      in
+      model_annotation
+      >>= fun model_annotation ->
       add_taint_annotation_to_model
         ~path
         ~location
@@ -2897,14 +2872,14 @@ let create_model_from_attribute
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
-        annotation)
+        model_annotation)
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~taint_configuration
         ~source_sink_filter
         ~top_level_decorators:decorators
         ~define_name:name
-        ~is_object_target
+        ~is_object_target:true
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
@@ -3236,58 +3211,39 @@ let rec parse_statement
             (ParsedAttribute
                {
                  name;
-                 source_annotation = None;
-                 sink_annotation = None;
+                 annotations = [];
                  decorators = [decorator];
                  location;
                  call_target = Target.create_object name;
                });
         ]
-      else if Expression.show annotation |> String.is_substring ~substring:"TaintSource[" then
-        let name = name_to_reference_exn name in
-        [
-          Ok
-            (ParsedAttribute
-               {
-                 name;
-                 source_annotation = Some annotation;
-                 sink_annotation = None;
-                 decorators = [];
-                 location;
-                 call_target = Target.create_object name;
-               });
-        ]
       else if
-        Expression.show annotation |> String.is_substring ~substring:"TaintSink["
+        Expression.show annotation |> String.is_substring ~substring:"TaintSource["
+        || Expression.show annotation |> String.is_substring ~substring:"TaintSink["
         || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
+        || Expression.show annotation |> String.equal "ViaTypeOf"
       then
         let name = name_to_reference_exn name in
-        [
-          Ok
-            (ParsedAttribute
-               {
-                 name;
-                 source_annotation = None;
-                 sink_annotation = Some annotation;
-                 decorators = [];
-                 location;
-                 call_target = Target.create_object name;
-               });
-        ]
-      else if Expression.show annotation |> String.equal "ViaTypeOf" then
-        let name = name_to_reference_exn name in
-        [
-          Ok
-            (ParsedAttribute
-               {
-                 name;
-                 source_annotation = None;
-                 sink_annotation = Some annotation;
-                 decorators = [];
-                 location;
-                 call_target = Target.create_object name;
-               });
-        ]
+        parse_annotations
+          ~path
+          ~location
+          ~model_name:name
+          ~taint_configuration
+          ~parameters:[]
+          ~callable_parameter_names_to_positions:None
+          ~is_object_target:true
+          ~is_model_query:false
+          annotation
+        >>| (fun annotations ->
+              ParsedAttribute
+                {
+                  name;
+                  annotations;
+                  decorators = [];
+                  location;
+                  call_target = Target.create_object name;
+                })
+        |> fun result -> [result]
       else
         [
           Error
