@@ -75,7 +75,9 @@ let model_verification_error ~path ~location kind = { ModelVerificationError.kin
 
 (* We don't have real models for attributes, so we make a fake callable model with a 'parameter'
    $global which acts as the taint sink whenever attributes are marked as sinks. *)
-let attribute_symbolic_parameter = "$global"
+let attribute_symbolic_parameter =
+  AccessPath.Root.PositionalParameter { name = "$global"; position = 0; positional_only = false }
+
 
 let decorators = String.Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
@@ -314,16 +316,7 @@ let rec parse_annotations
               Ok
                 (TaintKindsWithFeatures.from_via_feature
                    (Features.ViaFeature.ViaTypeOf
-                      {
-                        parameter =
-                          AccessPath.Root.PositionalParameter
-                            {
-                              name = attribute_symbolic_parameter;
-                              position = 0;
-                              positional_only = false;
-                            };
-                        tag = None;
-                      }))
+                      { parameter = attribute_symbolic_parameter; tag = None }))
             else
               Error
                 (annotation_error
@@ -596,16 +589,7 @@ let rec parse_annotations
                  TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
               let via_feature =
                 Features.ViaFeature.ViaTypeOf
-                  {
-                    parameter =
-                      AccessPath.Root.PositionalParameter
-                        {
-                          name = attribute_symbolic_parameter;
-                          position = 0;
-                          positional_only = false;
-                        };
-                    tag = None;
-                  }
+                  { parameter = attribute_symbolic_parameter; tag = None }
               in
               Ok
                 [
@@ -2821,11 +2805,7 @@ let create_model_from_attribute
         | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
         | TaintAnnotation.Sink _
         | TaintAnnotation.Tito _ ->
-            Ok
-              (ModelAnnotation.ParameterAnnotation
-                 ( AccessPath.Root.PositionalParameter
-                     { position = 0; name = attribute_symbolic_parameter; positional_only = false },
-                   annotation ))
+            Ok (ModelAnnotation.ParameterAnnotation (attribute_symbolic_parameter, annotation))
         | _ -> failwith "unreachable"
       in
       model_annotation
@@ -3693,11 +3673,7 @@ let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filte
         | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
         | TaintAnnotation.Sink _
         | TaintAnnotation.Tito _ ->
-            Ok
-              (ModelAnnotation.ParameterAnnotation
-                 ( AccessPath.Root.PositionalParameter
-                     { position = 0; name = attribute_symbolic_parameter; positional_only = false },
-                   annotation ))
+            Ok (ModelAnnotation.ParameterAnnotation (attribute_symbolic_parameter, annotation))
         | _ ->
             Error
               (invalid_model_query_error
