@@ -1,5 +1,5 @@
 - id: pyre
-  name: pyre-check
+  name: Run type check for your project with Pyre
   description: "Pyre: Performant type-checking for python."
   entry: pyre check
   language: python
@@ -7,7 +7,7 @@
   require_serial: true
   types_or: [python, pyi]
 - id: pysa
-  name: pyre-analyze
+  name: Analyze security issues with Pysa
   description: "Pysa: A security focused static analysis tool"
   entry: pyre analyze
   language: python
