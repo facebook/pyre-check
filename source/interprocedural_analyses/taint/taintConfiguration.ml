@@ -507,9 +507,8 @@ module Heap = struct
           "XSS";
         ]
     in
-    let transforms =
-      List.map ~f:(fun name -> TaintTransform.Named name) ["DemoTransform"; "TestTransform"]
-    in
+    let named_transform name = TaintTransform.Named { name; location = None } in
+    let transforms = List.map ~f:named_transform ["DemoTransform"; "TestTransform"] in
     let rules =
       [
         {
@@ -591,7 +590,7 @@ module Heap = struct
         {
           sources = [Sources.NamedSource "Test"];
           sinks = [Sinks.NamedSink "Test"];
-          transforms = [TaintTransform.Named "TestTransform"];
+          transforms = [named_transform "TestTransform"];
           code = 5011;
           name = "Flow with one transform.";
           message_format =
@@ -601,7 +600,7 @@ module Heap = struct
         {
           sources = [Sources.NamedSource "Test"];
           sinks = [Sinks.NamedSink "Test"];
-          transforms = [TaintTransform.Named "TestTransform"; TaintTransform.Named "DemoTransform"];
+          transforms = [named_transform "TestTransform"; named_transform "DemoTransform"];
           code = 5011;
           name = "Flow with two transforms.";
           message_format =
@@ -741,7 +740,10 @@ module Error = struct
         name: string;
         previous_location: JsonAst.LocationWithPath.t option;
       }
-    | TransformDuplicate of string
+    | TransformDuplicate of {
+        name: string;
+        previous_location: JsonAst.LocationWithPath.t option;
+      }
     | FeatureDuplicate of string
     | InvalidRegex of {
         regex: string;
@@ -839,7 +841,17 @@ module Error = struct
           previous_location.path
           JsonAst.Location.pp_start
           previous_location.location
-    | TransformDuplicate name -> Format.fprintf formatter "Duplicate entry for transform: `%s`" name
+    | TransformDuplicate { name; previous_location = None } ->
+        Format.fprintf formatter "Duplicate entry for transform: `%s`" name
+    | TransformDuplicate { name; previous_location = Some previous_location } ->
+        Format.fprintf
+          formatter
+          "Duplicate entry for transform: `%s`, previous entry was at `%a:%a`"
+          name
+          PyrePath.pp
+          previous_location.path
+          JsonAst.Location.pp_start
+          previous_location.location
     | FeatureDuplicate name -> Format.fprintf formatter "Duplicate entry for feature: `%s`" name
     | InvalidRegex { regex; reason } ->
         Format.fprintf formatter "Invalid regex `%s`: `%s`" regex reason
@@ -1033,7 +1045,11 @@ let from_json_list source_json_list =
       ~current_keys:(JsonAst.Json.Util.keys json)
       ~valid_keys:["name"; "comment"]
     >>= fun () ->
-    json_string_member ~path "name" json >>= fun name -> Result.Ok (TaintTransform.Named name)
+    json_string_member_with_location ~path "name" json
+    >>= fun (name, location) ->
+    Result.Ok
+      (TaintTransform.Named
+         { name; location = Some (JsonAst.LocationWithPath.create ~path ~location) })
   in
   let parse_transforms (path, json) =
     array_member ~path "transforms" json
@@ -1645,9 +1661,11 @@ let validate ({ Heap.sources; sinks; transforms; features; rules; _ } as configu
         ~get_error:(fun { AnnotationParser.name; _ } previous_location ->
           Error.SinkDuplicate { name; previous_location })
         sinks;
-      ensure_list_unique
-        ~get_name:TaintTransform.show
-        ~get_error:(fun name -> Error.TransformDuplicate name)
+      ensure_list_unique_with_location
+        ~get_key:TaintTransform.show
+        ~get_location:TaintTransform.get_location
+        ~get_error:(fun transform previous_location ->
+          Error.TransformDuplicate { name = TaintTransform.show transform; previous_location })
         transforms;
       ensure_list_unique
         ~get_name:Fn.id

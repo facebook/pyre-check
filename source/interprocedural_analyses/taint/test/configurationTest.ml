@@ -83,6 +83,8 @@ let without_locations sources_or_sinks =
 
 let named name = { AnnotationParser.name; kind = Named; location = None }
 
+let named_transform name = TaintTransform.Named { name; location = None }
+
 let test_simple _ =
   let configuration =
     assert_parse
@@ -172,7 +174,10 @@ let test_transform _ =
   in
   assert_equal
     (List.hd_exn configuration.rules).transforms
-    [TaintTransform.Named "A"; TaintTransform.Named "A"];
+    [
+      TaintTransform.Named { name = "A"; location = None };
+      TaintTransform.Named { name = "A"; location = None };
+    ];
   ()
 
 
@@ -838,7 +843,24 @@ let test_validate _ =
     }
     |};
   assert_parse_error
-    ~errors:[TaintConfiguration.Error.TransformDuplicate "Test"]
+    ~errors:
+      [
+        TaintConfiguration.Error.TransformDuplicate
+          {
+            name = "Test";
+            previous_location =
+              Some
+                {
+                  JsonParsing.JsonAst.LocationWithPath.path =
+                    PyrePath.create_absolute "/taint.config";
+                  location =
+                    {
+                      JsonParsing.JsonAst.Location.start = { line = 8; column = 19 };
+                      stop = { line = 8; column = 24 };
+                    };
+                };
+          };
+      ]
     {|
     {
       "sources": [
@@ -1442,7 +1464,7 @@ let test_matching_kinds _ =
       {
         base = Sources.NamedSource source_name;
         global =
-          List.map transform_names ~f:(fun name -> TaintTransform.Named name)
+          List.map transform_names ~f:(fun name -> named_transform name)
           |> TaintTransforms.of_named_transforms;
         local = TaintTransforms.empty;
       }
@@ -1452,7 +1474,7 @@ let test_matching_kinds _ =
       {
         base = Sinks.NamedSink sink_name;
         global =
-          List.map transform_names ~f:(fun name -> TaintTransform.Named name)
+          List.map transform_names ~f:(fun name -> named_transform name)
           |> TaintTransforms.of_named_transforms;
         local = TaintTransforms.empty;
       }
@@ -1505,9 +1527,9 @@ let test_matching_kinds _ =
     ~possible_tito_transforms:
       [
         TaintTransforms.empty;
-        TaintTransforms.of_named_transforms [TaintTransform.Named "X"];
-        TaintTransforms.of_named_transforms [TaintTransform.Named "X"; TaintTransform.Named "Y"];
-        TaintTransforms.of_named_transforms [TaintTransform.Named "Y"];
+        TaintTransforms.of_named_transforms [named_transform "X"];
+        TaintTransforms.of_named_transforms [named_transform "X"; named_transform "Y"];
+        TaintTransforms.of_named_transforms [named_transform "Y"];
       ]
     ();
   assert_matching
@@ -1774,14 +1796,14 @@ let test_matching_kinds _ =
               Sinks.Transform
                 {
                   local = TaintTransforms.empty;
-                  global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+                  global = TaintTransforms.of_named_transforms [named_transform "TU"];
                   base = Sinks.NamedSink "Y";
                 };
             ] );
         ( Sources.Transform
             {
               local = TaintTransforms.empty;
-              global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+              global = TaintTransforms.of_named_transforms [named_transform "TU"];
               base = Sources.NamedSource "B";
             },
           Sinks.Set.of_list [Sinks.NamedSink "Y"] );
@@ -1795,20 +1817,20 @@ let test_matching_kinds _ =
               Sources.Transform
                 {
                   local = TaintTransforms.empty;
-                  global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+                  global = TaintTransforms.of_named_transforms [named_transform "TU"];
                   base = Sources.NamedSource "B";
                 };
             ] );
         ( Sinks.Transform
             {
               local = TaintTransforms.empty;
-              global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+              global = TaintTransforms.of_named_transforms [named_transform "TU"];
               base = Sinks.NamedSink "Y";
             },
           Sources.Set.of_list [Sources.NamedSource "B"] );
       ]
     ~possible_tito_transforms:
-      [TaintTransforms.empty; TaintTransforms.of_named_transforms [TaintTransform.Named "TU"]]
+      [TaintTransforms.empty; TaintTransforms.of_named_transforms [named_transform "TU"]]
     ();
   assert_matching
     ~rule_filter:[1; 2; 4]
@@ -1878,15 +1900,14 @@ let test_matching_kinds _ =
                 {
                   local = TaintTransforms.empty;
                   global =
-                    TaintTransforms.of_named_transforms
-                      [TaintTransform.Named "TU"; TaintTransform.Named "TW"];
+                    TaintTransforms.of_named_transforms [named_transform "TU"; named_transform "TW"];
                   base = Sinks.NamedSink "Z";
                 };
             ] );
         ( Sources.Transform
             {
               local = TaintTransforms.empty;
-              global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+              global = TaintTransforms.of_named_transforms [named_transform "TU"];
               base = Sources.NamedSource "C";
             },
           Sinks.Set.of_list
@@ -1894,7 +1915,7 @@ let test_matching_kinds _ =
               Sinks.Transform
                 {
                   local = TaintTransforms.empty;
-                  global = TaintTransforms.of_named_transforms [TaintTransform.Named "TW"];
+                  global = TaintTransforms.of_named_transforms [named_transform "TW"];
                   base = Sinks.NamedSink "Z";
                 };
             ] );
@@ -1902,8 +1923,7 @@ let test_matching_kinds _ =
             {
               local = TaintTransforms.empty;
               global =
-                TaintTransforms.of_named_transforms
-                  [TaintTransform.Named "TW"; TaintTransform.Named "TU"];
+                TaintTransforms.of_named_transforms [named_transform "TW"; named_transform "TU"];
               base = Sources.NamedSource "C";
             },
           Sinks.Set.of_list [Sinks.NamedSink "Z"] );
@@ -1918,15 +1938,14 @@ let test_matching_kinds _ =
                 {
                   local = TaintTransforms.empty;
                   global =
-                    TaintTransforms.of_named_transforms
-                      [TaintTransform.Named "TW"; TaintTransform.Named "TU"];
+                    TaintTransforms.of_named_transforms [named_transform "TW"; named_transform "TU"];
                   base = Sources.NamedSource "C";
                 };
             ] );
         ( Sinks.Transform
             {
               local = TaintTransforms.empty;
-              global = TaintTransforms.of_named_transforms [TaintTransform.Named "TW"];
+              global = TaintTransforms.of_named_transforms [named_transform "TW"];
               base = Sinks.NamedSink "Z";
             },
           Sources.Set.of_list
@@ -1934,7 +1953,7 @@ let test_matching_kinds _ =
               Sources.Transform
                 {
                   local = TaintTransforms.empty;
-                  global = TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
+                  global = TaintTransforms.of_named_transforms [named_transform "TU"];
                   base = Sources.NamedSource "C";
                 };
             ] );
@@ -1942,8 +1961,7 @@ let test_matching_kinds _ =
             {
               local = TaintTransforms.empty;
               global =
-                TaintTransforms.of_named_transforms
-                  [TaintTransform.Named "TU"; TaintTransform.Named "TW"];
+                TaintTransforms.of_named_transforms [named_transform "TU"; named_transform "TW"];
               base = Sinks.NamedSink "Z";
             },
           Sources.Set.of_list [Sources.NamedSource "C"] );
@@ -1951,9 +1969,9 @@ let test_matching_kinds _ =
     ~possible_tito_transforms:
       [
         TaintTransforms.empty;
-        TaintTransforms.of_named_transforms [TaintTransform.Named "TU"];
-        TaintTransforms.of_named_transforms [TaintTransform.Named "TW"];
-        TaintTransforms.of_named_transforms [TaintTransform.Named "TU"; TaintTransform.Named "TW"];
+        TaintTransforms.of_named_transforms [named_transform "TU"];
+        TaintTransforms.of_named_transforms [named_transform "TW"];
+        TaintTransforms.of_named_transforms [named_transform "TU"; named_transform "TW"];
       ]
     ();
   ()
