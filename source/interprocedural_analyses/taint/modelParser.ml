@@ -306,49 +306,49 @@ let rec parse_annotations
   in
   let rec extract_kinds_with_features expression =
     match expression.Node.value with
-    | Expression.Name (Name.Identifier "ViaTypeOf") ->
-        if is_object_target or is_model_query then (* ViaTypeOf is treated as ViaTypeOf[$global] *)
-          Ok
-            (TaintKindsWithFeatures.from_via_feature
-               (Features.ViaFeature.ViaTypeOf
-                  {
-                    parameter =
-                      AccessPath.Root.PositionalParameter
-                        {
-                          name = attribute_symbolic_parameter;
-                          position = 0;
-                          positional_only = false;
-                        };
-                    tag = None;
-                  }))
-        else
-          Error
-            (annotation_error
-               "A standalone `ViaTypeOf` without arguments can only be used in attribute or global \
-                models.")
-    | Expression.Name (Name.Identifier "Collapse") ->
-        Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
-    | Expression.Name (Name.Identifier "NoCollapse") ->
-        Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
-    | Expression.Name (Name.Identifier taint_kind) ->
-        Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind))
+    | Expression.Name (Name.Identifier identifier) -> (
+        match identifier with
+        | "ViaTypeOf" ->
+            if is_object_target or is_model_query then
+              (* ViaTypeOf is treated as ViaTypeOf[$global] *)
+              Ok
+                (TaintKindsWithFeatures.from_via_feature
+                   (Features.ViaFeature.ViaTypeOf
+                      {
+                        parameter =
+                          AccessPath.Root.PositionalParameter
+                            {
+                              name = attribute_symbolic_parameter;
+                              position = 0;
+                              positional_only = false;
+                            };
+                        tag = None;
+                      }))
+            else
+              Error
+                (annotation_error
+                   "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
+                    global models.")
+        | "Collapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
+        | "NoCollapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
+        | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
     | Name (Name.Attribute { base; _ }) -> extract_kinds_with_features base
-    | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
+    | Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
         match base_name callee with
-        | Some "Via" -> extract_breadcrumbs expression >>| TaintKindsWithFeatures.from_breadcrumbs
+        | Some "Via" -> extract_breadcrumbs argument >>| TaintKindsWithFeatures.from_breadcrumbs
         | Some "ViaDynamicFeature" ->
-            extract_breadcrumbs ~is_dynamic:true expression
+            extract_breadcrumbs ~is_dynamic:true argument
             >>| TaintKindsWithFeatures.from_breadcrumbs
         | Some "ViaValueOf" ->
-            extract_via_tag expression
+            extract_via_tag argument
             >>= fun tag ->
-            extract_via_parameters expression
+            extract_via_parameters argument
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaValueOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "ViaTypeOf" ->
-            extract_via_tag expression
+            extract_via_tag argument
             >>= fun tag ->
-            extract_via_parameters expression
+            extract_via_parameters argument
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "Updates" ->
@@ -356,30 +356,30 @@ let rec parse_annotations
               get_parameter_position name
               >>| fun position -> Kind.from_name (Format.sprintf "ParameterUpdate%d" position)
             in
-            extract_names expression
+            extract_names argument
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
         | Some "ParameterPath" ->
-            parse_access_path ~path ~location expression
+            parse_access_path ~path ~location argument
             >>| TaintKindsWithFeatures.from_parameter_path
         | Some "ReturnPath" -> (
-            parse_access_path ~path ~location expression
+            parse_access_path ~path ~location argument
             >>= function
             | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_return_path path)
             | TaintPath.AllStaticFields ->
                 Error
                   (annotation_error "`all_static_fields()` is not allowed within `ReturnPath[]`"))
         | Some "UpdatePath" -> (
-            parse_access_path ~path ~location expression
+            parse_access_path ~path ~location argument
             >>= function
             | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_update_path path)
             | TaintPath.AllStaticFields ->
                 Error
                   (annotation_error "`all_static_fields()` is not allowed within `UpdatePath[]`"))
         | Some "CollapseDepth" ->
-            extract_collapse_depth expression
+            extract_collapse_depth argument
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
         | _ ->
-            let subkind = extract_subkind expression in
+            let subkind = extract_subkind argument in
             extract_kinds_with_features callee
             >>| fun { TaintKindsWithFeatures.kinds; features } ->
             let kinds =
@@ -465,327 +465,162 @@ let rec parse_annotations
   let invalid_annotation_error () =
     Error (annotation_error "Failed to parse the given taint annotation.")
   in
-  let rec parse_annotation = function
+  let get_partial_sink_kind expression =
+    match Node.value expression with
     | Expression.Call
         {
-          callee;
-          arguments =
+          callee =
             {
-              Call.Argument.value =
-                {
-                  Node.value =
-                    Expression.Tuple [{ Node.value = index; _ }; { Node.value = expression; _ }];
-                  _;
-                };
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier kind); _ };
+                      attribute = "__getitem__";
+                      _;
+                    });
               _;
-            }
-            :: _;
-        }
-      when [%compare.equal: string option] (base_name callee) (Some "AppliesTo") ->
-        let field =
-          match index with
-          | Expression.Constant (Constant.Integer index) ->
-              Ok (Abstract.TreeDomain.Label.create_int_index index)
-          | Expression.Constant (Constant.String { StringLiteral.value = index; _ }) ->
-              Ok (Abstract.TreeDomain.Label.create_name_index index)
-          | _ ->
+            };
+          arguments =
+            [{ Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ }];
+        } -> (
+        match
+          TaintConfiguration.PartialSinkLabelsMap.find_opt
+            kind
+            taint_configuration.partial_sink_labels
+        with
+        | Some { TaintConfiguration.PartialSinkLabelsMap.main; secondary } ->
+            if String.equal secondary label || String.equal main label then
+              Ok (Sinks.PartialSink { kind; label })
+            else
               Error
                 (annotation_error
-                   "Expected either integer or string as index in AppliesTo annotation.")
-        in
-        let extend_applies_to field = function
-          | TaintAnnotation.Sink { sink; features } ->
-              Ok
-                (TaintAnnotation.Sink
-                   { sink; features = TaintFeatures.extend_applies_to features field })
-          | TaintAnnotation.Source { source; features } ->
-              Ok
-                (TaintAnnotation.Source
-                   { source; features = TaintFeatures.extend_applies_to features field })
-          | TaintAnnotation.Tito { tito; features } ->
-              Ok
-                (TaintAnnotation.Tito
-                   { tito; features = TaintFeatures.extend_applies_to features field })
-          | TaintAnnotation.AddFeatureToArgument { features } ->
-              Ok
-                (TaintAnnotation.AddFeatureToArgument
-                   { features = TaintFeatures.extend_applies_to features field })
-          | TaintAnnotation.Sanitize _ ->
-              Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
-        in
-        field
-        >>= fun field ->
-        parse_annotation expression
-        >>= fun annotations -> List.map ~f:(extend_applies_to field) annotations |> all
-    | Call { callee; arguments }
-      when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaint") -> (
-        let required_arguments, optional_arguments =
-          match arguments with
-          | [
-           {
-             Call.Argument.value =
-               {
-                 Node.value =
-                   Expression.Tuple
-                     ({ Node.value = taint; _ }
-                     :: {
-                          Node.value =
-                            Expression.Constant
-                              (Constant.String { StringLiteral.value = canonical_name; _ });
-                          _;
-                        }
-                     :: {
-                          Node.value =
-                            Expression.Constant
-                              (Constant.String { StringLiteral.value = canonical_port; _ });
-                          _;
-                        }
-                     :: { Node.value = Expression.Constant (Constant.Integer producer_id); _ }
-                     :: remaining_arguments);
-                 _;
-               };
-             _;
-           };
-          ] ->
-              Some (taint, canonical_name, canonical_port, producer_id), remaining_arguments
-          | _ -> None, []
-        in
-        let optional_arguments =
-          match optional_arguments with
-          | [{ Node.value = Expression.Constant (Constant.Integer trace_length); _ }] ->
-              Some trace_length
-          | [] -> Some 0
-          | _ -> None
-        in
-        match required_arguments, optional_arguments with
-        | Some (taint, canonical_name, canonical_port, producer_id), Some trace_length ->
-            let add_cross_repository_information annotation =
-              let leaf_name =
-                Features.LeafName.
-                  {
-                    leaf = canonical_name;
-                    port = Some (Format.sprintf "producer:%d:%s" producer_id canonical_port);
-                  }
-              in
-              match annotation with
-              | TaintAnnotation.Source { source; features } ->
-                  TaintAnnotation.Source
-                    {
-                      source;
-                      features =
-                        {
-                          features with
-                          leaf_names = leaf_name :: features.leaf_names;
-                          leaf_name_provided = true;
-                          trace_length =
-                            Option.merge ~f:min features.trace_length (Some trace_length);
-                          breadcrumbs = Features.Breadcrumb.Crtex :: features.breadcrumbs;
-                        };
-                    }
-              | TaintAnnotation.Sink { sink; features } ->
-                  TaintAnnotation.Sink
-                    {
-                      sink;
-                      features =
-                        {
-                          features with
-                          leaf_names = leaf_name :: features.leaf_names;
-                          leaf_name_provided = true;
-                          trace_length =
-                            Option.merge ~f:min features.trace_length (Some trace_length);
-                          breadcrumbs = Features.Breadcrumb.Crtex :: features.breadcrumbs;
-                        };
-                    }
-              | _ -> annotation
-            in
-            parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
-        | _ ->
-            Error
-              (annotation_error
-                 "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
-                  canonical_name, canonical_port, producer_id, trace_length]."))
-    | Call { callee; arguments }
-      when [%compare.equal: string option] (base_name callee) (Some "CrossRepositoryTaintAnchor")
-      -> (
-        match arguments with
-        | [
-         {
-           Call.Argument.value =
-             {
-               Node.value =
-                 Expression.Tuple
-                   [
-                     { Node.value = taint; _ };
-                     {
-                       Node.value =
-                         Expression.Constant
-                           (Constant.String { StringLiteral.value = canonical_name; _ });
-                       _;
-                     };
-                     {
-                       Node.value =
-                         Expression.Constant
-                           (Constant.String { StringLiteral.value = canonical_port; _ });
-                       _;
-                     };
-                   ];
-               _;
-             };
-           _;
-         };
-        ] ->
-            let add_cross_repository_information annotation =
-              let leaf_name =
-                Features.LeafName.
-                  { leaf = canonical_name; port = Some (Format.sprintf "anchor:%s" canonical_port) }
-              in
-              match annotation with
-              | TaintAnnotation.Source { source; features } ->
-                  TaintAnnotation.Source
-                    {
-                      source;
-                      features =
-                        {
-                          features with
-                          leaf_names = leaf_name :: features.leaf_names;
-                          leaf_name_provided = true;
-                        };
-                    }
-              | TaintAnnotation.Sink { sink; features } ->
-                  TaintAnnotation.Sink
-                    {
-                      sink;
-                      features =
-                        {
-                          features with
-                          leaf_names = leaf_name :: features.leaf_names;
-                          leaf_name_provided = true;
-                        };
-                    }
-              | _ -> annotation
-            in
-            parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
-        | _ ->
-            Error
-              (annotation_error
-                 "Cross repository taint anchor must be of the form \
-                  CrossRepositoryTaintAnchor[taint, canonical_name, canonical_port]."))
-    | Name (Name.Identifier "Sanitize") -> Ok [Sanitize [AllSources; AllSinks; AllTito]]
-    | Call { callee; arguments }
-      when [%compare.equal: string option] (base_name callee) (Some "Sanitize") ->
-        let parse_argument { Call.Argument.value = { Node.value = expression; _ }; _ } =
-          parse_sanitize_annotation expression
-        in
-        List.map ~f:parse_argument arguments
-        |> all
-        >>| fun annotations -> [TaintAnnotation.Sanitize (List.concat annotations)]
-    | Call { callee; arguments = [{ Call.Argument.value = { value = Tuple expressions; _ }; _ }] }
-      when [%compare.equal: string option] (base_name callee) (Some "Union") ->
-        List.map expressions ~f:(fun expression ->
-            parse_annotations
-              ~path
-              ~location:expression.Node.location
-              ~model_name
-              ~taint_configuration
-              ~parameters
-              ~callable_parameter_names_to_positions
-              ~is_object_target
-              expression)
-        |> all
-        |> map ~f:List.concat
-    | Call { callee; arguments = [{ Call.Argument.value = expression; _ }] } -> (
-        let open Core.Result in
-        match base_name callee with
-        | Some "TaintSink" -> get_sink_kinds expression
-        | Some "TaintSource" -> get_source_kinds expression
-        | Some "TaintInTaintOut" -> get_taint_in_taint_out expression
-        | Some "AddFeatureToArgument" ->
-            extract_kinds_with_features expression
-            >>| fun { features; _ } -> [TaintAnnotation.AddFeatureToArgument { features }]
-        | Some "AttachToSink" ->
-            extract_attach_features ~name:"AttachToSink" expression
-            >>| fun features -> [TaintAnnotation.Sink { sink = Sinks.Attach; features }]
-        | Some "AttachToTito" ->
-            extract_attach_features ~name:"AttachToTito" expression
-            >>| fun features -> [TaintAnnotation.Tito { tito = Sinks.Attach; features }]
-        | Some "AttachToSource" ->
-            extract_attach_features ~name:"AttachToSource" expression
-            >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
-        | Some "PartialSink" ->
-            let partial_sink =
-              match Node.value expression with
-              | Call
-                  {
-                    callee =
-                      {
-                        Node.value =
-                          Name
-                            (Name.Attribute
-                              {
-                                base = { Node.value = Expression.Name (Name.Identifier kind); _ };
-                                attribute = "__getitem__";
-                                _;
-                              });
-                        _;
-                      };
-                    arguments =
-                      [
-                        { Call.Argument.value = { Node.value = Name (Name.Identifier label); _ }; _ };
-                      ];
-                  } -> (
-                  match
-                    TaintConfiguration.PartialSinkLabelsMap.find_opt
+                   (Format.sprintf
+                      "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
+                      label
                       kind
-                      taint_configuration.partial_sink_labels
-                  with
-                  | Some { TaintConfiguration.PartialSinkLabelsMap.main; secondary } ->
-                      if String.equal secondary label || String.equal main label then
-                        Ok (Sinks.PartialSink { kind; label })
-                      else
-                        Error
-                          (annotation_error
-                             (Format.sprintf
-                                "Unrecognized label `%s` for partial sink `%s` (choices: `%s`)"
-                                label
-                                kind
-                                (String.concat [main; secondary] ~sep:", ")))
-                  | None ->
-                      Error
-                        (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
-              | _ -> invalid_annotation_error ()
-            in
-            partial_sink
+                      (String.concat [main; secondary] ~sep:", ")))
+        | None -> Error (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
+    | _ -> invalid_annotation_error ()
+  in
+  let rec parse_annotation = function
+    | Expression.Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
+        let open Core.Result in
+        match base_name callee, argument with
+        | Some "TaintSink", _ -> get_sink_kinds argument
+        | Some "TaintSource", _ -> get_source_kinds argument
+        | Some "TaintInTaintOut", _ -> get_taint_in_taint_out argument
+        | Some "AddFeatureToArgument", _ ->
+            extract_kinds_with_features argument
+            >>| fun { features; _ } -> [TaintAnnotation.AddFeatureToArgument { features }]
+        | Some "AttachToSink", _ ->
+            extract_attach_features ~name:"AttachToSink" argument
+            >>| fun features -> [TaintAnnotation.Sink { sink = Sinks.Attach; features }]
+        | Some "AttachToTito", _ ->
+            extract_attach_features ~name:"AttachToTito" argument
+            >>| fun features -> [TaintAnnotation.Tito { tito = Sinks.Attach; features }]
+        | Some "AttachToSource", _ ->
+            extract_attach_features ~name:"AttachToSource" argument
+            >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
+        | Some "PartialSink", _ ->
+            get_partial_sink_kind argument
             >>| fun partial_sink ->
             [TaintAnnotation.Sink { sink = partial_sink; features = TaintFeatures.empty }]
+        | Some "Sanitize", _ ->
+            parse_sanitize_annotation (Node.value argument)
+            >>| fun annotations -> [TaintAnnotation.Sanitize annotations]
+        | ( Some "AppliesTo",
+            {
+              value = Expression.Tuple [{ Node.value = index; _ }; { Node.value = expression; _ }];
+              _;
+            } ) ->
+            let field =
+              match index with
+              | Expression.Constant (Constant.Integer index) ->
+                  Ok (Abstract.TreeDomain.Label.create_int_index index)
+              | Expression.Constant (Constant.String { StringLiteral.value = index; _ }) ->
+                  Ok (Abstract.TreeDomain.Label.create_name_index index)
+              | _ ->
+                  Error
+                    (annotation_error
+                       "Expected either integer or string as index in AppliesTo annotation.")
+            in
+            let extend_applies_to field = function
+              | TaintAnnotation.Sink { sink; features } ->
+                  Ok
+                    (TaintAnnotation.Sink
+                       { sink; features = TaintFeatures.extend_applies_to features field })
+              | TaintAnnotation.Source { source; features } ->
+                  Ok
+                    (TaintAnnotation.Source
+                       { source; features = TaintFeatures.extend_applies_to features field })
+              | TaintAnnotation.Tito { tito; features } ->
+                  Ok
+                    (TaintAnnotation.Tito
+                       { tito; features = TaintFeatures.extend_applies_to features field })
+              | TaintAnnotation.AddFeatureToArgument { features } ->
+                  Ok
+                    (TaintAnnotation.AddFeatureToArgument
+                       { features = TaintFeatures.extend_applies_to features field })
+              | TaintAnnotation.Sanitize _ ->
+                  Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
+            in
+            field
+            >>= fun field ->
+            parse_annotation expression
+            >>= fun annotations -> List.map ~f:(extend_applies_to field) annotations |> all
+        | Some "CrossRepositoryTaint", _ -> parse_cross_repository_producer argument
+        | Some "CrossRepositoryTaintAnchor", _ -> parse_cross_repository_anchor argument
+        | Some "Union", { value = Tuple expressions; _ } ->
+            List.map expressions ~f:(fun expression ->
+                parse_annotations
+                  ~path
+                  ~location:expression.Node.location
+                  ~model_name
+                  ~taint_configuration
+                  ~parameters
+                  ~callable_parameter_names_to_positions
+                  ~is_object_target
+                  expression)
+            |> all
+            |> map ~f:List.concat
         | _ -> invalid_annotation_error ())
-    | Name (Name.Identifier "TaintInTaintOut") ->
-        Ok [Tito { tito = Sinks.LocalReturn; features = TaintFeatures.empty }]
-    | Name (Name.Identifier "ViaTypeOf") ->
-        if is_object_target then
-          (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
-             TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
-          let via_feature =
-            Features.ViaFeature.ViaTypeOf
-              {
-                parameter =
-                  AccessPath.Root.PositionalParameter
-                    { name = attribute_symbolic_parameter; position = 0; positional_only = false };
-                tag = None;
-              }
-          in
-          Ok
-            [
-              Tito
-                {
-                  tito = Sinks.LocalReturn;
-                  features = { TaintFeatures.empty with via_features = [via_feature] };
-                };
-            ]
-        else
-          Error
-            (annotation_error
-               "A standalone `ViaTypeOf` without arguments can only be used in attribute or global \
-                models.")
+    | Name (Name.Identifier identifier) -> (
+        match identifier with
+        | "Sanitize" -> Ok [Sanitize [AllSources; AllSinks; AllTito]]
+        | "TaintInTaintOut" ->
+            Ok [Tito { tito = Sinks.LocalReturn; features = TaintFeatures.empty }]
+        | "ViaTypeOf" ->
+            if is_object_target then
+              (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
+                 TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
+              let via_feature =
+                Features.ViaFeature.ViaTypeOf
+                  {
+                    parameter =
+                      AccessPath.Root.PositionalParameter
+                        {
+                          name = attribute_symbolic_parameter;
+                          position = 0;
+                          positional_only = false;
+                        };
+                    tag = None;
+                  }
+              in
+              Ok
+                [
+                  Tito
+                    {
+                      tito = Sinks.LocalReturn;
+                      features = { TaintFeatures.empty with via_features = [via_feature] };
+                    };
+                ]
+            else
+              Error
+                (annotation_error
+                   "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
+                    global models.")
+        | _ -> invalid_annotation_error ())
     | Expression.Tuple expressions ->
         List.map expressions ~f:(fun expression ->
             parse_annotations
@@ -851,6 +686,137 @@ let rec parse_annotations
         in
         parse_annotation expression
         >>= fun annotations -> List.map ~f:to_sanitize annotations |> all
+  and parse_cross_repository_producer argument =
+    let required_arguments, optional_arguments =
+      match argument with
+      | {
+       Node.value =
+         Expression.Tuple
+           ({ Node.value = taint; _ }
+           :: {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = canonical_name; _ });
+                _;
+              }
+           :: {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = canonical_port; _ });
+                _;
+              }
+           :: { Node.value = Expression.Constant (Constant.Integer producer_id); _ }
+           :: remaining_arguments);
+       _;
+      } ->
+          Some (taint, canonical_name, canonical_port, producer_id), remaining_arguments
+      | _ -> None, []
+    in
+    let optional_arguments =
+      match optional_arguments with
+      | [{ Node.value = Expression.Constant (Constant.Integer trace_length); _ }] ->
+          Some trace_length
+      | [] -> Some 0
+      | _ -> None
+    in
+    match required_arguments, optional_arguments with
+    | Some (taint, canonical_name, canonical_port, producer_id), Some trace_length ->
+        let add_cross_repository_information annotation =
+          let leaf_name =
+            Features.LeafName.
+              {
+                leaf = canonical_name;
+                port = Some (Format.sprintf "producer:%d:%s" producer_id canonical_port);
+              }
+          in
+          match annotation with
+          | TaintAnnotation.Source { source; features } ->
+              TaintAnnotation.Source
+                {
+                  source;
+                  features =
+                    {
+                      features with
+                      leaf_names = leaf_name :: features.leaf_names;
+                      leaf_name_provided = true;
+                      trace_length = Option.merge ~f:min features.trace_length (Some trace_length);
+                      breadcrumbs = Features.Breadcrumb.Crtex :: features.breadcrumbs;
+                    };
+                }
+          | TaintAnnotation.Sink { sink; features } ->
+              TaintAnnotation.Sink
+                {
+                  sink;
+                  features =
+                    {
+                      features with
+                      leaf_names = leaf_name :: features.leaf_names;
+                      leaf_name_provided = true;
+                      trace_length = Option.merge ~f:min features.trace_length (Some trace_length);
+                      breadcrumbs = Features.Breadcrumb.Crtex :: features.breadcrumbs;
+                    };
+                }
+          | _ -> annotation
+        in
+        parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
+    | _ ->
+        Error
+          (annotation_error
+             "Cross repository taint must be of the form CrossRepositoryTaint[taint, \
+              canonical_name, canonical_port, producer_id, trace_length].")
+  and parse_cross_repository_anchor = function
+    | {
+        Node.value =
+          Expression.Tuple
+            [
+              { Node.value = taint; _ };
+              {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = canonical_name; _ });
+                _;
+              };
+              {
+                Node.value =
+                  Expression.Constant (Constant.String { StringLiteral.value = canonical_port; _ });
+                _;
+              };
+            ];
+        _;
+      } ->
+        let add_cross_repository_information annotation =
+          let leaf_name =
+            Features.LeafName.
+              { leaf = canonical_name; port = Some (Format.sprintf "anchor:%s" canonical_port) }
+          in
+          match annotation with
+          | TaintAnnotation.Source { source; features } ->
+              TaintAnnotation.Source
+                {
+                  source;
+                  features =
+                    {
+                      features with
+                      leaf_names = leaf_name :: features.leaf_names;
+                      leaf_name_provided = true;
+                    };
+                }
+          | TaintAnnotation.Sink { sink; features } ->
+              TaintAnnotation.Sink
+                {
+                  sink;
+                  features =
+                    {
+                      features with
+                      leaf_names = leaf_name :: features.leaf_names;
+                      leaf_name_provided = true;
+                    };
+                }
+          | _ -> annotation
+        in
+        parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
+    | _ ->
+        Error
+          (annotation_error
+             "Cross repository taint anchor must be of the form CrossRepositoryTaintAnchor[taint, \
+              canonical_name, canonical_port].")
   in
   parse_annotation (Node.value annotation)
 
