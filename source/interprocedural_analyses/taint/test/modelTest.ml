@@ -531,6 +531,7 @@ let test_models_with_if context =
 
 let test_source_models context =
   let assert_model = assert_model ~context in
+  let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
@@ -578,6 +579,13 @@ let test_source_models context =
     ~source:"def f(x: int): ..."
     ~model_source:{|def test.f(x) -> TaintSource[Test, ViaValueOf[x, WithTag["tag"]]]: ...|}
     ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:{|def test.f(x) -> TaintSource[Test, ViaValueOf[WithTag["tag"]]]: ...|}
+    ~expect:
+      "`TaintSource[(Test, ViaValueOf[WithTag[\"tag\"]])]` is an invalid taint annotation: Missing \
+       parameter name for ViaValueOf or ViaTypeOf"
     ();
   assert_model
     ~source:"def f(x: int): ..."

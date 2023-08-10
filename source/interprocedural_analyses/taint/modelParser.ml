@@ -244,20 +244,22 @@ let rec parse_annotations
     | Expression.Name (Name.Identifier subkind) -> Some subkind
     | _ -> None
   in
-  let rec extract_via_parameters expression =
-    match expression.Node.value with
-    | Expression.Name (Name.Identifier name) ->
-        get_parameter_position name
-        >>| fun position ->
-        [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
-    | Tuple expressions -> List.map ~f:extract_via_parameters expressions |> all >>| List.concat
-    | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") -> Ok []
-    | _ ->
-        Error
-          (annotation_error
-             (Format.sprintf
-                "Invalid expression for ViaValueOf or ViaTypeOf: %s"
-                (Expression.show expression)))
+  let extract_via_parameters expression =
+    let rec parse_expression expression =
+      match expression.Node.value with
+      | Expression.Name (Name.Identifier name) ->
+          get_parameter_position name
+          >>| fun position ->
+          [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
+      | Tuple expressions -> List.map ~f:parse_expression expressions |> all >>| List.concat
+      | Call { callee; _ } when Option.equal String.equal (base_name callee) (Some "WithTag") ->
+          Ok []
+      | _ -> Error (annotation_error "Invalid expression for ViaValueOf or ViaTypeOf")
+    in
+    parse_expression expression
+    |> function
+    | Ok [] -> Error (annotation_error "Missing parameter name for ViaValueOf or ViaTypeOf")
+    | parameters -> parameters
   in
   let rec extract_via_tag expression =
     match expression.Node.value with
