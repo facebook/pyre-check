@@ -287,14 +287,16 @@ let rec parse_annotations
         }
       when is_base_name callee "WithTag" ->
         Ok (Some value)
-    | Expression.Call _ ->
+    | Expression.Name (Name.Identifier _) when not is_object_target ->
+        (* This should be the parameter name. *)
+        Ok None
+    | Tuple expressions -> List.map expressions ~f:extract_via_tag |> all >>| List.find_map ~f:ident
+    | _ ->
         Error
           (annotation_error
              (Format.sprintf
                 "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
                 (Expression.show expression)))
-    | Tuple expressions -> List.map expressions ~f:extract_via_tag |> all >>| List.find_map ~f:ident
-    | _ -> Ok None
   in
   let rec extract_names expression =
     match expression.Node.value with
@@ -334,7 +336,6 @@ let rec parse_annotations
         | "Collapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
         | "NoCollapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
-    | Name (Name.Attribute { base; _ }) -> extract_kinds_with_features base
     | Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
         match base_name callee with
         | Some "Via" -> extract_breadcrumbs argument >>| TaintKindsWithFeatures.from_breadcrumbs

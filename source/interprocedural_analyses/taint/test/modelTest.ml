@@ -2643,6 +2643,23 @@ let test_invalid_models context =
       "`TaintSource[WithSubkind[A][B]]` is an invalid taint annotation: Invalid expression for \
        taint kind: WithSubkind[A][B]"
     ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[Test.attribute]: ..."
+    ~expect:
+      "`TaintSource[Test.attribute]` is an invalid taint annotation: Invalid expression for taint \
+       kind: Test.attribute"
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:"test.C.x: ViaTypeOf[a.b] = ..."
+    ~expect:
+      "`ViaTypeOf[a.b]` is an invalid taint annotation: Invalid expression in ViaValueOf or \
+       ViaTypeOf declaration: a.b"
+    ();
   ();
 
   (* Test invalid model queries. *)
