@@ -180,7 +180,7 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
-              { "always-via-type": "str" },
+              { "always-via-TheZ-type": "str" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -217,7 +217,7 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
-      { "always-via-type": "str" },
+      { "always-via-TheZ-type": "str" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -261,6 +261,7 @@
               { "first-field": "y" },
               { "via-type": "str" },
               { "via-type": "int" },
+              { "via-TheZ-type": "str" },
               { "always-via": "obscure:model" },
               { "type": "integer" },
               { "type": "scalar" },
@@ -303,6 +304,7 @@
       { "first-field": "y" },
       { "via-type": "str" },
       { "via-type": "int" },
+      { "via-TheZ-type": "str" },
       { "always-via": "obscure:model" },
       { "type": "integer" },
       { "type": "scalar" },
@@ -498,7 +500,7 @@
             "local_features": [
               { "has": "first-field" },
               { "first-field": "z" },
-              { "always-via-type": "float" },
+              { "always-via-TheZ-type": "float" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
@@ -535,7 +537,7 @@
     "features": [
       { "has": "first-field" },
       { "first-field": "z" },
-      { "always-via-type": "float" },
+      { "always-via-TheZ-type": "float" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
     ],
@@ -577,8 +579,8 @@
               { "first-field": "x" },
               { "first-field": "z" },
               { "first-field": "y" },
+              { "via-TheZ-type": "float" },
               { "via-type": "typing.List[str]" },
-              { "via-type": "float" },
               { "via-type": "typing.Dict[str, int]" },
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
@@ -618,8 +620,8 @@
       { "first-field": "x" },
       { "first-field": "z" },
       { "first-field": "y" },
+      { "via-TheZ-type": "float" },
       { "via-type": "typing.List[str]" },
-      { "via-type": "float" },
       { "via-type": "typing.Dict[str, int]" },
       { "always-via": "obscure:model" },
       { "always-via": "tito" }
@@ -817,7 +819,7 @@
                 "kind": "Test"
               }
             ],
-            "local_features": [ { "always-via-type": "object" } ],
+            "local_features": [ { "always-via-TheZ-type": "object" } ],
             "origin": {
               "filename": "via_type_of.py",
               "line": 136,
@@ -828,7 +830,7 @@
         ]
       }
     ],
-    "features": [ { "always-via-type": "object" } ],
+    "features": [ { "always-via-TheZ-type": "object" } ],
     "sink_handle": {
       "kind": "Global",
       "callee": "Obj{via_type_of.Test4_C.z}",
@@ -906,6 +908,7 @@
               {
                 "via_features": [
                   {
+                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
                     "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
@@ -990,6 +993,7 @@
               {
                 "via_features": [
                   {
+                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
                     "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
@@ -1072,6 +1076,7 @@
               {
                 "via_features": [
                   {
+                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
                     "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
@@ -1153,6 +1158,7 @@
               {
                 "via_features": [
                   {
+                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
                     "parameter": "PositionalParameter {position = 0; name = \"$global\"; positional_only = false}"
                   }
@@ -1530,7 +1536,7 @@
               }
             ],
             "local_features": [
-              { "always-via-type": "typing.List[typing.List[str]]" }
+              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
             ],
             "origin": {
               "filename": "via_type_of.py",
@@ -1561,7 +1567,9 @@
         ]
       }
     ],
-    "features": [ { "always-via-type": "typing.List[typing.List[str]]" } ],
+    "features": [
+      { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
+    ],
     "sink_handle": {
       "kind": "Call",
       "callee": "_test_sink",
@@ -1708,7 +1716,7 @@
               }
             ],
             "local_features": [
-              { "always-via-type": "typing.List[typing.List[str]]" }
+              { "always-via-TheZ-type": "typing.List[typing.List[str]]" }
             ],
             "origin": {
               "filename": "via_type_of.py",
@@ -1740,7 +1748,7 @@
       }
     ],
     "features": [
-      { "via-type": "typing.List[typing.List[str]]" },
+      { "via-TheZ-type": "typing.List[typing.List[str]]" },
       { "via-type": "typing.Dict[str, typing.List[int]]" },
       { "via-type": "via_type_of.Test3_Foo" }
     ],

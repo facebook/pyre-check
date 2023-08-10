@@ -690,6 +690,228 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test3_alarm1",
+    "callable_line": 87,
+    "code": 5002,
+    "line": 89,
+    "start": 13,
+    "end": 14,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 88,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:a",
+                    "name": "model_query_parameters_viatypeof.test3_f1"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-tag-type": "str" } ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 89,
+              "start": 13,
+              "end": 14
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via-tag-type": "str" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test3_f1",
+      "index": 0,
+      "parameter": "formal(a)"
+    },
+    "master_handle": "model_query_parameters_viatypeof.test3_alarm1:5002:0:Call|model_query_parameters_viatypeof.test3_f1|0|formal(a):81e25321961131daab69e0f747e38e4f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test3_alarm2",
+    "callable_line": 92,
+    "code": 5002,
+    "line": 94,
+    "start": 18,
+    "end": 19,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 93,
+              "start": 31,
+              "end": 45
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:b",
+                    "name": "model_query_parameters_viatypeof.test3_f1"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-tag-type": "str" } ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 94,
+              "start": 18,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via-tag-type": "str" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test3_f1",
+      "index": 0,
+      "parameter": "formal(b)"
+    },
+    "master_handle": "model_query_parameters_viatypeof.test3_alarm2:5002:0:Call|model_query_parameters_viatypeof.test3_f1|0|formal(b):4378064fd164dcd8e50db4db042c7e52"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test3_alarm3",
+    "callable_line": 97,
+    "code": 5002,
+    "line": 99,
+    "start": 23,
+    "end": 24,
+    "filename": "model_query_parameters_viatypeof.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 98,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:c",
+                    "name": "model_query_parameters_viatypeof.test3_f1"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-tag-type": "int" } ],
+            "origin": {
+              "filename": "model_query_parameters_viatypeof.py",
+              "line": 99,
+              "start": 23,
+              "end": 24
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via-tag-type": "int" },
+      { "always-type": "integer" },
+      { "always-type": "scalar" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "model_query_parameters_viatypeof.test3_f1",
+      "index": 0,
+      "parameter": "formal(c)"
+    },
+    "master_handle": "model_query_parameters_viatypeof.test3_alarm3:5002:0:Call|model_query_parameters_viatypeof.test3_f1|0|formal(c):a38fbfa03e77d91bdc6b24c54831cfdf"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -916,6 +1138,74 @@
               {
                 "via_features": [
                   {
+                    "kind": "ViaTypeOf",
+                    "parameter": "PositionalParameter {position = 0; name = \"a\"; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_viatypeof.test3_f1",
+    "sinks": [
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "tag": "tag",
+                    "kind": "ViaTypeOf",
+                    "parameter": "PositionalParameter {position = 2; name = \"c\"; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "tag": "tag",
+                    "kind": "ViaTypeOf",
+                    "parameter": "PositionalParameter {position = 1; name = \"b\"; positional_only = false}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "tag": "tag",
                     "kind": "ViaTypeOf",
                     "parameter": "PositionalParameter {position = 0; name = \"a\"; positional_only = false}"
                   }

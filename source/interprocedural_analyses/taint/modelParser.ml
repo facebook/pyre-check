@@ -341,7 +341,13 @@ let rec parse_annotations
         | Some "ViaTypeOf" ->
             extract_via_tag argument
             >>= fun tag ->
-            extract_via_parameters argument
+            let parameters =
+              if not (is_object_target or is_model_query) then
+                extract_via_parameters argument
+              else
+                Ok [attribute_symbolic_parameter]
+            in
+            parameters
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "Updates" ->
@@ -515,6 +521,23 @@ let rec parse_annotations
         | Some "AttachToSource", _ ->
             extract_attach_features ~name:"AttachToSource" argument
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
+        | Some "ViaTypeOf", _ ->
+            if is_object_target then (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
+              extract_via_tag argument
+              >>| fun tag ->
+              let via_feature =
+                Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
+              in
+              [
+                TaintAnnotation.Tito
+                  {
+                    tito = Sinks.LocalReturn;
+                    features = { TaintFeatures.empty with via_features = [via_feature] };
+                  };
+              ]
+            else
+              Error
+                (annotation_error "`ViaTypeOf[]` can only be used in attribute or global models.")
         | Some "PartialSink", _ ->
             get_partial_sink_kind argument
             >>| fun partial_sink ->
@@ -3168,6 +3191,7 @@ let rec parse_statement
         || Expression.show annotation |> String.is_substring ~substring:"TaintSink["
         || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
         || Expression.show annotation |> String.equal "ViaTypeOf"
+        || Expression.show annotation |> String.is_substring ~substring:"ViaTypeOf["
       then
         let name = name_to_reference_exn name in
         parse_annotations

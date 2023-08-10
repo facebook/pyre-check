@@ -78,3 +78,26 @@ def test2_noalarm1(c: Test2_C):
 
 def test2_noalarm2(c: Test2_C):
     c.f2("a", 0, Test2_T())
+
+
+def test3_f1(a, b, c):
+    pass
+
+
+def test3_alarm1():
+    x: str = _test_source()
+    test3_f1(x, "b", 0)
+
+
+def test3_alarm2():
+    x: Annotated[str, "foo"] = _test_source()
+    test3_f1("a", x, 0)
+
+
+def test3_alarm3():
+    x: int = _test_source()
+    test3_f1("a", "b", x)
+
+
+def test3_noalarm1():
+    test3_f1("a", "b", 0)

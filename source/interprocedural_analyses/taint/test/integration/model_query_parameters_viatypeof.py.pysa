@@ -14,3 +14,10 @@ ModelQuery(
   where=[cls.name.matches("Test2_C")],
   model=Parameters(TaintSink[Test, ViaTypeOf], where=[Not(name.matches("self"))])
 )
+
+ModelQuery(
+  name = "get_test3_sinks",
+  find="functions",
+  where=[name.matches("test3_f")],
+  model=Parameters(TaintSink[Test, ViaTypeOf[WithTag["tag"]]])
+)

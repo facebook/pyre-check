@@ -4769,8 +4769,7 @@ Unexpected statement: `food(y)`
       test.C.x: TaintInTaintOut[ViaTypeOf] = ...
     |}
     ();
-  (* TODO(T159692443): support ViaTypeOf and WithTag on attributes *)
-  assert_invalid_model
+  assert_valid_model
     ~source:{|
       class C:
         x: int = 0
@@ -4778,8 +4777,6 @@ Unexpected statement: `food(y)`
     ~model_source:{|
       test.C.x: ViaTypeOf[WithTag["tag"]] = ...
     |}
-    ~expect:
-      {|`ViaTypeOf[WithTag["tag"]]` is an invalid taint annotation: Unsupported annotation for attributes|}
     ();
   assert_valid_model
     ~source:{|
