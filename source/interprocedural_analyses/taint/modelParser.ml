@@ -239,10 +239,15 @@ let rec parse_annotations
           (annotation_error
              (Format.sprintf "Invalid expression for breadcrumb: %s" (Expression.show expression)))
   in
-  let extract_subkind { Node.value = expression; _ } =
-    match expression with
-    | Expression.Name (Name.Identifier subkind) -> Some subkind
-    | _ -> None
+  let extract_subkind expression =
+    match Node.value expression with
+    | Expression.Name (Name.Identifier subkind) -> Ok subkind
+    | _ ->
+        Error
+          (annotation_error
+             (Format.sprintf
+                "Invalid expression for taint subkind: %s"
+                (Expression.show expression)))
   in
   let extract_via_parameters expression =
     let rec parse_expression expression =
@@ -379,16 +384,16 @@ let rec parse_annotations
         | Some "CollapseDepth" ->
             extract_collapse_depth argument
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
-        | _ ->
-            let subkind = extract_subkind argument in
-            extract_kinds_with_features callee
-            >>| fun { TaintKindsWithFeatures.kinds; features } ->
-            let kinds =
-              List.map kinds ~f:(function
-                  | { Kind.name; subkind = None } -> { Kind.name; subkind }
-                  | kind -> kind)
-            in
-            { TaintKindsWithFeatures.kinds; features })
+        | Some taint_kind ->
+            extract_subkind argument
+            >>| fun subkind ->
+            TaintKindsWithFeatures.from_kind { Kind.name = taint_kind; subkind = Some subkind }
+        | None ->
+            Error
+              (annotation_error
+                 (Format.sprintf
+                    "Invalid expression for taint kind: %s"
+                    (Expression.show expression))))
     | Tuple expressions ->
         List.map ~f:extract_kinds_with_features expressions
         |> all

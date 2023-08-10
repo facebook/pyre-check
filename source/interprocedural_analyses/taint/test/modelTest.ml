@@ -2622,6 +2622,28 @@ let test_invalid_models context =
     ~expect:
       {|`TaintSource.foo(A)` is an invalid taint annotation: Failed to parse the given taint annotation.|}
     ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[WithSubkind[X, Y, Z]]: ..."
+    ~expect:
+      "`TaintSource[WithSubkind[(X, Y, Z)]]` is an invalid taint annotation: Invalid expression \
+       for taint subkind: (X, Y, Z)"
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[Collapse[Subkind]]: ..."
+    ~expect:
+      "`TaintSource[Collapse[Subkind]]` is an invalid taint annotation: Unsupported taint source \
+       `Collapse`"
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[WithSubkind[A][B]]: ..."
+    ~expect:
+      "`TaintSource[WithSubkind[A][B]]` is an invalid taint annotation: Invalid expression for \
+       taint kind: WithSubkind[A][B]"
+    ();
+  ();
 
   (* Test invalid model queries. *)
   assert_invalid_model
