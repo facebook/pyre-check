@@ -227,6 +227,7 @@ def run_test_cache_first_and_second_runs(
                 "ClassHierarchyGraph": "Used",
                 "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
+                "InitialModels": "Used",
                 "TypeEnvironment": "Used",
             }
         },
@@ -304,6 +305,7 @@ def run_test_changed_pysa_file(
                 "ClassHierarchyGraph": "Used",
                 "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
+                "InitialModels": "Used",
                 "TypeEnvironment": "Used",
             }
         },
@@ -365,6 +367,7 @@ def run_test_changed_taint_config_file(
                 "ClassHierarchyGraph": "Used",
                 "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
+                "InitialModels": "Used",
                 "TypeEnvironment": "Used",
             }
         },
@@ -434,6 +437,7 @@ def run_test_changed_models(
                 "ClassHierarchyGraph": "Used",
                 "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
+                "InitialModels": "Used",
                 "TypeEnvironment": "Used",
             }
         },
@@ -626,6 +630,7 @@ def run_test_changed_overrides(
                 "ClassHierarchyGraph": "Used",
                 "ClassIntervalGraph": "Used",
                 "InitialCallables": "Used",
+                "InitialModels": "Used",
                 "TypeEnvironment": "Used",
             }
         },

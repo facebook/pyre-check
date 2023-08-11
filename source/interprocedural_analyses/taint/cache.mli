@@ -34,3 +34,9 @@ val class_interval_graph
   ClassIntervalSetGraph.Heap.t * t
 
 val metadata_to_json : t -> Yojson.Safe.t
+
+module InitialModelsSharedMemory : sig
+  val save : Registry.t -> unit
+
+  val load : t -> Registry.t option * t
+end

@@ -26,6 +26,7 @@ module Entry = struct
     | InitialCallables
     | ClassHierarchyGraph
     | ClassIntervalGraph
+    | InitialModels
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -33,6 +34,7 @@ module Entry = struct
     | InitialCallables -> "initial callables"
     | ClassHierarchyGraph -> "class hierarchy graph"
     | ClassIntervalGraph -> "class interval graph"
+    | InitialModels -> "initial models"
 end
 
 module EntryStatus = struct
@@ -245,6 +247,17 @@ let save { save_cache; configuration; _ } =
     save_shared_memory ~configuration |> ignore
 
 
+let set_entry_usage ~entry ~usage ({ status; _ } as cache) =
+  let status =
+    match status with
+    | Loaded entry_status ->
+        let entry_status = EntryStatus.add ~name:entry ~usage entry_status in
+        SharedMemoryStatus.Loaded entry_status
+    | _ -> status
+  in
+  { cache with status }
+
+
 module type CacheEntryType = sig
   type t
 
@@ -258,16 +271,21 @@ module MakeCacheEntry (CacheEntry : CacheEntryType) = struct
     let name = Entry.show_pretty CacheEntry.entry
   end)
 
-  let load_or_compute ({ status; save_cache; _ } as cache) f =
-    let value, usage = T.load_or_compute ~should_save:save_cache f in
-    let status =
+  let load_or_compute ({ save_cache; status; _ } as cache) f =
+    let value, cache =
       match status with
-      | Loaded entry_status ->
-          let entry_status = EntryStatus.add ~name:CacheEntry.entry ~usage entry_status in
-          SharedMemoryStatus.Loaded entry_status
-      | _ -> status
+      | Loaded _ ->
+          let value, usage =
+            match T.load () with
+            | Ok value -> value, Usage.Used
+            | Error error -> f (), error
+          in
+          let cache = set_entry_usage ~entry:CacheEntry.entry ~usage cache in
+          value, cache
+      | _ -> f (), cache
     in
-    value, { cache with status }
+    if save_cache then T.save value;
+    value, cache
 end
 
 module ClassHierarchyGraphSharedMemory = MakeCacheEntry (struct
@@ -293,3 +311,28 @@ let initial_callables = InitialCallablesSharedMemory.load_or_compute
 let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
 
 let class_interval_graph = ClassIntervalGraphSharedMemory.load_or_compute
+
+module InitialModelsSharedMemory = struct
+  let entry = Entry.InitialModels
+
+  module T = SaveLoadSharedMemory.MakeSingleValue (struct
+    type t = (Interprocedural.Target.t * Model.t) list
+
+    let name = Entry.show_pretty entry
+  end)
+
+  let save initial_models = initial_models |> Registry.to_alist |> T.save
+
+  let load ({ status; _ } as cache) =
+    match status with
+    | Loaded _ -> (
+        match T.load () with
+        | Ok initial_models ->
+            ( Some (Registry.of_alist ~join:Model.join initial_models),
+              set_entry_usage ~entry ~usage:SaveLoadSharedMemory.Usage.Used cache )
+        | Error error -> None, set_entry_usage ~entry ~usage:error cache)
+    | _ ->
+        (* Initial models from the previous run are loaded only to see if they have changed, so that
+           we know whether to reuse the cached override graph. *)
+        None, cache
+end

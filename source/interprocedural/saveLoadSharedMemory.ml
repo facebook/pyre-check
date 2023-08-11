@@ -71,18 +71,4 @@ module MakeSingleValue (Value : SingleValueValueType) = struct
         Log.info "Saved %s to cache." Value.name;
         Ok ())
     |> ignore
-
-
-  let load_or_compute ~should_save f =
-    let value, usage =
-      match load () with
-      | Ok value -> Some value, Usage.Used
-      | Error error -> None, error
-    in
-    match value with
-    | Some value -> value, usage
-    | None ->
-        let value = f () in
-        if should_save then save value;
-        value, usage
 end

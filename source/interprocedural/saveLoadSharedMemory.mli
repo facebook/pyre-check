@@ -32,6 +32,4 @@ module MakeSingleValue (Value : SingleValueValueType) : sig
   val load : unit -> (Value.t, Usage.t) result
 
   val save : Value.t -> unit
-
-  val load_or_compute : should_save:bool -> (unit -> Value.t) -> Value.t * Usage.t
 end

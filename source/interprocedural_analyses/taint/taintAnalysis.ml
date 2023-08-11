@@ -458,6 +458,8 @@ let run_taint_analysis
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~initial_callables
   in
+  let _, cache = Cache.InitialModelsSharedMemory.load cache in
+  let () = if use_cache then Cache.InitialModelsSharedMemory.save initial_models in
 
   Log.info "Computing overrides...";
   let timer = Timer.start () in
