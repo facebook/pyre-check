@@ -609,8 +609,12 @@ class ValuesView(MappingView, Collection[_VT_co], Generic[_VT_co]):
 class Mapping(Collection[_KT], Generic[_KT, _VT_co]):
     # TODO: We wish the key type could also be covariant, but that doesn't work,
     # see discussion in https://github.com/python/typing/pull/273.
+    @overload
     @abstractmethod
     def __getitem__(self, __key: _KT) -> _VT_co: ...
+    @overload
+    @abstractmethod
+    def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co]: ...
     # Mixin methods
     @overload
     def get(self, __key: _KT) -> _VT_co | None: ...
