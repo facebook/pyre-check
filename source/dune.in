@@ -395,8 +395,6 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (ocamlc_flags
-  (:standard -custom))
  (libraries core_unix.command_unix pyrelib))
 
 (alias
