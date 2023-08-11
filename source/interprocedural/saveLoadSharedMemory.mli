@@ -33,3 +33,28 @@ module MakeSingleValue (Value : SingleValueValueType) : sig
 
   val save : Value.t -> unit
 end
+
+module type KeyValueValueType = sig
+  type t
+
+  val prefix : Hack_parallel.Std.Prefix.t
+
+  val description : string
+end
+
+(* Support storing / loading key-value pairs into / from the shared memory. *)
+module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyValueValueType) : sig
+  module KeySet : Set.S with type t = Set.Make(Key).t and type elt = Key.t
+
+  type t
+
+  val create : unit -> t
+
+  val get : t -> Key.t -> Value.t option
+
+  val mem : t -> Key.t -> bool
+
+  val of_alist : (Key.t * Value.t) list -> t
+
+  val cleanup : t -> unit
+end

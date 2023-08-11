@@ -72,3 +72,56 @@ module MakeSingleValue (Value : SingleValueValueType) = struct
         Ok ())
     |> ignore
 end
+
+module type KeyValueValueType = sig
+  type t
+
+  val prefix : Hack_parallel.Std.Prefix.t
+
+  val description : string
+end
+
+(* Support storing / loading key-value pairs into / from the shared memory. *)
+module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyValueValueType) =
+struct
+  module FirstClass =
+    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+      (Key)
+      (struct
+        type t = Value.t
+
+        let prefix = Value.prefix
+
+        let description = Value.description
+      end)
+
+  (* The table handle and the keys, whose combination locates all entries in the shared memory that
+     belong to this table. *)
+  module Handle = struct
+    type t = {
+      first_class_handle: FirstClass.t;
+      keys: FirstClass.KeySet.t;
+    }
+  end
+
+  module KeySet = FirstClass.KeySet
+
+  type t = Handle.t
+
+  let create () =
+    { Handle.first_class_handle = FirstClass.create (); keys = FirstClass.KeySet.empty }
+
+
+  let get { Handle.first_class_handle; _ } = FirstClass.get first_class_handle
+
+  let mem { Handle.first_class_handle; _ } = FirstClass.mem first_class_handle
+
+  (* Partially invalidate the shared memory. *)
+  let cleanup { Handle.first_class_handle; keys } = FirstClass.remove_batch first_class_handle keys
+
+  let of_alist list =
+    let save_entry ~first_class_handle (key, value) = FirstClass.add first_class_handle key value in
+    let first_class_handle = FirstClass.create () in
+    List.iter list ~f:(save_entry ~first_class_handle);
+    { Handle.first_class_handle; keys = list |> List.map ~f:fst |> FirstClass.KeySet.of_list }
+end

@@ -86,7 +86,7 @@ let test_call_graph_of_define context =
            ~qualifier:(Reference.create "test")
            ~define)
     in
-    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
+    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
     ()
   in
   assert_call_graph_of_define

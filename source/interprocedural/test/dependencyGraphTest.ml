@@ -68,7 +68,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
     CallGraph.WholeProgramCallGraph.add_or_exn call_graph ~callable ~callees
   in
   let call_graph = List.fold ~init:CallGraph.WholeProgramCallGraph.empty ~f:fold definitions in
-  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph in
+  let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
   call_graph
 
 

@@ -178,7 +178,7 @@ end
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
 module SharedMemory = struct
   module T =
-    Hack_parallel.Std.SharedMemory.FirstClass.WithCache.Make
+    SaveLoadSharedMemory.MakeKeyValue
       (Target.SharedMemoryKey)
       (struct
         type t = Reference.t list
@@ -192,27 +192,16 @@ module SharedMemory = struct
 
   let create = T.create
 
-  let add_overriding_types handle ~member ~subtypes = T.add handle member subtypes
-
   let get_overriding_types handle ~member = T.get handle member
 
   let overrides_exist handle member = T.mem handle member
 
   (** Records a heap override graph in shared memory. *)
-  let from_heap overrides =
-    let handle = create () in
-    let record_override_edge ~key:member ~data:subtypes =
-      add_overriding_types handle ~member ~subtypes
-    in
-    let () = Target.Map.Tree.iteri overrides ~f:record_override_edge in
-    handle
-
+  let from_heap overrides = overrides |> Target.Map.Tree.to_alist |> T.of_alist
 
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
-  let cleanup handle overrides =
-    overrides |> Target.Map.Tree.keys |> T.KeySet.of_list |> T.remove_batch handle
-
+  let cleanup = T.cleanup
 
   let expand_override_targets handle callees =
     let rec expand_and_gather expanded = function

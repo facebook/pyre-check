@@ -57,7 +57,7 @@ module SharedMemory : sig
 
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
-  val cleanup : t -> Heap.t -> unit
+  val cleanup : t -> unit
 end
 
 type whole_program_overrides = {

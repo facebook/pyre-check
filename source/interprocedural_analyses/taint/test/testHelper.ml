@@ -874,7 +874,7 @@ let end_to_end_integration_test path context =
       |> String.concat ~sep:""
     in
     let () = TaintFixpoint.cleanup fixpoint_state in
-    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory override_graph_heap in
+    let () = OverrideGraph.SharedMemory.cleanup override_graph_shared_memory in
     let () =
       ClassIntervalSetGraph.SharedMemory.cleanup
         class_interval_graph_shared_memory
