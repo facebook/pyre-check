@@ -464,7 +464,7 @@ class AsyncGenerator(AsyncIterator[_T_co], Generic[_T_co, _T_contra]):
 class Container(Protocol[_T_co]):
     # This is generic more on vibes than anything else
     @abstractmethod
-    def __contains__(self, __x: object) -> bool: ...
+    def __contains__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
 
 @runtime_checkable
 class Collection(Iterable[_T_co], Container[_T_co], Protocol[_T_co]):
