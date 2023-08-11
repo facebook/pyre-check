@@ -21,6 +21,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Union
 
@@ -154,499 +155,450 @@ def _remove_cache_file(cache_path: Path) -> None:
     except FileNotFoundError:
         pass
 
+@dataclass
+class Test:
+    typeshed_path: str
+    cache_path: Path
+    expected: List[Dict[str, Any]]
+    save_results_to: Path
+    exit_on_error: bool
 
-def run_test_no_cache(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """Run Pysa without the cache argument."""
-    LOG.info("Testing with no --use-cache flag:")
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=False
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "Disabled",
-        "save_cache": False,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-    _exit_or_continue(returncode, exit_on_error)
+    def run_test_no_cache(self) -> None:
+        """Run Pysa without the cache argument."""
+        LOG.info("Testing with no --use-cache flag:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=False
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "Disabled",
+            "save_cache": False,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
 
+    def run_test_cache_first_and_second_runs(self) -> None:
+        """
+        Run Pysa with the cache argument for the first time. This should create
+        the cache file and save state to it since the file doesn't exist already.
+        Ensure the cache file doesn't already exist for a clean run.
 
-def run_test_cache_first_and_second_runs(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa with the cache argument for the first time. This should create
-    the cache file and save state to it since the file doesn't exist already.
-    Ensure the cache file doesn't already exist for a clean run.
+        Then, run Pysa with the cache argument for the second time. Since the file
+        exists, Pysa should load the saved state from the file.
+        """
 
-    Then, run Pysa with the cache argument for the second time. Since the file
-    exists, Pysa should load the saved state from the file.
-    """
+        try:
+            shutil.rmtree(self.cache_path)
+        except FileNotFoundError:
+            pass
 
-    try:
-        shutil.rmtree(cache_path)
-    except FileNotFoundError:
-        pass
+        LOG.info("Testing behavior with --use-cache flag on initial run:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "NotFound",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
 
-    LOG.info("Testing behavior with --use-cache flag on initial run:")
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "NotFound",
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-    _exit_or_continue(returncode, exit_on_error)
+        LOG.info("Testing behavior with --use-cache on subsequent runs:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
 
-    LOG.info("Testing behavior with --use-cache on subsequent runs:")
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "ClassHierarchyGraph": "Used",
-                "ClassIntervalGraph": "Used",
-                "InitialCallables": "Used",
-                "InitialModels": "Used",
-                "TypeEnvironment": "Used",
-            }
-        },
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-    _exit_or_continue(returncode, exit_on_error)
+    def run_test_invalid_cache_file(self) -> None:
+        """
+        Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
+        cache file. Pysa should fall back to doing a clean run.
+        """
 
+        LOG.info("Testing fallback behavior with invalid cache file:")
 
-def run_test_invalid_cache_file(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
-    cache file. Pysa should fall back to doing a clean run.
-    """
+        _remove_cache_file(cache_path=self.cache_path)
+        (self.cache_path / "sharedmem").touch()
 
-    LOG.info("Testing fallback behavior with invalid cache file:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "LoadError",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
 
-    _remove_cache_file(cache_path=cache_path)
-    (cache_path / "sharedmem").touch()
+    def run_test_changed_pysa_file(self) -> None:
+        """
+        Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+        """
 
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "LoadError",
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-    _exit_or_continue(returncode, exit_on_error)
+        LOG.info("Testing cache is not invalidated after .pysa file change:")
 
+        test_model_path = Path("test_taint/PYSA_CACHE_TEST__tmp_model.pysa")
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            pass
 
-def run_test_changed_pysa_file(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
-    """
+        test_model_path.touch()
 
-    LOG.info("Testing cache is not invalidated after .pysa file change:")
-
-    test_model_path = Path("test_taint/PYSA_CACHE_TEST__tmp_model.pysa")
-    try:
-        test_model_path.unlink()
-    except FileNotFoundError:
-        pass
-
-    test_model_path.touch()
-
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "ClassHierarchyGraph": "Used",
-                "ClassIntervalGraph": "Used",
-                "InitialCallables": "Used",
-                "InitialModels": "Used",
-                "TypeEnvironment": "Used",
-            }
-        },
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-
-    # Clean up
-    try:
-        test_model_path.unlink()
-    except FileNotFoundError:
-        LOG.warning(f"Could not clean up {test_model_path.absolute()} after test run.")
-        pass
-
-    _exit_or_continue(returncode, exit_on_error)
-
-
-def run_test_changed_taint_config_file(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
-    """
-
-    LOG.info("Testing cache is not invalidated after taint.config change:")
-
-    test_taint_config = Path("test_taint/test_taint.config")
-    try:
-        test_taint_config.unlink()
-    except FileNotFoundError:
-        pass
-
-    with open(test_taint_config, "w") as f:
-        f.write(
-            "{\n"
-            '  "comment": "Test",\n'
-            '  "sources": [],\n'
-            '  "sinks": [],\n'
-            '  "features": [],\n'
-            '  "rules": []\n'
-            "}"
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
         )
 
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "ClassHierarchyGraph": "Used",
-                "ClassIntervalGraph": "Used",
-                "InitialCallables": "Used",
-                "InitialModels": "Used",
-                "TypeEnvironment": "Used",
-            }
-        },
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
+        # Clean up
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(
+                f"Could not clean up {test_model_path.absolute()} after test run."
+            )
+            pass
 
-    # Clean up
-    try:
-        test_taint_config.unlink()
-    except FileNotFoundError:
-        LOG.warning(
-            f"Could not clean up {test_taint_config.absolute()} after test run."
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    def run_test_changed_taint_config_file(self) -> None:
+        """
+        Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+        """
+
+        LOG.info("Testing cache is not invalidated after taint.config change:")
+
+        test_taint_config = Path("test_taint/test_taint.config")
+        try:
+            test_taint_config.unlink()
+        except FileNotFoundError:
+            pass
+
+        with open(test_taint_config, "w") as f:
+            f.write(
+                "{\n"
+                '  "comment": "Test",\n'
+                '  "sources": [],\n'
+                '  "sinks": [],\n'
+                '  "features": [],\n'
+                '  "rules": []\n'
+                "}"
+            )
+
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
         )
-        pass
-
-    _exit_or_continue(returncode, exit_on_error)
-
-
-def run_test_changed_models(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
-    """
-
-    LOG.info("Testing results after models change:")
-
-    # Remove a test taint file
-    test_model_path = Path("test_taint/sanitize.pysa")
-    # Save contents for cleanup phase
-    original_content = open(test_model_path).read()
-    try:
-        test_model_path.unlink()
-    except FileNotFoundError:
-        LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
-        pass
-
-    # Expected should have an additional issue from removing the sanitizer
-    new_issue = {
-        "code": 5001,
-        "column": 9,
-        "define": "integration_test.functools.test_cached_sanitizer",
-        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-        "line": 58,
-        "name": "Possible shell injection",
-        "path": "fixture_source/integration_test/functools.py",
-        "stop_column": 18,
-        "stop_line": 58,
-    }
-
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "ClassHierarchyGraph": "Used",
-                "ClassIntervalGraph": "Used",
-                "InitialCallables": "Used",
-                "InitialModels": "Used",
-                "TypeEnvironment": "Used",
-            }
-        },
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected + [new_issue],
-        save_results_to,
-        expected_cache_usage,
-    )
-
-    # Restore the original model file
-    open(test_model_path, "w").write(original_content)
-
-    _exit_or_continue(returncode, exit_on_error)
-
-
-def run_test_changed_source_files(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after adding a new file to test cache invalidation.
-    Pysa should detect that the source has changed and fall back
-    to doing a clean run.
-    """
-
-    LOG.info("Testing cache invalidation after source files change:")
-
-    new_file_path = Path("fixture_source") / "PYSA_CACHE_TEST__tmp_file.py"
-    try:
-        new_file_path.unlink()
-    except FileNotFoundError:
-        pass
-
-    new_file_path.touch()
-
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "InvalidByCodeChange",
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-
-    # Clean up
-    try:
-        new_file_path.unlink()
-    except FileNotFoundError:
-        LOG.warning(f"Could not clean up {new_file_path.absolute()} after test run.")
-        pass
-
-    _exit_or_continue(returncode, exit_on_error)
-
-
-def run_test_changed_decorators(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
-    Pysa should detect that the decorator modes have changed and fall back
-    to doing a clean run.
-    """
-
-    LOG.info("Testing cache invalidation after decorator mode change:")
-
-    new_model_path = Path("test_taint/test_decorator.pysa")
-    try:
-        new_model_path.unlink()
-    except FileNotFoundError:
-        pass
-
-    with open(new_model_path, "w") as f:
-        f.write(
-            "@IgnoreDecorator\ndef integration_test.cache.ignore_decorator(): ...\n"
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
         )
 
-    # Expected should have an additional issue from ignoring the decorator
-    new_issue = {
-        "code": 5001,
-        "column": 19,
-        "define": "integration_test.cache.test_ignore_decorator",
-        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-        "line": 23,
-        "name": "Possible shell injection",
-        "path": "fixture_source/integration_test/cache.py",
-        "stop_column": 27,
-        "stop_line": 23,
-    }
+        # Clean up
+        try:
+            test_taint_config.unlink()
+        except FileNotFoundError:
+            LOG.warning(
+                f"Could not clean up {test_taint_config.absolute()} after test run."
+            )
+            pass
 
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "InvalidByDecoratorChange",
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected + [new_issue],
-        save_results_to,
-        expected_cache_usage,
-    )
+        _exit_or_continue(returncode, self.exit_on_error)
 
-    # Clean up
-    try:
-        new_model_path.unlink()
-    except FileNotFoundError:
-        LOG.warning(f"Could not clean up {new_model_path.absolute()} after test run.")
-        pass
+    def run_test_changed_models(self) -> None:
+        """
+        Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
+        """
 
-    _exit_or_continue(returncode, exit_on_error)
+        LOG.info("Testing results after models change:")
 
+        # Remove a test taint file
+        test_model_path = Path("test_taint/sanitize.pysa")
+        # Save contents for cleanup phase
+        original_content = open(test_model_path).read()
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
+            pass
 
-def run_test_changed_overrides(
-    typeshed_path: str,
-    cache_path: Path,
-    expected: List[Dict[str, Any]],
-    save_results_to: Path,
-    exit_on_error: bool,
-) -> None:
-    """
-    Run Pysa after removing a @SkipOverrides model to test cache invalidation.
-    Pysa should detect that the override graph has changed and fall back
-    to doing a clean run.
-    """
+        # Expected should have an additional issue from removing the sanitizer
+        new_issue = {
+            "code": 5001,
+            "column": 9,
+            "define": "integration_test.functools.test_cached_sanitizer",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 58,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/functools.py",
+            "stop_column": 18,
+            "stop_line": 58,
+        }
 
-    _remove_cache_file(cache_path=cache_path)
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
 
-    LOG.info("Testing cache invalidation after skip override change (initial run):")
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": "NotFound",
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected,
-        save_results_to,
-        expected_cache_usage,
-    )
-    _exit_or_continue(returncode, exit_on_error)
+        # Restore the original model file
+        open(test_model_path, "w").write(original_content)
 
-    # Remove a test taint file
-    test_model_path = Path("test_taint/skip_overrides.pysa")
-    # Save contents for cleanup phase
-    original_content = open(test_model_path).read()
-    try:
-        test_model_path.unlink()
-    except FileNotFoundError:
-        LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
-        pass
+        _exit_or_continue(returncode, self.exit_on_error)
 
-    # Expected should have an additional issue from not skipping overrides
-    new_issue = {
-        "code": 5001,
-        "column": 20,
-        "define": "integration_test.cache.test_skip_overrides",
-        "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-        "line": 37,
-        "name": "Possible shell injection",
-        "path": "fixture_source/integration_test/cache.py",
-        "stop_column": 28,
-        "stop_line": 37,
-    }
+    def run_test_changed_source_files(self) -> None:
+        """
+        Run Pysa after adding a new file to test cache invalidation.
+        Pysa should detect that the source has changed and fall back
+        to doing a clean run.
+        """
 
-    LOG.info("Testing cache invalidation after skip override change (second run):")
-    pysa_command = _pysa_command(
-        typeshed_path, cache_path, save_results_to, use_cache=True
-    )
-    expected_cache_usage = {
-        "shared_memory_status": {
-            "Loaded": {
-                "ClassHierarchyGraph": "Used",
-                "ClassIntervalGraph": "Used",
-                "InitialCallables": "Used",
-                "InitialModels": "Used",
-                "TypeEnvironment": "Used",
-            }
-        },
-        "save_cache": True,
-    }
-    returncode = _run_and_check_output(
-        pysa_command,
-        expected + [new_issue],
-        save_results_to,
-        expected_cache_usage,
-    )
+        LOG.info("Testing cache invalidation after source files change:")
 
-    # Restore the original model file
-    open(test_model_path, "w").write(original_content)
+        new_file_path = Path("fixture_source") / "PYSA_CACHE_TEST__tmp_file.py"
+        try:
+            new_file_path.unlink()
+        except FileNotFoundError:
+            pass
 
-    _exit_or_continue(returncode, exit_on_error)
+        new_file_path.touch()
+
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "InvalidByCodeChange",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Clean up
+        try:
+            new_file_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(
+                f"Could not clean up {new_file_path.absolute()} after test run."
+            )
+            pass
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    def run_test_changed_decorators(self) -> None:
+        """
+        Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
+        Pysa should detect that the decorator modes have changed and fall back
+        to doing a clean run.
+        """
+
+        LOG.info("Testing cache invalidation after decorator mode change:")
+
+        new_model_path = Path("test_taint/test_decorator.pysa")
+        try:
+            new_model_path.unlink()
+        except FileNotFoundError:
+            pass
+
+        with open(new_model_path, "w") as f:
+            f.write(
+                "@IgnoreDecorator\ndef integration_test.cache.ignore_decorator(): ...\n"
+            )
+
+        # Expected should have an additional issue from ignoring the decorator
+        new_issue = {
+            "code": 5001,
+            "column": 19,
+            "define": "integration_test.cache.test_ignore_decorator",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 23,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 27,
+            "stop_line": 23,
+        }
+
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "InvalidByDecoratorChange",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Clean up
+        try:
+            new_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(
+                f"Could not clean up {new_model_path.absolute()} after test run."
+            )
+            pass
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    def run_test_changed_overrides(self) -> None:
+        """
+        Run Pysa after removing a @SkipOverrides model to test cache invalidation.
+        Pysa should detect that the override graph has changed and fall back
+        to doing a clean run.
+        """
+
+        _remove_cache_file(cache_path=self.cache_path)
+
+        LOG.info("Testing cache invalidation after skip override change (initial run):")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "NotFound",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
+
+        # Remove a test taint file
+        test_model_path = Path("test_taint/skip_overrides.pysa")
+        # Save contents for cleanup phase
+        original_content = open(test_model_path).read()
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
+            pass
+
+        # Expected should have an additional issue from not skipping overrides
+        new_issue = {
+            "code": 5001,
+            "column": 20,
+            "define": "integration_test.cache.test_skip_overrides",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 37,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 28,
+            "stop_line": 37,
+        }
+
+        LOG.info("Testing cache invalidation after skip override change (second run):")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Restore the original model file
+        open(test_model_path, "w").write(original_content)
+
+        _exit_or_continue(returncode, self.exit_on_error)
 
 
 def run_tests(exit_on_error: bool) -> None:
@@ -670,69 +622,23 @@ def run_tests(exit_on_error: bool) -> None:
         save_results_to = Path(save_results_to)
         LOG.info(f"Saving results to directory: `{save_results_to}`")
 
-        run_test_no_cache(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
+        test_class = Test(
+            typeshed_path=typeshed_path,
+            cache_path=cache_path,
+            expected=expected,
+            save_results_to=save_results_to,
+            exit_on_error=exit_on_error,
         )
-        run_test_cache_first_and_second_runs(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_invalid_cache_file(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_pysa_file(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_taint_config_file(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_models(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_source_files(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_decorators(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
-        run_test_changed_overrides(
-            typeshed_path,
-            cache_path,
-            expected,
-            save_results_to,
-            exit_on_error,
-        )
+
+        test_class.run_test_no_cache()
+        test_class.run_test_cache_first_and_second_runs()
+        test_class.run_test_invalid_cache_file()
+        test_class.run_test_changed_pysa_file()
+        test_class.run_test_changed_taint_config_file()
+        test_class.run_test_changed_models()
+        test_class.run_test_changed_source_files()
+        test_class.run_test_changed_decorators()
+        test_class.run_test_changed_overrides()
 
 
 if __name__ == "__main__":
