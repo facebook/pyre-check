@@ -687,16 +687,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             hover_request,
         )
         if isinstance(response, code_navigation_request.HoverResponse):
-            lsp_hover_response = lsp.LspHoverResponse(
-                "\n".join(
-                    [
-                        hover.to_lsp_hover_response().contents
-                        for hover in response.contents
-                    ]
-                )
-            )
             return GetHoverResponse(
-                source=DaemonQuerierSource.PYRE_DAEMON, data=lsp_hover_response
+                source=DaemonQuerierSource.PYRE_DAEMON,
+                data=lsp.LspHoverResponse.from_pyre_hover_responses(response.contents),
             )
         return daemon_query.DaemonQueryFailure(response.message)
 

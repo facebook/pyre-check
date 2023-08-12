@@ -567,6 +567,16 @@ class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     def empty() -> "LspHoverResponse":
         return LspHoverResponse(contents="")
 
+    @staticmethod
+    def from_pyre_hover_responses(
+        responses: List["PyreHoverResponse"],
+    ) -> "LspHoverResponse":
+        return LspHoverResponse(
+            "\n".join(
+                [response.to_lsp_hover_response().contents for response in responses]
+            )
+        )
+
 
 @dataclasses.dataclass(frozen=True)
 class PyreHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
