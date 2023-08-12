@@ -616,7 +616,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=lsp.LspHoverResponse.empty().to_dict(),
+                    result=None,
                 ),
             )
         daemon_status_before = self.server_state.status_tracker.get_status()
@@ -636,10 +636,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raw_result = None
             empty = True
         else:
-            raw_result = lsp.LspHoverResponse.cached_schema().dump(
-                result.data,
+            empty = result.data is None
+            raw_result = (
+                None
+                if empty
+                else lsp.LspHoverResponse.cached_schema().dump(
+                    result.data,
+                )
             )
-            empty = len(result.data.contents) == 0
 
         await lsp.write_json_rpc(
             self.output_channel,

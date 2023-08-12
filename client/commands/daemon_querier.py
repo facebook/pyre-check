@@ -71,7 +71,7 @@ class GetDefinitionLocationsResponse:
 @dataclasses.dataclass(frozen=True)
 class GetHoverResponse:
     source: DaemonQuerierSource
-    data: lsp.LspHoverResponse
+    data: Optional[lsp.LspHoverResponse]
 
 
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:

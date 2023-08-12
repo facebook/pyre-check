@@ -564,16 +564,19 @@ class LspHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     contents: str
 
     @staticmethod
-    def empty() -> "LspHoverResponse":
-        return LspHoverResponse(contents="")
-
-    @staticmethod
     def from_pyre_hover_responses(
         responses: List["PyreHoverResponse"],
-    ) -> "LspHoverResponse":
-        return LspHoverResponse(
-            "\n".join(
-                [response.to_lsp_hover_response().contents for response in responses]
+    ) -> Optional["LspHoverResponse"]:
+        lsp_hover_responses = [
+            lsp_response
+            for lsp_response in (hover.to_lsp_hover_response() for hover in responses)
+            if lsp_response is not None
+        ]
+        return (
+            None
+            if len(lsp_hover_responses) == 0
+            else LspHoverResponse(
+                "\n".join(response.contents for response in lsp_hover_responses)
             )
         )
 
@@ -584,12 +587,14 @@ class PyreHoverResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     value: Optional[str] = None
     docstring: Optional[str] = None
 
-    def to_lsp_hover_response(self) -> LspHoverResponse:
+    def to_lsp_hover_response(self) -> Optional[LspHoverResponse]:
         lines = []
         if self.value:
             lines.append(f"```\n{self.value}\n```" if self.value else "")
         if self.docstring:
             lines.append(self.docstring)
+        if len(lines) == 0:
+            return None
         return LspHoverResponse("\n".join(lines))
 
 

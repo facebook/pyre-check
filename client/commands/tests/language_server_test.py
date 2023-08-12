@@ -1887,9 +1887,7 @@ class HoverTest(ApiTestCase):
             output_writer,
             [
                 self._expect_success_message(
-                    result=lsp.LspHoverResponse.cached_schema().dump(
-                        lsp.LspHoverResponse.empty()
-                    ),
+                    result=None,
                 )
             ],
         )

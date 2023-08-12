@@ -10,7 +10,7 @@ from a remote code index/database.
 
 import abc
 from pathlib import Path
-from typing import List
+from typing import List, Optional
 
 from . import protocol as lsp
 
@@ -30,7 +30,7 @@ class AbstractRemoteIndex(abc.ABC):
     @abc.abstractmethod
     async def hover(
         self, path: Path, position: lsp.PyrePosition
-    ) -> lsp.LspHoverResponse:
+    ) -> Optional[lsp.LspHoverResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -71,8 +71,8 @@ class EmptyRemoteIndex(AbstractRemoteIndex):
 
     async def hover(
         self, path: Path, position: lsp.PyrePosition
-    ) -> lsp.LspHoverResponse:
-        return lsp.LspHoverResponse.empty()
+    ) -> Optional[lsp.LspHoverResponse]:
+        return None
 
     async def prepare_call_hierarchy(
         self,
