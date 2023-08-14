@@ -260,6 +260,13 @@ let test_expand_string_annotations _ =
     {|
       def foo() -> TakesParamSpec[[a, b]]: ...
     |};
+  assert_expand
+    {|
+      X: typing.TypeAlias = "Dict[int, X] | int"
+    |}
+    {|
+      X: typing.TypeAlias = Dict[int, X] | int
+    |};
 
   (* Ensure init subclass arguments are not counted as annotations to be expanded *)
   assert_expand

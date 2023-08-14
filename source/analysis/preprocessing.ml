@@ -132,14 +132,34 @@ let transform_annotations ~transform_annotation_expression source =
     let transform_children state _ = state, true
 
     let transform_assign ~assign:({ Assign.annotation; value = assign_value; _ } as assign) =
-      match Node.value assign_value with
-      | Expression.Call { callee; _ } when is_type_variable_definition callee ->
+      match annotation with
+      | Some
           {
-            assign with
-            Assign.annotation = annotation >>| transform_annotation_expression;
-            Assign.value = transform_annotation_expression assign_value;
-          }
-      | _ -> { assign with Assign.annotation = annotation >>| transform_annotation_expression }
+            Node.value =
+              Expression.Name
+                (Name.Attribute
+                  {
+                    base =
+                      {
+                        Node.value =
+                          Expression.Name (Name.Identifier ("typing" | "typing_extensions"));
+                        _;
+                      };
+                    attribute = "TypeAlias";
+                    _;
+                  });
+            _;
+          } ->
+          { assign with Assign.value = transform_annotation_expression assign_value }
+      | _ -> (
+          match Node.value assign_value with
+          | Expression.Call { callee; _ } when is_type_variable_definition callee ->
+              {
+                assign with
+                Assign.annotation = annotation >>| transform_annotation_expression;
+                Assign.value = transform_annotation_expression assign_value;
+              }
+          | _ -> { assign with Assign.annotation = annotation >>| transform_annotation_expression })
 
 
     let statement _ ({ Node.value; _ } as statement) =
