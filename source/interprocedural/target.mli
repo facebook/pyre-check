@@ -40,7 +40,7 @@ module T : sig
 end
 
 module Map : sig
-  include Core.Map.S with type Key.t = t
+  include Data_structures.SerializableMap.S with type key = t
 
   module Tree : module type of struct
     include Core.Map.Make_tree (struct

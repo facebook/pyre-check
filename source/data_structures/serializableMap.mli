@@ -18,6 +18,10 @@ module type S = sig
 
   val of_alist_exn : (key * 'a) list -> 'a t
 
+  val of_alist : f:('a -> 'a -> 'a) -> (key * 'a) list -> 'a t
+
+  val keys : 'a t -> key list
+
   val data : 'a t -> 'a list
 
   val add_multi : 'a list t -> key:key -> data:'a -> 'a list t

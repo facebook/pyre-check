@@ -21,6 +21,10 @@ module type S = sig
 
   val of_alist_exn : (key * 'a) list -> 'a t
 
+  val of_alist : f:('a -> 'a -> 'a) -> (key * 'a) list -> 'a t
+
+  val keys : 'a t -> key list
+
   val data : 'a t -> 'a list
 
   val add_multi : 'a list t -> key:key -> data:'a -> 'a list t
@@ -59,17 +63,23 @@ module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
 
   let to_alist = bindings
 
-  let of_alist_exn list =
+  let of_alist ~f list =
     let add_new_key map (key, value) =
       update
         key
         (function
           | None -> Some value
-          | Some _ -> failwith "key specified twice in of_alist_exn")
+          | Some old_value -> Some (f value old_value))
         map
     in
     List.fold ~init:empty ~f:add_new_key list
 
+
+  let of_alist_exn list =
+    of_alist ~f:(fun _ _ -> failwith "key specified twice in of_alist_exn") list
+
+
+  let keys map = fold (fun key _ sofar -> key :: sofar) map []
 
   let data map = fold (fun _ value sofar -> value :: sofar) map []
 

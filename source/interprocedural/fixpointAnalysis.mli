@@ -138,12 +138,6 @@ module Make (Analysis : ANALYSIS) : sig
 
     val merge : join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) -> t -> t -> t
 
-    val merge_skewed
-      :  join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) ->
-      t ->
-      t ->
-      t
-
     val of_alist
       :  join:(Analysis.Model.t -> Analysis.Model.t -> Analysis.Model.t) ->
       (Target.t * Analysis.Model.t) list ->

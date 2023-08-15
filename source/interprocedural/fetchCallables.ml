@@ -93,21 +93,19 @@ let gather_raw_definitions
       Some callables
   in
   let merge_callables callables_left callables_right =
-    Target.Map.merge callables_left callables_right ~f:(fun ~key:target value ->
-        match value with
-        | `Left define
-        | `Right define ->
-            Some define
-        | `Both (define_left, define_right) ->
-            Format.asprintf
-              "Unexpected callable `%a` with multiple define names: `%a` and `%a`"
-              Target.pp_internal
-              target
-              Reference.pp
-              define_left.Node.value.Define.signature.name
-              Reference.pp
-              define_right.Node.value.Define.signature.name
-            |> failwith)
+    Target.Map.union
+      (fun target define_left define_right ->
+        Format.asprintf
+          "Unexpected callable `%a` with multiple define names: `%a` and `%a`"
+          Target.pp_internal
+          target
+          Reference.pp
+          define_left.Node.value.Define.signature.name
+          Reference.pp
+          define_right.Node.value.Define.signature.name
+        |> failwith)
+      callables_left
+      callables_right
   in
   GlobalResolution.unannotated_global_environment resolution
   |> (fun environment ->
@@ -127,8 +125,10 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
     let definitions = gather_raw_definitions ~resolution ~source in
     let definitions =
       if Ast.ModulePath.is_stub source.module_path then
-        Target.Map.filter definitions ~f:(fun { Node.value = define; _ } ->
+        Target.Map.filter
+          (fun _ { Node.value = define; _ } ->
             not (Define.is_toplevel define || Define.is_class_toplevel define))
+          definitions
       else
         definitions
     in
@@ -137,7 +137,7 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
         ~configuration
         (Ast.ModulePath.full_path ~configuration source.module_path)
     in
-    let add_definition ~key:definition ~data:{ Node.value = define; _ } result =
+    let add_definition definition { Node.value = define; _ } result =
       if Define.is_stub define then
         { result with stubs = definition :: result.stubs }
       else if is_internal then
@@ -149,7 +149,7 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
       else
         { result with definitions = definition :: result.definitions }
     in
-    Target.Map.fold ~init:empty ~f:add_definition definitions
+    Target.Map.fold add_definition definitions empty
 
 
 let get_source ~environment qualifier =
