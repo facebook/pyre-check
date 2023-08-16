@@ -35,11 +35,13 @@ features: [
 ]
 ```
 
-The `via` feature can be appended to `TaintSource`, `TaintSink` and
-`TaintInTaintOut` annotations, to add extra metadata to any flow that goes
-through that annotated function/parameter/attribute. This is done by adding
-`Via[FEATURE_NAME]` within square brackets after the `TaintXXXX` annotation in a
-model file:
+The `via` feature can be appended to `TaintSource` and `TaintSink` annotations
+to add extra metadata to the specified source and sink flows. It can also be
+appended to `TaintInTaintOut` annotations, to add extra metadata to any flow
+that goes through that annotated function/parameter/attribute.
+
+This is done by adding `Via[FEATURE_NAME]` within square brackets after the
+`TaintXXXX` annotation in a model file:
 
 ```python
 # Augmenting TaintSource
