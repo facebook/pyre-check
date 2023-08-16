@@ -6,35 +6,37 @@
 import enum
 from builtins import _test_sink, _test_source
 from typing import Annotated, Any, Dict, List
+from dataclasses import dataclass
 
 
 class Test1_C:
-    x: int = 0
-    y: str = "y"
-    z: Annotated[str, "test1"] = "z"
+    def __init__(self, x: int, y: str, z: str) -> None:
+        self.x: int = x
+        self.y: str = y
+        self.z: Annotated[str, "test1"] = z
 
 
 def test1_alarm1():
     # always-via-type:int
-    c = Test1_C(_test_source())
+    c = Test1_C(**_test_source())
     _test_sink(c.x)
 
 
 def test1_alarm2():
     # always-via-type:str
-    c = Test1_C(_test_source())
+    c = Test1_C(**_test_source())
     _test_sink(c.y)
 
 
 def test1_alarm3():
     # always-via-type:typing.Annotated[str]
-    c = Test1_C(_test_source())
+    c = Test1_C(**_test_source())
     _test_sink(c.z)
 
 
 def test1_alarm4(foo):
     # via-type:int, via-type:str, via-type:typing.Annotated[str]
-    c = Test1_C(_test_source())
+    c = Test1_C(**_test_source())
     foo = c.x
     if 1:
         foo = c.y
@@ -43,6 +45,7 @@ def test1_alarm4(foo):
     _test_sink(foo)
 
 
+@dataclass
 class Test2_C:
     x: Dict[str, int] = {}
     y: List[str] = []
@@ -51,25 +54,25 @@ class Test2_C:
 
 def test2_alarm1():
     # always-via-type:Dict[str, int]
-    c = Test2_C(_test_source())
+    c = Test2_C(**_test_source())
     _test_sink(c.x)
 
 
 def test2_alarm2():
     # always-via-type:List[str]
-    c = Test2_C(_test_source())
+    c = Test2_C(**_test_source())
     _test_sink(c.y)
 
 
 def test2_alarm3():
     # always-via-type:float
-    c = Test2_C(_test_source())
+    c = Test2_C(**_test_source())
     _test_sink(c.z)
 
 
 def test2_alarm4(foo):
     # via-type:Dict[str, int], via-type:List[str], via-type:float
-    c = Test2_C(_test_source())
+    c = Test2_C(**_test_source())
     foo = c.x
     if 1:
         foo = c.y
@@ -82,6 +85,7 @@ class Test3_Foo:
     ...
 
 
+@dataclass
 class Test3_C:
     x: Dict[str, List[int]] = {}
     y: Test3_Foo = Test3_Foo()
@@ -103,7 +107,7 @@ def test3_alarm3(c: Test3_C):
     _test_sink(c.z)
 
 
-def test3_alarm4(c: Test3_C, foo):
+def test3_alarm4(c: Test3_C):
     # via-type:Dict[str, List[int]],
     # via-type:Test3_Foo,
     # via-type:typing.Annotated[List[List[str]]
@@ -115,6 +119,7 @@ def test3_alarm4(c: Test3_C, foo):
     _test_sink(foo)
 
 
+@dataclass
 class Test4_C:
     x = ...
     y: Any = 0
