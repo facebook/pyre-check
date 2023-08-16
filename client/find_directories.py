@@ -318,3 +318,13 @@ def find_taint_models_directory() -> Optional[Path]:
         return None
     else:
         return None
+
+
+def find_pysa_filters_directory() -> Optional[Path]:
+    pyre_check_path = find_pyre_directory()
+    if pyre_check_path is None:
+        return None
+    excepted_pysa_filter_path = pyre_check_path / "pysa_filters/"
+    if excepted_pysa_filter_path.is_dir():
+        return excepted_pysa_filter_path
+    return None
