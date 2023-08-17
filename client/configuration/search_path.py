@@ -260,7 +260,7 @@ def process_raw_elements(
                 for site_root in site_roots:
                     element = expanded_raw_element.to_element(site_root)
                     valid = verify_valid(element)
-                    if not valid:
+                    if valid:
                         break
                     add_if_exists(element)
                 if not valid:
