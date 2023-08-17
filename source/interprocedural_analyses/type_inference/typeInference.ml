@@ -12,4 +12,3 @@
 
 module Data = TypeInferenceData
 module Local = TypeInferenceLocal
-module Domain = TypeInferenceDomain
