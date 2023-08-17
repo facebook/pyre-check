@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module contains the data types needed to track the inferred type for globals, attributes,
+   and functions/methods. The overall results are intended to be deserialized into JSON and piped
+   straight to the `pyre infer` Python command. *)
 
 open Core
 open Pyre
