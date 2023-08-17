@@ -50,21 +50,20 @@ module EdgesValue = struct
   let equal = Memory.equal_from_compare (Option.compare compare_edges)
 end
 
-(* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
-   is quadratic, but it should be fine given the small number of generic variables. *)
-let deduplicate ~equal xs =
-  let add_if_not_seen_so_far (seen, unique_items) x =
-    if List.mem seen x ~equal then
-      seen, unique_items
-    else
-      x :: seen, x :: unique_items
-  in
-  List.fold xs ~init:([], []) ~f:add_if_not_seen_so_far |> snd |> List.rev
-
-
 let find_propagated_type_variables bases ~parse_annotation =
   let find_type_variables base_expression =
     parse_annotation base_expression |> Type.Variable.all_free_variables
+  in
+  (* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
+     is quadratic, but it should be fine given the small number of generic variables. *)
+  let deduplicate ~equal xs =
+    let add_if_not_seen_so_far (seen, unique_items) x =
+      if List.mem seen x ~equal then
+        seen, unique_items
+      else
+        x :: seen, x :: unique_items
+    in
+    List.fold xs ~init:([], []) ~f:add_if_not_seen_so_far |> snd |> List.rev
   in
   List.concat_map ~f:find_type_variables bases
   |> deduplicate ~equal:Type.Variable.equal
@@ -95,18 +94,15 @@ let compute_inferred_generic_base
     Option.some_if is_protocol parameters
   in
   if List.exists ~f:is_generic bases then
-    []
+    None
   else
-    let create variables = [Type.parametric "typing.Generic" variables |> Type.expression] in
+    let create variables = Type.parametric "typing.Generic" variables |> Type.expression in
     match List.find_map bases ~f:extract_protocol_parameters with
-    | Some parameters -> create parameters
+    | Some parameters -> Some (create parameters)
     | None ->
         (* TODO:(T60673574) Ban propagating multiple type variables *)
         let variables = find_propagated_type_variables bases ~parse_annotation in
-        if List.is_empty variables then
-          []
-        else
-          create variables
+        if List.is_empty variables then None else Some (create variables)
 
 
 let get_parents alias_environment name ~dependency =
@@ -142,7 +138,7 @@ let get_parents alias_environment name ~dependency =
   in
   let bases ({ Node.value = { ClassSummary.bases = { base_classes; _ }; _ }; _ } as definition) =
     let inferred_generic_base = compute_inferred_generic_base definition ~parse_annotation in
-    base_classes @ inferred_generic_base
+    base_classes @ Option.to_list inferred_generic_base
   in
   let add_special_parents parents =
     let simples = List.map ~f:(fun parent -> parent, []) in

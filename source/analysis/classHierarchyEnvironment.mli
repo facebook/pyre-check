@@ -39,4 +39,4 @@ include
 val compute_inferred_generic_base
   :  ClassSummary.t Ast.Node.t ->
   parse_annotation:(Ast.Expression.t -> Type.t) ->
-  Ast.Expression.t list
+  Ast.Expression.t option
