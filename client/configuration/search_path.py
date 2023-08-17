@@ -26,7 +26,7 @@ from .. import filesystem
 from . import exceptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
-site_packages_in_root: Dict[str : Tuple[str]] = {}
+site_packages_in_root: Dict[str, Tuple[str]] = {}
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
