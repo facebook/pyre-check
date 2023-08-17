@@ -585,7 +585,7 @@ let test_source_models context =
     ~model_source:{|def test.f(x) -> TaintSource[Test, ViaValueOf[WithTag["tag"]]]: ...|}
     ~expect:
       "`TaintSource[(Test, ViaValueOf[WithTag[\"tag\"]])]` is an invalid taint annotation: Missing \
-       parameter name for ViaValueOf or ViaTypeOf"
+       parameter name for `ViaValueOf`"
     ();
   assert_model
     ~source:"def f(x: int): ..."
@@ -2651,14 +2651,42 @@ let test_invalid_models context =
        kind: Test.attribute"
     ();
   assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[ViaAttributeName]: ..."
+    ~expect:
+      "`TaintSource[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
+       be used in attribute models."
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:{|def test.f(x) -> TaintSource[ViaAttributeName[WithTag["tag"]]]: ...|}
+    ~expect:
+      "`TaintSource[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
+       `ViaAttributeName` can only be used in attribute models."
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSink[ViaAttributeName]: ..."
+    ~expect:
+      "`TaintSink[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
+       be used in attribute models."
+    ();
+  assert_invalid_model
+    ~source:"def f(x: int): ..."
+    ~model_source:{|def test.f(x) -> TaintSink[ViaAttributeName[WithTag["tag"]]]: ...|}
+    ~expect:
+      "`TaintSink[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
+       `ViaAttributeName` can only be used in attribute models."
+    ();
+  assert_invalid_model
     ~source:{|
       class C:
         x: int = 0
       |}
     ~model_source:"test.C.x: ViaTypeOf[a.b] = ..."
     ~expect:
-      "`ViaTypeOf[a.b]` is an invalid taint annotation: Invalid expression in ViaValueOf or \
-       ViaTypeOf declaration: a.b"
+      "`ViaTypeOf[a.b]` is an invalid taint annotation: Invalid expression in `ViaTypeOf` \
+       declaration: a.b"
     ();
   ();
 
@@ -4843,6 +4871,74 @@ Unexpected statement: `food(y)`
       test.C.x: TaintSink[X, ViaTypeOf] = ...
     |}
     ();
+  (* ViaAttributeName *)
+  assert_invalid_model
+    ~source:{|
+      def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.foo(x: ViaAttributeName): ...
+    |}
+    ~expect:
+      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute models.|}
+    ();
+  assert_invalid_model
+    ~source:{|
+      class C:
+        def foo(x: int) -> int: ...
+      |}
+    ~model_source:{|
+      def test.C.foo() -> ViaAttributeName: ...
+    |}
+    ~expect:
+      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute models.|}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: ViaAttributeName = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintInTaintOut[ViaAttributeName] = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: ViaAttributeName[WithTag["tag"]] = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintSource[A, ViaAttributeName] = ...
+    |}
+    ();
+  assert_valid_model
+    ~source:{|
+      class C:
+        x: int = 0
+      |}
+    ~model_source:{|
+      test.C.x: TaintSink[X, ViaAttributeName] = ...
+    |}
+    ();
+  (* Model queries *)
   assert_invalid_model
     ~model_source:
       {|
@@ -4923,6 +5019,39 @@ Unexpected statement: `food(y)`
     ~expect:
       "`any_parameter.annotation.is_annotated_type` is not a valid constraint for model queries \
        with find clause of kind `globals`."
+    ();
+  assert_valid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "attributes",
+        find = "attributes",
+        where = type_annotation.is_annotated_type(),
+        model = AttributeModel(ViaTypeOf)
+      )
+    |}
+    ();
+  assert_valid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "attributes",
+        find = "attributes",
+        where = type_annotation.is_annotated_type(),
+        model = AttributeModel(ViaAttributeName)
+      )
+    |}
+    ();
+  assert_valid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "attributes",
+        find = "attributes",
+        where = type_annotation.is_annotated_type(),
+        model = AttributeModel(ViaAttributeName[WithTag["foo"]])
+      )
+    |}
     ();
   ()
 

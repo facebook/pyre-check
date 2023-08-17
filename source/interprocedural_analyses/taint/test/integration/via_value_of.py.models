@@ -291,9 +291,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "parameter",
                     "kind": "ViaValueOf",
-                    "parameter": "formal(parameter)"
+                    "parameter": "formal(parameter)",
+                    "tag": "parameter"
                   }
                 ],
                 "kind": "Test"

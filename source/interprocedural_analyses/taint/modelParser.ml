@@ -252,7 +252,7 @@ let rec parse_annotations
                 "Invalid expression for taint subkind: %s"
                 (Expression.show expression)))
   in
-  let extract_via_parameters expression =
+  let extract_via_parameters via_kind expression =
     let rec parse_expression expression =
       match expression.Node.value with
       | Expression.Name (Name.Identifier name) ->
@@ -261,14 +261,14 @@ let rec parse_annotations
           [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
       | Tuple expressions -> List.map ~f:parse_expression expressions |> all >>| List.concat
       | Call { callee; _ } when is_base_name callee "WithTag" -> Ok []
-      | _ -> Error (annotation_error "Invalid expression for ViaValueOf or ViaTypeOf")
+      | _ -> Error (annotation_error (Format.sprintf "Invalid expression for `%s`" via_kind))
     in
     parse_expression expression
     |> function
-    | Ok [] -> Error (annotation_error "Missing parameter name for ViaValueOf or ViaTypeOf")
+    | Ok [] -> Error (annotation_error (Format.sprintf "Missing parameter name for `%s`" via_kind))
     | parameters -> parameters
   in
-  let rec extract_via_tag expression =
+  let rec extract_via_tag via_kind expression =
     match expression.Node.value with
     | Expression.Call
         {
@@ -290,13 +290,16 @@ let rec parse_annotations
     | Expression.Name (Name.Identifier _) when not is_object_target ->
         (* This should be the parameter name. *)
         Ok None
-    | Tuple expressions -> List.map expressions ~f:extract_via_tag |> all >>| List.find_map ~f:ident
+    | Tuple expressions ->
+        List.map expressions ~f:(extract_via_tag via_kind) |> all >>| List.find_map ~f:ident
     | _ ->
         Error
           (annotation_error
-             (Format.sprintf
-                "Invalid expression in ViaValueOf or ViaTypeOf declaration: %s"
-                (Expression.show expression)))
+             (Format.asprintf
+                "Invalid expression in `%s` declaration: %a"
+                via_kind
+                Expression.pp
+                expression))
   in
   let rec extract_names expression =
     match expression.Node.value with
@@ -333,6 +336,13 @@ let rec parse_annotations
                 (annotation_error
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
                     global models.")
+        | "ViaAttributeName" ->
+            if is_object_target then
+              Ok
+                (TaintKindsWithFeatures.from_via_feature
+                   (Features.ViaFeature.ViaAttributeName { tag = None }))
+            else
+              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
         | "Collapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
         | "NoCollapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
@@ -343,23 +353,31 @@ let rec parse_annotations
             extract_breadcrumbs ~is_dynamic:true argument
             >>| TaintKindsWithFeatures.from_breadcrumbs
         | Some "ViaValueOf" ->
-            extract_via_tag argument
+            extract_via_tag "ViaValueOf" argument
             >>= fun tag ->
-            extract_via_parameters argument
+            extract_via_parameters "ViaValueOf" argument
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaValueOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "ViaTypeOf" ->
-            extract_via_tag argument
+            extract_via_tag "ViaTypeOf" argument
             >>= fun tag ->
             let parameters =
               if not (is_object_target or is_model_query) then
-                extract_via_parameters argument
+                extract_via_parameters "ViaTypeOf" argument
               else
                 Ok [attribute_symbolic_parameter]
             in
             parameters
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
+        | Some "ViaAttributeName" ->
+            if is_object_target then
+              extract_via_tag "ViaAttributeName" argument
+              >>| fun tag ->
+              [Features.ViaFeature.ViaAttributeName { tag }]
+              |> TaintKindsWithFeatures.from_via_features
+            else
+              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
         | Some "Updates" ->
             let to_leaf name =
               get_parameter_position name
@@ -533,7 +551,7 @@ let rec parse_annotations
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
         | Some "ViaTypeOf", _ ->
             if is_object_target then (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
-              extract_via_tag argument
+              extract_via_tag "ViaTypeOf" argument
               >>| fun tag ->
               let via_feature =
                 Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
@@ -548,6 +566,21 @@ let rec parse_annotations
             else
               Error
                 (annotation_error "`ViaTypeOf[]` can only be used in attribute or global models.")
+        | Some "ViaAttributeName", _ ->
+            if is_object_target then
+              (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
+              extract_via_tag "ViaAttributeName" argument
+              >>| fun tag ->
+              let via_feature = Features.ViaFeature.ViaAttributeName { tag } in
+              [
+                TaintAnnotation.Tito
+                  {
+                    tito = Sinks.LocalReturn;
+                    features = { TaintFeatures.empty with via_features = [via_feature] };
+                  };
+              ]
+            else
+              Error (annotation_error "`ViaAttributeName[]` can only be used in attribute models.")
         | Some "PartialSink", _ ->
             get_partial_sink_kind argument
             >>| fun partial_sink ->
@@ -637,6 +670,20 @@ let rec parse_annotations
                 (annotation_error
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
                     global models.")
+        | "ViaAttributeName" ->
+            if is_object_target then
+              (* Attribute annotations of the form `a: ViaAttributeName = ...`. *)
+              let via_feature = Features.ViaFeature.ViaAttributeName { tag = None } in
+              Ok
+                [
+                  Tito
+                    {
+                      tito = Sinks.LocalReturn;
+                      features = { TaintFeatures.empty with via_features = [via_feature] };
+                    };
+                ]
+            else
+              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
         | _ -> invalid_annotation_error ())
     | Expression.Tuple expressions ->
         List.map expressions ~f:(fun expression ->
@@ -3202,6 +3249,8 @@ let rec parse_statement
         || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
         || Expression.show annotation |> String.equal "ViaTypeOf"
         || Expression.show annotation |> String.is_substring ~substring:"ViaTypeOf["
+        || Expression.show annotation |> String.equal "ViaAttributeName"
+        || Expression.show annotation |> String.is_substring ~substring:"ViaAttributeName["
       then
         let name = name_to_reference_exn name in
         parse_annotations

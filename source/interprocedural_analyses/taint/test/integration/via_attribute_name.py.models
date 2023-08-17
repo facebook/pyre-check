@@ -1,0 +1,1717 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_sink_attribute_x",
+    "callable_line": 77,
+    "code": 5002,
+    "line": 78,
+    "start": 4,
+    "end": 7,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 78,
+              "start": 10,
+              "end": 24
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SinkAttributes.x}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "x" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 78,
+              "start": 4,
+              "end": 7
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-attribute": "x" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{via_attribute_name.SinkAttributes.x}",
+      "index": 0
+    },
+    "master_handle": "via_attribute_name.test_sink_attribute_x:5002:0:Global|Obj{via_attribute_name.SinkAttributes.x}|0:3f95bc7ebd501d3c5c28838896dd5d99"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_sink_attribute_y",
+    "callable_line": 81,
+    "code": 5002,
+    "line": 82,
+    "start": 4,
+    "end": 7,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 82,
+              "start": 10,
+              "end": 24
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SinkAttributes.y}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "y" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 82,
+              "start": 4,
+              "end": 7
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-attribute": "y" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{via_attribute_name.SinkAttributes.y}",
+      "index": 0
+    },
+    "master_handle": "via_attribute_name.test_sink_attribute_y:5002:0:Global|Obj{via_attribute_name.SinkAttributes.y}|0:4c6441ff0f0de0fefeee961860f8edcf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_sink_attribute_z",
+    "callable_line": 85,
+    "code": 5002,
+    "line": 86,
+    "start": 4,
+    "end": 7,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 86,
+              "start": 10,
+              "end": 24
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SinkAttributes.z}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 86,
+              "start": 4,
+              "end": 7
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-TheZ-attribute": "z" } ],
+    "sink_handle": {
+      "kind": "Global",
+      "callee": "Obj{via_attribute_name.SinkAttributes.z}",
+      "index": 0
+    },
+    "master_handle": "via_attribute_name.test_sink_attribute_z:5002:0:Global|Obj{via_attribute_name.SinkAttributes.z}|0:3b391daaa23a416a2644a8bb7d834997"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_join",
+    "callable_line": 32,
+    "code": 5002,
+    "line": 39,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "first-field": "z" },
+              { "first-field": "y" },
+              { "via-TheZ-attribute": "z" },
+              { "via-attribute": "y" },
+              { "via-attribute": "x" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 33, "start": 23, "end": 39 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 33,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 39,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "first-field": "z" },
+      { "first-field": "y" },
+      { "via-TheZ-attribute": "z" },
+      { "via-attribute": "y" },
+      { "via-attribute": "x" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_join:5002:0:Call|_test_sink|0|formal(arg):4cd435b039286befaea07fea1d677b02"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_model_query_x",
+    "callable_line": 96,
+    "code": 5002,
+    "line": 97,
+    "start": 15,
+    "end": 68,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 97, "start": 41, "end": 55 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 97,
+              "start": 41,
+              "end": 55
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 97,
+              "start": 15,
+              "end": 68
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_model_query_x:5002:0:Call|_test_sink|0|formal(arg):d31dd4790a7e7cfcfb8f379668ac7894"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_model_query_y",
+    "callable_line": 100,
+    "code": 5002,
+    "line": 101,
+    "start": 15,
+    "end": 68,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 101, "start": 47, "end": 61 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 101,
+              "start": 47,
+              "end": 61
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 101,
+              "start": 15,
+              "end": 68
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_model_query_y:5002:0:Call|_test_sink|0|formal(arg):313f9f0a8b791bcbaadc669343f8569f"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_model_query_z",
+    "callable_line": 104,
+    "code": 5002,
+    "line": 105,
+    "start": 15,
+    "end": 68,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "issue-broadening" }
+            ],
+            "tito_positions": [ { "line": 105, "start": 53, "end": 67 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 105,
+              "start": 53,
+              "end": 67
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 105,
+              "start": 15,
+              "end": 68
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "issue-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_model_query_z:5002:0:Call|_test_sink|0|formal(arg):9dc41a1ab1ad066179e12200125edfc5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_x",
+    "callable_line": 17,
+    "code": 5002,
+    "line": 19,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "x" },
+              { "always-via-attribute": "x" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 18, "start": 23, "end": 39 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 18,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 19,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "x" },
+      { "always-via-attribute": "x" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_x:5002:0:Call|_test_sink|0|formal(arg):999e6621258fbbb8f742b6f205ed726c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_y",
+    "callable_line": 22,
+    "code": 5002,
+    "line": 24,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "y" },
+              { "always-via-attribute": "y" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 23, "start": 23, "end": 39 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 23,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 24,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "y" },
+      { "always-via-attribute": "y" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_y:5002:0:Call|_test_sink|0|formal(arg):4545d6bab34e9e647f0e6610e7b5d7b8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_tito_attribute_z_with_tag",
+    "callable_line": 27,
+    "code": 5002,
+    "line": 29,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "z" },
+              { "always-via-TheZ-attribute": "z" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 28, "start": 23, "end": 39 } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 28,
+              "start": 25,
+              "end": 39
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 29,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "z" },
+      { "always-via-TheZ-attribute": "z" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_tito_attribute_z_with_tag:5002:0:Call|_test_sink|0|formal(arg):39954aaea434d5e41e8e0176519a6613"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SinkAttributes.x}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SinkAttributes.y}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SinkAttributes.z}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "TheZ" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SourceAttributes.x}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SourceAttributes.y}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.SourceAttributes.z}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "TheZ" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributeModelQuery.x}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "model-query" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributeModelQuery.y}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "model-query" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributeModelQuery.z}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "model-query" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributes.x}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributes.y}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{via_attribute_name.TitoAttributes.z}",
+    "tito": [
+      {
+        "port": "formal($global)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "TheZ" }
+                ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.SinkAttributes.__init__",
+    "sinks": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  { "kind": "ViaAttributeName", "tag": "TheZ" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [ { "kind": "ViaAttributeName" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.SourceAttributes.__init__",
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.TitoAttributeModelQuery.__init__",
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.TitoAttributes.__init__",
+    "tito": [
+      {
+        "port": "formal(z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[z]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[y]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[x]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_join",
+    "sinks": [
+      {
+        "port": "formal(c)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 67,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(c)[y]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 67,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(c)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 67,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_join",
+    "callable_line": 61,
+    "code": 5002,
+    "line": 67,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.x}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "x" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 62,
+              "start": 10,
+              "end": 13
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.y}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "y" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 64,
+              "start": 14,
+              "end": 17
+            }
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.z}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 66,
+              "start": 14,
+              "end": 17
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 67,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "via-TheZ-attribute": "z" },
+      { "via-attribute": "y" },
+      { "via-attribute": "x" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_source_attribute_join:5002:0:Call|_test_sink|0|formal(arg):eebcf6c6a6afba19ec51dba7022e6baa"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_x",
+    "sinks": [
+      {
+        "port": "formal(c)[x]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 50,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_x",
+    "callable_line": 49,
+    "code": 5002,
+    "line": 50,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.x}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "x" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 50,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 50,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-attribute": "x" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_source_attribute_x:5002:0:Call|_test_sink|0|formal(arg):a7c60ead346db9a6ebad284d24214b95"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_y",
+    "sinks": [
+      {
+        "port": "formal(c)[y]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 54,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_y",
+    "callable_line": 53,
+    "code": 5002,
+    "line": 54,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.y}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-attribute": "y" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 54,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 54,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-attribute": "y" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_source_attribute_y:5002:0:Call|_test_sink|0|formal(arg):dec45f508c947c9000cffaffa393bd2c"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_z",
+    "sinks": [
+      {
+        "port": "formal(c)[z]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 58,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "via_attribute_name.test_source_attribute_z",
+    "callable_line": 57,
+    "code": 5002,
+    "line": 58,
+    "start": 15,
+    "end": 18,
+    "filename": "via_attribute_name.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{via_attribute_name.SourceAttributes.z}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 58,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "via_attribute_name.py",
+              "line": 58,
+              "start": 15,
+              "end": 18
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via-TheZ-attribute": "z" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "via_attribute_name.test_source_attribute_z:5002:0:Call|_test_sink|0|formal(arg):ebeb5dc6d2cc847e05612370393ea941"
+  }
+}

@@ -1202,6 +1202,34 @@ ModelQuery(
 )
 ```
 
+#### Using `ViaAttributeName` with the `AttributeModel` clause
+
+`ViaAttributeName` can be used within `AttributeModel` to add a feature containing
+the name of the attribute to any taint flowing through the given attributes.
+
+For instance:
+```python
+ModelQuery(
+  name = "get_attribute_of_Foo",
+  find = "attributes",
+  where = [cls.name.equals("Foo")],
+  model = [
+    AttributeModel(ViaAttributeName[WithTag["Foo"]])
+  ]
+)
+```
+
+On the following code:
+```python
+class Foo:
+  first_name: str
+  last_name: str
+
+def last_name_to_sink(foo: Foo):
+  sink(foo.last_name)
+```
+This will add the feature `via-Foo-attribute:last_name` on the flow to the sink.
+
 ### Models for globals
 
 Taint for global models requires a `GlobalModel` model clause, which can only be used when the find clause specifies globals.

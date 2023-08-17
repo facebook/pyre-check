@@ -890,9 +890,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal($global)"
+                    "parameter": "formal($global)",
+                    "tag": "TheZ"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -969,9 +969,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal($global)"
+                    "parameter": "formal($global)",
+                    "tag": "TheZ"
                   }
                 ],
                 "return_paths": { "": 0 },
@@ -1046,9 +1046,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal($global)"
+                    "parameter": "formal($global)",
+                    "tag": "TheZ"
                   }
                 ],
                 "kind": "Test"
@@ -1122,9 +1122,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal($global)"
+                    "parameter": "formal($global)",
+                    "tag": "TheZ"
                   }
                 ],
                 "kind": "Test"
@@ -1311,9 +1311,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheZ",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal($global)"
+                    "parameter": "formal($global)",
+                    "tag": "TheZ"
                   }
                 ],
                 "kind": "Test"
@@ -1463,9 +1463,9 @@
               {
                 "via_features": [
                   {
-                    "tag": "TheY",
                     "kind": "ViaTypeOf",
-                    "parameter": "formal(y)"
+                    "parameter": "formal(y)",
+                    "tag": "TheY"
                   }
                 ],
                 "kind": "Test"
