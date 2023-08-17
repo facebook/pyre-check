@@ -224,7 +224,7 @@ def process_raw_elements(
 ) -> List[Element]:
     elements: List[Element] = []
 
-    def verify_valid(element: Union[SimpleElement, SitePackageElement]) -> bool:
+    def verify_valid(element: Element) -> bool:
         # verify if the package_path or path(for SimpleElement) exist.(see facebook/pyre-check#773)
         if os.path.exists(element.path()):
             elements.append(element)
@@ -244,7 +244,7 @@ def process_raw_elements(
             return element.package_name in site_packages_in_root[element.site_root]
         return False
 
-    def add_if_exists(element: Union[SimpleElement, SitePackageElement]) -> None:
+    def add_if_exists(element: Element) -> None:
         if os.path.exists(element.path()):
             elements.append(element)
 
