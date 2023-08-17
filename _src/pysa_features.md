@@ -169,16 +169,7 @@ def subprocess.run(
 ): ...
 ```
 
-The `via-type` feature also supports adding tags, using the same syntax as the `via-value`
-feature:
-
-```python
-def subprocess.run(
-    args: TaintSink[RemoteCodeExecution, ViaTypeOf[args, WithTag["subprocess-arg"]]]
-): ...
-```
-
-`ViaTypeOf` can also be used on attribute or global models, although tags are not supported. For example:
+The `via-type` feature can also be used on attribute or global models. For example:
 ```python
 my_module.MyClass.source: TaintSource[Test, ViaTypeOf] = ...
 my_module.MyClass.sink: TaintSource[Test, ViaTypeOf] = ...
@@ -187,6 +178,16 @@ my_module.MyClass.sink: TaintSource[Test, ViaTypeOf] = ...
 A standalone `ViaTypeOf` is also supported in this case, and is shorthand for `TaintInTaintOut[ViaTypeOf]`:
 ```python
 my_module.MyClass.my_attribute: ViaTypeOf = ...
+```
+
+The `via-type` feature also supports adding tags, using the same syntax as the `via-value`
+feature:
+```python
+def subprocess.run(
+    args: TaintSink[RemoteCodeExecution, ViaTypeOf[args, WithTag["my_tag"]]]
+): ...
+my_module.MyClass.sink: TaintSource[Test, ViaTypeOf[WithTag["my_tag"]]] = ...
+my_module.MyClass.other_attribute: ViaTypeOf[WithTag["my_tag"]] = ...
 ```
 
 Note that `ViaTypeOf` on `Annotated` types will not include the annotations after the first type specified.
@@ -200,6 +201,29 @@ class Foo:
 
 If there is a `ViaTypeOf` on `Foo.x` here, the feature shown on traces will be `via-type-of:typing.Annotated[int]`,
 **not** `via-type-of:typing.Annotated[int, "foo"]`.
+
+### `via-attribute` Feature Using `ViaAttributeName[]`
+
+The `via-attribute` feature is similar to the `via-value` feature, however,
+it can only be used to model attributes, and captures *the name of the attribute
+being accessed*.
+
+For instance:
+```python
+my_module.MyClass.my_attribute: ViaAttributeName = ...
+```
+
+Pysa will add the feature `"via-attribute:my_attribute` when taint flows through
+the attribute.
+
+This also supports tags, using the same syntax as `via-value`:
+```python
+my_module.MyClass.my_attribute: ViaAttributeName[WithTag["example"]] = ...
+```
+
+Note that `via-attribute` is most useful in
+[model queries](pysa_model_dsl.md#using-viaattributename-with-the-attributemodel-clause),
+when the attribute name is not known in advance.
 
 ### Supporting Features Dynamically Using `ViaDynamicFeature[]`
 
