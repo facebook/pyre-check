@@ -50,6 +50,65 @@ module EdgesValue = struct
   let equal = Memory.equal_from_compare (Option.compare compare_edges)
 end
 
+(* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
+   is quadratic, but it should be fine given the small number of generic variables. *)
+let deduplicate ~equal xs =
+  let add_if_not_seen_so_far (seen, unique_items) x =
+    if List.mem seen x ~equal then
+      seen, unique_items
+    else
+      x :: seen, x :: unique_items
+  in
+  List.fold xs ~init:([], []) ~f:add_if_not_seen_so_far |> snd |> List.rev
+
+
+let find_propagated_type_variables bases ~parse_annotation =
+  let find_type_variables base_expression =
+    parse_annotation base_expression |> Type.Variable.all_free_variables
+  in
+  List.concat_map ~f:find_type_variables bases
+  |> deduplicate ~equal:Type.Variable.equal
+  |> List.map ~f:Type.Variable.to_parameter
+
+
+let compute_inferred_generic_base
+    { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
+    ~parse_annotation
+  =
+  let bases =
+    match metaclass with
+    | Some metaclass -> metaclass :: base_classes
+    | _ -> base_classes
+  in
+  let is_generic base_expression =
+    let primitive, _ = parse_annotation base_expression |> Type.split in
+    Type.is_generic_primitive primitive
+  in
+  let extract_protocol_parameters base_expression =
+    let primitive, parameters = parse_annotation base_expression |> Type.split in
+    let is_protocol =
+      primitive
+      |> Type.primitive_name
+      >>| String.equal "typing.Protocol"
+      |> Option.value ~default:false
+    in
+    Option.some_if is_protocol parameters
+  in
+  if List.exists ~f:is_generic bases then
+    []
+  else
+    let create variables = [Type.parametric "typing.Generic" variables |> Type.expression] in
+    match List.find_map bases ~f:extract_protocol_parameters with
+    | Some parameters -> create parameters
+    | None ->
+        (* TODO:(T60673574) Ban propagating multiple type variables *)
+        let variables = find_propagated_type_variables bases ~parse_annotation in
+        if List.is_empty variables then
+          []
+        else
+          create variables
+
+
 let get_parents alias_environment name ~dependency =
   let object_index = IndexTracker.index "object" in
   let parse_annotation =
@@ -82,7 +141,7 @@ let get_parents alias_environment name ~dependency =
     | _ -> None
   in
   let bases ({ Node.value = { ClassSummary.bases = { base_classes; _ }; _ }; _ } as definition) =
-    let inferred_generic_base = AnnotatedBases.inferred_generic_base definition ~parse_annotation in
+    let inferred_generic_base = compute_inferred_generic_base definition ~parse_annotation in
     base_classes @ inferred_generic_base
   in
   let add_special_parents parents =

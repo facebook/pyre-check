@@ -116,7 +116,7 @@ let test_simple_registration context =
   ()
 
 
-let test_inferred_generic_base context =
+let test_register_inferred_generic_base context =
   let assert_registers source name expected =
     let project = ScratchProject.setup ["test.py", source] ~context ~track_dependencies:true in
     let read_only =
@@ -380,11 +380,184 @@ let test_updates context =
   ()
 
 
+let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single single)
+
+let test_compute_inferred_generic_base context =
+  let assert_inferred_generic ~target source expected =
+    let qualifier = Reference.create "test" in
+    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
+    in
+    let source =
+      AstEnvironment.ReadOnly.get_processed_source
+        (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+        qualifier
+    in
+    let source = Option.value_exn source in
+    let { Source.statements; _ } = source in
+    let target =
+      let target = function
+        | {
+            Node.location;
+            value = Ast.Statement.Statement.Class ({ Statement.Class.name; _ } as definition);
+          }
+          when String.equal (Reference.show name) target ->
+            Some { Node.location; value = definition }
+        | _ -> None
+      in
+      List.find_map ~f:target statements
+      |> Option.value_exn
+      |> Node.map ~f:(ClassSummary.create ~qualifier)
+    in
+    let resolution = GlobalResolution.create global_environment in
+    let parse_annotation =
+      GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
+    in
+    assert_equal
+      ~printer:[%show: Expression.t list]
+      ~cmp:(List.equal [%compare.equal: Expression.t])
+      expected
+      (ClassHierarchyEnvironment.compute_inferred_generic_base target ~parse_annotation)
+  in
+  assert_inferred_generic
+    ~target:"test.C"
+    {|
+       _T = typing.TypeVar('_T')
+       class C:
+         pass
+     |}
+    [];
+  assert_inferred_generic
+    ~target:"test.C"
+    {|
+       _T = typing.TypeVar("_T")
+       class List(typing.Generic[_T]):
+         pass
+       class C(List[_T]):
+         pass
+     |}
+    [Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"])];
+  assert_inferred_generic
+    ~target:"test.List"
+    {|
+       _T = TypeVar("_T")
+       class Iterable(typing.Generic[_T]):
+         pass
+       class List(Iterable[_T], typing.Generic[_T]):
+         pass
+     |}
+    [];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      _T1 = typing.TypeVar('_T1')
+      _T2 = typing.TypeVar('_T2')
+      class Foo(typing.Dict[_T1, _T2]): pass
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      _T1 = typing.TypeVar('_T1')
+      class Foo(typing.Dict[_T1, _T1]): pass
+    |}
+    [Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"])];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      TParams = pyre_extensions.ParameterSpecification("TParams")
+      class Base(typing.Generic[TParams]): pass
+      class Foo(Base[TParams]): pass
+    |}
+    [
+      Type.expression
+        (Type.parametric
+           "typing.Generic"
+           [
+             Type.Parameter.CallableParameters
+               (Type.Variable.Variadic.Parameters.self_reference
+                  (Type.Variable.Variadic.Parameters.create "test.TParams"));
+           ]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Child"
+    {|
+      Ts = pyre_extensions.TypeVarTuple("Ts")
+
+      class Base(typing.Generic[pyre_extensions.Unpack[Ts]]): ...
+
+      class Child(Base[pyre_extensions.Unpack[Ts]]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric
+           "typing.Generic"
+           [
+             Unpacked
+               (Type.OrderedTypes.Concatenation.create_unpackable
+                  (Type.Variable.Variadic.Tuple.create "test.Ts"));
+           ]);
+    ];
+  (* We should not sort the generic variables in alphabetical order. *)
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Dict, TypeVar
+
+      A = TypeVar("A")
+      B = TypeVar("B")
+
+      class Foo(Dict[B, A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.B"; Type.variable "test.A"]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Generic, TypeVar
+
+      A = TypeVar("A", bound=str)
+      B = TypeVar("B", bound=int)
+
+      class BaseAB(Generic[A, B]): ...
+      class BaseBA(Generic[B, A]): ...
+
+      class Foo(BaseAB[A, B], BaseBA[B, A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]);
+    ];
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Dict, Generic, TypeVar
+
+      A = TypeVar("A", bound=str)
+      B = TypeVar("B", bound=int)
+
+      class BaseAB(Generic[A, B]): ...
+
+      class Foo(BaseAB[Dict[A, B], A]): ...
+    |}
+    [
+      Type.expression
+        (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]);
+    ];
+  ()
+
+
 let () =
   "environment"
   >::: [
          "simple_registration" >:: test_simple_registration;
-         "inferred_bases" >:: test_inferred_generic_base;
+         "register_inferred_generic_bases" >:: test_register_inferred_generic_base;
+         "compute_inferred_generic_base" >:: test_compute_inferred_generic_base;
          "updates" >:: test_updates;
        ]
   |> Test.run

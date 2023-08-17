@@ -2,7 +2,6 @@
  (names
   aliasEnvironmentTest
   analysisErrorTest
-  annotatedBasesTest
   annotatedCallTest
   annotatedCallableTest
   annotatedDefineTest

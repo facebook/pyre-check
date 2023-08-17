@@ -34,3 +34,9 @@ include
   Environment.S
     with module ReadOnly = HierarchyReadOnly
      and module PreviousEnvironment = AliasEnvironment
+
+(* Exposed for testing purpose only *)
+val compute_inferred_generic_base
+  :  ClassSummary.t Ast.Node.t ->
+  parse_annotation:(Ast.Expression.t -> Type.t) ->
+  Ast.Expression.t list
