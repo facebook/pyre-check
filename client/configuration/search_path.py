@@ -261,8 +261,8 @@ def process_raw_elements(
                     element = expanded_raw_element.to_element(site_root)
                     valid = verify_valid(element)
                     if valid:
+                        add_if_exists(element)
                         break
-                    add_if_exists(element)
                 if not valid:
                     if required:
                         raise exceptions.InvalidConfiguration(
