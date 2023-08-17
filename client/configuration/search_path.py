@@ -19,12 +19,14 @@ import dataclasses
 import glob
 import logging
 import os
-from typing import Dict, Iterable, List, Sequence, Union
+import re
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 from .. import filesystem
 from . import exceptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
+site_packages_in_root: Dict[str : Tuple[str]] = {}
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -222,11 +224,30 @@ def process_raw_elements(
 ) -> List[Element]:
     elements: List[Element] = []
 
-    def add_if_exists(element: Element) -> bool:
+    def verify_valid(element: Union[SimpleElement, SitePackageElement]) -> bool:
+        # verify if the package_path or path(for SimpleElement) exist,
+        # and add it into the list if the path also exist(see facebook/pyre-check#773)
         if os.path.exists(element.path()):
             elements.append(element)
             return True
+        if isinstance(element, SitePackageElement):
+            if not os.path.exists(element.site_root):
+                return False
+            if element.site_root not in site_packages_in_root:
+                site_packages_in_root[element.site_root] = tuple(
+                    re.split(r"-([0-99]\.)*dist-info", package_path)[0]
+                    for package_path in os.listdir(element.site_root)
+                    if re.fullmatch(
+                        rf"{element.package_name}-([0-99]\.)*dist-info", package_path
+                    )
+                    is not None
+                )
+            return element.package_name in site_packages_in_root[element.site_root]
         return False
+
+    def add_if_exists(element: Union[SimpleElement, SitePackageElement]) -> None:
+        if os.path.exists(element.path()):
+            elements.append(element)
 
     for raw_element in raw_elements:
         expanded_raw_elements = raw_element.expand_glob()
@@ -236,13 +257,14 @@ def process_raw_elements(
             )
         for expanded_raw_element in expanded_raw_elements:
             if isinstance(expanded_raw_element, SitePackageRawElement):
-                added = False
+                valid = False
                 for site_root in site_roots:
-                    if added := add_if_exists(
-                        expanded_raw_element.to_element(site_root)
-                    ):
+                    element = expanded_raw_element.to_element(site_root)
+                    valid = verify_valid(element)
+                    if not valid:
                         break
-                if not added:
+                    add_if_exists(element)
+                if not valid:
                     if required:
                         raise exceptions.InvalidConfiguration(
                             f"Invalid path {expanded_raw_element.package_name}: does not exist."
@@ -256,14 +278,16 @@ def process_raw_elements(
                 expanded_raw_element, (SimpleRawElement, SubdirectoryRawElement)
             ):
                 element = expanded_raw_element.to_element()
-                added = add_if_exists(element)
-                if not added:
+                valid = verify_valid(element)
+                if not valid:
                     if required:
                         raise exceptions.InvalidConfiguration(
                             f"Path does not exist for search path: {element}"
                         )
                     else:
                         LOG.warning(f"Path does not exist for search path: {element}")
+                else:
+                    add_if_exists(element)
             else:
                 raise RuntimeError(
                     f"Unhandled raw search path element type: {expanded_raw_element}"
