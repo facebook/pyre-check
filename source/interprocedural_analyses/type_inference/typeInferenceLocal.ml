@@ -5,7 +5,28 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module sets up the code needed to infer type annotations for unannotated function
+   parameters, return type, attributes, and globals.
+
+   General idea: Use annotations that are present to infer annotations that are absent.
+
+   * The forward pass of the fixpoint propagates types forward in the function: from parameters and
+   local variables to return types, variables that are assigned to, etc.
+
+   For example, if we see `return my_argument` and we know `my_argument` has type `int`, then we can
+   infer that `int` must be compatible with the type of `x`. If there are no other considerations
+   (such as other return statements), we can annotate the function as returning `-> int:`. We deal
+   similarly with `x = my_argument`.
+
+   * The backward pass propagates types backward in the function: from return statements, assignment
+   statements, function calls, etc. to variables and parameters.
+
+   For example, if we see `expect_int(my_argument)`, then we can infer that the type of
+   `my_argument` must be compatible with `int`. If there are no other considerations, we can
+   annotate the parameter as `my_argument: int`.
+
+   * The fixpoint runs the forward and backward passes till there are no more changes to any
+   variables (or we reach a threshold). *)
 
 open Core
 open Ast
