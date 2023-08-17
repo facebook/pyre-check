@@ -81,6 +81,11 @@ def test2_alarm4(foo):
     _test_sink(foo)
 
 
+def test2_alarm5_via_constructor():
+    taint: str = _test_source()
+    _test_sink(Test2_C(x={}, y=[], z=taint))
+
+
 class Test3_Foo:
     ...
 

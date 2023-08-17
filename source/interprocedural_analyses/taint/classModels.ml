@@ -21,47 +21,141 @@ open Analysis
 open Interprocedural
 open Domains
 
+module FeatureSet = struct
+  type t = {
+    breadcrumbs: Features.BreadcrumbSet.t;
+    via_features: Features.ViaFeatureSet.t;
+  }
+
+  let empty =
+    { breadcrumbs = Features.BreadcrumbSet.bottom; via_features = Features.ViaFeatureSet.bottom }
+
+
+  let from_taint taint =
+    {
+      breadcrumbs = BackwardState.Tree.joined_breadcrumbs taint;
+      via_features =
+        BackwardState.Tree.fold
+          Features.ViaFeatureSet.Self
+          ~f:Features.ViaFeatureSet.join
+          ~init:Features.ViaFeatureSet.bottom
+          taint;
+    }
+end
+
 let infer ~environment ~user_models =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-  let add_tito ~input_root ~input_path ~output_path ~collapse_depth existing_state =
+  (* Translate ViaXXX features on attributes to ViaXX features on callables. *)
+  let translate_via_features_on_attribute attribute root tree =
+    let expand_via_feature via_feature taint =
+      match via_feature with
+      | Features.ViaFeature.ViaAttributeName { tag } ->
+          BackwardTaint.add_local_breadcrumb
+            (Features.Breadcrumb.ViaAttributeName { tag; value = attribute }
+            |> Features.BreadcrumbInterned.intern)
+            taint
+      | Features.ViaFeature.ViaValueOf { tag; _ } ->
+          BackwardTaint.transform
+            Features.ViaFeatureSet.Element
+            Add
+            ~f:(Features.ViaFeature.ViaValueOf { parameter = root; tag })
+            taint
+      | Features.ViaFeature.ViaTypeOf { tag; _ } ->
+          BackwardTaint.transform
+            Features.ViaFeatureSet.Element
+            Add
+            ~f:(Features.ViaFeature.ViaTypeOf { parameter = root; tag })
+            taint
+    in
+    let transform taint =
+      let via_features = BackwardTaint.via_features taint in
+      let taint =
+        BackwardTaint.transform
+          Features.ViaFeatureSet.Self
+          Map
+          ~f:(fun _ -> Features.ViaFeatureSet.bottom)
+          taint
+      in
+      Features.ViaFeatureSet.fold
+        Features.ViaFeatureSet.Element
+        ~f:expand_via_feature
+        ~init:taint
+        via_features
+    in
+    BackwardState.Tree.transform BackwardTaint.Self Map ~f:transform tree
+  in
+  let get_attribute_model class_name attribute =
+    Reference.create ~prefix:(Reference.create class_name) attribute
+    |> Target.create_object
+    |> Registry.get user_models
+  in
+  let get_attribute_tito_features class_name attribute root =
+    match get_attribute_model class_name attribute with
+    | Some { Model.backward = { taint_in_taint_out; _ }; _ } ->
+        BackwardState.read ~root:GlobalModel.global_root ~path:[] taint_in_taint_out
+        |> translate_via_features_on_attribute attribute root
+        |> FeatureSet.from_taint
+    | None -> FeatureSet.empty
+  in
+  let add_tito
+      ~input_root
+      ~input_path
+      ~output_path
+      ~collapse_depth
+      ~breadcrumbs
+      ~via_features
+      existing_state
+    =
     let leaf =
       BackwardTaint.singleton CallInfo.Tito Sinks.LocalReturn Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathTree.create
                [Part (Features.ReturnAccessPathTree.Path, (output_path, collapse_depth))])
+      |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
+      |> BackwardState.Tree.add_via_features via_features
     in
     BackwardState.assign ~root:input_root ~path:input_path leaf existing_state
   in
-  let add_parameter_tito ~positional position existing_state attribute =
+  let add_parameter_to_attribute_tito ~class_name ~positional position existing_state attribute =
     let input_root =
       if positional then
         AccessPath.Root.PositionalParameter { position; name = attribute; positional_only = false }
       else
         AccessPath.Root.NamedParameter { name = attribute }
     in
+    let { FeatureSet.breadcrumbs; via_features } =
+      get_attribute_tito_features class_name attribute input_root
+    in
     add_tito
       ~input_root
       ~input_path:[]
       ~output_path:[Abstract.TreeDomain.Label.create_name_index attribute]
       ~collapse_depth:Features.CollapseDepth.no_collapse
+      ~breadcrumbs
+      ~via_features
       existing_state
   in
-  let add_sink_from_attribute_model ~positional class_name position existing_state attribute =
-    let qualified_attribute =
-      Target.create_object (Reference.create ~prefix:class_name attribute)
-    in
-    match Registry.get user_models qualified_attribute with
+  let add_sink_from_attribute_model ~class_name ~positional position existing_state attribute =
+    match get_attribute_model class_name attribute with
     | Some { Model.backward = { sink_taint; _ }; _ } ->
-        let taint = BackwardState.read ~root:GlobalModel.global_root ~path:[] sink_taint in
         let root =
           if positional then
             AccessPath.Root.PositionalParameter
               { position; name = attribute; positional_only = false }
           else
             AccessPath.Root.NamedParameter { name = attribute }
+        in
+        let { FeatureSet.breadcrumbs; via_features } =
+          get_attribute_tito_features class_name attribute root
+        in
+        let taint =
+          BackwardState.read ~root:GlobalModel.global_root ~path:[] sink_taint
+          |> translate_via_features_on_attribute attribute root
+          |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs
+          |> BackwardState.Tree.add_via_features via_features
         in
         BackwardState.assign ~weak:true ~root ~path:[] taint existing_state
     | None -> existing_state
@@ -94,13 +188,14 @@ let infer ~environment ~user_models =
     in
     let taint_in_taint_out =
       List.foldi
-        ~f:(fun position -> add_parameter_tito ~positional:true (position + 1))
+        ~f:(fun position ->
+          add_parameter_to_attribute_tito ~class_name ~positional:true (position + 1))
         ~init:BackwardState.empty
         attributes
     in
     let sink_taint =
       List.foldi attributes ~init:BackwardState.empty ~f:(fun position ->
-          add_sink_from_attribute_model ~positional:true (Reference.create class_name) (position + 1))
+          add_sink_from_attribute_model ~class_name ~positional:true (position + 1))
     in
     [
       ( Target.Method { Target.class_name; method_name = "__init__"; kind = Normal },
@@ -141,7 +236,10 @@ let infer ~environment ~user_models =
       |> Option.value ~default:[]
     in
     let taint_in_taint_out =
-      List.foldi ~f:(add_parameter_tito ~positional:false) ~init:BackwardState.empty fields
+      List.foldi
+        ~f:(add_parameter_to_attribute_tito ~class_name ~positional:false)
+        ~init:BackwardState.empty
+        fields
       (* `TypedDict.__init__ also accepts iterables and **kwargs. *)
       |> add_tito
            ~input_root:
@@ -150,6 +248,8 @@ let infer ~environment ~user_models =
            ~input_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:0
+           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~via_features:Features.ViaFeatureSet.bottom
       |> add_tito
            ~input_root:
              (AccessPath.Root.PositionalParameter
@@ -157,17 +257,21 @@ let infer ~environment ~user_models =
            ~input_path:[AccessPath.dictionary_keys]
            ~output_path:[AccessPath.dictionary_keys]
            ~collapse_depth:Features.CollapseDepth.no_collapse
+           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~via_features:Features.ViaFeatureSet.bottom
       |> add_tito
            ~input_root:(AccessPath.Root.StarStarParameter { excluded = fields })
            ~input_path:[]
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:Features.CollapseDepth.no_collapse
+           ~breadcrumbs:Features.BreadcrumbSet.bottom
+           ~via_features:Features.ViaFeatureSet.bottom
     in
     let sink_taint =
       List.foldi
         fields
         ~init:BackwardState.empty
-        ~f:(add_sink_from_attribute_model ~positional:false (Reference.create class_name))
+        ~f:(add_sink_from_attribute_model ~class_name ~positional:false)
     in
     [
       ( Target.Method { Target.class_name; method_name = "__init__"; kind = Normal },

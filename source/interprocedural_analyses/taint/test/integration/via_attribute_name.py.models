@@ -311,6 +311,7 @@
               }
             ],
             "local_features": [
+              { "always-via-model-query-attribute": "x" },
               { "always-via": "tito" },
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
@@ -346,6 +347,7 @@
       }
     ],
     "features": [
+      { "always-via-model-query-attribute": "x" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
       { "always-via": "issue-broadening" }
@@ -384,6 +386,7 @@
               }
             ],
             "local_features": [
+              { "always-via-model-query-attribute": "y" },
               { "always-via": "tito" },
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
@@ -419,6 +422,7 @@
       }
     ],
     "features": [
+      { "always-via-model-query-attribute": "y" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
       { "always-via": "issue-broadening" }
@@ -457,6 +461,7 @@
               }
             ],
             "local_features": [
+              { "always-via-model-query-attribute": "z" },
               { "always-via": "tito" },
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
@@ -492,6 +497,7 @@
       }
     ],
     "features": [
+      { "always-via-model-query-attribute": "z" },
       { "always-via": "tito" },
       { "always-via": "broadening" },
       { "always-via": "issue-broadening" }
@@ -1047,14 +1053,8 @@
         "port": "formal(z)",
         "taint": [
           {
-            "kinds": [
-              {
-                "via_features": [
-                  { "kind": "ViaAttributeName", "tag": "TheZ" }
-                ],
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-TheZ-attribute": "z" } ],
             "declaration": null
           }
         ]
@@ -1063,12 +1063,8 @@
         "port": "formal(y)",
         "taint": [
           {
-            "kinds": [
-              {
-                "via_features": [ { "kind": "ViaAttributeName" } ],
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-attribute": "y" } ],
             "declaration": null
           }
         ]
@@ -1077,12 +1073,8 @@
         "port": "formal(x)",
         "taint": [
           {
-            "kinds": [
-              {
-                "via_features": [ { "kind": "ViaAttributeName" } ],
-                "kind": "Test"
-              }
-            ],
+            "kinds": [ { "kind": "Test" } ],
+            "local_features": [ { "always-via-attribute": "x" } ],
             "declaration": null
           }
         ]
@@ -1178,6 +1170,7 @@
             "kinds": [
               { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via-model-query-attribute": "z" } ],
             "tito": null
           }
         ]
@@ -1189,6 +1182,7 @@
             "kinds": [
               { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via-model-query-attribute": "y" } ],
             "tito": null
           }
         ]
@@ -1200,6 +1194,7 @@
             "kinds": [
               { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
             ],
+            "local_features": [ { "always-via-model-query-attribute": "x" } ],
             "tito": null
           }
         ]
