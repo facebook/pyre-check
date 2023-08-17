@@ -5,7 +5,21 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Expression: an expression represented in Pyre's OCaml implementation of the Python AST
+ * See `expr` in https://docs.python.org/3/library/ast.html
+ * - Expressions are very closely related to Statements. See Statement.Statement.t.
+ * - An expression is what you would typically think of as the parts of a line
+ *   in Python that can be broken up and repeated, and don't contain most keywords
+ *   (except for `None`, `False`, `True`, `and`, `or`, `in`, `is`, `not`, and `lambda`).
+ *   This is unlike Python statements, which can't be repeated more than once
+ *   (think of trying to do an `if` statement and `for` loop on the same line without `;`).
+ * - Examples of AST representations:
+ *   - Note: you can JSON representations of runtime values with
+ *     `(Yojson.Safe.to_string ([%yojson_of: Expression.t] <your_expression>))`.
+ *     - The same can be done with sexp with
+ *       `(Sexp.to_string ([%sexp_of: Expression.t] <your_expression>))`.
+ *   - Note: existing examples of representations can be seen in expressionTest.ml.
+ *)
 
 open Core
 open Sexplib.Std
