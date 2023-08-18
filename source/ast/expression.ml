@@ -14,7 +14,7 @@
  *   This is unlike Python statements, which can't be repeated more than once
  *   (think of trying to do an `if` statement and `for` loop on the same line without `;`).
  * - Examples of AST representations:
- *   - Note: you can JSON representations of runtime values with
+ *   - Note: you can get JSON representations of runtime values as a string with
  *     `(Yojson.Safe.to_string ([%yojson_of: Expression.t] <your_expression>))`.
  *     - The same can be done with sexp with
  *       `(Sexp.to_string ([%sexp_of: Expression.t] <your_expression>))`.
