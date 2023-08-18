@@ -18,8 +18,8 @@ from typing import List, Tuple
 from setuptools import find_packages, setup
 
 
-if sys.version_info < (3, 6):
-    sys.exit("Error: {PACKAGE_NAME} only runs on Python 3.6 and above.")
+if sys.version_info < (3, 8):
+    sys.exit("Error: {PACKAGE_NAME} only runs on Python 3.8 and above.")
 
 
 def get_all_files(root: Path, extension_glob: str) -> List[Tuple[str, List[str]]]:
@@ -116,7 +116,7 @@ def run(
         + get_all_files(root=Path.cwd() / "stubs/lxml", extension_glob="*.pyi")
         + get_all_files(root=Path.cwd() / "pysa_filters", extension_glob="*.json")
         + find_taint_stubs(),
-        python_requires=">=3.7",
+        python_requires=">=3.8",
         install_requires=runtime_dependencies,
         entry_points=dict(  # noqa we need to do this to make this .format-able
             console_scripts=[
