@@ -227,7 +227,6 @@ def process_raw_elements(
     def verify_valid(element: Element) -> bool:
         # verify if the package_path or path(for SimpleElement) exist.(see facebook/pyre-check#773)
         if os.path.exists(element.path()):
-            elements.append(element)
             return True
         if isinstance(element, SitePackageElement):
             if not os.path.exists(element.site_root):
