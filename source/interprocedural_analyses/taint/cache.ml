@@ -26,7 +26,6 @@ module Entry = struct
     | InitialCallables
     | ClassHierarchyGraph
     | ClassIntervalGraph
-    | InitialModels
     | PreviousAnalysisSetup
   [@@deriving compare, show { with_path = false }]
 
@@ -35,7 +34,6 @@ module Entry = struct
     | InitialCallables -> "initial callables"
     | ClassHierarchyGraph -> "class hierarchy graph"
     | ClassIntervalGraph -> "class interval graph"
-    | InitialModels -> "initial models"
     | PreviousAnalysisSetup -> "previous analysis setup"
 end
 
@@ -54,7 +52,10 @@ module EntryStatus = struct
 end
 
 module AnalysisSetup = struct
-  type t = { maximum_overrides: int option }
+  type t = {
+    maximum_overrides: int option;
+    initial_models: Registry.t;
+  }
 end
 
 module SharedMemoryStatus = struct
@@ -292,9 +293,12 @@ let save_shared_memory ~configuration =
       Ok ())
 
 
-let save ~maximum_overrides { save_cache; configuration; _ } =
+let save ~maximum_overrides ~initial_models { save_cache; configuration; _ } =
   if save_cache then
-    let () = PreviousAnalysisSetupSharedMemory.save_to_cache { AnalysisSetup.maximum_overrides } in
+    let () =
+      PreviousAnalysisSetupSharedMemory.save_to_cache
+        { AnalysisSetup.maximum_overrides; initial_models }
+    in
     save_shared_memory ~configuration |> ignore
 
 
@@ -356,28 +360,3 @@ let initial_callables = InitialCallablesSharedMemory.load_or_compute
 let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
 
 let class_interval_graph = ClassIntervalGraphSharedMemory.load_or_compute
-
-module InitialModelsSharedMemory = struct
-  let entry = Entry.InitialModels
-
-  module T = SaveLoadSharedMemory.MakeSingleValue (struct
-    type t = (Interprocedural.Target.t * Model.t) list
-
-    let name = Entry.show_pretty entry
-  end)
-
-  let save initial_models = initial_models |> Registry.to_alist |> T.save
-
-  let load ({ status; _ } as cache) =
-    match status with
-    | Loaded _ -> (
-        match T.load () with
-        | Ok initial_models ->
-            ( Some (Registry.of_alist ~join:Model.join initial_models),
-              set_entry_usage ~entry ~usage:SaveLoadSharedMemory.Usage.Used cache )
-        | Error error -> None, set_entry_usage ~entry ~usage:error cache)
-    | _ ->
-        (* Initial models from the previous run are loaded only to see if they have changed, so that
-           we know whether to reuse the cached override graph. *)
-        None, cache
-end

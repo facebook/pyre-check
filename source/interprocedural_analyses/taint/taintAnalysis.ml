@@ -458,8 +458,6 @@ let run_taint_analysis
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~initial_callables
   in
-  let _, cache = Cache.InitialModelsSharedMemory.load cache in
-  let () = if use_cache then Cache.InitialModelsSharedMemory.save initial_models in
 
   Log.info "Computing overrides...";
   let timer = Timer.start () in
@@ -545,6 +543,8 @@ let run_taint_analysis
     ~timer
     ();
 
+  let () = Cache.save ~maximum_overrides ~initial_models cache in
+
   let initial_models =
     MissingFlow.add_unknown_callee_models
       ~static_analysis_configuration
@@ -556,8 +556,6 @@ let run_taint_analysis
   let timer = Timer.start () in
   let () = purge_shared_memory ~environment ~qualifiers in
   Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
-
-  let () = Cache.save ~maximum_overrides cache in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";

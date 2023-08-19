@@ -268,7 +268,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
@@ -335,7 +334,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
@@ -394,7 +392,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
@@ -459,7 +456,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
@@ -620,7 +616,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
@@ -661,7 +656,6 @@ class Test:
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
-                    "InitialModels": "Used",
                     "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
