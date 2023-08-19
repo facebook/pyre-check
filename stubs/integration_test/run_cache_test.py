@@ -230,7 +230,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -295,7 +295,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -353,7 +353,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -417,7 +417,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -594,7 +594,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -659,7 +659,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
-                    "MaximumOverrides": "Used",
+                    "PreviousAnalysisSetup": "Used",
                     "TypeEnvironment": "Used",
                 }
             },

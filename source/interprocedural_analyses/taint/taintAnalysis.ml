@@ -463,10 +463,7 @@ let run_taint_analysis
 
   Log.info "Computing overrides...";
   let timer = Timer.start () in
-  let maximum_overrides =
-    Cache.maximum_overrides cache (fun () ->
-        TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
-  in
+  let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
   let {
     Interprocedural.OverrideGraph.override_graph_heap;
     override_graph_shared_memory;
@@ -560,7 +557,7 @@ let run_taint_analysis
   let () = purge_shared_memory ~environment ~qualifiers in
   Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
 
-  let () = Cache.save cache in
+  let () = Cache.save ~maximum_overrides cache in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";

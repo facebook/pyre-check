@@ -27,7 +27,7 @@ module Entry = struct
     | ClassHierarchyGraph
     | ClassIntervalGraph
     | InitialModels
-    | MaximumOverrides
+    | PreviousAnalysisSetup
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -36,7 +36,7 @@ module Entry = struct
     | ClassHierarchyGraph -> "class hierarchy graph"
     | ClassIntervalGraph -> "class interval graph"
     | InitialModels -> "initial models"
-    | MaximumOverrides -> "maximum overrides"
+    | PreviousAnalysisSetup -> "previous analysis setup"
 end
 
 module EntryStatus = struct
@@ -53,10 +53,8 @@ module EntryStatus = struct
     `Assoc (Map.fold accumulate entry_status [])
 end
 
-module PreviousConfiguration = struct
-  type t = { maximum_overrides: int option option }
-
-  let empty = { maximum_overrides = None }
+module AnalysisSetup = struct
+  type t = { maximum_overrides: int option }
 end
 
 module SharedMemoryStatus = struct
@@ -69,7 +67,7 @@ module SharedMemoryStatus = struct
     | Disabled
     | Loaded of {
         entry_status: EntryStatus.t;
-        previous_configuration: PreviousConfiguration.t;
+        previous_analysis_setup: AnalysisSetup.t;
       }
 
   let to_json = function
@@ -88,35 +86,33 @@ module SharedMemoryStatus = struct
         let entry_status = EntryStatus.add ~name:entry ~usage entry_status in
         Loaded { loaded with entry_status }
     | _ -> status
-
-
-  let set_previous_configuration ~previous_configuration status =
-    match status with
-    | Loaded loaded -> Loaded { loaded with previous_configuration }
-    | _ -> status
 end
 
-module MaximumOverridesSharedMemory = struct
-  let entry = Entry.MaximumOverrides
+module PreviousAnalysisSetupSharedMemory = struct
+  let entry = Entry.PreviousAnalysisSetup
 
   module T = SaveLoadSharedMemory.MakeSingleValue (struct
-    type t = int option
+    type t = AnalysisSetup.t
 
     let name = Entry.show_pretty entry
   end)
 
-  let load_from_cache status =
-    match status with
-    | SharedMemoryStatus.Loaded _ -> (
-        match T.load () with
-        | Ok maximum_overrides ->
-            ( Some maximum_overrides,
-              SharedMemoryStatus.set_entry_usage
-                ~entry
-                ~usage:SaveLoadSharedMemory.Usage.Used
-                status )
-        | Error error -> None, SharedMemoryStatus.set_entry_usage ~entry ~usage:error status)
-    | _ -> None, status
+  let load_from_cache entry_status =
+    match T.load () with
+    | Ok previous_analysis_setup ->
+        let entry_status =
+          EntryStatus.add ~name:entry ~usage:SaveLoadSharedMemory.Usage.Used entry_status
+        in
+        SharedMemoryStatus.Loaded { entry_status; previous_analysis_setup }
+    | Error error ->
+        Log.info
+          "Reset shared memory due to failing to load the previous analysis setup: %s"
+          (SaveLoadSharedMemory.Usage.show error);
+        Memory.reset_shared_memory ();
+        SharedMemoryStatus.LoadError
+
+
+  let save_to_cache = T.save
 end
 
 type t = {
@@ -178,12 +174,6 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
       Error SharedMemoryStatus.LoadError
 
 
-let maximum_overrides { save_cache; _ } f =
-  let maximum_overrides = f () in
-  if save_cache then MaximumOverridesSharedMemory.T.save maximum_overrides;
-  maximum_overrides
-
-
 let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
   let save_cache = enabled in
   if not enabled then
@@ -195,11 +185,8 @@ let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
       | Ok () -> (
           match check_decorator_invalidation ~decorator_configuration with
           | Ok () ->
-              SharedMemoryStatus.Loaded
-                {
-                  entry_status = EntryStatus.empty;
-                  previous_configuration = PreviousConfiguration.empty;
-                }
+              let entry_status = EntryStatus.empty in
+              PreviousAnalysisSetupSharedMemory.load_from_cache entry_status
           | Error error ->
               (* If there exist updates to certain decorators, it wastes memory and might not be
                  safe to leave the old type environment in the shared memory. *)
@@ -207,13 +194,6 @@ let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
               Memory.reset_shared_memory ();
               error)
       | Error error -> error
-    in
-    let previous_maximum_overrides, status = MaximumOverridesSharedMemory.load_from_cache status in
-    let status =
-      SharedMemoryStatus.set_previous_configuration
-        ~previous_configuration:
-          { PreviousConfiguration.maximum_overrides = previous_maximum_overrides }
-        status
     in
     { status; save_cache; scheduler; configuration }
 
@@ -312,8 +292,9 @@ let save_shared_memory ~configuration =
       Ok ())
 
 
-let save { save_cache; configuration; _ } =
+let save ~maximum_overrides { save_cache; configuration; _ } =
   if save_cache then
+    let () = PreviousAnalysisSetupSharedMemory.save_to_cache { AnalysisSetup.maximum_overrides } in
     save_shared_memory ~configuration |> ignore
 
 

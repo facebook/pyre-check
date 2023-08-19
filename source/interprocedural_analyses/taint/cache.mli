@@ -17,7 +17,7 @@ val try_load
   enabled:bool ->
   t
 
-val save : t -> unit
+val save : maximum_overrides:int option -> t -> unit
 
 val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t * t
 
@@ -34,8 +34,6 @@ val class_interval_graph
   ClassIntervalSetGraph.Heap.t * t
 
 val metadata_to_json : t -> Yojson.Safe.t
-
-val maximum_overrides : t -> (unit -> int option) -> int option
 
 module InitialModelsSharedMemory : sig
   val save : Registry.t -> unit
