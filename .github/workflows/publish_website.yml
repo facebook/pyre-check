@@ -29,6 +29,6 @@ jobs:
       if: ${{ github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@releases/v4
       with:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: documentation/website/build # The folder the action should deploy.
