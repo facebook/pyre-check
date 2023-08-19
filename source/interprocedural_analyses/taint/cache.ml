@@ -27,6 +27,7 @@ module Entry = struct
     | ClassHierarchyGraph
     | ClassIntervalGraph
     | InitialModels
+    | MaximumOverrides
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -35,6 +36,7 @@ module Entry = struct
     | ClassHierarchyGraph -> "class hierarchy graph"
     | ClassIntervalGraph -> "class interval graph"
     | InitialModels -> "initial models"
+    | MaximumOverrides -> "maximum overrides"
 end
 
 module EntryStatus = struct
@@ -51,6 +53,12 @@ module EntryStatus = struct
     `Assoc (Map.fold accumulate entry_status [])
 end
 
+module PreviousConfiguration = struct
+  type t = { maximum_overrides: int option option }
+
+  let empty = { maximum_overrides = None }
+end
+
 module SharedMemoryStatus = struct
   type t =
     | InvalidByDecoratorChange
@@ -59,7 +67,10 @@ module SharedMemoryStatus = struct
     | LoadError
     | NotFound
     | Disabled
-    | Loaded of EntryStatus.t
+    | Loaded of {
+        entry_status: EntryStatus.t;
+        previous_configuration: PreviousConfiguration.t;
+      }
 
   let to_json = function
     | InvalidByDecoratorChange -> `String "InvalidByDecoratorChange"
@@ -68,7 +79,44 @@ module SharedMemoryStatus = struct
     | LoadError -> `String "LoadError"
     | NotFound -> `String "NotFound"
     | Disabled -> `String "Disabled"
-    | Loaded entry_status -> `Assoc ["Loaded", EntryStatus.to_json entry_status]
+    | Loaded { entry_status; _ } -> `Assoc ["Loaded", EntryStatus.to_json entry_status]
+
+
+  let set_entry_usage ~entry ~usage status =
+    match status with
+    | Loaded ({ entry_status; _ } as loaded) ->
+        let entry_status = EntryStatus.add ~name:entry ~usage entry_status in
+        Loaded { loaded with entry_status }
+    | _ -> status
+
+
+  let set_previous_configuration ~previous_configuration status =
+    match status with
+    | Loaded loaded -> Loaded { loaded with previous_configuration }
+    | _ -> status
+end
+
+module MaximumOverridesSharedMemory = struct
+  let entry = Entry.MaximumOverrides
+
+  module T = SaveLoadSharedMemory.MakeSingleValue (struct
+    type t = int option
+
+    let name = Entry.show_pretty entry
+  end)
+
+  let load_from_cache status =
+    match status with
+    | SharedMemoryStatus.Loaded _ -> (
+        match T.load () with
+        | Ok maximum_overrides ->
+            ( Some maximum_overrides,
+              SharedMemoryStatus.set_entry_usage
+                ~entry
+                ~usage:SaveLoadSharedMemory.Usage.Used
+                status )
+        | Error error -> None, SharedMemoryStatus.set_entry_usage ~entry ~usage:error status)
+    | _ -> None, status
 end
 
 type t = {
@@ -130,16 +178,28 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
       Error SharedMemoryStatus.LoadError
 
 
+let maximum_overrides { save_cache; _ } f =
+  let maximum_overrides = f () in
+  if save_cache then MaximumOverridesSharedMemory.T.save maximum_overrides;
+  maximum_overrides
+
+
 let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
+  let save_cache = enabled in
   if not enabled then
-    { status = SharedMemoryStatus.Disabled; save_cache = false; scheduler; configuration }
+    { status = SharedMemoryStatus.Disabled; save_cache; scheduler; configuration }
   else
     let open Result in
     let status =
       match initialize_shared_memory ~configuration with
       | Ok () -> (
           match check_decorator_invalidation ~decorator_configuration with
-          | Ok () -> SharedMemoryStatus.Loaded EntryStatus.empty
+          | Ok () ->
+              SharedMemoryStatus.Loaded
+                {
+                  entry_status = EntryStatus.empty;
+                  previous_configuration = PreviousConfiguration.empty;
+                }
           | Error error ->
               (* If there exist updates to certain decorators, it wastes memory and might not be
                  safe to leave the old type environment in the shared memory. *)
@@ -148,7 +208,14 @@ let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
               error)
       | Error error -> error
     in
-    { status; save_cache = true; scheduler; configuration }
+    let previous_maximum_overrides, status = MaximumOverridesSharedMemory.load_from_cache status in
+    let status =
+      SharedMemoryStatus.set_previous_configuration
+        ~previous_configuration:
+          { PreviousConfiguration.maximum_overrides = previous_maximum_overrides }
+        status
+    in
+    { status; save_cache; scheduler; configuration }
 
 
 let load_type_environment ~scheduler ~configuration =
@@ -204,13 +271,16 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
   in
   let environment, status =
     match status with
-    | Loaded entry_status -> (
+    | Loaded _ -> (
         match load_type_environment ~scheduler ~configuration with
         | Ok environment ->
-            let entry_status =
-              EntryStatus.add ~name:Entry.TypeEnvironment ~usage:Usage.Used entry_status
+            let status =
+              SharedMemoryStatus.set_entry_usage
+                ~entry:Entry.TypeEnvironment
+                ~usage:Usage.Used
+                status
             in
-            environment, SharedMemoryStatus.Loaded entry_status
+            environment, status
         | Error error_status ->
             Log.info "Reset shared memory due to failing to load the type environment";
             Memory.reset_shared_memory ();
@@ -248,13 +318,7 @@ let save { save_cache; configuration; _ } =
 
 
 let set_entry_usage ~entry ~usage ({ status; _ } as cache) =
-  let status =
-    match status with
-    | Loaded entry_status ->
-        let entry_status = EntryStatus.add ~name:entry ~usage entry_status in
-        SharedMemoryStatus.Loaded entry_status
-    | _ -> status
-  in
+  let status = SharedMemoryStatus.set_entry_usage ~entry ~usage status in
   { cache with status }
 
 

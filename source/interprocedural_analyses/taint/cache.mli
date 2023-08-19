@@ -35,6 +35,8 @@ val class_interval_graph
 
 val metadata_to_json : t -> Yojson.Safe.t
 
+val maximum_overrides : t -> (unit -> int option) -> int option
+
 module InitialModelsSharedMemory : sig
   val save : Registry.t -> unit
 

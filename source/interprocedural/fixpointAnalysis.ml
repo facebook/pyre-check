@@ -474,9 +474,11 @@ module Make (Analysis : ANALYSIS) = struct
         match State.get_model shared_models_handle override with
         | None ->
             Format.asprintf
-              "During override analysis, can't find model for %a"
+              "During override analysis, can't find model for %a when analyzing %a"
               Target.pp_pretty
               override
+              Target.pp_pretty
+              callable
             |> failwith
         | Some model -> model |> Model.strip_for_callsite
       in

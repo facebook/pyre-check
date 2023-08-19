@@ -463,6 +463,10 @@ let run_taint_analysis
 
   Log.info "Computing overrides...";
   let timer = Timer.start () in
+  let maximum_overrides =
+    Cache.maximum_overrides cache (fun () ->
+        TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
+  in
   let {
     Interprocedural.OverrideGraph.override_graph_heap;
     override_graph_shared_memory;
@@ -475,7 +479,7 @@ let run_taint_analysis
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~include_unit_tests:false
       ~skip_overrides:(Registry.skip_overrides initial_models)
-      ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
+      ~maximum_overrides
       ~qualifiers
   in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();

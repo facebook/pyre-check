@@ -14,6 +14,7 @@ working directory.)
 """
 
 import argparse
+import copy
 import json
 import logging
 import os
@@ -23,7 +24,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Union
+from typing import Any, Dict, List, Union, Optional
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -82,7 +83,7 @@ def _run_and_check_output(
         output = subprocess.check_output(command, stderr=subprocess.STDOUT, text=True)
     except subprocess.CalledProcessError as exception:
         LOG.error(f"`pyre analyze` failed with return code {exception.returncode}")
-        sys.stdout.write(exception.output.decode())
+        sys.stdout.write(exception.output)
         return exception.returncode
 
     with open(save_results_to / "errors.json") as file:
@@ -119,7 +120,11 @@ def _run_and_check_output(
 
 
 def _pysa_command(
-    typeshed_path: str, cache_path: Path, save_results_to: Path, use_cache: bool
+    typeshed_path: str,
+    cache_path: Path,
+    save_results_to: Path,
+    use_cache: bool,
+    maximum_overrides: Optional[int] = None,
 ) -> List[str]:
     command = [
         "pyre",
@@ -136,6 +141,8 @@ def _pysa_command(
     ]
     if use_cache:
         command.append("--use-cache")
+    if maximum_overrides is not None:
+        command.append(f"--maximum-overrides-to-analyze={maximum_overrides}")
     return command
 
 
@@ -223,6 +230,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -287,6 +295,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -344,6 +353,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -407,6 +417,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -583,6 +594,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -597,6 +609,82 @@ class Test:
 
         # Restore the original model file
         open(test_model_path, "w").write(original_content)
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+
+    def run_test_changed_overrides_cap(self) -> None:
+        """
+        Run Pysa after limiting the max number of overrides to test cache invalidation.
+        Pysa should detect that the override graph has changed and fall back to doing a clean run.
+        """
+
+        _remove_cache_file(cache_path=self.cache_path)
+
+        LOG.info(
+            "Testing cache invalidation when changing --maximum-overrides-to-analyze (first run):"
+        )
+        pysa_command = _pysa_command(
+            self.typeshed_path,
+            self.cache_path,
+            self.save_results_to,
+            use_cache=True,
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "NotFound",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
+
+        LOG.info(
+            "Testing cache invalidation when changing --maximum-overrides-to-analyze (second run):"
+        )
+        pysa_command = _pysa_command(
+            self.typeshed_path,
+            self.cache_path,
+            self.save_results_to,
+            use_cache=True,
+            maximum_overrides=0,
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "InitialModels": "Used",
+                    "MaximumOverrides": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        # Expect an issue to disappear due to limiting overrides
+        issue = {
+            "code": 5001,
+            "column": 20,
+            "define": "integration_test.cache.test_overrides_cap",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 50,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 28,
+            "stop_line": 50,
+        }
+        new_expected = copy.deepcopy(self.expected)
+        new_expected.remove(issue)
+        returncode = _run_and_check_output(
+            pysa_command,
+            new_expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
 
         _exit_or_continue(returncode, self.exit_on_error)
 
@@ -639,6 +727,7 @@ def run_tests(exit_on_error: bool) -> None:
         test_class.run_test_changed_source_files()
         test_class.run_test_changed_decorators()
         test_class.run_test_changed_overrides()
+        test_class.run_test_changed_overrides_cap()
 
 
 if __name__ == "__main__":
