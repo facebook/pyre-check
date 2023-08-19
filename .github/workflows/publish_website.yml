@@ -21,10 +21,10 @@ jobs:
         cd documentation/website
         yarn install
         yarn run build
-        echo "::set-output name=time::$(date +'%Y-%m-%d %H:%M:%S')"
+        echo "OUTPUT_TIME=$(date +%Y-%m-%d %H:%M:%S)" >> $GITHUB_ENV
       id: build
     - name: Get output time
-      run: echo "The time was ${{ steps.build.outputs.time }}"
+      run: echo "The time was ${{ env.OUTPUT_TIME }}"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@releases/v4
