@@ -3414,7 +3414,7 @@ let assert_equivalent_attributes
 
 module MockClassHierarchyHandler = struct
   type t = {
-    edges: ClassHierarchy.Target.t list IndexTracker.Table.t;
+    edges: ClassHierarchy.Edges.t IndexTracker.Table.t;
     all_indices: IndexTracker.Hash_set.t;
   }
 
@@ -3427,7 +3427,7 @@ module MockClassHierarchyHandler = struct
 
 
   let pp format { edges; _ } =
-    let print_edge (source, targets) =
+    let print_edge (source, { ClassHierarchy.Edges.parents; _ }) =
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
           Format.asprintf
@@ -3436,7 +3436,7 @@ module MockClassHierarchyHandler = struct
             (Type.pp_parameters ~pp_type:Type.pp_concise)
             parameters
         in
-        targets |> List.map ~f:target |> String.concat ~sep:", "
+        List.map parents ~f:target |> String.concat ~sep:", "
       in
       Format.fprintf format "  %s -> %s\n" (IndexTracker.annotation source) targets
     in
@@ -3452,8 +3452,6 @@ module MockClassHierarchyHandler = struct
     (module struct
       let edges = Hashtbl.find order.edges
 
-      let extends_placeholder_stub _ = false
-
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
     end : ClassHierarchy.Handler)
 
@@ -3463,15 +3461,28 @@ module MockClassHierarchyHandler = struct
     let successor = IndexTracker.index successor in
     let edges = order.edges in
     (* Add edges. *)
-    let successors = Hashtbl.find edges predecessor |> Option.value ~default:[] in
-    Hashtbl.set
-      edges
-      ~key:predecessor
-      ~data:({ ClassHierarchy.Target.target = successor; parameters } :: successors)
+    let new_target = { ClassHierarchy.Target.target = successor; parameters } in
+    let predecessor_edges =
+      match Hashtbl.find edges predecessor with
+      | None -> { ClassHierarchy.Edges.parents = [new_target]; has_placeholder_stub_parent = false }
+      | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
+          { edges with parents = new_target :: parents }
+    in
+    Hashtbl.set edges ~key:predecessor ~data:predecessor_edges
+
+
+  let set_extends_placeholder_stub order annotation =
+    let index = IndexTracker.index annotation in
+    Hashtbl.change order.edges index ~f:(function
+        | None -> None
+        | Some edges -> Some { edges with has_placeholder_stub_parent = true })
 
 
   let insert order annotation =
     let index = IndexTracker.index annotation in
     Hash_set.add order.all_indices index;
-    Hashtbl.set order.edges ~key:index ~data:[]
+    Hashtbl.set
+      order.edges
+      ~key:index
+      ~data:{ ClassHierarchy.Edges.parents = []; has_placeholder_stub_parent = false }
 end

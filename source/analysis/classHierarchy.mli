@@ -53,15 +53,25 @@ module Target : sig
   module List : ListOrSet with type record = t list
 end
 
+module Edges : sig
+  type t = {
+    parents: Target.t list;
+    has_placeholder_stub_parent: bool;
+  }
+  [@@deriving sexp, compare]
+end
+
 (** The handler module for interfacing with ClassHierarchy lookups. See [Environment_handler] for
     more. *)
 module type Handler = sig
-  val edges : IndexTracker.t -> Target.t list option
-
-  val extends_placeholder_stub : IndexTracker.t -> bool
+  val edges : IndexTracker.t -> Edges.t option
 
   val contains : Type.Primitive.t -> bool
 end
+
+val parents_of : (module Handler) -> IndexTracker.t -> Target.t list option
+
+val extends_placeholder_stub : (module Handler) -> IndexTracker.t -> bool
 
 (* Returns true if the class hierarchy contains the given class. *)
 val contains : (module Handler) -> Type.Primitive.t -> bool

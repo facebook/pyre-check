@@ -96,10 +96,11 @@ let triangle_order =
 
 let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order (module Handler : Handler) annotation expected =
+    let get_successors = ClassHierarchy.parents_of (module Handler) in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       expected
-      (method_resolution_order_linearize annotation ~get_successors:Handler.edges)
+      (method_resolution_order_linearize annotation ~get_successors)
   in
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];
@@ -146,44 +147,24 @@ let test_is_transitive_successor _ =
   insert order successor;
   connect order ~predecessor ~successor;
 
-  let no_placeholder_subclasses_handler order =
+  let handler =
     (module struct
       let edges = Hashtbl.find order.edges
-
-      let extends_placeholder_stub _ = false
 
       let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
     end : ClassHierarchy.Handler)
   in
-  let all_placeholder_subclasses_handler order =
-    (module struct
-      let edges = Hashtbl.find order.edges
+  assert_true (is_transitive_successor handler ~source:predecessor ~target:successor);
+  assert_false (is_transitive_successor handler ~source:successor ~target:predecessor);
 
-      let extends_placeholder_stub _ = true
-
-      let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler)
-  in
-  assert_true
-    (is_transitive_successor
-       (no_placeholder_subclasses_handler order)
-       ~source:predecessor
-       ~target:successor);
-  assert_false
-    (is_transitive_successor
-       (no_placeholder_subclasses_handler order)
-       ~source:successor
-       ~target:predecessor);
-  assert_true
-    (is_transitive_successor
-       (all_placeholder_subclasses_handler order)
-       ~source:successor
-       ~target:predecessor);
+  set_extends_placeholder_stub order predecessor;
+  set_extends_placeholder_stub order successor;
+  assert_true (is_transitive_successor handler ~source:successor ~target:predecessor);
   (* The flag disables the special-casing of placeholder stub subclasses. *)
   assert_false
     (is_transitive_successor
        ~placeholder_subclass_extends_all:false
-       (all_placeholder_subclasses_handler order)
+       handler
        ~source:successor
        ~target:predecessor);
   ()
@@ -226,7 +207,8 @@ let test_check_integrity _ =
   assert_raises_cyclic ["0"; "1"] (fun _ -> check_integrity order ~indices);
   assert_raises_cyclic ["0"; "1"] (fun _ ->
       let (module Handler : Handler) = order in
-      method_resolution_order_linearize "1" ~get_successors:Handler.edges);
+      let get_successors = ClassHierarchy.parents_of (module Handler) in
+      method_resolution_order_linearize "1" ~get_successors);
 
   (* 0 -> 1
    * ^    |
@@ -248,7 +230,8 @@ let test_check_integrity _ =
   assert_raises_cyclic ["0"; "1"; "2"] (fun _ -> check_integrity order ~indices);
   assert_raises_cyclic ["0"; "1"; "2"] (fun _ ->
       let (module Handler : Handler) = order in
-      method_resolution_order_linearize "2" ~get_successors:Handler.edges)
+      let get_successors = ClassHierarchy.parents_of (module Handler) in
+      method_resolution_order_linearize "2" ~get_successors)
 
 
 let test_to_dot _ =

@@ -589,7 +589,7 @@ let test_populate context =
   let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
     let (module TypeOrderHandler) = class_hierarchy environment in
     let index annotation = IndexTracker.index annotation in
-    let targets = TypeOrderHandler.edges (index base) in
+    let targets = ClassHierarchy.parents_of (module TypeOrderHandler) (index base) in
     let to_target annotation =
       {
         ClassHierarchy.Target.target = index annotation;
@@ -1172,7 +1172,7 @@ let test_deduplicate context =
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
   ForwardAsserter.assert_targets
-    Handler.edges
+    (ClassHierarchy.parents_of (module Handler))
     "test.Zero"
     "test.One"
     [Single Type.integer; Single Type.integer]
@@ -1205,11 +1205,15 @@ let test_remove_extra_edges_to_object context =
   let (module Handler) = class_hierarchy global_environment in
   let zero_index = IndexTracker.index "test.Zero" in
   let one_index = IndexTracker.index "test.One" in
-  let printer = List.to_string ~f:ClassHierarchy.Target.show in
+  let printer edges = [%sexp_of: ClassHierarchy.Edges.t] edges |> Sexp.to_string_hum in
   assert_equal
+    ~cmp:[%compare.equal: ClassHierarchy.Edges.t]
     ~printer
     (find_unsafe Handler.edges zero_index)
-    [{ ClassHierarchy.Target.target = one_index; parameters = [] }];
+    {
+      ClassHierarchy.Edges.parents = [{ ClassHierarchy.Target.target = one_index; parameters = [] }];
+      has_placeholder_stub_parent = false;
+    };
   ()
 
 

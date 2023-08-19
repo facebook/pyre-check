@@ -34,20 +34,14 @@ let empty_stub_environment alias_environment =
   AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
 
 
-type edges = {
-  parents: ClassHierarchy.Target.t list;
-  has_placeholder_stub_parent: bool;
-}
-[@@deriving compare]
-
 module EdgesValue = struct
-  type t = edges option
+  type t = ClassHierarchy.Edges.t option
 
   let prefix = Hack_parallel.Std.Prefix.make ()
 
   let description = "Edges"
 
-  let equal = Memory.equal_from_compare (Option.compare compare_edges)
+  let equal = Memory.equal_from_compare [%compare: ClassHierarchy.Edges.t option]
 end
 
 let find_propagated_type_variables bases ~parse_annotation =
@@ -198,7 +192,7 @@ let get_parents alias_environment name ~dependency =
             (EmptyStubEnvironment.ReadOnly.from_empty_stub
                (empty_stub_environment alias_environment))
       in
-      Some { parents; has_placeholder_stub_parent }
+      Some { ClassHierarchy.Edges.parents; has_placeholder_stub_parent }
 
 
 module Edges = Environment.EnvironmentTable.WithCache (struct
@@ -231,7 +225,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
     key_to_trigger index |> ModuleTracker.Overlay.owns_identifier module_tracker_overlay
 
 
-  let equal_value = Option.equal [%compare.equal: edges]
+  let equal_value = [%compare.equal: ClassHierarchy.Edges.t option]
 end)
 
 module ReadOnly = struct
@@ -239,15 +233,7 @@ module ReadOnly = struct
 
   let alias_environment = upstream_environment
 
-  let get_edges read_only ?dependency key =
-    get read_only ?dependency key >>| fun { parents; _ } -> parents
-
-
-  let extends_placeholder_stub read_only ?dependency key =
-    get read_only ?dependency key
-    >>| (fun { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent)
-    |> Option.value ~default:false
-
+  let get_edges = get
 
   let check_integrity read_only =
     let unannotated_global_environment =
@@ -259,8 +245,6 @@ module ReadOnly = struct
     let class_hierarchy =
       (module struct
         let edges = get_edges read_only ?dependency:None
-
-        let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency:None
 
         let contains key =
           UnannotatedGlobalEnvironment.ReadOnly.get_class_summary unannotated_global_environment key
@@ -277,8 +261,6 @@ module ReadOnly = struct
     in
     (module struct
       let edges = get_edges read_only ?dependency
-
-      let extends_placeholder_stub = extends_placeholder_stub read_only ?dependency
 
       let contains key =
         let env_controls = AliasEnvironment.ReadOnly.controls alias_environment in

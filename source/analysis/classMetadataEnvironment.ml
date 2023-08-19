@@ -52,10 +52,12 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
   in
   let add definition =
     let successors annotation =
+      let (module Handler) =
+        ClassHierarchyEnvironment.ReadOnly.class_hierarchy class_hierarchy_environment ?dependency
+      in
       let linearization =
         ClassHierarchy.method_resolution_order_linearize
-          ~get_successors:
-            (ClassHierarchyEnvironment.ReadOnly.get_edges class_hierarchy_environment ?dependency)
+          ~get_successors:(ClassHierarchy.parents_of (module Handler))
           annotation
       in
       match linearization with

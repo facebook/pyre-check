@@ -89,15 +89,31 @@ end
 
 let generic_primitive = "typing.Generic"
 
-module type Handler = sig
-  val edges : IndexTracker.t -> Target.t list option
+module Edges = struct
+  type t = {
+    parents: Target.t list;
+    has_placeholder_stub_parent: bool;
+  }
+  [@@deriving sexp, compare]
+end
 
-  val extends_placeholder_stub : IndexTracker.t -> bool
+module type Handler = sig
+  val edges : IndexTracker.t -> Edges.t option
 
   val contains : Type.Primitive.t -> bool
 end
 
 let index_of annotation = IndexTracker.index annotation
+
+let parents_of (module Handler : Handler) target =
+  Handler.edges target >>| fun { parents; _ } -> parents
+
+
+let extends_placeholder_stub (module Handler : Handler) target =
+  match Handler.edges target with
+  | None -> false
+  | Some { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent
+
 
 let contains (module Handler : Handler) = Handler.contains
 
@@ -167,7 +183,9 @@ let method_resolution_order_linearize ~get_successors class_name =
 
 
 let successors (module Handler : Handler) annotation =
-  let linearization = method_resolution_order_linearize ~get_successors:Handler.edges annotation in
+  let linearization =
+    method_resolution_order_linearize ~get_successors:(parents_of (module Handler)) annotation
+  in
   match linearization with
   | _ :: successors -> successors
   | [] -> []
@@ -175,7 +193,7 @@ let successors (module Handler : Handler) annotation =
 
 let immediate_parents (module Handler : Handler) class_name =
   index_of class_name
-  |> Handler.edges
+  |> parents_of (module Handler)
   >>| List.map ~f:(fun target -> Target.target target |> IndexTracker.annotation)
   |> Option.value ~default:[]
 
@@ -196,7 +214,7 @@ let variables ?(default = None) (module Handler : Handler) = function
   | primitive_name ->
       let generic_index = index_of generic_primitive in
       let primitive_index = index_of primitive_name in
-      Handler.edges primitive_index
+      parents_of (module Handler) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } ->
               [%compare.equal: IndexTracker.t] target generic_index)
       >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
@@ -251,7 +269,7 @@ let least_common_successor order ~successors left right =
 
 let least_upper_bound ((module Handler : Handler) as order) =
   let successors index =
-    match Handler.edges index with
+    match parents_of (module Handler) index with
     | Some targets -> targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
     | None -> IndexTracker.Set.empty
   in
@@ -278,11 +296,12 @@ let is_transitive_successor
         | Ok () ->
             if
               [%compare.equal: IndexTracker.t] current (index_of target)
-              || (placeholder_subclass_extends_all && Handler.extends_placeholder_stub current)
+              || placeholder_subclass_extends_all
+                 && extends_placeholder_stub (module Handler) current
             then
               true
             else (
-              Option.iter (Handler.edges current) ~f:(Queue.enqueue_all worklist);
+              Option.iter (parents_of (module Handler) current) ~f:(Queue.enqueue_all worklist);
               iterate worklist))
   in
   iterate worklist
@@ -299,7 +318,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
         | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
       in
       index_of target
-      |> Handler.edges
+      |> parents_of (module Handler)
       >>= get_generic_parameters ~generic_index
       >>= parameters_to_variables
       >>| List.concat_map ~f:to_any
@@ -371,7 +390,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   List.map successors ~f:instantiate_parameters
                 in
-                Handler.edges target_index
+                parents_of (module Handler) target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
               if [%compare.equal: IndexTracker.t] target_index (index_of target) then
@@ -411,7 +430,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
           raise (Cyclic (String.Hash_set.of_list trace)))
         else if not (Set.mem !started_from index) then (
           started_from := Set.add !started_from index;
-          match Handler.edges index with
+          match parents_of (module Handler) index with
           | Some successors ->
               successors
               |> List.map ~f:Target.target
@@ -434,7 +453,7 @@ let to_dot (module Handler : Handler) ~indices =
       |> Buffer.add_string buffer)
     nodes;
   let add_edges index =
-    Handler.edges index
+    parents_of (module Handler) index
     >>| List.sort ~compare:Target.compare
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
             Format.asprintf "  %s -> %s" (IndexTracker.show index) (IndexTracker.show successor)

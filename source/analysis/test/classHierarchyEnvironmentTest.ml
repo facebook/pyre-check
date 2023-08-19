@@ -20,30 +20,21 @@ let test_simple_registration context =
       |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let expected_edges =
-      expected_edges
-      >>| List.map ~f:(fun name ->
-              { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
-    in
-    let printer v =
-      let show_target_readable { ClassHierarchy.Target.target; parameters } =
-        Format.asprintf
-          "%s[%a]"
-          (IndexTracker.annotation target)
-          (Type.pp_parameters ~pp_type:Type.pp)
-          parameters
-      in
-      v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
+      Some
+        {
+          ClassHierarchy.Edges.parents =
+            List.map
+              ~f:(fun name ->
+                { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
+              expected_edges;
+          has_placeholder_stub_parent = expected_extends_placeholder_stub;
+        }
     in
     assert_equal
-      ~printer
+      ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
+      ~printer:(fun edges -> [%sexp_of: ClassHierarchy.Edges.t option] edges |> Sexp.to_string_hum)
       expected_edges
-      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name));
-    assert_equal
-      ~printer:string_of_bool
-      expected_extends_placeholder_stub
-      (ClassHierarchyEnvironment.ReadOnly.extends_placeholder_stub
-         read_only
-         (IndexTracker.index name))
+      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name))
   in
   assert_registers
     ["test.py", {|
@@ -51,7 +42,7 @@ let test_simple_registration context =
       pass
   |}]
     "test.C"
-    ~expected_edges:(Some ["object"])
+    ~expected_edges:["object"]
     ~expected_extends_placeholder_stub:false;
   assert_registers
     ["test.py", {|
@@ -61,7 +52,7 @@ let test_simple_registration context =
       pass
   |}]
     "test.C"
-    ~expected_edges:(Some ["test.D"])
+    ~expected_edges:["test.D"]
     ~expected_extends_placeholder_stub:false;
   assert_registers
     [
@@ -75,7 +66,7 @@ let test_simple_registration context =
   |};
     ]
     "test.C"
-    ~expected_edges:(Some ["object"])
+    ~expected_edges:["object"]
     ~expected_extends_placeholder_stub:true;
   assert_registers
     [
@@ -93,7 +84,7 @@ let test_simple_registration context =
   |};
     ]
     "test.C"
-    ~expected_edges:(Some ["test.D"])
+    ~expected_edges:["test.D"]
     ~expected_extends_placeholder_stub:false;
   assert_registers
     [
@@ -111,7 +102,7 @@ let test_simple_registration context =
   |};
     ]
     "test.C"
-    ~expected_edges:(Some ["test.D"])
+    ~expected_edges:["test.D"]
     ~expected_extends_placeholder_stub:true;
   ()
 
@@ -124,23 +115,20 @@ let test_register_inferred_generic_base context =
       |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
     let expected =
-      expected
-      >>| List.map ~f:(fun (name, concretes) ->
-              {
-                ClassHierarchy.Target.target = IndexTracker.index name;
-                parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
-              })
-    in
-    let printer v =
-      let show_target_readable { ClassHierarchy.Target.target; parameters } =
-        (*Printf.sprintf*)
-        (*"%s[%s]"*)
-        Type.show (Type.parametric (IndexTracker.annotation target) parameters)
-      in
-      v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
+      Some
+        {
+          ClassHierarchy.Edges.parents =
+            List.map expected ~f:(fun (name, concretes) ->
+                {
+                  ClassHierarchy.Target.target = IndexTracker.index name;
+                  parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
+                });
+          has_placeholder_stub_parent = false;
+        }
     in
     assert_equal
-      ~printer
+      ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
+      ~printer:(fun edges -> [%sexp_of: ClassHierarchy.Edges.t option] edges |> Sexp.to_string_hum)
       expected
       (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name))
   in
@@ -151,7 +139,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    (Some ["object", []]);
+    ["object", []];
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -161,7 +149,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    (Some ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]);
+    ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]];
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -171,7 +159,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.List"
-    (Some ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]);
+    ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]];
   assert_registers
     {|
       _T1 = typing.TypeVar('_T1')
@@ -181,11 +169,10 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T2]): pass
     |}
     "test.Foo"
-    (Some
-       [
-         "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
-         "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
-       ]);
+    [
+      "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
+      "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
+    ];
   assert_registers
     {|
       _T1 = typing.TypeVar('_T1')
@@ -195,11 +182,10 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T1]): pass
     |}
     "test.Foo"
-    (Some
-       [
-         "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
-         "typing.Generic", [Type.variable "test._T1"];
-       ]);
+    [
+      "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
+      "typing.Generic", [Type.variable "test._T1"];
+    ];
   ()
 
 
@@ -229,26 +215,24 @@ let test_updates context =
     in
     let execute_action = function
       | `Edges (class_name, dependency, expectation) ->
-          let printer v =
-            let show_target_readable { ClassHierarchy.Target.target; parameters } =
-              Format.asprintf
-                "%s[%a]"
-                (IndexTracker.annotation target)
-                (Type.pp_parameters ~pp_type:Type.pp)
-                parameters
-            in
-            v >>| List.to_string ~f:show_target_readable |> Option.value ~default:"none"
-          in
           let expectation =
-            expectation
-            >>| List.map ~f:(fun name ->
-                    { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
+            Option.map expectation ~f:(fun expectation ->
+                {
+                  ClassHierarchy.Edges.parents =
+                    List.map expectation ~f:(fun name ->
+                        { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] });
+                  has_placeholder_stub_parent = false;
+                })
           in
           ClassHierarchyEnvironment.ReadOnly.get_edges
             read_only
             ~dependency
             (IndexTracker.index class_name)
-          |> assert_equal ~printer expectation
+          |> assert_equal
+               ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
+               ~printer:(fun edges ->
+                 [%sexp_of: ClassHierarchy.Edges.t option] edges |> Sexp.to_string_hum)
+               expectation
     in
     List.iter middle_actions ~f:execute_action;
     if Option.is_some original_source then
