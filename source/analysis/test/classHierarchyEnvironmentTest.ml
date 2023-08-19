@@ -108,7 +108,7 @@ let test_simple_registration context =
   ()
 
 
-let test_register_inferred_generic_base context =
+let test_parents_and_inferred_generic_base context =
   let assert_registers ~expected_parents ?expected_inferred_generic_base source name =
     let project = ScratchProject.setup ["test.py", source] ~context ~track_dependencies:true in
     let read_only =
@@ -176,8 +176,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    ~expected_parents:
-      ["typing.Generic", [Type.variable "test._T"]; "test.List", [Type.variable "test._T"]]
+    ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T"]);
   assert_registers
     {|
@@ -190,8 +189,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    ~expected_parents:
-      ["typing.Generic", [Type.variable "test._T"]; "test.List", [Type.variable "test._T"]]
+    ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T"]);
   assert_registers
     {|
@@ -205,6 +203,128 @@ let test_register_inferred_generic_base context =
     ~expected_parents:
       ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]
     ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       class Bar(Foo1[T1], Foo2[T2]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      ["test.Foo1", [Type.variable "test.T1"]; "test.Foo2", [Type.variable "test.T2"]]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       class Bar(typing.Generic[T1, T2], Foo1[T1], Foo2[T2]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      ["test.Foo1", [Type.variable "test.T1"]; "test.Foo2", [Type.variable "test.T2"]]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       class Bar(Foo1[T1], Foo2[T2], typing.Generic[T1, T2]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      [
+        "test.Foo1", [Type.variable "test.T1"];
+        "test.Foo2", [Type.variable "test.T2"];
+        "typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"];
+      ]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       # Note that Foo1 doesn't have type parameter here
+       class Bar(typing.Generic[T1, T2], Foo1, Foo2[T2]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:["test.Foo1", []; "test.Foo2", [Type.variable "test.T2"]]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       class Bar(Foo1[T1], typing.Generic[T1, T2], Foo2[T2]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      ["test.Foo1", [Type.variable "test.T1"]; "test.Foo2", [Type.variable "test.T2"]]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       # Note that Foo2 doesn't have type parameter here
+       class Bar(Foo1[T1], typing.Generic[T1, T2], Foo2): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      [
+        "test.Foo1", [Type.variable "test.T1"];
+        "typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"];
+        "test.Foo2", [];
+      ]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T1 = typing.TypeVar("T1")
+       T2 = typing.TypeVar("T2")
+       class Foo1(typing.Generic[T1]): pass
+       class Foo2(typing.Generic[T2]): pass
+       class Bar(typing.Generic[T1, T2], Foo1, Foo2): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      [
+        "typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"];
+        "test.Foo1", [];
+        "test.Foo2", [];
+      ]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test.T1"; Type.variable "test.T2"]);
+  assert_registers
+    {|
+       import typing
+       T = typing.TypeVar("T")
+       class Foo(typing.Generic[T]): pass
+       class Bar(typing.Protocol[T], Generic[T], Foo[T]): pass
+     |}
+    "test.Bar"
+    ~expected_parents:
+      ["typing.Protocol", [Type.variable "test.T"]; "test.Foo", [Type.variable "test.T"]]
+    ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test.T"]);
   assert_registers
     {|
       _T1 = typing.TypeVar('_T1')
@@ -582,7 +702,7 @@ let () =
   "environment"
   >::: [
          "simple_registration" >:: test_simple_registration;
-         "register_inferred_generic_bases" >:: test_register_inferred_generic_base;
+         "parents_and_inferred_generic_bases" >:: test_parents_and_inferred_generic_base;
          "compute_inferred_generic_base" >:: test_compute_inferred_generic_base;
          "updates" >:: test_updates;
        ]

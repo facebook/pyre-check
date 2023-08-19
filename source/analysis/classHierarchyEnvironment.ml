@@ -133,6 +133,33 @@ let get_parents alias_environment name ~dependency =
     | [], _ -> simples ["object"]
     | _ -> parents
   in
+  (* If `typing.Generic[]` appears in the base list, that entry needs to go through special
+     handling. This behavior was established in PEP 560 and gets implemented in CPython via
+     `GenericAlias.__mro_entries__()`. See https://fburl.com/mro_in_pyre for more detailed
+     explanation. *)
+  let filter_shadowed_generic_bases name_and_parameters =
+    let is_protocol =
+      List.exists name_and_parameters ~f:(fun (name, _) -> String.equal name "typing.Protocol")
+    in
+    let process_parent ((name, _) as current) rest =
+      match name with
+      | "typing.Generic" ->
+          (* TODO: type parameters of the `name` class is expected to be non-empty here because
+             Python forbids inheriting from `typing.Generic` directly. But we currently can't check
+             for that since we lack the setup to emit errors from this environment. *)
+          if is_protocol then
+            (* Hide `Generic` from MRO if the class also extends from `Protocol` *)
+            rest
+          else if List.exists rest ~f:(fun (_, parameters) -> not (List.is_empty parameters)) then
+            (* Hide `Generic` from MRO if there exist other generic aliases down the base class
+               list *)
+            rest
+          else
+            current :: rest
+      | _ -> current :: rest
+    in
+    List.fold_right name_and_parameters ~init:[] ~f:process_parent
+  in
   let is_not_primitive_cycle (parent, _) = not (String.equal name parent) in
   let convert_to_targets =
     List.map ~f:(fun (name, parameters) ->
@@ -168,6 +195,7 @@ let get_parents alias_environment name ~dependency =
         List.filter_map base_classes ~f:extract_supertype
         |> add_special_parents
         |> List.filter ~f:is_not_primitive_cycle
+        |> filter_shadowed_generic_bases
         |> convert_to_targets
         |> deduplicate
         |> remove_extra_edges_to_object
