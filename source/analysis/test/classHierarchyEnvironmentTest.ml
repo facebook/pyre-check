@@ -152,8 +152,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    ~expected_parents:
-      ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]
+    ~expected_parents:["test.List", [Type.variable "test._T"]]
     ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T"]);
   assert_registers
     {|
@@ -175,11 +174,7 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T2]): pass
     |}
     "test.Foo"
-    ~expected_parents:
-      [
-        "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
-        "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
-      ]
+    ~expected_parents:["test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"]]
     ~expected_inferred_generic_base:
       ("typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"]);
   assert_registers
@@ -191,11 +186,7 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T1]): pass
     |}
     "test.Foo"
-    ~expected_parents:
-      [
-        "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
-        "typing.Generic", [Type.variable "test._T1"];
-      ]
+    ~expected_parents:["test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"]]
     ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T1"]);
   ()
 
