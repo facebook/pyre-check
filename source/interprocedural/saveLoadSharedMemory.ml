@@ -15,7 +15,10 @@ let exception_to_error ~error ~message ~f =
 
 
 module Usage = struct
-  type error = LoadError [@@deriving show { with_path = false }]
+  type error =
+    | LoadError
+    | Stale
+  [@@deriving show { with_path = false }]
 
   type t =
     | Used
@@ -124,4 +127,24 @@ struct
     let first_class_handle = FirstClass.create () in
     List.iter list ~f:(save_entry ~first_class_handle);
     { Handle.first_class_handle; keys = list |> List.map ~f:fst |> FirstClass.KeySet.of_list }
+
+
+  let to_alist { Handle.first_class_handle; keys } =
+    FirstClass.get_batch first_class_handle keys
+    |> FirstClass.KeyMap.elements
+    |> List.filter_map ~f:(fun (key, value) ->
+           match value with
+           | Some value -> Some (key, value)
+           | None -> None)
+
+
+  module HandleSharedMemory = MakeSingleValue (struct
+    type t = Handle.t
+
+    let name = Format.asprintf "Handle of %s" Value.description
+  end)
+
+  let save_to_cache = HandleSharedMemory.save
+
+  let load_from_cache = HandleSharedMemory.load
 end

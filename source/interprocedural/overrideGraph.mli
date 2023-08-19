@@ -55,9 +55,15 @@ module SharedMemory : sig
   (** Record a heap override graph in shared memory and return the handle to the storage location. *)
   val from_heap : Heap.t -> t
 
+  val to_heap : t -> Heap.t
+
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
   val cleanup : t -> unit
+
+  val save_to_cache : t -> unit
+
+  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
 end
 
 type skipped_overrides = Target.t list

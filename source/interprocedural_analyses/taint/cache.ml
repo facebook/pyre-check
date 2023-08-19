@@ -27,6 +27,7 @@ module Entry = struct
     | ClassHierarchyGraph
     | ClassIntervalGraph
     | PreviousAnalysisSetup
+    | OverrideGraph
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -35,6 +36,7 @@ module Entry = struct
     | ClassHierarchyGraph -> "class hierarchy graph"
     | ClassIntervalGraph -> "class interval graph"
     | PreviousAnalysisSetup -> "previous analysis setup"
+    | OverrideGraph -> "override graph"
 end
 
 module EntryStatus = struct
@@ -294,8 +296,17 @@ let save_shared_memory ~configuration =
       Ok ())
 
 
-let save ~maximum_overrides ~initial_models ~skipped_overrides { save_cache; configuration; _ } =
+let save
+    ~maximum_overrides
+    ~initial_models
+    ~skipped_overrides
+    ~override_graph_shared_memory
+    { save_cache; configuration; _ }
+  =
   if save_cache then
+    let () =
+      Interprocedural.OverrideGraph.SharedMemory.save_to_cache override_graph_shared_memory
+    in
     let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
         { AnalysisSetup.maximum_overrides; initial_models; skipped_overrides }
@@ -361,3 +372,94 @@ let initial_callables = InitialCallablesSharedMemory.load_or_compute
 let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
 
 let class_interval_graph = ClassIntervalGraphSharedMemory.load_or_compute
+
+module OverrideGraphSharedMemory = struct
+  let is_reusable
+      ~initial_models
+      ~maximum_overrides
+      {
+        AnalysisSetup.maximum_overrides = previous_maximum_overrides;
+        initial_models = previous_initial_models;
+        _;
+      }
+    =
+    let no_change_in_skip_overrides =
+      Ast.Reference.Set.equal
+        (Registry.skip_overrides previous_initial_models)
+        (Registry.skip_overrides initial_models)
+    in
+    let no_change_in_maximum_overrides =
+      Option.equal Int.equal maximum_overrides previous_maximum_overrides
+    in
+    no_change_in_skip_overrides && no_change_in_maximum_overrides
+
+
+  let load_or_compute_if_unloadable
+      ~initial_models
+      ~previous_analysis_setup:{ AnalysisSetup.skipped_overrides; _ }
+      ~maximum_overrides
+      entry_status
+      compute_value
+    =
+    match Interprocedural.OverrideGraph.SharedMemory.load_from_cache () with
+    | Ok override_graph_shared_memory ->
+        let override_graph_heap =
+          Interprocedural.OverrideGraph.SharedMemory.to_heap override_graph_shared_memory
+        in
+        ( {
+            Interprocedural.OverrideGraph.override_graph_heap;
+            override_graph_shared_memory;
+            skipped_overrides;
+          },
+          EntryStatus.add
+            ~name:Entry.OverrideGraph
+            ~usage:SaveLoadSharedMemory.Usage.Used
+            entry_status )
+    | Error error ->
+        ( compute_value ~initial_models ~maximum_overrides (),
+          EntryStatus.add ~name:Entry.OverrideGraph ~usage:error entry_status )
+
+
+  let remove_previous () =
+    match Interprocedural.OverrideGraph.SharedMemory.load_from_cache () with
+    | Ok override_graph_shared_memory ->
+        Log.info "Removing the previous override graph.";
+        Interprocedural.OverrideGraph.SharedMemory.cleanup override_graph_shared_memory
+    | Error _ -> Log.warning "Failed to remove the previous override graph."
+
+
+  let load_or_compute_if_stale_or_unloadable
+      ~initial_models
+      ~maximum_overrides
+      ({ status; _ } as cache)
+      compute_value
+    =
+    match status with
+    | Loaded ({ previous_analysis_setup; entry_status } as loaded) ->
+        let reusable = is_reusable ~initial_models ~maximum_overrides previous_analysis_setup in
+        if reusable then
+          let () = Log.info "Try to reuse the override graph from the previous run." in
+          let value, entry_status =
+            load_or_compute_if_unloadable
+              ~initial_models
+              ~previous_analysis_setup
+              ~maximum_overrides
+              entry_status
+              compute_value
+          in
+          let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
+          value, { cache with status }
+        else
+          let () = Log.info "Override graph from the previous run is stale." in
+          let () = remove_previous () in
+          let cache =
+            set_entry_usage
+              ~entry:Entry.OverrideGraph
+              ~usage:(SaveLoadSharedMemory.Usage.Unused Stale)
+              cache
+          in
+          compute_value ~initial_models ~maximum_overrides (), cache
+    | _ -> compute_value ~initial_models ~maximum_overrides (), cache
+end
+
+let override_graph = OverrideGraphSharedMemory.load_or_compute_if_stale_or_unloadable

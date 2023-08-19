@@ -12,7 +12,10 @@ val exception_to_error
   ('b, 'a) result
 
 module Usage : sig
-  type error = LoadError [@@deriving show]
+  type error =
+    | LoadError
+    | Stale
+  [@@deriving show]
 
   type t =
     | Used
@@ -56,5 +59,11 @@ module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyV
 
   val of_alist : (Key.t * Value.t) list -> t
 
+  val to_alist : t -> (Key.t * Value.t) list
+
   val cleanup : t -> unit
+
+  val save_to_cache : t -> unit
+
+  val load_from_cache : unit -> (t, Usage.t) result
 end

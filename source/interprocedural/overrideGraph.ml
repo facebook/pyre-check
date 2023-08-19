@@ -199,6 +199,8 @@ module SharedMemory = struct
   (** Records a heap override graph in shared memory. *)
   let from_heap overrides = overrides |> Target.Map.Tree.to_alist |> T.of_alist
 
+  let to_heap handle = handle |> T.to_alist |> Target.Map.Tree.of_alist_exn
+
   (** Remove an override graph from shared memory. This must be called before storing another
       override graph. *)
   let cleanup = T.cleanup
@@ -216,6 +218,11 @@ module SharedMemory = struct
           :: List.fold overrides ~f:expand_and_gather ~init:expanded
     in
     List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
+
+
+  let save_to_cache = T.save_to_cache
+
+  let load_from_cache = T.load_from_cache
 end
 
 let get_source ~environment qualifier =

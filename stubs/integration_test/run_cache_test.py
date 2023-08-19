@@ -269,6 +269,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -335,6 +336,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -393,6 +395,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -457,6 +460,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -617,6 +621,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "(Unused Stale)",
                     "TypeEnvironment": "Used",
                 }
             },
@@ -657,6 +662,7 @@ class Test:
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
                     "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "(Unused Stale)",
                     "TypeEnvironment": "Used",
                 }
             },

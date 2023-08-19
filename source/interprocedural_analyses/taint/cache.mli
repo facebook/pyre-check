@@ -21,6 +21,7 @@ val save
   :  maximum_overrides:int option ->
   initial_models:Registry.t ->
   skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
+  override_graph_shared_memory:Interprocedural.OverrideGraph.SharedMemory.t ->
   t ->
   unit
 
@@ -39,3 +40,13 @@ val class_interval_graph
   ClassIntervalSetGraph.Heap.t * t
 
 val metadata_to_json : t -> Yojson.Safe.t
+
+val override_graph
+  :  initial_models:Registry.t ->
+  maximum_overrides:int option ->
+  t ->
+  (initial_models:Registry.t ->
+  maximum_overrides:int option ->
+  unit ->
+  Interprocedural.OverrideGraph.whole_program_overrides) ->
+  Interprocedural.OverrideGraph.whole_program_overrides * t
