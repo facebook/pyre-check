@@ -1212,7 +1212,7 @@ let test_remove_extra_edges_to_object context =
     (find_unsafe Handler.edges zero_index)
     {
       ClassHierarchy.Edges.parents = [{ ClassHierarchy.Target.target = one_index; parameters = [] }];
-      inferred_generic_base = None;
+      generic_base = None;
       has_placeholder_stub_parent = false;
     };
   ()

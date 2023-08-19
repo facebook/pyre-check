@@ -34,4 +34,4 @@ include
      and module PreviousEnvironment = AliasEnvironment
 
 (* Exposed for testing purpose only *)
-val compute_inferred_generic_base : Type.t list -> Type.t option
+val compute_generic_base : Type.t list -> Type.t option

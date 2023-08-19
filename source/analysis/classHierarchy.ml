@@ -92,10 +92,10 @@ let generic_primitive = "typing.Generic"
 module Edges = struct
   type t = {
     parents: Target.t list;
-    (* The instantiation of `typing.Generic` that the class inherits from but is not listed
-       explicitly as a parent. It needs to be stored separately because this class may not take part
-       in MRO computation. *)
-    inferred_generic_base: Target.t option;
+    (* The instantiation of `typing.Generic` that the class inherits from but is not necessarily
+       listed explicitly as a parent. It needs to be stored separately because this class may not
+       take part in MRO computation. *)
+    generic_base: Target.t option;
     has_placeholder_stub_parent: bool;
   }
   [@@deriving sexp, compare]
@@ -113,10 +113,10 @@ let parents_of (module Handler : Handler) target =
   Handler.edges target >>| fun { parents; _ } -> parents
 
 
-let parents_and_inferred_generic_of (module Handler : Handler) target =
+let parents_and_generic_of (module Handler : Handler) target =
   Handler.edges target
-  >>= fun { parents; inferred_generic_base; _ } ->
-  match inferred_generic_base with
+  >>= fun { parents; generic_base; _ } ->
+  match generic_base with
   | None -> Some parents
   | Some base -> Some (List.append parents [base])
 
@@ -226,7 +226,7 @@ let variables ?(default = None) (module Handler : Handler) = function
   | primitive_name ->
       let generic_index = index_of generic_primitive in
       let primitive_index = index_of primitive_name in
-      parents_and_inferred_generic_of (module Handler) primitive_index
+      parents_and_generic_of (module Handler) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } ->
               [%compare.equal: IndexTracker.t] target generic_index)
       >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
@@ -330,7 +330,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
         | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
       in
       index_of target
-      |> parents_and_inferred_generic_of (module Handler)
+      |> parents_and_generic_of (module Handler)
       >>= get_generic_parameters ~generic_index
       >>= parameters_to_variables
       >>| List.concat_map ~f:to_any
@@ -402,7 +402,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   List.map successors ~f:instantiate_parameters
                 in
-                parents_and_inferred_generic_of (module Handler) target_index
+                parents_and_generic_of (module Handler) target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
               if [%compare.equal: IndexTracker.t] target_index (index_of target) then

@@ -61,7 +61,7 @@ let find_propagated_type_variables parsed_bases =
   |> List.map ~f:Type.Variable.to_parameter
 
 
-let compute_inferred_generic_base parsed_bases =
+let compute_generic_base parsed_bases =
   let is_generic base_type =
     let primitive, _ = Type.split base_type in
     Type.is_generic_primitive primitive
@@ -76,16 +76,16 @@ let compute_inferred_generic_base parsed_bases =
     in
     Option.some_if is_protocol parameters
   in
-  if List.exists ~f:is_generic parsed_bases then
-    None
-  else
-    let create variables = Type.parametric "typing.Generic" variables in
-    match List.find_map parsed_bases ~f:extract_protocol_parameters with
-    | Some parameters -> Some (create parameters)
-    | None ->
-        (* TODO:(T60673574) Ban propagating multiple type variables *)
-        let variables = find_propagated_type_variables parsed_bases in
-        if List.is_empty variables then None else Some (create variables)
+  match List.find ~f:is_generic parsed_bases with
+  | Some _ as generic_base -> generic_base
+  | None -> (
+      let create variables = Type.parametric "typing.Generic" variables in
+      match List.find_map parsed_bases ~f:extract_protocol_parameters with
+      | Some parameters -> Some (create parameters)
+      | None ->
+          (* TODO:(T60673574) Ban propagating multiple type variables *)
+          let variables = find_propagated_type_variables parsed_bases in
+          if List.is_empty variables then None else Some (create variables))
 
 
 let get_parents alias_environment name ~dependency =
@@ -172,10 +172,10 @@ let get_parents alias_environment name ~dependency =
         |> deduplicate
         |> remove_extra_edges_to_object
       in
-      let inferred_generic_base =
+      let generic_base =
         let open Option in
         let parsed_bases = List.map base_classes ~f:parse_annotation in
-        compute_inferred_generic_base parsed_bases
+        compute_generic_base parsed_bases
         >>= fun base ->
         extract_supertype (Type.expression base)
         >>= fun (name, parameters) ->
@@ -189,7 +189,7 @@ let get_parents alias_environment name ~dependency =
             (EmptyStubEnvironment.ReadOnly.from_empty_stub
                (empty_stub_environment alias_environment))
       in
-      Some { ClassHierarchy.Edges.parents; inferred_generic_base; has_placeholder_stub_parent }
+      Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
 
 
 module Edges = Environment.EnvironmentTable.WithCache (struct

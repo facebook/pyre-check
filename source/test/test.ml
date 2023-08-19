@@ -3467,7 +3467,7 @@ module MockClassHierarchyHandler = struct
       | None ->
           {
             ClassHierarchy.Edges.parents = [new_target];
-            inferred_generic_base = None;
+            generic_base = None;
             has_placeholder_stub_parent = false;
           }
       | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
@@ -3492,7 +3492,7 @@ module MockClassHierarchyHandler = struct
       ~data:
         {
           ClassHierarchy.Edges.parents = [];
-          inferred_generic_base = None;
+          generic_base = None;
           has_placeholder_stub_parent = false;
         }
 end
