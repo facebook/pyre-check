@@ -21,6 +21,7 @@ jobs:
         cd documentation/website
         yarn install
         yarn run build
+        echo "::set-output name=time::$(date +'%Y-%m-%d %H:%M:%S')"
       id: build
     - name: Get output time
       run: echo "The time was ${{ steps.build.outputs.time }}"
