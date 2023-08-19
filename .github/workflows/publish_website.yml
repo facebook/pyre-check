@@ -21,8 +21,7 @@ jobs:
         cd documentation/website
         yarn install
         yarn run build
-        echo "OUTPUT_TIME=$(date +%Y-%m-%d %H:%M:%S)" >> $GITHUB_ENV
-      id: build
+        echo "OUTPUT_TIME=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
     - name: Get output time
       run: echo "The time was ${{ env.OUTPUT_TIME }}"
     - name: Deploy
