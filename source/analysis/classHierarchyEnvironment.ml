@@ -64,15 +64,7 @@ let find_propagated_type_variables bases ~parse_annotation =
   |> List.map ~f:Type.Variable.to_parameter
 
 
-let compute_inferred_generic_base
-    { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
-    ~parse_annotation
-  =
-  let bases =
-    match metaclass with
-    | Some metaclass -> metaclass :: base_classes
-    | _ -> base_classes
-  in
+let compute_inferred_generic_base bases ~parse_annotation =
   let is_generic base_expression =
     let primitive, _ = parse_annotation base_expression |> Type.split in
     Type.is_generic_primitive primitive
@@ -171,10 +163,9 @@ let get_parents alias_environment name ~dependency =
   with
   | None -> None
   | Some class_summary ->
+      let base_classes = bases class_summary in
       let parents =
-        class_summary
-        |> bases
-        |> List.filter_map ~f:extract_supertype
+        List.filter_map base_classes ~f:extract_supertype
         |> add_special_parents
         |> List.filter ~f:is_not_primitive_cycle
         |> convert_to_targets
@@ -183,7 +174,7 @@ let get_parents alias_environment name ~dependency =
       in
       let inferred_generic_base =
         let open Option in
-        compute_inferred_generic_base class_summary ~parse_annotation
+        compute_inferred_generic_base base_classes ~parse_annotation
         >>= extract_supertype
         >>= fun (name, parameters) ->
         Some { ClassHierarchy.Target.target = IndexTracker.index name; parameters }

@@ -35,6 +35,6 @@ include
 
 (* Exposed for testing purpose only *)
 val compute_inferred_generic_base
-  :  ClassSummary.t Ast.Node.t ->
+  :  Ast.Expression.t list ->
   parse_annotation:(Ast.Expression.t -> Type.t) ->
   Ast.Expression.t option

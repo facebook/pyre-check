@@ -394,17 +394,18 @@ let test_compute_inferred_generic_base context =
       in
       List.find_map ~f:target statements
       |> Option.value_exn
-      |> Node.map ~f:(ClassSummary.create ~qualifier)
+      |> fun { Node.value; _ } -> ClassSummary.create ~qualifier value
     in
     let resolution = GlobalResolution.create global_environment in
     let parse_annotation =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
+    let { ClassSummary.bases = { base_classes; _ }; _ } = target in
     assert_equal
       ~printer:[%show: Expression.t option]
       ~cmp:[%compare.equal: Expression.t option]
       expected
-      (ClassHierarchyEnvironment.compute_inferred_generic_base target ~parse_annotation)
+      (ClassHierarchyEnvironment.compute_inferred_generic_base base_classes ~parse_annotation)
   in
   assert_inferred_generic
     ~target:"test.C"
@@ -530,6 +531,17 @@ let test_compute_inferred_generic_base context =
     (Some
        (Type.expression
           (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"])));
+  (* This is actually illegal in Python, but Pyre currently lacks the capability to detect it *)
+  assert_inferred_generic
+    ~target:"test.Foo"
+    {|
+      from typing import Generic, TypeVar
+
+      class Base: pass
+      T = TypeVar("T")
+      class Foo(Base, metaclass=Generic[T]): ...
+    |}
+    None;
   ()
 
 
