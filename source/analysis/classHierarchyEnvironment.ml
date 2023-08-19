@@ -44,10 +44,7 @@ module EdgesValue = struct
   let equal = Memory.equal_from_compare [%compare: ClassHierarchy.Edges.t option]
 end
 
-let find_propagated_type_variables bases ~parse_annotation =
-  let find_type_variables base_expression =
-    parse_annotation base_expression |> Type.Variable.all_free_variables
-  in
+let find_propagated_type_variables parsed_bases =
   (* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
      is quadratic, but it should be fine given the small number of generic variables. *)
   let deduplicate ~equal xs =
@@ -59,18 +56,18 @@ let find_propagated_type_variables bases ~parse_annotation =
     in
     List.fold xs ~init:([], []) ~f:add_if_not_seen_so_far |> snd |> List.rev
   in
-  List.concat_map ~f:find_type_variables bases
+  List.concat_map ~f:Type.Variable.all_free_variables parsed_bases
   |> deduplicate ~equal:Type.Variable.equal
   |> List.map ~f:Type.Variable.to_parameter
 
 
-let compute_inferred_generic_base bases ~parse_annotation =
-  let is_generic base_expression =
-    let primitive, _ = parse_annotation base_expression |> Type.split in
+let compute_inferred_generic_base parsed_bases =
+  let is_generic base_type =
+    let primitive, _ = Type.split base_type in
     Type.is_generic_primitive primitive
   in
-  let extract_protocol_parameters base_expression =
-    let primitive, parameters = parse_annotation base_expression |> Type.split in
+  let extract_protocol_parameters base_type =
+    let primitive, parameters = Type.split base_type in
     let is_protocol =
       primitive
       |> Type.primitive_name
@@ -79,15 +76,15 @@ let compute_inferred_generic_base bases ~parse_annotation =
     in
     Option.some_if is_protocol parameters
   in
-  if List.exists ~f:is_generic bases then
+  if List.exists ~f:is_generic parsed_bases then
     None
   else
-    let create variables = Type.parametric "typing.Generic" variables |> Type.expression in
-    match List.find_map bases ~f:extract_protocol_parameters with
+    let create variables = Type.parametric "typing.Generic" variables in
+    match List.find_map parsed_bases ~f:extract_protocol_parameters with
     | Some parameters -> Some (create parameters)
     | None ->
         (* TODO:(T60673574) Ban propagating multiple type variables *)
-        let variables = find_propagated_type_variables bases ~parse_annotation in
+        let variables = find_propagated_type_variables parsed_bases in
         if List.is_empty variables then None else Some (create variables)
 
 
@@ -98,7 +95,10 @@ let get_parents alias_environment name ~dependency =
       ?dependency
       alias_environment
   in
-  (* Register normal annotations. *)
+  (* Split `base_expression` into `(name, params)` where `name` is the name of the class and
+     `params` is its type parameters. E.g. `Foo[T]` ==> `("Foo", [TypeVar "T"])` *)
+  (* For some reason, this function parses `base_expression` into type with `allow_untracked` set to
+     true, which is not the case for other invocations of parse_annotation within this file. *)
   let extract_supertype base_expression =
     let value = delocalize base_expression in
     match Node.value value with
@@ -174,8 +174,10 @@ let get_parents alias_environment name ~dependency =
       in
       let inferred_generic_base =
         let open Option in
-        compute_inferred_generic_base base_classes ~parse_annotation
-        >>= extract_supertype
+        let parsed_bases = List.map base_classes ~f:parse_annotation in
+        compute_inferred_generic_base parsed_bases
+        >>= fun base ->
+        extract_supertype (Type.expression base)
         >>= fun (name, parameters) ->
         Some { ClassHierarchy.Target.target = IndexTracker.index name; parameters }
       in

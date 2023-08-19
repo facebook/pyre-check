@@ -401,11 +401,15 @@ let test_compute_inferred_generic_base context =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in
     let { ClassSummary.bases = { base_classes; _ }; _ } = target in
+    let actual =
+      List.map base_classes ~f:parse_annotation
+      |> ClassHierarchyEnvironment.compute_inferred_generic_base
+    in
     assert_equal
       ~printer:[%show: Expression.t option]
       ~cmp:[%compare.equal: Expression.t option]
-      expected
-      (ClassHierarchyEnvironment.compute_inferred_generic_base base_classes ~parse_annotation)
+      (Option.map expected ~f:Type.expression)
+      (Option.map actual ~f:Type.expression)
   in
   assert_inferred_generic
     ~target:"test.C"
@@ -424,7 +428,7 @@ let test_compute_inferred_generic_base context =
        class C(List[_T]):
          pass
      |}
-    (Some (Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test._T"]));
   assert_inferred_generic
     ~target:"test.List"
     {|
@@ -442,16 +446,14 @@ let test_compute_inferred_generic_base context =
       _T2 = typing.TypeVar('_T2')
       class Foo(typing.Dict[_T1, _T2]): pass
     |}
-    (Some
-       (Type.expression
-          (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test._T1"; Type.variable "test._T2"]));
   assert_inferred_generic
     ~target:"test.Foo"
     {|
       _T1 = typing.TypeVar('_T1')
       class Foo(typing.Dict[_T1, _T1]): pass
     |}
-    (Some (Type.expression (Type.parametric "typing.Generic" !![Type.variable "test._T1"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test._T1"]));
   assert_inferred_generic
     ~target:"test.Foo"
     {|
@@ -460,14 +462,13 @@ let test_compute_inferred_generic_base context =
       class Foo(Base[TParams]): pass
     |}
     (Some
-       (Type.expression
-          (Type.parametric
-             "typing.Generic"
-             [
-               Type.Parameter.CallableParameters
-                 (Type.Variable.Variadic.Parameters.self_reference
-                    (Type.Variable.Variadic.Parameters.create "test.TParams"));
-             ])));
+       (Type.parametric
+          "typing.Generic"
+          [
+            Type.Parameter.CallableParameters
+              (Type.Variable.Variadic.Parameters.self_reference
+                 (Type.Variable.Variadic.Parameters.create "test.TParams"));
+          ]));
   assert_inferred_generic
     ~target:"test.Child"
     {|
@@ -478,14 +479,13 @@ let test_compute_inferred_generic_base context =
       class Child(Base[pyre_extensions.Unpack[Ts]]): ...
     |}
     (Some
-       (Type.expression
-          (Type.parametric
-             "typing.Generic"
-             [
-               Unpacked
-                 (Type.OrderedTypes.Concatenation.create_unpackable
-                    (Type.Variable.Variadic.Tuple.create "test.Ts"));
-             ])));
+       (Type.parametric
+          "typing.Generic"
+          [
+            Unpacked
+              (Type.OrderedTypes.Concatenation.create_unpackable
+                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+          ]));
   (* We should not sort the generic variables in alphabetical order. *)
   assert_inferred_generic
     ~target:"test.Foo"
@@ -497,9 +497,7 @@ let test_compute_inferred_generic_base context =
 
       class Foo(Dict[B, A]): ...
     |}
-    (Some
-       (Type.expression
-          (Type.parametric "typing.Generic" !![Type.variable "test.B"; Type.variable "test.A"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test.B"; Type.variable "test.A"]));
   assert_inferred_generic
     ~target:"test.Foo"
     {|
@@ -513,9 +511,7 @@ let test_compute_inferred_generic_base context =
 
       class Foo(BaseAB[A, B], BaseBA[B, A]): ...
     |}
-    (Some
-       (Type.expression
-          (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]));
   assert_inferred_generic
     ~target:"test.Foo"
     {|
@@ -528,9 +524,7 @@ let test_compute_inferred_generic_base context =
 
       class Foo(BaseAB[Dict[A, B], A]): ...
     |}
-    (Some
-       (Type.expression
-          (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"])));
+    (Some (Type.parametric "typing.Generic" !![Type.variable "test.A"; Type.variable "test.B"]));
   (* This is actually illegal in Python, but Pyre currently lacks the capability to detect it *)
   assert_inferred_generic
     ~target:"test.Foo"
