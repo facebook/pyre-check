@@ -184,6 +184,13 @@ let get_parents alias_environment name ~dependency =
         |> deduplicate
         |> remove_extra_edges_to_object
       in
+      let inferred_generic_base =
+        let open Option in
+        compute_inferred_generic_base class_summary ~parse_annotation
+        >>= extract_supertype
+        >>= fun (name, parameters) ->
+        Some { ClassHierarchy.Target.target = IndexTracker.index name; parameters }
+      in
       let has_placeholder_stub_parent =
         AnnotatedBases.extends_placeholder_stub_class
           class_summary
@@ -192,7 +199,7 @@ let get_parents alias_environment name ~dependency =
             (EmptyStubEnvironment.ReadOnly.from_empty_stub
                (empty_stub_environment alias_environment))
       in
-      Some { ClassHierarchy.Edges.parents; has_placeholder_stub_parent }
+      Some { ClassHierarchy.Edges.parents; inferred_generic_base; has_placeholder_stub_parent }
 
 
 module Edges = Environment.EnvironmentTable.WithCache (struct

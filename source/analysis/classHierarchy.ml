@@ -92,6 +92,10 @@ let generic_primitive = "typing.Generic"
 module Edges = struct
   type t = {
     parents: Target.t list;
+    (* The instantiation of `typing.Generic` that the class inherits from but is not listed
+       explicitly as a parent. It needs to be stored separately because this class may not take part
+       in MRO computation. *)
+    inferred_generic_base: Target.t option;
     has_placeholder_stub_parent: bool;
   }
   [@@deriving sexp, compare]

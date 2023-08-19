@@ -3464,7 +3464,12 @@ module MockClassHierarchyHandler = struct
     let new_target = { ClassHierarchy.Target.target = successor; parameters } in
     let predecessor_edges =
       match Hashtbl.find edges predecessor with
-      | None -> { ClassHierarchy.Edges.parents = [new_target]; has_placeholder_stub_parent = false }
+      | None ->
+          {
+            ClassHierarchy.Edges.parents = [new_target];
+            inferred_generic_base = None;
+            has_placeholder_stub_parent = false;
+          }
       | Some ({ ClassHierarchy.Edges.parents; _ } as edges) ->
           { edges with parents = new_target :: parents }
     in
@@ -3484,5 +3489,10 @@ module MockClassHierarchyHandler = struct
     Hashtbl.set
       order.edges
       ~key:index
-      ~data:{ ClassHierarchy.Edges.parents = []; has_placeholder_stub_parent = false }
+      ~data:
+        {
+          ClassHierarchy.Edges.parents = [];
+          inferred_generic_base = None;
+          has_placeholder_stub_parent = false;
+        }
 end

@@ -56,6 +56,7 @@ end
 module Edges : sig
   type t = {
     parents: Target.t list;
+    inferred_generic_base: Target.t option;
     has_placeholder_stub_parent: bool;
   }
   [@@deriving sexp, compare]

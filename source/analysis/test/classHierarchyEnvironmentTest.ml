@@ -27,6 +27,7 @@ let test_simple_registration context =
               ~f:(fun name ->
                 { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
               expected_edges;
+          inferred_generic_base = None;
           has_placeholder_stub_parent = expected_extends_placeholder_stub;
         }
     in
@@ -108,21 +109,23 @@ let test_simple_registration context =
 
 
 let test_register_inferred_generic_base context =
-  let assert_registers source name expected =
+  let assert_registers ~expected_parents ?expected_inferred_generic_base source name =
     let project = ScratchProject.setup ["test.py", source] ~context ~track_dependencies:true in
     let read_only =
       ScratchProject.errors_environment project
       |> ErrorsEnvironment.Testing.ReadOnly.class_hierarchy_environment
     in
+    let create_target (name, concretes) =
+      {
+        ClassHierarchy.Target.target = IndexTracker.index name;
+        parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
+      }
+    in
     let expected =
       Some
         {
-          ClassHierarchy.Edges.parents =
-            List.map expected ~f:(fun (name, concretes) ->
-                {
-                  ClassHierarchy.Target.target = IndexTracker.index name;
-                  parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
-                });
+          ClassHierarchy.Edges.parents = List.map expected_parents ~f:create_target;
+          inferred_generic_base = Option.map expected_inferred_generic_base ~f:create_target;
           has_placeholder_stub_parent = false;
         }
     in
@@ -139,7 +142,7 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    ["object", []];
+    ~expected_parents:["object", []];
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -149,7 +152,9 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.C"
-    ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]];
+    ~expected_parents:
+      ["test.List", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]]
+    ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T"]);
   assert_registers
     {|
        _T = typing.TypeVar("_T")
@@ -159,7 +164,8 @@ let test_register_inferred_generic_base context =
          pass
      |}
     "test.List"
-    ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]];
+    ~expected_parents:
+      ["test.Iterable", [Type.variable "test._T"]; "typing.Generic", [Type.variable "test._T"]];
   assert_registers
     {|
       _T1 = typing.TypeVar('_T1')
@@ -169,10 +175,13 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T2]): pass
     |}
     "test.Foo"
-    [
-      "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
-      "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
-    ];
+    ~expected_parents:
+      [
+        "test.Dict", [Type.variable "test._T1"; Type.variable "test._T2"];
+        "typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"];
+      ]
+    ~expected_inferred_generic_base:
+      ("typing.Generic", [Type.variable "test._T1"; Type.variable "test._T2"]);
   assert_registers
     {|
       _T1 = typing.TypeVar('_T1')
@@ -182,10 +191,12 @@ let test_register_inferred_generic_base context =
       class Foo(Dict[_T1, _T1]): pass
     |}
     "test.Foo"
-    [
-      "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
-      "typing.Generic", [Type.variable "test._T1"];
-    ];
+    ~expected_parents:
+      [
+        "test.Dict", [Type.variable "test._T1"; Type.variable "test._T1"];
+        "typing.Generic", [Type.variable "test._T1"];
+      ]
+    ~expected_inferred_generic_base:("typing.Generic", [Type.variable "test._T1"]);
   ()
 
 
@@ -221,6 +232,7 @@ let test_updates context =
                   ClassHierarchy.Edges.parents =
                     List.map expectation ~f:(fun name ->
                         { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] });
+                  inferred_generic_base = None;
                   has_placeholder_stub_parent = false;
                 })
           in
