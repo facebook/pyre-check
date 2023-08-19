@@ -23,7 +23,7 @@ jobs:
         yarn run build
         echo "OUTPUT_TIME=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
     - name: Get output time
-      run: echo "The time was ${{ env.OUTPUT_TIME }}"
+      run: echo "The time was ${{ env.OUTPUT_TIME }} (UTC)"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@releases/v4
