@@ -17,7 +17,12 @@ val try_load
   enabled:bool ->
   t
 
-val save : maximum_overrides:int option -> initial_models:Registry.t -> t -> unit
+val save
+  :  maximum_overrides:int option ->
+  initial_models:Registry.t ->
+  skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
+  t ->
+  unit
 
 val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t * t
 

@@ -543,7 +543,12 @@ let run_taint_analysis
     ~timer
     ();
 
-  let () = Cache.save ~maximum_overrides ~initial_models cache in
+  let () = Cache.save ~maximum_overrides ~initial_models ~skipped_overrides cache in
+
+  Log.info "Purging shared memory...";
+  let timer = Timer.start () in
+  let () = purge_shared_memory ~environment ~qualifiers in
+  Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
 
   let initial_models =
     MissingFlow.add_unknown_callee_models

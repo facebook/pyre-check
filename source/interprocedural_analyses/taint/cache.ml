@@ -55,6 +55,7 @@ module AnalysisSetup = struct
   type t = {
     maximum_overrides: int option;
     initial_models: Registry.t;
+    skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
   }
 end
 
@@ -293,11 +294,11 @@ let save_shared_memory ~configuration =
       Ok ())
 
 
-let save ~maximum_overrides ~initial_models { save_cache; configuration; _ } =
+let save ~maximum_overrides ~initial_models ~skipped_overrides { save_cache; configuration; _ } =
   if save_cache then
     let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
-        { AnalysisSetup.maximum_overrides; initial_models }
+        { AnalysisSetup.maximum_overrides; initial_models; skipped_overrides }
     in
     save_shared_memory ~configuration |> ignore
 

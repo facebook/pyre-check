@@ -223,10 +223,12 @@ let get_source ~environment qualifier =
   AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
 
 
+type skipped_overrides = Target.t list
+
 type whole_program_overrides = {
   override_graph_heap: Heap.t;
   override_graph_shared_memory: SharedMemory.t;
-  skipped_overrides: Target.t list;
+  skipped_overrides: skipped_overrides;
 }
 
 (** Compute the override graph, which maps overide_targets (parent methods which are overridden) to
