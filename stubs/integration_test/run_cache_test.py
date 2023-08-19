@@ -1,4 +1,5 @@
 #!/usr/bin/env python3
+# pyre-string
 # Copyright (c) Meta Platforms, Inc. and affiliates.
 #
 # This source code is licensed under the MIT license found in the
@@ -24,7 +25,7 @@ import sys
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Dict, List, Union, Optional
+from typing import Any, Dict, List, Union, Optional, Callable, TypeVar
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -155,21 +156,84 @@ def _exit_or_continue(returncode: int, exit_on_error: bool) -> None:
             sys.exit(returncode)
 
 
+def _cache_file(cache_path: Path) -> Path:
+    return cache_path / "sharedmem"
+
+
 def _remove_cache_file(cache_path: Path) -> None:
-    cache_file = cache_path / "sharedmem"
+    cache_file = _cache_file(cache_path)
     try:
         cache_file.unlink()
     except FileNotFoundError:
         pass
 
+
+T = TypeVar("T")
+
+
+def save_restore_cache(subtest: Callable[[T], None]) -> Callable[[T], None]:
+    def inner(self: T) -> None:
+        self.save_cache_file()
+        subtest(self)
+        self.restore_cache_file()
+
+    return inner
+
+
 @dataclass
 class Test:
+    """
+    Invariant: Before and after each subtest, the cache file is the same as what is
+    built from calling build_fresh_cache
+    """
+
     typeshed_path: str
     cache_path: Path
     expected: List[Dict[str, Any]]
     save_results_to: Path
     exit_on_error: bool
 
+    def temporary_cache_file(self) -> Path:
+        return _cache_file(self.save_results_to)
+
+    def save_cache_file(self) -> None:
+        shutil.copyfile(
+            src=_cache_file(self.cache_path), dst=self.temporary_cache_file()
+        )
+
+    def restore_cache_file(self) -> None:
+        shutil.copyfile(
+            src=self.temporary_cache_file(), dst=_cache_file(self.cache_path)
+        )
+
+    def build_fresh_cache_and_sanity_check(self) -> None:
+        """
+        Run Pysa with the cache argument for the first time. This should create
+        the cache file and save state to it since the file doesn't exist already.
+        Ensure the cache file doesn't already exist for a clean run.
+        """
+        try:
+            shutil.rmtree(self.cache_path)
+        except FileNotFoundError:
+            pass
+
+        LOG.info("Build cache with --use-cache flag on initial run:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "NotFound",
+            "save_cache": True,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    @save_restore_cache
     def run_test_no_cache(self) -> None:
         """Run Pysa without the cache argument."""
         LOG.info("Testing with no --use-cache flag:")
@@ -188,38 +252,13 @@ class Test:
         )
         _exit_or_continue(returncode, self.exit_on_error)
 
-    def run_test_cache_first_and_second_runs(self) -> None:
+    @save_restore_cache
+    def run_test_cache_second_run(self) -> None:
         """
-        Run Pysa with the cache argument for the first time. This should create
-        the cache file and save state to it since the file doesn't exist already.
-        Ensure the cache file doesn't already exist for a clean run.
-
-        Then, run Pysa with the cache argument for the second time. Since the file
+        Run Pysa with the cache argument for the second time. Since the file
         exists, Pysa should load the saved state from the file.
         """
-
-        try:
-            shutil.rmtree(self.cache_path)
-        except FileNotFoundError:
-            pass
-
-        LOG.info("Testing behavior with --use-cache flag on initial run:")
-        pysa_command = _pysa_command(
-            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
-        )
-        expected_cache_usage = {
-            "shared_memory_status": "NotFound",
-            "save_cache": True,
-        }
-        returncode = _run_and_check_output(
-            pysa_command,
-            self.expected,
-            self.save_results_to,
-            expected_cache_usage,
-        )
-        _exit_or_continue(returncode, self.exit_on_error)
-
-        LOG.info("Testing behavior with --use-cache on subsequent runs:")
+        LOG.info("Testing behavior with --use-cache, using the built cache:")
         pysa_command = _pysa_command(
             self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
         )
@@ -244,6 +283,7 @@ class Test:
         )
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_invalid_cache_file(self) -> None:
         """
         Run Pysa with an empty .pyre/.pysa_cache/sharedmem to simulate an invalid/corrupt
@@ -270,6 +310,7 @@ class Test:
         )
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_pysa_file(self) -> None:
         """
         Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -319,6 +360,7 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_taint_config_file(self) -> None:
         """
         Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -377,6 +419,7 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_models(self) -> None:
         """
         Run Pysa after adding a new Pysa model and ensure the cache is not invalidated.
@@ -435,6 +478,7 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_source_files(self) -> None:
         """
         Run Pysa after adding a new file to test cache invalidation.
@@ -477,6 +521,7 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_decorators(self) -> None:
         """
         Run Pysa after adding a new model with @IgnoreDecorator to test cache invalidation.
@@ -535,31 +580,13 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
+    @save_restore_cache
     def run_test_changed_overrides(self) -> None:
         """
         Run Pysa after removing a @SkipOverrides model to test cache invalidation.
         Pysa should detect that the override graph has changed and fall back
         to doing a clean run.
         """
-
-        _remove_cache_file(cache_path=self.cache_path)
-
-        LOG.info("Testing cache invalidation after skip override change (initial run):")
-        pysa_command = _pysa_command(
-            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
-        )
-        expected_cache_usage = {
-            "shared_memory_status": "NotFound",
-            "save_cache": True,
-        }
-        returncode = _run_and_check_output(
-            pysa_command,
-            self.expected,
-            self.save_results_to,
-            expected_cache_usage,
-        )
-        _exit_or_continue(returncode, self.exit_on_error)
-
         # Remove a test taint file
         test_model_path = Path("test_taint/skip_overrides.pysa")
         # Save contents for cleanup phase
@@ -583,7 +610,7 @@ class Test:
             "stop_line": 37,
         }
 
-        LOG.info("Testing cache invalidation after skip override change (second run):")
+        LOG.info("Testing cache invalidation after change in @SkipOverrides:")
         pysa_command = _pysa_command(
             self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
         )
@@ -612,38 +639,14 @@ class Test:
 
         _exit_or_continue(returncode, self.exit_on_error)
 
-
+    @save_restore_cache
     def run_test_changed_overrides_cap(self) -> None:
         """
         Run Pysa after limiting the max number of overrides to test cache invalidation.
         Pysa should detect that the override graph has changed and fall back to doing a clean run.
         """
-
-        _remove_cache_file(cache_path=self.cache_path)
-
         LOG.info(
-            "Testing cache invalidation when changing --maximum-overrides-to-analyze (first run):"
-        )
-        pysa_command = _pysa_command(
-            self.typeshed_path,
-            self.cache_path,
-            self.save_results_to,
-            use_cache=True,
-        )
-        expected_cache_usage = {
-            "shared_memory_status": "NotFound",
-            "save_cache": True,
-        }
-        returncode = _run_and_check_output(
-            pysa_command,
-            self.expected,
-            self.save_results_to,
-            expected_cache_usage,
-        )
-        _exit_or_continue(returncode, self.exit_on_error)
-
-        LOG.info(
-            "Testing cache invalidation when changing --maximum-overrides-to-analyze (second run):"
+            "Testing cache invalidation when changing --maximum-overrides-to-analyze:"
         )
         pysa_command = _pysa_command(
             self.typeshed_path,
@@ -718,8 +721,10 @@ def run_tests(exit_on_error: bool) -> None:
             exit_on_error=exit_on_error,
         )
 
+        test_class.build_fresh_cache_and_sanity_check()
+
         test_class.run_test_no_cache()
-        test_class.run_test_cache_first_and_second_runs()
+        test_class.run_test_cache_second_run()
         test_class.run_test_invalid_cache_file()
         test_class.run_test_changed_pysa_file()
         test_class.run_test_changed_taint_config_file()
