@@ -10,9 +10,6 @@ on:
 jobs:
   build_docs_job:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.6]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
