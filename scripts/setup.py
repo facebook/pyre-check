@@ -75,7 +75,7 @@ def detect_opam_version() -> Tuple[int]:
         version = tuple(map(int, version.strip().split(".")))
     except ValueError:
         LOG.error("Failed to parse output of `opam --version`: `{}`", version.strip())
-        raise OpamVersionParseError
+        raise OpamVersionParseError()
 
     LOG.info(f"Found opam version {'.'.join(map(str, version))}")
 
@@ -84,7 +84,7 @@ def detect_opam_version() -> Tuple[int]:
             "Pyre only supports opam 2.0.0 and above, please update your "
             + "opam version."
         )
-        raise OldOpam
+        raise OldOpam()
 
     return version
 
@@ -155,7 +155,7 @@ class Setup(NamedTuple):
                 )
                 LOG.error("If you want to bypass this safety check, run:")
                 LOG.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
-                raise OCamlbuildAlreadyInstalled
+                raise OCamlbuildAlreadyInstalled()
 
     def already_initialized(self) -> bool:
         return Path(self.opam_root.as_posix()).is_dir()
