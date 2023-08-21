@@ -19,11 +19,11 @@ class RegularClass:
         self.b = b
 
 
-def regular_class(parameter: RegularClass) -> None:
+def parameter_sink_regular_class(parameter: RegularClass) -> None:
     pass
 
 
-def optional_regular_class(parameter: Optional[RegularClass]) -> None:
+def parameter_sink_optional_regular_class(parameter: Optional[RegularClass]) -> None:
     pass
 
 
@@ -33,25 +33,27 @@ class Dataclass:
     d: str
 
 
-def dataclass(parameter: Dataclass) -> None:
+def parameter_sink_dataclass(parameter: Dataclass) -> None:
     pass
 
 
-def optional_dataclass(parameter: Optional[Dataclass]) -> None:
+def parameter_sink_optional_dataclass(parameter: Optional[Dataclass]) -> None:
     pass
 
 
-def union_dataclass_regular(parameter: Union[Dataclass, RegularClass]) -> None:
+def parameter_sink_union_dataclass_regular(
+    parameter: Union[Dataclass, RegularClass]
+) -> None:
     pass
 
 
 # Builtins do not have attributes, so we just add a sink on the whole parameter.
-def builtin_parameters(x: int, y: str, z: List[int], t: bool) -> None:
+def parameter_sink_builtin_parameters(x: int, y: str, z: List[int], t: bool) -> None:
     pass
 
 
 # If a parameter is not annotated, we just add a sink on the whole parameter.
-def unnannotated(x) -> None:
+def parameter_sink_unnannotated(x) -> None:
     pass
 
 
@@ -80,23 +82,23 @@ class D(A):
         self.d = d
 
 
-def test_b(parameter: B) -> None:
+def parameter_sink_b(parameter: B) -> None:
     pass
 
 
-def test_c(parameter: C) -> None:
+def parameter_sink_c(parameter: C) -> None:
     pass
 
 
-def test_d(parameter: D) -> None:
+def parameter_sink_d(parameter: D) -> None:
     pass
 
 
-def test_union_c_d(parameter: Union[C, D]) -> None:
+def parameter_sink_union_c_d(parameter: Union[C, D]) -> None:
     pass
 
 
-def test_type(parameter: Type[A]) -> None:
+def parameter_sink_type(parameter: Type[A]) -> None:
     pass
 
 
@@ -104,5 +106,5 @@ class Empty:
     pass
 
 
-def test_empty(parameter: Empty) -> None:
+def parameter_sink_empty(parameter: Empty) -> None:
     pass

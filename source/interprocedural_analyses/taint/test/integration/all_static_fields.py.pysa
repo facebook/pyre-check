@@ -4,7 +4,7 @@ def _test_source() -> TaintSource[Test, Via[special_source]]: ...
 ModelQuery(
   name = "all_parameter_fields",
   find = "functions",
-  where = [fully_qualified_name.matches("^all_static_fields\..*$")],
+  where = [fully_qualified_name.matches("^all_static_fields\.parameter_sink_.*$")],
   model = [
     Parameters(TaintSink[Test, ParameterPath[_.all_static_fields()]])
   ]
