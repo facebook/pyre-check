@@ -2166,6 +2166,26 @@ let test_class_models context =
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
+  assert_model
+    ~source:
+      {|
+        class SkipMe:
+          def method(parameter): ...
+          def method_with_multiple_parameters(first, second): ...
+      |}
+    ~model_source:"class test.SkipMe(SkipModelBroadening): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Method
+          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          "test.SkipMe.method";
+        outcome
+          ~kind:`Method
+          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          "test.SkipMe.method_with_multiple_parameters";
+      ]
+    ();
   (* Skip overrides do not generate methods. *)
   assert_model
     ~source:
@@ -2339,7 +2359,7 @@ let test_taint_in_taint_out_transform context =
     ()
 
 
-let test_skip_analysis context =
+let test_modes context =
   assert_model
     ~context
     ~model_source:{|
@@ -2348,7 +2368,22 @@ let test_skip_analysis context =
     |}
     ~expect:
       [outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton SkipAnalysis) "test.taint"]
-    ()
+    ();
+  assert_model
+    ~context
+    ~model_source:{|
+      @SkipModelBroadening
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          "test.taint";
+      ]
+    ();
+  ()
 
 
 let test_skip_inlining_decorator context =
@@ -7670,7 +7705,7 @@ let () =
          "parameter_sanitize" >:: test_parameter_sanitize;
          "return_sanitize" >:: test_return_sanitize;
          "parameters_sanitize" >:: test_parameters_sanitize;
-         "skip_analysis" >:: test_skip_analysis;
+         "modes" >:: test_modes;
          "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;

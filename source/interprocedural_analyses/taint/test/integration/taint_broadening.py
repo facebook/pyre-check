@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import Dict, Optional, Union
+from typing import Dict, Optional, Union, TypeVar
 
 
 def tito(x):
@@ -306,3 +306,106 @@ def tito_broaden_output_path_common_prefix(x):
             "l": x.l,
         }
     }
+
+
+# Test for the @SkipModelBroadening mode.
+
+T = TypeVar("T")
+
+
+# see taint_broadening.py.pysa
+def skip_model_broadening(f: T) -> T:
+    return f
+
+
+@skip_model_broadening
+def model_broadening_no_collapse_source_width(c):
+    result = {}
+    if c:
+        result["o1.1"] = _test_source()
+        result["o1.2"] = _test_source()
+        result["o1.3"] = _test_source()
+        result["o1.4"] = _test_source()
+        result["o1.5"] = _test_source()
+        result["o1.6"] = _test_source()
+        result["o1.7"] = _test_source()
+        result["o1.8"] = _test_source()
+        result["o1.9"] = _test_source()
+        result["o1.10"] = _test_source()
+        result["o1.11"] = _test_source()
+        result["o1.12"] = _test_source()
+        result["o1.13"] = _test_source()
+        result["o1.14"] = _test_source()
+        result["o1.15"] = _test_source()
+    else:
+        result["o2.1"] = _test_source()
+        result["o2.2"] = _test_source()
+        result["o2.3"] = _test_source()
+        result["o2.4"] = _test_source()
+        result["o2.5"] = _test_source()
+        result["o2.6"] = _test_source()
+        result["o2.7"] = _test_source()
+        result["o2.8"] = _test_source()
+        result["o2.9"] = _test_source()
+        result["o2.10"] = _test_source()
+        result["o2.11"] = _test_source()
+        result["o2.12"] = _test_source()
+        result["o2.13"] = _test_source()
+        result["o2.14"] = _test_source()
+        result["o2.15"] = _test_source()
+    return result
+
+
+@skip_model_broadening
+def model_broadening_no_collapse_sink_width(parameter, condition):
+    if condition:
+        _test_sink(parameter["i1.1"])
+        _test_sink(parameter["i1.2"])
+        _test_sink(parameter["i1.3"])
+        _test_sink(parameter["i1.4"])
+        _test_sink(parameter["i1.5"])
+        _test_sink(parameter["i1.6"])
+        _test_sink(parameter["i1.7"])
+        _test_sink(parameter["i1.8"])
+        _test_sink(parameter["i1.9"])
+        _test_sink(parameter["i1.10"])
+        _test_sink(parameter["i1.11"])
+        _test_sink(parameter["i1.12"])
+        _test_sink(parameter["i1.13"])
+        _test_sink(parameter["i1.14"])
+        _test_sink(parameter["i1.15"])
+    else:
+        _test_sink(parameter["i2.1"])
+        _test_sink(parameter["i2.2"])
+        _test_sink(parameter["i2.3"])
+        _test_sink(parameter["i2.4"])
+        _test_sink(parameter["i2.5"])
+        _test_sink(parameter["i2.6"])
+        _test_sink(parameter["i2.7"])
+        _test_sink(parameter["i2.8"])
+        _test_sink(parameter["i2.9"])
+        _test_sink(parameter["i2.10"])
+        _test_sink(parameter["i2.11"])
+        _test_sink(parameter["i2.12"])
+        _test_sink(parameter["i2.13"])
+        _test_sink(parameter["i2.14"])
+        _test_sink(parameter["i2.15"])
+
+
+@skip_model_broadening
+def tito_no_broadening_input_and_output_paths(
+    parameter,
+) -> Dict[str, Union[str, Optional[int]]]:
+    result: Dict[str, Union[str, Optional[int]]] = {}
+    result["o1"] = parameter.i1
+    result["o2"] = parameter.i2
+    result["o3"] = parameter.i3
+    result["o4"] = parameter.i4
+    result["o5"] = parameter.i5
+    result["o6"] = parameter.i6
+    result["o7"] = parameter.i7
+    result["o8"] = parameter.i8
+    result["o9"] = parameter.i9
+    result["o10"] = parameter.i10
+    result["o11"] = parameter.i11
+    return result

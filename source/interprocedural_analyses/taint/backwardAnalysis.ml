@@ -2411,27 +2411,31 @@ let extract_tito_and_sink_models
         _;
       }
     ~existing_backward
+    ~apply_broadening
     entry_taint
   =
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
-  let simplify ~breadcrumbs annotation tree =
+  let simplify ~breadcrumbs tree =
+    if apply_broadening then
+      tree
+      |> BackwardState.Tree.shape ~mold_with_return_access_paths:is_constructor ~breadcrumbs
+      |> BackwardState.Tree.limit_to ~breadcrumbs ~width:maximum_model_sink_tree_width
+      |> BackwardState.Tree.transform_call_info
+           CallInfo.Tito
+           Features.ReturnAccessPathTree.Self
+           Map
+           ~f:Features.ReturnAccessPathTree.limit_width
+    else
+      tree
+  in
+  let add_type_breadcrumbs annotation tree =
     let type_breadcrumbs =
       annotation
       >>| GlobalResolution.parse_annotation resolution
       |> Features.type_breadcrumbs_from_annotation ~resolution
     in
-
-    tree
-    |> BackwardState.Tree.shape ~mold_with_return_access_paths:is_constructor ~breadcrumbs
-    |> BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs
-    |> BackwardState.Tree.limit_to ~breadcrumbs ~width:maximum_model_sink_tree_width
-    |> BackwardState.Tree.transform_call_info
-         CallInfo.Tito
-         Features.ReturnAccessPathTree.Self
-         Map
-         ~f:Features.ReturnAccessPathTree.limit_width
+    BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in
-
   let split_and_simplify model (parameter, name, annotation) =
     let partition =
       BackwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] entry_taint
@@ -2447,7 +2451,8 @@ let extract_tito_and_sink_models
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
-        |> simplify ~breadcrumbs:(Features.model_tito_broadening_set ()) annotation
+        |> simplify ~breadcrumbs:(Features.model_tito_broadening_set ())
+        |> add_type_breadcrumbs annotation
       in
       let candidate_tree =
         match maximum_tito_depth with
@@ -2460,9 +2465,12 @@ let extract_tito_and_sink_models
         |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
         |> BackwardState.Tree.add_via_features via_features_to_attach
       in
-      BackwardState.Tree.limit_to
-        ~breadcrumbs:(Features.model_tito_broadening_set ())
-        ~width:maximum_model_tito_tree_width
+      if apply_broadening then
+        BackwardState.Tree.limit_to
+          ~breadcrumbs:(Features.model_tito_broadening_set ())
+          ~width:maximum_model_tito_tree_width
+          candidate_tree
+      else
         candidate_tree
     in
     let sink_taint =
@@ -2481,7 +2489,9 @@ let extract_tito_and_sink_models
               | _ -> sink_tree
             in
             let sink_tree =
-              simplify ~breadcrumbs:(Features.model_sink_broadening_set ()) annotation sink_tree
+              sink_tree
+              |> simplify ~breadcrumbs:(Features.model_sink_broadening_set ())
+              |> add_type_breadcrumbs annotation
             in
             let sink_tree =
               match Sinks.discard_transforms sink with
@@ -2612,6 +2622,9 @@ let run
     | None -> State.log "No entry state found"
   in
   let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let apply_broadening =
+    not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
+  in
   let extract_model State.{ taint; _ } =
     let model =
       TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
@@ -2621,6 +2634,7 @@ let run
             ~resolution
             ~taint_configuration:FunctionContext.taint_configuration
             ~existing_backward:existing_model.Model.backward
+            ~apply_broadening
             taint)
     in
     let () = State.log "Backward Model:@,%a" Model.Backward.pp model in

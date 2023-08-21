@@ -44,6 +44,7 @@ module Mode : sig
     | SkipOverrides
     | Entrypoint
     | IgnoreDecorator
+    | SkipModelBroadening
   [@@deriving show, compare, equal]
 
   val from_string : string -> t option

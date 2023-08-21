@@ -218,6 +218,7 @@ module Mode = struct
     | SkipOverrides
     | Entrypoint
     | IgnoreDecorator
+    | SkipModelBroadening
   [@@deriving compare, equal]
 
   let pp formatter = function
@@ -227,6 +228,7 @@ module Mode = struct
     | SkipOverrides -> Format.fprintf formatter "SkipOverrides"
     | Entrypoint -> Format.fprintf formatter "Entrypoint"
     | IgnoreDecorator -> Format.fprintf formatter "IgnoreDecorator"
+    | SkipModelBroadening -> Format.fprintf formatter "SkipModelBroadening"
 
 
   let show = Format.asprintf "%a" pp
@@ -240,6 +242,7 @@ module Mode = struct
     | "SkipOverrides" -> Some SkipOverrides
     | "Entrypoint" -> Some Entrypoint
     | "IgnoreDecorator" -> Some IgnoreDecorator
+    | "SkipModelBroadening" -> Some SkipModelBroadening
     | _ -> None
 end
 

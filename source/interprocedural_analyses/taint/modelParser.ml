@@ -2645,6 +2645,7 @@ let adjust_sanitize_and_modes_and_skipped_override
     | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes)
     | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes)
     | "IgnoreDecorator" -> Ok (sanitizers, Model.ModeSet.add IgnoreDecorator modes)
+    | "SkipModelBroadening" -> Ok (sanitizers, Model.ModeSet.add SkipModelBroadening modes)
     | _ -> Ok (sanitizers, modes)
   in
   List.fold_result
@@ -2685,7 +2686,8 @@ let create_model_from_signature
           | ["SkipOverrides"]
           | ["Entrypoint"]
           | ["SkipObscure"]
-          | ["IgnoreDecorator"] ->
+          | ["IgnoreDecorator"]
+          | ["SkipModelBroadening"] ->
               Either.first decorator
           | _ -> Either.Second decorator_expression)
     in
@@ -3096,6 +3098,8 @@ let rec parse_statement
             Some (Either.Second (decorator_with_name "SkipOverrides"))
           else if String.equal name "Entrypoint" then
             Some (Either.Second (decorator_with_name "Entrypoint"))
+          else if String.equal name "SkipModelBroadening" then
+            Some (Either.Second (decorator_with_name "SkipModelBroadening"))
           else
             None
         in

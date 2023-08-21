@@ -1,0 +1,9 @@
+def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+
+ModelQuery(
+  name = "disable_model_broadening",
+  find = "functions",
+  where = Decorator(name.equals("skip_model_broadening")),
+  model = Modes([SkipModelBroadening])
+)

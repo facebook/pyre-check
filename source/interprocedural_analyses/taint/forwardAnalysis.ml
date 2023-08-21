@@ -2913,6 +2913,7 @@ let extract_source_model
       }
     ~breadcrumbs_to_attach
     ~via_features_to_attach
+    ~apply_broadening
     exit_taint
   =
   let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
@@ -2929,14 +2930,16 @@ let extract_source_model
           ForwardState.Tree.prune_maximum_length maximum_trace_length tree
       | _ -> tree
     in
-    tree
-    |> ForwardState.Tree.shape
-         ~mold_with_return_access_paths:false
-         ~breadcrumbs:(Features.model_source_broadening_set ())
-    |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
-    |> ForwardState.Tree.limit_to
-         ~breadcrumbs:(Features.model_source_broadening_set ())
-         ~width:maximum_model_source_tree_width
+    if apply_broadening then
+      tree
+      |> ForwardState.Tree.shape
+           ~mold_with_return_access_paths:false
+           ~breadcrumbs:(Features.model_source_broadening_set ())
+      |> ForwardState.Tree.limit_to
+           ~breadcrumbs:(Features.model_source_broadening_set ())
+           ~width:maximum_model_source_tree_width
+    else
+      tree
   in
   let return_taint =
     let return_variable =
@@ -2962,6 +2965,7 @@ let extract_source_model
 
   ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
   |> ForwardState.add_local_breadcrumbs breadcrumbs_to_attach
+  |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
   |> ForwardState.add_via_features via_features_to_attach
 
 
@@ -3055,6 +3059,9 @@ let run
         ~attach_to_kind:Sources.Attach
         existing_model.forward.source_taint
     in
+    let apply_broadening =
+      not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.modes)
+    in
     let source_taint =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis - extract model" ~f:(fun () ->
           extract_source_model
@@ -3063,6 +3070,7 @@ let run
             ~taint_configuration:FunctionContext.taint_configuration
             ~breadcrumbs_to_attach
             ~via_features_to_attach
+            ~apply_broadening
             taint)
     in
     let model = Model.Forward.{ source_taint } in
