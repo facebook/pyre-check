@@ -201,17 +201,23 @@ let parse_location_with_module location =
 
 
 let diff ~print format (left, right) =
-  let input =
-    let command =
-      Format.sprintf
-        "diff -u <(printf '%s') <(printf '%s')"
-        (Format.asprintf "%a" print left)
-        (Format.asprintf "%a" print right)
+  try
+    let input =
+      let command =
+        Format.sprintf
+          "diff -u <(printf '%s') <(printf '%s')"
+          (Format.asprintf "%a" print left)
+          (Format.asprintf "%a" print right)
+      in
+      CamlUnix.open_process_args_in "/bin/bash" [| "/bin/bash"; "-c"; command |]
     in
-    CamlUnix.open_process_args_in "/bin/bash" [| "/bin/bash"; "-c"; command |]
-  in
-  Format.fprintf format "\n%s" (In_channel.input_all input);
-  In_channel.close input
+    Format.fprintf format "\n%s" (In_channel.input_all input);
+    In_channel.close input
+  with
+  | CamlUnix.Unix_error (CamlUnix.E2BIG, _, _) ->
+      Format.fprintf
+        format
+        "\nWarning: `diff -u <(printf '...') <(printf '...')` failed: input too large"
 
 
 let map_printer ~key_pp ~data_pp map =
