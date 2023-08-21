@@ -533,6 +533,8 @@ let rec process_request ~type_environment ~build_system request =
           ~class_hierarchy_graph
           ~source_sink_filter:None
           ~verbose:false
+          ~error_on_unexpected_models:true
+          ~error_on_empty_result:true
           ~definitions_and_stubs:
             (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
           ~stubs:

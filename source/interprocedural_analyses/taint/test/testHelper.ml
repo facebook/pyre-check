@@ -474,7 +474,7 @@ let initialize
     ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.Heap.default)
     ?expected_dump_string
-    ?(verify_model_queries = true)
+    ?(verify_empty_model_queries = true)
     ?model_path
     ~context
     source_content
@@ -571,6 +571,8 @@ let initialize
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~verbose:false
+            ~error_on_unexpected_models:true
+            ~error_on_empty_result:verify_empty_model_queries
             ~definitions_and_stubs:(List.rev_append stubs definitions)
             ~stubs:(Target.HashSet.of_list stubs)
             queries
@@ -591,8 +593,7 @@ let initialize
             ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results
             |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
         | None, None -> ());
-        let verify = static_analysis_configuration.verify_models && verify_model_queries in
-        ModelVerificationError.verify_models_and_dsl errors verify;
+        ModelVerificationError.verify_models_and_dsl errors true;
         let models =
           model_query_results
           |> ModelQueryExecution.ModelQueryRegistryMap.get_registry
@@ -797,7 +798,7 @@ let end_to_end_integration_test path context =
         ?models_source
         ~add_initial_models
         ~taint_configuration
-        ~verify_model_queries:false
+        ~verify_empty_model_queries:false
         ~context
         source
     in

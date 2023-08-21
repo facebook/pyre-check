@@ -1820,6 +1820,8 @@ let generate_models_from_queries
     ~class_hierarchy_graph
     ~source_sink_filter
     ~verbose
+    ~error_on_unexpected_models
+    ~error_on_empty_result
     ~definitions_and_stubs
     ~stubs
     queries
@@ -1891,13 +1893,19 @@ let generate_models_from_queries
 
   let { ExecutionResult.models; _ } = execution_result in
   let execution_result =
-    ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
-      ~model_query_results:models
-      ~queries
-    |> ExecutionResult.add_errors execution_result
+    if error_on_unexpected_models then
+      ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
+        ~model_query_results:models
+        ~queries
+      |> ExecutionResult.add_errors execution_result
+    else
+      execution_result
   in
   let execution_result =
-    ModelQueryRegistryMap.errors_for_queries_without_output ~model_query_results:models ~queries
-    |> ExecutionResult.add_errors execution_result
+    if error_on_empty_result then
+      ModelQueryRegistryMap.errors_for_queries_without_output ~model_query_results:models ~queries
+      |> ExecutionResult.add_errors execution_result
+    else
+      execution_result
   in
   execution_result

@@ -276,6 +276,8 @@ let initialize_models
             ~scheduler
             ~class_hierarchy_graph
             ~verbose
+            ~error_on_unexpected_models:true
+            ~error_on_empty_result:true
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~definitions_and_stubs:
               (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
