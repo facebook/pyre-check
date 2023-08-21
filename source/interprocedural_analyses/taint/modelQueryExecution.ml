@@ -148,7 +148,7 @@ module ModelQueryRegistryMap = struct
     expected_and_unexpected_model_errors
 
 
-  let check_errors ~model_query_results ~queries =
+  let errors_for_queries_without_output ~model_query_results ~queries =
     let module LoggingGroup = struct
       type t = {
         name: string;
@@ -1897,7 +1897,7 @@ let generate_models_from_queries
     |> ExecutionResult.add_errors execution_result
   in
   let execution_result =
-    ModelQueryRegistryMap.check_errors ~model_query_results:models ~queries
+    ModelQueryRegistryMap.errors_for_queries_without_output ~model_query_results:models ~queries
     |> ExecutionResult.add_errors execution_result
   in
   execution_result
