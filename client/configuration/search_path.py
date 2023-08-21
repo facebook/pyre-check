@@ -19,12 +19,18 @@ import dataclasses
 import glob
 import logging
 import os
-from typing import Dict, Iterable, List, Sequence, Union
+import re
+from typing import Dict, Iterable, List, Sequence, Tuple, Union
 
 from .. import filesystem
 from . import exceptions
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+dist_info_in_root: Dict[str, List[str]] = {}
+_site_filter = re.compile(r".*-([0-99]\.)*dist-info")
+
+_PYCACHE = re.compile("__pycache__")
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -72,9 +78,43 @@ class SitePackageElement(Element):
     package_name: str
     is_toplevel_module: bool = False
 
-    def package_path(self) -> str:
-        module_suffix = ".py" if self.is_toplevel_module else ""
-        return self.package_name + module_suffix
+    def package_path(self) -> Union[str, None]:
+        if not self.is_toplevel_module:
+            return self.package_name
+
+        this_pkg_filter = re.compile(
+            r"{}-([0-99]\.)*dist-info".format(self.package_name)
+        )
+
+        if self.site_root not in dist_info_in_root:
+            dist_info_in_root[self.site_root] = []
+            for directory in os.listdir(self.site_root):
+                if _site_filter.fullmatch(directory) is not None:
+                    dist_info_in_root[self.site_root].append(directory)
+
+        for directory in dist_info_in_root[self.site_root]:
+            if this_pkg_filter.fullmatch(directory):
+                dist_info_path = f"{self.site_root}/{directory}"
+                break
+        else:
+            return None
+
+        not_toplevel_patterns: Tuple[re.Pattern] = (this_pkg_filter, _PYCACHE)
+
+        with open(file=f"{dist_info_path}/RECORD", mode="r") as record:
+            files = []
+            for val in [line.split(",") for line in record.readlines()]:
+                files.append(*val)
+            for file in files:
+                if not file:
+                    continue
+                for pattern in not_toplevel_patterns:
+                    if pattern.fullmatch(file) is not None:
+                        break
+                else:
+                    return file
+
+        return None
 
     def path(self) -> str:
         return os.path.join(self.site_root, self.package_path())
