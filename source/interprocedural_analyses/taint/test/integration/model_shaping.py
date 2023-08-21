@@ -3,7 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-from builtins import _test_source, _test_sink, _rce, _sql, _user_controlled, _cookies
+from builtins import _test_source, _rce, _sql, _user_controlled, _cookies
 from typing import Any, cast, Dict, List
 
 
@@ -77,20 +77,6 @@ def asdict_test(obj):
 
 def obscure_test(obj):
     return type(obj)(_test_source())
-
-
-def recursive_sink_parent(obj):
-    if obj.parent is not None:
-        recursive_sink_parent(obj.parent)
-    else:
-        _test_sink(obj)
-
-
-def recursive_sink_parent_attribute(obj):
-    if obj.parent is not None:
-        recursive_sink_parent_attribute(obj.parent)
-    else:
-        _test_sink(obj.attribute)
 
 
 def shape_multi_sink(obj):

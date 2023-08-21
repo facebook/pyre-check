@@ -248,7 +248,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification._asdict_inner",
+    "callable": "model_shaping._asdict_inner",
     "sinks": [
       {
         "port": "formal(obj)",
@@ -268,7 +268,7 @@
             ],
             "tito_positions": [ { "line": 41, "start": 24, "end": 27 } ],
             "origin": {
-              "filename": "model_simplification.py",
+              "filename": "model_shaping.py",
               "line": 42,
               "start": 47,
               "end": 53
@@ -297,12 +297,12 @@
             "tito_positions": [ { "line": 42, "start": 42, "end": 45 } ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 42,
                 "start": 34,
                 "end": 54
               },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj)"
             }
           },
@@ -330,12 +330,12 @@
             ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 49,
                 "start": 56,
                 "end": 57
               },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj)"
             }
           },
@@ -365,12 +365,12 @@
             ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 54,
                 "start": 34,
                 "end": 35
               },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj)"
             }
           },
@@ -398,12 +398,12 @@
             ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 64,
                 "start": 34,
                 "end": 35
               },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj)"
             }
           }
@@ -457,7 +457,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification.asdict",
+    "callable": "model_shaping.asdict",
     "sinks": [
       {
         "port": "formal(obj)",
@@ -481,12 +481,12 @@
             ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 34,
                 "start": 25,
                 "end": 28
               },
-              "resolves_to": [ "model_simplification._asdict_inner" ],
+              "resolves_to": [ "model_shaping._asdict_inner" ],
               "port": "formal(obj)"
             }
           }
@@ -544,7 +544,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification.asdict_test",
+    "callable": "model_shaping.asdict_test",
     "sinks": [
       {
         "port": "formal(obj)",
@@ -568,12 +568,12 @@
             ],
             "call": {
               "position": {
-                "filename": "model_simplification.py",
+                "filename": "model_shaping.py",
                 "line": 75,
                 "start": 18,
                 "end": 21
               },
-              "resolves_to": [ "model_simplification.asdict" ],
+              "resolves_to": [ "model_shaping.asdict" ],
               "port": "formal(obj)"
             }
           }
@@ -610,7 +610,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification.obscure_test",
+    "callable": "model_shaping.obscure_test",
     "sources": [
       {
         "port": "result",
@@ -628,7 +628,7 @@
             "local_features": [ { "always-via": "obscure:unknown-callee" } ],
             "tito_positions": [ { "line": 79, "start": 21, "end": 35 } ],
             "origin": {
-              "filename": "model_simplification.py",
+              "filename": "model_shaping.py",
               "line": 79,
               "start": 21,
               "end": 35
@@ -668,227 +668,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification.recursive_sink_parent",
-    "sinks": [
-      {
-        "port": "formal(obj)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "model_simplification.py",
-              "line": 86,
-              "start": 19,
-              "end": 22
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "via": "model-broadening" },
-                  { "via": "broadening" },
-                  { "via": "model-sink-broadening" }
-                ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "model-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "model-sink-broadening" }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 84,
-                "start": 30,
-                "end": 40
-              },
-              "resolves_to": [ "model_simplification.recursive_sink_parent" ],
-              "port": "formal(obj)"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_simplification.recursive_sink_parent_attribute",
-    "sinks": [
-      {
-        "port": "formal(obj)[attribute]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "model_simplification.py",
-              "line": 93,
-              "start": 19,
-              "end": 32
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(obj)[parent][attribute]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 1,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 91,
-                "start": 40,
-                "end": 50
-              },
-              "resolves_to": [
-                "model_simplification.recursive_sink_parent_attribute"
-              ],
-              "port": "formal(obj)[attribute]"
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(obj)[parent][parent][attribute]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 2,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 91,
-                "start": 40,
-                "end": 50
-              },
-              "resolves_to": [
-                "model_simplification.recursive_sink_parent_attribute"
-              ],
-              "port": "formal(obj)[parent][attribute]"
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(obj)[parent][parent][parent][attribute]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 3,
-                "kind": "Test"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 91,
-                "start": 40,
-                "end": 50
-              },
-              "resolves_to": [
-                "model_simplification.recursive_sink_parent_attribute"
-              ],
-              "port": "formal(obj)[parent][parent][attribute]"
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(obj)[parent][parent][parent][parent]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "length": 4,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "via": "broadening" }, { "via": "widen-broadening" }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 91,
-                "start": 40,
-                "end": 50
-              },
-              "resolves_to": [
-                "model_simplification.recursive_sink_parent_attribute"
-              ],
-              "port": "formal(obj)[parent][parent][parent][attribute]"
-            }
-          },
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-via": "special_sink" },
-                  { "via": "broadening" },
-                  { "via": "widen-broadening" }
-                ],
-                "length": 5,
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "via": "broadening" }, { "via": "widen-broadening" }
-            ],
-            "call": {
-              "position": {
-                "filename": "model_simplification.py",
-                "line": 91,
-                "start": 40,
-                "end": 50
-              },
-              "resolves_to": [
-                "model_simplification.recursive_sink_parent_attribute"
-              ],
-              "port": "formal(obj)[parent][parent][parent][parent]"
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "model_simplification.shape_multi_sink",
+    "callable": "model_shaping.shape_multi_sink",
     "sinks": [
       {
         "port": "formal(obj)",
@@ -906,8 +686,8 @@
               { "always-via": "model-sink-broadening" }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 97,
+              "filename": "model_shaping.py",
+              "line": 83,
               "start": 9,
               "end": 16
             }
@@ -925,8 +705,8 @@
               { "always-via": "model-sink-broadening" }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 98,
+              "filename": "model_shaping.py",
+              "line": 84,
               "start": 9,
               "end": 16
             }
@@ -939,8 +719,8 @@
               }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 99,
+              "filename": "model_shaping.py",
+              "line": 85,
               "start": 9,
               "end": 12
             }
@@ -958,8 +738,8 @@
               }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 100,
+              "filename": "model_shaping.py",
+              "line": 86,
               "start": 9,
               "end": 16
             }
@@ -972,7 +752,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "model_simplification.shape_multi_source",
+    "callable": "model_shaping.shape_multi_source",
     "sources": [
       {
         "port": "result[a]",
@@ -987,8 +767,8 @@
               }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 106,
+              "filename": "model_shaping.py",
+              "line": 92,
               "start": 17,
               "end": 35
             }
@@ -1008,8 +788,8 @@
               { "always-via": "broadening" }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 107,
+              "filename": "model_shaping.py",
+              "line": 93,
               "start": 23,
               "end": 41
             }
@@ -1029,8 +809,8 @@
               { "always-via": "broadening" }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 108,
+              "filename": "model_shaping.py",
+              "line": 94,
               "start": 29,
               "end": 47
             }
@@ -1048,8 +828,8 @@
               }
             ],
             "origin": {
-              "filename": "model_simplification.py",
-              "line": 112,
+              "filename": "model_shaping.py",
+              "line": 98,
               "start": 23,
               "end": 33
             }

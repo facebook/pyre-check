@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_approximate_return_access_paths",
-    "callable_line": 282,
+    "callable_line": 248,
     "code": 5002,
-    "line": 286,
+    "line": 252,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -33,10 +33,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 285, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 251, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 284,
+              "line": 250,
               "start": 10,
               "end": 24
             }
@@ -56,7 +56,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 286,
+              "line": 252,
               "start": 15,
               "end": 21
             }
@@ -88,9 +88,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_approximate_return_access_paths_common_prefix",
-    "callable_line": 289,
+    "callable_line": 255,
     "code": 5002,
-    "line": 293,
+    "line": 259,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -118,10 +118,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 292, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 258, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 291,
+              "line": 257,
               "start": 12,
               "end": 26
             }
@@ -141,7 +141,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 293,
+              "line": 259,
               "start": 15,
               "end": 21
             }
@@ -173,9 +173,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_join_tito_collapse_test_3",
-    "callable_line": 456,
+    "callable_line": 422,
     "code": 5002,
-    "line": 459,
+    "line": 425,
     "start": 15,
     "end": 28,
     "filename": "taint_in_taint_out.py",
@@ -199,10 +199,10 @@
               { "first-index": "foo" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 458, "start": 34, "end": 35 } ],
+            "tito_positions": [ { "line": 424, "start": 34, "end": 35 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 457,
+              "line": 423,
               "start": 14,
               "end": 28
             }
@@ -222,7 +222,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 459,
+              "line": 425,
               "start": 15,
               "end": 28
             }
@@ -250,9 +250,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_user_declared_tito_collapse_one",
-    "callable_line": 482,
+    "callable_line": 448,
     "code": 5002,
-    "line": 485,
+    "line": 451,
     "start": 15,
     "end": 26,
     "filename": "taint_in_taint_out.py",
@@ -278,10 +278,10 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 484, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 450, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 483,
+              "line": 449,
               "start": 20,
               "end": 34
             }
@@ -301,7 +301,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 485,
+              "line": 451,
               "start": 15,
               "end": 26
             }
@@ -410,9 +410,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.issue_with_into_dict_then_tito_collapse",
-    "callable_line": 244,
+    "callable_line": 210,
     "code": 5002,
-    "line": 247,
+    "line": 213,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -437,10 +437,10 @@
               { "always-via": "obscure:model" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 246, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 212, "start": 37, "end": 38 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 245,
+              "line": 211,
               "start": 8,
               "end": 22
             }
@@ -460,7 +460,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 247,
+              "line": 213,
               "start": 15,
               "end": 21
             }
@@ -489,9 +489,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.non_issue_approximate_return_access_paths_common_prefix",
-    "callable_line": 296,
+    "callable_line": 262,
     "code": 5002,
-    "line": 301,
+    "line": 267,
     "start": 15,
     "end": 21,
     "filename": "taint_in_taint_out.py",
@@ -519,10 +519,10 @@
               { "always-via": "broadening" },
               { "always-via": "model-tito-broadening" }
             ],
-            "tito_positions": [ { "line": 299, "start": 40, "end": 41 } ],
+            "tito_positions": [ { "line": 265, "start": 40, "end": 41 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 298,
+              "line": 264,
               "start": 10,
               "end": 24
             }
@@ -542,7 +542,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 301,
+              "line": 267,
               "start": 15,
               "end": 21
             }
@@ -574,9 +574,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_always_via_feature",
-    "callable_line": 177,
+    "callable_line": 143,
     "code": 5002,
-    "line": 178,
+    "line": 144,
     "start": 15,
     "end": 48,
     "filename": "taint_in_taint_out.py",
@@ -598,10 +598,10 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 178, "start": 33, "end": 47 } ],
+            "tito_positions": [ { "line": 144, "start": 33, "end": 47 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 178,
+              "line": 144,
               "start": 33,
               "end": 47
             }
@@ -621,7 +621,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 178,
+              "line": 144,
               "start": 15,
               "end": 48
             }
@@ -648,9 +648,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_complex_evaluator",
-    "callable_line": 223,
+    "callable_line": 189,
     "code": 5002,
-    "line": 224,
+    "line": 190,
     "start": 15,
     "end": 62,
     "filename": "taint_in_taint_out.py",
@@ -678,10 +678,10 @@
               { "via": "model-tito-broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 224, "start": 47, "end": 61 } ],
+            "tito_positions": [ { "line": 190, "start": 47, "end": 61 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 224,
+              "line": 190,
               "start": 47,
               "end": 61
             }
@@ -701,7 +701,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 224,
+              "line": 190,
               "start": 15,
               "end": 62
             }
@@ -733,9 +733,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_explicit_call_to_superclass",
-    "callable_line": 194,
+    "callable_line": 160,
     "code": 5002,
-    "line": 196,
+    "line": 162,
     "start": 15,
     "end": 23,
     "filename": "taint_in_taint_out.py",
@@ -759,10 +759,10 @@
               { "first-field": "arg" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 195, "start": 19, "end": 33 } ],
+            "tito_positions": [ { "line": 161, "start": 19, "end": 33 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 195,
+              "line": 161,
               "start": 19,
               "end": 33
             }
@@ -782,7 +782,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 196,
+              "line": 162,
               "start": 15,
               "end": 23
             }
@@ -810,9 +810,9 @@
   "kind": "issue",
   "data": {
     "callable": "taint_in_taint_out.test_simplified_evaluator",
-    "callable_line": 203,
+    "callable_line": 169,
     "code": 5002,
-    "line": 204,
+    "line": 170,
     "start": 15,
     "end": 44,
     "filename": "taint_in_taint_out.py",
@@ -836,10 +836,10 @@
               { "always-via": "broadening" },
               { "always-via": "issue-broadening" }
             ],
-            "tito_positions": [ { "line": 204, "start": 29, "end": 43 } ],
+            "tito_positions": [ { "line": 170, "start": 29, "end": 43 } ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 204,
+              "line": 170,
               "start": 29,
               "end": 43
             }
@@ -859,7 +859,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 204,
+              "line": 170,
               "start": 15,
               "end": 44
             }
@@ -999,7 +999,7 @@
               { "via": "model-tito-broadening" },
               { "always-via": "obscure:unknown-callee" }
             ],
-            "tito_positions": [ { "line": 220, "start": 31, "end": 36 } ],
+            "tito_positions": [ { "line": 186, "start": 31, "end": 36 } ],
             "tito": null
           }
         ]
@@ -1032,8 +1032,8 @@
               { "via": "obscure:unknown-callee" }
             ],
             "tito_positions": [
-              { "line": 217, "start": 50, "end": 55 },
-              { "line": 218, "start": 44, "end": 49 }
+              { "line": 183, "start": 50, "end": 55 },
+              { "line": 184, "start": 44, "end": 49 }
             ],
             "tito": null
           }
@@ -1126,7 +1126,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 191, "start": 32, "end": 35 } ],
+            "tito_positions": [ { "line": 157, "start": 32, "end": 35 } ],
             "tito": null
           }
         ]
@@ -1137,7 +1137,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 191, "start": 26, "end": 30 } ],
+            "tito_positions": [ { "line": 157, "start": 26, "end": 30 } ],
             "tito": null
           }
         ]
@@ -1387,52 +1387,6 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_in_taint_out.approximate_return_access_paths_common_prefix_input",
-    "tito": [
-      {
-        "port": "formal(x)[y]",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
-            "local_features": [
-              { "always-via": "model-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_in_taint_out.approximate_return_access_paths_common_prefix_output",
-    "tito": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "kinds": [
-              { "return_paths": { "[a]": 0 }, "kind": "LocalReturn" }
-            ],
-            "local_features": [
-              { "always-via": "model-broadening" },
-              { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
-            ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
     "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
     "tito": [
       {
@@ -1447,7 +1401,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 352, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 318, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1472,7 +1426,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 342, "start": 26, "end": 27 } ],
+            "tito_positions": [ { "line": 308, "start": 26, "end": 27 } ],
             "tito": null
           }
         ]
@@ -1498,8 +1452,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 358, "start": 26, "end": 27 },
-              { "line": 360, "start": 26, "end": 27 }
+              { "line": 324, "start": 26, "end": 27 },
+              { "line": 326, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1526,8 +1480,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 390, "start": 26, "end": 27 },
-              { "line": 392, "start": 26, "end": 27 }
+              { "line": 356, "start": 26, "end": 27 },
+              { "line": 358, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1554,8 +1508,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 374, "start": 28, "end": 29 },
-              { "line": 376, "start": 28, "end": 29 }
+              { "line": 340, "start": 28, "end": 29 },
+              { "line": 342, "start": 28, "end": 29 }
             ],
             "tito": null
           }
@@ -1582,8 +1536,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 366, "start": 26, "end": 27 },
-              { "line": 368, "start": 26, "end": 27 }
+              { "line": 332, "start": 26, "end": 27 },
+              { "line": 334, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1610,8 +1564,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 382, "start": 26, "end": 27 },
-              { "line": 384, "start": 26, "end": 27 }
+              { "line": 348, "start": 26, "end": 27 },
+              { "line": 350, "start": 26, "end": 27 }
             ],
             "tito": null
           }
@@ -1753,7 +1707,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 338, "start": 29, "end": 30 } ],
+            "tito_positions": [ { "line": 304, "start": 29, "end": 30 } ],
             "tito": null
           }
         ]
@@ -1778,7 +1732,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 262, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 228, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1805,7 +1759,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 236, "start": 24, "end": 25 } ],
+            "tito_positions": [ { "line": 202, "start": 24, "end": 25 } ],
             "tito": null
           }
         ]
@@ -1831,8 +1785,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 420, "start": 37, "end": 38 },
-              { "line": 422, "start": 39, "end": 40 }
+              { "line": 386, "start": 37, "end": 38 },
+              { "line": 388, "start": 39, "end": 40 }
             ],
             "tito": null
           }
@@ -1859,8 +1813,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 429, "start": 37, "end": 38 },
-              { "line": 431, "start": 41, "end": 42 }
+              { "line": 395, "start": 37, "end": 38 },
+              { "line": 397, "start": 41, "end": 42 }
             ],
             "tito": null
           }
@@ -1887,8 +1841,8 @@
             ],
             "local_features": [ { "always-via": "tito" } ],
             "tito_positions": [
-              { "line": 451, "start": 33, "end": 34 },
-              { "line": 453, "start": 41, "end": 42 }
+              { "line": 417, "start": 33, "end": 34 },
+              { "line": 419, "start": 41, "end": 42 }
             ],
             "tito": null
           }
@@ -1919,7 +1873,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 399, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 365, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -1940,7 +1894,7 @@
               { "return_paths": { "[a]": 0, "": 4 }, "kind": "LocalReturn" }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 406, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 372, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -1964,7 +1918,7 @@
               }
             ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 413, "start": 30, "end": 31 } ],
+            "tito_positions": [ { "line": 379, "start": 30, "end": 31 } ],
             "tito": null
           }
         ]
@@ -2025,7 +1979,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 347, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 313, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2050,7 +2004,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 266, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 232, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2581,7 +2535,7 @@
               { "first-index": "c" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 314, "start": 39, "end": 40 } ],
+            "tito_positions": [ { "line": 280, "start": 39, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2629,7 +2583,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 436, "start": 29, "end": 40 } ],
+            "tito_positions": [ { "line": 402, "start": 29, "end": 40 } ],
             "tito": null
           }
         ]
@@ -2654,7 +2608,7 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 440, "start": 45, "end": 46 } ],
+            "tito_positions": [ { "line": 406, "start": 45, "end": 46 } ],
             "tito": null
           }
         ]
@@ -2681,7 +2635,7 @@
             "local_features": [
               { "always-via": "obscure:model" }, { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 240, "start": 21, "end": 22 } ],
+            "tito_positions": [ { "line": 206, "start": 21, "end": 22 } ],
             "tito": null
           }
         ]
@@ -2710,7 +2664,7 @@
               { "first-index": "a" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 332, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 298, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2758,7 +2712,7 @@
               { "first-index": "b" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 323, "start": 37, "end": 38 } ],
+            "tito_positions": [ { "line": 289, "start": 37, "end": 38 } ],
             "tito": null
           }
         ]
@@ -2807,7 +2761,7 @@
             "local_features": [
               { "always-via": "string_concat_rhs" }, { "via": "tito" }
             ],
-            "tito_positions": [ { "line": 174, "start": 27, "end": 30 } ],
+            "tito_positions": [ { "line": 140, "start": 27, "end": 30 } ],
             "tito": null
           }
         ]
@@ -2836,7 +2790,7 @@
             ],
             "origin": {
               "filename": "taint_in_taint_out.py",
-              "line": 504,
+              "line": 470,
               "start": 15,
               "end": 21
             }

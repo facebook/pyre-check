@@ -76,6 +76,95 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "taint_broadening.test_different_tito_broadenings",
+    "callable_line": 240,
+    "code": 5002,
+    "line": 244,
+    "start": 8,
+    "end": 11,
+    "filename": "taint_broadening.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "format-string" },
+              { "always-via": "model-broadening" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito_positions": [
+              { "line": 242, "start": 46, "end": 52 },
+              { "line": 245, "start": 13, "end": 34 },
+              { "line": 245, "start": 23, "end": 33 }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 241,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 244,
+              "start": 8,
+              "end": 8
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "format-string" },
+      { "always-via": "model-broadening" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "model-tito-broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "taint_broadening.test_different_tito_broadenings:5002:0:Call|_test_sink|0|formal(arg):bce82a5d323d96cf114fac0bbcb88dbd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "taint_broadening.tito_collapse_issue",
     "callable_line": 18,
     "code": 5002,
@@ -154,95 +243,6 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "taint_broadening.tito_collapse_issue:5002:0:Call|_test_sink|0|formal(arg):138379028e02f0ac33c56db31dd10394"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "taint_broadening.untainted_keys",
-    "callable_line": 131,
-    "code": 5002,
-    "line": 135,
-    "start": 8,
-    "end": 11,
-    "filename": "taint_broadening.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-via": "obscure:model" },
-              { "always-via": "format-string" },
-              { "always-via": "model-broadening" },
-              { "always-via": "tito-broadening" },
-              { "always-via": "tito" },
-              { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
-            ],
-            "tito_positions": [
-              { "line": 133, "start": 41, "end": 47 },
-              { "line": 136, "start": 13, "end": 34 },
-              { "line": 136, "start": 23, "end": 33 }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 132,
-              "start": 13,
-              "end": 27
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 135,
-              "start": 8,
-              "end": 8
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" },
-      { "always-via": "special_sink" },
-      { "always-via": "obscure:model" },
-      { "always-via": "format-string" },
-      { "always-via": "model-broadening" },
-      { "always-via": "tito-broadening" },
-      { "always-via": "tito" },
-      { "always-via": "broadening" },
-      { "always-via": "model-tito-broadening" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "taint_broadening.untainted_keys:5002:0:Call|_test_sink|0|formal(arg):e795031ef90f21d0bf0b024428c8cc78"
   }
 }
 {
@@ -494,57 +494,670 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_broadening.convert_2_update_dict_no_widening",
-    "tito": [
+    "callable": "taint_broadening.model_broadening_collapse_sink_width",
+    "sinks": [
       {
-        "port": "formal(source)",
+        "port": "formal(parameter)",
         "taint": [
           {
             "kinds": [
               {
-                "return_paths": {
-                  "[9]": 0,
-                  "[8]": 0,
-                  "[7]": 0,
-                  "[6]": 0,
-                  "[5]": 0,
-                  "[4]": 0,
-                  "[3]": 0,
-                  "[2]": 0,
-                  "[10]": 0,
-                  "[1]": 0
-                },
-                "kind": "LocalReturn"
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
               }
             ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.1" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
+              { "always-via": "model-sink-broadening" }
             ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_broadening.convert_2_update_dict_widening",
-    "tito": [
-      {
-        "port": "formal(source)",
-        "taint": [
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 82,
+              "start": 19,
+              "end": 36
+            }
+          },
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
             "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.2" },
               { "always-via": "model-broadening" },
               { "always-via": "broadening" },
-              { "always-via": "model-tito-broadening" }
+              { "always-via": "model-sink-broadening" }
             ],
-            "tito": null
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 83,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.3" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 84,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.4" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 85,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.5" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 86,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.6" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 87,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.7" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 88,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.8" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 89,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.9" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 90,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.10" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 91,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.11" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 92,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.12" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 93,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.13" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 94,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.14" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 95,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i1.15" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 96,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.1" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 98,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.2" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 99,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.3" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 100,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.4" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 101,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.5" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 102,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.6" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 103,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.7" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 104,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.8" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 105,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.9" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 106,
+              "start": 19,
+              "end": 36
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.10" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 107,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.11" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 108,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.12" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 109,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.13" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 110,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.14" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 111,
+              "start": 19,
+              "end": 37
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "i2.15" },
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 112,
+              "start": 19,
+              "end": 37
+            }
           }
         ]
       }
@@ -554,7 +1167,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "taint_broadening.simplify_collapse_source",
+    "callable": "taint_broadening.model_broadening_collapse_source_width",
     "sources": [
       {
         "port": "result",
@@ -577,8 +1190,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 44,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -599,8 +1212,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 45,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -621,8 +1234,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 46,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -643,8 +1256,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 47,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -665,8 +1278,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 48,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -687,8 +1300,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 49,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -709,8 +1322,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 50,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -731,8 +1344,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 51,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -753,8 +1366,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 52,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -775,8 +1388,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 53,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -797,8 +1410,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 54,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -819,8 +1432,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 55,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -841,8 +1454,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 56,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -863,8 +1476,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 57,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -885,8 +1498,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 58,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -907,8 +1520,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 60,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -929,8 +1542,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 61,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -951,8 +1564,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 62,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -973,8 +1586,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 63,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -995,8 +1608,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 64,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -1017,8 +1630,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 65,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -1039,8 +1652,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 66,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -1061,8 +1674,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 67,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -1083,8 +1696,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 68,
-              "start": 19,
-              "end": 33
+              "start": 25,
+              "end": 39
             }
           },
           {
@@ -1105,8 +1718,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 69,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -1127,8 +1740,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 70,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -1149,8 +1762,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 71,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -1171,8 +1784,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 72,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -1193,8 +1806,8 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 73,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
             }
           },
           {
@@ -1215,8 +1828,378 @@
             "origin": {
               "filename": "taint_broadening.py",
               "line": 74,
-              "start": 20,
-              "end": 34
+              "start": 26,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.model_broadening_sink_no_collapse_depth",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a][a][a][a][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 138,
+              "start": 19,
+              "end": 53
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[a][a][a][a][2]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "<numeric>" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 140,
+              "start": 19,
+              "end": 53
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.model_broadening_source_no_collapse_depth",
+    "sources": [
+      {
+        "port": "result[a][a][a][a][1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 118,
+              "start": 42,
+              "end": 56
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[a][a][a][a][2]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 120,
+              "start": 42,
+              "end": 56
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.random_tito",
+    "tito": [
+      {
+        "port": "formal(parameter)[i1]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i2]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i3]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i4]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.recursive_sink_parent",
+    "sinks": [
+      {
+        "port": "formal(obj)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 154,
+              "start": 19,
+              "end": 22
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "via": "model-broadening" },
+                  { "via": "broadening" },
+                  { "via": "model-sink-broadening" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-sink-broadening" }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 152,
+                "start": 30,
+                "end": 40
+              },
+              "resolves_to": [ "taint_broadening.recursive_sink_parent" ],
+              "port": "formal(obj)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.recursive_sink_parent_attribute",
+    "sinks": [
+      {
+        "port": "formal(obj)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 161,
+              "start": 19,
+              "end": 32
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[parent][attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 159,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "taint_broadening.recursive_sink_parent_attribute"
+              ],
+              "port": "formal(obj)[attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[parent][parent][attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 159,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "taint_broadening.recursive_sink_parent_attribute"
+              ],
+              "port": "formal(obj)[parent][attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[parent][parent][parent][attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 3,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 159,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "taint_broadening.recursive_sink_parent_attribute"
+              ],
+              "port": "formal(obj)[parent][parent][attribute]"
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(obj)[parent][parent][parent][parent]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 4,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "broadening" }, { "via": "widen-broadening" }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 159,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "taint_broadening.recursive_sink_parent_attribute"
+              ],
+              "port": "formal(obj)[parent][parent][parent][attribute]"
+            }
+          },
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-via": "special_sink" },
+                  { "via": "broadening" },
+                  { "via": "widen-broadening" }
+                ],
+                "length": 5,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "broadening" }, { "via": "widen-broadening" }
+            ],
+            "call": {
+              "position": {
+                "filename": "taint_broadening.py",
+                "line": 159,
+                "start": 40,
+                "end": 50
+              },
+              "resolves_to": [
+                "taint_broadening.recursive_sink_parent_attribute"
+              ],
+              "port": "formal(obj)[parent][parent][parent][parent]"
             }
           }
         ]
@@ -1230,7 +2213,7 @@
     "callable": "taint_broadening.sink_a",
     "sinks": [
       {
-        "port": "formal(d)[a]",
+        "port": "formal(parameter)[a]",
         "taint": [
           {
             "kinds": [
@@ -1247,8 +2230,523 @@
               "filename": "taint_broadening.py",
               "line": 15,
               "start": 15,
-              "end": 21
+              "end": 29
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.sink_taint_widening_collapse_depth",
+    "sinks": [
+      {
+        "port": "formal(parameter)[a][a][a][a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "b" },
+              { "via": "broadening" },
+              { "via": "widen-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 145,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[a][a][a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "b" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 145,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[a][a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "b" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 145,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "b" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 145,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "b" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 145,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.source_taint_widening_collapse_depth",
+    "sources": [
+      {
+        "port": "result[a][a][a][a]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "via": "broadening" }, { "via": "widen-broadening" }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 129,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[a][a][a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 129,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[a][a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 129,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[a][b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 129,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "taint_broadening.py",
+              "line": 129,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_input_and_output_paths",
+    "tito": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_input_and_output_paths_single_statement",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_input_path_common_prefix",
+    "tito": [
+      {
+        "port": "formal(x)[y]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
+    "tito": [
+      {
+        "port": "formal(parameter)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": {
+                  "[o9]": 0,
+                  "[o8]": 0,
+                  "[o7]": 0,
+                  "[o6]": 0,
+                  "[o5]": 0,
+                  "[o4]": 0,
+                  "[o3]": 0,
+                  "[o2]": 0,
+                  "[o10]": 0,
+                  "[o1]": 0
+                },
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_output_path_common_prefix",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[a]": 0 }, "kind": "LocalReturn" }
+            ],
+            "local_features": [
+              { "always-via": "model-broadening" },
+              { "always-via": "broadening" },
+              { "always-via": "model-tito-broadening" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "taint_broadening.tito_broaden_output_paths_but_not_input_path",
+    "tito": [
+      {
+        "port": "formal(parameter)[i1]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 219, "start": 31, "end": 40 },
+              { "line": 220, "start": 31, "end": 40 },
+              { "line": 221, "start": 31, "end": 40 },
+              { "line": 222, "start": 31, "end": 40 },
+              { "line": 223, "start": 31, "end": 40 },
+              { "line": 224, "start": 31, "end": 40 },
+              { "line": 225, "start": 31, "end": 40 },
+              { "line": 226, "start": 31, "end": 40 },
+              { "line": 227, "start": 31, "end": 40 },
+              { "line": 228, "start": 32, "end": 41 },
+              { "line": 229, "start": 32, "end": 41 },
+              { "line": 230, "start": 32, "end": 41 },
+              { "line": 231, "start": 32, "end": 41 },
+              { "line": 232, "start": 32, "end": 41 },
+              { "line": 233, "start": 32, "end": 41 }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i2]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 219, "start": 31, "end": 40 },
+              { "line": 220, "start": 31, "end": 40 },
+              { "line": 221, "start": 31, "end": 40 },
+              { "line": 222, "start": 31, "end": 40 },
+              { "line": 223, "start": 31, "end": 40 },
+              { "line": 224, "start": 31, "end": 40 },
+              { "line": 225, "start": 31, "end": 40 },
+              { "line": 226, "start": 31, "end": 40 },
+              { "line": 227, "start": 31, "end": 40 },
+              { "line": 228, "start": 32, "end": 41 },
+              { "line": 229, "start": 32, "end": 41 },
+              { "line": 230, "start": 32, "end": 41 },
+              { "line": 231, "start": 32, "end": 41 },
+              { "line": 232, "start": 32, "end": 41 },
+              { "line": 233, "start": 32, "end": 41 }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i3]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 219, "start": 31, "end": 40 },
+              { "line": 220, "start": 31, "end": 40 },
+              { "line": 221, "start": 31, "end": 40 },
+              { "line": 222, "start": 31, "end": 40 },
+              { "line": 223, "start": 31, "end": 40 },
+              { "line": 224, "start": 31, "end": 40 },
+              { "line": 225, "start": 31, "end": 40 },
+              { "line": 226, "start": 31, "end": 40 },
+              { "line": 227, "start": 31, "end": 40 },
+              { "line": 228, "start": 32, "end": 41 },
+              { "line": 229, "start": 32, "end": 41 },
+              { "line": 230, "start": 32, "end": 41 },
+              { "line": 231, "start": 32, "end": 41 },
+              { "line": 232, "start": 32, "end": 41 },
+              { "line": 233, "start": 32, "end": 41 }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(parameter)[i4]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 0 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 219, "start": 31, "end": 40 },
+              { "line": 220, "start": 31, "end": 40 },
+              { "line": 221, "start": 31, "end": 40 },
+              { "line": 222, "start": 31, "end": 40 },
+              { "line": 223, "start": 31, "end": 40 },
+              { "line": 224, "start": 31, "end": 40 },
+              { "line": 225, "start": 31, "end": 40 },
+              { "line": 226, "start": 31, "end": 40 },
+              { "line": 227, "start": 31, "end": 40 },
+              { "line": 228, "start": 32, "end": 41 },
+              { "line": 229, "start": 32, "end": 41 },
+              { "line": 230, "start": 32, "end": 41 },
+              { "line": 231, "start": 32, "end": 41 },
+              { "line": 232, "start": 32, "end": 41 },
+              { "line": 233, "start": 32, "end": 41 }
+            ],
+            "tito": null
           }
         ]
       }
@@ -1261,7 +2759,7 @@
     "callable": "taint_broadening.tito_collapse_sink",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(parameter)",
         "taint": [
           {
             "kinds": [
@@ -1279,7 +2777,7 @@
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 26, "start": 13, "end": 14 } ],
+            "tito_positions": [ { "line": 26, "start": 13, "end": 22 } ],
             "origin": {
               "filename": "taint_broadening.py",
               "line": 27,
@@ -1322,112 +2820,6 @@
               "line": 31,
               "start": 14,
               "end": 28
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_broadening.widen_collapse_sink",
-    "sinks": [
-      {
-        "port": "formal(d)[a][a][a][a][1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "<numeric>" }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 92,
-              "start": 19,
-              "end": 45
-            }
-          }
-        ]
-      },
-      {
-        "port": "formal(d)[a][a][a][a][2]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "has": "first-index" }, { "first-index": "<numeric>" }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 94,
-              "start": 19,
-              "end": 45
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "taint_broadening.widen_collapse_source",
-    "sources": [
-      {
-        "port": "result[a][a][a][a][1]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 82,
-              "start": 37,
-              "end": 51
-            }
-          }
-        ]
-      },
-      {
-        "port": "result[a][a][a][a][2]",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "taint_broadening.py",
-              "line": 84,
-              "start": 37,
-              "end": 51
             }
           }
         ]
