@@ -218,7 +218,7 @@ let parse_models_and_queries_from_configuration
          ~stubs
          ~python_version
   in
-  let () = ModelVerificationError.verify_models_and_dsl errors verify_models in
+  let () = ModelVerificationError.verify_models_and_dsl ~raise_exception:verify_models errors in
   parse_result
 
 
@@ -292,8 +292,8 @@ let initialize_models
         in
         let () =
           ModelVerificationError.verify_models_and_dsl
+            ~raise_exception:static_analysis_configuration.verify_dsl
             model_query_errors
-            static_analysis_configuration.verify_dsl
         in
         let errors = List.append errors model_query_errors in
         let models =

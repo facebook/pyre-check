@@ -593,7 +593,7 @@ let initialize
             ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results
             |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
         | None, None -> ());
-        ModelVerificationError.verify_models_and_dsl errors true;
+        ModelVerificationError.verify_models_and_dsl ~raise_exception:true errors;
         let models =
           model_query_results
           |> ModelQueryExecution.ModelQueryRegistryMap.get_registry

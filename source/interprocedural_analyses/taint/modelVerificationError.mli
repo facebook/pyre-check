@@ -185,4 +185,4 @@ val display : t -> string
 
 exception ModelVerificationErrors of t list
 
-val verify_models_and_dsl : t list -> bool -> unit
+val verify_models_and_dsl : raise_exception:bool -> t list -> unit

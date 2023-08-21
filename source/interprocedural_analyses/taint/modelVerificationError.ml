@@ -609,10 +609,10 @@ let to_json ({ kind; path; location } as error) =
 
 exception ModelVerificationErrors of t list
 
-let verify_models_and_dsl errors verify =
+let verify_models_and_dsl ~raise_exception errors =
   if not (List.is_empty errors) then
     (* Exit or log errors, depending on whether models need to be verified. *)
-    if not verify then begin
+    if not raise_exception then begin
       Log.error "Found %d model verification errors!" (List.length errors);
       List.iter errors ~f:(fun error -> Log.error "%s" (display error))
     end
