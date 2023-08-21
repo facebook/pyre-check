@@ -28,9 +28,12 @@ from . import exceptions
 LOG: logging.Logger = logging.getLogger(__name__)
 
 dist_info_in_root: Dict[str, List[str]] = {}
-_site_filter: re.Pattern[str] = re.compile(r".*-([0-99]\.)*dist-info")
 
-_PYCACHE: re.Pattern[str] = re.compile("__pycache__")
+# pyre-fixme[5]: Globally accessible variable `_site_filter` has type `re.Pattern[str]` but no type is specified.
+_site_filter = re.compile(r".*-([0-99]\.)*dist-info")
+
+# pyre-fixme[5]: Globally accessible variable `_PYCACHE` has type `re.Pattern[str]` but no type is specified.
+_PYCACHE = re.compile("__pycache__")
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
