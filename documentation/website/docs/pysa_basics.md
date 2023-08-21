@@ -341,6 +341,7 @@ specific sources and sinks over using the general `@Sanitize`, `-> Sanitize` or
 `: Sanitize` annotations.
 
 ### TITO Sanitizers vs Source/Sink Sanitizers
+
 Source/Sink sanitizers are used to sanitize functions belonging to the source/sink trace. Example
 ```python
 def render_string_safe(string: str):
@@ -374,9 +375,10 @@ Like in the example before this code would generate a Pysa XSS issue. To avoid t
 def sanitize_string(string: Sanitize[TaintInTaintOut[TaintSink[XSS]]]): ...
 ```
 This will instruct pysa to remove the XSS taint from the value returned by the `sanitize_string` when a tainted value is passed as `string` parameter to the `sanitize_string` function.
+
 ## Taint Propagation
 
-Sometimes, Pysa is unable to infer that tainted data provided as an argument to a function will be returned by that function. In such cases, Pysa models can be annotated with `TaintInTaintOut[LocalReturn]` to encode this information for using during the analysis. This annotation can be applied to any parameter, including `self`, and is useful in scenarios such as when retrieving a value from a collection containting tainted data:
+Sometimes, Pysa is unable to infer that tainted data provided as an argument to a function will be returned by that function. In such cases, Pysa models can be annotated with `TaintInTaintOut[LocalReturn]` to encode this information for the analysis. This annotation can be applied to any parameter, including `self`, and is useful in scenarios such as when retrieving a value from a collection containting tainted data:
 
 ```python
 # This tells Pysa that if a 'dict' contains tainted data, the result
@@ -395,7 +397,14 @@ For performance reasons, Pysa does not keep track of when functions place taint 
 def dict.update(self, __m: TaintInTaintOut[Updates[self]]): ...
 ```
 
-Note that [feature annotations](pysa_features.md) may also be placed inside the `[]` blocks of `TaintInTaintOut[...]` annotations.
+Note that **constructors** and **property setters** are treated as if they were returning `self`. This means you should use `LocalReturn` instead of `Updates[self]` when writing models those. For instance:
+```python
+def MyClass.__init__(self, argument: TaintInTaintOut[LocalReturn]): ...
+@foo.setter
+def MyClass.foo(self, value: TaintInTaintOut[LocalReturn]): ...
+```
+
+[Feature annotations](pysa_features.md) may also be placed inside the `[]` blocks of `TaintInTaintOut[...]` annotations.
 
 ## Features
 
