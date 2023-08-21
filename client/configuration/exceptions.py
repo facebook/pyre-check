@@ -18,3 +18,8 @@ class InvalidConfiguration(Exception):
 class InvalidPythonVersion(InvalidConfiguration):
     def __init__(self, message: str) -> None:
         super().__init__(message)
+
+
+class InvalidPackage(ValueError):
+    def __init__(self, pkg_name: str) -> None:
+        super().__init__(f"Invalid package: {pkg_name} does not exist.")

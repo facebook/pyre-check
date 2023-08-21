@@ -250,7 +250,7 @@ class SearchPathTest(testslide.TestCase):
                 required=True,
             )
 
-    def test_toplevel_module_not_pyfile(self):
+    def test_toplevel_module_not_pyfile(self) -> None:
         Path.mkdir(Path("foo"), exist_ok=True)
         Path.mkdir(Path("foo/bar-1.0.0.dist-info"), exist_ok=True)
         Path.touch(Path("foo/bar.so"), exist_ok=True)

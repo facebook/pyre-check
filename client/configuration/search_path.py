@@ -28,9 +28,9 @@ from . import exceptions
 LOG: logging.Logger = logging.getLogger(__name__)
 
 dist_info_in_root: Dict[str, List[str]] = {}
-_site_filter = re.compile(r".*-([0-99]\.)*dist-info")
+_site_filter: re.Pattern[str] = re.compile(r".*-([0-99]\.)*dist-info")
 
-_PYCACHE = re.compile("__pycache__")
+_PYCACHE: re.Pattern[str] = re.compile("__pycache__")
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -78,7 +78,7 @@ class SitePackageElement(Element):
     package_name: str
     is_toplevel_module: bool = False
 
-    def package_path(self) -> Union[str, None]:
+    def package_path(self) -> str:
         if not self.is_toplevel_module:
             return self.package_name
 
@@ -97,10 +97,14 @@ class SitePackageElement(Element):
                 dist_info_path = f"{self.site_root}/{directory}"
                 break
         else:
-            return None
+            raise exceptions.InvalidPackage(self.package_name)
 
-        not_toplevel_patterns: Tuple[re.Pattern] = (this_pkg_filter, _PYCACHE)
+        not_toplevel_patterns: Tuple[re.Pattern[str], re.Pattern[str]] = (
+            this_pkg_filter,
+            _PYCACHE,
+        )
 
+        # pyre-fixme[61]: Local variable `dist_info_path` is undefined, or not always defined.
         with open(file=f"{dist_info_path}/RECORD", mode="r") as record:
             files = []
             for val in [line.split(",") for line in record.readlines()]:
@@ -114,7 +118,7 @@ class SitePackageElement(Element):
                 else:
                     return file
 
-        return None
+        raise exceptions.InvalidPackage(self.package_name)
 
     def path(self) -> str:
         return os.path.join(self.site_root, self.package_path())
