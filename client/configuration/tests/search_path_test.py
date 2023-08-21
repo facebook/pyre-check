@@ -85,9 +85,9 @@ class SearchPathTest(testslide.TestCase):
             "foo$bar",
         )
 
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
-        Path.touch(Path("foo/bar.py"))
+        Path.mkdir(Path("foo"), exist_ok=True)
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"), exist_ok=True)
+        Path.touch(Path("foo/bar.py"), exist_ok=True)
 
         with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
             f.write("bar.py")
@@ -251,9 +251,9 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_toplevel_module_not_pyfile(self):
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
-        Path.touch(Path("foo/bar.so"))
+        Path.mkdir(Path("foo"), exist_ok=True)
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"), exist_ok=True)
+        Path.touch(Path("foo/bar.so"), exist_ok=True)
 
         with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
             f.write("bar.so")
