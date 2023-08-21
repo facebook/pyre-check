@@ -98,3 +98,11 @@ def test_union_c_d(parameter: Union[C, D]) -> None:
 
 def test_type(parameter: Type[A]) -> None:
     pass
+
+
+class Empty:
+    pass
+
+
+def test_empty(parameter: Empty) -> None:
+    pass

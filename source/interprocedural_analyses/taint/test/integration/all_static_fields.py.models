@@ -415,6 +415,18 @@
 {
   "kind": "model",
   "data": {
+    "callable": "all_static_fields.test_empty",
+    "sinks": [
+      {
+        "port": "formal(parameter)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "all_static_fields.test_type",
     "sinks": [
       {
