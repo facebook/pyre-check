@@ -84,6 +84,14 @@ class SearchPathTest(testslide.TestCase):
             SitePackageElement("foo", "bar").command_line_argument(),
             "foo$bar",
         )
+
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
+        Path.touch(Path("foo/bar.py"))
+
+        with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
+            f.write("bar.py")
+
         self.assertEqual(
             SitePackageElement("foo", "bar", True).command_line_argument(),
             "foo$bar.py",
