@@ -266,7 +266,11 @@ let initialize_models
         Log.info "Generating models from model queries...";
         let timer = Timer.start () in
         let verbose = Option.is_some taint_configuration.dump_model_query_results_path in
-        let model_query_results, model_query_errors =
+        let {
+          ModelQueryExecution.ExecutionResult.models = model_query_results;
+          errors = model_query_errors;
+        }
+          =
           ModelQueryExecution.generate_models_from_queries
             ~resolution
             ~scheduler

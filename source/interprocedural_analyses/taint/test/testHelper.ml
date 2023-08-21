@@ -564,7 +564,7 @@ let initialize
              source)
           (List.is_empty errors);
 
-        let model_query_results, errors =
+        let { ModelQueryExecution.ExecutionResult.models = model_query_results; errors } =
           ModelQueryExecution.generate_models_from_queries
             ~resolution:global_resolution
             ~scheduler:(Test.mock_scheduler ())

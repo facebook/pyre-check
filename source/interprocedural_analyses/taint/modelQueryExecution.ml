@@ -276,6 +276,40 @@ module DumpModelQueryResults = struct
     content
 end
 
+module ExecutionResult = struct
+  type t = {
+    models: ModelQueryRegistryMap.t;
+    errors: ModelVerificationError.t list;
+  }
+
+  let empty = { models = ModelQueryRegistryMap.empty; errors = [] }
+
+  let merge
+      ~model_join
+      { models = left_models; errors = left_errors }
+      { models = right_models; errors = right_errors }
+    =
+    {
+      models = ModelQueryRegistryMap.merge ~model_join left_models right_models;
+      errors = List.append left_errors right_errors;
+    }
+
+
+  let add_error { models; errors } error = { models; errors = error :: errors }
+
+  let add_errors { models; errors } new_errors = { models; errors = List.append errors new_errors }
+
+  let add_model { models; errors } ~model_query_identifier ~target ~model =
+    {
+      models =
+        ModelQueryRegistryMap.add
+          models
+          ~model_query_identifier
+          ~registry:(Registry.singleton ~target ~model);
+      errors;
+    }
+end
+
 let sanitized_location_insensitive_compare left right =
   let sanitize_decorator_argument { Expression.Call.Argument.name; value } =
     let new_name =
@@ -999,7 +1033,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       query
     =
-    let fold registry target =
+    let fold (registry, errors) target =
       let modelable = QueryKind.make_modelable ~resolution target in
       match
         generate_model_from_query_on_target
@@ -1012,15 +1046,13 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           ~modelable
           query
       with
-      | Ok (Some model) -> Registry.add registry ~join:Model.join_user_models ~target ~model
-      | Ok None -> registry
-      | Error error ->
-          let () =
-            Log.error "Error while executing model query: %s" (ModelVerificationError.display error)
-          in
-          registry
+      | Ok (Some model) ->
+          let registry = Registry.add registry ~join:Model.join_user_models ~target ~model in
+          registry, errors
+      | Ok None -> registry, errors
+      | Error error -> registry, error :: errors
     in
-    List.fold targets ~init:Registry.empty ~f:fold
+    List.fold targets ~init:(Registry.empty, []) ~f:fold
 
 
   let generate_models_from_queries_on_target
@@ -1033,8 +1065,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       target
     =
     let modelable = QueryKind.make_modelable ~resolution target in
-    let fold model_query_results query =
-      let identifier = ModelQuery.unique_identifier query in
+    let fold results query =
       match
         generate_model_from_query_on_target
           ~verbose
@@ -1047,16 +1078,15 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           query
       with
       | Ok (Some model) ->
-          let registry = Registry.singleton ~target ~model in
-          ModelQueryRegistryMap.add model_query_results ~model_query_identifier:identifier ~registry
-      | Ok None -> model_query_results
-      | Error error ->
-          let () =
-            Log.error "Error while executing model query: %s" (ModelVerificationError.display error)
-          in
-          model_query_results
+          ExecutionResult.add_model
+            results
+            ~model_query_identifier:(ModelQuery.unique_identifier query)
+            ~target
+            ~model
+      | Ok None -> results
+      | Error error -> ExecutionResult.add_error results error
     in
-    List.fold queries ~init:ModelQueryRegistryMap.empty ~f:fold
+    List.fold queries ~init:ExecutionResult.empty ~f:fold
 
 
   let generate_models_from_queries_on_targets
@@ -1068,20 +1098,18 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       queries
     =
-    let fold model_query_results target =
-      let model_query =
-        generate_models_from_queries_on_target
-          ~verbose
-          ~resolution
-          ~class_hierarchy_graph
-          ~source_sink_filter
-          ~stubs
-          ~queries
-          target
-      in
-      ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results model_query
+    let fold results target =
+      generate_models_from_queries_on_target
+        ~verbose
+        ~resolution
+        ~class_hierarchy_graph
+        ~source_sink_filter
+        ~stubs
+        ~queries
+        target
+      |> ExecutionResult.merge ~model_join:Model.join_user_models results
     in
-    List.fold targets ~init:ModelQueryRegistryMap.empty ~f:fold
+    List.fold targets ~init:ExecutionResult.empty ~f:fold
 
 
   let generate_cache_from_query_on_target
@@ -1185,7 +1213,10 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~cache
       read_from_cache_queries
     =
-    let fold model_query_results ({ ModelQuery.name = model_query_name; where; _ } as query) =
+    let fold
+        { ExecutionResult.models; errors }
+        ({ ModelQuery.name = model_query_name; where; _ } as query)
+      =
       match CandidateTargetsFromCache.from_constraint cache (AllOf where) with
       | Top ->
           (* This should never happen, since model verification prevents building invalid
@@ -1196,8 +1227,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             model_query_name
           |> failwith
       | Set candidates ->
-          let identifier = ModelQuery.unique_identifier query in
-          let registry =
+          let registry, new_errors =
             generate_models_from_query_on_targets
               ~verbose
               ~resolution
@@ -1207,9 +1237,16 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
               ~targets:(Target.Set.elements candidates)
               query
           in
-          ModelQueryRegistryMap.add model_query_results ~model_query_identifier:identifier ~registry
+          {
+            ExecutionResult.models =
+              ModelQueryRegistryMap.add
+                models
+                ~model_query_identifier:(ModelQuery.unique_identifier query)
+                ~registry;
+            errors = List.rev_append new_errors errors;
+          }
     in
-    List.fold read_from_cache_queries ~init:ModelQueryRegistryMap.empty ~f:fold
+    List.fold read_from_cache_queries ~init:ExecutionResult.empty ~f:fold
 
 
   (* Generate models from non-cache queries. *)
@@ -1222,7 +1259,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~stubs
       ~targets
     = function
-    | [] -> ModelQueryRegistryMap.empty
+    | [] -> ExecutionResult.empty
     | regular_queries ->
         let map targets =
           generate_models_from_queries_on_targets
@@ -1234,7 +1271,6 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
             ~targets
             regular_queries
         in
-        let reduce = ModelQueryRegistryMap.merge ~model_join:Model.join_user_models in
         Scheduler.map_reduce
           scheduler
           ~policy:
@@ -1243,9 +1279,9 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
                ~minimum_chunk_size:1000
                ~preferred_chunks_per_worker:1
                ())
-          ~initial:ModelQueryRegistryMap.empty
+          ~initial:ExecutionResult.empty
           ~map
-          ~reduce
+          ~reduce:(ExecutionResult.merge ~model_join:Model.join_user_models)
           ~inputs:targets
           ()
 
@@ -1291,7 +1327,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           (List.length read_from_cache_queries)
           QueryKind.query_kind_name
       in
-      let results =
+      let ({ ExecutionResult.models; _ } as results) =
         generate_models_from_read_cache_queries_on_targets
           ~verbose
           ~resolution
@@ -1304,7 +1340,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let () =
         Log.info
           "Generated %d models from cached %s model queries."
-          (List.length (ModelQueryRegistryMap.get_models results))
+          (List.length (ModelQueryRegistryMap.get_models models))
           QueryKind.query_kind_name
       in
       results
@@ -1317,7 +1353,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           (List.length regular_queries)
           QueryKind.query_kind_name
       in
-      let results =
+      let ({ ExecutionResult.models; _ } as results) =
         generate_models_from_regular_queries_on_targets_with_multiprocessing
           ~verbose
           ~resolution
@@ -1331,13 +1367,13 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let () =
         Log.info
           "Generated %d models from regular %s model queries."
-          (List.length (ModelQueryRegistryMap.get_models results))
+          (List.length (ModelQueryRegistryMap.get_models models))
           QueryKind.query_kind_name
       in
       results
     in
 
-    ModelQueryRegistryMap.merge
+    ExecutionResult.merge
       ~model_join:Model.join_user_models
       model_query_results_regular_queries
       model_query_results_cache_queries
@@ -1802,7 +1838,7 @@ let generate_models_from_queries
   in
 
   (* Generate models for functions and methods. *)
-  let model_query_results =
+  let execution_result =
     if not (List.is_empty callable_queries) then
       CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
@@ -1814,11 +1850,11 @@ let generate_models_from_queries
         ~targets:definitions_and_stubs
         callable_queries
     else
-      ModelQueryRegistryMap.empty
+      ExecutionResult.empty
   in
 
   (* Generate models for attributes. *)
-  let model_query_results =
+  let execution_result =
     if not (List.is_empty attribute_queries) then
       let attributes = AttributeQueryExecutor.get_attributes ~resolution in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
@@ -1830,13 +1866,13 @@ let generate_models_from_queries
         ~stubs
         ~targets:attributes
         attribute_queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
+      |> ExecutionResult.merge ~model_join:Model.join_user_models execution_result
     else
-      model_query_results
+      execution_result
   in
 
   (* Generate models for globals. *)
-  let model_query_results =
+  let execution_result =
     if not (List.is_empty global_queries) then
       let globals = GlobalVariableQueryExecutor.get_globals ~resolution in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
@@ -1848,17 +1884,20 @@ let generate_models_from_queries
         ~stubs
         ~targets:globals
         global_queries
-      |> ModelQueryRegistryMap.merge ~model_join:Model.join_user_models model_query_results
+      |> ExecutionResult.merge ~model_join:Model.join_user_models execution_result
     else
-      model_query_results
+      execution_result
   in
 
-  let errors =
-    List.rev_append
-      (ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
-         ~model_query_results
-         ~queries)
-      (ModelQueryRegistryMap.check_errors ~model_query_results ~queries)
+  let { ExecutionResult.models; _ } = execution_result in
+  let execution_result =
+    ModelQueryRegistryMap.check_expected_and_unexpected_model_errors
+      ~model_query_results:models
+      ~queries
+    |> ExecutionResult.add_errors execution_result
   in
-
-  model_query_results, errors
+  let execution_result =
+    ModelQueryRegistryMap.check_errors ~model_query_results:models ~queries
+    |> ExecutionResult.add_errors execution_result
+  in
+  execution_result

@@ -38,6 +38,26 @@ module DumpModelQueryResults : sig
     string
 end
 
+module ExecutionResult : sig
+  type t = {
+    models: ModelQueryRegistryMap.t;
+    errors: ModelVerificationError.t list;
+  }
+
+  val empty : t
+
+  val merge : model_join:(Model.t -> Model.t -> Model.t) -> t -> t -> t
+
+  val add_error : t -> ModelVerificationError.t -> t
+
+  val add_model
+    :  t ->
+    model_query_identifier:string ->
+    target:Interprocedural.Target.t ->
+    model:Model.t ->
+    t
+end
+
 module PartitionCacheQueries : sig
   type t = {
     write_to_cache: ModelParseResult.ModelQuery.t list;
@@ -161,4 +181,4 @@ val generate_models_from_queries
   definitions_and_stubs:Interprocedural.Target.t list ->
   stubs:Interprocedural.Target.t Base.Hash_set.t ->
   ModelParseResult.ModelQuery.t list ->
-  ModelQueryRegistryMap.t * ModelVerificationError.t list
+  ExecutionResult.t

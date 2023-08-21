@@ -828,7 +828,13 @@ let rec process_request ~type_environment ~build_system request =
                          query_name
                          (PyrePath.show path))
                   else
-                    let models_and_names, errors = setup_and_execute_model_queries rules in
+                    let {
+                      Taint.ModelQueryExecution.ExecutionResult.models = models_and_names;
+                      errors;
+                    }
+                      =
+                      setup_and_execute_model_queries rules
+                    in
                     let to_taint_model (callable, model) =
                       {
                         Base.callable = Interprocedural.Target.external_name callable;
@@ -1026,7 +1032,8 @@ let rec process_request ~type_environment ~build_system request =
         in
         let model_query_errors =
           if verify_dsl then
-            setup_and_execute_model_queries model_queries |> snd
+            setup_and_execute_model_queries model_queries
+            |> fun { Taint.ModelQueryExecution.ExecutionResult.errors; _ } -> errors
           else
             []
         in
