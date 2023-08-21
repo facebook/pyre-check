@@ -249,3 +249,13 @@ class SearchPathTest(testslide.TestCase):
                 site_roots=[],
                 required=True,
             )
+
+    def test_toplevel_module_not_pyfile(self):
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
+        Path.touch(Path("foo/bar.so"))
+
+        with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
+            f.write("bar.so")
+
+        self.assertEqual(SitePackageElement("foo", "bar", True).path(), "foo/bar.so")
