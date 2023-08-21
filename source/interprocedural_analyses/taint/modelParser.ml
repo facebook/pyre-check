@@ -388,13 +388,8 @@ let rec parse_annotations
         | Some "ParameterPath" ->
             parse_access_path ~path ~location argument
             >>| TaintKindsWithFeatures.from_parameter_path
-        | Some "ReturnPath" -> (
-            parse_access_path ~path ~location argument
-            >>= function
-            | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_return_path path)
-            | TaintPath.AllStaticFields ->
-                Error
-                  (annotation_error "`all_static_fields()` is not allowed within `ReturnPath[]`"))
+        | Some "ReturnPath" ->
+            parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
         | Some "UpdatePath" -> (
             parse_access_path ~path ~location argument
             >>= function
@@ -984,13 +979,15 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
     in
     match features with
     | {
-     TaintFeatures.return_path = Some return_path;
+     TaintFeatures.return_path = Some (TaintPath.Regular return_path);
      applies_to = None;
      parameter_path = None;
      update_path = None;
      _;
     } ->
         Ok [return_path]
+    | { TaintFeatures.return_path = Some TaintPath.AllStaticFields; _ } ->
+        Ok (all_static_field_paths ())
     | { parameter_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ParameterPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -1154,7 +1151,11 @@ let introduce_taint_in_taint_out
   let output_path =
     match Sinks.discard_transforms taint_sink_kind, features with
     | _, { return_path = None; update_path = None; _ } -> Ok []
-    | Sinks.LocalReturn, { return_path = Some return_path; update_path = None; _ } -> Ok return_path
+    | ( Sinks.LocalReturn,
+        { return_path = Some (TaintPath.Regular return_path); update_path = None; _ } ) ->
+        Ok return_path
+    | Sinks.LocalReturn, { return_path = Some TaintPath.AllStaticFields; _ } ->
+        Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`"
     | Sinks.LocalReturn, { update_path = Some _; return_path = None; _ } ->
         Error "Invalid UpdatePath annotation for TaintInTaintOut annotation"
     | Sinks.ParameterUpdate _, { return_path = Some _; update_path = None; _ } ->

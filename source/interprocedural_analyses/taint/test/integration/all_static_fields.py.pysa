@@ -2,10 +2,19 @@ def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
 def _test_source() -> TaintSource[Test, Via[special_source]]: ...
 
 ModelQuery(
-  name = "all_parameter_fields",
+  name = "all_parameter_fields_sinks",
   find = "functions",
   where = [fully_qualified_name.matches("^all_static_fields\.parameter_sink_.*$")],
   model = [
     Parameters(TaintSink[Test, ParameterPath[_.all_static_fields()]])
+  ]
+)
+
+ModelQuery(
+  name = "all_return_fields_sources",
+  find = "functions",
+  where = [fully_qualified_name.matches("^all_static_fields\.return_source_.*$")],
+  model = [
+    Returns(TaintSource[Test, ReturnPath[_.all_static_fields()]])
   ]
 )

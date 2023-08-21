@@ -703,6 +703,11 @@ let test_source_models context =
           "test.foo";
       ]
     ();
+  assert_model
+    ~source:"def f(x: int): ..."
+    ~model_source:"def test.f(x) -> TaintSource[Test, ReturnPath[_.all_static_fields()]]: ..."
+    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ();
   ()
 
 
@@ -3882,12 +3887,6 @@ let test_invalid_models context =
     ~expect:"Invalid model for `test.taint`: Invalid ReturnPath annotation for Updates annotation"
     ();
   assert_invalid_model
-    ~model_source:"def test.taint() -> TaintSource[Test, ReturnPath[_.all_static_fields()]]: ..."
-    ~expect:
-      "`TaintSource[(Test, ReturnPath[_.all_static_fields()])]` is an invalid taint annotation: \
-       `all_static_fields()` is not allowed within `ReturnPath[]`"
-    ();
-  assert_invalid_model
     ~model_source:"def test.taint(x: TaintInTaintOut[UpdatePath[_.all_static_fields()]]): ..."
     ~expect:
       "`TaintInTaintOut[UpdatePath[_.all_static_fields()]]` is an invalid taint annotation: \
@@ -3895,6 +3894,12 @@ let test_invalid_models context =
     ();
   assert_invalid_model
     ~model_source:"def test.taint(x: TaintInTaintOut[ParameterPath[_.all_static_fields()]]): ..."
+    ~expect:
+      "Invalid model for `test.taint`: `all_static_fields()` is not allowed within \
+       `TaintInTaintOut[]`"
+    ();
+  assert_invalid_model
+    ~model_source:"def test.taint(x: TaintInTaintOut[ReturnPath[_.all_static_fields()]]): ..."
     ~expect:
       "Invalid model for `test.taint`: `all_static_fields()` is not allowed within \
        `TaintInTaintOut[]`"

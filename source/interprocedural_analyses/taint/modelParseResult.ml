@@ -59,7 +59,7 @@ module TaintFeatures = struct
     via_features: Features.ViaFeature.t list;
     applies_to: AccessPath.Path.t option;
     parameter_path: TaintPath.t option;
-    return_path: AccessPath.Path.t option;
+    return_path: TaintPath.t option;
     update_path: AccessPath.Path.t option;
     leaf_names: Features.LeafName.t list;
     leaf_name_provided: bool;
@@ -165,7 +165,7 @@ module TaintFeatures = struct
     features
     |> add_path_option ~name:"AppliesTo" applies_to
     |> add_option ~name:"ParameterPath" ~pp:TaintPath.pp parameter_path
-    |> add_path_option ~name:"ReturnPath" return_path
+    |> add_option ~name:"ReturnPath" ~pp:TaintPath.pp return_path
     |> add_path_option ~name:"UpdatePath" update_path
     |> add_option ~name:"TraceLength" ~pp:Int.pp trace_length
     |> add_collapse_depth

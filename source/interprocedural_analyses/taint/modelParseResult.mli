@@ -39,7 +39,7 @@ module TaintFeatures : sig
     via_features: Features.ViaFeature.t list;
     applies_to: AccessPath.Path.t option;
     parameter_path: TaintPath.t option;
-    return_path: AccessPath.Path.t option;
+    return_path: TaintPath.t option;
     update_path: AccessPath.Path.t option;
     leaf_names: Features.LeafName.t list;
     leaf_name_provided: bool;
@@ -77,7 +77,7 @@ module TaintKindsWithFeatures : sig
 
   val from_parameter_path : TaintPath.t -> t
 
-  val from_return_path : AccessPath.Path.t -> t
+  val from_return_path : TaintPath.t -> t
 
   val from_update_path : AccessPath.Path.t -> t
 

@@ -111,7 +111,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 73, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 107, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -122,7 +122,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 73, "start": 8, "end": 15 } ],
+            "tito_positions": [ { "line": 107, "start": 8, "end": 15 } ],
             "tito": null
           }
         ]
@@ -165,7 +165,7 @@
               { "always-type": "scalar" },
               { "always-via": "tito" }
             ],
-            "tito_positions": [ { "line": 81, "start": 25, "end": 26 } ],
+            "tito_positions": [ { "line": 115, "start": 25, "end": 26 } ],
             "tito": null
           }
         ]
@@ -176,7 +176,7 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [ { "via": "tito" } ],
-            "tito_positions": [ { "line": 81, "start": 8, "end": 15 } ],
+            "tito_positions": [ { "line": 115, "start": 8, "end": 15 } ],
             "tito": null
           }
         ]
@@ -207,6 +207,23 @@
             "kinds": [
               { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
             ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.Empty.__init__",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": null
           }
         ]
@@ -487,6 +504,230 @@
     "sinks": [
       {
         "port": "formal(x)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_b",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_builtin_int",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_builtin_list",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_c",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_d",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_dataclass",
+    "sources": [
+      {
+        "port": "result[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_empty",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_optional_dataclass",
+    "sources": [
+      {
+        "port": "result[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_optional_regular_class",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_regular_class",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_type",
+    "sources": [
+      {
+        "port": "result[__name__]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_union_c_d",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_union_dataclass_regular",
+    "sources": [
+      {
+        "port": "result[a]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[b]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[c]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[d]",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "all_static_fields.return_source_unnannotated",
+    "sources": [
+      {
+        "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
