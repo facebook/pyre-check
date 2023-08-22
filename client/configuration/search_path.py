@@ -33,7 +33,7 @@ dist_info_in_root: Dict[str, List[str]] = {}
 _site_filter = re.compile(r".*-([0-99]\.)*dist-info")
 
 # pyre-fixme[5]: Globally accessible variable `_PYCACHE` has type `re.Pattern[str]` but no type is specified.
-_PYCACHE = re.compile("__pycache__")
+_PYCACHE = re.compile("__pycache__(/)*.*")
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
@@ -86,7 +86,7 @@ class SitePackageElement(Element):
             return self.package_name
 
         this_pkg_filter = re.compile(
-            r"{}-([0-99]\.)*dist-info".format(self.package_name)
+            r"{}-([0-99]\.)*dist-info(/)*.*".format(self.package_name)
         )
 
         if self.site_root not in dist_info_in_root:
