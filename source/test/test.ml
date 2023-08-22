@@ -140,7 +140,7 @@ let parse_single_statement ?(preprocess = false) ?(coerce_special_methods = fals
 
 let parse_last_statement source =
   match parse source with
-  | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
+  | { Source.statements; _ } when not (List.is_empty statements) -> List.last_exn statements
   | _ -> failwith "Could not parse last statement"
 
 

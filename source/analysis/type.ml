@@ -1058,9 +1058,9 @@ end = struct
     let sep = "" in
     let concat_list = String.concat ~sep list_variables in
     let prefix =
-      if constant_factor = 1 && List.length list_variables > 0 then
+      if constant_factor = 1 && not (List.is_empty list_variables) then
         ""
-      else if constant_factor = -1 && List.length list_variables > 0 then
+      else if constant_factor = -1 && not (List.is_empty list_variables) then
         "-"
       else
         string_of_int constant_factor ^ sep
@@ -1074,9 +1074,9 @@ end = struct
       { constant_factor = right_factor; variables = right_variables }
     =
     let multiply_variables left_variables right_variables =
-      if List.length left_variables = 0 then
+      if List.is_empty left_variables then
         right_variables
-      else if List.length right_variables = 0 then
+      else if List.is_empty right_variables then
         left_variables
       else
         let merge_common left_variables right_variables =
@@ -1546,7 +1546,7 @@ end = struct
 
   let apply_over_types ~operation ?(divide = false) left right =
     let checked_division left right =
-      if List.length right = 0 then
+      if List.is_empty right then
         Bottom
       else
         create (Polynomial.divide left right ~compare_t:T.compare)
@@ -1785,7 +1785,7 @@ let local_replace_polynomial polynomial ~replace_variable ~replace_recursive =
     | Monomial.Operation (Product _) -> None
   in
   let replacements = collect polynomial |> List.filter_map ~f:replacement_pair in
-  if List.length replacements = 0 then
+  if List.is_empty replacements then
     None
   else
     let merge_replace left (variable, right) =

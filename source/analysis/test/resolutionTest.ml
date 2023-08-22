@@ -542,7 +542,7 @@ let test_fallback_attribute context =
           qualifier
       in
       let last_statement_exn = function
-        | { Source.statements; _ } when List.length statements > 0 -> List.last_exn statements
+        | { Source.statements; _ } when not (List.is_empty statements) -> List.last_exn statements
         | _ -> failwith "Could not parse last statement"
       in
 

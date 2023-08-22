@@ -2680,7 +2680,7 @@ class base class_metadata_environment dependency =
                   |> List.filter_map ~f:(fun variable ->
                          invalid_generic_int (Type.Variable variable))
                 in
-                if List.length errors > 0 then
+                if not (List.is_empty errors) then
                   Any, errors @ sofar
                 else
                   annotation, sofar
