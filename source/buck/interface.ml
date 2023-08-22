@@ -126,8 +126,6 @@ module V1 = struct
           [
             (* Force `buck` to hand back structured JSON output instead of plain text. *)
             ["--json"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
             [
               (* Build all python-related rules. *)
               "kind(\"python_binary|python_library|python_test\", %s)"
@@ -171,7 +169,6 @@ module V1 = struct
             List.concat
               [
                 ["--json"];
-                ["--config"; "client.id=pyre"];
                 [
                   (* This will get only those owner targets that are beneath our targets or the
                      dependencies of our targets. *)
@@ -194,8 +191,6 @@ module V1 = struct
           [
             (* Force `buck` to hand back structured JSON output instead of plain text. *)
             ["--show-full-json-output"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
             List.map targets ~f:(fun target ->
                 Stdlib.Format.sprintf "%s%s" (BuckTarget.show target) source_database_suffix);
           ]
@@ -534,8 +529,6 @@ module V2 = struct
             [bxl_builder];
             (* Force `buck` to opt-out fancy tui logging. *)
             ["--console=simple"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
             ["--"];
             List.bind target_patterns ~f:(fun target ->
                 ["--target"; Stdlib.Format.sprintf "%s" target]);
@@ -640,8 +633,6 @@ module Lazy = struct
             [bxl_builder];
             (* Force `buck` to opt-out fancy tui logging. *)
             ["--console=simple"];
-            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
             ["--"];
             List.bind target_patterns ~f:(fun source_path -> ["--source"; source_path]);
           ]

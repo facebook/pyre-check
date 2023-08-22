@@ -155,6 +155,8 @@ module V1 = struct
             isolation_prefix_to_buck_arguments isolation_prefix;
             [command];
             mode_to_buck_arguments mode;
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
           ]
       in
       let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
@@ -229,6 +231,8 @@ module V2 = struct
             isolation_prefix_to_buck_arguments isolation_prefix;
             [command];
             mode_to_buck_arguments mode;
+            (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
+            ["--config"; "client.id=pyre"];
           ]
       in
       let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
