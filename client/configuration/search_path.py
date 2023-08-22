@@ -44,11 +44,11 @@ def _expand_relative_root(path: str, relative_root: str) -> str:
 
 class Element(abc.ABC):
     @abc.abstractmethod
-    def path(self) -> str:
+    def path(self) -> Union[str, None]:
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def command_line_argument(self) -> str:
+    def command_line_argument(self) -> Union[str, None]:
         raise NotImplementedError()
 
 
@@ -81,9 +81,11 @@ class SitePackageElement(Element):
     package_name: str
     is_toplevel_module: bool = False
 
-    def package_path(self) -> str:
+    def package_path(self) -> Union[str, None]:
         if not self.is_toplevel_module:
-            return self.package_name
+            if os.path.exists(f"{self.site_root}/{self.package_name}"):
+                return self.package_name
+            return None
 
         this_pkg_filter = re.compile(
             r"{}-([0-99]\.)*dist-info(/)*.*".format(self.package_name)
@@ -100,7 +102,7 @@ class SitePackageElement(Element):
                 dist_info_path = f"{self.site_root}/{directory}"
                 break
         else:
-            raise exceptions.InvalidPackage(self.package_name)
+            return None
 
         not_toplevel_patterns: Tuple[re.Pattern[str], re.Pattern[str]] = (
             this_pkg_filter,
@@ -109,25 +111,27 @@ class SitePackageElement(Element):
 
         # pyre-fixme[61]: Local variable `dist_info_path` is undefined, or not always defined.
         with open(file=f"{dist_info_path}/RECORD", mode="r") as record:
-            files = []
-            for val in [line.split(",") for line in record.readlines()]:
-                files.append(*val)
-            for file in files:
-                if not file:
-                    continue
+            for line in record.readlines():
+                file_name = line.split(",")[0]
                 for pattern in not_toplevel_patterns:
-                    if pattern.fullmatch(file) is not None:
+                    if pattern.fullmatch(file_name):
                         break
                 else:
-                    return file
+                    return file_name
 
-        raise exceptions.InvalidPackage(self.package_name)
+        return None
 
-    def path(self) -> str:
-        return os.path.join(self.site_root, self.package_path())
+    def path(self) -> Union[str, None]:
+        excepted_package_path: Union[str, None] = self.package_path()
+        if excepted_package_path is None:
+            return None
+        return os.path.join(self.site_root, excepted_package_path)
 
-    def command_line_argument(self) -> str:
-        return self.site_root + "$" + self.package_path()
+    def command_line_argument(self) -> Union[str, None]:
+        excepted_package_path: Union[str, None] = self.package_path()
+        if excepted_package_path is None:
+            return None
+        return self.site_root + "$" + excepted_package_path
 
 
 class RawElement(abc.ABC):
@@ -270,7 +274,10 @@ def process_raw_elements(
     elements: List[Element] = []
 
     def add_if_exists(element: Element) -> bool:
-        if os.path.exists(element.path()):
+        excepted_path = element.path()
+        if excepted_path is None:
+            return False
+        if os.path.exists(excepted_path):
             elements.append(element)
             return True
         return False

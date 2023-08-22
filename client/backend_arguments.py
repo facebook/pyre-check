@@ -69,7 +69,14 @@ class SimpleSourcePath:
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
-        return {element.path() for element in self.elements}
+        paths = set()
+
+        for element in self.elements:
+            excepted_path = element.path()
+            if excepted_path is not None:
+                paths.add(excepted_path)
+
+        return paths
 
     def cleanup(self) -> None:
         pass
@@ -98,7 +105,14 @@ class WithUnwatchedDependencySourcePath:
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
-        return {element.path() for element in self.elements}
+        paths = set()
+
+        for element in self.elements:
+            excepted_path = element.path()
+            if excepted_path is not None:
+                paths.add(excepted_path)
+
+        return paths
 
     def cleanup(self) -> None:
         pass

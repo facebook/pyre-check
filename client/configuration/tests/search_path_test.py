@@ -71,20 +71,32 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_path(self) -> None:
-        self.assertEqual(SimpleElement("foo").path(), "foo")
-        self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
-        self.assertEqual(SitePackageElement("foo", "bar").path(), "foo/bar")
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar"))
+
+        try:
+            self.assertEqual(SimpleElement("foo").path(), "foo")
+            self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
+            self.assertEqual(SitePackageElement("foo", "bar").path(), "foo/bar")
+        finally:
+            shutil.rmtree("foo")
 
     def test_command_line_argument(self) -> None:
-        self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
-        self.assertEqual(
-            SubdirectoryElement("foo", "bar").command_line_argument(),
-            "foo$bar",
-        )
-        self.assertEqual(
-            SitePackageElement("foo", "bar").command_line_argument(),
-            "foo$bar",
-        )
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar"))
+
+        try:
+            self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
+            self.assertEqual(
+                SubdirectoryElement("foo", "bar").command_line_argument(),
+                "foo$bar",
+            )
+            self.assertEqual(
+                SitePackageElement("foo", "bar").command_line_argument(),
+                "foo$bar",
+            )
+        finally:
+            shutil.rmtree("foo")
 
         Path.mkdir(Path("foo"))
         Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
