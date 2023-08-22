@@ -5,7 +5,12 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* The no-daemon query module contains logic for the ability to query pyre without spinning up a
+   long-lasting pyre daemon. This is for use cases that only require a single query: it is less
+   crash-prone and does not leave a process around afterwards.
+
+   These queries do not output to the normal daemon logs, instead redirect all output to stdout and
+   terminate when the job is done. *)
 
 open Core
 
