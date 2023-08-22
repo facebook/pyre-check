@@ -232,7 +232,7 @@ module V2 = struct
             [command];
             mode_to_buck_arguments mode;
             (* Mark the query as coming from `pyre` for `buck`, to make troubleshooting easier. *)
-            ["--config"; "client.id=pyre"];
+            ["--client-metadata"; "id=pyre"];
           ]
       in
       let expanded_buck_arguments = List.append common_buck_arguments user_supplied_arguments in
