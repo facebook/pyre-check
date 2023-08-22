@@ -2679,6 +2679,36 @@ let test_global_leaks context =
              |> fun json -> `List [`String "Query"; json] |> Yojson.Safe.to_string )))
 
 
+let test_process_request context =
+  let assert_process_request ~request ?(build_system = BuildSystem.create_for_testing ()) expected =
+    let type_environment =
+      let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
+        Test.ScratchProject.setup ~context ["test.py", ""]
+        |> Test.ScratchProject.build_type_environment
+      in
+      type_environment
+    in
+    let result = Query.process_request ~type_environment ~build_system request in
+    assert_equal
+      ~ctxt:context
+      ~printer:(fun x -> Yojson.Safe.to_string (Query.Response.to_yojson x))
+      expected
+      result
+  in
+
+  assert_process_request
+    ~request:
+      (Query.Request.Type
+         (Expression.Expression.Constant Expression.Constant.True
+         |> Node.create_with_default_location))
+    (Query.Response.Single (Query.Response.Base.Type (Type.Literal (Type.Boolean true))));
+  assert_process_request
+    ~request:(Query.Request.TypesInFiles ["test.py"])
+    ~build_system:
+      (BuildSystem.create_for_testing ~lookup_artifact:(fun _ -> failwith "injected exception") ())
+    (Query.Response.Error "(Failure \"injected exception\")")
+
+
 let () =
   "query"
   >::: [
@@ -2693,5 +2723,6 @@ let () =
          "expression_level_coverage" >:: OUnitLwt.lwt_wrapper test_expression_level_coverage;
          "dump_call_graph" >:: OUnitLwt.lwt_wrapper test_dump_call_graph;
          "global_leaks" >:: OUnitLwt.lwt_wrapper test_global_leaks;
+         "process_request" >:: test_process_request;
        ]
   |> Test.run
