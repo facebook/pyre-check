@@ -3,6 +3,7 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+import shutil
 import tempfile
 from pathlib import Path
 
@@ -85,17 +86,20 @@ class SearchPathTest(testslide.TestCase):
             "foo$bar",
         )
 
-        Path.mkdir(Path("foo"), exist_ok=True)
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"), exist_ok=True)
-        Path.touch(Path("foo/bar.py"), exist_ok=True)
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
+        Path.touch(Path("foo/bar.py"))
 
         with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
             f.write("bar.py")
 
-        self.assertEqual(
-            SitePackageElement("foo", "bar", True).command_line_argument(),
-            "foo$bar.py",
-        )
+        try:
+            self.assertEqual(
+                SitePackageElement("foo", "bar", True).command_line_argument(),
+                "foo$bar.py",
+            )
+        finally:
+            shutil.rmtree("foo")
 
     def test_expand_global_root(self) -> None:
         self.assertEqual(
@@ -251,11 +255,16 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_toplevel_module_not_pyfile(self) -> None:
-        Path.mkdir(Path("foo"), exist_ok=True)
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"), exist_ok=True)
-        Path.touch(Path("foo/bar.so"), exist_ok=True)
+        Path.mkdir(Path("foo"))
+        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
+        Path.touch(Path("foo/bar.so"))
 
         with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
             f.write("bar.so")
 
-        self.assertEqual(SitePackageElement("foo", "bar", True).path(), "foo/bar.so")
+        try:
+            self.assertEqual(
+                SitePackageElement("foo", "bar", True).path(), "foo/bar.so"
+            )
+        finally:
+            shutil.rmtree("foo")
