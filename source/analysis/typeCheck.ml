@@ -2038,10 +2038,10 @@ module State (Context : Context) = struct
         in
         (* Resolve `super()` calls. *)
         let superclass { ClassMetadataEnvironment.successors; extends_placeholder_stub_class; _ } =
-          if extends_placeholder_stub_class then
-            None
-          else
-            List.find successors ~f:(GlobalResolution.class_exists global_resolution)
+          match successors with
+          | Some successors when not extends_placeholder_stub_class ->
+              List.find successors ~f:(GlobalResolution.class_exists global_resolution)
+          | _ -> None
         in
         match metadata >>= superclass with
         | Some superclass ->

@@ -8,7 +8,7 @@
 open SharedMemoryKeys
 
 type class_metadata = {
-  successors: Type.Primitive.t list;
+  successors: Type.Primitive.t list option;
   is_test: bool;
   is_final: bool;
   extends_placeholder_stub_class: bool;

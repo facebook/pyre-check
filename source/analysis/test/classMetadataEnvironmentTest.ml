@@ -37,7 +37,7 @@ let test_simple_registration context =
     "test.C"
     (Some
        {
-         successors = ["object"];
+         successors = Some ["object"];
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
@@ -55,7 +55,7 @@ let test_simple_registration context =
     "test.C"
     (Some
        {
-         successors = ["test.D"; "object"];
+         successors = Some ["test.D"; "object"];
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
@@ -71,7 +71,7 @@ let test_simple_registration context =
     "test.C"
     (Some
        {
-         successors = ["object"];
+         successors = Some ["object"];
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
@@ -87,7 +87,7 @@ let test_simple_registration context =
     "test.C"
     (Some
        {
-         successors = ["object"];
+         successors = Some ["object"];
          is_test = false;
          is_final = false;
          extends_placeholder_stub_class = false;
@@ -104,7 +104,7 @@ let test_simple_registration context =
     "unittest.TestCase"
     (Some
        {
-         successors = ["object"];
+         successors = Some ["object"];
          is_test = true;
          is_final = false;
          extends_placeholder_stub_class = false;
@@ -190,7 +190,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -206,7 +206,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -233,7 +233,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -249,7 +249,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["test.D"; "object"];
+              successors = Some ["test.D"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -289,7 +289,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = true;
@@ -305,7 +305,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["placeholder.Base"; "object"];
+              successors = Some ["placeholder.Base"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -345,7 +345,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -357,7 +357,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["test.C"; "object"];
+              successors = Some ["test.C"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -369,7 +369,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["test.A"; "object"];
+              successors = Some ["test.A"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -381,7 +381,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["test.D"; "test.C"; "test.A"; "object"];
+              successors = Some ["test.D"; "test.C"; "test.A"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -393,7 +393,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["test.B"; "test.A"; "object"];
+              successors = Some ["test.B"; "test.A"; "object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = true;
@@ -421,7 +421,7 @@ let test_updates context =
           dependency,
           Some
             {
-              successors = ["object"];
+              successors = Some ["object"];
               is_test = false;
               is_final = false;
               extends_placeholder_stub_class = false;
@@ -440,9 +440,9 @@ let assert_overlay_parents ~context ~overlay ~qualified_class_name expected_succ
       (ClassMetadataEnvironment.Overlay.read_only overlay)
       qualified_class_name
   with
-  | None -> failwith ("Failed to look up " ^ qualified_class_name)
-  | Some { ClassMetadataEnvironment.successors; _ } ->
+  | Some { ClassMetadataEnvironment.successors = Some successors; _ } ->
       assert_equal ~ctxt:context ~printer:[%show: Identifier.t list] expected_successors successors
+  | _ -> failwith ("Failed to look up " ^ qualified_class_name)
 
 
 let assert_overlay_state ~context ~overlay qualified_class_name_successors_pairs =

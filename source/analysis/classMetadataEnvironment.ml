@@ -23,7 +23,10 @@ open Pyre
 module PreviousEnvironment = ClassHierarchyEnvironment
 
 type class_metadata = {
-  successors: Type.Primitive.t list;
+  (* `None` means successor computation for the given class failed (due to, e.g. inconsistent MRO).
+     TODO: Decide how `successors = None` would interact with other flags. Should we auto-derive
+     some of them based on the value of `successors`? *)
+  successors: Type.Primitive.t list option;
   is_test: bool;
   is_final: bool;
   extends_placeholder_stub_class: bool;
@@ -60,19 +63,17 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
           ~get_successors:(ClassHierarchy.parents_of (module Handler))
           annotation
       with
-      | Result.Ok (_ :: successors) -> successors
-      | Result.Ok [] -> []
-      | Result.Error error ->
-          let message =
-            ClassHierarchy.MethodResolutionOrderError.sexp_of_t error |> Sexp.to_string_hum
-          in
-          failwith message
+      | Result.Ok (_ :: successors) -> Some successors
+      | Result.Ok [] -> Some []
+      | Result.Error _ -> None
     in
     let successors = successors class_name in
     let is_final =
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
-    let in_test = List.exists ~f:Type.Primitive.is_unit_test (class_name :: successors) in
+    let in_test =
+      List.exists ~f:Type.Primitive.is_unit_test (class_name :: Option.value successors ~default:[])
+    in
     let extends_placeholder_stub_class =
       let empty_stub_environment =
         AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
@@ -157,9 +158,9 @@ module ReadOnly = struct
   let class_hierarchy_environment = upstream_environment
 
   let successors read_only ?dependency class_name =
-    get_class_metadata read_only ?dependency class_name
-    >>| (fun { successors; _ } -> successors)
-    |> Option.value ~default:[]
+    match get_class_metadata read_only ?dependency class_name with
+    | Some { successors = Some successors; _ } -> successors
+    | _ -> []
 end
 
 module MetadataReadOnly = ReadOnly

@@ -926,9 +926,9 @@ let get_class_attributes ~resolution = function
 
 let get_class_attributes_transitive ~resolution class_name =
   let successors =
-    GlobalResolution.class_metadata resolution class_name
-    >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
-    |> Option.value ~default:[]
+    match GlobalResolution.class_metadata resolution class_name with
+    | Some { ClassMetadataEnvironment.successors = Some successors; _ } -> successors
+    | _ -> []
   in
   class_name :: successors |> List.filter_map ~f:(get_class_attributes ~resolution) |> List.concat
 

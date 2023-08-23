@@ -1632,9 +1632,13 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
             (* Access on an instance, i.e `self.foo`. *)
             let parents =
               let successors =
-                GlobalResolution.class_metadata (Resolution.global_resolution resolution) class_name
-                >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
-                |> Option.value ~default:[]
+                match
+                  GlobalResolution.class_metadata
+                    (Resolution.global_resolution resolution)
+                    class_name
+                with
+                | Some { ClassMetadataEnvironment.successors = Some successors; _ } -> successors
+                | _ -> []
               in
               class_name :: successors
             in

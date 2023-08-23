@@ -3111,7 +3111,7 @@ class base class_metadata_environment dependency =
             ?dependency
             class_name )
       with
-      | Some definition, Some { is_typed_dictionary; is_test = in_test; _ } ->
+      | Some definition, Some { is_typed_dictionary; is_test = in_test; successors = Some _; _ } ->
           let is_declarative_sqlalchemy_class () =
             Option.equal
               Type.equal
@@ -3162,7 +3162,7 @@ class base class_metadata_environment dependency =
             if accessed_through_class && special_method then
               []
             else if transitive then
-              class_name :: successors
+              class_name :: Option.value successors ~default:[]
             else
               [class_name]
           in
