@@ -164,12 +164,14 @@ let process_incremental_update_request
           ~f:(fun scheduler ->
             OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths)
       in
-      List.filter subscriptions ~f:Subscription.wants_type_errors
-      |> Subscription.batch_send ~response:create_type_errors_response
+      let type_error_subscriptions, status_change_subscriptions =
+        List.partition_tf subscriptions ~f:Subscription.wants_type_errors
+      in
+      Subscription.batch_send type_error_subscriptions ~response:create_type_errors_response
       >>= fun () ->
-      List.filter subscriptions ~f:(fun x -> not (Subscription.wants_type_errors x))
-      |> Subscription.batch_send
-           ~response:(create_status_update_response Response.ServerStatus.Ready)
+      Subscription.batch_send
+        status_change_subscriptions
+        ~response:(create_status_update_response Response.ServerStatus.Ready)
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state
