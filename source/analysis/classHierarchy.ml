@@ -15,11 +15,16 @@ open Pyre
 
 exception Cyclic of Type.Primitive.t
 
-exception Incomplete
-
 exception InconsistentMethodResolutionOrder of Type.Primitive.t
 
 exception Untracked of string
+
+module CheckIntegrityError = struct
+  type t =
+    | Cyclic of Type.Primitive.t
+    | Incomplete of Type.Primitive.t
+  [@@deriving sexp, compare]
+end
 
 module Target = struct
   type t = {
@@ -410,19 +415,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       split >>= handle_split
 
 
-let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) =
-  (* Ensure keys are consistent. *)
-  let key_consistent key =
-    let raise_if_none value =
-      if Option.is_none value then (
-        Log.error "Inconsistency in type order: No value for key %s" (IndexTracker.show key);
-        raise Incomplete)
-    in
-    raise_if_none (Handler.edges key)
-  in
-  List.iter ~f:key_consistent indices;
-
-  (* Check for cycles. *)
+let check_for_cycles_exn (module Handler : Handler) ~(indices : IndexTracker.t list) =
   let started_from = ref IndexTracker.Set.empty in
   let find_cycle start =
     if not (Set.mem !started_from start) then
@@ -442,7 +435,19 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
       in
       visit [] start
   in
-  indices |> List.iter ~f:find_cycle
+  List.iter indices ~f:find_cycle
+
+
+let check_integrity ~indices (module Handler : Handler) =
+  let no_edges key = Handler.edges key |> Option.is_none in
+  match List.find indices ~f:no_edges with
+  | Some key ->
+      let name = IndexTracker.show key in
+      Log.error "Inconsistency in type order: No edges for key %s" name;
+      Result.Error (CheckIntegrityError.Incomplete name)
+  | None -> (
+      try Result.Ok (check_for_cycles_exn ~indices (module Handler)) with
+      | Cyclic name -> Result.Error (CheckIntegrityError.Cyclic name))
 
 
 let to_dot (module Handler : Handler) ~indices =

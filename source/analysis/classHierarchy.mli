@@ -9,9 +9,14 @@ open Core
 
 exception Cyclic of string
 
-exception Incomplete
-
 exception Untracked of string
+
+module CheckIntegrityError : sig
+  type t =
+    | Cyclic of Type.Primitive.t
+    | Incomplete of Type.Primitive.t
+  [@@deriving sexp, compare]
+end
 
 module Target : sig
   type t = {
@@ -103,7 +108,10 @@ val least_upper_bound
   Type.Primitive.t ->
   Type.Primitive.t list
 
-val check_integrity : (module Handler) -> indices:IndexTracker.t list -> unit
+val check_integrity
+  :  indices:IndexTracker.t list ->
+  (module Handler) ->
+  (unit, CheckIntegrityError.t) result
 
 val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
 

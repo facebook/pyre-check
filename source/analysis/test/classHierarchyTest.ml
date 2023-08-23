@@ -162,19 +162,24 @@ let test_least_upper_bound _ =
 
 
 let test_check_integrity _ =
-  let assert_raises_cyclic expression =
-    (* `assert_raises` doesn't work because it uses the polymorphic equality.
-     * We implement our own equality check here. *)
-    try
-      let _ = expression () in
-      assert_failure "expression did not raise an exception"
-    with
-    | Cyclic _ -> ()
-    | _ -> assert_failure "expression raised an unexpected exception"
+  let assert_ok ~indices order =
+    match check_integrity ~indices order with
+    | Result.Ok _ -> ()
+    | Result.Error _ -> assert_failure "unexpected failure"
+  in
+  let assert_cyclic ~indices order =
+    match check_integrity ~indices order with
+    | Result.Error (ClassHierarchy.CheckIntegrityError.Cyclic _) -> ()
+    | _ -> assert_failure "expected a cyclic error but did not get one"
+  in
+  let assert_incomplete ~indices order =
+    match check_integrity ~indices order with
+    | Result.Error (ClassHierarchy.CheckIntegrityError.Incomplete _) -> ()
+    | _ -> assert_failure "expected a cyclic error but did not get one"
   in
 
-  check_integrity order ~indices:order_indices;
-  check_integrity butterfly ~indices:butterfly_indices;
+  assert_ok order ~indices:order_indices;
+  assert_ok butterfly ~indices:butterfly_indices;
 
   (*(* 0 <-> 1 *)*)
   let order, indices =
@@ -186,11 +191,7 @@ let test_check_integrity _ =
     connect order ~predecessor:"1" ~successor:"0";
     handler order, Hash_set.to_list order.all_indices
   in
-  assert_raises_cyclic (fun _ -> check_integrity order ~indices);
-  assert_raises_cyclic (fun _ ->
-      let (module Handler : Handler) = order in
-      let get_successors = ClassHierarchy.parents_of (module Handler) in
-      method_resolution_order_linearize "1" ~get_successors);
+  assert_cyclic order ~indices;
 
   (* 0 -> 1
    * ^    |
@@ -209,11 +210,16 @@ let test_check_integrity _ =
     connect order ~predecessor:"2" ~successor:"3";
     handler order, Hash_set.to_list order.all_indices
   in
-  assert_raises_cyclic (fun _ -> check_integrity order ~indices);
-  assert_raises_cyclic (fun _ ->
-      let (module Handler : Handler) = order in
-      let get_successors = ClassHierarchy.parents_of (module Handler) in
-      method_resolution_order_linearize "2" ~get_successors)
+  assert_cyclic order ~indices;
+
+  let order, indices =
+    let order = MockClassHierarchyHandler.create () in
+    let open MockClassHierarchyHandler in
+    insert order "0";
+    handler order, [IndexTracker.index "1"]
+  in
+  assert_incomplete order ~indices;
+  ()
 
 
 let test_to_dot _ =
