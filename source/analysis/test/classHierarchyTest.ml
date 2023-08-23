@@ -110,24 +110,6 @@ let test_method_resolution_order_linearize _ =
   assert_method_resolution_order triangle_order "C" ["C"; "B"; "A"]
 
 
-let test_successors _ =
-  (* Butterfly:
-   *  0 - 2
-   *    X
-   *  1 - 3 *)
-  assert_equal (successors butterfly "3") [];
-  assert_equal (successors butterfly "0") ["3"; "2"];
-
-  (*          0 - 3
-   *          /   /   \
-   *          BOTTOM - 1      TOP
-   *          |  \       /
-   *          4 -- 2 --- *)
-  assert_equal (successors order "3") [];
-  assert_equal (successors order "0") ["3"];
-  assert_equal (successors order "bottom") ["4"; "2"; "1"; "0"; "3"]
-
-
 let test_immediate_parents _ =
   assert_equal (immediate_parents butterfly "3") [];
   assert_equal (immediate_parents butterfly "0") ["3"; "2"];
@@ -612,7 +594,6 @@ let () =
          "check_integrity" >:: test_check_integrity;
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
-         "successors" >:: test_successors;
          "immediate_parents" >:: test_immediate_parents;
          "is_transitive_successor" >:: test_is_transitive_successor;
          "to_dot" >:: test_to_dot;

@@ -538,16 +538,16 @@ let test_connect_type_order context =
   in
   let global_environment = ScratchProject.global_environment project in
   let order = class_hierarchy global_environment in
-  let assert_successors annotation successors =
+  let assert_parents annotation successors =
     assert_equal
       ~printer:(List.to_string ~f:Type.Primitive.show)
       successors
-      (ClassHierarchy.successors order annotation)
+      (ClassHierarchy.immediate_parents order annotation)
   in
   (* Classes get connected to object via ClassHierarchyEnvironment.update. *)
-  assert_successors "test.C" ["object"];
-  assert_successors "test.D" ["test.C"; "object"];
-  assert_successors "test.CallMe" ["object"]
+  assert_parents "test.C" ["object"];
+  assert_parents "test.D" ["test.C"];
+  assert_parents "test.CallMe" ["object"]
 
 
 let test_populate context =
@@ -1012,18 +1012,6 @@ let test_meet_type_order context =
   assert_meet Type.integer Type.float Type.integer
 
 
-let test_supertypes_type_order context =
-  let environment =
-    populate ~context ["test.py", {|
-      class foo(): pass
-      class bar(foo): pass
-    |}]
-  in
-  let order = class_hierarchy environment in
-  assert_equal ["object"] (ClassHierarchy.successors order "test.foo");
-  assert_equal ["test.foo"; "object"] (ClassHierarchy.successors order "test.bar")
-
-
 let test_class_summary context =
   let is_defined environment annotation = class_summary environment annotation |> Option.is_some in
   let environment = populate ~context ["baz.py", {|
@@ -1331,7 +1319,6 @@ let () =
          "join_type_order" >:: test_join_type_order;
          "less_or_equal_type_order" >:: test_less_or_equal_type_order;
          "meet_type_order" >:: test_meet_type_order;
-         "supertypes_type_order" >:: test_supertypes_type_order;
          "class_summary" >:: test_class_summary;
          "modules" >:: test_modules;
          "populate" >:: test_populate;

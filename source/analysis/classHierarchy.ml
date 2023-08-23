@@ -194,15 +194,6 @@ let method_resolution_order_linearize ~get_successors class_name =
   linearize ~visited:(String.Hash_set.create ()) class_name
 
 
-let successors (module Handler : Handler) annotation =
-  let linearization =
-    method_resolution_order_linearize ~get_successors:(parents_of (module Handler)) annotation
-  in
-  match linearization with
-  | _ :: successors -> successors
-  | [] -> []
-
-
 let immediate_parents (module Handler : Handler) class_name =
   index_of class_name
   |> parents_of (module Handler)
