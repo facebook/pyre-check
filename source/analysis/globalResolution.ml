@@ -107,11 +107,10 @@ let function_definition ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let class_metadata ({ dependency; _ } as resolution) annotation =
-  primitive_name annotation
-  >>= ClassMetadataEnvironment.ReadOnly.get_class_metadata
-        ?dependency
-        (class_metadata_environment resolution)
+let class_metadata ({ dependency; _ } as resolution) =
+  ClassMetadataEnvironment.ReadOnly.get_class_metadata
+    ?dependency
+    (class_metadata_environment resolution)
 
 
 let is_suppressed_module ({ dependency; _ } as resolution) reference =

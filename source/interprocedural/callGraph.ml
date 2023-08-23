@@ -1628,22 +1628,25 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
             let attribute = Format.sprintf "__class__.%s" attribute in
             let target = Reference.create ~prefix:parent attribute in
             target :: targets
-        | annotation ->
+        | Type.Primitive class_name ->
             (* Access on an instance, i.e `self.foo`. *)
             let parents =
               let successors =
-                GlobalResolution.class_metadata (Resolution.global_resolution resolution) annotation
+                GlobalResolution.class_metadata (Resolution.global_resolution resolution) class_name
                 >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
                 |> Option.value ~default:[]
-                |> List.map ~f:(fun name -> Type.Primitive name)
               in
-              annotation :: successors
+              class_name :: successors
             in
             let add_target targets parent =
-              let target = Reference.create ~prefix:(Type.class_name parent) attribute in
+              let parent = Reference.create parent in
+              let target = Reference.create ~prefix:parent attribute in
               target :: targets
             in
             List.fold ~init:targets ~f:add_target parents
+        | annotation ->
+            let target = Reference.create ~prefix:(Type.class_name annotation) attribute in
+            target :: targets
       in
       find_targets [] base_annotation
 

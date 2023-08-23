@@ -100,7 +100,7 @@ val module_tracker : t -> ModuleTracker.ReadOnly.t
 
 val get_module_metadata : t -> Reference.t -> Module.t option
 
-val class_metadata : t -> Type.t -> ClassMetadataEnvironment.class_metadata option
+val class_metadata : t -> Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option
 
 val is_protocol : t -> Type.t -> bool
 

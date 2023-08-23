@@ -926,7 +926,7 @@ let get_class_attributes ~resolution = function
 
 let get_class_attributes_transitive ~resolution class_name =
   let successors =
-    GlobalResolution.class_metadata resolution (Type.Primitive class_name)
+    GlobalResolution.class_metadata resolution class_name
     >>| (fun { ClassMetadataEnvironment.successors; _ } -> successors)
     |> Option.value ~default:[]
   in

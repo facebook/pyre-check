@@ -2033,7 +2033,7 @@ module State (Context : Context) = struct
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
         let metadata =
           Resolution.parent resolution
-          >>| (fun parent -> Type.Primitive (Reference.show parent))
+          >>| Reference.show
           >>= GlobalResolution.class_metadata global_resolution
         in
         (* Resolve `super()` calls. *)
@@ -6878,9 +6878,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                 let { ClassSummary.name; _ } = definition in
                 let class_name = Reference.show name in
                 let is_protocol_or_abstract class_name =
-                  match
-                    GlobalResolution.class_metadata global_resolution (Primitive class_name)
-                  with
+                  match GlobalResolution.class_metadata global_resolution class_name with
                   | Some { is_protocol; is_abstract; _ } when is_protocol || is_abstract ->
                       `Fst { class_name; is_abstract; is_protocol }
                   | Some { is_protocol; is_abstract; _ } ->
@@ -6969,11 +6967,10 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               errors
           in
           match expression_value with
-          | { Node.value = Name name; _ } when is_simple_name name ->
-              let reference = name_to_reference_exn name in
-              GlobalResolution.class_metadata
-                global_resolution
-                (Type.Primitive (Reference.show reference))
+          | { Node.value = Name name; _ } ->
+              name_to_reference name
+              >>| Reference.show
+              >>= GlobalResolution.class_metadata global_resolution
               >>| add_error
               |> Option.value ~default:errors
           | _ -> errors
