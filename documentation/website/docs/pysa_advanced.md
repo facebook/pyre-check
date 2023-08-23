@@ -177,47 +177,168 @@ of `ReturnPath`. For instance:
 def MyClass.updates_foo(self, x: TaintInTaintOut[Updates[self], UpdatePath[_.foo]]): ...
 ```
 
-## Collapsing on taint-in-taint-out
+## Taint broadening
 
-Collapsing (also called taint broadening) is an over-approximation performed by
-the taint analysis for correctness or performance reasons. After applying collapsing,
-Pysa considers that a whole object or variable is tainted when only some attributes
+**Taint broadening** is an over-approximation performed by the taint analysis
+for correctness or performance reasons. After applying broadening, Pysa
+considers that a whole object or variable is tainted when only some attributes
 or keys were initially tainted.
 
-The most common causes for taint collapsing are:
-* Taint goes through an [obscure model](#obscure-models), when it does not have
-the body of the callee; Pysa must assume anything could get tainted, for correctness.
-* The number of tainted attributes or keys hits a [threshold](#tune-the-taint-tree-width-and-depth).
-To prevent the analysis from blowing up by tracking too many values, Pysa assumes the whole object is tainted.
+This is also called **taint collapsing** or **tree collapsing** because the taint
+is internally represented as a tree structure where edges are attributes or keys.
+Collapsing means merging the taint on all children into the root of the tree.
 
-Whenever collapsing happens, Pysa will add the [broadening feature](pysa_features.md#broadening-feature) on
-the taint flow, which can help discard false positives in post processing.
-
-When specifying a [taint propagation](pysa_basics.md#taint-propagation) in a `.pysa` file,
-the propagation will collapse the taint by default. For instance:
-
+For instance, this happens when Pysa does not have access to the body of a
+function:
 ```python
+def obscure_function(arg): ...
+
+
+def foo():
+  # Only `x['a']` is tainted.
+  x = {"a": source()}
+
+  # Taint broadening happens, `y` and all its attributes are considered tainted.
+  y = obscure_function(x)
+
+  # This is considered an issue, even if only `x['a']` was initially tainted.
+  sink(y['b'])
+
+  # Also an issue, `y` is entirely tainted.
+  sink(y)
+```
+
+Note that whenever broadening happens, Pysa will automatically add a broadening
+[feature](pysa_features.md) on the taint flow, which can help discard false
+positives in post processing. Fine grained features are used for each different
+scenario leading to broadening.
+
+The most common causes for taint broadening are the following:
+
+### Broadening on obscure models
+
+Taint that flows through an [obscure model](#obscure-models) - for instance,
+when Pysa does not have access to the body of the callee - is collapsed, since
+we must assume anything could get tainted, for correctness.
+
+In this scenario, the `tito-broadening` and `via:obscure:model` features are
+added to the flow.
+
+### Broadening on taint-in-taint-out (TITO)
+
+When specifying a [taint propagation](pysa_basics.md#taint-propagation) (also
+called **Taint In Taint Out** or **TITO**) in a `.pysa` file, the propagation
+will collapse the taint by default.
+
+For instance:
+```python
+# models.pysa
 def tito(arg: TaintInTaintOut): ...
 ```
 
 ```python
 def foo():
   x = {"a": source()}
-  y = tito(x) # Only `x['a']` is tainted, but `y` gets tainted.
-  sink(y) # Issue since `y` is tainted
-  sink(y['b']) # Also an issue, because taint is propagated from `y` to `y['b']`.
+  y = tito(x)
+  sink(y['b']) # Considered an issue because of taint broadening.
 ```
 
-If the function is known to preserve the structure of the argument, the `NoCollapse`
-annotation can be used to disable collapsing. For instance:
+In this scenario, the `tito-broadening` feature is added to the flow.
+
+If the function is known to preserve the structure of the argument, the
+`NoCollapse` annotation can be used to disable collapsing. For instance:
 
 ```python
 def tito(arg: TaintInTaintOut[NoCollapse]): ...
 ```
 
-This would remove both issues from the previous example.
+This would remove the issue from the previous example.
 
-Note that this can be used in combination with [`ParameterPath` and `ReturnPath`](#parameter-and-return-path).
+Note that this can be used in combination with
+[`ParameterPath` and `ReturnPath`](#parameter-and-return-path).
+
+### Model broadening
+
+When the number of tainted attributes or keys hits a certain threshold, taint
+broadening is applied to prevent the analysis from blowing up by tracking too
+many values.
+
+This is referred as **Model broadening** since this happens when the model (or
+summary) of a function is computed.
+
+For instance, this can happen when the number of tainted key-value pairs of a
+dictionary hit a certain threshold. For scalability reasons, Pysa cannot track
+an infinite amount of indices, and thus makes the approximation that the whole
+object is tainted.
+
+```python
+def foo(condition):
+    d = {}
+    if condition:
+        d["a"] = source()
+        d["b"] = source()
+        # c, d, e, etc.
+    else:
+        d["1"] = source()
+        d["2"] = source()
+        # etc.
+    return d # too many indexes, the whole return value is considered tainted.
+```
+
+In this scenary, the `model-broadening` feature is added to the flow.
+
+See [analysis thresholds](#analysis-thresholds) for documentation about the
+different scenarios of model broadening.
+
+### Widen broadening
+
+When the number of tainted attributes or keys is potentially infinite because of
+a loop or recursion, taint broadening is applied to allow the termination of the
+analysis.
+
+The term "widen" or "widening" refers to an operator that is applied to ensure
+convergence. It commonly happens within loops.
+
+For instance:
+```python
+def foo(n):
+  d = {}
+  for _ in range(n):
+    d = {
+      "a": source(),
+      "b": d,
+    }
+  return d
+```
+
+Technically, `d['b']...['b']['a']` (with an infinite number of access to `b`)
+could be tainted. To allow the analysis to terminate, Pysa stops at a certain
+depth. See [analysis thresholds](#analysis-thresholds) for documentation about
+the different scenarios of widen broadening.
+
+Another example:
+```python
+def foo(person):
+    while person.parent is not None:
+        person = person.parent
+        # Infer sinks on person.name, person.parent.name, person.parent.parent.name, etc.
+        sink(person.name)
+```
+
+In these scenarios, the `widen-broadening` feature is added to the flow.
+
+### Issue broadening
+
+When an object with a tainted attribute or key reaches a sink, Pysa considers
+the flow as valid even if the whole object is not tainted.
+
+For instance:
+```python
+d = {"a": source(), "b": "foo"}
+sink(d) # `d` itself is not tainted, but `d["a"]` is, thus we emit an issue.
+```
+
+In this scenario, the `issue-broadening` feature is added to the issue.
 
 ## Tainting Specific `kwargs`
 
@@ -896,7 +1017,7 @@ If transform `MyTransform` is applied to taint `SourceC`, there is no possible r
 
 Also note that the existing TaintInTaintOut annotation semantics of TITO being assumed (instead of inferred) on the argument are unchanged.
 
-## Tune the taint tree width and depth
+## Analysis thresholds
 
 Pysa provides many options to fine tune the taint analysis. The following
 options can be provided either via the command line or in the `taint.config` file,
@@ -927,6 +1048,8 @@ When not provided, these are set to the following defaults:
 * Command line option: `--maximum-model-source-tree-width`
 * taint.config option: `maximum_model_source_tree_width`
 
+See [taint broadening](#taint-broadening) and [model broadening](#model-broadening).
+
 This limits the width of the source tree in the model for a callable, i.e
 the number of output paths in the return value.
 
@@ -945,6 +1068,8 @@ be added to the flow.
 
 * Command line option: `--maximum-model-sink-tree-width`
 * taint.config option: `maximum_model_sink_tree_width`
+
+See [taint broadening](#taint-broadening) and [model broadening](#model-broadening).
 
 This limits the width of the sink tree in the model for a callable, i.e
 the number of input paths leading to a sink for a given parameter.
@@ -967,6 +1092,8 @@ whole argument leads to a sink. When that happens, the breadcrumbs
 * Command line option: `--maximum-model-tito-tree-width`
 * taint.config option: `maximum_model_tito_tree_width`
 
+See [taint broadening](#taint-broadening) and [model broadening](#model-broadening).
+
 This limits the width of the taint-in-taint-out tree in the model for a callable,
 i.e the number of input paths propagated to the return value, for a given parameter.
 
@@ -978,14 +1105,16 @@ def foo(arg):
 
 The taint-in-taint-out tree for `foo` and parameter `arg` has a width of 3.
 Above the provided threshold, pysa will collapse the taint and consider that the
-taint on the whole argument is propagated to the return value. When that
-happens, the breadcrumbs `model-broadening` and `model-tito-broadening` will be
-added to the flow.
+taint on the whole argument is propagated to the return value. When that happens,
+the breadcrumbs `model-broadening` and `model-tito-broadening` will be added to
+the flow.
 
 ### Maximum tree depth after widening
 
 * Command line option: `--maximum-tree-depth-after-widening`
 * taint.config option: `maximum_tree_depth_after_widening`
+
+See [taint broadening](#taint-broadening) and [widen broadening](#widen-broadening).
 
 This limits the depth of the source, sink and tito trees within loops, i.e the
 length of source, sink and tito paths for each variables.
@@ -1009,6 +1138,8 @@ When that happens, the breadcrumb `widen-broadening` will be added to the flow.
 * Command line option: `--maximum-return-access-path-width`
 * taint.config option: `maximum_return_access_path_width`
 
+See [taint broadening](#taint-broadening) and [model broadening](#model-broadening).
+
 This limits the width of the return access path tree in the model for a callable,
 i.e the number of output paths propagated to the return value, for a given parameter.
 
@@ -1028,6 +1159,8 @@ the flow.
 
 * Command line option: `--maximum-return-access-path-depth-after-widening`
 * taint.config option: `maximum_return_access_path_depth_after_widening`
+
+See [taint broadening](#taint-broadening) and [widen broadening](#widen-broadening).
 
 This limits the depth of the return access path tree within loops, i.e the
 length of output paths propagated to the return value, for a given parameter.
