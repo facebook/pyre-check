@@ -7,7 +7,7 @@
 
 open Core
 
-exception Cyclic of String.Hash_set.t
+exception Cyclic of string
 
 exception Incomplete
 

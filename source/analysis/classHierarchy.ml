@@ -13,7 +13,7 @@ open Core
 open Ast
 open Pyre
 
-exception Cyclic of String.Hash_set.t
+exception Cyclic of Type.Primitive.t
 
 exception Incomplete
 
@@ -178,7 +178,7 @@ let method_resolution_order_linearize ~get_successors class_name =
   let rec linearize ~visited class_name =
     if Hash_set.mem visited class_name then (
       Log.error "Order is cyclic:\nTrace: {%s}" (Hash_set.to_list visited |> String.concat ~sep:", ");
-      raise (Cyclic visited));
+      raise (Cyclic class_name));
     let visited = Hash_set.copy visited in
     Hash_set.add visited class_name;
     let linearized_successors =
@@ -430,7 +430,7 @@ let check_integrity (module Handler : Handler) ~(indices : IndexTracker.t list) 
         if List.mem ~equal:[%compare.equal: IndexTracker.t] reverse_visited index then (
           let trace = List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited) in
           Log.error "Order is cyclic:\nTrace: %s" (String.concat ~sep:" -> " trace);
-          raise (Cyclic (String.Hash_set.of_list trace)))
+          raise (Cyclic (IndexTracker.annotation index)))
         else if not (Set.mem !started_from index) then (
           started_from := Set.add !started_from index;
           match parents_of (module Handler) index with
