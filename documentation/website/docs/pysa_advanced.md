@@ -290,6 +290,19 @@ In this scenary, the `model-broadening` feature is added to the flow.
 See [analysis thresholds](#analysis-thresholds) for documentation about the
 different scenarios of model broadening.
 
+Note that model broadening can be disabled for a given function or method using
+the `@SkipModelBroadening` annotation in a `.pysa` file:
+```python
+@SkipModelBroadening
+def foo(): ...
+```
+
+This can also be used in a `ModelQuery` using the
+[`Modes`](pysa_model_dsl.md##models-for-setting-modes) clause.
+
+Note that this should be used sparingly since this can potentially lead to an
+increase in analysis time.
+
 ### Widen broadening
 
 When the number of tainted attributes or keys is potentially infinite because of

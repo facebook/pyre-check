@@ -1263,6 +1263,8 @@ The available modes are:
 - [`SkipDecoratorWhenInlining`](pysa_advanced.md#prevent-inlining-decorators-with-skipdecoratorwheninlining)
   - Prevents the selected decorator from being inlined during analysis
   - Note: this mode will be a no-op, since model queries are generated after decorators are inlined
+- [`SkipModelBroadening`](pysa_advanced.md#model-broadening)
+  - Prevents model broadening for the given function or method
 
 For instance, instead of annotating each function separately, as in the following `.pysa` file:
 
