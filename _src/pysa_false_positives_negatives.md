@@ -12,15 +12,18 @@ source to a sink, but Pysa fails to catch it.
 
 ## Common Causes of False Positives
 
-### Taint collapsing
+### Taint broadening
 
 Pysa uses a set of heuristics in order to make the analysis scale to millions
-of lines of code. The main heuristic is called taint collapsing, which happens
-when Pysa is tracking too many attributes of an object or keys of a dictionary.
+of lines of code. The main heuristic is called
+[**taint broadening**](pysa_advanced.md#taint-broadening) (also called **taint
+collapsing**), which happens when Pysa is tracking too many attributes of an
+object or keys of a dictionary.
+
 To avoid blowing up, Pysa will collapse taint, and assume the whole object is
 tainted. Pysa will use sane defaults, but heuristics can be [tuned using
 command line options or a taint configuration
-file](pysa_advanced.md##tune-the-taint-tree-width-and-depth).
+file](pysa_advanced.md##analysis-thresholds).
 
 Taint collapsing also happens when taint flows through a function that Pysa does
 not have the code for. To be sound, it assumes functions without code

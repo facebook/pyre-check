@@ -299,84 +299,19 @@ through a conversion to `int` before reaching the sink. Note that **the
 `always-` version of a feature is _exclusive_ with the non-`always-` version**;
 if `always-type:scalar` is present, `type:scalar` will not be present.
 
-### `broadening` Feature
+### `broadening` Features
 
-The `broadening` feature is automatically added whenever Pysa makes an
-approximation about a taint flow. This is also referred as "taint collapsing"
-because the taint is internally represented as a tree structure where edges are
-attributes or indexes. Collapsing usually leads to tainting a whole object
-instead of a single attribute of that object.
+Pysa automatically adds broadening features when
+[taint broadening](pysa_advanced.md#taint-broadening) is applied during the
+analysis.
 
-Pysa also provides more fine grained features for all scenario where we make
-approximations.
+Broadening features are:
+* `tito-broadening`
+* `model-broadening`
+* `model-source-broadening`
+* `model-sink-broadening`
+* `model-tito-broadening`
+* `widen-broadening`
+* `issue-broadening`
 
-#### `model-broadening` Feature
-
-The `model-broadening` feature is added when the model of a callable has been
-simplified because the source, sink or tito taint tree hit a width or depth
-threshold.
-
-For instance, this can happen when the number of tainted key-value pairs of a
-dictionary hit a certain threshold. For scalability reasons, Pysa cannot track
-an infinite amount of indexes, and thus makes the approximation that the whole
-object is tainted.
-
-```python
-def foo(condition):
-    d = {}
-    if condition:
-        d["a"] = source()
-        d["b"] = source()
-        # c, d, e, etc.
-    else:
-        d["1"] = source()
-        d["2"] = source()
-        # etc.
-    return d # too many indexes, the whole return value is considered tainted.
-```
-
-See [tune the taint tree width and depth](pysa_advanced.md#tune-the-taint-tree-width-and-depth)
-for more information.
-
-#### `widen-broadening` Feature
-
-The `widen-broadening` feature is added when a taint tree is exceeding
-the maximum depth within a loop.
-
-For instance:
-```python
-def foo(person):
-    while person.parent is not None:
-        person = person.parent
-        # Infer sinks on person.name, person.parent.name, person.parent.parent.name, etc.
-        sink(person.name)
-```
-
-#### `tito-broadening` Feature
-
-The `tito-broadening` feature is added when an object with tainted attributes is
-propagated through a function to its return value. For correctness reasons, Pysa
-makes the approximation that the whole returned object is tainted. This is
-referred as "Taint-In-Taint-Out collapsing".
-
-```python
-def identity(x):
-  return x
-
-def foo():
-  x = {"a": source(), "b": "foo"} # only `x["a"]` is tainted.
-  y = identity(x)
-  sink(y) # the whole `y` variable is tainted because of tito collapsing.
-  sink(y['b']) # since `y` is tainted, any access to `y` is also tainted.
-```
-
-#### `issue-broadening` Feature
-
-The `issue-broadening` feature is added when an object with a tainted attribute
-reaches a taint sink. Pysa will consider the flow as valid even if the whole
-object is not tainted.
-
-```python
-d = {"a": source(), "b": "foo"}
-sink(d) # `d` itself is not tainted, but `d["a"]` is, thus we emit an issue.
-```
+See [taint broadening](pysa_advanced.md#taint-broadening) for more infomation.
