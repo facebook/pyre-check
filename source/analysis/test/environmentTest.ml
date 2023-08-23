@@ -745,14 +745,11 @@ let test_populate context =
   assert_global "test.Class.property" None;
 
   (* Loops. *)
-  (try
-     populate ~context ["test.py", {|
+  populate ~context ["test.py", {|
         def foo(cls):
           class cls(cls): pass
       |}]
-     |> ignore
-   with
-  | ClassHierarchy.Cyclic _ -> assert_unreached ());
+  |> ignore;
 
   (* Check meta variables are registered. *)
   let assert_global =

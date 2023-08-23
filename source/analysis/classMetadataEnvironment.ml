@@ -55,14 +55,18 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
       let (module Handler) =
         ClassHierarchyEnvironment.ReadOnly.class_hierarchy class_hierarchy_environment ?dependency
       in
-      let linearization =
+      match
         ClassHierarchy.method_resolution_order_linearize
           ~get_successors:(ClassHierarchy.parents_of (module Handler))
           annotation
-      in
-      match linearization with
-      | _ :: successors -> successors
-      | [] -> []
+      with
+      | Result.Ok (_ :: successors) -> successors
+      | Result.Ok [] -> []
+      | Result.Error error ->
+          let message =
+            ClassHierarchy.MethodResolutionOrderError.sexp_of_t error |> Sexp.to_string_hum
+          in
+          failwith message
     in
     let successors = successors class_name in
     let is_final =

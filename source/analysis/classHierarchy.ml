@@ -19,6 +19,13 @@ exception InconsistentMethodResolutionOrder of Type.Primitive.t
 
 exception Untracked of string
 
+module MethodResolutionOrderError = struct
+  type t =
+    | Cyclic of Type.Primitive.t
+    | Inconsistent of Type.Primitive.t
+  [@@deriving sexp, compare]
+end
+
 module CheckIntegrityError = struct
   type t =
     | Cyclic of Type.Primitive.t
@@ -150,7 +157,7 @@ let raise_if_untracked order annotation =
     raise (Untracked annotation)
 
 
-let method_resolution_order_linearize ~get_successors class_name =
+let method_resolution_order_linearize_exn ~get_successors class_name =
   let rec merge = function
     | [] -> []
     | [single_linearized_parent] -> single_linearized_parent
@@ -197,6 +204,14 @@ let method_resolution_order_linearize ~get_successors class_name =
     class_name :: merge linearized_successors
   in
   linearize ~visited:(String.Hash_set.create ()) class_name
+
+
+let method_resolution_order_linearize ~get_successors class_name =
+  match method_resolution_order_linearize_exn ~get_successors class_name with
+  | result -> Result.Ok result
+  | exception Cyclic name -> Result.Error (MethodResolutionOrderError.Cyclic name)
+  | exception InconsistentMethodResolutionOrder name ->
+      Result.Error (MethodResolutionOrderError.Inconsistent name)
 
 
 let immediate_parents (module Handler : Handler) class_name =

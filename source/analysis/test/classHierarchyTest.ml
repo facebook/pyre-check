@@ -98,9 +98,10 @@ let test_method_resolution_order_linearize _ =
   let assert_method_resolution_order (module Handler : Handler) annotation expected =
     let get_successors = ClassHierarchy.parents_of (module Handler) in
     assert_equal
-      ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
+      ~cmp:[%compare.equal: string list]
+      ~printer:(fun names -> [%sexp_of: string list] names |> Sexp.to_string_hum)
       expected
-      (method_resolution_order_linearize annotation ~get_successors)
+      (method_resolution_order_linearize annotation ~get_successors |> Result.ok |> Option.value_exn)
   in
   assert_method_resolution_order butterfly "3" ["3"];
   assert_method_resolution_order butterfly "0" ["0"; "3"; "2"];

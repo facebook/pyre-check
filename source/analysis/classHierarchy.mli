@@ -7,9 +7,14 @@
 
 open Core
 
-exception Cyclic of string
-
 exception Untracked of string
+
+module MethodResolutionOrderError : sig
+  type t =
+    | Cyclic of Type.Primitive.t
+    | Inconsistent of Type.Primitive.t
+  [@@deriving sexp, compare]
+end
 
 module CheckIntegrityError : sig
   type t =
@@ -88,11 +93,10 @@ val contains : (module Handler) -> Type.Primitive.t -> bool
    `is_instantiated hierarchy typing.List[str]` will evaluate to false. *)
 val is_instantiated : (module Handler) -> Type.t -> bool
 
-(* Exposed for tests only *)
 val method_resolution_order_linearize
   :  get_successors:(IndexTracker.t -> Target.t list option) ->
   Type.Primitive.t ->
-  Type.Primitive.t list
+  (Type.Primitive.t list, MethodResolutionOrderError.t) result
 
 val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
 

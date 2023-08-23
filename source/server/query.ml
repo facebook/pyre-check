@@ -1060,8 +1060,6 @@ let rec process_request_exn ~type_environment ~build_system request =
         Format.asprintf "Type `%a` has the wrong number of parameters." Type.pp untracked
       in
       Error untracked_response
-  | ClassHierarchy.Cyclic class_name ->
-      Error (Format.asprintf "Cyclic class hierarchy detected for `%s`" class_name)
   | Taint.TaintConfiguration.TaintConfigurationError errors ->
       errors
       |> List.map ~f:Taint.TaintConfiguration.Error.show
