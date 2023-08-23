@@ -21,6 +21,7 @@
   asyncTest
   attributeTest
   callableTest
+  classTest
   constructorTest
   controlFlowTest
   dataClassTest

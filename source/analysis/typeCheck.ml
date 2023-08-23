@@ -7145,16 +7145,36 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         in
         override_errors @ errors
       in
+      let check_inconsistent_mro ~class_name { ClassMetadataEnvironment.successors; _ } =
+        match successors with
+        | Some _ -> None
+        | None ->
+            let kind = AnalysisError.InconsistentMethodResolutionOrder { class_name } in
+            let error =
+              Error.create
+                ~location:(Location.with_module ~module_reference:Context.qualifier location)
+                ~kind
+                ~define:Context.define
+            in
+            Some error
+      in
       let name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
-      GlobalResolution.class_summary global_resolution (Type.Primitive name)
-      >>| Node.value
-      >>| (fun definition ->
-            errors
-            |> check_bases
-            |> check_protocol definition
-            |> check_attribute_initialization definition
-            |> check_overrides definition)
-      |> Option.value ~default:errors
+      match
+        GlobalResolution.class_metadata global_resolution name
+        >>| check_inconsistent_mro ~class_name:name
+      with
+      | None -> errors
+      | Some (Some mro_error) ->
+          (* Do not bother doing other checks if the class itself does not have a consistent MRO. *)
+          mro_error :: errors
+      | Some None -> (
+          match GlobalResolution.class_summary global_resolution (Type.Primitive name) with
+          | None -> errors
+          | Some { Node.value = definition; _ } ->
+              check_bases errors
+              |> check_protocol definition
+              |> check_attribute_initialization definition
+              |> check_overrides definition)
     else
       errors
   in

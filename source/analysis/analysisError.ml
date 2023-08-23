@@ -730,6 +730,7 @@ and kind =
       annotation: Type.t;
       attempted_action: illegal_action_on_incomplete_type;
     }
+  | InconsistentMethodResolutionOrder of { class_name: Type.Primitive.t }
   | InconsistentOverride of {
       overridden_method: Identifier.t;
       parent: Reference.t;
@@ -939,6 +940,7 @@ let code_of_kind = function
   | UninitializedLocal _ -> 61
   | NonLiteralString _ -> 62
   | SuppressionCommentWithoutErrorCode _ -> 63
+  | InconsistentMethodResolutionOrder _ -> 64
   | ParserFailure _ -> 404
   (* Additional errors. *)
   | UnawaitedAwaitable _ -> 1001
@@ -966,6 +968,7 @@ let name_of_kind = function
   | IncompatibleParameterType _ -> "Incompatible parameter type"
   | IncompatibleReturnType _ -> "Incompatible return type"
   | IncompatibleVariableType _ -> "Incompatible variable type"
+  | InconsistentMethodResolutionOrder _ -> "Inconsistent method resolution order"
   | InconsistentOverride _ -> "Inconsistent override"
   | IncompatibleOverload _ -> "Incompatible overload"
   | IncompleteType _ -> "Incomplete type"
@@ -1574,6 +1577,8 @@ let rec messages ~concise ~signature location kind =
           []
       in
       message :: trace
+  | InconsistentMethodResolutionOrder { class_name } ->
+      [Format.sprintf "Class `%s` does not have a consistent method resolution order" class_name]
   | InconsistentOverride { parent; override; override_kind; overridden_method } ->
       let kind =
         match override_kind with
@@ -3187,6 +3192,7 @@ let due_to_analysis_limitations { kind; _ } =
   | IllegalAnnotationTarget _
   | IncompatibleAsyncGeneratorReturnType _
   | IncompatibleConstructorAnnotation _
+  | InconsistentMethodResolutionOrder _
   | InconsistentOverride { override = StrengthenedPrecondition (NotFound _); _ }
   | InvalidArgument (VariableArgumentsWithUnpackableType _)
   | InvalidDecoration _
@@ -3468,6 +3474,10 @@ let join ~resolution left right =
                   join_mismatch left.incompatible_type.mismatch right.incompatible_type.mismatch;
               };
           }
+    | ( (InconsistentMethodResolutionOrder { class_name = left_name } as left),
+        InconsistentMethodResolutionOrder { class_name = right_name } )
+      when Type.Primitive.equal left_name right_name ->
+        left
     | ( InconsistentOverride ({ override = StrengthenedPrecondition left_issue; _ } as left),
         InconsistentOverride ({ override = StrengthenedPrecondition right_issue; _ } as right) )
       -> (
@@ -3702,6 +3712,7 @@ let join ~resolution left right =
     | IncompatibleOverload _, _
     | IncompleteType _, _
     | IncompatibleVariableType _, _
+    | InconsistentMethodResolutionOrder _, _
     | InconsistentOverride _, _
     | InvalidArgument _, _
     | InvalidDecoration _, _
@@ -4296,6 +4307,8 @@ let dequalify
             overridden_method = dequalify_identifier overridden_method;
             override = StrengthenedPrecondition (NotFound access);
           }
+    | InconsistentMethodResolutionOrder { class_name } ->
+        InconsistentMethodResolutionOrder { class_name = dequalify_identifier class_name }
     | InconsistentOverride
         ({ override = WeakenedPostcondition mismatch; parent; overridden_method; _ } as
         inconsistent_override) ->

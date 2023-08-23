@@ -382,6 +382,7 @@ and kind =
       annotation: Type.t;
       attempted_action: illegal_action_on_incomplete_type;
     }
+  | InconsistentMethodResolutionOrder of { class_name: Type.Primitive.t }
   | InconsistentOverride of {
       overridden_method: Identifier.t;
       parent: Reference.t;
