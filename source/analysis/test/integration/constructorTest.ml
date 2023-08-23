@@ -804,18 +804,6 @@ let test_check_constructors context =
     |}
     [];
 
-  (* The MRO of inheriting both a class and its direct parent will result in super() evaluating to
-     the subclass, regardless of order. *)
-  assert_type_errors
-    {|
-      from builtins import A, B
-      class Subclass(A, B):
-        def foo(self)->A:
-          return super()
-        def wrong(self)->B:
-          return super()
-    |}
-    [];
   assert_type_errors
     {|
       import typing

@@ -79,7 +79,7 @@ let test_from_source context =
       class C(A): pass
       class D(A, B): pass
       class E(D): pass
-      class F(A, D): pass
+      class F(D, A): pass
     |}
     ~expected:
       (create

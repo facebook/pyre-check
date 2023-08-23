@@ -89,8 +89,10 @@ let triangle_order =
   insert order "B";
   insert order "C";
   connect order ~predecessor:"B" ~successor:"A";
-  connect order ~predecessor:"C" ~successor:"B";
+  (* NOTE: The C->A edge needs to be inserted before the C->B edge. If the order gets reversed,
+     we'll get a inconsistent MRO issue. *)
   connect order ~predecessor:"C" ~successor:"A";
+  connect order ~predecessor:"C" ~successor:"B";
   handler order
 
 

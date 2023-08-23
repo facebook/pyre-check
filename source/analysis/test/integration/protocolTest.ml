@@ -77,7 +77,7 @@ let test_check_protocol context =
       class FooProtocol(typing.Protocol):
         def foo(self) -> int: ...
 
-      class FooBarProtocol(typing.Protocol, FooProtocol):
+      class FooBarProtocol(FooProtocol, typing.Protocol):
         def bar(self) -> int: ...
 
 

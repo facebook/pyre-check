@@ -31,7 +31,7 @@ let test_superclasses context =
       class SubFoo(Foo): pass
       class SubFooBar(Foo, Bar): pass
       class SubRecurse(SubFooBar): pass
-      class SubRedundant(Foo, SubFooBar): pass
+      class SubRedundant(SubFooBar, Foo): pass
     |}
         );
       ]

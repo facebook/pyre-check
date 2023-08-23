@@ -158,6 +158,23 @@ let raise_if_untracked order annotation =
 
 
 let method_resolution_order_linearize_exn ~get_successors class_name =
+  (* The `merge` function takes a list of "constraints" as input and return a list `L` representing
+     the computed MRO that satisfy those constraints. Each "constraint" is by itself another list of
+     class names indicating what orderings must be perserved in `L`.
+
+     For example, if we pass `[["A"; "B"; "C"]; ["C", "D"]]` to `merge`, then we know that in the
+     returned list, class `A` must precede class `B`, class `B` must precede class `C` (from the
+     first constraint), and class `C` must precede class `D` (from the second constraint). One
+     possible return list that satisfies all of these ordering constraint would be `["A"; "B"; "C";
+     "D"]`.
+
+     The intuition behind the C3 algorithm for computing `L` is straightforward: it's an iterative
+     process where each iteration would inspect all constraints we currently have, and pick a
+     candidate class that does not break any of them (i.e. look at the first class from each
+     "constraint" and see if that class gets preceded by any other classes in other constraints),
+     add the candidate to the result list, and advance to the next iteration. If at any iteration we
+     could not find a valid candidate, an inconsistent MRO would be detected and we fail the entire
+     process. *)
   let rec merge = function
     | [] -> []
     | [single_linearized_parent] -> single_linearized_parent
@@ -187,6 +204,16 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
         let linearized_successors = List.filter_map ~f:(strip_head head) linearized_successors in
         head :: merge linearized_successors
   in
+  (* `linearize C` computes the MRO for class `C`. The additional `visited` parameter is used to
+     detect when MRO computation would run into cycles (e.g. class A inherits from class B, which in
+     turn inherits from class A).
+
+     For a given class `C` that inherits from 2 parents `A` and `B`, the MRO for class `C` must obey
+     2 kinds of constraints: (1) C's MRO must satisfy all constraints of `A`'s MRO and `B`'s MRO.
+     (2) In C's MRO, `A` must precede `B` because `A` comes before `B` in the base class list.
+
+     The implementation here simply translates the two points above into a list of constraints, and
+     invoke `merge` to "solve" those constraints and get a satisfying MRO. *)
   let rec linearize ~visited class_name =
     if String.Set.mem visited class_name then (
       Log.error
@@ -194,15 +221,15 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
         (String.Set.to_list visited |> String.concat ~sep:", ");
       raise (Cyclic class_name));
     let visited = String.Set.add visited class_name in
-    let linearized_successors =
+    let successors =
       let create_annotation { Target.target = index; _ } = IndexTracker.annotation index in
       index_of class_name
       |> get_successors
       |> Option.value ~default:[]
       |> List.map ~f:create_annotation
-      |> List.map ~f:(linearize ~visited)
     in
-    class_name :: merge linearized_successors
+    let linearized_successors = List.map successors ~f:(linearize ~visited) in
+    class_name :: merge (List.append linearized_successors [successors])
   in
   linearize ~visited:String.Set.empty class_name
 
