@@ -33,6 +33,10 @@ module Inference : sig
   val create : raw -> t
 
   val from_error : define:Ast.Statement.Define.t -> Analysis.AnalysisError.t -> t
+
+  module TestingOnly : sig
+    val should_ignore : target:target -> Type.t -> bool
+  end
 end
 
 module LocalResult : sig

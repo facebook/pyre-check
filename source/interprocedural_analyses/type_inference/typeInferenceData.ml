@@ -346,25 +346,27 @@ module Inference = struct
 
   type t = raw option [@@deriving show]
 
-  let create { type_ = raw_type; target } =
+  let should_ignore ~target sanitized_type =
     let is_parameter =
       match target with
       | Parameter _ -> true
       | _ -> false
     in
+    Type.contains_unknown sanitized_type
+    || Type.contains_undefined sanitized_type
+    || Type.contains_prohibited_any sanitized_type
+    || (is_parameter && Type.equal sanitized_type NoneType)
+    || Type.ReadOnly.is_readonly sanitized_type
+
+
+  let create { type_ = raw_type; target } =
     let sanitized_type =
       raw_type
       |> Type.Variable.mark_all_free_variables_as_escaped
       |> Type.Variable.convert_all_escaped_free_variables_to_anys
       |> Type.infer_transform
     in
-    let ignore =
-      Type.contains_unknown sanitized_type
-      || Type.contains_undefined sanitized_type
-      || Type.contains_prohibited_any sanitized_type
-      || (is_parameter && Type.equal sanitized_type NoneType)
-    in
-    if ignore then
+    if should_ignore ~target sanitized_type then
       None
     else
       Some { type_ = sanitized_type; target }
@@ -388,6 +390,11 @@ module Inference = struct
       | _ -> None
     in
     raw_inference >>= create
+
+
+  module TestingOnly = struct
+    let should_ignore = should_ignore
+  end
 end
 
 module LocalResult = struct

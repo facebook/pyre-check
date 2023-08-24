@@ -953,6 +953,20 @@ let test_inferred_function_parameters context =
     |}
     ~target:"test.foo"
     ~expected:no_inferences;
+  (* Ignore `ReadOnly` annotations. *)
+  check_inference_results
+    {|
+      from pyre_extensions import ReadOnly
+
+      class Foo: ...
+
+      def expect_readonly_foo(foo: ReadOnly[Foo]) -> None: ...
+
+      def foo(x) -> None:
+          expect_readonly_foo(x)
+    |}
+    ~target:"test.foo"
+    ~expected:no_inferences;
   ()
 
 
