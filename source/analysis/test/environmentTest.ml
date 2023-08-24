@@ -571,7 +571,7 @@ let test_populate context =
 
   (* Check custom class definitions. *)
   let global_resolution = GlobalResolution.create environment in
-  assert_is_some (GlobalResolution.class_summary global_resolution (Primitive "typing.Optional"));
+  assert_is_some (GlobalResolution.class_summary global_resolution "typing.Optional");
 
   (* Check type aliases. *)
   let environment =
@@ -1014,14 +1014,10 @@ let test_class_summary context =
   let environment = populate ~context ["baz.py", {|
       class baz(): pass
     |}] in
-  assert_true (is_defined environment (Type.Primitive "baz.baz"));
-  assert_true (is_defined environment (Type.parametric "baz.baz" [Single Type.integer]));
-  assert_is_some (class_summary environment (Type.Primitive "baz.baz"));
-  assert_false (is_defined environment (Type.Primitive "bar.bar"));
-  assert_false (is_defined environment (Type.parametric "bar.bar" [Single Type.integer]));
-  assert_is_none (class_summary environment (Type.Primitive "bar.bar"));
-  let any = class_summary environment Type.object_primitive |> value |> Node.value in
-  assert_equal any.ClassSummary.name !&"object"
+  assert_true (is_defined environment "baz.baz");
+  assert_false (is_defined environment "bar.bar");
+  let object_class = class_summary environment "object" |> value |> Node.value in
+  assert_equal object_class.ClassSummary.name !&"object"
 
 
 let test_modules context =

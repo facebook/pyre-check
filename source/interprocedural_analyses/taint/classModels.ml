@@ -161,7 +161,7 @@ let infer ~environment ~user_models =
     | None -> existing_state
   in
   let get_attributes_in_alphabetical_order class_name =
-    GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
+    GlobalResolution.class_summary global_resolution class_name
     >>| Node.value
     >>| ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
     |> Option.value ~default:Identifier.SerializableMap.empty
@@ -316,7 +316,7 @@ let infer ~environment ~user_models =
       []
   in
   let inferred_models class_name =
-    GlobalResolution.class_summary global_resolution (Type.Primitive class_name)
+    GlobalResolution.class_summary global_resolution class_name
     >>| compute_models class_name
     |> Option.value ~default:[]
   in

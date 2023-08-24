@@ -83,16 +83,10 @@ let is_protocol ({ dependency; _ } as resolution) annotation =
     annotation
 
 
-let primitive_name annotation =
-  let primitive, _ = Type.split annotation in
-  Type.primitive_name primitive
-
-
-let class_summary ({ dependency; _ } as resolution) annotation =
-  primitive_name annotation
-  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-        (unannotated_global_environment resolution)
-        ?dependency
+let class_summary ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
+    (unannotated_global_environment resolution)
+    ?dependency
 
 
 let define_body ({ dependency; _ } as resolution) =

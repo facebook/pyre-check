@@ -795,10 +795,7 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
                     ~parent
                     ~name:attribute)
             >>| AnnotatedAttribute.parent
-            >>= (fun parent ->
-                  GlobalResolution.class_summary
-                    (Resolution.global_resolution resolution)
-                    (Type.Primitive parent))
+            >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
             >>| Node.value
           in
           match parent_class_summary with
@@ -826,6 +823,8 @@ let resolve_attributes_for_name ~resolution expression =
       in
       let parent_class_summary =
         base_type
+        >>| Type.split
+        >>= (fun (parent, _) -> Type.primitive_name parent)
         >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
         >>| Node.value
       in

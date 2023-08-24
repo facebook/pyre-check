@@ -380,7 +380,6 @@ let verify_global ~path ~location ~resolution ~name =
       let class_summary =
         Reference.prefix name
         >>| Reference.show
-        >>| (fun class_name -> Type.Primitive class_name)
         >>= GlobalResolution.class_summary resolution
         >>| Node.value
       in

@@ -825,7 +825,9 @@ module State (Context : Context) = struct
 
   let module_path_of_type ~global_resolution annotation =
     let module_tracker = GlobalResolution.module_tracker global_resolution in
-    GlobalResolution.class_summary global_resolution annotation
+    let annotation_base, _ = Type.split annotation in
+    Type.primitive_name annotation_base
+    >>= GlobalResolution.class_summary global_resolution
     >>| Node.value
     >>= fun { ClassSummary.qualifier; _ } ->
     ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
@@ -7159,7 +7161,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           (* Do not bother doing other checks if the class itself does not have a consistent MRO. *)
           mro_error :: errors
       | Some None -> (
-          match GlobalResolution.class_summary global_resolution (Type.Primitive name) with
+          match GlobalResolution.class_summary global_resolution name with
           | None -> errors
           | Some { Node.value = definition; _ } ->
               check_bases errors
