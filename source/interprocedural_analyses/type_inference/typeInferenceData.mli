@@ -31,6 +31,8 @@ module Inference : sig
   type t [@@deriving show]
 
   val create : raw -> t
+
+  val from_error : define:Ast.Statement.Define.t -> Analysis.AnalysisError.t -> t
 end
 
 module LocalResult : sig

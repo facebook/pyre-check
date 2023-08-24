@@ -1135,35 +1135,20 @@ let legacy_infer_for_define
 let infer_for_define ~configuration ~global_resolution ~source ~qualifier ~filename_lookup ~define =
   let timer = Timer.start () in
   let { Node.location; value = { Define.signature; _ } } = define in
-  let abstract = Define.Signature.is_abstract_method signature in
-  let error_to_inference { AnalysisError.location; kind; _ } =
-    let open AnalysisError in
-    match kind with
-    | MissingReturnAnnotation { annotation = Some type_; _ } when not abstract ->
-        Some Inference.{ type_; target = Return }
-    | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
-        Some Inference.{ type_; target = Parameter { name } }
-    | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
-        Some Inference.{ type_; target = Global { name; location } }
-    | MissingAttributeAnnotation
-        { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
-        Some
-          Inference.
-            { type_; target = Attribute { parent = type_to_reference parent; name; location } }
-    | _ -> None
-  in
-  let add_missing_annotation_error ~global_resolution ~lookup result error =
-    match error_to_inference error with
-    | None -> result
-    | Some raw ->
-        raw |> Inference.create |> LocalResult.add_inference ~global_resolution ~lookup result
+  let add_missing_annotation_error ~global_resolution ~define ~lookup result error =
+    Inference.from_error ~define error
+    |> LocalResult.add_inference ~global_resolution ~lookup result
   in
   let errors = legacy_infer_for_define ~configuration ~global_resolution ~source ~define in
   let result =
     List.fold
       ~init:
         (LocalResult.from_signature ~global_resolution ~lookup:filename_lookup ~qualifier define)
-      ~f:(add_missing_annotation_error ~global_resolution ~lookup:filename_lookup)
+      ~f:
+        (add_missing_annotation_error
+           ~global_resolution
+           ~define:(Node.value define)
+           ~lookup:filename_lookup)
       errors
   in
   let number_of_lines = location.stop.line - location.start.line + 1 in

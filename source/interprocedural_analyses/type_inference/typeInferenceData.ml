@@ -368,6 +368,26 @@ module Inference = struct
       None
     else
       Some { type_ = sanitized_type; target }
+
+
+  let from_error ~define { AnalysisError.location; kind; _ } =
+    let raw_inference =
+      let open AnalysisError in
+      let open Statement in
+      match kind with
+      | MissingReturnAnnotation { annotation = Some type_; _ }
+        when not (Define.is_abstract_method define) ->
+          Some { type_; target = Return }
+      | MissingParameterAnnotation { name; annotation = Some type_; _ } ->
+          Some { type_; target = Parameter { name } }
+      | MissingGlobalAnnotation { name; annotation = Some type_; _ } ->
+          Some { type_; target = Global { name; location } }
+      | MissingAttributeAnnotation
+          { parent; missing_annotation = { name; annotation = Some type_; _ } } ->
+          Some { type_; target = Attribute { parent = type_to_reference parent; name; location } }
+      | _ -> None
+    in
+    raw_inference >>= create
 end
 
 module LocalResult = struct
