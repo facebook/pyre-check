@@ -823,6 +823,14 @@ module State (Context : Context) = struct
     | _ -> None
 
 
+  let module_path_of_type ~global_resolution annotation =
+    let module_tracker = GlobalResolution.module_tracker global_resolution in
+    GlobalResolution.class_summary global_resolution annotation
+    >>| Node.value
+    >>= fun { ClassSummary.qualifier; _ } ->
+    ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
+
+
   let forward_reference ~resolution ~location ~errors reference =
     let global_resolution = Resolution.global_resolution resolution in
     let reference = GlobalResolution.legacy_resolve_exports global_resolution reference in
@@ -1210,13 +1218,6 @@ module State (Context : Context) = struct
               Some (class_data, attribute, undefined_target)
           | None -> None
         in
-        let module_path_of_parent_module class_type =
-          let module_tracker = GlobalResolution.module_tracker global_resolution in
-          GlobalResolution.class_summary global_resolution class_type
-          >>| Node.value
-          >>= fun { ClassSummary.qualifier; _ } ->
-          ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
-        in
         match
           Type.class_data_for_attribute_lookup resolved_base
           >>| List.map ~f:find_attribute
@@ -1238,7 +1239,8 @@ module State (Context : Context) = struct
                            Error.Class
                              {
                                class_origin = ClassType resolved_base;
-                               parent_module_path = module_path_of_parent_module resolved_base;
+                               parent_module_path =
+                                 module_path_of_type ~global_resolution resolved_base;
                              };
                        })
             in
@@ -1320,7 +1322,8 @@ module State (Context : Context) = struct
                                Error.Class
                                  {
                                    class_origin;
-                                   parent_module_path = module_path_of_parent_module target;
+                                   parent_module_path =
+                                     module_path_of_type ~global_resolution target;
                                  };
                            })
               | _ -> errors
@@ -1634,13 +1637,7 @@ module State (Context : Context) = struct
                     (Error.UnsupportedOperand
                        (Binary { operator_name; left_operand = target; right_operand = resolved }))
               | _ ->
-                  let class_module =
-                    let module_tracker = GlobalResolution.module_tracker global_resolution in
-                    GlobalResolution.class_summary global_resolution target
-                    >>| Node.value
-                    >>= fun { ClassSummary.qualifier; _ } ->
-                    ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
-                  in
+                  let class_module = module_path_of_type ~global_resolution target in
                   Some
                     (Error.UndefinedAttribute
                        {
@@ -4447,13 +4444,7 @@ module State (Context : Context) = struct
                                  custom definition of `__setattr__`, we should run signature select
                                  against the value type. *)
                               let parent_module_path =
-                                let module_tracker =
-                                  GlobalResolution.module_tracker global_resolution
-                                in
-                                GlobalResolution.class_summary global_resolution parent
-                                >>| Node.value
-                                >>= fun { ClassSummary.qualifier; _ } ->
-                                ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
+                                module_path_of_type ~global_resolution parent
                               in
                               emit_error
                                 ~errors
