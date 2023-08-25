@@ -198,7 +198,7 @@ let model_verification_error ~path ~location kind = { ModelVerificationError.kin
 let verify_model_syntax ~path ~location ~callable_name ~normalized_model_parameters =
   (* Ensure that the parameter's default value is either not present or `...` to catch common errors
      when declaring models. *)
-  let check_default_value (_, _, original) =
+  let check_default_value { AccessPath.NormalizedParameter.original; _ } =
     match Node.value original with
     | { Parameter.value = None; _ }
     | { Parameter.value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
@@ -232,7 +232,11 @@ let model_compatible_errors ~callable_overload ~normalized_model_parameters =
   let open ModelVerificationError in
   (* Once a requirement has been satisfied, it is removed from requirement object. At the end, we
      check whether there remains unsatisfied requirements. *)
-  let validate_model_parameter position (errors, requirements) (model_parameter, _, _) =
+  let validate_model_parameter
+      position
+      (errors, requirements)
+      { AccessPath.NormalizedParameter.root = model_parameter; _ }
+    =
     let open AccessPath.Root in
     match model_parameter with
     | LocalResult

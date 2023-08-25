@@ -2246,7 +2246,7 @@ let parse_parameter_taint
     ~parameters
     ~callable_parameter_names_to_positions
     ~is_object_target
-    (root, _name, parameter)
+    { AccessPath.NormalizedParameter.root; original = parameter; _ }
   =
   parameter.Node.value.Parameter.annotation
   >>| parse_annotations
@@ -2799,8 +2799,8 @@ let create_model_from_signature
               AccessPath.Root.PositionalParameter { name; position; positional_only = false }
           | root -> Ok root
         in
-        let adjust_position (root, name, parameter) =
-          adjust_position_of_root root >>| fun root -> root, name, parameter
+        let adjust_position ({ AccessPath.NormalizedParameter.root; _ } as parameter) =
+          adjust_position_of_root root >>| fun root -> { parameter with root }
         in
         List.map parameters ~f:adjust_position |> all
   in

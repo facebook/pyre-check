@@ -537,8 +537,11 @@ let rec normalized_parameter_matches_constraint
     ~class_hierarchy_graph
     ~name_captures
     ~parameter:
-      ((root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as
-      parameter)
+      ({
+         AccessPath.NormalizedParameter.root;
+         qualified_name;
+         original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
+       } as parameter)
   = function
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
@@ -549,7 +552,7 @@ let rec normalized_parameter_matches_constraint
             ~annotation_constraint
       |> Option.value ~default:false
   | ModelQuery.ParameterConstraint.NameConstraint name_constraint ->
-      matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized parameter_name)
+      matches_name_constraint ~name_captures ~name_constraint (Identifier.sanitized qualified_name)
   | ModelQuery.ParameterConstraint.IndexConstraint index -> (
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
@@ -1531,9 +1534,13 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
             List.find_map
               normalized_parameters
               ~f:(fun
-                   (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ })
+                   {
+                     AccessPath.NormalizedParameter.root;
+                     qualified_name;
+                     original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
+                   }
                  ->
-                if Identifier.equal_sanitized parameter_name name then
+                if Identifier.equal_sanitized qualified_name name then
                   Some (root, annotation)
                 else
                   None)
@@ -1549,7 +1556,13 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           let parameter =
             List.find_map
               normalized_parameters
-              ~f:(fun (root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) ->
+              ~f:(fun
+                   {
+                     AccessPath.NormalizedParameter.root;
+                     original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
+                     _;
+                   }
+                 ->
                 match root with
                 | AccessPath.Root.PositionalParameter { position; _ } when position = index ->
                     Some (root, annotation)
@@ -1564,12 +1577,16 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           | None -> [])
       | ModelQuery.Model.AllParameters { excludes; taint } ->
           let apply_parameter_production
-              ( (root, parameter_name, { Node.value = { Expression.Parameter.annotation; _ }; _ }),
+              ( {
+                  AccessPath.NormalizedParameter.root;
+                  qualified_name;
+                  original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
+                },
                 production )
             =
             if
               (not (List.is_empty excludes))
-              && List.mem excludes ~equal:String.equal (Identifier.sanitized parameter_name)
+              && List.mem excludes ~equal:String.equal (Identifier.sanitized qualified_name)
             then
               None
             else
@@ -1580,7 +1597,11 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           |> List.filter_map ~f:apply_parameter_production
       | ModelQuery.Model.Parameter { where; taint; _ } ->
           let apply_parameter_production
-              ( ((root, _, { Node.value = { Expression.Parameter.annotation; _ }; _ }) as parameter),
+              ( ({
+                   AccessPath.NormalizedParameter.root;
+                   original = { Node.value = { Expression.Parameter.annotation; _ }; _ };
+                   _;
+                 } as parameter),
                 production )
             =
             if
@@ -1593,8 +1614,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                      ~name_captures:None
                      ~parameter)
             then
-              let parameter, _, _ = parameter in
-              production_to_taint annotation ~production ~parameter:(Some parameter)
+              production_to_taint annotation ~production ~parameter:(Some root)
               >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
             else
               None

@@ -40,7 +40,7 @@ val demangle_class_attribute : string -> string
 val verify_signature
   :  path:PyrePath.t option ->
   location:Location.t ->
-  normalized_model_parameters:(AccessPath.Root.t * string * Ast.Expression.Parameter.t) list ->
+  normalized_model_parameters:AccessPath.NormalizedParameter.t list ->
   name:Reference.t ->
   Type.Callable.t option ->
   (unit, ModelVerificationError.t) result

@@ -2839,7 +2839,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let prime_parameter
         state
-        (parameter_root, name, { Node.location; value = { Parameter.value; _ } })
+        {
+          AccessPath.NormalizedParameter.root = parameter_root;
+          qualified_name;
+          original = { Node.location; value = { Parameter.value; _ } };
+        }
       =
       let prime =
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
@@ -2859,7 +2863,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | None -> ForwardState.Tree.bottom, state
         | Some expression -> analyze_expression ~resolution ~state ~is_result_used:true ~expression
       in
-      let root = AccessPath.Root.Variable name in
+      let root = AccessPath.Root.Variable qualified_name in
       let taint =
         ForwardState.assign
           ~root

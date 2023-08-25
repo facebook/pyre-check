@@ -40,7 +40,16 @@ module Root : sig
   module Set : Caml.Set.S with type elt = t
 end
 
-val normalize_parameters : Parameter.t list -> (Root.t * Identifier.t * Parameter.t) list
+module NormalizedParameter : sig
+  type t = {
+    root: Root.t;
+    (* Qualified name (prefixed with `$parameter$`), ignoring stars. *)
+    qualified_name: Identifier.t;
+    original: Parameter.t;
+  }
+end
+
+val normalize_parameters : Parameter.t list -> NormalizedParameter.t list
 
 module Path : sig
   type t = Abstract.TreeDomain.Label.t list [@@deriving compare, eq, show]

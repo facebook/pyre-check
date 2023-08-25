@@ -2436,9 +2436,9 @@ let extract_tito_and_sink_models
     in
     BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in
-  let split_and_simplify model (parameter, name, annotation) =
+  let split_and_simplify model (parameter, qualified_name, annotation) =
     let partition =
-      BackwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] entry_taint
+      BackwardState.read ~root:(AccessPath.Root.Variable qualified_name) ~path:[] entry_taint
       |> BackwardState.Tree.partition BackwardTaint.kind By ~f:Sinks.discard_transforms
     in
     let taint_in_taint_out =
@@ -2525,8 +2525,8 @@ let extract_tito_and_sink_models
   let normalized_parameters =
     parameters
     |> AccessPath.normalize_parameters
-    |> List.map ~f:(fun (parameter, name, original) ->
-           parameter, name, original.Node.value.Parameter.annotation)
+    |> List.map ~f:(fun { AccessPath.NormalizedParameter.root; qualified_name; original } ->
+           root, qualified_name, original.Node.value.Parameter.annotation)
   in
   let captures =
     List.map captures ~f:(fun capture ->
