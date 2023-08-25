@@ -309,10 +309,6 @@ let alias_environment class_metadata_environment =
     (class_hierarchy_environment class_metadata_environment)
 
 
-let empty_stub_environment class_metadata_environment =
-  alias_environment class_metadata_environment |> AliasEnvironment.ReadOnly.empty_stub_environment
-
-
 let unannotated_global_environment class_metadata_environment =
   alias_environment class_metadata_environment
   |> AliasEnvironment.ReadOnly.unannotated_global_environment
@@ -325,17 +321,6 @@ let class_summary class_metadata_environment annotation ~dependency =
   >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
         (unannotated_global_environment class_metadata_environment)
         ?dependency
-
-
-let aliases class_metadata_environment ~dependency =
-  AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment class_metadata_environment)
-
-
-let is_suppressed_module class_metadata_environment ~dependency reference =
-  EmptyStubEnvironment.ReadOnly.from_empty_stub
-    (empty_stub_environment class_metadata_environment)
-    ?dependency
-    reference
 
 
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
@@ -3070,13 +3055,16 @@ class base class_metadata_environment dependency =
           add_if_missing ~attribute_name:"__getattr__" ~annotation:Type.Any
         in
         add_actual ();
-        if
-          include_generated_attributes
-          && AnnotatedBases.extends_placeholder_stub_class
-               parent
-               ~aliases:(aliases class_metadata_environment ~dependency)
-               ~from_empty_stub:(is_suppressed_module class_metadata_environment ~dependency)
-        then
+        let extends_placeholder_stubs class_name =
+          let class_hierarchy =
+            ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+              (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                 class_metadata_environment)
+              ?dependency
+          in
+          ClassHierarchy.extends_placeholder_stub class_hierarchy class_name
+        in
+        if include_generated_attributes && extends_placeholder_stubs class_name then
           add_placeholder_stub_inheritances ();
         let () =
           if include_generated_attributes then
