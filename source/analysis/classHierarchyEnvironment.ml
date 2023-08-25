@@ -44,6 +44,22 @@ module EdgesValue = struct
   let equal = Memory.equal_from_compare [%compare: ClassHierarchy.Edges.t option]
 end
 
+let compute_extends_placeholder_stub_class
+    { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
+    ~aliases
+    ~from_empty_stub
+  =
+  let metaclass_is_from_placeholder_stub =
+    metaclass
+    >>| AnnotatedBases.base_is_from_placeholder_stub ~aliases ~from_empty_stub
+    |> Option.value ~default:false
+  in
+  List.exists
+    base_classes
+    ~f:(AnnotatedBases.base_is_from_placeholder_stub ~aliases ~from_empty_stub)
+  || metaclass_is_from_placeholder_stub
+
+
 let find_propagated_type_variables parsed_bases =
   (* Note: We want to preserve order when deduplicating, so we can't use `List.dedup_and_sort`. This
      is quadratic, but it should be fine given the small number of generic variables. *)
@@ -210,7 +226,7 @@ let get_parents alias_environment name ~dependency =
         Some { ClassHierarchy.Target.target = IndexTracker.index name; parameters }
       in
       let has_placeholder_stub_parent =
-        AnnotatedBases.extends_placeholder_stub_class
+        compute_extends_placeholder_stub_class
           class_summary
           ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
           ~from_empty_stub:
