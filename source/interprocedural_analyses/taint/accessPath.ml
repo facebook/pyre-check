@@ -89,7 +89,7 @@ let normalize_parameters parameters =
       (seen_star, excluded, normalized)
       ({ Node.value = { Parameter.name = qualified_name; _ }; _ } as original)
     =
-    if String.equal qualified_name "/" then
+    if Identifier.equal (Identifier.sanitized qualified_name) "/" then
       let mark_as_positional_only ({ NormalizedParameter.root; _ } as parameter) =
         let root =
           match root with

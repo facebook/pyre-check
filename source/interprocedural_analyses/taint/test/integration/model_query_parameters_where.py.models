@@ -781,10 +781,6 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(/)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
         "port": "formal(a)",
         "taint": [
           {
