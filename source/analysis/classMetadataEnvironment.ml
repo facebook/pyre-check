@@ -28,6 +28,7 @@ type class_metadata = {
      some of them based on the value of `successors`? *)
   successors: Type.Primitive.t list option;
   is_test: bool;
+  is_mock: bool;
   is_final: bool;
   is_abstract: bool;
   is_protocol: bool;
@@ -70,8 +71,19 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
     let is_final =
       definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
     in
-    let in_test =
+    let is_test =
       List.exists ~f:Type.Primitive.is_unit_test (class_name :: Option.value successors ~default:[])
+    in
+    let is_mock =
+      let is_mock_class = function
+        | "unittest.mock.Base"
+        | "mock.Base"
+        | "unittest.mock.NonCallableMock"
+        | "mock.NonCallableMock" ->
+            true
+        | _ -> false
+      in
+      List.exists ~f:is_mock_class (class_name :: Option.value successors ~default:[])
     in
     let is_protocol = ClassSummary.is_protocol (Node.value definition) in
     let is_abstract = ClassSummary.is_abstract (Node.value definition) in
@@ -81,7 +93,7 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
         ~f:([%compare.equal: Type.Primitive.t] total_typed_dictionary_name)
         (Option.value successors ~default:[])
     in
-    { is_test = in_test; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
+    { is_test; is_mock; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
     unannotated_global_environment

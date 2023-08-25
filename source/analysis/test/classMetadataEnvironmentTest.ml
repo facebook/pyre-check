@@ -39,6 +39,7 @@ let test_simple_registration context =
        {
          successors = Some ["object"];
          is_test = false;
+         is_mock = false;
          is_final = false;
          is_protocol = false;
          is_abstract = false;
@@ -56,6 +57,7 @@ let test_simple_registration context =
        {
          successors = Some ["test.D"; "object"];
          is_test = false;
+         is_mock = false;
          is_final = false;
          is_protocol = false;
          is_abstract = false;
@@ -71,6 +73,7 @@ let test_simple_registration context =
        {
          successors = Some ["object"];
          is_test = false;
+         is_mock = false;
          is_final = false;
          is_protocol = false;
          is_abstract = true;
@@ -86,6 +89,7 @@ let test_simple_registration context =
        {
          successors = Some ["object"];
          is_test = false;
+         is_mock = false;
          is_final = false;
          is_protocol = true;
          is_abstract = false;
@@ -102,6 +106,41 @@ let test_simple_registration context =
        {
          successors = Some ["object"];
          is_test = true;
+         is_mock = false;
+         is_final = false;
+         is_protocol = false;
+         is_abstract = false;
+         is_typed_dictionary = false;
+       });
+  assert_registers
+    ~source_name:"mock"
+    {|
+      class NonCallableMock:
+        pass
+    |}
+    "mock.NonCallableMock"
+    (Some
+       {
+         successors = Some ["object"];
+         is_test = false;
+         is_mock = true;
+         is_final = false;
+         is_protocol = false;
+         is_abstract = false;
+         is_typed_dictionary = false;
+       });
+  assert_registers
+    ~source_name:"unittest/mock"
+    {|
+      class Base:
+        pass
+    |}
+    "unittest.mock.Base"
+    (Some
+       {
+         successors = Some ["object"];
+         is_test = false;
+         is_mock = true;
          is_final = false;
          is_protocol = false;
          is_abstract = false;
@@ -187,6 +226,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -202,6 +242,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -228,6 +269,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -243,6 +285,7 @@ let test_updates context =
             {
               successors = Some ["test.D"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -282,6 +325,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -297,6 +341,7 @@ let test_updates context =
             {
               successors = Some ["placeholder.Base"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -336,6 +381,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -347,6 +393,7 @@ let test_updates context =
             {
               successors = Some ["test.C"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -358,6 +405,7 @@ let test_updates context =
             {
               successors = Some ["test.A"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -369,6 +417,7 @@ let test_updates context =
             {
               successors = Some ["test.D"; "test.C"; "test.A"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -380,6 +429,7 @@ let test_updates context =
             {
               successors = Some ["test.B"; "test.A"; "object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;
@@ -407,6 +457,7 @@ let test_updates context =
             {
               successors = Some ["object"];
               is_test = false;
+              is_mock = false;
               is_final = false;
               is_protocol = false;
               is_abstract = false;

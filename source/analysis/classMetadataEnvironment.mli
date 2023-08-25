@@ -10,6 +10,7 @@ open SharedMemoryKeys
 type class_metadata = {
   successors: Type.Primitive.t list option;
   is_test: bool;
+  is_mock: bool;
   is_final: bool;
   is_abstract: bool;
   is_protocol: bool;

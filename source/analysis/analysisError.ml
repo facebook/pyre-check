@@ -3873,18 +3873,10 @@ let filter ~resolution errors =
             try
               match annotation with
               | Type.Primitive predecessor
-              | Type.Parametric { name = predecessor; _ } ->
-                  let is_transitive_successor =
-                    GlobalResolution.is_transitive_successor
-                      ~placeholder_subclass_extends_all:false
-                      resolution
-                      ~predecessor
-                  in
-                  is_transitive_successor ~successor:"unittest.mock.Base"
-                  || is_transitive_successor ~successor:"mock.Base"
-                  (* Special-case mypy's workaround for mocks. *)
-                  || is_transitive_successor ~successor:"unittest.mock.NonCallableMock"
-                  || is_transitive_successor ~successor:"mock.NonCallableMock"
+              | Type.Parametric { name = predecessor; _ } -> (
+                  match GlobalResolution.class_metadata resolution predecessor with
+                  | None -> false
+                  | Some { ClassMetadataEnvironment.is_mock; _ } -> is_mock)
               | _ -> false
             with
             | ClassHierarchy.Untracked _ -> false
