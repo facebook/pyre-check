@@ -2758,7 +2758,7 @@ let create_model_from_signature
   (* If there were parameters omitted from the model, the positioning will be off in the access path
      conversion. Let's fix the positions after the fact to make sure that our models aren't off. *)
   let normalized_model_parameters =
-    let parameters = AccessPath.Root.normalize_parameters parameters in
+    let parameters = AccessPath.normalize_parameters parameters in
     match callable_parameter_names_to_positions with
     | None -> Ok parameters
     | Some names_to_positions ->

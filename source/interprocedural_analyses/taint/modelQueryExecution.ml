@@ -711,7 +711,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
       |> Option.value ~default:false
   | ModelQuery.Constraint.AnyParameterConstraint parameter_constraint ->
       Modelable.parameters value
-      |> AccessPath.Root.normalize_parameters
+      |> AccessPath.normalize_parameters
       |> List.exists ~f:(fun parameter ->
              normalized_parameter_matches_constraint
                ~resolution
@@ -1611,7 +1611,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | Modelable.Callable { signature; _ } -> Lazy.force signature
       | _ -> failwith "unreachable"
     in
-    let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+    let normalized_parameters = AccessPath.normalize_parameters parameters in
     List.concat_map models ~f:(apply_model ~normalized_parameters ~return_annotation)
 
 

@@ -2524,7 +2524,7 @@ let extract_tito_and_sink_models
   let { Statement.Define.signature = { parameters; _ }; captures; _ } = define in
   let normalized_parameters =
     parameters
-    |> AccessPath.Root.normalize_parameters
+    |> AccessPath.normalize_parameters
     |> List.map ~f:(fun (parameter, name, original) ->
            parameter, name, original.Node.value.Parameter.annotation)
   in

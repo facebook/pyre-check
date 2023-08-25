@@ -352,7 +352,7 @@ let add_obscure_sink ~resolution ~call_target model =
             BackwardTaint.singleton CallInfo.declaration (Sinks.NamedSink "Obscure") Frame.initial
             |> BackwardState.Tree.create_leaf
           in
-          let parameters = AccessPath.Root.normalize_parameters parameters in
+          let parameters = AccessPath.normalize_parameters parameters in
           let add_parameter_sink sink_taint (root, _, _) =
             BackwardState.assign ~root ~path:[] sink sink_taint
           in

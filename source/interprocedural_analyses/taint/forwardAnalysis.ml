@@ -3033,7 +3033,7 @@ let run
   let timer = Timer.start () in
   let initial =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - initial state" ~f:(fun () ->
-        let normalized_parameters = AccessPath.Root.normalize_parameters parameters in
+        let normalized_parameters = AccessPath.normalize_parameters parameters in
         State.create ~existing_model normalized_parameters)
   in
   let () = State.log "Processing CFG:@.%a" Cfg.pp cfg in

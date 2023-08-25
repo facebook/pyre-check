@@ -44,56 +44,6 @@ module Root = struct
       | None -> name
 
 
-    let normalize_parameters parameters =
-      let normalize_parameters
-          position
-          (seen_star, excluded, normalized)
-          ({ Node.value = { Parameter.name = prefixed_name; _ }; _ } as original)
-        =
-        let prefixed_name_string = prefixed_name in
-        if String.equal prefixed_name_string "/" then
-          let mark_as_positional_only (parameter, name, original) =
-            let parameter =
-              match parameter with
-              | PositionalParameter { position; name; _ } ->
-                  PositionalParameter { position; name; positional_only = true }
-              | _ -> parameter
-            in
-            parameter, name, original
-          in
-          seen_star, excluded, List.map ~f:mark_as_positional_only normalized
-        else if String.is_prefix ~prefix:"**" prefixed_name_string then
-          let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"**" in
-          ( true,
-            excluded,
-            (StarStarParameter { excluded }, prefixed_variable_name, original) :: normalized )
-        else if Identifier.equal (Identifier.sanitized prefixed_name_string) "*" then
-          (* This is not a real starred argument, but instead is just the indicator for the beginning
-           * of the keyword only arguments *)
-          true, excluded, normalized
-        else if String.is_prefix ~prefix:"*" prefixed_name_string then
-          let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"*" in
-          ( true,
-            excluded,
-            (StarParameter { position }, prefixed_variable_name, original) :: normalized )
-        else if seen_star then
-          let normal_name = prefixed_name_string |> chop_parameter_prefix in
-          ( true,
-            normal_name :: excluded,
-            (NamedParameter { name = normal_name }, prefixed_name, original) :: normalized )
-        else
-          let normal_name = prefixed_name_string |> chop_parameter_prefix in
-          ( false,
-            normal_name :: excluded,
-            ( PositionalParameter { position; name = normal_name; positional_only = false },
-              prefixed_name,
-              original )
-            :: normalized )
-      in
-      List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
-      |> fun (_, _, parameters) -> List.rev parameters
-
-
     let parameter_name = function
       | PositionalParameter { name; _ }
       | NamedParameter { name } ->
@@ -123,6 +73,56 @@ module Root = struct
   include T
   module Set = Caml.Set.Make (T)
 end
+
+let normalize_parameters parameters =
+  let normalize_parameters
+      position
+      (seen_star, excluded, normalized)
+      ({ Node.value = { Parameter.name = prefixed_name; _ }; _ } as original)
+    =
+    let prefixed_name_string = prefixed_name in
+    if String.equal prefixed_name_string "/" then
+      let mark_as_positional_only (parameter, name, original) =
+        let parameter =
+          match parameter with
+          | Root.PositionalParameter { position; name; _ } ->
+              Root.PositionalParameter { position; name; positional_only = true }
+          | _ -> parameter
+        in
+        parameter, name, original
+      in
+      seen_star, excluded, List.map ~f:mark_as_positional_only normalized
+    else if String.is_prefix ~prefix:"**" prefixed_name_string then
+      let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"**" in
+      ( true,
+        excluded,
+        (Root.StarStarParameter { excluded }, prefixed_variable_name, original) :: normalized )
+    else if Identifier.equal (Identifier.sanitized prefixed_name_string) "*" then
+      (* This is not a real starred argument, but instead is just the indicator for the beginning
+       * of the keyword only arguments *)
+      true, excluded, normalized
+    else if String.is_prefix ~prefix:"*" prefixed_name_string then
+      let prefixed_variable_name = String.chop_prefix_exn prefixed_name_string ~prefix:"*" in
+      ( true,
+        excluded,
+        (Root.StarParameter { position }, prefixed_variable_name, original) :: normalized )
+    else if seen_star then
+      let normal_name = prefixed_name_string |> Root.chop_parameter_prefix in
+      ( true,
+        normal_name :: excluded,
+        (Root.NamedParameter { name = normal_name }, prefixed_name, original) :: normalized )
+    else
+      let normal_name = prefixed_name_string |> Root.chop_parameter_prefix in
+      ( false,
+        normal_name :: excluded,
+        ( Root.PositionalParameter { position; name = normal_name; positional_only = false },
+          prefixed_name,
+          original )
+        :: normalized )
+  in
+  List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
+  |> fun (_, _, parameters) -> List.rev parameters
+
 
 module Path = struct
   type t = Abstract.TreeDomain.Label.t list
