@@ -206,7 +206,7 @@ async def async_run_code_navigation_client(
         [pyre_server_options.PyreServerOptions], AbstractDaemonQueryFailer
     ],
 ) -> int:
-    initial_server_options = launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler.read_server_options(
+    initial_server_options = pyre_server_options.read_server_options(
         server_options_reader, remote_logging
     )
     stdin, stdout = await connections.create_async_stdin_stdout()

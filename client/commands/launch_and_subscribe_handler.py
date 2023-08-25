@@ -136,24 +136,6 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         }
 
     @staticmethod
-    def read_server_options(
-        server_options_reader: pyre_server_options.PyreServerOptionsReader,
-        remote_logging: Optional[backend_arguments.RemoteLogging],
-    ) -> pyre_server_options.PyreServerOptions:
-        try:
-            LOG.info("Reading Pyre server configurations...")
-            return server_options_reader()
-        except Exception:
-            log_lsp_event.log(
-                remote_logging=remote_logging,
-                event=log_lsp_event.LSPEvent.NOT_CONFIGURED,
-                normals={
-                    "exception": traceback.format_exc(),
-                },
-            )
-            raise
-
-    @staticmethod
     async def _read_server_response(
         server_input_channel: connections.AsyncTextReader,
     ) -> str:
@@ -375,7 +357,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         Reread the server start options, which can change due to configuration
         reloading, and run with error logging.
         """
-        server_options = self.read_server_options(
+        server_options = pyre_server_options.read_server_options(
             self.server_options_reader, self.remote_logging
         )
         # Update the server options, which can change if the config is modified

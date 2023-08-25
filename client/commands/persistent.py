@@ -228,7 +228,7 @@ async def run_persistent(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
 ) -> int:
-    initial_server_options = launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler.read_server_options(
+    initial_server_options = pyre_server_options.read_server_options(
         server_options_reader, remote_logging
     )
     stdin, stdout = await connections.create_async_stdin_stdout()
