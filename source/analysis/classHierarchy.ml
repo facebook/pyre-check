@@ -125,7 +125,7 @@ let parents_of (module Handler : Handler) target =
   Handler.edges target >>| fun { parents; _ } -> parents
 
 
-let parents_and_generic_of (module Handler : Handler) target =
+let parents_and_generic_of_target (module Handler : Handler) target =
   Handler.edges target
   >>= fun { parents; generic_base; _ } ->
   match generic_base with
@@ -133,7 +133,7 @@ let parents_and_generic_of (module Handler : Handler) target =
   | Some base -> Some (List.append parents [base])
 
 
-let extends_placeholder_stub (module Handler : Handler) target =
+let extends_placeholder_stub_of_target (module Handler : Handler) target =
   match Handler.edges target with
   | None -> false
   | Some { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent
@@ -249,6 +249,10 @@ let immediate_parents (module Handler : Handler) class_name =
   |> Option.value ~default:[]
 
 
+let extends_placeholder_stub (module Handler : Handler) class_name =
+  index_of class_name |> extends_placeholder_stub_of_target (module Handler)
+
+
 let parameters_to_variables parameters =
   List.map parameters ~f:Type.Parameter.to_variable |> Option.all
 
@@ -265,7 +269,7 @@ let variables ?(default = None) (module Handler : Handler) = function
   | primitive_name ->
       let generic_index = index_of generic_primitive in
       let primitive_index = index_of primitive_name in
-      parents_and_generic_of (module Handler) primitive_index
+      parents_and_generic_of_target (module Handler) primitive_index
       >>= List.find ~f:(fun { Target.target; _ } ->
               [%compare.equal: IndexTracker.t] target generic_index)
       >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
@@ -348,7 +352,7 @@ let is_transitive_successor
             if
               [%compare.equal: IndexTracker.t] current (index_of target)
               || placeholder_subclass_extends_all
-                 && extends_placeholder_stub (module Handler) current
+                 && extends_placeholder_stub_of_target (module Handler) current
             then
               true
             else (
@@ -369,7 +373,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
         | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
       in
       index_of target
-      |> parents_and_generic_of (module Handler)
+      |> parents_and_generic_of_target (module Handler)
       >>= get_generic_parameters ~generic_index
       >>= parameters_to_variables
       >>| List.concat_map ~f:to_any
@@ -441,7 +445,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   in
                   List.map successors ~f:instantiate_parameters
                 in
-                parents_and_generic_of (module Handler) target_index
+                parents_and_generic_of_target (module Handler) target_index
                 >>| get_instantiated_successors ~generic_index ~parameters
               in
               if [%compare.equal: IndexTracker.t] target_index (index_of target) then

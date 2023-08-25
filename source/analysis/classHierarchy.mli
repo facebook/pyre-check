@@ -82,8 +82,6 @@ end
 
 val parents_of : (module Handler) -> IndexTracker.t -> Target.t list option
 
-val extends_placeholder_stub : (module Handler) -> IndexTracker.t -> bool
-
 (* Returns true if the class hierarchy contains the given class. *)
 val contains : (module Handler) -> Type.Primitive.t -> bool
 
@@ -99,6 +97,8 @@ val method_resolution_order_linearize
   (Type.Primitive.t list, MethodResolutionOrderError.t) result
 
 val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t list
+
+val extends_placeholder_stub : (module Handler) -> Type.Primitive.t -> bool
 
 val variables
   :  ?default:Type.Variable.t list option ->
