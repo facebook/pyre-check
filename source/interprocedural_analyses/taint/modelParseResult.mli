@@ -27,10 +27,19 @@ module CollapseDepth : sig
 end
 
 module TaintPath : sig
+  module Label : sig
+    type t =
+      | TreeLabel of Abstract.TreeDomain.Label.t
+      | ParameterName
+    [@@deriving equal, show]
+  end
+
   type t =
-    | Regular of AccessPath.Path.t
+    | Path of Label.t list
     | AllStaticFields
   [@@deriving equal, show]
+
+  val get_access_path : t -> (AccessPath.Path.t, string) result
 end
 
 module TaintFeatures : sig
@@ -40,7 +49,7 @@ module TaintFeatures : sig
     applies_to: AccessPath.Path.t option;
     parameter_path: TaintPath.t option;
     return_path: TaintPath.t option;
-    update_path: AccessPath.Path.t option;
+    update_path: TaintPath.t option;
     leaf_names: Features.LeafName.t list;
     leaf_name_provided: bool;
     trace_length: int option;
@@ -79,7 +88,7 @@ module TaintKindsWithFeatures : sig
 
   val from_return_path : TaintPath.t -> t
 
-  val from_update_path : AccessPath.Path.t -> t
+  val from_update_path : TaintPath.t -> t
 
   val from_collapse_depth : CollapseDepth.t -> t
 

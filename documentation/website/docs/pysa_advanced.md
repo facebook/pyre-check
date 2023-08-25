@@ -84,8 +84,8 @@ return value (depending on the context). The underscore can be followed by attri
 accesses (e.g, `_.foo.bar`) and index accesses (e.g, `_["foo"][0]["bar"]`), or a
 combination of both (e.g, `_.foo[0]`).
 
-In addition to these, three special calls can be used: `.all()`, `.keys()` and
-`.all_static_fields()`.
+In addition to these, four special calls can be used: `.all()`, `.keys()`,
+`.parameter_name()` and `.all_static_fields()`.
 
 #### all()
 
@@ -151,6 +151,39 @@ In general, we recommend to **mark the whole parameter or return value** as a
 source or sink. This feature is **only useful** for power users that post
 process the result of the analysis and extract leaf ports. It is also very
 **computationally expensive**.
+
+#### parameter_name()
+
+`.parameter_name()` will be replaced by the name of the parameter that is being
+modelled. This can only be used for `TaintInTaintOut` on parameters of functions
+or methods. This is usually useful to model constructors of dataclass-like
+classes.
+
+For instance:
+```
+class A:
+  def __init__(self, x, y, z):
+    # method too complicated
+    pass
+```
+
+Using the following [model query](pysa_model_dsl.md):
+```python
+ModelQuery(
+  name="constructors",
+  find="method",
+  where=[fully_qualified_name.equals("A.__init__")],
+  model=[
+    Parameters(TaintInTaintOut[LocalReturn, NoCollapse, ReturnPath[_.parameter_name()]]),
+    Modes([SkipAnalysis])
+  ]
+)
+```
+
+This will automatically propagate taint from parameters `x`, `y`, `z` to
+`self.x`, `self.y` and `self.z`. Note that if the code is available and the
+constructor is not too complex, Pysa will do that automatically without the need
+for a model.
 
 ### Taint In Taint Out
 

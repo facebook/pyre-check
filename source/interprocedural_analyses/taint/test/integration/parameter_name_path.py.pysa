@@ -1,0 +1,9 @@
+def _test_sink(arg: TaintSink[Test]): ...
+def _test_source() -> TaintSource[Test]: ...
+
+ModelQuery(
+  name = "tito_parameter_name",
+  find = "functions",
+  where = name.matches("^test_tito_.*$"),
+  model = Parameters(TaintInTaintOut[LocalReturn, NoCollapse, ReturnPath[_.parameter_name()]])
+)

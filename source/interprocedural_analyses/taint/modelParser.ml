@@ -109,7 +109,8 @@ let base_name expression =
 let is_base_name expression name = Option.equal String.equal (base_name expression) (Some name)
 
 let parse_access_path ~path ~location expression =
-  let module Label = Abstract.TreeDomain.Label in
+  let module TreeLabel = Abstract.TreeDomain.Label in
+  let module ModelLabel = TaintPath.Label in
   let open Core.Result in
   let annotation_error reason =
     model_verification_error
@@ -119,26 +120,27 @@ let parse_access_path ~path ~location expression =
   in
   let rec parse_expression expression =
     match Node.value expression with
-    | Expression.Name (Name.Identifier "_") -> Ok (TaintPath.Regular [])
+    | Expression.Name (Name.Identifier "_") -> Ok (TaintPath.Path [])
     | Expression.Name (Name.Identifier _) ->
         Error (annotation_error "access path must start with `_`")
     | Expression.Name (Name.Attribute { base; attribute; _ }) ->
         (* The analysis does not currently distinguish between fields and indices.
          * Silently convert fields to indices to prevent confusion. *)
-        parse_regular_path base
-        >>| fun base -> TaintPath.Regular (base @ [Label.create_name_index attribute])
+        parse_model_labels base
+        >>| fun base ->
+        TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_name_index attribute)])
     | Expression.Call
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments = [{ Call.Argument.value = argument; _ }];
         } -> (
-        parse_regular_path base
+        parse_model_labels base
         >>= fun base ->
         match Node.value argument with
         | Expression.Constant (Constant.Integer index) ->
-            Ok (TaintPath.Regular (base @ [Label.create_int_index index]))
+            Ok (TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_int_index index)]))
         | Expression.Constant (Constant.String { StringLiteral.value = key; _ }) ->
-            Ok (TaintPath.Regular (base @ [Label.create_name_index key]))
+            Ok (TaintPath.Path (base @ [ModelLabel.TreeLabel (TreeLabel.create_name_index key)]))
         | _ ->
             Error
               (annotation_error
@@ -150,21 +152,29 @@ let parse_access_path ~path ~location expression =
           callee = { Node.value = Name (Name.Attribute { base; attribute = "keys"; _ }); _ };
           arguments = [];
         } ->
-        parse_regular_path base
-        >>| fun base -> TaintPath.Regular (base @ [AccessPath.dictionary_keys])
+        parse_model_labels base
+        >>| fun base -> TaintPath.Path (base @ [ModelLabel.TreeLabel AccessPath.dictionary_keys])
     | Expression.Call
         {
           callee = { Node.value = Name (Name.Attribute { base; attribute = "all"; _ }); _ };
           arguments = [];
         } ->
-        parse_regular_path base >>| fun base -> TaintPath.Regular (base @ [Label.AnyIndex])
+        parse_model_labels base
+        >>| fun base -> TaintPath.Path (base @ [ModelLabel.TreeLabel TreeLabel.AnyIndex])
+    | Expression.Call
+        {
+          callee =
+            { Node.value = Name (Name.Attribute { base; attribute = "parameter_name"; _ }); _ };
+          arguments = [];
+        } ->
+        parse_model_labels base >>| fun base -> TaintPath.Path (base @ [ModelLabel.ParameterName])
     | Expression.Call
         {
           callee =
             { Node.value = Name (Name.Attribute { base; attribute = "all_static_fields"; _ }); _ };
           arguments = [];
         } -> (
-        parse_regular_path base
+        parse_model_labels base
         >>= function
         | [] -> Ok TaintPath.AllStaticFields
         | _ -> Error (annotation_error "`all_static_fields()` can only be used on `_`"))
@@ -175,12 +185,13 @@ let parse_access_path ~path ~location expression =
         Error
           (annotation_error
              (Format.sprintf
-                "unexpected method call `%s` (allowed: `keys`, `all`, `all_static_fields`)"
+                "unexpected method call `%s` (allowed: `keys`, `all`, `all_static_fields`, \
+                 `parameter_name`)"
                 attribute))
     | _ -> Error (annotation_error "unexpected expression")
-  and parse_regular_path expression =
+  and parse_model_labels expression =
     match parse_expression expression with
-    | Ok (TaintPath.Regular path) -> Ok path
+    | Ok (TaintPath.Path labels) -> Ok labels
     | Ok TaintPath.AllStaticFields ->
         Error (annotation_error "cannot access attributes or methods of `all_static_fields()`")
     | Error _ as error -> error
@@ -390,13 +401,8 @@ let rec parse_annotations
             >>| TaintKindsWithFeatures.from_parameter_path
         | Some "ReturnPath" ->
             parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
-        | Some "UpdatePath" -> (
-            parse_access_path ~path ~location argument
-            >>= function
-            | TaintPath.Regular path -> Ok (TaintKindsWithFeatures.from_update_path path)
-            | TaintPath.AllStaticFields ->
-                Error
-                  (annotation_error "`all_static_fields()` is not allowed within `UpdatePath[]`"))
+        | Some "UpdatePath" ->
+            parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_update_path
         | Some "CollapseDepth" ->
             extract_collapse_depth argument
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
@@ -934,6 +940,7 @@ let get_class_attributes_transitive ~resolution class_name =
 
 
 let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features =
+  let open Core.Result in
   let all_static_field_paths () =
     let attributes =
       root_annotations
@@ -948,6 +955,16 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
     | attributes ->
         List.map ~f:(fun attribute -> [Abstract.TreeDomain.Label.Index attribute]) attributes
   in
+  let expand_model_path = function
+    | TaintPath.Path path ->
+        let expand_label = function
+          | TaintPath.Label.TreeLabel label -> Ok label
+          | TaintPath.Label.ParameterName ->
+              Error (Format.asprintf "`parameter_name()` is not allowed for %ss" kind)
+        in
+        path |> List.map ~f:expand_label |> Core.Result.all >>| fun path -> [path]
+    | TaintPath.AllStaticFields -> Ok (all_static_field_paths ())
+  in
   let paths_for_parameter () =
     let kind =
       match kind with
@@ -956,14 +973,13 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
     in
     match features with
     | {
-     TaintFeatures.parameter_path = Some (TaintPath.Regular parameter_path);
+     TaintFeatures.parameter_path = Some path;
      applies_to = None;
      return_path = None;
      update_path = None;
      _;
     } ->
-        Ok [parameter_path]
-    | { parameter_path = Some TaintPath.AllStaticFields; _ } -> Ok (all_static_field_paths ())
+        expand_model_path path
     | { return_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ReturnPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -979,15 +995,13 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
     in
     match features with
     | {
-     TaintFeatures.return_path = Some (TaintPath.Regular return_path);
+     TaintFeatures.return_path = Some path;
      applies_to = None;
      parameter_path = None;
      update_path = None;
      _;
     } ->
-        Ok [return_path]
-    | { TaintFeatures.return_path = Some TaintPath.AllStaticFields; _ } ->
-        Ok (all_static_field_paths ())
+        expand_model_path path
     | { parameter_path = Some _; _ } ->
         Error (Format.sprintf "Invalid ParameterPath annotation for %s" kind)
     | { update_path = Some _; _ } ->
@@ -1002,6 +1016,75 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
       Ok [Option.value ~default:[] applies_to]
   | AccessPath.Root.LocalResult, _ -> paths_for_return ()
   | _ -> paths_for_parameter ()
+
+
+let expand_model_labels ~parameter path =
+  let open Core.Result in
+  let expand_parameter_name () =
+    match parameter with
+    | root when AccessPath.Root.equal root attribute_symbolic_parameter ->
+        Error "`parameter_name()` is not allowed for attribute or global models"
+    | AccessPath.Root.LocalResult ->
+        Error "`parameter_name()` is not allowed for return annotations"
+    | AccessPath.Root.PositionalParameter { name; positional_only = false; _ }
+    | AccessPath.Root.NamedParameter { name; _ } ->
+        Ok (Some (Abstract.TreeDomain.Label.Index name))
+    | AccessPath.Root.PositionalParameter { positional_only = true; _ }
+    | AccessPath.Root.StarParameter _
+    | AccessPath.Root.StarStarParameter _ ->
+        Ok None
+    | AccessPath.Root.Variable _
+    | AccessPath.Root.CapturedVariable _ ->
+        failwith "unexpected access path root in model generation"
+  in
+  let expand_label = function
+    | TaintPath.Label.TreeLabel label -> Ok (Some label)
+    | TaintPath.Label.ParameterName -> expand_parameter_name ()
+  in
+  path |> List.map ~f:expand_label |> Core.Result.all >>| List.filter_map ~f:Fn.id
+
+
+let input_path_for_tito ~input_root ~kind ~features =
+  match features with
+  | { TaintFeatures.applies_to; parameter_path = None; _ } ->
+      Ok (Option.value ~default:[] applies_to)
+  | { parameter_path = Some parameter_path; applies_to = None; _ } -> (
+      match parameter_path with
+      | TaintPath.Path path -> expand_model_labels ~parameter:input_root path
+      | TaintPath.AllStaticFields ->
+          Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`")
+  | _ ->
+      Error
+        (Format.asprintf
+           "Invalid mix of AppliesTo and ParameterPath for %a annotation"
+           Sinks.pp
+           kind)
+
+
+let output_path_for_tito ~input_root ~kind ~features =
+  match Sinks.discard_transforms kind, features with
+  | _, { TaintFeatures.return_path = None; update_path = None; _ } -> Ok []
+  | Sinks.LocalReturn, { return_path = Some return_path; update_path = None; _ } -> (
+      match return_path with
+      | TaintPath.Path path -> expand_model_labels ~parameter:input_root path
+      | TaintPath.AllStaticFields ->
+          Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`")
+  | Sinks.LocalReturn, { update_path = Some _; return_path = None; _ } ->
+      Error "Invalid UpdatePath annotation for TaintInTaintOut annotation"
+  | Sinks.ParameterUpdate _, { return_path = Some _; update_path = None; _ } ->
+      Error "Invalid ReturnPath annotation for Updates annotation"
+  | Sinks.ParameterUpdate _, { update_path = Some update_path; return_path = None; _ } -> (
+      match update_path with
+      | TaintPath.Path path -> expand_model_labels ~parameter:input_root path
+      | TaintPath.AllStaticFields ->
+          Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`")
+  | Sinks.Attach, { return_path = Some _; _ } ->
+      Error "Invalid ReturnPath annotation for AttachTo annotation"
+  | Sinks.Attach, { update_path = Some _; _ } ->
+      Error "Invalid UpdatePath annotation for AttachTo annotation"
+  | kind, _ ->
+      Error
+        (Format.asprintf "Invalid mix of ReturnPath and UpdatePath for %a annotation" Sinks.pp kind)
 
 
 let type_breadcrumbs_from_annotations ~resolution annotations =
@@ -1132,48 +1215,9 @@ let introduce_taint_in_taint_out
     | Some CollapseDepth.NoCollapse -> Features.CollapseDepth.no_collapse
     | Some (CollapseDepth.Value depth) -> depth
   in
-  let input_path =
-    match features with
-    | { applies_to; parameter_path = None; _ } -> Ok (Option.value ~default:[] applies_to)
-    | { parameter_path = Some (TaintPath.Regular parameter_path); applies_to = None; _ } ->
-        Ok parameter_path
-    | { parameter_path = Some TaintPath.AllStaticFields; _ } ->
-        Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    | _ ->
-        Error
-          (Format.asprintf
-             "Invalid mix of AppliesTo and ParameterPath for %a annotation"
-             Sinks.pp
-             taint_sink_kind)
-  in
-  input_path
+  input_path_for_tito ~input_root:root ~kind:taint_sink_kind ~features
   >>= fun input_path ->
-  let output_path =
-    match Sinks.discard_transforms taint_sink_kind, features with
-    | _, { return_path = None; update_path = None; _ } -> Ok []
-    | ( Sinks.LocalReturn,
-        { return_path = Some (TaintPath.Regular return_path); update_path = None; _ } ) ->
-        Ok return_path
-    | Sinks.LocalReturn, { return_path = Some TaintPath.AllStaticFields; _ } ->
-        Error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`"
-    | Sinks.LocalReturn, { update_path = Some _; return_path = None; _ } ->
-        Error "Invalid UpdatePath annotation for TaintInTaintOut annotation"
-    | Sinks.ParameterUpdate _, { return_path = Some _; update_path = None; _ } ->
-        Error "Invalid ReturnPath annotation for Updates annotation"
-    | Sinks.ParameterUpdate _, { update_path = Some update_path; return_path = None; _ } ->
-        Ok update_path
-    | Sinks.Attach, { return_path = Some _; _ } ->
-        Error "Invalid ReturnPath annotation for AttachTo annotation"
-    | Sinks.Attach, { update_path = Some _; _ } ->
-        Error "Invalid UpdatePath annotation for AttachTo annotation"
-    | taint_sink_kind, _ ->
-        Error
-          (Format.asprintf
-             "Invalid mix of ReturnPath and UpdatePath for %a annotation"
-             Sinks.pp
-             taint_sink_kind)
-  in
-  output_path
+  output_path_for_tito ~input_root:root ~kind:taint_sink_kind ~features
   >>= fun output_path ->
   let tito_result_taint =
     Domains.local_return_frame ~output_path ~collapse_depth

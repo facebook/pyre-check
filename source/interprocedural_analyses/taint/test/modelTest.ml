@@ -3808,7 +3808,7 @@ let test_invalid_models context =
     ~model_source:"def test.sink(parameter: TaintSink[Test, ParameterPath[_.unknown()]]): ..."
     ~expect:
       "`_.unknown()` is an invalid access path: unexpected method call `unknown` (allowed: `keys`, \
-       `all`, `all_static_fields`)"
+       `all`, `all_static_fields`, `parameter_name`)"
     ();
   assert_invalid_model
     ~model_source:"def test.sink(parameter: TaintSink[Test, ReturnPath[_[0]]]): ..."
@@ -3889,8 +3889,7 @@ let test_invalid_models context =
   assert_invalid_model
     ~model_source:"def test.taint(x: TaintInTaintOut[UpdatePath[_.all_static_fields()]]): ..."
     ~expect:
-      "`TaintInTaintOut[UpdatePath[_.all_static_fields()]]` is an invalid taint annotation: \
-       `all_static_fields()` is not allowed within `UpdatePath[]`"
+      "Invalid model for `test.taint`: Invalid UpdatePath annotation for TaintInTaintOut annotation"
     ();
   assert_invalid_model
     ~model_source:"def test.taint(x: TaintInTaintOut[ParameterPath[_.all_static_fields()]]): ..."
@@ -7523,7 +7522,7 @@ let test_query_parsing context =
 
 
 let test_access_path _ =
-  let module Label = Abstract.TreeDomain.Label in
+  let module TreeLabel = Abstract.TreeDomain.Label in
   let module TaintPath = ModelParseResult.TaintPath in
   let parse_access_path source =
     PyreParser.Parser.parse_exn [source]
@@ -7545,37 +7544,57 @@ let test_access_path _ =
     | Error error -> assert_equal ~printer:ident expected (ModelVerificationError.display error)
     | Ok _ -> assert_bool (Format.sprintf "Unexpected valid access path for: %s" source) false
   in
-  assert_valid_path ~source:"_" ~expected:(TaintPath.Regular []);
-  assert_valid_path ~source:"_.foo" ~expected:(TaintPath.Regular [Label.Index "foo"]);
+  let index_label index = TaintPath.Label.TreeLabel (TreeLabel.Index index) in
+  assert_valid_path ~source:"_" ~expected:(TaintPath.Path []);
+  assert_valid_path ~source:"_.foo" ~expected:(TaintPath.Path [index_label "foo"]);
   assert_valid_path
     ~source:"_.foo.bar"
-    ~expected:(TaintPath.Regular [Label.Index "foo"; Label.Index "bar"]);
-  assert_valid_path ~source:"_['foo']" ~expected:(TaintPath.Regular [Label.Index "foo"]);
-  assert_valid_path ~source:"_[\"foo\"]" ~expected:(TaintPath.Regular [Label.Index "foo"]);
-  assert_valid_path ~source:"_[0]" ~expected:(TaintPath.Regular [Label.Index "0"]);
+    ~expected:(TaintPath.Path [index_label "foo"; index_label "bar"]);
+  assert_valid_path ~source:"_['foo']" ~expected:(TaintPath.Path [index_label "foo"]);
+  assert_valid_path ~source:"_[\"foo\"]" ~expected:(TaintPath.Path [index_label "foo"]);
+  assert_valid_path ~source:"_[0]" ~expected:(TaintPath.Path [index_label "0"]);
   assert_valid_path
     ~source:"_['foo']['bar']"
-    ~expected:(TaintPath.Regular [Label.Index "foo"; Label.Index "bar"]);
+    ~expected:(TaintPath.Path [index_label "foo"; index_label "bar"]);
   assert_valid_path
     ~source:"_['foo'].bar"
-    ~expected:(TaintPath.Regular [Label.Index "foo"; Label.Index "bar"]);
+    ~expected:(TaintPath.Path [index_label "foo"; index_label "bar"]);
   assert_valid_path
     ~source:"_.foo['bar']"
-    ~expected:(TaintPath.Regular [Label.Index "foo"; Label.Index "bar"]);
+    ~expected:(TaintPath.Path [index_label "foo"; index_label "bar"]);
   assert_valid_path
     ~source:"_.foo[0]"
-    ~expected:(TaintPath.Regular [Label.Index "foo"; Label.Index "0"]);
-  assert_valid_path ~source:"_.keys()" ~expected:(TaintPath.Regular [AccessPath.dictionary_keys]);
-  assert_valid_path ~source:"_.all()" ~expected:(TaintPath.Regular [Label.AnyIndex]);
+    ~expected:(TaintPath.Path [index_label "foo"; index_label "0"]);
+  assert_valid_path
+    ~source:"_.keys()"
+    ~expected:(TaintPath.Path [TaintPath.Label.TreeLabel AccessPath.dictionary_keys]);
+  assert_valid_path
+    ~source:"_.all()"
+    ~expected:(TaintPath.Path [TaintPath.Label.TreeLabel TreeLabel.AnyIndex]);
   assert_valid_path ~source:"_.all_static_fields()" ~expected:TaintPath.AllStaticFields;
+  assert_valid_path
+    ~source:"_.parameter_name()"
+    ~expected:(TaintPath.Path [TaintPath.Label.ParameterName]);
   assert_valid_path
     ~source:"_[0].keys().foo.all()"
     ~expected:
-      (TaintPath.Regular
-         [Label.Index "0"; AccessPath.dictionary_keys; Label.Index "foo"; Label.AnyIndex]);
+      (TaintPath.Path
+         [
+           index_label "0";
+           TaintPath.Label.TreeLabel AccessPath.dictionary_keys;
+           index_label "foo";
+           TaintPath.Label.TreeLabel TreeLabel.AnyIndex;
+         ]);
   assert_valid_path
-    ~source:"_.all()['a'].bar"
-    ~expected:(TaintPath.Regular [Label.AnyIndex; Label.Index "a"; Label.Index "bar"]);
+    ~source:"_.all()['a'].bar.parameter_name()"
+    ~expected:
+      (TaintPath.Path
+         [
+           TaintPath.Label.TreeLabel TreeLabel.AnyIndex;
+           index_label "a";
+           index_label "bar";
+           TaintPath.Label.ParameterName;
+         ]);
   assert_invalid_path
     ~source:"foo"
     ~expected:"`foo` is an invalid access path: access path must start with `_`";
@@ -7586,7 +7605,7 @@ let test_access_path _ =
     ~source:"_.a-b"
     ~expected:
       "`_.a.__sub__(b)` is an invalid access path: unexpected method call `__sub__` (allowed: \
-       `keys`, `all`, `all_static_fields`)";
+       `keys`, `all`, `all_static_fields`, `parameter_name`)";
   assert_invalid_path
     ~source:"_[a]"
     ~expected:
@@ -7601,7 +7620,7 @@ let test_access_path _ =
     ~source:"_.keys().something()"
     ~expected:
       "`_.keys().something()` is an invalid access path: unexpected method call `something` \
-       (allowed: `keys`, `all`, `all_static_fields`)";
+       (allowed: `keys`, `all`, `all_static_fields`, `parameter_name`)";
   assert_invalid_path
     ~source:"_.foo.all_static_fields()"
     ~expected:
@@ -7622,6 +7641,11 @@ let test_access_path _ =
     ~expected:
       "`_.keys().all_static_fields()` is an invalid access path: `all_static_fields()` can only be \
        used on `_`";
+  assert_invalid_path
+    ~source:"_.parameter_name().all_static_fields()"
+    ~expected:
+      "`_.parameter_name().all_static_fields()` is an invalid access path: `all_static_fields()` \
+       can only be used on `_`";
   assert_invalid_path
     ~source:"_.all_static_fields().foo"
     ~expected:

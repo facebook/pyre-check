@@ -28,7 +28,7 @@ module Label : sig
     | AnyIndex
     | Index of string
     | Field of string
-  [@@deriving show]
+  [@@deriving show, eq]
 
   type path = t list [@@deriving show]
 

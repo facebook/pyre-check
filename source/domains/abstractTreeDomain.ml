@@ -119,7 +119,7 @@ module Label = struct
       | AnyIndex
       | Index of string
       | Field of string
-    [@@deriving ord]
+    [@@deriving ord, eq]
 
     type path = t list
   end
@@ -218,7 +218,7 @@ module Label = struct
     | _, [] -> 1
 
 
-  let equal_path = ( = )
+  let equal_path = List.equal equal
 end
 
 module Make (Config : CONFIG) (Element : ELEMENT) () = struct
