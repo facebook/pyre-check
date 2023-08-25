@@ -468,6 +468,152 @@ let test_updates context =
   ()
 
 
+let test_is_transitive_successors context =
+  let assert_is_successor ~source ~expected ~placeholder_subclass_extends_all ~target predecessor =
+    let project =
+      ScratchProject.setup
+        ["test.py", source; "my_placeholder_stub.pyi", "# pyre-placeholder-stub"]
+        ~include_typeshed_stubs:true
+        ~include_helper_builtins:false
+        ~context
+    in
+    let read_only =
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+    in
+    assert_equal
+      ~cmp:Bool.equal
+      ~printer:Bool.to_string
+      expected
+      (ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+         read_only
+         ~placeholder_subclass_extends_all
+         ~target
+         predecessor)
+  in
+
+  assert_is_successor
+    ~source:{|
+    class A: pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.A"
+    "test.A"
+    ~expected:true;
+  assert_is_successor
+    ~source:{|
+    class A: pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.A"
+    "test.A"
+    ~expected:true;
+
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B: pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.A"
+    "test.B"
+    ~expected:false;
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B: pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.A"
+    "test.B"
+    ~expected:false;
+
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.A"
+    "test.B"
+    ~expected:true;
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.A"
+    "test.B"
+    ~expected:true;
+
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+    class C(B): pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.A"
+    "test.C"
+    ~expected:true;
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+    class C(B): pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.A"
+    "test.C"
+    ~expected:true;
+
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+    class C: pass
+    class D(C, B): pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.A"
+    "test.D"
+    ~expected:true;
+  assert_is_successor
+    ~source:{|
+    class A: pass
+    class B(A): pass
+    class C: pass
+    class D(C, B): pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.A"
+    "test.D"
+    ~expected:true;
+
+  assert_is_successor
+    ~source:{|
+    from my_placeholder_stub import A
+    class B: pass
+    class C(A): pass
+  |}
+    ~placeholder_subclass_extends_all:true
+    ~target:"test.B"
+    "test.C"
+    ~expected:true;
+  assert_is_successor
+    ~source:{|
+    from my_placeholder_stub import A
+    class B: pass
+    class C(A): pass
+  |}
+    ~placeholder_subclass_extends_all:false
+    ~target:"test.B"
+    "test.C"
+    ~expected:false;
+  ()
+
+
 let assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors =
   match
     ClassMetadataEnvironment.ReadOnly.get_class_metadata
@@ -714,6 +860,7 @@ let () =
   >::: [
          "simple_registration" >:: test_simple_registration;
          "updates" >:: test_updates;
+         "is_transitive_successors" >:: test_is_transitive_successors;
          "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
          "overlay_propagation" >:: test_overlay_propagation;
        ]

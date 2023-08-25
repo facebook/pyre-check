@@ -154,6 +154,22 @@ module ReadOnly = struct
     match get_class_metadata read_only ?dependency class_name with
     | Some { successors = Some successors; _ } -> successors
     | _ -> []
+
+
+  let is_transitive_successor read_only ?dependency ~placeholder_subclass_extends_all ~target source
+    =
+    let class_hierarcy =
+      ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+        ?dependency
+        (class_hierarchy_environment read_only)
+    in
+    let extends_placeholder_stub = ClassHierarchy.extends_placeholder_stub class_hierarcy in
+    let counts_as_extends_target current =
+      [%compare.equal: Type.Primitive.t] current target
+      || (placeholder_subclass_extends_all && extends_placeholder_stub current)
+    in
+    let successors_of_source = successors read_only ?dependency source in
+    List.exists (source :: successors_of_source) ~f:counts_as_extends_target
 end
 
 module MetadataReadOnly = ReadOnly

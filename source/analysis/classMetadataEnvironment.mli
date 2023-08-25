@@ -32,6 +32,14 @@ module MetadataReadOnly : sig
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
   val successors : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> string list
+
+  val is_transitive_successor
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    placeholder_subclass_extends_all:bool ->
+    target:Type.Primitive.t ->
+    Type.Primitive.t ->
+    bool
 end
 
 include
