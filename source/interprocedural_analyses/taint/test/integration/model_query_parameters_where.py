@@ -27,6 +27,14 @@ def test1_alarm4(a: int, b: str, c: C, d):
     _test_sink(d)
 
 
+def test1_positional_arguments(a: int, /, b: str):
+    _test_sink(a)
+
+
+def test1_args_kwargs(a: int, *args, **kwargs):
+    _test_sink(a)
+
+
 def test2_noalarm1(foo_1, foo_2):
     _test_sink(foo_1)
 
