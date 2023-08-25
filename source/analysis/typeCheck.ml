@@ -2030,19 +2030,23 @@ module State (Context : Context) = struct
                 forward_right (Some not_none_left)
             | _, _ -> forward_right (Some resolved_left)))
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
-        let metadata =
-          Resolution.parent resolution
-          >>| Reference.show
-          >>= GlobalResolution.class_metadata global_resolution
-        in
-        (* Resolve `super()` calls. *)
-        let superclass { ClassMetadataEnvironment.successors; extends_placeholder_stub_class; _ } =
+        let superclass ~class_name { ClassMetadataEnvironment.successors; _ } =
+          let extends_placeholder_stub_class =
+            let class_hierarchy = GlobalResolution.class_hierarchy global_resolution in
+            ClassHierarchy.extends_placeholder_stub class_hierarchy class_name
+          in
           match successors with
           | Some successors when not extends_placeholder_stub_class ->
               List.find successors ~f:(GlobalResolution.class_exists global_resolution)
           | _ -> None
         in
-        match metadata >>= superclass with
+        let resolved_superclass =
+          Resolution.parent resolution
+          >>| Reference.show
+          >>= fun class_name ->
+          GlobalResolution.class_metadata global_resolution class_name >>= superclass ~class_name
+        in
+        match resolved_superclass with
         | Some superclass ->
             let resolved = Type.Primitive superclass in
             {

@@ -29,7 +29,6 @@ type class_metadata = {
   successors: Type.Primitive.t list option;
   is_test: bool;
   is_final: bool;
-  extends_placeholder_stub_class: bool;
   is_abstract: bool;
   is_protocol: bool;
   is_typed_dictionary: bool;
@@ -74,16 +73,6 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
     let in_test =
       List.exists ~f:Type.Primitive.is_unit_test (class_name :: Option.value successors ~default:[])
     in
-    let extends_placeholder_stub_class =
-      let empty_stub_environment =
-        AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
-      in
-      definition
-      |> AnnotatedBases.extends_placeholder_stub_class
-           ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
-           ~from_empty_stub:
-             (EmptyStubEnvironment.ReadOnly.from_empty_stub empty_stub_environment ?dependency)
-    in
     let is_protocol = ClassSummary.is_protocol (Node.value definition) in
     let is_abstract = ClassSummary.is_abstract (Node.value definition) in
     let class_hierarchy =
@@ -92,15 +81,7 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
     let is_typed_dictionary =
       ClassHierarchy.is_typed_dictionary_subclass ~class_hierarchy class_name
     in
-    {
-      is_test = in_test;
-      successors;
-      is_final;
-      extends_placeholder_stub_class;
-      is_protocol;
-      is_abstract;
-      is_typed_dictionary;
-    }
+    { is_test = in_test; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
   in
   UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
     unannotated_global_environment

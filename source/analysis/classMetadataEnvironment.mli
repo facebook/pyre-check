@@ -11,7 +11,6 @@ type class_metadata = {
   successors: Type.Primitive.t list option;
   is_test: bool;
   is_final: bool;
-  extends_placeholder_stub_class: bool;
   is_abstract: bool;
   is_protocol: bool;
   is_typed_dictionary: bool;
