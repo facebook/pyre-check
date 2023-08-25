@@ -75,11 +75,11 @@ let produce_class_metadata class_hierarchy_environment class_name ~dependency =
     in
     let is_protocol = ClassSummary.is_protocol (Node.value definition) in
     let is_abstract = ClassSummary.is_abstract (Node.value definition) in
-    let class_hierarchy =
-      ClassHierarchyEnvironment.ReadOnly.class_hierarchy ?dependency class_hierarchy_environment
-    in
     let is_typed_dictionary =
-      ClassHierarchy.is_typed_dictionary_subclass ~class_hierarchy class_name
+      let total_typed_dictionary_name = Type.TypedDictionary.class_name ~total:true in
+      List.exists
+        ~f:([%compare.equal: Type.Primitive.t] total_typed_dictionary_name)
+        (Option.value successors ~default:[])
     in
     { is_test = in_test; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
   in

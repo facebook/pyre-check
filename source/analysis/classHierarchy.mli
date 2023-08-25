@@ -131,7 +131,3 @@ val instantiate_successors_parameters
   source:Type.t ->
   target:Type.Primitive.t ->
   Type.Parameter.t list option
-
-val is_typed_dictionary_subclass : class_hierarchy:(module Handler) -> string -> bool
-
-val is_total_typed_dictionary : class_hierarchy:(module Handler) -> string -> bool

@@ -525,24 +525,3 @@ let to_dot (module Handler : Handler) ~indices =
   List.iter ~f:add_edges indices;
   Buffer.add_string buffer "}";
   Buffer.contents buffer
-
-
-let is_typed_dictionary_subclass ~class_hierarchy name =
-  let (module TypeOrderHandler : Handler) = class_hierarchy in
-  TypeOrderHandler.contains name
-  && TypeOrderHandler.contains (Type.TypedDictionary.class_name ~total:true)
-  && is_transitive_successor
-       ~placeholder_subclass_extends_all:false
-       class_hierarchy
-       ~source:name
-       ~target:(Type.TypedDictionary.class_name ~total:true)
-  && not (String.equal name (Type.TypedDictionary.class_name ~total:true))
-
-
-let is_total_typed_dictionary ~class_hierarchy name =
-  not
-    (is_transitive_successor
-       ~placeholder_subclass_extends_all:false
-       class_hierarchy
-       ~source:name
-       ~target:(Type.TypedDictionary.class_name ~total:false))
