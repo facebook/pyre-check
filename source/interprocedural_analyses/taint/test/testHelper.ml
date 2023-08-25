@@ -793,14 +793,21 @@ let end_to_end_integration_test path context =
       global_constants;
     }
       =
-      initialize
-        ~handle
-        ?models_source
-        ~add_initial_models
-        ~taint_configuration
-        ~verify_empty_model_queries:false
-        ~context
-        source
+      try
+        initialize
+          ~handle
+          ?models_source
+          ~add_initial_models
+          ~taint_configuration
+          ~verify_empty_model_queries:false
+          ~context
+          source
+      with
+      | ModelVerificationError.ModelVerificationErrors errors as exn ->
+          Printf.printf "Unexpected model verification errors:\n";
+          List.iter errors ~f:(fun error ->
+              Printf.printf "%s\n" (ModelVerificationError.display error));
+          raise exn
     in
     let entrypoints = Registry.entrypoints initial_models in
     let prune_method =
