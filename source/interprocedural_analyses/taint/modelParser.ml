@@ -202,7 +202,6 @@ let parse_access_path ~path ~location expression =
 let rec parse_annotations
     ~path
     ~location
-    ~model_name
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
@@ -636,7 +635,6 @@ let rec parse_annotations
                 parse_annotations
                   ~path
                   ~location:expression.Node.location
-                  ~model_name
                   ~taint_configuration
                   ~parameters
                   ~callable_parameter_names_to_positions
@@ -691,7 +689,6 @@ let rec parse_annotations
             parse_annotations
               ~path
               ~location:expression.Node.location
-              ~model_name
               ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
@@ -2051,7 +2048,6 @@ let parse_model_clause
             parse_annotations
               ~path
               ~location
-              ~model_name:"model query"
               ~taint_configuration
               ~parameters:[]
               ~callable_parameter_names_to_positions:None
@@ -2285,7 +2281,6 @@ let port_annotations_from_signature ~root ~callable_annotation =
 let parse_parameter_taint
     ~path
     ~location
-    ~model_name
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
@@ -2296,7 +2291,6 @@ let parse_parameter_taint
   >>| parse_annotations
         ~path
         ~location
-        ~model_name
         ~taint_configuration
         ~parameters
         ~callable_parameter_names_to_positions
@@ -2421,7 +2415,6 @@ let add_taint_annotation_to_model
 let parse_return_taint
     ~path
     ~location
-    ~model_name
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
@@ -2432,7 +2425,6 @@ let parse_return_taint
   parse_annotations
     ~path
     ~location
-    ~model_name
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
@@ -2500,7 +2492,6 @@ let resolve_global_callable
 
 let adjust_sanitize_and_modes_and_skipped_override
     ~path
-    ~define_name
     ~taint_configuration
     ~source_sink_filter
     ~top_level_decorators
@@ -2524,7 +2515,6 @@ let adjust_sanitize_and_modes_and_skipped_override
     parse_annotations
       ~path
       ~location
-      ~model_name:(Reference.show define_name)
       ~taint_configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
@@ -2857,7 +2847,6 @@ let create_model_from_signature
         (parse_parameter_taint
            ~path
            ~location
-           ~model_name:(Reference.show callable_name)
            ~taint_configuration
            ~parameters
            ~callable_parameter_names_to_positions
@@ -2871,7 +2860,6 @@ let create_model_from_signature
            (parse_return_taint
               ~path
               ~location
-              ~model_name:(Reference.show callable_name)
               ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
@@ -2911,7 +2899,6 @@ let create_model_from_signature
         ~taint_configuration
         ~source_sink_filter
         ~top_level_decorators
-        ~define_name:callable_name
         ~is_object_target
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
@@ -2951,7 +2938,6 @@ let create_model_from_attribute
         ~taint_configuration
         ~source_sink_filter
         ~top_level_decorators:decorators
-        ~define_name:name
         ~is_object_target:true
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
@@ -3308,7 +3294,6 @@ let rec parse_statement
         parse_annotations
           ~path
           ~location
-          ~model_name:name
           ~taint_configuration
           ~parameters:[]
           ~callable_parameter_names_to_positions:None
