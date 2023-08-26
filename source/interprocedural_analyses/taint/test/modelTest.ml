@@ -2695,28 +2695,28 @@ let test_invalid_models context =
     ~model_source:"def test.f(x) -> TaintSource[ViaAttributeName]: ..."
     ~expect:
       "`TaintSource[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
-       be used in attribute models."
+       be used in attribute or global models."
     ();
   assert_invalid_model
     ~source:"def f(x: int): ..."
     ~model_source:{|def test.f(x) -> TaintSource[ViaAttributeName[WithTag["tag"]]]: ...|}
     ~expect:
       "`TaintSource[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
-       `ViaAttributeName` can only be used in attribute models."
+       `ViaAttributeName` can only be used in attribute or global models."
     ();
   assert_invalid_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSink[ViaAttributeName]: ..."
     ~expect:
       "`TaintSink[ViaAttributeName]` is an invalid taint annotation: `ViaAttributeName` can only \
-       be used in attribute models."
+       be used in attribute or global models."
     ();
   assert_invalid_model
     ~source:"def f(x: int): ..."
     ~model_source:{|def test.f(x) -> TaintSink[ViaAttributeName[WithTag["tag"]]]: ...|}
     ~expect:
       "`TaintSink[ViaAttributeName[WithTag[\"tag\"]]]` is an invalid taint annotation: \
-       `ViaAttributeName` can only be used in attribute models."
+       `ViaAttributeName` can only be used in attribute or global models."
     ();
   assert_invalid_model
     ~source:{|
@@ -4919,7 +4919,7 @@ Unexpected statement: `food(y)`
       def test.foo(x: ViaAttributeName): ...
     |}
     ~expect:
-      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute models.|}
+      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|}
     ();
   assert_invalid_model
     ~source:{|
@@ -4930,7 +4930,7 @@ Unexpected statement: `food(y)`
       def test.C.foo() -> ViaAttributeName: ...
     |}
     ~expect:
-      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute models.|}
+      {|`ViaAttributeName` is an invalid taint annotation: `ViaAttributeName` can only be used in attribute or global models.|}
     ();
   assert_valid_model
     ~source:{|

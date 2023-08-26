@@ -357,29 +357,35 @@ let rec parse_annotations
                 "expected non-negative int literal argument for CollapseDepth, got `%s`"
                 (Expression.show expression)))
   in
+  let check_attribute_annotation identifier origin =
+    if AnnotationOrigin.is_attribute origin then
+      Ok ()
+    else
+      Error
+        (annotation_error
+           (Format.sprintf "`%s` can only be used in attribute or global models." identifier))
+  in
   let rec extract_kinds_with_features expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier identifier) -> (
         match identifier with
         | "ViaTypeOf" ->
-            if AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin then
-              (* ViaTypeOf is treated as ViaTypeOf[$global] *)
-              Ok
-                (TaintKindsWithFeatures.from_via_feature
-                   (Features.ViaFeature.ViaTypeOf
-                      { parameter = attribute_symbolic_parameter; tag = None }))
-            else
+            if not (AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin)
+            then
               Error
                 (annotation_error
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
                     global models.")
-        | "ViaAttributeName" ->
-            if AnnotationOrigin.is_attribute origin then
+            else (* ViaTypeOf is treated as ViaTypeOf[$global] *)
               Ok
                 (TaintKindsWithFeatures.from_via_feature
-                   (Features.ViaFeature.ViaAttributeName { tag = None }))
-            else
-              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
+                   (Features.ViaFeature.ViaTypeOf
+                      { parameter = attribute_symbolic_parameter; tag = None }))
+        | "ViaAttributeName" ->
+            check_attribute_annotation identifier origin
+            >>| fun () ->
+            TaintKindsWithFeatures.from_via_feature
+              (Features.ViaFeature.ViaAttributeName { tag = None })
         | "Collapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
         | "NoCollapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
@@ -411,13 +417,12 @@ let rec parse_annotations
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "ViaAttributeName" ->
-            if AnnotationOrigin.is_attribute origin then
-              extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
-              >>| fun tag ->
-              [Features.ViaFeature.ViaAttributeName { tag }]
-              |> TaintKindsWithFeatures.from_via_features
-            else
-              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
+            check_attribute_annotation "ViaAttributeName" origin
+            >>= fun () ->
+            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
+            >>| fun tag ->
+            [Features.ViaFeature.ViaAttributeName { tag }]
+            |> TaintKindsWithFeatures.from_via_features
         | Some "Updates" ->
             let to_leaf name =
               get_parameter_position name
@@ -547,9 +552,7 @@ let rec parse_annotations
             taint_configuration.partial_sink_labels
         with
         | Some { TaintConfiguration.PartialSinkLabelsMap.main; secondary } ->
-            if String.equal secondary label || String.equal main label then
-              Ok (Sinks.PartialSink { kind; label })
-            else
+            if not (String.equal secondary label || String.equal main label) then
               Error
                 (annotation_error
                    (Format.sprintf
@@ -557,6 +560,8 @@ let rec parse_annotations
                       label
                       kind
                       (String.concat [main; secondary] ~sep:", ")))
+            else
+              Ok (Sinks.PartialSink { kind; label })
         | None -> Error (annotation_error (Format.sprintf "Unrecognized partial sink `%s`." kind)))
     | _ -> invalid_annotation_error ()
   in
@@ -580,38 +585,35 @@ let rec parse_annotations
             extract_attach_features ~name:"AttachToSource" argument
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
         | Some "ViaTypeOf", _ ->
-            if AnnotationOrigin.is_attribute origin then
-              (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
-              extract_via_tag ~requires_parameter_name:false "ViaTypeOf" argument
-              >>| fun tag ->
-              let via_feature =
-                Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
-              in
-              [
-                TaintAnnotation.Tito
-                  {
-                    tito = Sinks.LocalReturn;
-                    features = { TaintFeatures.empty with via_features = [via_feature] };
-                  };
-              ]
-            else
-              Error
-                (annotation_error "`ViaTypeOf[]` can only be used in attribute or global models.")
+            check_attribute_annotation "ViaTypeOf" origin
+            >>= fun () ->
+            (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
+            extract_via_tag ~requires_parameter_name:false "ViaTypeOf" argument
+            >>| fun tag ->
+            let via_feature =
+              Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
+            in
+            [
+              TaintAnnotation.Tito
+                {
+                  tito = Sinks.LocalReturn;
+                  features = { TaintFeatures.empty with via_features = [via_feature] };
+                };
+            ]
         | Some "ViaAttributeName", _ ->
-            if AnnotationOrigin.is_attribute origin then
-              (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
-              extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
-              >>| fun tag ->
-              let via_feature = Features.ViaFeature.ViaAttributeName { tag } in
-              [
-                TaintAnnotation.Tito
-                  {
-                    tito = Sinks.LocalReturn;
-                    features = { TaintFeatures.empty with via_features = [via_feature] };
-                  };
-              ]
-            else
-              Error (annotation_error "`ViaAttributeName[]` can only be used in attribute models.")
+            check_attribute_annotation "ViaAttributeName" origin
+            >>= fun () ->
+            (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
+            extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
+            >>| fun tag ->
+            let via_feature = Features.ViaFeature.ViaAttributeName { tag } in
+            [
+              TaintAnnotation.Tito
+                {
+                  tito = Sinks.LocalReturn;
+                  features = { TaintFeatures.empty with via_features = [via_feature] };
+                };
+            ]
         | Some "PartialSink", _ ->
             get_partial_sink_kind argument
             >>| fun partial_sink ->
@@ -680,7 +682,12 @@ let rec parse_annotations
         | "TaintInTaintOut" ->
             Ok [Tito { tito = Sinks.LocalReturn; features = TaintFeatures.empty }]
         | "ViaTypeOf" ->
-            if AnnotationOrigin.is_attribute origin then
+            if not (AnnotationOrigin.is_attribute origin) then
+              Error
+                (annotation_error
+                   "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
+                    global models.")
+            else
               (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
                  TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
               let via_feature =
@@ -695,25 +702,18 @@ let rec parse_annotations
                       features = { TaintFeatures.empty with via_features = [via_feature] };
                     };
                 ]
-            else
-              Error
-                (annotation_error
-                   "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
-                    global models.")
         | "ViaAttributeName" ->
-            if AnnotationOrigin.is_attribute origin then
-              (* Attribute annotations of the form `a: ViaAttributeName = ...`. *)
-              let via_feature = Features.ViaFeature.ViaAttributeName { tag = None } in
-              Ok
-                [
-                  Tito
-                    {
-                      tito = Sinks.LocalReturn;
-                      features = { TaintFeatures.empty with via_features = [via_feature] };
-                    };
-                ]
-            else
-              Error (annotation_error "`ViaAttributeName` can only be used in attribute models.")
+            check_attribute_annotation identifier origin
+            >>| fun () ->
+            (* Attribute annotations of the form `a: ViaAttributeName = ...`. *)
+            let via_feature = Features.ViaFeature.ViaAttributeName { tag = None } in
+            [
+              TaintAnnotation.Tito
+                {
+                  tito = Sinks.LocalReturn;
+                  features = { TaintFeatures.empty with via_features = [via_feature] };
+                };
+            ]
         | _ -> invalid_annotation_error ())
     | Expression.Tuple expressions ->
         List.map expressions ~f:(fun expression ->
