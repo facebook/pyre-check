@@ -199,14 +199,41 @@ let parse_access_path ~path ~location expression =
   parse_expression expression
 
 
+module AnnotationOrigin = struct
+  type t =
+    | DefineParameter
+    | DefineReturn
+    | DefineDecorator
+    | Attribute
+    | ModelQueryParameter
+    | ModelQueryReturn
+    | ModelQueryAttribute
+    | ModelQueryGlobal
+  [@@deriving equal]
+
+  let is_attribute = function
+    | Attribute
+    | ModelQueryAttribute ->
+        true
+    | _ -> false
+
+
+  let is_model_query = function
+    | ModelQueryParameter
+    | ModelQueryReturn
+    | ModelQueryAttribute
+    | ModelQueryGlobal ->
+        true
+    | _ -> false
+end
+
 let rec parse_annotations
     ~path
     ~location
+    ~origin
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
-    ?(is_object_target = false)
-    ?(is_model_query = false)
     annotation
   =
   let open Core.Result in
@@ -278,7 +305,7 @@ let rec parse_annotations
     | Ok [] -> Error (annotation_error (Format.sprintf "Missing parameter name for `%s`" via_kind))
     | parameters -> parameters
   in
-  let rec extract_via_tag via_kind expression =
+  let rec extract_via_tag ~requires_parameter_name via_kind expression =
     match expression.Node.value with
     | Expression.Call
         {
@@ -297,11 +324,11 @@ let rec parse_annotations
         }
       when is_base_name callee "WithTag" ->
         Ok (Some value)
-    | Expression.Name (Name.Identifier _) when not is_object_target ->
-        (* This should be the parameter name. *)
-        Ok None
+    | Expression.Name (Name.Identifier _) when requires_parameter_name -> Ok None
     | Tuple expressions ->
-        List.map expressions ~f:(extract_via_tag via_kind) |> all >>| List.find_map ~f:ident
+        List.map expressions ~f:(extract_via_tag ~requires_parameter_name via_kind)
+        |> all
+        >>| List.find_map ~f:ident
     | _ ->
         Error
           (annotation_error
@@ -335,7 +362,7 @@ let rec parse_annotations
     | Expression.Name (Name.Identifier identifier) -> (
         match identifier with
         | "ViaTypeOf" ->
-            if is_object_target or is_model_query then
+            if AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin then
               (* ViaTypeOf is treated as ViaTypeOf[$global] *)
               Ok
                 (TaintKindsWithFeatures.from_via_feature
@@ -347,7 +374,7 @@ let rec parse_annotations
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
                     global models.")
         | "ViaAttributeName" ->
-            if is_object_target then
+            if AnnotationOrigin.is_attribute origin then
               Ok
                 (TaintKindsWithFeatures.from_via_feature
                    (Features.ViaFeature.ViaAttributeName { tag = None }))
@@ -363,16 +390,19 @@ let rec parse_annotations
             extract_breadcrumbs ~is_dynamic:true argument
             >>| TaintKindsWithFeatures.from_breadcrumbs
         | Some "ViaValueOf" ->
-            extract_via_tag "ViaValueOf" argument
+            extract_via_tag ~requires_parameter_name:true "ViaValueOf" argument
             >>= fun tag ->
             extract_via_parameters "ViaValueOf" argument
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaValueOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "ViaTypeOf" ->
-            extract_via_tag "ViaTypeOf" argument
+            let requires_parameter_name =
+              not (AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin)
+            in
+            extract_via_tag ~requires_parameter_name "ViaTypeOf" argument
             >>= fun tag ->
             let parameters =
-              if not (is_object_target or is_model_query) then
+              if requires_parameter_name then
                 extract_via_parameters "ViaTypeOf" argument
               else
                 Ok [attribute_symbolic_parameter]
@@ -381,8 +411,8 @@ let rec parse_annotations
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
         | Some "ViaAttributeName" ->
-            if is_object_target then
-              extract_via_tag "ViaAttributeName" argument
+            if AnnotationOrigin.is_attribute origin then
+              extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
               >>| fun tag ->
               [Features.ViaFeature.ViaAttributeName { tag }]
               |> TaintKindsWithFeatures.from_via_features
@@ -550,8 +580,9 @@ let rec parse_annotations
             extract_attach_features ~name:"AttachToSource" argument
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
         | Some "ViaTypeOf", _ ->
-            if is_object_target then (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
-              extract_via_tag "ViaTypeOf" argument
+            if AnnotationOrigin.is_attribute origin then
+              (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
+              extract_via_tag ~requires_parameter_name:false "ViaTypeOf" argument
               >>| fun tag ->
               let via_feature =
                 Features.ViaFeature.ViaTypeOf { parameter = attribute_symbolic_parameter; tag }
@@ -567,9 +598,9 @@ let rec parse_annotations
               Error
                 (annotation_error "`ViaTypeOf[]` can only be used in attribute or global models.")
         | Some "ViaAttributeName", _ ->
-            if is_object_target then
+            if AnnotationOrigin.is_attribute origin then
               (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
-              extract_via_tag "ViaAttributeName" argument
+              extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
               >>| fun tag ->
               let via_feature = Features.ViaFeature.ViaAttributeName { tag } in
               [
@@ -635,10 +666,10 @@ let rec parse_annotations
                 parse_annotations
                   ~path
                   ~location:expression.Node.location
+                  ~origin
                   ~taint_configuration
                   ~parameters
                   ~callable_parameter_names_to_positions
-                  ~is_object_target
                   expression)
             |> all
             |> map ~f:List.concat
@@ -649,7 +680,7 @@ let rec parse_annotations
         | "TaintInTaintOut" ->
             Ok [Tito { tito = Sinks.LocalReturn; features = TaintFeatures.empty }]
         | "ViaTypeOf" ->
-            if is_object_target then
+            if AnnotationOrigin.is_attribute origin then
               (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
                  TaintInTaintOut[ViaTypeOf[$global]] = ...` *)
               let via_feature =
@@ -670,7 +701,7 @@ let rec parse_annotations
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
                     global models.")
         | "ViaAttributeName" ->
-            if is_object_target then
+            if AnnotationOrigin.is_attribute origin then
               (* Attribute annotations of the form `a: ViaAttributeName = ...`. *)
               let via_feature = Features.ViaFeature.ViaAttributeName { tag = None } in
               Ok
@@ -689,10 +720,10 @@ let rec parse_annotations
             parse_annotations
               ~path
               ~location:expression.Node.location
+              ~origin
               ~taint_configuration
               ~parameters
               ~callable_parameter_names_to_positions
-              ~is_object_target
               expression)
         |> all
         >>| List.concat
@@ -1987,7 +2018,6 @@ let parse_model_clause
     ~path
     ~taint_configuration
     ~find_clause
-    ~is_object_target
     ({ Node.value; location } as expression)
   =
   let open Core.Result in
@@ -1999,7 +2029,7 @@ let parse_model_clause
          { expression = callee; find_clause_kind = ModelQuery.Find.show find_clause })
   in
   let parse_model ({ Node.value; _ } as model_expression) =
-    let parse_taint taint_expression =
+    let parse_taint ~origin taint_expression =
       let parse_produced_taint expression =
         match Node.value expression with
         | Expression.Call
@@ -2048,11 +2078,10 @@ let parse_model_clause
             parse_annotations
               ~path
               ~location
+              ~origin
               ~taint_configuration
               ~parameters:[]
               ~callable_parameter_names_to_positions:None
-              ~is_object_target
-              ~is_model_query:true
               expression
             >>| List.map ~f:(fun taint -> ModelQuery.QueryTaintAnnotation.TaintAnnotation taint)
       in
@@ -2075,21 +2104,25 @@ let parse_model_clause
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
         check_find ~callee ModelQuery.Find.is_callable
-        >>= fun () -> parse_taint taint >>| fun taint -> ModelQuery.Model.Return taint
+        >>= fun () ->
+        parse_taint ~origin:ModelQueryReturn taint >>| fun taint -> ModelQuery.Model.Return taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
         check_find ~callee ModelQuery.Find.is_attribute
-        >>= fun () -> parse_taint taint >>| fun taint -> ModelQuery.Model.Attribute taint
+        >>= fun () ->
+        parse_taint ~origin:ModelQueryAttribute taint
+        >>| fun taint -> ModelQuery.Model.Attribute taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "GlobalModel"); _ } as callee;
           arguments = [{ Call.Argument.value = taint; _ }];
         } ->
         check_find ~callee ModelQuery.Find.is_global
-        >>= fun () -> parse_taint taint >>| fun taint -> ModelQuery.Model.Global taint
+        >>= fun () ->
+        parse_taint ~origin:ModelQueryGlobal taint >>| fun taint -> ModelQuery.Model.Global taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "Modes"); _ } as callee;
@@ -2150,7 +2183,8 @@ let parse_model_clause
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_taint taint >>| fun taint -> ModelQuery.Model.NamedParameter { name; taint }
+        parse_taint ~origin:ModelQueryParameter taint
+        >>| fun taint -> ModelQuery.Model.NamedParameter { name; taint }
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "PositionalParameter"); _ } as callee;
@@ -2165,7 +2199,8 @@ let parse_model_clause
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_taint taint >>| fun taint -> ModelQuery.Model.PositionalParameter { index; taint }
+        parse_taint ~origin:ModelQueryParameter taint
+        >>| fun taint -> ModelQuery.Model.PositionalParameter { index; taint }
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ } as callee;
@@ -2173,7 +2208,8 @@ let parse_model_clause
         } ->
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
-        parse_taint taint >>| fun taint -> ModelQuery.Model.AllParameters { excludes = []; taint }
+        parse_taint ~origin:ModelQueryParameter taint
+        >>| fun taint -> ModelQuery.Model.AllParameters { excludes = []; taint }
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "AllParameters"); _ } as callee;
@@ -2200,7 +2236,8 @@ let parse_model_clause
         in
         excludes
         >>= fun excludes ->
-        parse_taint taint >>| fun taint -> ModelQuery.Model.AllParameters { excludes; taint }
+        parse_taint ~origin:ModelQueryParameter taint
+        >>| fun taint -> ModelQuery.Model.AllParameters { excludes; taint }
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "Parameters"); _ } as callee;
@@ -2210,14 +2247,16 @@ let parse_model_clause
         >>= fun () ->
         match arguments with
         | [{ Call.Argument.value = taint; _ }] ->
-            parse_taint taint >>| fun taint -> ModelQuery.Model.Parameter { where = []; taint }
+            parse_taint ~origin:ModelQueryParameter taint
+            >>| fun taint -> ModelQuery.Model.Parameter { where = []; taint }
         | [
          { Call.Argument.value = taint; _ };
          { Call.Argument.name = Some { Node.value = "where"; _ }; value = where_clause };
         ] ->
             parse_parameter_where_clause ~path where_clause
             >>= fun where ->
-            parse_taint taint >>| fun taint -> ModelQuery.Model.Parameter { where; taint }
+            parse_taint ~origin:ModelQueryParameter taint
+            >>| fun taint -> ModelQuery.Model.Parameter { where; taint }
         | _ ->
             Error
               (model_verification_error
@@ -2281,20 +2320,20 @@ let port_annotations_from_signature ~root ~callable_annotation =
 let parse_parameter_taint
     ~path
     ~location
+    ~origin
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
-    ~is_object_target
     { AccessPath.NormalizedParameter.root; original = parameter; _ }
   =
   parameter.Node.value.Parameter.annotation
   >>| parse_annotations
         ~path
         ~location
+        ~origin
         ~taint_configuration
         ~parameters
         ~callable_parameter_names_to_positions
-        ~is_object_target
   |> Option.value ~default:(Ok [])
   |> Core.Result.map
        ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ParameterAnnotation (root, annotation)))
@@ -2415,20 +2454,20 @@ let add_taint_annotation_to_model
 let parse_return_taint
     ~path
     ~location
+    ~origin
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
-    ~is_object_target
     expression
   =
   let open Core.Result in
   parse_annotations
     ~path
     ~location
+    ~origin
     ~taint_configuration
     ~parameters
     ~callable_parameter_names_to_positions
-    ~is_object_target
     expression
   |> map ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ReturnAnnotation annotation))
 
@@ -2493,9 +2532,9 @@ let resolve_global_callable
 let adjust_sanitize_and_modes_and_skipped_override
     ~path
     ~taint_configuration
+    ~origin
     ~source_sink_filter
     ~top_level_decorators
-    ~is_object_target
     model
   =
   let open Core.Result in
@@ -2515,10 +2554,10 @@ let adjust_sanitize_and_modes_and_skipped_override
     parse_annotations
       ~path
       ~location
+      ~origin
       ~taint_configuration
       ~parameters:[]
       ~callable_parameter_names_to_positions:None
-      ~is_object_target
       expression
     |> function
     | Ok [Sanitize sanitize_annotations] ->
@@ -2557,12 +2596,12 @@ let adjust_sanitize_and_modes_and_skipped_override
           };
         ] -> (
         match identifier with
-        | "TaintSource" when not is_object_target ->
+        | "TaintSource" when not (AnnotationOrigin.is_attribute origin) ->
             Error
               (annotation_error
                  "`TaintSource` is not supported within `Sanitize()`. Did you mean to use \
                   `SanitizeSingleTrace(...)`?")
-        | "TaintSink" when not is_object_target ->
+        | "TaintSink" when not (AnnotationOrigin.is_attribute origin) ->
             Error
               (annotation_error
                  "`TaintSink` is not supported within `Sanitize()`. Did you mean to use \
@@ -2590,13 +2629,15 @@ let adjust_sanitize_and_modes_and_skipped_override
         parse_sanitize_annotations ~location ~original_expression arguments
         >>= function
         | { Sanitize.sources; _ }
-          when (not (SanitizeTransform.SourceSet.is_empty sources)) && not is_object_target ->
+          when (not (SanitizeTransform.SourceSet.is_empty sources))
+               && not (AnnotationOrigin.is_attribute origin) ->
             Error
               (annotation_error
                  "`TaintSource` is not supported within `Sanitize(...)`. Did you mean to use \
                   `SanitizeSingleTrace(...)`?")
         | { Sanitize.sinks; _ }
-          when (not (SanitizeTransform.SinkSet.is_empty sinks)) && not is_object_target ->
+          when (not (SanitizeTransform.SinkSet.is_empty sinks))
+               && not (AnnotationOrigin.is_attribute origin) ->
             Error
               (annotation_error
                  "`TaintSink` is not supported within `Sanitize(...)`. Did you mean to use \
@@ -2706,7 +2747,6 @@ let create_model_from_signature
   =
   let open Core.Result in
   let open ModelVerifier in
-  let is_object_target = false in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
     let get_taint_decorator decorator_expression =
@@ -2847,10 +2887,10 @@ let create_model_from_signature
         (parse_parameter_taint
            ~path
            ~location
+           ~origin:DefineParameter
            ~taint_configuration
            ~parameters
-           ~callable_parameter_names_to_positions
-           ~is_object_target)
+           ~callable_parameter_names_to_positions)
     |> all
     >>| List.concat
     >>= fun parameter_taint ->
@@ -2860,10 +2900,10 @@ let create_model_from_signature
            (parse_return_taint
               ~path
               ~location
+              ~origin:DefineReturn
               ~taint_configuration
               ~parameters
-              ~callable_parameter_names_to_positions
-              ~is_object_target)
+              ~callable_parameter_names_to_positions)
     |> Option.value ~default:(Ok [])
     >>| fun return_taint -> List.rev_append parameter_taint return_taint
   in
@@ -2897,9 +2937,9 @@ let create_model_from_signature
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~taint_configuration
+        ~origin:DefineDecorator
         ~source_sink_filter
         ~top_level_decorators
-        ~is_object_target
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
@@ -2936,9 +2976,9 @@ let create_model_from_attribute
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~taint_configuration
+        ~origin:Attribute
         ~source_sink_filter
         ~top_level_decorators:decorators
-        ~is_object_target:true
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
@@ -3294,11 +3334,10 @@ let rec parse_statement
         parse_annotations
           ~path
           ~location
+          ~origin:Attribute
           ~taint_configuration
           ~parameters:[]
           ~callable_parameter_names_to_positions:None
-          ~is_object_target:true
-          ~is_model_query:false
           annotation
         >>| (fun annotations ->
               ParsedAttribute
@@ -3454,12 +3493,7 @@ let rec parse_statement
             parse_where_clause ~path ~find_clause:find where_clause
             |> as_result_error_list
             >>= fun where ->
-            parse_model_clause
-              ~path
-              ~taint_configuration
-              ~find_clause:find
-              ~is_object_target:(not (ModelQuery.Find.is_callable find))
-              model_clause
+            parse_model_clause ~path ~taint_configuration ~find_clause:find model_clause
             >>= check_write_to_cache_models ~path ~location ~where
             |> as_result_error_list
             >>= fun models ->
