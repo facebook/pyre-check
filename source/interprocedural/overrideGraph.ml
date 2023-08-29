@@ -185,6 +185,8 @@ module SharedMemory = struct
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
+        let handle_prefix = Hack_parallel.Std.Prefix.make ()
+
         let description = "overriding types"
       end)
 

@@ -30,21 +30,21 @@ end
 module type SingleValueValueType = sig
   type t
 
+  val prefix : Hack_parallel.Std.Prefix.t
+
   val name : string
 end
 
 (* Support storing / loading a single OCaml value into / from the shared memory, for caching
    purposes. *)
 module MakeSingleValue (Value : SingleValueValueType) = struct
-  let shared_memory_prefix = Hack_parallel.Std.Prefix.make ()
-
   module T = Memory.Serializer (struct
     type t = Value.t
 
     module Serialized = struct
       type t = Value.t
 
-      let prefix = shared_memory_prefix
+      let prefix = Value.prefix
 
       let description = Value.name
     end
@@ -54,7 +54,7 @@ module MakeSingleValue (Value : SingleValueValueType) = struct
     let deserialize = Fn.id
   end)
 
-  let load () =
+  let load_from_cache () =
     exception_to_error
       ~error:(Usage.Unused Usage.LoadError)
       ~message:(Format.asprintf "Loading %s from cache" Value.name)
@@ -65,7 +65,7 @@ module MakeSingleValue (Value : SingleValueValueType) = struct
         Ok value)
 
 
-  let save value =
+  let save_to_cache value =
     exception_to_error
       ~error:()
       ~message:(Format.asprintf "Saving %s to cache" Value.name)
@@ -81,6 +81,8 @@ module type KeyValueValueType = sig
   type t
 
   val prefix : Hack_parallel.Std.Prefix.t
+
+  val handle_prefix : Hack_parallel.Std.Prefix.t
 
   val description : string
 end
@@ -157,12 +159,14 @@ struct
   module HandleSharedMemory = MakeSingleValue (struct
     type t = Handle.t
 
+    let prefix = Value.handle_prefix
+
     let name = Format.asprintf "Handle of %s" Value.description
   end)
 
-  let save_to_cache = HandleSharedMemory.save
+  let save_to_cache = HandleSharedMemory.save_to_cache
 
-  let load_from_cache = HandleSharedMemory.load
+  let load_from_cache = HandleSharedMemory.load_from_cache
 
   module ReadOnly = struct
     type t = FirstClass.t

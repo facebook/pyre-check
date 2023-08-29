@@ -99,11 +99,13 @@ module PreviousAnalysisSetupSharedMemory = struct
   module T = SaveLoadSharedMemory.MakeSingleValue (struct
     type t = AnalysisSetup.t
 
+    let prefix = Hack_parallel.Std.Prefix.make ()
+
     let name = Entry.show_pretty entry
   end)
 
   let load_from_cache entry_status =
-    match T.load () with
+    match T.load_from_cache () with
     | Ok previous_analysis_setup ->
         let entry_status =
           EntryStatus.add ~name:entry ~usage:SaveLoadSharedMemory.Usage.Used entry_status
@@ -117,7 +119,7 @@ module PreviousAnalysisSetupSharedMemory = struct
         SharedMemoryStatus.LoadError
 
 
-  let save_to_cache = T.save
+  let save_to_cache = T.save_to_cache
 end
 
 type t = {
@@ -325,11 +327,15 @@ module type CacheEntryType = sig
   type t
 
   val entry : Entry.t
+
+  val prefix : Hack_parallel.Std.Prefix.t
 end
 
 module MakeCacheEntry (CacheEntry : CacheEntryType) = struct
   module T = SaveLoadSharedMemory.MakeSingleValue (struct
     type t = CacheEntry.t
+
+    let prefix = CacheEntry.prefix
 
     let name = Entry.show_pretty CacheEntry.entry
   end)
@@ -339,7 +345,7 @@ module MakeCacheEntry (CacheEntry : CacheEntryType) = struct
       match status with
       | Loaded _ ->
           let value, usage =
-            match T.load () with
+            match T.load_from_cache () with
             | Ok value -> value, Usage.Used
             | Error error -> f (), error
           in
@@ -347,7 +353,7 @@ module MakeCacheEntry (CacheEntry : CacheEntryType) = struct
           value, cache
       | _ -> f (), cache
     in
-    if save_cache then T.save value;
+    if save_cache then T.save_to_cache value;
     value, cache
 end
 
@@ -355,12 +361,16 @@ module ClassHierarchyGraphSharedMemory = MakeCacheEntry (struct
   type t = ClassHierarchyGraph.Heap.t
 
   let entry = Entry.ClassHierarchyGraph
+
+  let prefix = Hack_parallel.Std.Prefix.make ()
 end)
 
 module ClassIntervalGraphSharedMemory = MakeCacheEntry (struct
   type t = ClassIntervalSetGraph.Heap.t
 
   let entry = Entry.ClassIntervalGraph
+
+  let prefix = Hack_parallel.Std.Prefix.make ()
 end)
 
 let initial_callables ({ status; _ } as cache) compute_value =

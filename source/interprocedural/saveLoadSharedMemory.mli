@@ -26,21 +26,25 @@ end
 module type SingleValueValueType = sig
   type t
 
+  val prefix : Hack_parallel.Std.Prefix.t
+
   val name : string
 end
 
 (* Support storing / loading a single OCaml value into / from the shared memory, for caching
    purposes. *)
 module MakeSingleValue (Value : SingleValueValueType) : sig
-  val load : unit -> (Value.t, Usage.t) result
+  val load_from_cache : unit -> (Value.t, Usage.t) result
 
-  val save : Value.t -> unit
+  val save_to_cache : Value.t -> unit
 end
 
 module type KeyValueValueType = sig
   type t
 
   val prefix : Hack_parallel.Std.Prefix.t
+
+  val handle_prefix : Hack_parallel.Std.Prefix.t
 
   val description : string
 end
