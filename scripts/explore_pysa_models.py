@@ -12,14 +12,26 @@ taint analysis. See https://pyre-check.org/docs/pysa-explore/ for the documentat
 """
 
 
+import copy
 import io
 import json
 import multiprocessing
 import re
 import subprocess
 import textwrap
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Any, Callable, Dict, Iterable, List, NamedTuple, Optional, Tuple
+from typing import (
+    Any,
+    Callable,
+    Dict,
+    Iterable,
+    List,
+    NamedTuple,
+    Optional,
+    Tuple,
+    Union,
+)
 
 
 class FilePosition(NamedTuple):
@@ -285,18 +297,62 @@ def model_remove_leaf_names(model: Dict[str, Any]) -> Dict[str, Any]:
     return map_model(model, frame_map=frame_map)
 
 
+@dataclass
+class FormattingOptions:
+    show_sources: bool = True
+    show_sinks: bool = True
+    show_tito: bool = True
+    show_tito_positions: bool = True
+    show_class_intervals: bool = True
+    show_features: bool = True
+    show_leaf_names: bool = True
+    kind: Optional[str] = None
+    caller_port: Optional[str] = None
+
+    def apply_options(self, **kwargs: Union[bool, str]) -> "FormattingOptions":
+        options = copy.copy(self)
+        for name, value in kwargs.items():
+            if not hasattr(options, name):
+                raise AssertionError(f"Unknown formatting option `{name}`")
+            setattr(options, name, value)
+        return options
+
+
+__default_formatting_options: FormattingOptions = FormattingOptions(
+    show_tito_positions=False,
+    show_class_intervals=False,
+    show_features=False,
+    show_leaf_names=False,
+)
+
+
+def set_formatting(**kwargs: Union[str, bool]) -> None:
+    """
+    Set default formatting options.
+    Available options with their default values:
+      kind = None                Filter by taint kind.
+      caller_port = None         Filter by caller port.
+      show_sources = True
+      show_sinks = True
+      show_tito = True
+      show_tito_positions = False
+      show_class_intervals = False
+      show_features = False
+      show_leaf_names = False
+    Most functions accept formatting options as optional arguments.
+    """
+    global __default_formatting_options
+    __default_formatting_options = __default_formatting_options.apply_options(**kwargs)
+
+
+def show_formatting() -> None:
+    """Show default formatting options."""
+    print(__default_formatting_options)
+
+
 def get_model(
     callable: str,
-    *,
-    kind: Optional[str] = None,
-    caller_port: Optional[str] = None,
-    remove_sources: bool = False,
-    remove_sinks: bool = False,
-    remove_tito: bool = False,
-    remove_tito_positions: bool = False,
-    remove_class_intervals: bool = False,
-    remove_features: bool = False,
-    remove_leaf_names: bool = False,
+    **kwargs: Union[str, bool],
 ) -> Dict[str, Any]:
     """Get the model for the given callable."""
     directory = _assert_loaded()
@@ -308,23 +364,25 @@ def get_model(
     assert message["kind"] == "model"
 
     model = message["data"]
-    if remove_sources and "sources" in model:
+
+    options = __default_formatting_options.apply_options(**kwargs)
+    if not options.show_sources and "sources" in model:
         del model["sources"]
-    if remove_sinks and "sinks" in model:
+    if not options.show_sinks and "sinks" in model:
         del model["sinks"]
-    if remove_tito and "tito" in model:
+    if not options.show_tito and "tito" in model:
         del model["tito"]
-    if kind is not None:
-        model = filter_model_kind(model, kind)
-    if caller_port is not None:
-        model = filter_model_caller_port(model, caller_port)
-    if remove_tito_positions:
+    if options.kind is not None:
+        model = filter_model_kind(model, options.kind)
+    if options.caller_port is not None:
+        model = filter_model_caller_port(model, options.caller_port)
+    if not options.show_tito_positions:
         model = model_remove_tito_positions(model)
-    if remove_class_intervals:
+    if not options.show_class_intervals:
         model = model_remove_class_intervals(model)
-    if remove_features:
+    if not options.show_features:
         model = model_remove_features(model)
-    if remove_leaf_names:
+    if not options.show_leaf_names:
         model = model_remove_leaf_names(model)
     return model
 
@@ -349,44 +407,10 @@ def print_json(data: object) -> None:
 
 def print_model(
     callable: str,
-    *,
-    kind: Optional[str] = None,
-    caller_port: Optional[str] = None,
-    remove_sources: bool = False,
-    remove_sinks: bool = False,
-    remove_tito: bool = False,
-    remove_tito_positions: bool = False,
-    remove_class_intervals: bool = False,
-    remove_features: bool = False,
-    remove_leaf_names: bool = False,
+    **kwargs: Union[str, bool],
 ) -> None:
-    """
-    Pretty print the model for the given callable.
-    Optional parameters:
-      kind='UserControlled'      Filter by taint kind.
-      caller_port='result'       Filter by caller port.
-      remove_sources=False
-      remove_sinks=False
-      remove_tito=False
-      remove_tito_positions=True
-      remove_class_intervals=True
-      remove_features=True
-      remove_leaf_names=True
-    """
-    print_json(
-        get_model(
-            callable,
-            kind=kind,
-            caller_port=caller_port,
-            remove_sources=remove_sources,
-            remove_sinks=remove_sinks,
-            remove_tito=remove_tito,
-            remove_tito_positions=remove_tito_positions,
-            remove_class_intervals=remove_class_intervals,
-            remove_features=remove_features,
-            remove_leaf_names=remove_leaf_names,
-        )
-    )
+    """Pretty print the model for the given callable."""
+    print_json(get_model(callable, **kwargs))
 
 
 def get_issues(callable: Optional[str] = None) -> List[Dict[str, Any]]:
@@ -429,6 +453,8 @@ def print_help() -> None:
         (print_model, "print_model('foo.bar')"),
         (get_issues, "get_issues('foo.bar')"),
         (print_issues, "print_issues('foo.bar')"),
+        (set_formatting, "set_formatting(show_sources=False)"),
+        (show_formatting, "show_formatting()"),
         (print_json, "print_json({'a': 'b'})"),
         (print_help, "print_help()"),
     ]
