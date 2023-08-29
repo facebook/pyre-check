@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* File utilities - all file related operations in the codebase must go through these functions. *)
 
 open Core
 open Pyre
