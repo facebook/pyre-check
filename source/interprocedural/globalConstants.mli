@@ -19,13 +19,22 @@ end
 module SharedMemory : sig
   type t
 
-  val from_heap : Heap.t -> t
+  val create : unit -> t
 
-  val get : t -> Reference.t -> StringLiteral.t option
+  val add_heap : t -> Heap.t -> t
 
   val from_qualifiers
-    :  scheduler:Scheduler.t ->
+    :  handle:t ->
+    scheduler:Scheduler.t ->
     environment:Analysis.TypeEnvironment.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t
+
+  module ReadOnly : sig
+    type t
+
+    val get : t -> Reference.t -> StringLiteral.t option
+  end
+
+  val read_only : t -> ReadOnly.t
 end

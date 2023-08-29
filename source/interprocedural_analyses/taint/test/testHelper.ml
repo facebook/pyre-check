@@ -621,8 +621,10 @@ let initialize
     Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
   in
 
+  let global_constants_shared_memory = GlobalConstants.SharedMemory.create () in
   let global_constants =
-    GlobalConstants.Heap.from_source source |> GlobalConstants.SharedMemory.from_heap
+    GlobalConstants.Heap.from_source source
+    |> GlobalConstants.SharedMemory.add_heap global_constants_shared_memory
   in
 
   (* Initialize models *)
@@ -849,7 +851,8 @@ let end_to_end_integration_test path context =
             class_interval_graph = class_interval_graph_shared_memory;
             define_call_graphs =
               Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
-            global_constants;
+            global_constants =
+              Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
           }
         ~callables_to_analyze
         ~max_iterations:100

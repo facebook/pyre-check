@@ -84,27 +84,24 @@ end
 
 module SharedMemory = struct
   include
-    Memory.WithCache.Make
+    SaveLoadSharedMemory.MakeKeyValue
       (Analysis.SharedMemoryKeys.ReferenceKey)
       (struct
         type t = StringLiteral.t
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
+        let handle_prefix = Hack_parallel.Std.Prefix.make ()
+
         let description = "Mapping from fully qualified global name to expression"
       end)
 
-  type t = Handle
-
-  let from_heap heap =
-    Reference.Map.iteri heap ~f:(fun ~key ~data -> add key data);
-    Handle
+  let add_heap handle heap =
+    Reference.Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
 
 
-  let get Handle = get
-
-  let from_qualifiers ~scheduler ~environment ~qualifiers =
-    Scheduler.iter
+  let from_qualifiers ~handle ~scheduler ~environment ~qualifiers =
+    Scheduler.map_reduce
       scheduler
       ~policy:
         (Scheduler.Policy.fixed_chunk_count
@@ -112,9 +109,9 @@ module SharedMemory = struct
            ~minimum_chunk_size:50
            ~preferred_chunks_per_worker:1
            ())
-      ~f:(fun qualifiers ->
-        let (_ : t) = from_heap (Heap.from_qualifiers ~environment ~qualifiers) in
-        ())
-      ~inputs:qualifiers;
-    Handle
+      ~initial:handle
+      ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~environment ~qualifiers))
+      ~reduce:(fun left_handle right_handle -> merge_same_handle left_handle right_handle)
+      ~inputs:qualifiers
+      ()
 end

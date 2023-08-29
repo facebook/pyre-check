@@ -60,7 +60,7 @@ module type FUNCTION_CONTEXT = sig
 
   val class_interval_graph : Interprocedural.ClassIntervalSetGraph.SharedMemory.t
 
-  val global_constants : Interprocedural.GlobalConstants.SharedMemory.t
+  val global_constants : Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t
 
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
@@ -2510,7 +2510,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let global_taint, state =
             let as_reference = identifier |> Reference.create |> Reference.delocalize in
             let global_string =
-              Interprocedural.GlobalConstants.SharedMemory.get
+              Interprocedural.GlobalConstants.SharedMemory.ReadOnly.get
                 FunctionContext.global_constants
                 as_reference
             in

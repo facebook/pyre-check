@@ -498,6 +498,7 @@ let run_taint_analysis
   let timer = Timer.start () in
   let global_constants =
     Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
+      ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
       ~scheduler
       ~environment:(Analysis.TypeEnvironment.read_only environment)
       ~qualifiers
@@ -617,7 +618,7 @@ let run_taint_analysis
           class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs =
             Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
-          global_constants;
+          global_constants = Interprocedural.GlobalConstants.SharedMemory.read_only global_constants;
         }
       ~callables_to_analyze
       ~max_iterations:100

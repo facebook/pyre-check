@@ -15,7 +15,7 @@ val run
   string_combine_partial_sink_tree:Domains.BackwardState.Tree.t ->
   environment:TypeEnvironment.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
-  global_constants:Interprocedural.GlobalConstants.SharedMemory.t ->
+  global_constants:Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->

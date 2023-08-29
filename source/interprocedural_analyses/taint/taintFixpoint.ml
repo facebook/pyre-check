@@ -26,7 +26,7 @@ module Context = struct
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.t;
-    global_constants: Interprocedural.GlobalConstants.SharedMemory.t;
+    global_constants: Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t;
   }
 end
 
