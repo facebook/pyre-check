@@ -496,12 +496,13 @@ let run_taint_analysis
 
   Log.info "Indexing global constants...";
   let timer = Timer.start () in
-  let global_constants =
-    Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
-      ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
-      ~scheduler
-      ~environment:(Analysis.TypeEnvironment.read_only environment)
-      ~qualifiers
+  let global_constants, cache =
+    Cache.global_constants cache (fun () ->
+        Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
+          ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
+          ~scheduler
+          ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~qualifiers)
   in
   Statistics.performance
     ~name:"Finished constant propagation analysis"
@@ -570,6 +571,7 @@ let run_taint_analysis
       ~initial_callables
       ~call_graph_shared_memory:define_call_graphs
       ~whole_program_call_graph
+      ~global_constants
       cache
   in
 

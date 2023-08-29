@@ -37,4 +37,8 @@ module SharedMemory : sig
   end
 
   val read_only : t -> ReadOnly.t
+
+  val save_to_cache : t -> unit
+
+  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
 end

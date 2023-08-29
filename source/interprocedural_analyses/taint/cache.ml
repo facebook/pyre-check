@@ -29,6 +29,7 @@ module Entry = struct
     | PreviousAnalysisSetup
     | OverrideGraph
     | CallGraph
+    | GlobalConstants
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -39,6 +40,7 @@ module Entry = struct
     | PreviousAnalysisSetup -> "previous analysis setup"
     | OverrideGraph -> "override graph"
     | CallGraph -> "call graph"
+    | GlobalConstants -> "global constants"
 end
 
 module EntryStatus = struct
@@ -312,6 +314,7 @@ let save
     ~initial_callables
     ~call_graph_shared_memory
     ~whole_program_call_graph
+    ~global_constants
     { save_cache; configuration; _ }
   =
   if save_cache then
@@ -321,6 +324,7 @@ let save
     let () =
       Interprocedural.CallGraph.DefineCallGraphSharedMemory.save_to_cache call_graph_shared_memory
     in
+    let () = Interprocedural.GlobalConstants.SharedMemory.save_to_cache global_constants in
     let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
         {
@@ -587,3 +591,23 @@ module CallGraphSharedMemory = struct
 end
 
 let call_graph = CallGraphSharedMemory.load_or_recompute
+
+module GlobalConstantsSharedMemory = struct
+  let load_or_compute_if_not_loadable compute_value =
+    match Interprocedural.GlobalConstants.SharedMemory.load_from_cache () with
+    | Ok global_constants -> global_constants, SaveLoadSharedMemory.Usage.Used
+    | Error error -> compute_value (), error
+
+
+  let load_or_recompute_if_stale_or_not_loadable ({ status; _ } as cache) compute_value =
+    match status with
+    | Loaded ({ entry_status; _ } as loaded) ->
+        let () = Log.info "Trying to reuse the global constants from the previous run." in
+        let value, usage = load_or_compute_if_not_loadable compute_value in
+        let entry_status = EntryStatus.add ~name:Entry.GlobalConstants ~usage entry_status in
+        let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
+        value, { cache with status }
+    | _ -> compute_value (), cache
+end
+
+let global_constants = GlobalConstantsSharedMemory.load_or_recompute_if_stale_or_not_loadable

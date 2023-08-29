@@ -25,6 +25,7 @@ val save
   initial_callables:FetchCallables.t ->
   call_graph_shared_memory:Interprocedural.CallGraph.DefineCallGraphSharedMemory.t ->
   whole_program_call_graph:Interprocedural.CallGraph.WholeProgramCallGraph.t ->
+  global_constants:Interprocedural.GlobalConstants.SharedMemory.t ->
   t ->
   unit
 
@@ -63,3 +64,8 @@ val call_graph
   unit ->
   Interprocedural.CallGraph.call_graphs) ->
   Interprocedural.CallGraph.call_graphs * t
+
+val global_constants
+  :  t ->
+  (unit -> Interprocedural.GlobalConstants.SharedMemory.t) ->
+  Interprocedural.GlobalConstants.SharedMemory.t * t
