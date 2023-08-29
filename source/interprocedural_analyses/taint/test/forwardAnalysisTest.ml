@@ -62,7 +62,8 @@ let assert_taint ?models ?models_source ~context source expect =
         ~environment:type_environment
         ~override_graph:
           (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only)
-        ~attribute_targets:(Registry.object_targets models)
+        ~attribute_targets:
+          (models |> Registry.object_targets |> Target.Set.elements |> Target.HashSet.of_list)
         ~qualifier
         ~define:(Ast.Node.value define)
     in

@@ -304,7 +304,7 @@ val build_whole_program_call_graph
   environment:TypeEnvironment.ReadOnly.t ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   store_shared_memory:bool ->
-  attribute_targets:Target.HashSet.t ->
+  attribute_targets:Target.Set.t ->
   skip_analysis_targets:Target.Set.t ->
   definitions:Target.t list ->
   call_graphs

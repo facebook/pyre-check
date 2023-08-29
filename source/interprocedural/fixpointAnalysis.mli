@@ -151,7 +151,7 @@ module Make (Analysis : ANALYSIS) : sig
 
     val targets : t -> Target.t list
 
-    val object_targets : t -> Target.HashSet.t
+    val object_targets : t -> Target.Set.t
 
     val fold : init:'a -> f:(target:Target.t -> model:Analysis.Model.t -> 'a -> 'a) -> t -> 'a
 

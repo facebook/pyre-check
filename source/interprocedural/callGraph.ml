@@ -1858,6 +1858,7 @@ struct
     let global_targets =
       resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
       |> List.map ~f:Target.create_object
+      (* Use a hashset here for faster lookups. *)
       |> List.filter ~f:(Hash_set.mem attribute_targets)
       |> List.map
            ~f:
@@ -2452,6 +2453,7 @@ let build_whole_program_call_graph
     ~skip_analysis_targets
     ~definitions
   =
+  let attribute_targets = attribute_targets |> Target.Set.elements |> Target.HashSet.of_list in
   let define_call_graphs, whole_program_call_graph =
     let build_call_graph ((define_call_graphs, whole_program_call_graph) as so_far) callable =
       if Target.Set.mem callable skip_analysis_targets then

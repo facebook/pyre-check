@@ -508,9 +508,7 @@ module CallGraphSharedMemory = struct
   let compare_attribute_targets ~previous_initial_models ~initial_models =
     let attribute_targets = Registry.object_targets initial_models in
     let previous_attribute_targets = Registry.object_targets previous_initial_models in
-    let is_equal =
-      Interprocedural.Target.HashSet.equal attribute_targets previous_attribute_targets
-    in
+    let is_equal = Interprocedural.Target.Set.equal attribute_targets previous_attribute_targets in
     if not is_equal then
       Log.info "Detected changes in the attribute targets";
     is_equal

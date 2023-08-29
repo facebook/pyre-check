@@ -173,14 +173,12 @@ module Make (Analysis : ANALYSIS) = struct
     let targets registry = Target.Map.keys registry
 
     let object_targets registry =
-      let objects = Target.HashSet.create () in
-      let add target _ =
+      let add target _ so_far =
         match target with
-        | Target.Object _ -> Hash_set.add objects target
-        | _ -> ()
+        | Target.Object _ -> Target.Set.add target so_far
+        | _ -> so_far
       in
-      let () = Target.Map.iter add registry in
-      objects
+      Target.Map.fold add registry Target.Set.empty
 
 
     let fold ~init ~f map =
