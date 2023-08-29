@@ -2451,12 +2451,20 @@ class base class_metadata_environment dependency =
           (class_hierarchy_environment class_metadata_environment)
       in
       let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
+      let is_transitive_successor ~source ~target =
+        ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+          class_metadata_environment
+          ~placeholder_subclass_extends_all:true
+          ?dependency
+          ~target
+          source
+      in
       {
         ConstraintsSet.class_hierarchy =
           {
             instantiate_successors_parameters =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-            is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+            is_transitive_successor;
             variables = ClassHierarchy.variables class_hierarchy_handler;
             least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
           };

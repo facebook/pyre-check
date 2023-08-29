@@ -63,10 +63,30 @@ let parse_attributes ~class_name ~parse_annotation attributes =
 let get_typed_dictionary _ = None
 
 let hierarchy class_hierarchy_handler =
+  let is_transitive_successor ~source ~target =
+    match
+      ClassHierarchy.method_resolution_order_linearize
+        ~get_successors:(ClassHierarchy.parents_of class_hierarchy_handler)
+        source
+    with
+    | Result.Error error ->
+        let message =
+          Format.asprintf
+            "Invalid type order setup for %s: %a"
+            source
+            Sexp.pp_hum
+            (ClassHierarchy.MethodResolutionOrderError.sexp_of_t error)
+        in
+        failwith message
+    | Result.Ok mro_of_source ->
+        List.exists mro_of_source ~f:(fun current ->
+            Type.Primitive.equal target current
+            || ClassHierarchy.extends_placeholder_stub class_hierarchy_handler current)
+  in
   {
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-    is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+    is_transitive_successor;
     variables = ClassHierarchy.variables class_hierarchy_handler;
     least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
   }
@@ -423,8 +443,8 @@ let default =
   insert order "typing.Sized";
   connect order ~predecessor:"list" ~successor:"typing.Sized";
   concrete_connect order ~predecessor:"list" ~successor:"typing.Generic" ~parameters:[variable];
-
   concrete_connect order ~predecessor:"list" ~successor:"typing.Sequence" ~parameters:[variable];
+
   insert order "typing.AbstractSet";
   insert order "set";
   connect order ~predecessor:"set" ~successor:"typing.Sized";
@@ -436,7 +456,6 @@ let default =
     ~parameters:[variable];
   concrete_connect order ~predecessor:"set" ~successor:"typing.AbstractSet" ~parameters:[variable];
   insert order "typing.Iterator";
-  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
   concrete_connect
     order
     ~predecessor:"typing.Iterator"
@@ -454,9 +473,10 @@ let default =
     ~successor:"typing.Generic"
     ~parameters:[variable_covariant];
   concrete_connect order ~predecessor:"list" ~successor:"typing.Iterable" ~parameters:[variable];
+  concrete_connect order ~predecessor:"list" ~successor:"typing.Iterator" ~parameters:[variable];
   insert order "tuple";
-  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
   concrete_connect order ~predecessor:"tuple" ~successor:"typing.Generic" ~parameters:[variable];
+  concrete_connect order ~predecessor:"tuple" ~successor:"typing.Iterator" ~parameters:[variable];
   insert order "typing.Generator";
   concrete_connect
     order

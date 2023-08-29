@@ -52,11 +52,20 @@ let environment ?source context =
   global_environment
 
 
-let hierarchy class_hierarchy_handler =
+let hierarchy global_resolution =
+  let class_hierarchy_handler = GlobalResolution.class_hierarchy global_resolution in
+  let class_metadata_environment = GlobalResolution.class_metadata_environment global_resolution in
+  let is_transitive_successor ~source ~target =
+    ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+      class_metadata_environment
+      ~placeholder_subclass_extends_all:true
+      ~target
+      source
+  in
   {
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-    is_transitive_successor = ClassHierarchy.is_transitive_successor class_hierarchy_handler;
+    is_transitive_successor;
     variables = ClassHierarchy.variables class_hierarchy_handler;
     least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
   }
@@ -205,13 +214,11 @@ let make_assert_functions context =
       ()
     =
     let handler =
-      let class_hierarchy =
-        GlobalResolution.create environment |> GlobalResolution.class_hierarchy
-      in
+      let global_resolution = GlobalResolution.create environment in
       let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
       let order =
         {
-          ConstraintsSet.class_hierarchy = hierarchy class_hierarchy;
+          ConstraintsSet.class_hierarchy = hierarchy global_resolution;
           all_attributes = attributes;
           attribute = attribute_from_attributes attributes;
           is_protocol;
@@ -1530,9 +1537,8 @@ let test_instantiate_protocol_parameters context =
         | Type.Primitive primitive, _ -> List.Assoc.mem protocols primitive ~equal:String.equal
         | _ -> false
       in
-      let handler = GlobalResolution.class_hierarchy resolution in
       {
-        ConstraintsSet.class_hierarchy = hierarchy handler;
+        ConstraintsSet.class_hierarchy = hierarchy resolution;
         all_attributes = attributes;
         attribute = attribute_from_attributes attributes;
         is_protocol;
@@ -1703,10 +1709,10 @@ let test_mark_escaped_as_escaped context =
     Type.Callable.create ~annotation:variable ~parameters:(Type.Callable.Defined []) ()
   in
   let result =
-    let class_hierarchy = GlobalResolution.create environment |> GlobalResolution.class_hierarchy in
+    let global_resolution = GlobalResolution.create environment in
     let order =
       {
-        ConstraintsSet.class_hierarchy = hierarchy class_hierarchy;
+        ConstraintsSet.class_hierarchy = hierarchy global_resolution;
         all_attributes = (fun _ ~assumptions:_ -> None);
         attribute = (fun _ ~assumptions:_ ~name:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);

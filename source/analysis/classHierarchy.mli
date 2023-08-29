@@ -119,13 +119,6 @@ val check_integrity
 
 val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
 
-val is_transitive_successor
-  :  ?placeholder_subclass_extends_all:bool ->
-  (module Handler) ->
-  source:Type.Primitive.t ->
-  target:Type.Primitive.t ->
-  bool
-
 val instantiate_successors_parameters
   :  (module Handler) ->
   source:Type.t ->

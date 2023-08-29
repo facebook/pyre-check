@@ -331,37 +331,6 @@ let least_upper_bound ((module Handler : Handler) as order) =
   least_common_successor order ~successors
 
 
-let is_transitive_successor
-    ?(placeholder_subclass_extends_all = true)
-    ((module Handler : Handler) as handler)
-    ~source
-    ~target
-  =
-  raise_if_untracked handler source;
-  raise_if_untracked handler target;
-  let worklist = Queue.create () in
-  let visited = IndexTracker.Hash_set.create () in
-  Queue.enqueue worklist { Target.target = index_of source; parameters = [] };
-  let rec iterate worklist =
-    match Queue.dequeue worklist with
-    | None -> false
-    | Some { Target.target = current; _ } -> (
-        match Hash_set.strict_add visited current with
-        | Error _ -> iterate worklist
-        | Ok () ->
-            if
-              [%compare.equal: IndexTracker.t] current (index_of target)
-              || placeholder_subclass_extends_all
-                 && extends_placeholder_stub_of_target (module Handler) current
-            then
-              true
-            else (
-              Option.iter (parents_of (module Handler) current) ~f:(Queue.enqueue_all worklist);
-              iterate worklist))
-  in
-  iterate worklist
-
-
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler target;
   let generic_index = IndexTracker.index generic_primitive in

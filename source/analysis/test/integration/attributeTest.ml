@@ -1964,8 +1964,6 @@ let test_check_annotated context =
 
 let test_class_with_same_name_as_local_variable context =
   let assert_type_errors = assert_type_errors ~context in
-  (* TODO(T121169620): Reproduce a bug where Pyre failed analyzing the function because of the `Foo
-     = None` before the `Foo` class definition. Note that the file is also named `Foo.py`. *)
   assert_type_errors
     ~handle:"Foo.py"
     {|
@@ -1978,7 +1976,6 @@ let test_class_with_same_name_as_local_variable context =
     [
       "Incompatible variable type [9]: Foo is declared to have type `Type[Foo]` but is used as \
        type `None`.";
-      "Analysis failure [30]: Terminating analysis because type `$local_Foo$Foo` is not defined.";
     ];
   (* TODO(T121169620): Pyre should recognize the `x` attribute. *)
   assert_type_errors

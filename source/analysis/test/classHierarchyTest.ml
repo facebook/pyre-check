@@ -123,38 +123,6 @@ let test_immediate_parents _ =
   ()
 
 
-let test_is_transitive_successor _ =
-  let order = MockClassHierarchyHandler.create () in
-  let open MockClassHierarchyHandler in
-  let predecessor = "predecessor" in
-  let successor = "successor" in
-  insert order predecessor;
-  insert order successor;
-  connect order ~predecessor ~successor;
-
-  let handler =
-    (module struct
-      let edges = Hashtbl.find order.edges
-
-      let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
-    end : ClassHierarchy.Handler)
-  in
-  assert_true (is_transitive_successor handler ~source:predecessor ~target:successor);
-  assert_false (is_transitive_successor handler ~source:successor ~target:predecessor);
-
-  set_extends_placeholder_stub order predecessor;
-  set_extends_placeholder_stub order successor;
-  assert_true (is_transitive_successor handler ~source:successor ~target:predecessor);
-  (* The flag disables the special-casing of placeholder stub subclasses. *)
-  assert_false
-    (is_transitive_successor
-       ~placeholder_subclass_extends_all:false
-       handler
-       ~source:successor
-       ~target:predecessor);
-  ()
-
-
 let test_least_upper_bound _ =
   assert_equal (least_upper_bound order "3" "1") ["3"];
   assert_equal (least_upper_bound order "4" "bottom") ["4"];
@@ -604,7 +572,6 @@ let () =
          "is_instantiated" >:: test_is_instantiated;
          "least_upper_bound" >:: test_least_upper_bound;
          "immediate_parents" >:: test_immediate_parents;
-         "is_transitive_successor" >:: test_is_transitive_successor;
          "to_dot" >:: test_to_dot;
          "variables" >:: test_variables;
          "instantiate_successors_parameters" >:: test_instantiate_successors_parameters;
