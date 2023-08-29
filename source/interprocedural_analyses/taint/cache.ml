@@ -206,7 +206,7 @@ let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
           | Error error ->
               (* If there exist updates to certain decorators, it wastes memory and might not be
                  safe to leave the old type environment in the shared memory. *)
-              Log.info "Reset shared memory";
+              Log.info "Resetting shared memory";
               Memory.reset_shared_memory ();
               error)
       | Error error -> error
@@ -278,7 +278,7 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
             in
             environment, status
         | Error error_status ->
-            Log.info "Reset shared memory due to failing to load the type environment";
+            Log.info "Resetting shared memory due to failing to load the type environment";
             Memory.reset_shared_memory ();
             compute_and_save_environment (), error_status)
     | _ -> compute_and_save_environment (), status
@@ -484,7 +484,7 @@ module OverrideGraphSharedMemory = struct
           is_reusable ~skip_overrides_targets ~maximum_overrides previous_analysis_setup
         in
         if reusable then
-          let () = Log.info "Try to reuse the override graph from the previous run." in
+          let () = Log.info "Trying to reuse the override graph from the cache." in
           let value, entry_status =
             load_or_compute_if_unloadable
               ~skip_overrides_targets
@@ -496,7 +496,7 @@ module OverrideGraphSharedMemory = struct
           let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
           value, { cache with status }
         else
-          let () = Log.info "Override graph from the previous run is stale." in
+          let () = Log.info "Override graph from the cache is stale." in
           let () = remove_previous () in
           let cache =
             set_entry_usage
@@ -580,7 +580,7 @@ module CallGraphSharedMemory = struct
           is_reusable ~attribute_targets ~skip_analysis_targets entry_status previous_analysis_setup
         in
         if reusable then
-          let () = Log.info "Try to reuse the call graph from the previous run." in
+          let () = Log.info "Trying to reuse the call graph from the cache." in
           let value, usage =
             load_or_compute_if_not_loadable
               ~attribute_targets
@@ -593,7 +593,7 @@ module CallGraphSharedMemory = struct
           let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
           value, { cache with status }
         else
-          let () = Log.info "Call graph from the previous run is stale." in
+          let () = Log.info "Call graph from the cache is stale." in
           let () = remove_previous () in
           let cache =
             set_entry_usage
@@ -617,7 +617,7 @@ module GlobalConstantsSharedMemory = struct
   let load_or_recompute_if_stale_or_not_loadable ({ status; _ } as cache) compute_value =
     match status with
     | Loaded ({ entry_status; _ } as loaded) ->
-        let () = Log.info "Trying to reuse the global constants from the previous run." in
+        let () = Log.info "Trying to reuse the global constants from the cache." in
         let value, usage = load_or_compute_if_not_loadable compute_value in
         let entry_status = EntryStatus.add ~name:Entry.GlobalConstants ~usage entry_status in
         let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
