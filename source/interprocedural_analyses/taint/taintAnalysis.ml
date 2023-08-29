@@ -468,6 +468,7 @@ let run_taint_analysis
   Log.info "Computing overrides...";
   let timer = Timer.start () in
   let maximum_overrides = TaintConfiguration.maximum_overrides_to_analyze taint_configuration in
+  let skip_overrides_targets = Registry.skip_overrides initial_models in
   let ( {
           Interprocedural.OverrideGraph.override_graph_heap;
           override_graph_shared_memory;
@@ -476,16 +477,16 @@ let run_taint_analysis
         cache )
     =
     Cache.override_graph
-      ~initial_models
+      ~skip_overrides_targets
       ~maximum_overrides
       cache
-      (fun ~initial_models ~maximum_overrides () ->
+      (fun ~skip_overrides_targets ~maximum_overrides () ->
         Interprocedural.OverrideGraph.build_whole_program_overrides
           ~static_analysis_configuration
           ~scheduler
           ~environment:(Analysis.TypeEnvironment.read_only environment)
           ~include_unit_tests:false
-          ~skip_overrides:(Registry.skip_overrides initial_models)
+          ~skip_overrides_targets
           ~maximum_overrides
           ~qualifiers)
   in
@@ -513,16 +514,23 @@ let run_taint_analysis
   Log.info "Building call graph...";
   let timer = Timer.start () in
   let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
+  let attribute_targets = Registry.object_targets initial_models in
+  let skip_analysis_targets = Registry.skip_analysis initial_models in
   let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs }, cache =
-    Cache.call_graph ~initial_models ~definitions cache (fun ~initial_models ~definitions () ->
+    Cache.call_graph
+      ~attribute_targets
+      ~skip_analysis_targets
+      ~definitions
+      cache
+      (fun ~attribute_targets ~skip_analysis_targets ~definitions () ->
         Interprocedural.CallGraph.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
           ~environment:(Analysis.TypeEnvironment.read_only environment)
           ~override_graph:override_graph_shared_memory_read_only
           ~store_shared_memory:true
-          ~attribute_targets:(Registry.object_targets initial_models)
-          ~skip_analysis_targets:(Registry.skip_analysis initial_models)
+          ~attribute_targets
+          ~skip_analysis_targets
           ~definitions)
   in
   Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
@@ -565,7 +573,9 @@ let run_taint_analysis
   let () =
     Cache.save
       ~maximum_overrides
-      ~initial_models
+      ~attribute_targets
+      ~skip_analysis_targets
+      ~skip_overrides_targets
       ~skipped_overrides
       ~override_graph_shared_memory
       ~initial_callables

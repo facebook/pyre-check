@@ -87,7 +87,7 @@ val build_whole_program_overrides
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   include_unit_tests:bool ->
-  skip_overrides:Reference.SerializableSet.t ->
+  skip_overrides_targets:Reference.SerializableSet.t ->
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->
   whole_program_overrides

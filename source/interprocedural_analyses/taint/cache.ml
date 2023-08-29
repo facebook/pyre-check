@@ -62,7 +62,9 @@ end
 module AnalysisSetup = struct
   type t = {
     maximum_overrides: int option;
-    initial_models: Registry.t;
+    attribute_targets: Interprocedural.Target.Set.t;
+    skip_analysis_targets: Interprocedural.Target.Set.t;
+    skip_overrides_targets: Ast.Reference.SerializableSet.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
     initial_callables: FetchCallables.t;
     whole_program_call_graph: Interprocedural.CallGraph.WholeProgramCallGraph.t;
@@ -308,7 +310,9 @@ let save_shared_memory ~configuration =
 
 let save
     ~maximum_overrides
-    ~initial_models
+    ~attribute_targets
+    ~skip_analysis_targets
+    ~skip_overrides_targets
     ~skipped_overrides
     ~override_graph_shared_memory
     ~initial_callables
@@ -329,7 +333,9 @@ let save
       PreviousAnalysisSetupSharedMemory.save_to_cache
         {
           AnalysisSetup.maximum_overrides;
-          initial_models;
+          attribute_targets;
+          skip_analysis_targets;
+          skip_overrides_targets;
           skipped_overrides;
           initial_callables;
           whole_program_call_graph;
@@ -415,18 +421,16 @@ let class_interval_graph = ClassIntervalGraphSharedMemory.load_or_compute
 
 module OverrideGraphSharedMemory = struct
   let is_reusable
-      ~initial_models
+      ~skip_overrides_targets
       ~maximum_overrides
       {
         AnalysisSetup.maximum_overrides = previous_maximum_overrides;
-        initial_models = previous_initial_models;
+        skip_overrides_targets = previous_skip_overrides_targets;
         _;
       }
     =
     let no_change_in_skip_overrides =
-      Ast.Reference.SerializableSet.equal
-        (Registry.skip_overrides previous_initial_models)
-        (Registry.skip_overrides initial_models)
+      Ast.Reference.SerializableSet.equal previous_skip_overrides_targets skip_overrides_targets
     in
     let no_change_in_maximum_overrides =
       Option.equal Int.equal maximum_overrides previous_maximum_overrides
@@ -435,7 +439,7 @@ module OverrideGraphSharedMemory = struct
 
 
   let load_or_compute_if_unloadable
-      ~initial_models
+      ~skip_overrides_targets
       ~previous_analysis_setup:{ AnalysisSetup.skipped_overrides; _ }
       ~maximum_overrides
       entry_status
@@ -456,7 +460,7 @@ module OverrideGraphSharedMemory = struct
             ~usage:SaveLoadSharedMemory.Usage.Used
             entry_status )
     | Error error ->
-        ( compute_value ~initial_models ~maximum_overrides (),
+        ( compute_value ~skip_overrides_targets ~maximum_overrides (),
           EntryStatus.add ~name:Entry.OverrideGraph ~usage:error entry_status )
 
 
@@ -469,19 +473,21 @@ module OverrideGraphSharedMemory = struct
 
 
   let load_or_compute_if_stale_or_unloadable
-      ~initial_models
+      ~skip_overrides_targets
       ~maximum_overrides
       ({ status; _ } as cache)
       compute_value
     =
     match status with
     | Loaded ({ previous_analysis_setup; entry_status } as loaded) ->
-        let reusable = is_reusable ~initial_models ~maximum_overrides previous_analysis_setup in
+        let reusable =
+          is_reusable ~skip_overrides_targets ~maximum_overrides previous_analysis_setup
+        in
         if reusable then
           let () = Log.info "Try to reuse the override graph from the previous run." in
           let value, entry_status =
             load_or_compute_if_unloadable
-              ~initial_models
+              ~skip_overrides_targets
               ~previous_analysis_setup
               ~maximum_overrides
               entry_status
@@ -498,25 +504,21 @@ module OverrideGraphSharedMemory = struct
               ~usage:(SaveLoadSharedMemory.Usage.Unused Stale)
               cache
           in
-          compute_value ~initial_models ~maximum_overrides (), cache
-    | _ -> compute_value ~initial_models ~maximum_overrides (), cache
+          compute_value ~skip_overrides_targets ~maximum_overrides (), cache
+    | _ -> compute_value ~skip_overrides_targets ~maximum_overrides (), cache
 end
 
 let override_graph = OverrideGraphSharedMemory.load_or_compute_if_stale_or_unloadable
 
 module CallGraphSharedMemory = struct
-  let compare_attribute_targets ~previous_initial_models ~initial_models =
-    let attribute_targets = Registry.object_targets initial_models in
-    let previous_attribute_targets = Registry.object_targets previous_initial_models in
+  let compare_attribute_targets ~previous_attribute_targets ~attribute_targets =
     let is_equal = Interprocedural.Target.Set.equal attribute_targets previous_attribute_targets in
     if not is_equal then
       Log.info "Detected changes in the attribute targets";
     is_equal
 
 
-  let compare_skip_analysis_targets ~previous_initial_models ~initial_models =
-    let skip_analysis_targets = Registry.skip_analysis initial_models in
-    let previous_skip_analysis_targets = Registry.skip_analysis previous_initial_models in
+  let compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets =
     let is_equal =
       Interprocedural.Target.Set.equal skip_analysis_targets previous_skip_analysis_targets
     in
@@ -526,16 +528,21 @@ module CallGraphSharedMemory = struct
 
 
   let is_reusable
-      ~initial_models
+      ~attribute_targets
+      ~skip_analysis_targets
       entry_status
-      { AnalysisSetup.initial_models = previous_initial_models; _ }
+      {
+        AnalysisSetup.attribute_targets = previous_attribute_targets;
+        skip_analysis_targets = previous_skip_analysis_targets;
+        _;
+      }
     =
     (* Technically we should also compare the changes in the definitions, but such comparison is
        unnecessary because we invalidate the cache when there is a source code change -- which
        implies no change in the definitions. *)
     EntryStatus.get Entry.OverrideGraph entry_status == SaveLoadSharedMemory.Usage.Used
-    && compare_skip_analysis_targets ~previous_initial_models ~initial_models
-    && compare_attribute_targets ~previous_initial_models ~initial_models
+    && compare_attribute_targets ~previous_attribute_targets ~attribute_targets
+    && compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets
 
 
   let remove_previous () =
@@ -547,8 +554,9 @@ module CallGraphSharedMemory = struct
 
 
   let load_or_compute_if_not_loadable
+      ~attribute_targets
+      ~skip_analysis_targets
       ~definitions
-      ~initial_models
       ~previous_analysis_setup:{ AnalysisSetup.whole_program_call_graph; _ }
       compute_value
     =
@@ -556,18 +564,27 @@ module CallGraphSharedMemory = struct
     | Ok define_call_graphs ->
         ( { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs },
           SaveLoadSharedMemory.Usage.Used )
-    | Error error -> compute_value ~initial_models ~definitions (), error
+    | Error error -> compute_value ~attribute_targets ~skip_analysis_targets ~definitions (), error
 
 
-  let load_or_recompute ~initial_models ~definitions ({ status; _ } as cache) compute_value =
+  let load_or_recompute
+      ~attribute_targets
+      ~skip_analysis_targets
+      ~definitions
+      ({ status; _ } as cache)
+      compute_value
+    =
     match status with
     | Loaded ({ previous_analysis_setup; entry_status } as loaded) ->
-        let reusable = is_reusable ~initial_models entry_status previous_analysis_setup in
+        let reusable =
+          is_reusable ~attribute_targets ~skip_analysis_targets entry_status previous_analysis_setup
+        in
         if reusable then
           let () = Log.info "Try to reuse the call graph from the previous run." in
           let value, usage =
             load_or_compute_if_not_loadable
-              ~initial_models
+              ~attribute_targets
+              ~skip_analysis_targets
               ~definitions
               ~previous_analysis_setup
               compute_value
@@ -584,8 +601,8 @@ module CallGraphSharedMemory = struct
               ~usage:(SaveLoadSharedMemory.Usage.Unused Stale)
               cache
           in
-          compute_value ~initial_models ~definitions (), cache
-    | _ -> compute_value ~initial_models ~definitions (), cache
+          compute_value ~attribute_targets ~skip_analysis_targets ~definitions (), cache
+    | _ -> compute_value ~attribute_targets ~skip_analysis_targets ~definitions (), cache
 end
 
 let call_graph = CallGraphSharedMemory.load_or_recompute

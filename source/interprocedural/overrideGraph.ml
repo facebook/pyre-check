@@ -252,7 +252,7 @@ let build_whole_program_overrides
     ~static_analysis_configuration
     ~environment
     ~include_unit_tests
-    ~skip_overrides
+    ~skip_overrides_targets
     ~maximum_overrides
     ~qualifiers
   =
@@ -264,7 +264,7 @@ let build_whole_program_overrides
       | Some source ->
           let new_overrides =
             Heap.from_source ~environment ~include_unit_tests ~source
-            |> Heap.skip_overrides ~to_skip:skip_overrides
+            |> Heap.skip_overrides ~to_skip:skip_overrides_targets
           in
           Target.Map.Tree.merge_skewed ~combine overrides new_overrides
     in
