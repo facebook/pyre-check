@@ -202,7 +202,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "first_field.alternate_fields",
+    "callable": "first_index.alternate_fields",
     "sources": [
       {
         "port": "result",
@@ -221,7 +221,7 @@
               { "has": "first-index" }, { "first-index": "a" }
             ],
             "origin": {
-              "filename": "first_field.py",
+              "filename": "first_index.py",
               "line": 12,
               "start": 14,
               "end": 28
@@ -241,7 +241,7 @@
               { "has": "first-index" }, { "first-index": "b" }
             ],
             "origin": {
-              "filename": "first_field.py",
+              "filename": "first_index.py",
               "line": 12,
               "start": 35,
               "end": 49
@@ -255,13 +255,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "first_field.alternate_fields",
+    "callable": "first_index.alternate_fields",
     "callable_line": 11,
     "code": 5002,
     "line": 17,
     "start": 15,
     "end": 16,
-    "filename": "first_field.py",
+    "filename": "first_index.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
@@ -281,7 +281,7 @@
               { "has": "first-index" }, { "first-index": "a" }
             ],
             "origin": {
-              "filename": "first_field.py",
+              "filename": "first_index.py",
               "line": 12,
               "start": 14,
               "end": 28
@@ -301,7 +301,7 @@
               { "has": "first-index" }, { "first-index": "b" }
             ],
             "origin": {
-              "filename": "first_field.py",
+              "filename": "first_index.py",
               "line": 12,
               "start": 35,
               "end": 49
@@ -321,7 +321,7 @@
               }
             ],
             "origin": {
-              "filename": "first_field.py",
+              "filename": "first_index.py",
               "line": 17,
               "start": 15,
               "end": 16
@@ -343,13 +343,13 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "first_field.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):e344eba1a11b018a14afd4a5796566b9"
+    "master_handle": "first_index.alternate_fields:5002:0:Call|_test_sink|0|formal(arg):0b4eae0529819331d17760506f0825f9"
   }
 }
 {
   "kind": "model",
   "data": {
-    "callable": "first_field.local_fields",
+    "callable": "first_index.local_fields",
     "sources": [
       {
         "port": "result",
@@ -374,12 +374,12 @@
             ],
             "call": {
               "position": {
-                "filename": "first_field.py",
+                "filename": "first_index.py",
                 "line": 22,
                 "start": 8,
                 "end": 26
               },
-              "resolves_to": [ "first_field.alternate_fields" ],
+              "resolves_to": [ "first_index.alternate_fields" ],
               "port": "result"
             }
           }
@@ -391,7 +391,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "first_field.local_fields_hop",
+    "callable": "first_index.local_fields_hop",
     "sources": [
       {
         "port": "result",
@@ -416,12 +416,12 @@
             ],
             "call": {
               "position": {
-                "filename": "first_field.py",
+                "filename": "first_index.py",
                 "line": 31,
                 "start": 8,
                 "end": 22
               },
-              "resolves_to": [ "first_field.local_fields" ],
+              "resolves_to": [ "first_index.local_fields" ],
               "port": "result"
             }
           }
