@@ -311,6 +311,10 @@ Broadening features are:
 * `model-source-broadening`
 * `model-sink-broadening`
 * `model-tito-broadening`
+* `model-shaping`
+* `model-source-shaping`
+* `model-sink-shaping`
+* `model-tito-shaping`
 * `widen-broadening`
 * `issue-broadening`
 

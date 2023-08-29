@@ -240,8 +240,8 @@
             ],
             "local_features": [
               { "via-value": "second" },
-              { "via": "model-broadening" },
-              { "via": "model-source-broadening" },
+              { "via": "model-source-shaping" },
+              { "via": "model-shaping" },
               { "via": "broadening" }
             ],
             "origin": {

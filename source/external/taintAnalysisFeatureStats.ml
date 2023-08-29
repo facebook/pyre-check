@@ -23,6 +23,10 @@ let common_breadcrumbs =
     (* ModelSourceBroadening *) 2439536194025271970;
     (* ModelSinkBroadening *) -2738958863442293014;
     (* ModelTitoBroadening *) -1578665859618221961;
+    (* ModelShaping *) 1423125298667540077;
+    (* ModelSourceShaping *) 4128033442803123087;
+    (* ModelSinkShaping *) -367760535426754964;
+    (* ModelTitoShaping *) -1535594150991062538;
     (* WidenBroadening *) -293447484878671831;
     (* FormatString *) 3490955977576959699;
     (* Lambda *) -2825441026312067324;
@@ -41,10 +45,6 @@ let common_breadcrumbs =
     (* SimpleVia[obfuscated_data] *) -4208192405276300888;
     (* SimpleVia[hmac_key] *) -3982698479217660749;
     (* SimpleVia[filesystem_operation] *) -2972470572941736736;
-    (* SimpleVia[sql_query] *) -277997400056776587;
-    (* SimpleVia[bytesio] *) 2360738635902389996;
-    (* ViaType[Exception] *) 311578467925302803;
-    (* SimpleVia[known_false_positive_6306] *) -2854192715197321820;
   |]
 
 

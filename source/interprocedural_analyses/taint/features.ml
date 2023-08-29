@@ -240,10 +240,14 @@ module Breadcrumb = struct
     | Broadening (* Taint tree was collapsed for various reasons *)
     | WidenBroadening (* Taint tree was collapsed during widening *)
     | TitoBroadening (* Taint tree was collapsed when applying tito *)
-    | ModelBroadening (* Taint tree was collapsed when simplifying the model *)
-    | ModelSourceBroadening (* Source tree was collapsed when simplifying the model *)
-    | ModelSinkBroadening (* Sink tree was collapsed when simplifying the model *)
-    | ModelTitoBroadening (* Tito tree was collapsed when simplifying the model *)
+    | ModelBroadening (* Taint tree was collapsed during model broadening *)
+    | ModelSourceBroadening (* Source tree was collapsed during model broadening *)
+    | ModelSinkBroadening (* Sink tree was collapsed during model broadening *)
+    | ModelTitoBroadening (* Tito tree was collapsed during model broadening *)
+    | ModelShaping (* Taint tree was collapsed during model shaping *)
+    | ModelSourceShaping (* Source tree was collapsed during model shaping *)
+    | ModelSinkShaping (* Sink tree was collapsed during model shaping *)
+    | ModelTitoShaping (* Tito tree was collapsed during model shaping *)
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
     | Crtex (* Taint comes from the Cross Repository Taint EXchange *)
     | TransformTitoDepth of int
@@ -273,6 +277,10 @@ module Breadcrumb = struct
     | ModelSourceBroadening -> Format.fprintf formatter "ModelSourceBroadening"
     | ModelSinkBroadening -> Format.fprintf formatter "ModelSinkBroadening"
     | ModelTitoBroadening -> Format.fprintf formatter "ModelTitoBroadening"
+    | ModelShaping -> Format.fprintf formatter "ModelShaping"
+    | ModelSourceShaping -> Format.fprintf formatter "ModelSourceShaping"
+    | ModelSinkShaping -> Format.fprintf formatter "ModelSinkShaping"
+    | ModelTitoShaping -> Format.fprintf formatter "ModelTitoShaping"
     | IssueBroadening -> Format.fprintf formatter "IssueBroadening"
     | Crtex -> Format.fprintf formatter "Crtex"
     | TransformTitoDepth depth -> Format.fprintf formatter "TransformTitoDepth(%d)" depth
@@ -305,6 +313,10 @@ module Breadcrumb = struct
     | ModelSourceBroadening -> `Assoc [prefix ^ "via", `String "model-source-broadening"]
     | ModelSinkBroadening -> `Assoc [prefix ^ "via", `String "model-sink-broadening"]
     | ModelTitoBroadening -> `Assoc [prefix ^ "via", `String "model-tito-broadening"]
+    | ModelShaping -> `Assoc [prefix ^ "via", `String "model-shaping"]
+    | ModelSourceShaping -> `Assoc [prefix ^ "via", `String "model-source-shaping"]
+    | ModelSinkShaping -> `Assoc [prefix ^ "via", `String "model-sink-shaping"]
+    | ModelTitoShaping -> `Assoc [prefix ^ "via", `String "model-tito-shaping"]
     | IssueBroadening -> `Assoc [prefix ^ "via", `String "issue-broadening"]
     | Crtex -> `Assoc [prefix ^ "via", `String "crtex"]
     | TransformTitoDepth depth ->
@@ -616,6 +628,21 @@ let model_sink_broadening_set =
 let model_tito_broadening_set =
   memoize_breadcrumb_set
     [Breadcrumb.Broadening; Breadcrumb.ModelBroadening; Breadcrumb.ModelTitoBroadening]
+
+
+let model_source_shaping_set =
+  memoize_breadcrumb_set
+    [Breadcrumb.Broadening; Breadcrumb.ModelShaping; Breadcrumb.ModelSourceShaping]
+
+
+let model_sink_shaping_set =
+  memoize_breadcrumb_set
+    [Breadcrumb.Broadening; Breadcrumb.ModelShaping; Breadcrumb.ModelSinkShaping]
+
+
+let model_tito_shaping_set =
+  memoize_breadcrumb_set
+    [Breadcrumb.Broadening; Breadcrumb.ModelShaping; Breadcrumb.ModelTitoShaping]
 
 
 let issue_broadening_set =

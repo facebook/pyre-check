@@ -2938,7 +2938,7 @@ let extract_source_model
       tree
       |> ForwardState.Tree.shape
            ~mold_with_return_access_paths:false
-           ~breadcrumbs:(Features.model_source_broadening_set ())
+           ~breadcrumbs:(Features.model_source_shaping_set ())
       |> ForwardState.Tree.limit_to
            ~breadcrumbs:(Features.model_source_broadening_set ())
            ~width:maximum_model_source_tree_width

@@ -2415,11 +2415,15 @@ let extract_tito_and_sink_models
     entry_taint
   =
   (* Simplify trees by keeping only essential structure and merging details back into that. *)
-  let simplify ~breadcrumbs tree =
+  let simplify ~shape_breadcrumbs ~limit_breadcrumbs tree =
     if apply_broadening then
       tree
-      |> BackwardState.Tree.shape ~mold_with_return_access_paths:is_constructor ~breadcrumbs
-      |> BackwardState.Tree.limit_to ~breadcrumbs ~width:maximum_model_sink_tree_width
+      |> BackwardState.Tree.shape
+           ~mold_with_return_access_paths:is_constructor
+           ~breadcrumbs:shape_breadcrumbs
+      |> BackwardState.Tree.limit_to
+           ~breadcrumbs:limit_breadcrumbs
+           ~width:maximum_model_sink_tree_width
       |> BackwardState.Tree.transform_call_info
            CallInfo.Tito
            Features.ReturnAccessPathTree.Self
@@ -2451,7 +2455,9 @@ let extract_tito_and_sink_models
       let candidate_tree =
         Map.Poly.find partition Sinks.LocalReturn
         |> Option.value ~default:BackwardState.Tree.empty
-        |> simplify ~breadcrumbs:(Features.model_tito_broadening_set ())
+        |> simplify
+             ~shape_breadcrumbs:(Features.model_tito_shaping_set ())
+             ~limit_breadcrumbs:(Features.model_tito_broadening_set ())
         |> add_type_breadcrumbs annotation
       in
       let candidate_tree =
@@ -2490,7 +2496,9 @@ let extract_tito_and_sink_models
             in
             let sink_tree =
               sink_tree
-              |> simplify ~breadcrumbs:(Features.model_sink_broadening_set ())
+              |> simplify
+                   ~shape_breadcrumbs:(Features.model_sink_shaping_set ())
+                   ~limit_breadcrumbs:(Features.model_sink_broadening_set ())
               |> add_type_breadcrumbs annotation
             in
             let sink_tree =

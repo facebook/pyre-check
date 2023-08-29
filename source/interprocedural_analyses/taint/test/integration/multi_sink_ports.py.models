@@ -46,10 +46,10 @@
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "model-broadening" },
+                  { "via": "model-shaping" },
                   { "via": "tito" },
                   { "via": "broadening" },
-                  { "via": "model-sink-broadening" }
+                  { "via": "model-sink-shaping" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
@@ -65,10 +65,10 @@
                   { "via": "c_feature" },
                   { "via": "split" },
                   { "via": "b_feature" },
-                  { "via": "model-broadening" },
+                  { "via": "model-shaping" },
                   { "via": "tito" },
                   { "via": "broadening" },
-                  { "via": "model-sink-broadening" }
+                  { "via": "model-sink-shaping" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
@@ -122,10 +122,10 @@
       { "via": "c_feature" },
       { "via": "split" },
       { "via": "b_feature" },
-      { "via": "model-broadening" },
+      { "via": "model-shaping" },
       { "via": "tito" },
       { "via": "broadening" },
-      { "via": "model-sink-broadening" }
+      { "via": "model-sink-shaping" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -189,10 +189,10 @@
                   { "via": "a_feature" },
                   { "via": "c_feature" },
                   { "via": "split" },
-                  { "via": "model-broadening" },
+                  { "via": "model-shaping" },
                   { "via": "tito" },
                   { "via": "broadening" },
-                  { "via": "model-sink-broadening" }
+                  { "via": "model-sink-shaping" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkA" },
@@ -208,10 +208,10 @@
                   { "via": "c_feature" },
                   { "via": "split" },
                   { "via": "b_feature" },
-                  { "via": "model-broadening" },
+                  { "via": "model-shaping" },
                   { "via": "tito" },
                   { "via": "broadening" },
-                  { "via": "model-sink-broadening" }
+                  { "via": "model-sink-shaping" }
                 ],
                 "leaves": [
                   { "port": "leaf:x", "name": "multi_sink_ports.sinkB" },
@@ -265,11 +265,11 @@
       { "via": "c_feature" },
       { "via": "split" },
       { "via": "b_feature" },
-      { "via": "model-broadening" },
+      { "via": "model-shaping" },
       { "always-via": "tito" },
       { "via": "broadening" },
-      { "via": "issue-broadening" },
-      { "via": "model-sink-broadening" }
+      { "via": "model-sink-shaping" },
+      { "via": "issue-broadening" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -781,9 +781,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "model-broadening" },
+              { "always-via": "model-shaping" },
               { "always-via": "broadening" },
-              { "always-via": "model-sink-broadening" }
+              { "always-via": "model-sink-shaping" }
             ],
             "call": {
               "position": {
@@ -847,9 +847,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "model-broadening" },
+              { "always-via": "model-shaping" },
               { "always-via": "broadening" },
-              { "always-via": "model-sink-broadening" }
+              { "always-via": "model-sink-shaping" }
             ],
             "call": {
               "position": {
@@ -882,9 +882,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "model-broadening" },
+              { "always-via": "model-shaping" },
               { "always-via": "broadening" },
-              { "always-via": "model-sink-broadening" }
+              { "always-via": "model-sink-shaping" }
             ],
             "call": {
               "position": {
