@@ -2363,8 +2363,8 @@ let call_graph_of_callable
 (** Call graphs of callables, stored in the shared memory. This is a mapping from a callable to its
     `DefineCallGraph.t`. *)
 module DefineCallGraphSharedMemory = struct
-  include
-    Memory.WithCache.Make
+  module T =
+    SaveLoadSharedMemory.MakeKeyValue
       (Target.SharedMemoryKey)
       (struct
         type t = LocationCallees.t Location.Map.Tree.t
@@ -2374,11 +2374,21 @@ module DefineCallGraphSharedMemory = struct
         let description = "call graphs of defines"
       end)
 
-  type t = Handle
+  type t = T.t
 
-  let set Handle ~callable ~call_graph = add callable call_graph
+  let add handle ~callable ~call_graph = T.add handle callable call_graph
 
-  let get Handle ~callable = get callable
+  let create = T.create
+
+  let merge_same_handle = T.merge_same_handle
+
+  module ReadOnly = struct
+    type t = T.ReadOnly.t
+
+    let get handle ~callable = T.ReadOnly.get handle callable
+  end
+
+  let read_only = T.read_only
 end
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its
@@ -2434,11 +2444,10 @@ let build_whole_program_call_graph
     ~skip_analysis_targets
     ~definitions
   =
-  let define_call_graphs = DefineCallGraphSharedMemory.Handle in
-  let whole_program_call_graph =
-    let build_call_graph whole_program_call_graph callable =
+  let define_call_graphs, whole_program_call_graph =
+    let build_call_graph ((define_call_graphs, whole_program_call_graph) as so_far) callable =
       if Target.Set.mem callable skip_analysis_targets then
-        whole_program_call_graph
+        so_far
       else
         let callable_call_graph =
           Alarm.with_alarm
@@ -2454,18 +2463,37 @@ let build_whole_program_call_graph
                 ~callable)
             ()
         in
-        let () =
+        let define_call_graphs =
           if store_shared_memory then
-            DefineCallGraphSharedMemory.set
+            DefineCallGraphSharedMemory.add
               define_call_graphs
               ~callable
               ~call_graph:callable_call_graph
+          else
+            define_call_graphs
         in
-        WholeProgramCallGraph.add_or_exn
-          whole_program_call_graph
-          ~callable
-          ~callees:(DefineCallGraph.all_targets callable_call_graph)
+        let whole_program_call_graph =
+          WholeProgramCallGraph.add_or_exn
+            whole_program_call_graph
+            ~callable
+            ~callees:(DefineCallGraph.all_targets callable_call_graph)
+        in
+        define_call_graphs, whole_program_call_graph
     in
+    let reduce
+        (left_define_call_graphs, left_whole_program_call_graph)
+        (right_define_call_graphs, right_whole_program_call_graph)
+      =
+      (* We should check the keys in two define call graphs are disjoint. If not disjoint, we should
+         fail the analysis. But we don't perform such check due to performance reasons. *)
+      ( DefineCallGraphSharedMemory.merge_same_handle
+          left_define_call_graphs
+          right_define_call_graphs,
+        WholeProgramCallGraph.merge_disjoint
+          left_whole_program_call_graph
+          right_whole_program_call_graph )
+    in
+    let define_call_graphs = DefineCallGraphSharedMemory.create () in
     Scheduler.map_reduce
       scheduler
       ~policy:
@@ -2474,10 +2502,13 @@ let build_whole_program_call_graph
            ~minimum_chunk_size:100
            ~preferred_chunk_size:2000
            ())
-      ~initial:WholeProgramCallGraph.empty
+      ~initial:(define_call_graphs, WholeProgramCallGraph.empty)
       ~map:(fun definitions ->
-        List.fold definitions ~init:WholeProgramCallGraph.empty ~f:build_call_graph)
-      ~reduce:WholeProgramCallGraph.merge_disjoint
+        List.fold
+          definitions
+          ~init:(define_call_graphs, WholeProgramCallGraph.empty)
+          ~f:build_call_graph)
+      ~reduce
       ~inputs:definitions
       ()
   in

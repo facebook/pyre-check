@@ -114,6 +114,12 @@ struct
 
   let create () = { Handle.first_class_handle = FirstClass.create (); keys = BigList.empty }
 
+  let add { Handle.first_class_handle; keys } key value =
+    let keys = BigList.cons key keys in
+    let () = FirstClass.add first_class_handle key value in
+    { Handle.first_class_handle; keys }
+
+
   (* Partially invalidate the shared memory. *)
   let cleanup { Handle.first_class_handle; keys } =
     FirstClass.remove_batch first_class_handle (keys |> BigList.to_list |> FirstClass.KeySet.of_list)
@@ -133,6 +139,19 @@ struct
            match value with
            | Some value -> Some (key, value)
            | None -> None)
+
+
+  let merge_same_handle
+      { Handle.first_class_handle = left_first_class_handle; keys = left_keys }
+      { Handle.first_class_handle = right_first_class_handle; keys = right_keys }
+    =
+    if not (FirstClass.equal left_first_class_handle right_first_class_handle) then
+      failwith "Cannot merge with different handles"
+    else
+      {
+        Handle.first_class_handle = left_first_class_handle;
+        keys = BigList.merge left_keys right_keys;
+      }
 
 
   module HandleSharedMemory = MakeSingleValue (struct

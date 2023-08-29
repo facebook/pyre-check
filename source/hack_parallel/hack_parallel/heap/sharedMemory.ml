@@ -1320,6 +1320,8 @@ module FirstClass = struct
     module type S = sig
       type t
 
+      val equal : t -> t -> bool
+
       type key
 
       type value
@@ -1367,7 +1369,7 @@ module FirstClass = struct
 
       type t = int
 
-
+      let equal = Int.equal
 
       let with_convert_key f id key = f (id, key)
 

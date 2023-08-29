@@ -24,7 +24,8 @@ module Context = struct
     taint_configuration: TaintConfiguration.SharedMemory.t;
     type_environment: TypeEnvironment.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
-    define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.t;
+    (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
+    define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.t;
     global_constants: Interprocedural.GlobalConstants.SharedMemory.t;
   }
 end
@@ -116,7 +117,9 @@ module Analysis = struct
     in
     let call_graph_of_define =
       match
-        Interprocedural.CallGraph.DefineCallGraphSharedMemory.get define_call_graphs ~callable
+        Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.get
+          define_call_graphs
+          ~callable
       with
       | Some call_graph -> call_graph
       | None ->

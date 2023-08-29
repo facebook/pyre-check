@@ -255,7 +255,13 @@ val call_graph_of_callable
 module DefineCallGraphSharedMemory : sig
   type t
 
-  val get : t -> callable:Target.t -> DefineCallGraph.t option
+  module ReadOnly : sig
+    type t
+
+    val get : t -> callable:Target.t -> DefineCallGraph.t option
+  end
+
+  val read_only : t -> ReadOnly.t
 end
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its

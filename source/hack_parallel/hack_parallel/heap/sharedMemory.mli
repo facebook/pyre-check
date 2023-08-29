@@ -285,6 +285,8 @@ module FirstClass : sig
     module type S = sig
       type t
 
+      val equal : t -> t -> bool
+
       type key
 
       type value

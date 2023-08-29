@@ -53,9 +53,13 @@ module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyV
 
   val create : unit -> t
 
+  val add : t -> Key.t -> Value.t -> t
+
   val of_alist : (Key.t * Value.t) list -> t
 
   val to_alist : t -> (Key.t * Value.t) list
+
+  val merge_same_handle : t -> t -> t
 
   val cleanup : t -> unit
 

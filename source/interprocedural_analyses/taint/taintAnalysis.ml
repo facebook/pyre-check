@@ -610,7 +610,8 @@ let run_taint_analysis
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
           type_environment = Analysis.TypeEnvironment.read_only environment;
           class_interval_graph = class_interval_graph_shared_memory;
-          define_call_graphs;
+          define_call_graphs =
+            Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
           global_constants;
         }
       ~callables_to_analyze
