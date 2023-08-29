@@ -6,7 +6,7 @@
  *)
 
 open Core
-module BigList = Data_structures.BigList
+open Data_structures
 
 let exception_to_error ~error ~message ~f =
   try f () with
