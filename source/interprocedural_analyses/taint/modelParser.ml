@@ -225,6 +225,44 @@ module AnnotationOrigin = struct
     | ModelQueryGlobal ->
         true
     | _ -> false
+
+
+  let is_parameter = function
+    | DefineParameter
+    | ModelQueryParameter ->
+        true
+    | _ -> false
+
+
+  let is_return = function
+    | DefineReturn
+    | ModelQueryReturn ->
+        true
+    | _ -> false
+end
+
+module AnnotationName = struct
+  type t =
+    | Source
+    | Sink
+    | TaintInTaintOut
+    | AddFeatureToArgument
+    | AttachToSource
+    | AttachToSink
+    | AttachToTito
+  [@@deriving equal]
+
+  let pp formatter = function
+    | Source -> Format.fprintf formatter "Source"
+    | Sink -> Format.fprintf formatter "Sink"
+    | TaintInTaintOut -> Format.fprintf formatter "TaintInTaintOut"
+    | AddFeatureToArgument -> Format.fprintf formatter "AddFeatureToArgument"
+    | AttachToSource -> Format.fprintf formatter "AttachToSource"
+    | AttachToSink -> Format.fprintf formatter "AttachToSink"
+    | AttachToTito -> Format.fprintf formatter "AttachToTito"
+
+
+  let is_tito = equal TaintInTaintOut
 end
 
 let rec parse_annotations
@@ -365,7 +403,29 @@ let rec parse_annotations
         (annotation_error
            (Format.sprintf "`%s` can only be used in attribute or global models." identifier))
   in
-  let rec extract_kinds_with_features expression =
+  let check_parameter_annotation identifier origin =
+    if AnnotationOrigin.is_parameter origin then
+      Ok ()
+    else
+      Error (annotation_error (Format.sprintf "`%s` can only be used on parameters" identifier))
+  in
+  let check_tito_annotation identifier name =
+    if AnnotationName.is_tito name then
+      Ok ()
+    else
+      Error
+        (annotation_error
+           (Format.sprintf "`%s` can only be used within `TaintInTaintOut[]`" identifier))
+  in
+  let error_on_path_with_parameter_name
+      ({ TaintKindsWithFeatures.features; _ } as kinds_with_features)
+    =
+    if TaintFeatures.has_path_with_parameter_name features then
+      Error (annotation_error "`parameter_name()` can only be used within `TaintInTaintOut[]`")
+    else
+      Ok kinds_with_features
+  in
+  let rec extract_kinds_with_features ~name expression =
     match expression.Node.value with
     | Expression.Name (Name.Identifier identifier) -> (
         match identifier with
@@ -386,8 +446,12 @@ let rec parse_annotations
             >>| fun () ->
             TaintKindsWithFeatures.from_via_feature
               (Features.ViaFeature.ViaAttributeName { tag = None })
-        | "Collapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse)
-        | "NoCollapse" -> Ok (TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse)
+        | "Collapse" ->
+            check_tito_annotation identifier name
+            >>| fun () -> TaintKindsWithFeatures.from_collapse_depth CollapseDepth.Collapse
+        | "NoCollapse" ->
+            check_tito_annotation identifier name
+            >>| fun () -> TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
     | Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
         match base_name callee with
@@ -424,6 +488,10 @@ let rec parse_annotations
             [Features.ViaFeature.ViaAttributeName { tag }]
             |> TaintKindsWithFeatures.from_via_features
         | Some "Updates" ->
+            check_tito_annotation "Updates" name
+            >>= fun () ->
+            check_parameter_annotation "Updates" origin
+            >>= fun () ->
             let to_leaf name =
               get_parameter_position name
               >>| fun position -> Kind.from_name (Format.sprintf "ParameterUpdate%d" position)
@@ -431,13 +499,27 @@ let rec parse_annotations
             extract_names argument
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
         | Some "ParameterPath" ->
+            check_parameter_annotation "ParameterPath" origin
+            >>= fun () ->
             parse_access_path ~path ~location argument
             >>| TaintKindsWithFeatures.from_parameter_path
         | Some "ReturnPath" ->
-            parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
+            if not (AnnotationOrigin.is_return origin || AnnotationName.is_tito name) then
+              Error
+                (annotation_error
+                   "`ReturnPath[]` can only be used as a return annotation or within \
+                    `TaintInTaintOut[]`")
+            else
+              parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
         | Some "UpdatePath" ->
+            check_tito_annotation "UpdatePath" name
+            >>= fun () ->
+            check_parameter_annotation "UpdatePath" origin
+            >>= fun () ->
             parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_update_path
         | Some "CollapseDepth" ->
+            check_tito_annotation "CollapseDepth" name
+            >>= fun () ->
             extract_collapse_depth argument
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
         | Some taint_kind ->
@@ -451,7 +533,7 @@ let rec parse_annotations
                     "Invalid expression for taint kind: %s"
                     (Expression.show expression))))
     | Tuple expressions ->
-        List.map ~f:extract_kinds_with_features expressions
+        List.map ~f:(extract_kinds_with_features ~name) expressions
         |> all
         >>= fun kinds_with_features ->
         kinds_with_features
@@ -464,7 +546,8 @@ let rec parse_annotations
   in
   let get_source_kinds expression =
     let open TaintConfiguration.Heap in
-    extract_kinds_with_features expression
+    extract_kinds_with_features ~name:Source expression
+    >>= error_on_path_with_parameter_name
     >>= fun { kinds; features } ->
     List.map kinds ~f:(fun { name; subkind } ->
         AnnotationParser.parse_source ~allowed:taint_configuration.sources ?subkind name
@@ -474,7 +557,8 @@ let rec parse_annotations
   in
   let get_sink_kinds expression =
     let open TaintConfiguration.Heap in
-    extract_kinds_with_features expression
+    extract_kinds_with_features ~name:Sink expression
+    >>= error_on_path_with_parameter_name
     >>= fun { kinds; features } ->
     List.map kinds ~f:(fun { name; subkind } ->
         AnnotationParser.parse_sink ~allowed:taint_configuration.sinks ?subkind name
@@ -484,9 +568,19 @@ let rec parse_annotations
   in
   let get_taint_in_taint_out expression =
     let open TaintConfiguration.Heap in
-    extract_kinds_with_features expression
+    extract_kinds_with_features ~name:TaintInTaintOut expression
     >>= fun { kinds; features } ->
     match kinds with
+    | _ when not (AnnotationOrigin.is_parameter origin || AnnotationOrigin.is_attribute origin) ->
+        Error
+          (annotation_error
+             "`TaintInTaintOut[]` can only be used on parameters, attributes or globals")
+    | _ when TaintFeatures.has_path_with_all_static_fields features ->
+        Error (annotation_error "`all_static_fields()` is not allowed within `TaintInTaintOut[]`")
+    | _
+      when TaintFeatures.has_path_with_parameter_name features
+           && not (AnnotationOrigin.is_parameter origin) ->
+        Error (annotation_error "`parameter_name()` can only be used on parameters")
     | [] -> Ok [TaintAnnotation.Tito { tito = Sinks.LocalReturn; features }]
     | _ ->
         List.map kinds ~f:(fun { name; subkind } ->
@@ -500,7 +594,7 @@ let rec parse_annotations
   in
   let extract_attach_features ~name expression =
     (* Ensure AttachToX annotations don't have any non-Via annotations for now. *)
-    extract_kinds_with_features expression
+    extract_kinds_with_features ~name expression
     >>= function
     | {
         kinds = [];
@@ -522,7 +616,10 @@ let rec parse_annotations
     | _ ->
         Error
           (annotation_error
-             (Format.sprintf "All parameters to `%s` must be of the form `Via[feature]`." name))
+             (Format.asprintf
+                "All parameters to `%a` must be of the form `Via[feature]`."
+                AnnotationName.pp
+                name))
   in
   let invalid_annotation_error () =
     Error (annotation_error "Failed to parse the given taint annotation.")
@@ -573,16 +670,16 @@ let rec parse_annotations
         | Some "TaintSource", _ -> get_source_kinds argument
         | Some "TaintInTaintOut", _ -> get_taint_in_taint_out argument
         | Some "AddFeatureToArgument", _ ->
-            extract_kinds_with_features argument
+            extract_kinds_with_features ~name:AddFeatureToArgument argument
             >>| fun { features; _ } -> [TaintAnnotation.AddFeatureToArgument { features }]
         | Some "AttachToSink", _ ->
-            extract_attach_features ~name:"AttachToSink" argument
+            extract_attach_features ~name:AttachToSink argument
             >>| fun features -> [TaintAnnotation.Sink { sink = Sinks.Attach; features }]
         | Some "AttachToTito", _ ->
-            extract_attach_features ~name:"AttachToTito" argument
+            extract_attach_features ~name:AttachToTito argument
             >>| fun features -> [TaintAnnotation.Tito { tito = Sinks.Attach; features }]
         | Some "AttachToSource", _ ->
-            extract_attach_features ~name:"AttachToSource" argument
+            extract_attach_features ~name:AttachToSource argument
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
         | Some "ViaTypeOf", _ ->
             check_attribute_annotation "ViaTypeOf" origin
@@ -615,6 +712,8 @@ let rec parse_annotations
                 };
             ]
         | Some "PartialSink", _ ->
+            check_parameter_annotation "PartialSink" origin
+            >>= fun () ->
             get_partial_sink_kind argument
             >>| fun partial_sink ->
             [TaintAnnotation.Sink { sink = partial_sink; features = TaintFeatures.empty }]
@@ -637,23 +736,32 @@ let rec parse_annotations
                     (annotation_error
                        "Expected either integer or string as index in AppliesTo annotation.")
             in
+            let error_on_ambiguous_applies_to = function
+              | { TaintFeatures.applies_to = Some _; parameter_path = Some _; _ } ->
+                  Error (annotation_error "`AppliesTo[]` cannot be used with `ParameterPath[]`")
+              | { applies_to = Some _; return_path = Some _; _ } ->
+                  Error (annotation_error "`AppliesTo[]` cannot be used with `ReturnPath[]`")
+              | { applies_to = Some _; update_path = Some _; _ } ->
+                  Error (annotation_error "`AppliesTo[]` cannot be used with `UpdatePath[]`")
+              | features -> Ok features
+            in
             let extend_applies_to field = function
               | TaintAnnotation.Sink { sink; features } ->
-                  Ok
-                    (TaintAnnotation.Sink
-                       { sink; features = TaintFeatures.extend_applies_to features field })
+                  TaintFeatures.extend_applies_to features field
+                  |> error_on_ambiguous_applies_to
+                  >>| fun features -> TaintAnnotation.Sink { sink; features }
               | TaintAnnotation.Source { source; features } ->
-                  Ok
-                    (TaintAnnotation.Source
-                       { source; features = TaintFeatures.extend_applies_to features field })
+                  TaintFeatures.extend_applies_to features field
+                  |> error_on_ambiguous_applies_to
+                  >>| fun features -> TaintAnnotation.Source { source; features }
               | TaintAnnotation.Tito { tito; features } ->
-                  Ok
-                    (TaintAnnotation.Tito
-                       { tito; features = TaintFeatures.extend_applies_to features field })
+                  TaintFeatures.extend_applies_to features field
+                  |> error_on_ambiguous_applies_to
+                  >>| fun features -> TaintAnnotation.Tito { tito; features }
               | TaintAnnotation.AddFeatureToArgument { features } ->
-                  Ok
-                    (TaintAnnotation.AddFeatureToArgument
-                       { features = TaintFeatures.extend_applies_to features field })
+                  TaintFeatures.extend_applies_to features field
+                  |> error_on_ambiguous_applies_to
+                  >>| fun features -> TaintAnnotation.AddFeatureToArgument { features }
               | TaintAnnotation.Sanitize _ ->
                   Error (annotation_error "`AppliesTo[Sanitize[...]]` is not supported.")
             in
@@ -686,7 +794,7 @@ let rec parse_annotations
               Error
                 (annotation_error
                    "A standalone `ViaTypeOf` without arguments can only be used in attribute or \
-                    global models.")
+                    global models")
             else
               (* Attribute annotations of the form `a: ViaTypeOf = ...` is equivalent to:
                  TaintInTaintOut[ViaTypeOf[$global]] = ...` *)

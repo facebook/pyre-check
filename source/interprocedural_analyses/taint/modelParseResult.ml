@@ -69,6 +69,11 @@ module TaintPath = struct
 
   let show = Format.asprintf "%a" pp
 
+  let has_parameter_name = function
+    | Path path -> List.mem path ParameterName ~equal:Label.equal
+    | AllStaticFields -> false
+
+
   let get_access_path = function
     | Path path ->
         let to_tree_label = function
@@ -192,6 +197,21 @@ module TaintFeatures = struct
     |> add_option ~name:"UpdatePath" ~pp:TaintPath.pp update_path
     |> add_option ~name:"TraceLength" ~pp:Int.pp trace_length
     |> add_collapse_depth
+
+
+  let has_path_with_all_static_fields = function
+    | { parameter_path = Some TaintPath.AllStaticFields; _ }
+    | { return_path = Some TaintPath.AllStaticFields; _ }
+    | { update_path = Some TaintPath.AllStaticFields; _ } ->
+        true
+    | _ -> false
+
+
+  let has_path_with_parameter_name = function
+    | { parameter_path = Some path; _ } when TaintPath.has_parameter_name path -> true
+    | { return_path = Some path; _ } when TaintPath.has_parameter_name path -> true
+    | { update_path = Some path; _ } when TaintPath.has_parameter_name path -> true
+    | _ -> false
 end
 
 module TaintKindsWithFeatures = struct

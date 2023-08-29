@@ -39,6 +39,8 @@ module TaintPath : sig
     | AllStaticFields
   [@@deriving equal, show]
 
+  val has_parameter_name : t -> bool
+
   val get_access_path : t -> (AccessPath.Path.t, string) result
 end
 
@@ -64,6 +66,10 @@ module TaintFeatures : sig
   val join : t -> t -> (t, string) Result.t
 
   val extend_applies_to : t -> Abstract.TreeDomain.Label.t -> t
+
+  val has_path_with_all_static_fields : t -> bool
+
+  val has_path_with_parameter_name : t -> bool
 end
 
 module TaintKindsWithFeatures : sig
