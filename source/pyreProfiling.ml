@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Profiling logic for internal Pyre behaviour. *)
 
 open Core
 module Worker = Hack_parallel.Std.Worker
