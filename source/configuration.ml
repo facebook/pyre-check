@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module supports the loading of Pyre configaration from global .pyre_configuration files with
+   local overrides defined within .pyre_configuration.local files. Some additional utility functions
+   are provided *)
 
 open Core
 
