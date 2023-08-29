@@ -6,6 +6,7 @@
  *)
 
 open Core
+module BigList = Data_structures.BigList
 
 let exception_to_error ~error ~message ~f =
   try f () with
@@ -103,7 +104,7 @@ struct
   module Handle = struct
     type t = {
       first_class_handle: FirstClass.t;
-      keys: FirstClass.KeySet.t;
+      keys: Key.t BigList.t;
     }
   end
 
@@ -111,26 +112,26 @@ struct
 
   type t = Handle.t
 
-  let create () =
-    { Handle.first_class_handle = FirstClass.create (); keys = FirstClass.KeySet.empty }
-
+  let create () = { Handle.first_class_handle = FirstClass.create (); keys = BigList.empty }
 
   let get { Handle.first_class_handle; _ } = FirstClass.get first_class_handle
 
   let mem { Handle.first_class_handle; _ } = FirstClass.mem first_class_handle
 
   (* Partially invalidate the shared memory. *)
-  let cleanup { Handle.first_class_handle; keys } = FirstClass.remove_batch first_class_handle keys
+  let cleanup { Handle.first_class_handle; keys } =
+    FirstClass.remove_batch first_class_handle (keys |> BigList.to_list |> FirstClass.KeySet.of_list)
+
 
   let of_alist list =
     let save_entry ~first_class_handle (key, value) = FirstClass.add first_class_handle key value in
     let first_class_handle = FirstClass.create () in
     List.iter list ~f:(save_entry ~first_class_handle);
-    { Handle.first_class_handle; keys = list |> List.map ~f:fst |> FirstClass.KeySet.of_list }
+    { Handle.first_class_handle; keys = list |> List.map ~f:fst |> BigList.of_list }
 
 
   let to_alist { Handle.first_class_handle; keys } =
-    FirstClass.get_batch first_class_handle keys
+    FirstClass.get_batch first_class_handle (keys |> BigList.to_list |> KeySet.of_list)
     |> FirstClass.KeyMap.elements
     |> List.filter_map ~f:(fun (key, value) ->
            match value with
