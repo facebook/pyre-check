@@ -22,6 +22,7 @@ val save
   initial_models:Registry.t ->
   skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
   override_graph_shared_memory:Interprocedural.OverrideGraph.SharedMemory.t ->
+  initial_callables:FetchCallables.t ->
   t ->
   unit
 

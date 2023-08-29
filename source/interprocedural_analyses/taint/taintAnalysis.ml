@@ -564,6 +564,7 @@ let run_taint_analysis
       ~initial_models
       ~skipped_overrides
       ~override_graph_shared_memory
+      ~initial_callables
       cache
   in
 

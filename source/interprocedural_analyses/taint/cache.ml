@@ -58,6 +58,7 @@ module AnalysisSetup = struct
     maximum_overrides: int option;
     initial_models: Registry.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
+    initial_callables: FetchCallables.t;
   }
 end
 
@@ -301,6 +302,7 @@ let save
     ~initial_models
     ~skipped_overrides
     ~override_graph_shared_memory
+    ~initial_callables
     { save_cache; configuration; _ }
   =
   if save_cache then
@@ -309,7 +311,7 @@ let save
     in
     let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
-        { AnalysisSetup.maximum_overrides; initial_models; skipped_overrides }
+        { AnalysisSetup.maximum_overrides; initial_models; skipped_overrides; initial_callables }
     in
     save_shared_memory ~configuration |> ignore
 
@@ -355,19 +357,27 @@ module ClassHierarchyGraphSharedMemory = MakeCacheEntry (struct
   let entry = Entry.ClassHierarchyGraph
 end)
 
-module InitialCallablesSharedMemory = MakeCacheEntry (struct
-  type t = FetchCallables.t
-
-  let entry = Entry.InitialCallables
-end)
-
 module ClassIntervalGraphSharedMemory = MakeCacheEntry (struct
   type t = ClassIntervalSetGraph.Heap.t
 
   let entry = Entry.ClassIntervalGraph
 end)
 
-let initial_callables = InitialCallablesSharedMemory.load_or_compute
+let initial_callables ({ status; _ } as cache) compute_value =
+  match status with
+  | Loaded
+      ({ entry_status; previous_analysis_setup = { AnalysisSetup.initial_callables; _ }; _ } as
+      loaded) ->
+      let entry_status =
+        EntryStatus.add
+          ~name:Entry.InitialCallables
+          ~usage:SaveLoadSharedMemory.Usage.Used
+          entry_status
+      in
+      let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
+      initial_callables, { cache with status }
+  | _ -> compute_value (), cache
+
 
 let class_hierarchy_graph = ClassHierarchyGraphSharedMemory.load_or_compute
 
