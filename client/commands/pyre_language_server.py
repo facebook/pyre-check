@@ -327,6 +327,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             self.server_state.server_options.language_server_features.telemetry.is_enabled()
         )
         if should_write_telemetry:
+            parameters[
+                "project_identifier"
+            ] = self.server_state.server_options.project_identifier
             await lsp.write_json_rpc_ignore_connection_error(
                 self.output_channel,
                 json_rpc.Request(
