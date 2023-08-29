@@ -50,6 +50,7 @@ let show reference = Format.asprintf "%a" pp reference
 
 module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Set.Make (T)
+module SerializableSet = Data_structures.SerializableSet.Make (T)
 include Hashable.Make (T)
 
 let empty = []

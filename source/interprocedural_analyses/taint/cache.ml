@@ -424,7 +424,7 @@ module OverrideGraphSharedMemory = struct
       }
     =
     let no_change_in_skip_overrides =
-      Ast.Reference.Set.equal
+      Ast.Reference.SerializableSet.equal
         (Registry.skip_overrides previous_initial_models)
         (Registry.skip_overrides initial_models)
     in

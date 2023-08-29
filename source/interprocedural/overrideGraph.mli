@@ -29,7 +29,7 @@ module Heap : sig
     source:Source.t ->
     t
 
-  val skip_overrides : to_skip:Reference.Set.t -> t -> t
+  val skip_overrides : to_skip:Reference.SerializableSet.t -> t -> t
 
   type cap_overrides_result = {
     overrides: t;
@@ -87,7 +87,7 @@ val build_whole_program_overrides
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
   include_unit_tests:bool ->
-  skip_overrides:Reference.Set.t ->
+  skip_overrides:Reference.SerializableSet.t ->
   maximum_overrides:int option ->
   qualifiers:Reference.t list ->
   whole_program_overrides

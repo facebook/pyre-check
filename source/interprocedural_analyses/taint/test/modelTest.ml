@@ -132,8 +132,13 @@ let assert_model
   begin
     match expected_skipped_overrides with
     | Some expected ->
-        let expected_set = List.map expected ~f:Ast.Reference.create |> Ast.Reference.Set.of_list in
-        assert_equal ~cmp:Ast.Reference.Set.equal expected_set (Registry.skip_overrides models)
+        let expected_set =
+          List.map expected ~f:Ast.Reference.create |> Ast.Reference.SerializableSet.of_list
+        in
+        assert_equal
+          ~cmp:Ast.Reference.SerializableSet.equal
+          expected_set
+          (Registry.skip_overrides models)
     | None -> ()
   end;
   let get_model = Registry.get models in

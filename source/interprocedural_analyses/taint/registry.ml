@@ -25,7 +25,7 @@ let targets_with_mode models ~mode =
 let skip_overrides models =
   targets_with_mode models ~mode:Model.Mode.SkipOverrides
   |> List.map ~f:Target.define_name
-  |> Reference.Set.of_list
+  |> Reference.SerializableSet.of_list
 
 
 let skip_analysis models =

@@ -32,6 +32,8 @@ module SerializableMap : Data_structures.SerializableMap.S with type key = t
 
 module Set : Set.S with type Elt.t = t
 
+module SerializableSet : Data_structures.SerializableSet.S with type elt = t
+
 include Hashable with type t := t
 
 val empty : t
