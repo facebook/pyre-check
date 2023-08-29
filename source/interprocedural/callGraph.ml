@@ -2391,6 +2391,12 @@ module DefineCallGraphSharedMemory = struct
   end
 
   let read_only = T.read_only
+
+  let cleanup = T.cleanup
+
+  let save_to_cache = T.save_to_cache
+
+  let load_from_cache = T.load_from_cache
 end
 
 (** Whole-program call graph, stored in the ocaml heap. This is a mapping from a callable to all its

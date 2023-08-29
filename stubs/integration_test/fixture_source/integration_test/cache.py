@@ -48,3 +48,14 @@ class AnotherOverride(AnotherBase):
 
 def test_overrides_cap(instance: AnotherBase):
     instance.method(source())
+
+def test_skip_analysis():
+    sink(source())
+
+
+class Token:
+    token: str = ""
+
+
+def test_attribute(token: Token) -> None:
+    sink(token.token)

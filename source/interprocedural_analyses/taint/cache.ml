@@ -28,6 +28,7 @@ module Entry = struct
     | ClassIntervalGraph
     | PreviousAnalysisSetup
     | OverrideGraph
+    | CallGraph
   [@@deriving compare, show { with_path = false }]
 
   let show_pretty = function
@@ -37,6 +38,7 @@ module Entry = struct
     | ClassIntervalGraph -> "class interval graph"
     | PreviousAnalysisSetup -> "previous analysis setup"
     | OverrideGraph -> "override graph"
+    | CallGraph -> "call graph"
 end
 
 module EntryStatus = struct
@@ -47,6 +49,8 @@ module EntryStatus = struct
   let empty = Map.empty
 
   let add ~name ~usage = Map.add name usage
+
+  let get = Map.find
 
   let to_json entry_status =
     let accumulate name usage so_far = (Entry.show name, `String (Usage.show usage)) :: so_far in
@@ -59,6 +63,7 @@ module AnalysisSetup = struct
     initial_models: Registry.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
     initial_callables: FetchCallables.t;
+    whole_program_call_graph: Interprocedural.CallGraph.WholeProgramCallGraph.t;
   }
 end
 
@@ -305,6 +310,8 @@ let save
     ~skipped_overrides
     ~override_graph_shared_memory
     ~initial_callables
+    ~call_graph_shared_memory
+    ~whole_program_call_graph
     { save_cache; configuration; _ }
   =
   if save_cache then
@@ -312,8 +319,17 @@ let save
       Interprocedural.OverrideGraph.SharedMemory.save_to_cache override_graph_shared_memory
     in
     let () =
+      Interprocedural.CallGraph.DefineCallGraphSharedMemory.save_to_cache call_graph_shared_memory
+    in
+    let () =
       PreviousAnalysisSetupSharedMemory.save_to_cache
-        { AnalysisSetup.maximum_overrides; initial_models; skipped_overrides; initial_callables }
+        {
+          AnalysisSetup.maximum_overrides;
+          initial_models;
+          skipped_overrides;
+          initial_callables;
+          whole_program_call_graph;
+        }
     in
     save_shared_memory ~configuration |> ignore
 
@@ -483,3 +499,91 @@ module OverrideGraphSharedMemory = struct
 end
 
 let override_graph = OverrideGraphSharedMemory.load_or_compute_if_stale_or_unloadable
+
+module CallGraphSharedMemory = struct
+  let compare_attribute_targets ~previous_initial_models ~initial_models =
+    let attribute_targets = Registry.object_targets initial_models in
+    let previous_attribute_targets = Registry.object_targets previous_initial_models in
+    let is_equal =
+      Interprocedural.Target.HashSet.equal attribute_targets previous_attribute_targets
+    in
+    if not is_equal then
+      Log.info "Detected changes in the attribute targets";
+    is_equal
+
+
+  let compare_skip_analysis_targets ~previous_initial_models ~initial_models =
+    let skip_analysis_targets = Registry.skip_analysis initial_models in
+    let previous_skip_analysis_targets = Registry.skip_analysis previous_initial_models in
+    let is_equal =
+      Interprocedural.Target.Set.equal skip_analysis_targets previous_skip_analysis_targets
+    in
+    if not is_equal then
+      Log.info "Detected changes in the skip analysis targets";
+    is_equal
+
+
+  let is_reusable
+      ~initial_models
+      entry_status
+      { AnalysisSetup.initial_models = previous_initial_models; _ }
+    =
+    (* Technically we should also compare the changes in the definitions, but such comparison is
+       unnecessary because we invalidate the cache when there is a source code change -- which
+       implies no change in the definitions. *)
+    EntryStatus.get Entry.OverrideGraph entry_status == SaveLoadSharedMemory.Usage.Used
+    && compare_skip_analysis_targets ~previous_initial_models ~initial_models
+    && compare_attribute_targets ~previous_initial_models ~initial_models
+
+
+  let remove_previous () =
+    match Interprocedural.CallGraph.DefineCallGraphSharedMemory.load_from_cache () with
+    | Ok call_graph_shared_memory ->
+        Log.info "Removing the previous call graph.";
+        Interprocedural.CallGraph.DefineCallGraphSharedMemory.cleanup call_graph_shared_memory
+    | Error _ -> Log.warning "Failed to remove the previous call graph."
+
+
+  let load_or_compute_if_not_loadable
+      ~definitions
+      ~initial_models
+      ~previous_analysis_setup:{ AnalysisSetup.whole_program_call_graph; _ }
+      compute_value
+    =
+    match Interprocedural.CallGraph.DefineCallGraphSharedMemory.load_from_cache () with
+    | Ok define_call_graphs ->
+        ( { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs },
+          SaveLoadSharedMemory.Usage.Used )
+    | Error error -> compute_value ~initial_models ~definitions (), error
+
+
+  let load_or_recompute ~initial_models ~definitions ({ status; _ } as cache) compute_value =
+    match status with
+    | Loaded ({ previous_analysis_setup; entry_status } as loaded) ->
+        let reusable = is_reusable ~initial_models entry_status previous_analysis_setup in
+        if reusable then
+          let () = Log.info "Try to reuse the call graph from the previous run." in
+          let value, usage =
+            load_or_compute_if_not_loadable
+              ~initial_models
+              ~definitions
+              ~previous_analysis_setup
+              compute_value
+          in
+          let entry_status = EntryStatus.add ~name:Entry.CallGraph ~usage entry_status in
+          let status = SharedMemoryStatus.Loaded { loaded with entry_status } in
+          value, { cache with status }
+        else
+          let () = Log.info "Call graph from the previous run is stale." in
+          let () = remove_previous () in
+          let cache =
+            set_entry_usage
+              ~entry:Entry.CallGraph
+              ~usage:(SaveLoadSharedMemory.Usage.Unused Stale)
+              cache
+          in
+          compute_value ~initial_models ~definitions (), cache
+    | _ -> compute_value ~initial_models ~definitions (), cache
+end
+
+let call_graph = CallGraphSharedMemory.load_or_recompute

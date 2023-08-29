@@ -265,6 +265,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "Used",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -332,6 +333,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "Used",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -391,6 +393,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "Used",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -456,6 +459,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "Used",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -617,6 +621,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "(Unused Stale)",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -658,6 +663,7 @@ class Test:
         expected_cache_usage = {
             "shared_memory_status": {
                 "Loaded": {
+                    "CallGraph": "(Unused Stale)",
                     "ClassHierarchyGraph": "Used",
                     "ClassIntervalGraph": "Used",
                     "InitialCallables": "Used",
@@ -688,6 +694,170 @@ class Test:
             self.save_results_to,
             expected_cache_usage,
         )
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    @save_restore_cache
+    def run_test_changed_skip_analysis(self) -> None:
+        """
+        Run Pysa after changing the skip analysis targets to test cache invalidation.
+        Pysa should detect this and fall back to doing a clean run.
+        """
+        # Remove a test taint file
+        test_model_path = Path("test_taint/skip_analysis.pysa")
+        # Save contents for cleanup phase
+        original_content = open(test_model_path).read()
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(f"Could not remove {test_model_path.absolute()}.")
+            pass
+
+        LOG.info("Testing cache invalidation when changing skip analysis targets:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "CallGraph": "(Unused Stale)",
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        # Expect a new issue due to not skipping analyzing a callable
+        new_issue = {
+            "code": 5001,
+            "column": 9,
+            "define": "integration_test.cache.test_skip_analysis",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 53,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 17,
+            "stop_line": 53,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Restore the original model file
+        open(test_model_path, "w").write(original_content)
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    @save_restore_cache
+    def run_test_changed_definitions(self) -> None:
+        """
+        Run Pysa after adding a definition to test cache invalidation.
+        Pysa should detect code changes and fall back to a clean run.
+        """
+        source_file_path = Path("fixture_source/integration_test/cache.py")
+        # Save contents for cleanup phase
+        original_content = open(source_file_path).read()
+        try:
+            new_definition = "def new_definition():\n    sink(source())"
+            open(source_file_path, "w").write(f"{original_content}\n{new_definition}")
+        except FileNotFoundError:
+            LOG.warning(f"Could not update {source_file_path.absolute()}.")
+            pass
+
+        LOG.info("Testing cache invalidation when adding a new definition:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": "InvalidByCodeChange",
+            "save_cache": True,
+        }
+        # Expect a new issue due to not skipping analyzing a callable
+        new_issue = {
+            "code": 5001,
+            "column": 9,
+            "define": "integration_test.cache.new_definition",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 64,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 17,
+            "stop_line": 64,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Restore the original source code file
+        open(source_file_path, "w").write(original_content)
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    @save_restore_cache
+    def run_test_changed_attribute_targets(self) -> None:
+        """
+        Run Pysa after adding an attribute model to test cache invalidation.
+        Pysa should detect code changes and fall back to a clean run.
+        """
+        test_model_path = Path("test_taint/attributes.pysa")
+        # Save contents for cleanup phase
+        original_content = open(test_model_path).read()
+        try:
+            new_model = "integration_test.cache.Token.token: TaintSource[UserControlled] = ..."
+            open(test_model_path, "w").write(f"{original_content}\n{new_model}")
+        except FileNotFoundError:
+            LOG.warning(f"Could not update {test_model_path.absolute()}.")
+            pass
+
+        LOG.info("Testing cache invalidation when adding a new attribute model:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "CallGraph": "(Unused Stale)",
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "InitialCallables": "Used",
+                    "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "Used",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+        # Expect a new issue due to adding an attribute model
+        new_issue = {
+            "code": 5001,
+            "column": 9,
+            "define": "integration_test.cache.test_attribute",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 61,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 20,
+            "stop_line": 61,
+        }
+        returncode = _run_and_check_output(
+            pysa_command,
+            self.expected + [new_issue],
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Restore the original model file
+        open(test_model_path, "w").write(original_content)
 
         _exit_or_continue(returncode, self.exit_on_error)
 
@@ -730,9 +900,12 @@ def run_tests(exit_on_error: bool) -> None:
         test_class.run_test_changed_taint_config_file()
         test_class.run_test_changed_models()
         test_class.run_test_changed_source_files()
+        test_class.run_test_changed_definitions()
         test_class.run_test_changed_decorators()
         test_class.run_test_changed_overrides()
         test_class.run_test_changed_overrides_cap()
+        test_class.run_test_changed_skip_analysis()
+        test_class.run_test_changed_attribute_targets()
 
 
 if __name__ == "__main__":

@@ -23,6 +23,8 @@ val save
   skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
   override_graph_shared_memory:Interprocedural.OverrideGraph.SharedMemory.t ->
   initial_callables:FetchCallables.t ->
+  call_graph_shared_memory:Interprocedural.CallGraph.DefineCallGraphSharedMemory.t ->
+  whole_program_call_graph:Interprocedural.CallGraph.WholeProgramCallGraph.t ->
   t ->
   unit
 
@@ -51,3 +53,13 @@ val override_graph
   unit ->
   Interprocedural.OverrideGraph.whole_program_overrides) ->
   Interprocedural.OverrideGraph.whole_program_overrides * t
+
+val call_graph
+  :  initial_models:Registry.t ->
+  definitions:Interprocedural.Target.t list ->
+  t ->
+  (initial_models:Registry.t ->
+  definitions:Interprocedural.Target.t list ->
+  unit ->
+  Interprocedural.CallGraph.call_graphs) ->
+  Interprocedural.CallGraph.call_graphs * t

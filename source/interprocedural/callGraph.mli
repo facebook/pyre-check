@@ -255,6 +255,12 @@ val call_graph_of_callable
 module DefineCallGraphSharedMemory : sig
   type t
 
+  val cleanup : t -> unit
+
+  val save_to_cache : t -> unit
+
+  val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
+
   module ReadOnly : sig
     type t
 

@@ -510,16 +510,18 @@ let run_taint_analysis
 
   Log.info "Building call graph...";
   let timer = Timer.start () in
-  let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs } =
-    Interprocedural.CallGraph.build_whole_program_call_graph
-      ~scheduler
-      ~static_analysis_configuration
-      ~environment:(Analysis.TypeEnvironment.read_only environment)
-      ~override_graph:override_graph_shared_memory_read_only
-      ~store_shared_memory:true
-      ~attribute_targets:(Registry.object_targets initial_models)
-      ~skip_analysis_targets:(Registry.skip_analysis initial_models)
-      ~definitions:(Interprocedural.FetchCallables.get_definitions initial_callables)
+  let definitions = Interprocedural.FetchCallables.get_definitions initial_callables in
+  let { Interprocedural.CallGraph.whole_program_call_graph; define_call_graphs }, cache =
+    Cache.call_graph ~initial_models ~definitions cache (fun ~initial_models ~definitions () ->
+        Interprocedural.CallGraph.build_whole_program_call_graph
+          ~scheduler
+          ~static_analysis_configuration
+          ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~override_graph:override_graph_shared_memory_read_only
+          ~store_shared_memory:true
+          ~attribute_targets:(Registry.object_targets initial_models)
+          ~skip_analysis_targets:(Registry.skip_analysis initial_models)
+          ~definitions)
   in
   Statistics.performance ~name:"Call graph built" ~phase_name:"Building call graph" ~timer ();
 
@@ -565,6 +567,8 @@ let run_taint_analysis
       ~skipped_overrides
       ~override_graph_shared_memory
       ~initial_callables
+      ~call_graph_shared_memory:define_call_graphs
+      ~whole_program_call_graph
       cache
   in
 
