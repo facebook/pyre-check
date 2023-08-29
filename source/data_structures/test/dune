@@ -1,5 +1,5 @@
 (tests
- (names patriciaTreeSetTest bitSetPatriciaTreeIntSetTest)
+ (names patriciaTreeSetTest bitSetPatriciaTreeIntSetTest bigListTest)
  (preprocess
   (pps
    ppx_deriving.eq
