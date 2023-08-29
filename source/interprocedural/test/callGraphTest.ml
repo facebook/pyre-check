@@ -81,7 +81,8 @@ let test_call_graph_of_define context =
         (CallGraph.call_graph_of_define
            ~static_analysis_configuration
            ~environment
-           ~override_graph:override_graph_shared_memory
+           ~override_graph:
+             (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
            ~attribute_targets:(Target.HashSet.of_list object_targets)
            ~qualifier:(Reference.create "test")
            ~define)

@@ -489,6 +489,9 @@ let run_taint_analysis
           ~maximum_overrides
           ~qualifiers)
   in
+  let override_graph_shared_memory_read_only =
+    Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
+  in
   Statistics.performance ~name:"Overrides computed" ~phase_name:"Computing overrides" ~timer ();
 
   Log.info "Indexing global constants...";
@@ -512,7 +515,7 @@ let run_taint_analysis
       ~scheduler
       ~static_analysis_configuration
       ~environment:(Analysis.TypeEnvironment.read_only environment)
-      ~override_graph:override_graph_shared_memory
+      ~override_graph:override_graph_shared_memory_read_only
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~skip_analysis_targets:(Registry.skip_analysis initial_models)
@@ -600,7 +603,7 @@ let run_taint_analysis
     Taint.TaintFixpoint.compute
       ~scheduler
       ~type_environment:(Analysis.TypeEnvironment.read_only environment)
-      ~override_graph:override_graph_shared_memory
+      ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
       ~context:
         {
@@ -682,7 +685,7 @@ let run_taint_analysis
           ~output_format
           ~local_root
           ~filename_lookup
-          ~override_graph:override_graph_shared_memory
+          ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides
           ~model_verification_errors

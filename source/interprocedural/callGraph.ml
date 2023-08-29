@@ -961,7 +961,7 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
   let global_resolution = Resolution.global_resolution resolution in
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
-    if OverrideGraph.SharedMemory.overrides_exist override_graph method_name then
+    if OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph method_name then
       Target.get_corresponding_override method_name
     else
       method_name
@@ -977,7 +977,9 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
     [get_actual_target implementation_target]
   else
     match
-      OverrideGraph.SharedMemory.get_overriding_types override_graph ~member:implementation_target
+      OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
+        override_graph
+        ~member:implementation_target
     with
     | None ->
         (* case b *)
@@ -1693,7 +1695,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 
-  val override_graph : OverrideGraph.SharedMemory.t
+  val override_graph : OverrideGraph.SharedMemory.ReadOnly.t
 
   val call_indexer : CallTargetIndexer.t
 

@@ -60,7 +60,8 @@ let create_call_graph ?(other_sources = []) ~context source_text =
       CallGraph.call_graph_of_callable
         ~static_analysis_configuration
         ~environment
-        ~override_graph:override_graph_shared_memory
+        ~override_graph:
+          (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
         ~attribute_targets:(Target.HashSet.create ())
         ~callable
       |> CallGraph.DefineCallGraph.all_targets

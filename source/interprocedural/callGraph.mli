@@ -234,7 +234,7 @@ end
 val call_graph_of_define
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.t ->
+  override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   attribute_targets:Target.HashSet.t ->
   qualifier:Reference.t ->
   define:Ast.Statement.Define.t ->
@@ -245,7 +245,7 @@ val redirect_special_calls : resolution:Resolution.t -> Call.t -> Call.t
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.t ->
+  override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   attribute_targets:Target.HashSet.t ->
   callable:Target.t ->
   DefineCallGraph.t
@@ -290,7 +290,7 @@ val build_whole_program_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
-  override_graph:OverrideGraph.SharedMemory.t ->
+  override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   store_shared_memory:bool ->
   attribute_targets:Target.HashSet.t ->
   skip_analysis_targets:Target.Set.t ->

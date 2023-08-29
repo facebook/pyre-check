@@ -617,6 +617,9 @@ let initialize
     |> OverrideGraph.Heap.skip_overrides ~to_skip:(Registry.skip_overrides user_models)
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
+  let override_graph_shared_memory_read_only =
+    Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
+  in
 
   let global_constants =
     GlobalConstants.Heap.from_source source |> GlobalConstants.SharedMemory.from_heap
@@ -629,7 +632,7 @@ let initialize
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment:type_environment
-      ~override_graph:override_graph_shared_memory
+      ~override_graph:override_graph_shared_memory_read_only
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~skip_analysis_targets:Target.Set.empty
@@ -830,11 +833,14 @@ let end_to_end_integration_test path context =
         ~stubs
         ~override_targets
     in
+    let override_graph_shared_memory_read_only =
+      Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory
+    in
     let fixpoint_state =
       TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
         ~type_environment
-        ~override_graph:override_graph_shared_memory
+        ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
         ~context:
           {
@@ -858,7 +864,7 @@ let end_to_end_integration_test path context =
         ~taint_configuration
         ~fixpoint_state
         ~filename_lookup
-        ~override_graph:override_graph_shared_memory
+        ~override_graph:override_graph_shared_memory_read_only
         ~dump_override_models:true
         callable
       |> List.map ~f:(fun json -> Yojson.Safe.pretty_to_string ~std:true json ^ "\n")

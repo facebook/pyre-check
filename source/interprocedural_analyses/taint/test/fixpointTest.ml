@@ -61,7 +61,8 @@ let assert_fixpoint
     TaintFixpoint.compute
       ~scheduler
       ~type_environment
-      ~override_graph:override_graph_shared_memory
+      ~override_graph:
+        (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
       ~context:
         {

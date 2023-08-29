@@ -114,10 +114,6 @@ struct
 
   let create () = { Handle.first_class_handle = FirstClass.create (); keys = BigList.empty }
 
-  let get { Handle.first_class_handle; _ } = FirstClass.get first_class_handle
-
-  let mem { Handle.first_class_handle; _ } = FirstClass.mem first_class_handle
-
   (* Partially invalidate the shared memory. *)
   let cleanup { Handle.first_class_handle; keys } =
     FirstClass.remove_batch first_class_handle (keys |> BigList.to_list |> FirstClass.KeySet.of_list)
@@ -148,4 +144,14 @@ struct
   let save_to_cache = HandleSharedMemory.save
 
   let load_from_cache = HandleSharedMemory.load
+
+  module ReadOnly = struct
+    type t = FirstClass.t
+
+    let get = FirstClass.get
+
+    let mem = FirstClass.mem
+  end
+
+  let read_only { Handle.first_class_handle; _ } = first_class_handle
 end

@@ -463,7 +463,7 @@ module Make (Analysis : ANALYSIS) = struct
     =
     let timer = Timer.start () in
     let overrides =
-      OverrideGraph.SharedMemory.get_overriding_types
+      OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
         override_graph
         ~member:(Target.get_corresponding_method callable)
       |> Option.value ~default:[]

@@ -127,7 +127,7 @@ module CallInfo = struct
     match trace with
     | CallSite { location; callees; port; path } ->
         let callees =
-          OverrideGraph.SharedMemory.expand_override_targets override_graph callees
+          OverrideGraph.SharedMemory.ReadOnly.expand_override_targets override_graph callees
           |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
         in
         CallSite { location; callees; port; path }
@@ -557,7 +557,7 @@ module type TAINT_DOMAIN = sig
   val essential : preserve_return_access_paths:bool -> t -> t
 
   val to_json
-    :  expand_overrides:OverrideGraph.SharedMemory.t option ->
+    :  expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->
     is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
     filename_lookup:(Reference.t -> string option) option ->
     export_leaf_names:ExportLeafNames.t ->

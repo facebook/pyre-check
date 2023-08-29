@@ -53,10 +53,6 @@ module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyV
 
   val create : unit -> t
 
-  val get : t -> Key.t -> Value.t option
-
-  val mem : t -> Key.t -> bool
-
   val of_alist : (Key.t * Value.t) list -> t
 
   val to_alist : t -> (Key.t * Value.t) list
@@ -66,4 +62,16 @@ module MakeKeyValue (Key : Hack_parallel.Std.SharedMemory.KeyType) (Value : KeyV
   val save_to_cache : t -> unit
 
   val load_from_cache : unit -> (t, Usage.t) result
+
+  (* A handle that only contains the essential information, to save memory usage. Since the above
+     type t is expensive to serialize, it can be costly when used in a map_reduce. *)
+  module ReadOnly : sig
+    type t
+
+    val get : t -> Key.t -> Value.t option
+
+    val mem : t -> Key.t -> bool
+  end
+
+  val read_only : t -> ReadOnly.t
 end

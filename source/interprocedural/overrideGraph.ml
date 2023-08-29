@@ -192,10 +192,6 @@ module SharedMemory = struct
 
   let create = T.create
 
-  let get_overriding_types handle ~member = T.get handle member
-
-  let overrides_exist handle member = T.mem handle member
-
   (** Records a heap override graph in shared memory. *)
   let from_heap overrides = overrides |> Target.Map.Tree.to_alist |> T.of_alist
 
@@ -205,20 +201,29 @@ module SharedMemory = struct
       override graph. *)
   let cleanup = T.cleanup
 
-  let expand_override_targets handle callees =
-    let rec expand_and_gather expanded = function
-      | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
-      | Target.Override _ as override ->
-          let make_override at_type = Target.create_derived_override override ~at_type in
-          let overrides =
-            let member = Target.get_corresponding_method override in
-            T.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
-          in
-          Target.get_corresponding_method override
-          :: List.fold overrides ~f:expand_and_gather ~init:expanded
-    in
-    List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
+  let read_only = T.read_only
 
+  module ReadOnly = struct
+    type t = T.ReadOnly.t
+
+    let get_overriding_types handle ~member = T.ReadOnly.get handle member
+
+    let overrides_exist handle member = T.ReadOnly.mem handle member
+
+    let expand_override_targets handle callees =
+      let rec expand_and_gather expanded = function
+        | (Target.Function _ | Target.Method _ | Target.Object _) as real -> real :: expanded
+        | Target.Override _ as override ->
+            let make_override at_type = Target.create_derived_override override ~at_type in
+            let overrides =
+              let member = Target.get_corresponding_method override in
+              T.ReadOnly.get handle member |> Option.value ~default:[] |> List.map ~f:make_override
+            in
+            Target.get_corresponding_method override
+            :: List.fold overrides ~f:expand_and_gather ~init:expanded
+      in
+      List.fold callees ~init:[] ~f:expand_and_gather |> List.dedup_and_sort ~compare:Target.compare
+  end
 
   let save_to_cache = T.save_to_cache
 

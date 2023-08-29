@@ -46,12 +46,6 @@ module SharedMemory : sig
 
   val create : unit -> t
 
-  val get_overriding_types : t -> member:Target.t -> Reference.t list option
-
-  val overrides_exist : t -> Target.t -> bool
-
-  val expand_override_targets : t -> Target.t list -> Target.t list
-
   (** Record a heap override graph in shared memory and return the handle to the storage location. *)
   val from_heap : Heap.t -> t
 
@@ -64,6 +58,18 @@ module SharedMemory : sig
   val save_to_cache : t -> unit
 
   val load_from_cache : unit -> (t, SaveLoadSharedMemory.Usage.t) result
+
+  module ReadOnly : sig
+    type t
+
+    val get_overriding_types : t -> member:Target.t -> Reference.t list option
+
+    val overrides_exist : t -> Target.t -> bool
+
+    val expand_override_targets : t -> Target.t list -> Target.t list
+  end
+
+  val read_only : t -> ReadOnly.t
 end
 
 type skipped_overrides = Target.t list
