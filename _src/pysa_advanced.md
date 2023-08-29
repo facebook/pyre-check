@@ -318,7 +318,7 @@ def foo(condition):
     return d # too many indexes, the whole return value is considered tainted.
 ```
 
-In this scenary, the `model-broadening` feature is added to the flow.
+In this scenario, the `model-broadening` feature is added to the flow.
 
 See [analysis thresholds](#analysis-thresholds) for documentation about the
 different scenarios of model broadening.
@@ -335,6 +335,35 @@ This can also be used in a `ModelQuery` using the
 
 Note that this should be used sparingly since this can potentially lead to an
 increase in analysis time.
+
+### Model shaping
+
+When a specific attribute or key is tainted when the whole object is tainted
+with the same taint kind (e.g, `UserControlled`), taint collapsing is applied
+as an optimization to save analysis time. This is called **model shaping** and
+is applied right before **model broadening**.
+
+For instance:
+```python
+def my_sink(x):
+  sink(x)
+  sink(x.foo)
+```
+
+The sink on `x.foo` (represented as `formal(x)[foo]`) is merged into the sink
+on `x`.
+
+Note that this is sound since attributes of a tainted object are also considered
+tainted. Thus if `my_sink` is actually called with `x.foo` tainted, the flow
+will be found as expected.
+
+The downside is that this can lead to false positives in cases where `my_sink`
+is called with another attribute (say `x.bar`) tainted. We would find a flow
+from `x.bar` to `x.foo` in `my_sink`.
+
+In this scenario, the `model-shaping` feature is added to the flow. The features
+`model-source-shaping`, `model-sink-shaping` and `model-tito-shaping` are also
+added to differentiate whether the shaping was on sources, sinks or tito.
 
 ### Widen broadening
 
