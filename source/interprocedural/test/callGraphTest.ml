@@ -5041,6 +5041,14 @@ let test_call_graph_of_define context =
     ~define_name:"test.A.self_readonly"
     ~expected:
       [
+        ( "13:4-13:10",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_attribute_access
+               {
+                 AttributeAccessCallees.property_targets = [];
+                 global_targets = [CallTarget.create ~return_type:None (Target.Object "test.A.B")];
+                 is_attribute = true;
+               }) );
         ( "13:4-13:18",
           LocationCallees.Singleton
             (ExpressionCallees.from_call

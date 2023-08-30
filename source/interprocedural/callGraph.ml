@@ -1835,7 +1835,12 @@ struct
       ~special
       ~setter
     =
-    let base_annotation = CallResolution.resolve_ignoring_optional ~resolution base in
+    let base_annotation =
+      base
+      |> CallResolution.resolve_ignoring_optional ~resolution
+      |> CallResolution.ignore_readonly_self
+    in
+
     log
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \
        is `%a`"

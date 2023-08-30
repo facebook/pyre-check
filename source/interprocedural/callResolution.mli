@@ -42,3 +42,6 @@ val defining_attribute
 
 (* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
+
+(* Convert `self: ReadOnly[Self]` back to just class instance `self`. No op otherwise *)
+val ignore_readonly_self : Type.t -> Type.t
