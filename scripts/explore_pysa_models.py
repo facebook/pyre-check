@@ -215,38 +215,23 @@ def _map_taint_tree(
     frame_map: Callable[[str, Dict[str, Any]], None],
     local_taint_map: Callable[[str, Dict[str, Any]], None],
 ) -> List[Dict[str, Any]]:
-    new_taint_tree = []
+    taint_tree = copy.deepcopy(taint_tree)
+
     for taint in taint_tree:
         caller_port = taint["port"]
-        new_local_taints = []
         for local_taint in taint["taint"]:
-            new_kinds = []
+            local_taint_map(caller_port, local_taint)
             for frame in local_taint["kinds"]:
-                new_frame = frame.copy()
-                frame_map(caller_port, new_frame)
-                new_kinds.append(new_frame)
+                frame_map(caller_port, frame)
 
-            new_local_taint = local_taint.copy()
-            new_local_taint["kinds"] = new_kinds
-            local_taint_map(caller_port, new_local_taint)
-            new_local_taints.append(new_local_taint)
-
-        new_taint = taint.copy()
-        new_taint["taint"] = new_local_taints
-        new_taint_tree.append(new_taint)
-
-    return new_taint_tree
+    return taint_tree
 
 
 def map_model(
     model: Dict[str, Any],
-    frame_map: Optional[Callable[[str, Dict[str, Any]], None]] = None,
-    local_taint_map: Optional[Callable[[str, Dict[str, Any]], None]] = None,
+    frame_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
+    local_taint_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
 ) -> Dict[str, Any]:
-    frame_map = frame_map if frame_map is not None else lambda x, y: None
-    local_taint_map = (
-        local_taint_map if local_taint_map is not None else lambda x, y: None
-    )
 
     model = model.copy()
     model["sources"] = _map_taint_tree(
@@ -257,12 +242,37 @@ def map_model(
     return model
 
 
+def map_issue_traces(
+    issue: Dict[str, Any],
+    frame_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
+    local_taint_map: Callable[[str, Dict[str, Any]], None] = lambda x, y: None,
+) -> Dict[str, Any]:
+    issue = copy.deepcopy(issue)
+
+    for trace in issue["traces"]:
+        condition = trace["name"]
+        for root in trace["roots"]:
+            local_taint_map(condition, root)
+            for frame in root["kinds"]:
+                frame_map(condition, frame)
+
+    return issue
+
+
 def model_remove_tito_positions(model: Dict[str, Any]) -> Dict[str, Any]:
     def local_taint_map(caller_port: str, local_taint: Dict[str, Any]) -> None:
         if "tito_positions" in local_taint:
             del local_taint["tito_positions"]
 
     return map_model(model, local_taint_map=local_taint_map)
+
+
+def issue_remove_tito_positions(issue: Dict[str, Any]) -> Dict[str, Any]:
+    def local_taint_map(condition: str, local_taint: Dict[str, Any]) -> None:
+        if "tito_positions" in local_taint:
+            del local_taint["tito_positions"]
+
+    return map_issue_traces(issue, local_taint_map=local_taint_map)
 
 
 def model_remove_class_intervals(model: Dict[str, Any]) -> Dict[str, Any]:
@@ -277,6 +287,18 @@ def model_remove_class_intervals(model: Dict[str, Any]) -> Dict[str, Any]:
     return map_model(model, local_taint_map=local_taint_map)
 
 
+def issue_remove_class_intervals(issue: Dict[str, Any]) -> Dict[str, Any]:
+    def local_taint_map(condition: str, local_taint: Dict[str, Any]) -> None:
+        if "receiver_interval" in local_taint:
+            del local_taint["receiver_interval"]
+        if "caller_interval" in local_taint:
+            del local_taint["caller_interval"]
+        if "is_self_call" in local_taint:
+            del local_taint["is_self_call"]
+
+    return map_issue_traces(issue, local_taint_map=local_taint_map)
+
+
 def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
     def frame_map(caller_port: str, frame: Dict[str, Any]) -> None:
         if "features" in frame:
@@ -289,12 +311,32 @@ def model_remove_features(model: Dict[str, Any]) -> Dict[str, Any]:
     return map_model(model, frame_map=frame_map, local_taint_map=local_taint_map)
 
 
+def issue_remove_features(issue: Dict[str, Any]) -> Dict[str, Any]:
+    def frame_map(condition: str, frame: Dict[str, Any]) -> None:
+        if "features" in frame:
+            del frame["features"]
+
+    def local_taint_map(condition: str, local_taint: Dict[str, Any]) -> None:
+        if "local_features" in local_taint:
+            del local_taint["local_features"]
+
+    return map_issue_traces(issue, frame_map=frame_map, local_taint_map=local_taint_map)
+
+
 def model_remove_leaf_names(model: Dict[str, Any]) -> Dict[str, Any]:
     def frame_map(caller_port: str, frame: Dict[str, Any]) -> None:
         if "leaves" in frame:
             del frame["leaves"]
 
     return map_model(model, frame_map=frame_map)
+
+
+def issue_remove_leaf_names(issue: Dict[str, Any]) -> Dict[str, Any]:
+    def frame_map(condition: str, frame: Dict[str, Any]) -> None:
+        if "leaves" in frame:
+            del frame["leaves"]
+
+    return map_issue_traces(issue, frame_map=frame_map)
 
 
 @dataclass
@@ -413,7 +455,9 @@ def print_model(
     print_json(get_model(callable, **kwargs))
 
 
-def get_issues(callable: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_issues(
+    callable: Optional[str] = None, **kwargs: Union[str, bool]
+) -> List[Dict[str, Any]]:
     """
     Get all issues.
     If a callable is provided, only return issues within it.
@@ -433,12 +477,25 @@ def get_issues(callable: Optional[str] = None) -> List[Dict[str, Any]]:
             assert message["kind"] == "issue"
             issues.append(message["data"])
 
+    options = __default_formatting_options.apply_options(**kwargs)
+    for index in range(len(issues)):
+        # TODO(T138283233): implement filtering by kind on issues.
+        if not options.show_tito_positions:
+            issues[index] = issue_remove_tito_positions(issues[index])
+        if not options.show_class_intervals:
+            issues[index] = issue_remove_class_intervals(issues[index])
+        if not options.show_features:
+            issues[index] = issue_remove_features(issues[index])
+            del issues[index]["features"]
+        if not options.show_leaf_names:
+            issues[index] = issue_remove_leaf_names(issues[index])
+
     return issues
 
 
-def print_issues(callable: str) -> None:
+def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
     """Pretty print the issues within the given callable."""
-    print_json(get_issues(callable))
+    print_json(get_issues(callable, **kwargs))
 
 
 def print_help() -> None:
