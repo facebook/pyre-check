@@ -341,6 +341,7 @@ def issue_remove_leaf_names(issue: Dict[str, Any]) -> Dict[str, Any]:
 
 @dataclass
 class FormattingOptions:
+    format: str = "json"
     show_sources: bool = True
     show_sinks: bool = True
     show_tito: bool = True
@@ -372,6 +373,7 @@ def set_formatting(**kwargs: Union[str, bool]) -> None:
     """
     Set default formatting options.
     Available options with their default values:
+      format = 'json'            Display format ('json' or 'text')
       kind = None                Filter by taint kind.
       caller_port = None         Filter by caller port.
       show_sources = True
@@ -437,7 +439,7 @@ def print_json(data: object) -> None:
     try:
         subprocess.run(["jq", "-C"], input=json.dumps(data).encode(), check=True)
     except FileNotFoundError:
-        print(json.dumps(data, indent="  "))
+        print(json.dumps(data, indent=" " * 2))
 
         global __warned_missing_jq
         if not __warned_missing_jq:
@@ -447,12 +449,145 @@ def print_json(data: object) -> None:
             __warned_missing_jq = True
 
 
+def green(text: str) -> str:
+    return f"\033[32m{text}\033[0m"
+
+
+def blue(text: str) -> str:
+    return f"\033[34m{text}\033[0m"
+
+
+def feature_to_string(feature: Union[str, Dict[str, str]]) -> str:
+    if isinstance(feature, str):
+        return feature
+    elif isinstance(feature, dict):
+        if len(feature) == 1:
+            key, value = next(iter(feature.items()))
+            return f"{key}:{value}"
+        else:
+            raise AssertionError(f"unexpected feature: {feature}")
+    else:
+        raise AssertionError(f"unexpected feature: {feature}")
+
+
+def leaf_name_to_string(leaf: Dict[str, str]) -> str:
+    name = leaf["name"]
+    if "port" in leaf:
+        name += f':{leaf["port"]}'
+    return name
+
+
+def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
+    if "call" in local_taint:
+        call = local_taint["call"]
+        position = call["position"]
+        print(f'{indent}CalleePort: {green(call["port"])}')
+        for resolve_to in call["resolves_to"]:
+            print(f"{indent}Callee: {blue(resolve_to)}")
+        print(
+            f'{indent}Location: {blue(position["filename"])}:{blue(position["line"])}:{blue(position["start"])}'
+        )
+    elif "origin" in local_taint:
+        position = local_taint["origin"]
+        print(
+            f'{indent}Origin: Location: {blue(position["filename"])}:{blue(position["line"])}:{blue(position["start"])}'
+        )
+    elif "declaration" in local_taint:
+        print(f"{indent}Declaration:")
+    elif "tito" in local_taint:
+        print(f"{indent}Tito:")
+    else:
+        raise AssertionError("unexpected call info")
+
+
+def print_local_taint(local_taint: Dict[str, Any], indent: str) -> None:
+    if "receiver_interval" in local_taint:
+        print(f'{indent}ReceiverInterval: {local_taint["receiver_interval"]}')
+    if "caller_interval" in local_taint:
+        print(f'{indent}CallerInterval: {local_taint["caller_interval"]}')
+    if "is_self_call" in local_taint:
+        print(f'{indent}IsSelfCall: {local_taint["is_self_call"]}')
+    if "tito_positions" in local_taint:
+        positions = ", ".join(
+            f'{position["line"]}:{position["start"]}:{position["end"]}'
+            for position in local_taint["tito_positions"]
+        )
+        print(f"{indent}TitoPositions: {positions}")
+    if "local_features" in local_taint:
+        features = ", ".join(
+            blue(feature_to_string(feature))
+            for feature in local_taint["local_features"]
+        )
+        print(f"{indent}LocalFeatures: {features}")
+
+
+def print_frame(frame: Dict[str, Any], indent: str) -> None:
+    if "return_paths" in frame:
+        # Special case for taint-in-taint-out
+        for return_path, collapse_depth in frame["return_paths"].items():
+            print(
+                f'{indent}{green(frame["kind"])}: '
+                f"ReturnPath {green(return_path)} "
+                f"CollapseDepth {blue(collapse_depth)} "
+                f'Distance {blue(frame.get("length", 0))}'
+            )
+    else:
+        print(
+            f'{indent}{green(frame["kind"])}: Distance {blue(frame.get("length", 0))}'
+        )
+
+    if "features" in frame:
+        features = ", ".join(
+            blue(feature_to_string(feature)) for feature in frame["features"]
+        )
+        print(f"{indent}  Features: {features}")
+
+    if "leaves" in frame:
+        leaves = ", ".join(blue(leaf_name_to_string(leaf)) for leaf in frame["leaves"])
+        print(f"{indent}  Leaves: {leaves}")
+
+
+def print_taint_tree(taint_tree: List[Dict[str, Any]], is_tito: bool) -> None:
+    for taint in taint_tree:
+        label = "CallerPort" if not is_tito else "ParameterPath"
+        print(f'  {label}: {green(taint["port"])}')
+        for local_taint in taint["taint"]:
+            print_call_info(local_taint, indent=" " * 4)
+            print_local_taint(local_taint, indent=" " * 4)
+
+            for frame in local_taint["kinds"]:
+                print_frame(frame, indent=" " * 6)
+
+
 def print_model(
     callable: str,
     **kwargs: Union[str, bool],
 ) -> None:
     """Pretty print the model for the given callable."""
-    print_json(get_model(callable, **kwargs))
+    model = get_model(callable, **kwargs)
+
+    options = __default_formatting_options.apply_options(**kwargs)
+    if options.format == "json":
+        print_json(model)
+    elif options.format == "text":
+        print(f"Model for {green(model['callable'])}")
+        print("Sources:")
+        print_taint_tree(model.get("sources", []), is_tito=False)
+        print("Sinks:")
+        print_taint_tree(model.get("sinks", []), is_tito=False)
+        print("Tito:")
+        print_taint_tree(model.get("tito", []), is_tito=True)
+        if "global_sanitizer" in model:
+            print(f"GlobalSanitizers: {model['global_sanitizer']}")
+        if "parameters_sanitizer" in model:
+            print(f"ParametersSanitizer: {model['parameters_sanitizer']}")
+        if "sanitizers" in model:
+            print(f"Sanitizers: {model['sanitizers']}")
+        if "modes" in model:
+            modes = ", ".join(green(mode) for mode in model["modes"])
+            print(f"Modes: {modes}")
+    else:
+        raise AssertionError(f"Unexpected format `{options.format}`")
 
 
 def get_issues(
@@ -493,9 +628,37 @@ def get_issues(
     return issues
 
 
+def print_issue_trace(trace: Dict[str, Any]) -> None:
+    for local_taint in trace["roots"]:
+        print_call_info(local_taint, indent=" " * 4)
+        print_local_taint(local_taint, indent=" " * 4)
+
+        for frame in local_taint["kinds"]:
+            print_frame(frame, indent=" " * 6)
+
+
 def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
     """Pretty print the issues within the given callable."""
-    print_json(get_issues(callable, **kwargs))
+    issues = get_issues(callable, **kwargs)
+
+    options = __default_formatting_options.apply_options(**kwargs)
+    if options.format == "json":
+        print_json(issues)
+    elif options.format == "text":
+        print(f"Issues for {green(callable)}")
+        for issue in issues:
+            print("Issue:")
+            print(f'  Code: {issue["code"]}')
+            print(
+                f'  Location: {blue(issue["filename"])}:{blue(issue["line"])}:{blue(issue["start"])}'
+            )
+            print(f'  Message: {blue(issue["message"])}')
+            print(f'  Handle: {green(issue["master_handle"])}')
+            for trace in issue["traces"]:
+                print(f'  {trace["name"].capitalize()}:')
+                print_issue_trace(trace)
+    else:
+        raise AssertionError(f"Unexpected format `{options.format}`")
 
 
 def print_help() -> None:
