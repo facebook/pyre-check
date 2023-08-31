@@ -450,6 +450,7 @@ type test_environment = {
   initial_callables: FetchCallables.t;
   stubs: Target.t list;
   initial_models: Registry.t;
+  model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
   type_environment: TypeEnvironment.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.Heap.t;
   class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
@@ -473,7 +474,6 @@ let initialize
     ?(add_initial_models = true)
     ?find_missing_flows
     ?(taint_configuration = TaintConfiguration.Heap.default)
-    ?expected_dump_string
     ?(verify_empty_model_queries = true)
     ?model_path
     ~context
@@ -533,7 +533,7 @@ let initialize
   let class_hierarchy_graph =
     ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
   in
-  let user_models =
+  let user_models, model_query_results =
     let models_source =
       match models_source, add_initial_models with
       | Some source, true ->
@@ -542,7 +542,7 @@ let initialize
       | models_source, _ -> models_source
     in
     match models_source with
-    | None -> Registry.empty
+    | None -> Registry.empty, ModelQueryExecution.ModelQueryRegistryMap.empty
     | Some source ->
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
@@ -576,22 +576,6 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             queries
         in
-        let dumped_models_equal left right =
-          let left, right = Yojson.Safe.from_string left, Yojson.Safe.from_string right in
-          Yojson.Safe.equal left right
-        in
-        (match taint_configuration.dump_model_query_results_path, expected_dump_string with
-        | Some path, Some expected_string ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_file_and_string
-              ~model_query_results
-              ~path
-            |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
-        | Some path, None ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_file ~model_query_results ~path
-        | None, Some expected_string ->
-            ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results
-            |> assert_equal ~cmp:dumped_models_equal ~printer:Fn.id expected_string
-        | None, None -> ());
         ModelVerificationError.verify_models_and_dsl ~raise_exception:true errors;
         let models =
           model_query_results
@@ -606,7 +590,7 @@ let initialize
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
-        models
+        models, model_query_results
   in
   let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
@@ -663,6 +647,7 @@ let initialize
     initial_callables;
     stubs;
     initial_models;
+    model_query_results;
     type_environment;
     class_interval_graph;
     class_interval_graph_shared_memory;
@@ -791,6 +776,7 @@ let end_to_end_integration_test path context =
       override_graph_heap;
       override_graph_shared_memory;
       initial_models;
+      model_query_results = _;
       initial_callables;
       stubs;
       class_interval_graph;

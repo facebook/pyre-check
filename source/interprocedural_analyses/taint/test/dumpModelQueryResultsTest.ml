@@ -9,13 +9,21 @@ open OUnit2
 open Taint
 open TestHelper
 
+let assert_model_query_results ?model_path ~context ~models_source ~source ~expected () =
+  let { model_query_results; _ } = initialize ?model_path ~models_source ~context source in
+  let actual = ModelQueryExecution.DumpModelQueryResults.dump_to_string ~model_query_results in
+  let dumped_models_equal left right =
+    let left, right = Yojson.Safe.from_string left, Yojson.Safe.from_string right in
+    Yojson.Safe.equal left right
+  in
+  assert_equal ~cmp:dumped_models_equal ~printer:Core.Fn.id actual expected
+
+
 let test_dump_model_query_results context =
-  let configuration = TaintConfiguration.Heap.default in
-  (* Test functions *)
-  let _ =
-    initialize
-      ~models_source:
-        {|
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
       ModelQuery(
         name = "get_foo",
         find = "functions",
@@ -35,16 +43,15 @@ let test_dump_model_query_results context =
         model = Returns(TaintSource[Test])
       )
     |}
-      ~context
-      ~taint_configuration:configuration
+    ~source:
       {|
       def foo1(): ...
       def foo2(): ...
       def bar(): ...
       def barfooo(): ...
       |}
-      ~expected_dump_string:
-        {|[
+    ~expected:
+      {|[
   {
     "get_bar": [
       {
@@ -130,12 +137,12 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
+    ();
   (* Test methods *)
-  let _ =
-    initialize
-      ~models_source:
-        {|
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
         ModelQuery(
           name = "get_Base_child_sources",
           find = "methods",
@@ -145,8 +152,7 @@ let test_dump_model_query_results context =
           ]
         )
       |}
-      ~context
-      ~taint_configuration:configuration
+    ~source:
       {|
       class Base:
           def foo(self, x):
@@ -154,8 +160,8 @@ let test_dump_model_query_results context =
           def baz(self, y):
               return 0
       |}
-      ~expected_dump_string:
-        {|[
+    ~expected:
+      {|[
   {
     "get_Base_child_sources": [
       {
@@ -183,12 +189,12 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
+    ();
   (* Test correct ModelQuery<->sources for same callable *)
-  let _ =
-    initialize
-      ~models_source:
-        {|
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
       ModelQuery(
         name = "ModelQueryA",
         find = "functions",
@@ -202,13 +208,11 @@ let test_dump_model_query_results context =
         model = Returns(TaintSource[UserControlled])
       )
     |}
-      ~context
-      ~taint_configuration:configuration
-      {|
+    ~source:{|
       def foo(x): ...
       |}
-      ~expected_dump_string:
-        {|[
+    ~expected:
+      {|[
   {
     "ModelQueryA": [
       {
@@ -245,13 +249,13 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
+    ();
   (* TODO(T123305678) Add test for attributes *)
   (* Test correct ModelQuery<->sources for same callable *)
-  let _ =
-    initialize
-      ~models_source:
-        {|
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
         ModelQuery(
           name = "get_parent_of_baz_class_sources",
           find = "methods",
@@ -270,8 +274,7 @@ let test_dump_model_query_results context =
           ]
         )
         |}
-      ~context
-      ~taint_configuration:configuration
+    ~source:
       {|
       class Foo:
         def __init__(self, a, b):
@@ -283,8 +286,8 @@ let test_dump_model_query_results context =
         def __init__(self, a, b):
           ...
       |}
-      ~expected_dump_string:
-        {|[
+    ~expected:
+      {|[
   {
     "get_parent_of_baz_class_sources": [
       {
@@ -314,11 +317,11 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
-  let _ =
-    initialize
-      ~models_source:
-        {|
+    ();
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
         ModelQuery(
           name = "get_parent_of_baz_class_transitive_sources",
           find = "methods",
@@ -345,8 +348,7 @@ let test_dump_model_query_results context =
           ]
         )
         |}
-      ~context
-      ~taint_configuration:configuration
+    ~source:
       {|
       class Foo:
         def __init__(self, a, b):
@@ -358,8 +360,8 @@ let test_dump_model_query_results context =
         def __init__(self, a, b):
           ...
       |}
-      ~expected_dump_string:
-        {|[
+    ~expected:
+      {|[
   {
     "get_parent_of_baz_class_transitive_sources": [
       {
@@ -401,12 +403,12 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
+    ();
   (* Test functions *)
-  let _ =
-    initialize
-      ~models_source:
-        {|
+  assert_model_query_results
+    ~context
+    ~models_source:
+      {|
       ModelQuery(
         name = "get_foo",
         find = "functions",
@@ -426,17 +428,16 @@ let test_dump_model_query_results context =
         model = Returns(TaintSource[Test])
       )
     |}
-      ~context
-      ~taint_configuration:configuration
+    ~source:
       {|
       def foo1(): ...
       def foo2(): ...
       def bar(): ...
       def barfooo(): ...
       |}
-      ~model_path:(PyrePath.create_absolute "/a/b.pysa")
-      ~expected_dump_string:
-        {|[
+    ~model_path:(PyrePath.create_absolute "/a/b.pysa")
+    ~expected:
+      {|[
   {
     "/a/b.pysa/get_bar": [
       {
@@ -522,7 +523,7 @@ let test_dump_model_query_results context =
     ]
   }
 ]|}
-  in
+    ();
   ()
 
 
