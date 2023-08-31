@@ -22,6 +22,8 @@ module Map : sig
       include Comparator.Make (T)
     end)
   end
+
+  val pp : (Formatter.t -> 'a -> unit) -> Formatter.t -> 'a t -> unit
 end
 
 val local_qualifier_pattern : Str.regexp

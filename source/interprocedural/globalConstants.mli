@@ -9,11 +9,13 @@ open Ast
 open Expression
 
 module Heap : sig
-  type t
+  type t [@@deriving show, eq]
+
+  val of_alist_exn : (Reference.t * string) list -> t
 
   val empty : t
 
-  val from_source : Source.t -> t
+  val from_source : qualifier:Ast.Reference.t -> Source.t -> t
 end
 
 module SharedMemory : sig

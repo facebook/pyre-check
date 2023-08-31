@@ -12,7 +12,11 @@ open Pyre
 open Sexplib.Conv
 
 module T = struct
-  type t = Identifier.t list [@@deriving compare, sexp, hash, to_yojson, show]
+  type t = Identifier.t list [@@deriving compare, sexp, hash, to_yojson]
+
+  let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf format "%s"
+
+  let show reference = Format.asprintf "%a" pp reference
 end
 
 include T
@@ -24,6 +28,17 @@ module Map = struct
     include T
     include Comparator.Make (T)
   end)
+
+  let pp pp_value formatter map =
+    match to_alist map with
+    | [] -> Format.fprintf formatter "{}"
+    | [(key, value)] -> Format.fprintf formatter "{%a -> %a}" T.pp key pp_value value
+    | pairs ->
+        let pp_pair formatter (key, value) =
+          Format.fprintf formatter "@,%a -> %a" T.pp key pp_value value
+        in
+        let pp_pairs formatter = List.iter ~f:(pp_pair formatter) in
+        Format.fprintf formatter "{@[<v 2>%a@]@,}" pp_pairs pairs
 end
 
 let local_qualifier_pattern = Str.regexp "^\\$local_\\([a-zA-Z-_0-9\\?]+\\)\\$"
@@ -43,10 +58,6 @@ let create ?prefix name =
       name
   | Some prefix -> prefix @ name
 
-
-let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf format "%s"
-
-let show reference = Format.asprintf "%a" pp reference
 
 module SerializableMap = Data_structures.SerializableMap.Make (T)
 module Set = Set.Make (T)

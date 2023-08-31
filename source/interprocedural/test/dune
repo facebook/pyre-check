@@ -10,7 +10,8 @@
   callResolutionTest
   fetchCallablesTest
   overrideGraphTest
-  changedPathsTest)
+  changedPathsTest
+  globalConstantsTest)
  (preprocess
   (pps
    ppx_deriving.eq

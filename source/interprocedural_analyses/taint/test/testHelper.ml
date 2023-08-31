@@ -494,10 +494,9 @@ let initialize
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
+  let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source =
-    AstEnvironment.ReadOnly.get_processed_source
-      ast_environment
-      (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
+    AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
     |> fun option -> Option.value_exn option
   in
   (if not (List.is_empty errors) then
@@ -623,7 +622,7 @@ let initialize
 
   let global_constants_shared_memory = GlobalConstants.SharedMemory.create () in
   let global_constants =
-    GlobalConstants.Heap.from_source source
+    GlobalConstants.Heap.from_source ~qualifier source
     |> GlobalConstants.SharedMemory.add_heap global_constants_shared_memory
   in
 
