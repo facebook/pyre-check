@@ -54,10 +54,11 @@ class PyreServerOptions:
         )
 
     @staticmethod
-    def create(
-        start_command_argument: command_arguments.StartArguments,
+    def create_from_start_arguments(
+        start_arguments: start.Arguments,
         configuration: frontend_configuration.Base,
         language_server_features: features.LanguageServerFeatures,
+        flavor: identifiers.PyreFlavor,
         unsaved_changes_only: bool = False,
     ) -> PyreServerOptions:
         binary_location = configuration.get_binary_location(download_if_needed=True)
@@ -65,11 +66,6 @@ class PyreServerOptions:
             raise configuration_module.InvalidConfiguration(
                 "Cannot locate a Pyre binary to run."
             )
-
-        start_arguments = start.create_server_arguments(
-            configuration,
-            start_command_argument,
-        )
         if start_arguments.watchman_root is None and not unsaved_changes_only:
             raise commands.ClientException(
                 "Cannot locate a `watchman` root. Pyre's server will not function "
@@ -83,8 +79,29 @@ class PyreServerOptions:
             language_server_features=language_server_features,
             strict_default=configuration.is_strict(),
             excludes=configuration.get_excludes(),
-            flavor=start_command_argument.flavor,
+            flavor=flavor,
             using_errpy_parser=configuration.get_use_errpy_parser(),
+        )
+
+    @staticmethod
+    def create(
+        start_command_argument: command_arguments.StartArguments,
+        configuration: frontend_configuration.Base,
+        language_server_features: features.LanguageServerFeatures,
+        unsaved_changes_only: bool = False,
+    ) -> PyreServerOptions:
+
+        start_arguments = start.create_server_arguments(
+            configuration,
+            start_command_argument,
+        )
+
+        return PyreServerOptions.create_from_start_arguments(
+            start_arguments,
+            configuration,
+            language_server_features,
+            start_command_argument.flavor,
+            unsaved_changes_only,
         )
 
     @staticmethod
