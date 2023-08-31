@@ -6,7 +6,6 @@
  *)
 
 open Interprocedural
-module Json = Yojson.Safe
 
 val externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
@@ -16,7 +15,7 @@ val externalize
   Target.t ->
   Issue.t list ->
   Model.t ->
-  Yojson.Safe.t list
+  NewlineDelimitedJson.Line.t list
 
 val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
@@ -25,7 +24,7 @@ val fetch_and_externalize
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   dump_override_models:bool ->
   Target.t ->
-  Yojson.Safe.t list
+  NewlineDelimitedJson.Line.t list
 
 val produce_errors
   :  scheduler:Scheduler.t ->

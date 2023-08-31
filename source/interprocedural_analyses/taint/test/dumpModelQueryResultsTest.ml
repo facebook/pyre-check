@@ -50,37 +50,31 @@ let test_dump_model_query_results context =
       {
         "callable": "test.bar",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.bar",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.bar",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -90,55 +84,46 @@ let test_dump_model_query_results context =
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.foo1",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo1",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo1",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.foo2",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo2",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo2",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -148,19 +133,16 @@ let test_dump_model_query_results context =
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -197,35 +179,29 @@ let test_dump_model_query_results context =
       {
         "callable": "test.Base.baz",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Base.baz",
-            "sources": [
-              {
-                "port": "formal(self)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ]
-          }
+          "callable": "test.Base.baz",
+          "sources": [
+            {
+              "port": "formal(self)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ]
         }
       },
       {
         "callable": "test.Base.foo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Base.foo",
-            "sources": [
-              {
-                "port": "formal(self)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ]
-          }
+          "callable": "test.Base.foo",
+          "sources": [
+            {
+              "port": "formal(self)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ]
         }
       }
     ]
@@ -262,19 +238,16 @@ let test_dump_model_query_results context =
       {
         "callable": "test.foo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -284,22 +257,19 @@ let test_dump_model_query_results context =
       {
         "callable": "test.foo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  {
-                    "kinds": [ { "kind": "UserControlled" } ],
-                    "declaration": null
-                  }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                {
+                  "kinds": [ { "kind": "UserControlled" } ],
+                  "declaration": null
+                }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -350,37 +320,31 @@ let test_dump_model_query_results context =
       {
         "callable": "test.Bar.__init__",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Bar.__init__",
-            "sources": [
-              {
-                "port": "formal(b)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.Bar.__init__",
+          "sources": [
+            {
+              "port": "formal(b)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.Baz.__init__",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Baz.__init__",
-            "sources": [
-              {
-                "port": "formal(b)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.Baz.__init__",
+          "sources": [
+            {
+              "port": "formal(b)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -437,55 +401,46 @@ let test_dump_model_query_results context =
       {
         "callable": "test.Bar.__init__",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Bar.__init__",
-            "sources": [
-              {
-                "port": "formal(b)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.Bar.__init__",
+          "sources": [
+            {
+              "port": "formal(b)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.Baz.__init__",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Baz.__init__",
-            "sources": [
-              {
-                "port": "formal(b)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.Baz.__init__",
+          "sources": [
+            {
+              "port": "formal(b)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.Foo.__init__",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.Foo.__init__",
-            "sources": [
-              {
-                "port": "formal(b)",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.Foo.__init__",
+          "sources": [
+            {
+              "port": "formal(b)",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -532,37 +487,31 @@ let test_dump_model_query_results context =
       {
         "callable": "test.bar",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.bar",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.bar",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -572,55 +521,46 @@ let test_dump_model_query_results context =
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.foo1",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo1",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo1",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       },
       {
         "callable": "test.foo2",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.foo2",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.foo2",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]
@@ -630,19 +570,16 @@ let test_dump_model_query_results context =
       {
         "callable": "test.barfooo",
         "model": {
-          "kind": "model",
-          "data": {
-            "callable": "test.barfooo",
-            "sources": [
-              {
-                "port": "result",
-                "taint": [
-                  { "kinds": [ { "kind": "Test" } ], "declaration": null }
-                ]
-              }
-            ],
-            "modes": [ "Obscure" ]
-          }
+          "callable": "test.barfooo",
+          "sources": [
+            {
+              "port": "result",
+              "taint": [
+                { "kinds": [ { "kind": "Test" } ], "declaration": null }
+              ]
+            }
+          ],
+          "modes": [ "Obscure" ]
         }
       }
     ]

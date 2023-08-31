@@ -11,7 +11,6 @@
 open Core
 open Pyre
 open Interprocedural
-module Json = Yojson.Safe
 
 (* Patch the forward reference to access the final summaries in trace info generation. *)
 let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
@@ -51,7 +50,7 @@ let issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~overri
         ~filename_lookup
         issue
     in
-    `Assoc ["kind", `String "issue"; "data", json]
+    { NewlineDelimitedJson.Line.kind = Issue; data = json }
   in
   List.map ~f:issue_to_json issues
 
@@ -105,13 +104,17 @@ let externalize
   if not (Model.should_externalize model) then
     issues
   else
-    Model.to_json
-      ~expand_overrides:(Some override_graph)
-      ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-      ~filename_lookup:(Some filename_lookup)
-      ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
-      callable
-      model
+    {
+      NewlineDelimitedJson.Line.kind = Model;
+      data =
+        Model.to_json
+          ~expand_overrides:(Some override_graph)
+          ~is_valid_callee:(has_significant_summary ~fixpoint_state)
+          ~filename_lookup:(Some filename_lookup)
+          ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
+          callable
+          model;
+    }
     :: issues
 
 
@@ -140,29 +143,6 @@ let fetch_and_externalize
         model
 
 
-let emit_externalization
-    ~taint_configuration
-    ~fixpoint_state
-    ~filename_lookup
-    ~override_graph
-    emitter
-    callable
-  =
-  fetch_and_externalize
-    ~taint_configuration
-    ~fixpoint_state
-    ~filename_lookup
-    ~override_graph
-    ~dump_override_models:false
-    callable
-  |> List.iter ~f:emitter
-
-
-type callable_shard = {
-  shard_index: int;
-  callables: Target.t list;
-}
-
 let save_results_to_directory
     ~scheduler
     ~taint_configuration
@@ -185,72 +165,40 @@ let save_results_to_directory
     open_out (PyrePath.absolute path)
   in
   let save_models () =
-    let write_header ~out_channel =
-      `Assoc ["file_version", `Int 3; "config", `Assoc ["repo", `String root]]
-      |> Json.to_channel out_channel;
-      Printf.fprintf out_channel "\n"
-    in
-    let write_model ~out_channel callable =
-      let emitter json =
-        Json.to_channel out_channel json;
-        Printf.fprintf out_channel "\n"
-      in
+    let model_to_json callable =
       let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
-      emit_externalization
+      fetch_and_externalize
         ~taint_configuration
         ~fixpoint_state
         ~filename_lookup
         ~override_graph
-        emitter
+        ~dump_override_models:false
         callable
     in
     match output_format with
     | Configuration.TaintOutputFormat.Json ->
-        let out_channel = open_file ~filename:"taint-output.json" in
-        write_header ~out_channel;
-        Target.Set.iter (write_model ~out_channel) callables;
-        close_out out_channel
+        NewlineDelimitedJson.write_file
+          ~path:(PyrePath.append result_directory ~element:"taint-output.json")
+          ~configuration:(`Assoc ["repo", `String root])
+          ~to_json_lines:model_to_json
+          (Target.Set.elements callables)
     | Configuration.TaintOutputFormat.ShardedJson ->
-        let shard_size =
-          Int.max 1 (Target.Set.cardinal callables / Scheduler.number_workers scheduler)
-        in
-        let shards =
-          callables
-          |> Target.Set.elements
-          |> List.chunks_of ~length:shard_size
-          |> List.mapi ~f:(fun shard_index callables -> { shard_index; callables })
-        in
-        let number_shards = List.length shards in
-        let write_json_shard { shard_index; callables } =
-          let filename =
-            Format.sprintf "taint-output@%05d-of-%05d.json" shard_index number_shards
-          in
-          let out_channel = open_file ~filename in
-          write_header ~out_channel;
-          List.iter ~f:(write_model ~out_channel) callables;
-          close_out out_channel
-        in
-        Scheduler.map_reduce
-          scheduler
-          ~policy:(Scheduler.Policy.legacy_fixed_chunk_size 1)
-          ~initial:()
-          ~map:(List.iter ~f:write_json_shard)
-          ~reduce:(fun () () -> ())
-          ~inputs:shards
-          ()
+        NewlineDelimitedJson.write_sharded_files
+          ~scheduler
+          ~directory:result_directory
+          ~filename_prefix:"taint-output"
+          ~configuration:(`Assoc ["repo", `String root])
+          ~to_json_lines:model_to_json
+          (Target.Set.elements callables)
   in
   let remove_existing_models () =
-    if PyrePath.is_directory result_directory then
-      PyrePath.read_directory_ordered result_directory
-      |> List.filter ~f:(fun path ->
-             let filename = PyrePath.last path in
-             String.is_prefix filename ~prefix:"taint-output@"
-             && String.is_suffix filename ~suffix:".json")
-      |> List.iter ~f:PyrePath.remove
+    NewlineDelimitedJson.remove_sharded_files
+      ~directory:result_directory
+      ~filename_prefix:"taint-output"
   in
   let save_errors () =
     let out_channel = open_file ~filename:"errors.json" in
-    Json.to_channel out_channel (`List errors);
+    Yojson.Safe.to_channel out_channel (`List errors);
     close_out out_channel
   in
   let save_metadata () =
@@ -265,7 +213,7 @@ let save_results_to_directory
                      `String (Target.show_pretty override))) );
           ]
       in
-      Json.Util.combine global_statistics (statistics ~model_verification_errors)
+      Yojson.Safe.Util.combine global_statistics (statistics ~model_verification_errors)
     in
     let metadata_json =
       `Assoc
@@ -285,7 +233,7 @@ let save_results_to_directory
           "cache", Cache.metadata_to_json cache;
         ]
     in
-    Json.to_channel out_channel metadata_json;
+    Yojson.Safe.to_channel out_channel metadata_json;
     close_out out_channel
   in
   remove_existing_models ();

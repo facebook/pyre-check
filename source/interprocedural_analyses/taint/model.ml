@@ -753,7 +753,7 @@ let to_json
     else
       model_json
   in
-  `Assoc ["kind", `String "model"; "data", `Assoc model_json]
+  `Assoc model_json
 
 
 module WithTarget = struct
