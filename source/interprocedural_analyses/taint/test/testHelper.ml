@@ -633,6 +633,7 @@ let initialize
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment:type_environment
+      ~filename_lookup:None
       ~override_graph:override_graph_shared_memory_read_only
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)

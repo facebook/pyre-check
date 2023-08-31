@@ -346,11 +346,29 @@ let compact_ocaml_heap ~name =
   Statistics.performance ~name ~phase_name:name ~timer ()
 
 
+let filename_lookup
+    ~build_system
+    ~module_tracker
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
+    path_reference
+  =
+  match
+    Server.PathLookup.instantiate_path_with_build_system
+      ~build_system
+      ~module_tracker
+      path_reference
+  with
+  | None -> None
+  | Some full_path ->
+      let root = Option.value repository_root ~default:local_root in
+      PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
+
+
 let run_taint_analysis
     ~static_analysis_configuration:
       ({
          Configuration.StaticAnalysis.configuration;
-         repository_root;
          use_cache;
          limit_entrypoints;
          compact_ocaml_heap = compact_ocaml_heap_flag;
@@ -393,8 +411,10 @@ let run_taint_analysis
     |> Analysis.TypeEnvironment.ReadOnly.module_tracker
   in
   let qualifiers = Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
-
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
+  let filename_lookup =
+    filename_lookup ~build_system ~module_tracker ~static_analysis_configuration
+  in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
@@ -527,6 +547,7 @@ let run_taint_analysis
           ~scheduler
           ~static_analysis_configuration
           ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~filename_lookup:(Some filename_lookup)
           ~override_graph:override_graph_shared_memory_read_only
           ~store_shared_memory:true
           ~attribute_targets
@@ -638,18 +659,6 @@ let run_taint_analysis
       ~shared_models
   in
 
-  let filename_lookup path_reference =
-    match
-      Server.PathLookup.instantiate_path_with_build_system
-        ~build_system
-        ~module_tracker
-        path_reference
-    with
-    | None -> None
-    | Some full_path ->
-        let root = Option.value repository_root ~default:configuration.local_root in
-        PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
-  in
   let callables =
     Target.Set.of_list (List.rev_append (Registry.targets initial_models) callables_to_analyze)
   in

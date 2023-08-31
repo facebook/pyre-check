@@ -23,6 +23,26 @@ open Statement
 open Expression
 open Pyre
 
+module JsonHelper = struct
+  let add_optional name value to_json bindings =
+    match value with
+    | Some value -> (name, to_json value) :: bindings
+    | None -> bindings
+
+
+  let add_flag_if name condition bindings =
+    if condition then
+      (name, `Bool true) :: bindings
+    else
+      bindings
+
+
+  let add_list name elements to_json bindings =
+    match elements with
+    | [] -> bindings
+    | _ -> (name, `List (List.map ~f:to_json elements)) :: bindings
+end
+
 (** Represents type information about the return type of a call. *)
 module ReturnType = struct
   type t = {
@@ -120,6 +140,18 @@ module ReturnType = struct
       | _ -> Lazy.force return_type
     in
     from_annotation ~resolution:(Resolution.global_resolution resolution) annotation
+
+
+  let to_json { is_boolean; is_integer; is_float; is_enumeration } =
+    let add_string_if name condition elements =
+      if condition then `String name :: elements else elements
+    in
+    []
+    |> add_string_if "boolean" is_boolean
+    |> add_string_if "integer" is_integer
+    |> add_string_if "float" is_float
+    |> add_string_if "enum" is_enumeration
+    |> fun elements -> `List elements
 end
 
 (** A specific target of a given call, with extra information. *)
@@ -183,6 +215,16 @@ module CallTarget = struct
     && implicit_self_left == implicit_self_right
     && implicit_dunder_call_left == implicit_dunder_call_right
     && index_left == index_right
+
+
+  let to_json { target; implicit_self; implicit_dunder_call; index; return_type; receiver_type } =
+    ["index", `Int index; "target", `String (Target.external_name target)]
+    |> JsonHelper.add_flag_if "implicit_self" implicit_self
+    |> JsonHelper.add_flag_if "implicit_dunder_call" implicit_dunder_call
+    |> JsonHelper.add_optional "return_type" return_type ReturnType.to_json
+    |> JsonHelper.add_optional "receiver_type" receiver_type (fun annotation ->
+           `String (Type.show annotation))
+    |> fun bindings -> `Assoc (List.rev bindings)
 end
 
 (** Information about an argument being a callable. *)
@@ -220,6 +262,12 @@ module HigherOrderParameter = struct
 
   let deduplicate { index; call_targets; unresolved } =
     { index; call_targets = CallTarget.dedup_and_sort call_targets; unresolved }
+
+
+  let to_json { index; call_targets; unresolved } =
+    ["parameter_index", `Int index; "calls", `List (List.map ~f:CallTarget.to_json call_targets)]
+    |> JsonHelper.add_flag_if "unresolved" unresolved
+    |> fun bindings -> `Assoc bindings
 end
 
 (** Mapping from a parameter index to its HigherOrderParameter, if any. *)
@@ -269,6 +317,10 @@ module HigherOrderParameterMap = struct
 
   let first_index map =
     Map.min_binding_opt map >>| fun (_, higher_order_parameter) -> higher_order_parameter
+
+
+  let to_json map =
+    map |> Map.data |> List.map ~f:HigherOrderParameter.to_json |> fun elements -> `List elements
 end
 
 (** An aggregate of all possible callees at a call site. *)
@@ -471,6 +523,24 @@ module CallCallees = struct
       ] ->
         true
     | _ -> false
+
+
+  let to_json { call_targets; new_targets; init_targets; higher_order_parameters; unresolved } =
+    let bindings =
+      []
+      |> JsonHelper.add_list "calls" call_targets CallTarget.to_json
+      |> JsonHelper.add_list "new_calls" new_targets CallTarget.to_json
+      |> JsonHelper.add_list "init_calls" init_targets CallTarget.to_json
+    in
+    let bindings =
+      if not (HigherOrderParameterMap.is_empty higher_order_parameters) then
+        ("higher_order_parameters", HigherOrderParameterMap.to_json higher_order_parameters)
+        :: bindings
+      else
+        bindings
+    in
+    let bindings = JsonHelper.add_flag_if "unresolved" unresolved bindings in
+    `Assoc (List.rev bindings)
 end
 
 (** An aggregrate of all possible callees for a given attribute access. *)
@@ -535,6 +605,13 @@ module AttributeAccessCallees = struct
   let empty = { property_targets = []; global_targets = []; is_attribute = true }
 
   let is_empty attribute_access_callees = equal attribute_access_callees empty
+
+  let to_json { property_targets; global_targets; is_attribute } =
+    []
+    |> JsonHelper.add_list "properties" property_targets CallTarget.to_json
+    |> JsonHelper.add_list "globals" global_targets CallTarget.to_json
+    |> JsonHelper.add_flag_if "is_attribute" is_attribute
+    |> fun bindings -> `Assoc (List.rev bindings)
 end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
@@ -548,6 +625,9 @@ module IdentifierCallees = struct
 
 
   let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
+
+  let to_json { global_targets } =
+    `Assoc ["globals", `List (List.map ~f:CallTarget.to_json global_targets)]
 end
 
 (** An aggregate of callees for formatting strings. *)
@@ -584,6 +664,12 @@ module StringFormatCallees = struct
   let from_stringify_targets stringify_targets = { stringify_targets; f_string_targets = [] }
 
   let from_f_string_targets f_string_targets = { stringify_targets = []; f_string_targets }
+
+  let to_json { stringify_targets; f_string_targets } =
+    []
+    |> JsonHelper.add_list "stringify" stringify_targets CallTarget.to_json
+    |> JsonHelper.add_list "f-string" f_string_targets CallTarget.to_json
+    |> fun bindings -> `Assoc bindings
 end
 
 (** An aggregate of all possible callees for an arbitrary expression. *)
@@ -703,6 +789,15 @@ module ExpressionCallees = struct
          attribute_access_right
     && Option.equal IdentifierCallees.equal identifier_left identifier_right
     && Option.equal StringFormatCallees.equal string_format_left string_format_right
+
+
+  let to_json { call; attribute_access; identifier; string_format } =
+    []
+    |> JsonHelper.add_optional "call" call CallCallees.to_json
+    |> JsonHelper.add_optional "attribute_access" attribute_access AttributeAccessCallees.to_json
+    |> JsonHelper.add_optional "identifier" identifier IdentifierCallees.to_json
+    |> JsonHelper.add_optional "string_format" string_format StringFormatCallees.to_json
+    |> fun bindings -> `Assoc (List.rev bindings)
 end
 
 (** An aggregate of all possible callees for an arbitrary location.
@@ -738,6 +833,18 @@ module LocationCallees = struct
     | Compound map_left, Compound map_right ->
         SerializableStringMap.equal ExpressionCallees.equal_ignoring_types map_left map_right
     | _ -> false
+
+
+  let to_json = function
+    | Singleton callees -> `Assoc ["singleton", ExpressionCallees.to_json callees]
+    | Compound map ->
+        let bindings =
+          SerializableStringMap.fold
+            (fun key value sofar -> (key, ExpressionCallees.to_json value) :: sofar)
+            map
+            []
+        in
+        `Assoc ["compound", `Assoc bindings]
 end
 
 module UnprocessedLocationCallees = struct
@@ -834,6 +941,25 @@ module DefineCallGraph = struct
     Location.Map.Tree.data call_graph
     |> List.concat_map ~f:LocationCallees.all_targets
     |> List.dedup_and_sort ~compare:Target.compare
+
+
+  let to_json ~resolution ~filename_lookup ~callable call_graph =
+    let filename =
+      match Target.get_module_and_definition ~resolution callable, filename_lookup with
+      | Some (qualifier, _), Some filename_lookup ->
+          Option.value (filename_lookup qualifier) ~default:"*"
+      | _ -> "*"
+    in
+    let edges =
+      Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
+          (Location.show key, LocationCallees.to_json data) :: sofar)
+    in
+    `Assoc
+      [
+        "callable", `String (Target.external_name callable);
+        "filename", `String filename;
+        "calls", `Assoc edges;
+      ]
 end
 
 (* Produce call targets with a textual order index.
@@ -2450,8 +2576,16 @@ type call_graphs = {
     fixpoint. *)
 let build_whole_program_call_graph
     ~scheduler
-    ~static_analysis_configuration
+    ~static_analysis_configuration:
+      ({
+         Configuration.StaticAnalysis.save_results_to;
+         output_format;
+         dump_call_graph;
+         configuration = { local_root; _ };
+         _;
+       } as static_analysis_configuration)
     ~environment
+    ~filename_lookup
     ~override_graph
     ~store_shared_memory
     ~attribute_targets
@@ -2527,19 +2661,53 @@ let build_whole_program_call_graph
       ~inputs:definitions
       ()
   in
+  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let define_call_graphs_read_only = DefineCallGraphSharedMemory.read_only define_call_graphs in
+  let call_graph_to_json callable =
+    match DefineCallGraphSharedMemory.ReadOnly.get define_call_graphs_read_only ~callable with
+    | Some call_graph ->
+        [
+          {
+            NewlineDelimitedJson.Line.kind = CallGraph;
+            data = DefineCallGraph.to_json ~resolution ~filename_lookup ~callable call_graph;
+          };
+        ]
+    | None -> []
+  in
   let () =
-    match static_analysis_configuration.Configuration.StaticAnalysis.save_results_to with
-    | Some path ->
-        let path = PyrePath.append path ~element:"call-graph.json" in
-        Log.info "Writing the call graph to `%s`" (PyrePath.absolute path);
-        whole_program_call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
+    match save_results_to with
+    | Some directory ->
+        Log.info "Writing the call graph to `%s`" (PyrePath.absolute directory);
+        let () =
+          match output_format with
+          | Configuration.TaintOutputFormat.Json ->
+              NewlineDelimitedJson.write_file
+                ~path:(PyrePath.append directory ~element:"call-graph.json")
+                ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                ~to_json_lines:call_graph_to_json
+                definitions
+          | Configuration.TaintOutputFormat.ShardedJson ->
+              NewlineDelimitedJson.remove_sharded_files ~directory ~filename_prefix:"call-graph";
+              NewlineDelimitedJson.write_sharded_files
+                ~scheduler
+                ~directory
+                ~filename_prefix:"call-graph"
+                ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+                ~to_json_lines:call_graph_to_json
+                definitions
+        in
+        ()
     | None -> ()
   in
   let () =
-    match static_analysis_configuration.Configuration.StaticAnalysis.dump_call_graph with
+    match dump_call_graph with
     | Some path ->
         Log.warning "Emitting the contents of the call graph to `%s`" (PyrePath.absolute path);
-        whole_program_call_graph |> WholeProgramCallGraph.to_target_graph |> TargetGraph.dump ~path
+        NewlineDelimitedJson.write_file
+          ~path
+          ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+          ~to_json_lines:call_graph_to_json
+          definitions
     | None -> ()
   in
   { whole_program_call_graph; define_call_graphs }

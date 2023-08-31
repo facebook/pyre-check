@@ -9,6 +9,7 @@ module Kind : sig
   type t =
     | Model
     | Issue
+    | CallGraph
 
   val show : t -> string
 end
