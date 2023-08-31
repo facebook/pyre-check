@@ -643,14 +643,14 @@ let to_error
       Error.create ~location ~define ~kind
 
 
-let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lookup issue =
+let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_module_path issue =
   let callable_name = Target.external_name issue.handle.callable in
   let _, message = get_name_and_detailed_message ~taint_configuration issue in
   let source_traces =
     ForwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
-      ~filename_lookup:(Some filename_lookup)
+      ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.source_taint
   in
@@ -658,7 +658,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
     BackwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
-      ~filename_lookup:(Some filename_lookup)
+      ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.sink_taint
   in
@@ -695,6 +695,9 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~filename_lo
         `Assoc ["name", `String "forward"; "roots", source_traces];
         `Assoc ["name", `String "backward"; "roots", sink_traces];
       ]
+  in
+  let filename_lookup qualifier =
+    resolve_module_path qualifier >>= fun { RepositoryPath.filename; _ } -> filename
   in
   let {
     Location.WithPath.path;
@@ -825,8 +828,11 @@ module MultiSource = struct
     | _ -> false
 
 
-  let show_call_info ~filename_lookup call_info =
+  let show_call_info ~resolve_module_path call_info =
     let show_location location =
+      let filename_lookup qualifier =
+        resolve_module_path qualifier >>= fun { RepositoryPath.filename; _ } -> filename
+      in
       let { Location.WithPath.path; start; _ } =
         Location.WithModule.instantiate ~lookup:filename_lookup location
       in
@@ -843,7 +849,10 @@ module MultiSource = struct
           (callees |> List.map ~f:Target.external_name |> String.concat ~sep:"; ")
 
 
-  let get_first_sink_hops ~main_issue_location ~filename_lookup { flow = { Flow.sink_taint; _ }; _ }
+  let get_first_sink_hops
+      ~main_issue_location
+      ~resolve_module_path
+      { flow = { Flow.sink_taint; _ }; _ }
     =
     BackwardTaint.reduce
       BackwardTaint.kind
@@ -859,7 +868,7 @@ module MultiSource = struct
                 (Format.asprintf
                    "Sink trace of secondary flow leading to %s begins at %s"
                    (Sinks.show sink_kind)
-                   (show_call_info ~filename_lookup call_info));
+                   (show_call_info ~resolve_module_path call_info));
           }
         in
         ExtraTraceFirstHop.Set.add extra_trace so_far)
@@ -869,7 +878,7 @@ module MultiSource = struct
 
   let get_first_source_hops
       ~main_issue_location
-      ~filename_lookup
+      ~resolve_module_path
       { flow = { Flow.source_taint; _ }; _ }
     =
     ForwardTaint.reduce
@@ -886,7 +895,7 @@ module MultiSource = struct
                 (Format.asprintf
                    "Source trace of secondary flow from %s begins at %s"
                    (Sources.show source_kind)
-                   (show_call_info ~filename_lookup call_info));
+                   (show_call_info ~resolve_module_path call_info));
           }
         in
         ExtraTraceFirstHop.Set.add extra_trace so_far)

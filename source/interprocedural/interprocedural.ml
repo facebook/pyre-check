@@ -24,3 +24,4 @@ module GlobalConstants = GlobalConstants
 module ChangedPaths = ChangedPaths
 module SaveLoadSharedMemory = SaveLoadSharedMemory
 module NewlineDelimitedJson = NewlineDelimitedJson
+module RepositoryPath = RepositoryPath

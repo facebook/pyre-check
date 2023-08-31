@@ -10,7 +10,7 @@ open Interprocedural
 val externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
   fixpoint_state:TaintFixpoint.t ->
-  filename_lookup:(Ast.Reference.t -> string option) ->
+  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   Target.t ->
   Issue.t list ->
@@ -20,7 +20,7 @@ val externalize
 val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
   fixpoint_state:TaintFixpoint.t ->
-  filename_lookup:(Ast.Reference.t -> string option) ->
+  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   dump_override_models:bool ->
   Target.t ->
@@ -29,7 +29,7 @@ val fetch_and_externalize
 val produce_errors
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
-  filename_lookup:(Ast.Reference.t -> string option) ->
+  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   taint_configuration:TaintConfiguration.SharedMemory.t ->
   callables:Target.Set.t ->
   fixpoint_timer:Timer.t ->
@@ -42,7 +42,7 @@ val save_results_to_directory
   result_directory:PyrePath.t ->
   output_format:Configuration.TaintOutputFormat.t ->
   local_root:PyrePath.t ->
-  filename_lookup:(Ast.Reference.t -> string option) ->
+  resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   skipped_overrides:Target.t list ->
   callables:Target.Set.t ->

@@ -40,7 +40,7 @@ val to_json
   :  taint_configuration:TaintConfiguration.Heap.t ->
   expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->
   is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
-  filename_lookup:(Reference.t -> string option) ->
+  resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
   t ->
   Yojson.Safe.t
 
@@ -136,13 +136,13 @@ module MultiSource : sig
 
   val get_first_sink_hops
     :  main_issue_location:Location.WithModule.t ->
-    filename_lookup:(Reference.t -> string option) ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
     issue ->
     ExtraTraceFirstHop.Set.t
 
   val get_first_source_hops
     :  main_issue_location:Location.WithModule.t ->
-    filename_lookup:(Reference.t -> string option) ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
     issue ->
     ExtraTraceFirstHop.Set.t
 

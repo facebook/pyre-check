@@ -11,7 +11,7 @@ module Target = Interprocedural.Target
    Additionally, we attach the main issues with the secondary issues. This function updates the
    analysis results that are stored in `fixpoint_state`. *)
 val update_multi_source_issues
-  :  filename_lookup:(Ast.Reference.t -> string option) ->
+  :  resolve_module_path:(Ast.Reference.t -> Interprocedural.RepositoryPath.t option) ->
   taint_configuration:TaintConfiguration.Heap.t ->
   callables:Target.t list ->
   fixpoint_state:TaintFixpoint.t ->

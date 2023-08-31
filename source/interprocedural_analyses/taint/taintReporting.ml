@@ -40,14 +40,14 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
           not (Domains.BackwardTaint.is_bottom taint))
 
 
-let issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~override_graph issues =
+let issues_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph issues =
   let issue_to_json issue =
     let json =
       Issue.to_json
         ~taint_configuration
         ~expand_overrides:(Some override_graph)
         ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-        ~filename_lookup
+        ~resolve_module_path
         issue
     in
     { NewlineDelimitedJson.Line.kind = Issue; data = json }
@@ -92,14 +92,14 @@ let extract_errors ~scheduler ~taint_configuration ~callables ~fixpoint_state =
 let externalize
     ~taint_configuration
     ~fixpoint_state
-    ~filename_lookup
+    ~resolve_module_path
     ~override_graph
     callable
     result
     model
   =
   let issues =
-    issues_to_json ~taint_configuration ~fixpoint_state ~filename_lookup ~override_graph result
+    issues_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph result
   in
   if not (Model.should_externalize model) then
     issues
@@ -110,7 +110,7 @@ let externalize
         Model.to_json
           ~expand_overrides:(Some override_graph)
           ~is_valid_callee:(has_significant_summary ~fixpoint_state)
-          ~filename_lookup:(Some filename_lookup)
+          ~resolve_module_path:(Some resolve_module_path)
           ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
           callable
           model;
@@ -121,7 +121,7 @@ let externalize
 let fetch_and_externalize
     ~taint_configuration
     ~fixpoint_state
-    ~filename_lookup
+    ~resolve_module_path
     ~override_graph
     ~dump_override_models
   = function
@@ -136,7 +136,7 @@ let fetch_and_externalize
       externalize
         ~taint_configuration
         ~fixpoint_state
-        ~filename_lookup
+        ~resolve_module_path
         ~override_graph
         callable
         result
@@ -149,7 +149,7 @@ let save_results_to_directory
     ~result_directory
     ~output_format
     ~local_root
-    ~filename_lookup
+    ~resolve_module_path
     ~override_graph
     ~skipped_overrides
     ~callables
@@ -170,7 +170,7 @@ let save_results_to_directory
       fetch_and_externalize
         ~taint_configuration
         ~fixpoint_state
-        ~filename_lookup
+        ~resolve_module_path
         ~override_graph
         ~dump_override_models:false
         callable
@@ -252,7 +252,7 @@ let produce_errors
     ~scheduler
     ~static_analysis_configuration:
       Configuration.StaticAnalysis.{ configuration = { show_error_traces; _ }; _ }
-    ~filename_lookup
+    ~resolve_module_path
     ~taint_configuration
     ~callables
     ~fixpoint_timer
@@ -280,6 +280,9 @@ let produce_errors
           "issues", List.length errors;
         ]
       ()
+  in
+  let filename_lookup qualifier =
+    resolve_module_path qualifier >>= fun { RepositoryPath.filename; _ } -> filename
   in
   let error_to_json error =
     error

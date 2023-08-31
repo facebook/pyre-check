@@ -55,18 +55,23 @@ let location_to_json
     ]
 
 
-let location_with_module_to_json ~filename_lookup location_with_module : Yojson.Safe.t =
-  let optionally_add_filename fields =
-    match filename_lookup with
-    | Some lookup ->
-        let { Location.WithPath.path; _ } =
-          Location.WithModule.instantiate ~lookup location_with_module
-        in
-        ("filename", `String path) :: fields
+let location_with_module_to_json ~resolve_module_path location_with_module : Yojson.Safe.t =
+  let add_path fields =
+    match resolve_module_path with
+    | Some resolve_module_path -> (
+        (* SAPP expects filenames to be relative to the repository root.
+         * When the file is outside the repository, uses `*` as the filename
+         * and add the full path under the `path` key for debugging purposes. *)
+        match resolve_module_path location_with_module.Location.WithModule.module_reference with
+        | Some { RepositoryPath.filename = Some filename; _ } ->
+            ("filename", `String filename) :: fields
+        | Some { RepositoryPath.filename = None; path } ->
+            ("filename", `String "*") :: ("path", `String (PyrePath.absolute path)) :: fields
+        | None -> ("filename", `String "*") :: fields)
     | None -> fields
   in
   match location_to_json (Location.strip_module location_with_module) with
-  | `Assoc fields -> `Assoc (optionally_add_filename fields)
+  | `Assoc fields -> `Assoc (add_path fields)
   | _ -> failwith "unreachable"
 
 
@@ -135,18 +140,18 @@ module CallInfo = struct
 
 
   (* Returns the (dictionary key * json) to emit *)
-  let to_json ~filename_lookup trace : string * Yojson.Safe.t =
+  let to_json ~resolve_module_path trace : string * Yojson.Safe.t =
     match trace with
     | Declaration _ -> "declaration", `Null
     | Tito -> "tito", `Null
     | Origin location ->
-        let location_json = location_with_module_to_json ~filename_lookup location in
+        let location_json = location_with_module_to_json ~resolve_module_path location in
         "origin", location_json
     | CallSite { location; callees; port; path } ->
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
-        let location_json = location_with_module_to_json ~filename_lookup location in
+        let location_json = location_with_module_to_json ~resolve_module_path location in
         let port_json = AccessPath.create port path |> AccessPath.to_json in
         let call_json =
           `Assoc ["position", location_json; "resolves_to", `List callee_json; "port", port_json]
@@ -355,7 +360,7 @@ module ExtraTraceFirstHop = struct
     let to_json { call_info; leaf_kind; message } =
       let json =
         [
-          CallInfo.to_json ~filename_lookup:None call_info;
+          CallInfo.to_json ~resolve_module_path:None call_info;
           "leaf_kind", `String (show_leaf_kind leaf_kind);
           "trace_kind", `String (trace_kind leaf_kind);
         ]
@@ -559,7 +564,7 @@ module type TAINT_DOMAIN = sig
   val to_json
     :  expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->
     is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
-    filename_lookup:(Reference.t -> string option) option ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     export_leaf_names:ExportLeafNames.t ->
     t ->
     Yojson.Safe.t
@@ -762,7 +767,7 @@ end = struct
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
-  let to_json ~expand_overrides ~is_valid_callee ~filename_lookup ~export_leaf_names taint =
+  let to_json ~expand_overrides ~is_valid_callee ~resolve_module_path ~export_leaf_names taint =
     let cons_if_non_empty key list assoc =
       if List.is_empty list then
         assoc
@@ -795,7 +800,7 @@ end = struct
     in
 
     let trace_to_json (trace_info, local_taint) =
-      let json = [CallInfo.to_json ~filename_lookup trace_info] in
+      let json = [CallInfo.to_json ~resolve_module_path trace_info] in
 
       let tito_positions =
         LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
@@ -1591,7 +1596,8 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       end)
       (Tree)
 
-  let to_json ~expand_overrides ~is_valid_callee ~filename_lookup ~export_leaf_names environment =
+  let to_json ~expand_overrides ~is_valid_callee ~resolve_module_path ~export_leaf_names environment
+    =
     let element_to_json json_list (root, tree) =
       let path_to_json (path, tip) json_list =
         let port = AccessPath.create root path |> AccessPath.to_json in
@@ -1602,7 +1608,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
               Taint.to_json
                 ~expand_overrides
                 ~is_valid_callee
-                ~filename_lookup
+                ~resolve_module_path
                 ~export_leaf_names
                 tip );
           ] )

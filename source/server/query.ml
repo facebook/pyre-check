@@ -844,7 +844,7 @@ let rec process_request_exn ~type_environment ~build_system request =
                           Taint.Model.to_json
                             ~expand_overrides:None
                             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-                            ~filename_lookup:None
+                            ~resolve_module_path:None
                             ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
                             callable
                             model;

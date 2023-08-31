@@ -633,7 +633,7 @@ let initialize
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
       ~environment:type_environment
-      ~filename_lookup:None
+      ~resolve_module_path:None
       ~override_graph:override_graph_shared_memory_read_only
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
@@ -859,15 +859,18 @@ let end_to_end_integration_test path context =
         ~epoch:TaintFixpoint.Epoch.initial
         ~shared_models
     in
-    let filename_lookup =
-      TypeEnvironment.ReadOnly.module_tracker type_environment
-      |> ModuleTracker.ReadOnly.lookup_relative_path
+    let resolve_module_path qualifier =
+      ModuleTracker.ReadOnly.lookup_relative_path
+        (TypeEnvironment.ReadOnly.module_tracker type_environment)
+        qualifier
+      >>| fun filename ->
+      { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in
     let serialize_model callable =
       TaintReporting.fetch_and_externalize
         ~taint_configuration
         ~fixpoint_state
-        ~filename_lookup
+        ~resolve_module_path
         ~override_graph:override_graph_shared_memory_read_only
         ~dump_override_models:true
         callable
@@ -880,7 +883,7 @@ let end_to_end_integration_test path context =
       [create_call_graph_files whole_program_call_graph; create_overrides_files override_graph_heap]
     in
     MultiSourcePostProcessing.update_multi_source_issues
-      ~filename_lookup
+      ~resolve_module_path
       ~taint_configuration
       ~callables:callables_to_analyze
       ~fixpoint_state;

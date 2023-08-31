@@ -943,23 +943,28 @@ module DefineCallGraph = struct
     |> List.dedup_and_sort ~compare:Target.compare
 
 
-  let to_json ~resolution ~filename_lookup ~callable call_graph =
-    let filename =
-      match Target.get_module_and_definition ~resolution callable, filename_lookup with
-      | Some (qualifier, _), Some filename_lookup ->
-          Option.value (filename_lookup qualifier) ~default:"*"
-      | _ -> "*"
+  let to_json ~resolution ~resolve_module_path ~callable call_graph =
+    let bindings = ["callable", `String (Target.external_name callable)] in
+    let bindings =
+      let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
+      Target.get_module_and_definition ~resolution callable
+      >>| fst
+      >>= resolve_module_path
+      >>| (function
+            | { RepositoryPath.filename = Some filename; _ } ->
+                ("filename", `String filename) :: bindings
+            | { path; _ } ->
+                ("filename", `String "*") :: ("path", `String (PyrePath.absolute path)) :: bindings)
+      |> Option.value ~default:bindings
     in
-    let edges =
-      Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
-          (Location.show key, LocationCallees.to_json data) :: sofar)
+    let bindings =
+      let edges =
+        Location.Map.Tree.fold call_graph ~init:[] ~f:(fun ~key ~data sofar ->
+            (Location.show key, LocationCallees.to_json data) :: sofar)
+      in
+      ("calls", `Assoc edges) :: bindings
     in
-    `Assoc
-      [
-        "callable", `String (Target.external_name callable);
-        "filename", `String filename;
-        "calls", `Assoc edges;
-      ]
+    `Assoc (List.rev bindings)
 end
 
 (* Produce call targets with a textual order index.
@@ -2585,7 +2590,7 @@ let build_whole_program_call_graph
          _;
        } as static_analysis_configuration)
     ~environment
-    ~filename_lookup
+    ~resolve_module_path
     ~override_graph
     ~store_shared_memory
     ~attribute_targets
@@ -2669,7 +2674,7 @@ let build_whole_program_call_graph
         [
           {
             NewlineDelimitedJson.Line.kind = CallGraph;
-            data = DefineCallGraph.to_json ~resolution ~filename_lookup ~callable call_graph;
+            data = DefineCallGraph.to_json ~resolution ~resolve_module_path ~callable call_graph;
           };
         ]
     | None -> []

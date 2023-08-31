@@ -346,23 +346,25 @@ let compact_ocaml_heap ~name =
   Statistics.performance ~name ~phase_name:name ~timer ()
 
 
-let filename_lookup
+let resolve_module_path
     ~build_system
     ~module_tracker
     ~static_analysis_configuration:
       { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
-    path_reference
+    qualifier
   =
   match
-    Server.PathLookup.instantiate_path_with_build_system
-      ~build_system
-      ~module_tracker
-      path_reference
+    Server.PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker qualifier
   with
   | None -> None
-  | Some full_path ->
+  | Some path ->
       let root = Option.value repository_root ~default:local_root in
-      PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute full_path)
+      let path = PyrePath.create_absolute path in
+      Some
+        {
+          Interprocedural.RepositoryPath.filename = PyrePath.get_relative_to_root ~root ~path;
+          path;
+        }
 
 
 let run_taint_analysis
@@ -412,8 +414,8 @@ let run_taint_analysis
   in
   let qualifiers = Analysis.ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
-  let filename_lookup =
-    filename_lookup ~build_system ~module_tracker ~static_analysis_configuration
+  let resolve_module_path =
+    resolve_module_path ~build_system ~module_tracker ~static_analysis_configuration
   in
 
   let class_hierarchy_graph, cache =
@@ -547,7 +549,7 @@ let run_taint_analysis
           ~scheduler
           ~static_analysis_configuration
           ~environment:(Analysis.TypeEnvironment.read_only environment)
-          ~filename_lookup:(Some filename_lookup)
+          ~resolve_module_path:(Some resolve_module_path)
           ~override_graph:override_graph_shared_memory_read_only
           ~store_shared_memory:true
           ~attribute_targets
@@ -667,7 +669,7 @@ let run_taint_analysis
   let timer = Timer.start () in
   let () =
     MultiSourcePostProcessing.update_multi_source_issues
-      ~filename_lookup
+      ~resolve_module_path
       ~taint_configuration
       ~callables:callables_to_analyze
       ~fixpoint_state
@@ -683,7 +685,7 @@ let run_taint_analysis
       ~scheduler
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
-      ~filename_lookup
+      ~resolve_module_path
       ~callables
       ~fixpoint_timer
       ~fixpoint_state
@@ -712,7 +714,7 @@ let run_taint_analysis
           ~result_directory
           ~output_format
           ~local_root
-          ~filename_lookup
+          ~resolve_module_path
           ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides

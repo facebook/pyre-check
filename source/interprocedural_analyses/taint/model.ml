@@ -58,7 +58,7 @@ module Forward = struct
          (ForwardState.to_json
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~filename_lookup:None
+            ~resolve_module_path:None
             ~export_leaf_names:ExportLeafNames.Always
             source_taint))
 
@@ -98,7 +98,7 @@ module Backward = struct
          (BackwardState.to_json
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~filename_lookup:None
+            ~resolve_module_path:None
             ~export_leaf_names:ExportLeafNames.Always
             taint_in_taint_out))
       (json_to_string
@@ -106,7 +106,7 @@ module Backward = struct
          (BackwardState.to_json
             ~expand_overrides:None
             ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~filename_lookup:None
+            ~resolve_module_path:None
             ~export_leaf_names:ExportLeafNames.Always
             sink_taint))
 
@@ -671,7 +671,7 @@ let join_user_models ({ modes = left_modes; _ } as left) ({ modes = right_modes;
 let to_json
     ~expand_overrides
     ~is_valid_callee
-    ~filename_lookup
+    ~resolve_module_path
     ~export_leaf_names
     callable
     {
@@ -692,7 +692,7 @@ let to_json
             ForwardState.to_json
               ~expand_overrides
               ~is_valid_callee
-              ~filename_lookup
+              ~resolve_module_path
               ~export_leaf_names
               source_taint );
         ]
@@ -707,7 +707,7 @@ let to_json
             BackwardState.to_json
               ~expand_overrides
               ~is_valid_callee
-              ~filename_lookup
+              ~resolve_module_path
               ~export_leaf_names
               sink_taint );
         ]
@@ -722,7 +722,7 @@ let to_json
             BackwardState.to_json
               ~expand_overrides
               ~is_valid_callee
-              ~filename_lookup
+              ~resolve_module_path
               ~export_leaf_names
               taint_in_taint_out );
         ]

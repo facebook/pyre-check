@@ -57,7 +57,7 @@ let collect_main_issues ~taint_configuration ~issue_handle_map =
 (* For a multi-source rule, only keep its main issue, based on the taint configuration.
    Additionally, we attach the main issues with the secondary issues. This function updates the
    analysis results that are stored in `fixpoint_state`. *)
-let update_multi_source_issues ~filename_lookup ~taint_configuration ~callables ~fixpoint_state =
+let update_multi_source_issues ~resolve_module_path ~taint_configuration ~callables ~fixpoint_state =
   let issue_handle_map = issue_handle_map ~callables ~fixpoint_state in
   let main_issues = collect_main_issues ~taint_configuration ~issue_handle_map in
   let attach_secondary_issue ~main_issue_location issue_so_far secondary_issue_handle =
@@ -65,10 +65,16 @@ let update_multi_source_issues ~filename_lookup ~taint_configuration ~callables 
       IssueHandle.SerializableMap.find secondary_issue_handle issue_handle_map
     in
     let source_traces =
-      Issue.MultiSource.get_first_source_hops ~main_issue_location ~filename_lookup secondary_issue
+      Issue.MultiSource.get_first_source_hops
+        ~main_issue_location
+        ~resolve_module_path
+        secondary_issue
     in
     let sink_traces =
-      Issue.MultiSource.get_first_sink_hops ~main_issue_location ~filename_lookup secondary_issue
+      Issue.MultiSource.get_first_sink_hops
+        ~main_issue_location
+        ~resolve_module_path
+        secondary_issue
     in
     Issue.MultiSource.attach_extra_traces ~source_traces ~sink_traces issue_so_far
   in

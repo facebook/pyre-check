@@ -252,7 +252,7 @@ module DefineCallGraph : sig
 
   val to_json
     :  resolution:GlobalResolution.t ->
-    filename_lookup:(Reference.t -> string option) option ->
+    resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     callable:Target.t ->
     t ->
     Yojson.Safe.t
@@ -329,7 +329,7 @@ val build_whole_program_call_graph
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   environment:TypeEnvironment.ReadOnly.t ->
-  filename_lookup:(Reference.t -> string option) option ->
+  resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   store_shared_memory:bool ->
   attribute_targets:Target.Set.t ->
