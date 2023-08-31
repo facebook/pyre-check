@@ -240,18 +240,13 @@ end
 module DumpModelQueryResults = struct
   let dump_to_string ~model_query_results =
     let model_to_json (callable, model) =
-      `Assoc
-        [
-          "callable", `String (Target.external_name callable);
-          ( "model",
-            Model.to_json
-              ~expand_overrides:None
-              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-              ~resolve_module_path:None
-              ~export_leaf_names:Domains.ExportLeafNames.Always
-              callable
-              model );
-        ]
+      Model.to_json
+        ~expand_overrides:None
+        ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+        ~resolve_module_path:None
+        ~export_leaf_names:Domains.ExportLeafNames.Always
+        callable
+        model
     in
     let to_json ~key:model_query_identifier ~data:models =
       models
