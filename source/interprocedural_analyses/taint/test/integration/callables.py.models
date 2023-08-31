@@ -104,7 +104,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.AbstractEventProcessor::async_call_tainted}",
+    "callable": "Ovr{callables.AbstractEventProcessor.async_call_tainted}",
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -134,7 +134,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.AbstractEventProcessor::async_run}",
+    "callable": "Ovr{callables.AbstractEventProcessor.async_run}",
     "sinks": [
       {
         "port": "formal(self)[benign]",
@@ -164,7 +164,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.ConcreteEventProcessor::async_call_tainted}",
+    "callable": "Ovr{callables.ConcreteEventProcessor.async_call_tainted}",
     "sinks": [
       {
         "port": "formal(self)[tainted]",
@@ -194,7 +194,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.ConcreteEventProcessor::async_run}",
+    "callable": "Ovr{callables.ConcreteEventProcessor.async_run}",
     "sinks": [
       {
         "port": "formal(self)[benign]",

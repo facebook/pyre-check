@@ -1,9 +1,9 @@
 @generated
 Call dependencies
 readonly.$toplevel (fun) -> [readonly._Self_readonly_A__ (object)]
-readonly.A::$class_toplevel (method) -> []
-readonly.A::__init__ (method) -> [readonly.A.B (object) readonly.A.mapping (object)]
-readonly.A::self_readonly_map (method) -> [_test_sink (fun) readonly.A.mapping (object) typing.Mapping::get (method)]
-readonly.A::self_readonly_str (method) -> [_test_sink (fun) readonly.A.B (object)]
-readonly.A::self_untyped_map (method) -> [_test_sink (fun) readonly.A.mapping (object) typing.Mapping::get (method)]
-readonly.A::self_untyped_str (method) -> [_test_sink (fun) readonly.A.B (object)]
+readonly.A.$class_toplevel (method) -> []
+readonly.A.__init__ (method) -> [readonly.A.B (object) readonly.A.mapping (object)]
+readonly.A.self_readonly_map (method) -> [_test_sink (fun) readonly.A.mapping (object) typing.Mapping.get (method)]
+readonly.A.self_readonly_str (method) -> [_test_sink (fun) readonly.A.B (object)]
+readonly.A.self_untyped_map (method) -> [_test_sink (fun) readonly.A.mapping (object) typing.Mapping.get (method)]
+readonly.A.self_untyped_str (method) -> [_test_sink (fun) readonly.A.B (object)]

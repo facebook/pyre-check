@@ -587,7 +587,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.A::methodA}",
+    "callable": "Ovr{overrides.A.methodA}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -617,7 +617,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.B::classMethod}",
+    "callable": "Ovr{overrides.B.classMethod}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -647,7 +647,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.B::methodB}",
+    "callable": "Ovr{overrides.B.methodB}",
     "sources": [
       {
         "port": "result",
@@ -679,7 +679,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base::classMethod}",
+    "callable": "Ovr{overrides.Base.classMethod}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -709,7 +709,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base::methodA}",
+    "callable": "Ovr{overrides.Base.methodA}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -752,7 +752,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base::methodB}",
+    "callable": "Ovr{overrides.Base.methodB}",
     "sources": [
       {
         "port": "result",
@@ -784,7 +784,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.C::methodA}",
+    "callable": "Ovr{overrides.C.methodA}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -825,7 +825,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.D::methodA}",
+    "callable": "Ovr{overrides.D.methodA}",
     "sinks": [
       {
         "port": "formal(arg)",
@@ -866,7 +866,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.D::methodB}",
+    "callable": "Ovr{overrides.D.methodB}",
     "sources": [
       {
         "port": "result",
@@ -898,7 +898,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.OverloadedOverride::methodA}",
+    "callable": "Ovr{overrides.OverloadedOverride.methodA}",
     "tito": [
       {
         "port": "formal(arg)",

@@ -26,7 +26,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.A::method}",
+    "callable": "Ovr{combinatory_ports.A.method}",
     "sinks": [
       {
         "port": "formal(self)[a][a][a]",
@@ -2374,7 +2374,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.B::method}",
+    "callable": "Ovr{combinatory_ports.B.method}",
     "sinks": [
       {
         "port": "formal(self)[b][a][a]",
@@ -4722,7 +4722,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.Base::method}",
+    "callable": "Ovr{combinatory_ports.Base.method}",
     "sinks": [
       {
         "port": "formal(self)[a][a][a]",
@@ -11772,7 +11772,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.C::method}",
+    "callable": "Ovr{combinatory_ports.C.method}",
     "sinks": [
       {
         "port": "formal(self)[c][a][a]",

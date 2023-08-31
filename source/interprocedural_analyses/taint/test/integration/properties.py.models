@@ -689,7 +689,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.Class::my_property}",
+    "callable": "Ovr{properties.Class.my_property}",
     "sources": [
       {
         "port": "result",
@@ -732,7 +732,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.DerivedTaintedSetter::my_property@setter}",
+    "callable": "Ovr{properties.DerivedTaintedSetter.my_property@setter}",
     "sinks": [
       {
         "port": "formal(value)",
@@ -773,7 +773,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.GrandDerived::my_property@setter}",
+    "callable": "Ovr{properties.GrandDerived.my_property@setter}",
     "tito": [
       {
         "port": "formal(self)",
@@ -790,7 +790,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.OtherDerived::my_property}",
+    "callable": "Ovr{properties.OtherDerived.my_property}",
     "sources": [
       {
         "port": "result",
@@ -822,7 +822,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.TaintedGetterAndSetter::my_property@setter}",
+    "callable": "Ovr{properties.TaintedGetterAndSetter.my_property@setter}",
     "sources": [
       {
         "port": "formal(self)",
@@ -910,7 +910,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{properties.TaintedGetterAndSetter::my_property}",
+    "callable": "Ovr{properties.TaintedGetterAndSetter.my_property}",
     "sources": [
       {
         "port": "result",
@@ -1865,7 +1865,7 @@
                 "leaves": [
                   {
                     "port": "leaf:return",
-                    "name": "Ovr{properties.TaintedGetterAndSetter::my_property}"
+                    "name": "Ovr{properties.TaintedGetterAndSetter.my_property}"
                   }
                 ],
                 "kind": "Test"
@@ -2052,7 +2052,7 @@
                 "leaves": [
                   {
                     "port": "leaf:return",
-                    "name": "Ovr{properties.TaintedGetterAndSetter::my_property}"
+                    "name": "Ovr{properties.TaintedGetterAndSetter.my_property}"
                   }
                 ],
                 "kind": "Test"

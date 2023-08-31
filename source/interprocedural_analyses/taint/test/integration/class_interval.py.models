@@ -317,7 +317,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A0::m2}",
+    "callable": "Ovr{class_interval.A0.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -347,7 +347,37 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A13::g}",
+    "callable": "Ovr{class_interval.A1.m2}",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{class_interval.A13.g}",
     "sources": [
       {
         "port": "result",
@@ -379,7 +409,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A14::m2}",
+    "callable": "Ovr{class_interval.A14.m2}",
     "sources": [
       {
         "port": "result",
@@ -413,7 +443,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A15::m2}",
+    "callable": "Ovr{class_interval.A15.m2}",
     "sources": [
       {
         "port": "result",
@@ -447,7 +477,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A16::m2}",
+    "callable": "Ovr{class_interval.A16.m2}",
     "sources": [
       {
         "port": "result",
@@ -479,37 +509,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A1::m2}",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{class_interval.A2::m2}",
+    "callable": "Ovr{class_interval.A2.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -539,7 +539,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A3::m2}",
+    "callable": "Ovr{class_interval.A3.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -569,7 +569,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A4::m3}",
+    "callable": "Ovr{class_interval.A4.m3}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -599,7 +599,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A5::m2}",
+    "callable": "Ovr{class_interval.A5.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -629,7 +629,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.A6::m0}",
+    "callable": "Ovr{class_interval.A6.m0}",
     "sources": [
       {
         "port": "result",
@@ -683,7 +683,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.B16::m2}",
+    "callable": "Ovr{class_interval.B16.m2}",
     "sources": [
       {
         "port": "result",
@@ -715,7 +715,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.B3::m0}",
+    "callable": "Ovr{class_interval.B3.m0}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -750,7 +750,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.B6::m0}",
+    "callable": "Ovr{class_interval.B6.m0}",
     "sources": [
       {
         "port": "result",
@@ -804,7 +804,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C0::m2}",
+    "callable": "Ovr{class_interval.C0.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -834,7 +834,37 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C13::g}",
+    "callable": "Ovr{class_interval.C1.m2}",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{class_interval.C13.g}",
     "sources": [
       {
         "port": "result",
@@ -866,7 +896,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C14::m2}",
+    "callable": "Ovr{class_interval.C14.m2}",
     "sources": [
       {
         "port": "result",
@@ -900,37 +930,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C1::m2}",
-    "sinks": [
-      {
-        "port": "formal(x)",
-        "taint": [
-          {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "builtins.pyi",
-              "line": -1,
-              "start": -1,
-              "end": -1
-            }
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "Ovr{class_interval.C2::m2}",
+    "callable": "Ovr{class_interval.C2.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -960,7 +960,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C3::m0}",
+    "callable": "Ovr{class_interval.C3.m0}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -995,7 +995,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C3::m2}",
+    "callable": "Ovr{class_interval.C3.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1025,7 +1025,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.C4::m3}",
+    "callable": "Ovr{class_interval.C4.m3}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1055,7 +1055,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.D16::m2}",
+    "callable": "Ovr{class_interval.D16.m2}",
     "sources": [
       {
         "port": "result",
@@ -1087,7 +1087,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.D2::m2}",
+    "callable": "Ovr{class_interval.D2.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1117,7 +1117,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.D5::m2}",
+    "callable": "Ovr{class_interval.D5.m2}",
     "sinks": [
       {
         "port": "formal(x)",
@@ -1147,7 +1147,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_interval.E15::m2}",
+    "callable": "Ovr{class_interval.E15.m2}",
     "sources": [
       {
         "port": "result",

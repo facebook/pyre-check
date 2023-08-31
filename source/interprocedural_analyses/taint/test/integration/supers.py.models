@@ -346,7 +346,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{supers.B::g1}",
+    "callable": "Ovr{supers.B.g1}",
     "sinks": [
       {
         "port": "formal(self)[attribute]",
@@ -381,7 +381,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{supers.C::g1}",
+    "callable": "Ovr{supers.C.g1}",
     "sinks": [
       {
         "port": "formal(self)[attribute]",
@@ -416,7 +416,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{supers.D::g1}",
+    "callable": "Ovr{supers.D.g1}",
     "sinks": [
       {
         "port": "formal(self)[attribute]",

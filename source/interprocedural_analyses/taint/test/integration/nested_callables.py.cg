@@ -14,7 +14,7 @@ nested_callables.outer_calling_other_function (fun) -> [$local_nested_callables?
 nested_callables.test_access_parameter_in_inner_scope_sink (fun) -> [_test_source (fun) nested_callables.access_parameter_in_inner_scope_sink (fun)]
 nested_callables.test_access_parameter_in_inner_scope_tito (fun) -> [_test_sink (fun) _test_source (fun) nested_callables.access_parameter_in_inner_scope_tito (fun)]
 nested_callables.test_access_variables_in_outer_scope_source (fun) -> [_test_sink (fun) nested_callables.access_variables_in_outer_scope_source (fun)]
-$local_nested_callables$g (fun) -> [str::__add__ (method)]
+$local_nested_callables$g (fun) -> [str.__add__ (method)]
 $local_nested_callables?foo$inner (fun) -> [_test_sink (fun) _test_source (fun)]
 $local_nested_callables?outer$inner (fun) -> [_test_sink (fun)]
 nested_callables.$toplevel (fun) -> [nested_callables.g (object)]

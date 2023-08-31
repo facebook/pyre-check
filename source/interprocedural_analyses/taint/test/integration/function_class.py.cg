@@ -1,4 +1,4 @@
 @generated
 Call dependencies
 function_class.$toplevel (fun) -> []
-function_class.test (fun) -> [function_class.test.A::__init__ (method) object::__new__ (method)]
+function_class.test (fun) -> [function_class.test.A.__init__ (method) object.__new__ (method)]

@@ -2,7 +2,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{obscure_tito.C::taint_parameter}",
+    "callable": "Ovr{obscure_tito.C.taint_parameter}",
     "sinks": [
       {
         "port": "formal(tainted_parameter)",
@@ -15,7 +15,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{obscure_tito.C::update}",
+    "callable": "Ovr{obscure_tito.C.update}",
     "tito": [
       {
         "port": "formal(parameter)",
@@ -161,7 +161,7 @@
                 "leaves": [
                   {
                     "port": "leaf:tainted_parameter",
-                    "name": "Ovr{obscure_tito.C::taint_parameter}"
+                    "name": "Ovr{obscure_tito.C.taint_parameter}"
                   }
                 ],
                 "kind": "Test"
