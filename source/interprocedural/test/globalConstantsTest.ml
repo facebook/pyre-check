@@ -89,4 +89,63 @@ let test_from_source context =
     ~expected:["a.y", "123"]
 
 
-let () = "global_constants" >::: ["from_source" >:: test_from_source] |> Test.run
+let test_from_qualifiers context =
+  let from_sources sources =
+    let project = Test.ScratchProject.setup ~context sources in
+    let { ScratchProject.BuiltTypeEnvironment.type_environment; sources } =
+      ScratchProject.build_type_environment project
+    in
+    let qualifiers =
+      List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
+    in
+    GlobalConstants.Heap.from_qualifiers ~environment:type_environment ~qualifiers
+  in
+  let assert_global_constants ~sources ~expected =
+    let global_constants = from_sources sources in
+    let expected =
+      expected
+      |> List.map ~f:(fun (key, value) -> Reference.create key, value)
+      |> GlobalConstants.Heap.of_alist_exn
+    in
+    assert_equal
+      expected
+      global_constants
+      ~printer:GlobalConstants.Heap.show
+      ~cmp:GlobalConstants.Heap.equal
+  in
+  let assert_raises_exception ~sources =
+    try
+      let _ = from_sources sources in
+      assert_failure "Expected an exception to be raised"
+    with
+    | _ -> ()
+  in
+  assert_global_constants
+    ~sources:
+      ["a/__init__.py", {|
+      value = '123'
+    |}; "a/b.py", {|
+      value = '456'
+    |}]
+    ~expected:["a.value", "123"; "a.b.value", "456"];
+  (* The same qualified global variable name can refer to different variables. *)
+  assert_raises_exception
+    ~sources:
+      [
+        ( "a/__init__.py",
+          {|
+      class Test(object):
+        pass
+      b = Test()
+      b.value = '123'
+    |} );
+        "a/b.py", {|
+      value = '456'
+    |};
+      ]
+
+
+let () =
+  "global_constants"
+  >::: ["from_source" >:: test_from_source; "from_qualifiers" >:: test_from_qualifiers]
+  |> Test.run

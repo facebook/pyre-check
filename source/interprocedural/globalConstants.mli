@@ -16,6 +16,11 @@ module Heap : sig
   val empty : t
 
   val from_source : qualifier:Ast.Reference.t -> Source.t -> t
+
+  val from_qualifiers
+    :  environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
+    qualifiers:Reference.t list ->
+    t
 end
 
 module SharedMemory : sig
