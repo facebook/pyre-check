@@ -2,7 +2,7 @@
 Call dependencies
 readonly.$toplevel (fun) -> [readonly._Self_readonly_A__ (object)]
 readonly.readonly_foo_not_tainted (fun) -> [_test_sink (fun)]
-readonly.readonly_foo_tainted (fun) -> [_test_sink (fun)]
+readonly.readonly_foo_tainted (fun) -> [_test_sink (fun) readonly.Foo.tainted (object)]
 readonly.readonly_tito (fun) -> [_test_sink (fun) _test_source (fun) object.__new__ (method) readonly.A.__init__ (method) readonly.A.readonly_tito (method)]
 readonly.regular_foo_not_tainted (fun) -> [_test_sink (fun)]
 readonly.regular_foo_tainted (fun) -> [_test_sink (fun) readonly.Foo.tainted (object)]

@@ -1969,7 +1969,8 @@ struct
     let base_annotation =
       base
       |> CallResolution.resolve_ignoring_optional ~resolution
-      |> CallResolution.ignore_readonly_self
+      |> CallResolution.strip_readonly
+      |> CallResolution.unbind_type_variable
     in
 
     log

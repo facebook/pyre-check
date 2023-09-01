@@ -51,7 +51,6 @@ class Foo:
 
 
 def readonly_foo_tainted(foo: ReadOnly[Foo]) -> None:
-    # TODO(T162446777): ReadOnly False Negative
     _test_sink(foo.tainted)
 
 

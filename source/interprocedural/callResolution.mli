@@ -43,5 +43,8 @@ val defining_attribute
 (* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
 val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
 
-(* Convert `self: ReadOnly[Self]` back to just class instance `self`. No op otherwise *)
-val ignore_readonly_self : Type.t -> Type.t
+(* Convert `self: ReadOnly[X]` back to just `X` *)
+val strip_readonly : Type.t -> Type.t
+
+(* Convert `TypeVar["X", bound="Y"]` to `Y` *)
+val unbind_type_variable : Type.t -> Type.t

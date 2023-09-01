@@ -14,5 +14,5 @@ class Foo:
         self.tainted: str = tainted
 
 def issue(foo: T) -> T:
-    _test_sink(foo.tainted) # TODO(T162475681): False Negative for Bound TypeVar
+    _test_sink(foo.tainted)
     return foo

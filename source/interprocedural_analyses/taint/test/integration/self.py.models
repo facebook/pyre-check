@@ -2725,7 +2725,7 @@
     "callable": "self.Foo.typevar_self_class_direct",
     "sinks": [
       {
-        "port": "formal(self)[__class__][tainted_class]",
+        "port": "formal(self)",
         "taint": [
           {
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
@@ -2737,6 +2737,13 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 44, "start": 19, "end": 23 } ],
             "origin": {
               "filename": "self.py",
               "line": 44,

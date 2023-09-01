@@ -10,20 +10,32 @@ open Interprocedural
 open Test
 
 let test_resolve_ignoring_optional context =
-  let assert_resolved_without_optional ~source ~expression ~expected =
+  let assert_resolved ~source ~expression ~expected =
     let resolution =
       ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
     in
     CallResolution.resolve_ignoring_optional ~resolution (Test.parse_single_expression expression)
     |> assert_equal ~printer:Type.show expected
   in
-  assert_resolved_without_optional
+  assert_resolved
     ~source:{|
     class Data:
       def __init__(self, x: int) -> None: ...
   |}
     ~expression:"x.Data()"
-    ~expected:(Type.Primitive "x.Data")
+    ~expected:(Type.Primitive "x.Data");
+  assert_resolved
+    ~source:
+      {|
+    from pyre_extensions import ReadOnly
+    from typing_extensions import Self
+
+    class Foo:
+      def readonly(self: ReadOnly[Self]) -> ReadOnly[Self]:
+        return self
+  |}
+    ~expression:"x.Foo().readonly()"
+    ~expected:(Type.ReadOnly (Type.Primitive "x.Foo"))
 
 
 let () =

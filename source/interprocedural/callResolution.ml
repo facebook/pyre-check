@@ -156,17 +156,13 @@ let rec resolve_ignoring_optional ~resolution expression =
   Type.optional_value annotation |> Option.value ~default:annotation
 
 
-let unbind_variable = function
+let unbind_type_variable = function
   | Type.Variable { constraints = Type.Record.Variable.Bound bound; _ } -> bound
   | annotation -> annotation
 
 
-let ignore_readonly_self annotation =
+let strip_readonly annotation =
   if Type.ReadOnly.is_readonly annotation then
-    let stripped = Type.ReadOnly.strip_readonly annotation in
-    if Preprocessing.SelfType.is_synthetic_type_variable (Type.show_concise stripped) then
-      unbind_variable stripped
-    else
-      annotation
+    Type.ReadOnly.strip_readonly annotation
   else
     annotation
