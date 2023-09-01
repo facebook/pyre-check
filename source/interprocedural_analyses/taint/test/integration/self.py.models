@@ -1,0 +1,3218 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.foo_class_attributes",
+    "callable_line": 104,
+    "code": 5002,
+    "line": 105,
+    "start": 15,
+    "end": 32,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 105,
+              "start": 15,
+              "end": 32
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 105,
+              "start": 15,
+              "end": 32
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.foo_class_attributes:5002:0:Call|_test_sink|0|formal(arg):113a6a1668fab2c15612987b30e9ff0e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_other",
+    "callable_line": 164,
+    "code": 5002,
+    "line": 170,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 166, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 165,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 170,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_other:5002:0:Call|_test_sink|3|formal(arg):2524d0a5f157f9949fa6cb77805dcbfd"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_other",
+    "callable_line": 164,
+    "code": 5002,
+    "line": 169,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 166, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 165,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 169,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_other:5002:0:Call|_test_sink|2|formal(arg):d10d76d1e8d7b8363cba76697439f110"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_self",
+    "callable_line": 150,
+    "code": 5002,
+    "line": 156,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 152, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 151,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 156,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_self:5002:0:Call|_test_sink|3|formal(arg):01a48533279d2a89e6877f3abe5de572"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_self",
+    "callable_line": 150,
+    "code": 5002,
+    "line": 155,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 152, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 151,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 155,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_self:5002:0:Call|_test_sink|2|formal(arg):11d2a8586740eb4dad46a23bc089b816"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_untyped_self",
+    "callable_line": 178,
+    "code": 5002,
+    "line": 186,
+    "start": 15,
+    "end": 44,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 180, "start": 8, "end": 10 },
+              { "line": 186, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 180, "start": 8, "end": 10 },
+              { "line": 186, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 186,
+              "start": 15,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "not_tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_untyped_self:5002:0:Call|_test_sink|4|formal(arg):a327855ca17b69b3d9eb73acc4570a3b"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_untyped_self",
+    "callable_line": 178,
+    "code": 5002,
+    "line": 184,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 180, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 184,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_untyped_self:5002:0:Call|_test_sink|3|formal(arg):2ef55134d0df5592298c7020d041f203"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_untyped_self",
+    "callable_line": 178,
+    "code": 5002,
+    "line": 183,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 180, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 183,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_untyped_self:5002:0:Call|_test_sink|2|formal(arg):031848cea68535bacda42ab0dad8e576"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.selftype_access_untyped_self",
+    "callable_line": 178,
+    "code": 5002,
+    "line": 181,
+    "start": 15,
+    "end": 40,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 181,
+              "start": 15,
+              "end": 40
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 180, "start": 8, "end": 10 },
+              { "line": 181, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 180, "start": 8, "end": 10 },
+              { "line": 181, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 179,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 181,
+              "start": 15,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "tito-broadening" },
+      { "via": "tito" },
+      { "via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.selftype_access_untyped_self:5002:0:Call|_test_sink|0|formal(arg):4006b8987dad024a32cf5ce8cca03054"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_other",
+    "callable_line": 136,
+    "code": 5002,
+    "line": 144,
+    "start": 15,
+    "end": 44,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 138, "start": 8, "end": 10 },
+              { "line": 144, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 138, "start": 8, "end": 10 },
+              { "line": 144, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 144,
+              "start": 15,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "not_tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_other:5002:0:Call|_test_sink|4|formal(arg):989e429b8dfed038736ecd2eeb886ad8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_other",
+    "callable_line": 136,
+    "code": 5002,
+    "line": 142,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 138, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 142,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_other:5002:0:Call|_test_sink|3|formal(arg):32764f4895d09617a755f0e776e4b4cc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_other",
+    "callable_line": 136,
+    "code": 5002,
+    "line": 141,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 138, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 141,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_other:5002:0:Call|_test_sink|2|formal(arg):304d2abb36f15cbc355d6e087e86a70c"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_other",
+    "callable_line": 136,
+    "code": 5002,
+    "line": 139,
+    "start": 15,
+    "end": 40,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 139,
+              "start": 15,
+              "end": 40
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 138, "start": 8, "end": 10 },
+              { "line": 139, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 138, "start": 8, "end": 10 },
+              { "line": 139, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 137,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 139,
+              "start": 15,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "tito-broadening" },
+      { "via": "tito" },
+      { "via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_other:5002:0:Call|_test_sink|0|formal(arg):56abeef9457a343350c5fcdee0cc03a2"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_self",
+    "callable_line": 122,
+    "code": 5002,
+    "line": 130,
+    "start": 15,
+    "end": 44,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 124, "start": 8, "end": 10 },
+              { "line": 130, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 124, "start": 8, "end": 10 },
+              { "line": 130, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 130,
+              "start": 15,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "not_tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_self:5002:0:Call|_test_sink|4|formal(arg):73b70ae2fc36bad1f59b35c4451d39f4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_self",
+    "callable_line": 122,
+    "code": 5002,
+    "line": 128,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 124, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 128,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_self:5002:0:Call|_test_sink|3|formal(arg):0f5817d87b88ab806b4a51f97cd00c44"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_self",
+    "callable_line": 122,
+    "code": 5002,
+    "line": 127,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_instance" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 124, "start": 8, "end": 10 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 127,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_self:5002:0:Call|_test_sink|2|formal(arg):b503e18862933d5e40f05292df974098"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.typevar_access_self",
+    "callable_line": 122,
+    "code": 5002,
+    "line": 125,
+    "start": 15,
+    "end": 40,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 125,
+              "start": 15,
+              "end": 40
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 124, "start": 8, "end": 10 },
+              { "line": 125, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [
+              { "line": 124, "start": 8, "end": 10 },
+              { "line": 125, "start": 15, "end": 16 }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 123,
+                "start": 13,
+                "end": 24
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 125,
+              "start": 15,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "tito-broadening" },
+      { "via": "tito" },
+      { "via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.typevar_access_self:5002:0:Call|_test_sink|0|formal(arg):e3a97e9195fccb4d2e82ff190dba7367"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.untyped_access_self",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 116,
+    "start": 15,
+    "end": 44,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 15, "end": 16 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "not_tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 116, "start": 15, "end": 16 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 116,
+              "start": 15,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "not_tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "obscure:model" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 4,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.untyped_access_self:5002:0:Call|_test_sink|4|formal(arg):7decb117020b2629c84b438d0787e4a0"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.untyped_access_self",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 114,
+    "start": 15,
+    "end": 39,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_extra_instance" }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 114,
+              "start": 15,
+              "end": 39
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_extra_instance" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 3,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.untyped_access_self:5002:0:Call|_test_sink|3|formal(arg):f54667a587b99d3517a63348a95c21d5"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.untyped_access_self",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 113,
+    "start": 15,
+    "end": 33,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" }, { "first-field": "tainted_instance" }
+            ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 113,
+              "start": 15,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_instance" },
+      { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 2,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.untyped_access_self:5002:0:Call|_test_sink|2|formal(arg):bbaaf5ed89150dea5572cea6184a6210"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.untyped_access_self",
+    "callable_line": 109,
+    "code": 5002,
+    "line": 111,
+    "start": 15,
+    "end": 40,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 111,
+              "start": 15,
+              "end": 40
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 15, "end": 16 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_extra_instance]"
+            }
+          },
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": true,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-field" },
+              { "first-field": "tainted_class" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 111, "start": 15, "end": 16 } ],
+            "call": {
+              "position": {
+                "filename": "self.py",
+                "line": 110,
+                "start": 8,
+                "end": 19
+              },
+              "resolves_to": [ "self.Foo.__init__" ],
+              "port": "result[tainted_instance]"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 111,
+              "start": 15,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-field" },
+      { "first-field": "tainted_class" },
+      { "via": "special_source" },
+      { "always-via": "special_sink" },
+      { "via": "obscure:model" },
+      { "via": "tito-broadening" },
+      { "via": "tito" },
+      { "via": "broadening" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.untyped_access_self:5002:0:Call|_test_sink|0|formal(arg):a9d717cff292e863a729950c3fcdef35"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{self.Foo.__class__.tainted_class}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.__init__",
+    "sources": [
+      {
+        "port": "formal(tainted_instance)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result[tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 20,
+              "start": 43,
+              "end": 57
+            }
+          }
+        ]
+      },
+      {
+        "port": "result[tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:tainted_instance",
+                    "name": "self.Foo.__init__"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 17,
+              "start": 23,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(not_tainted_instance)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[not_tainted_instance]": 3 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(tainted_instance)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[tainted_instance]": 3 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_access_other",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_access_self",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_access_untyped_self",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_self_class",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 77,
+              "start": 19,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_self_class_direct",
+    "sinks": [
+      {
+        "port": "formal(self)[__class__][tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 73,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_self_extra_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 85,
+              "start": 19,
+              "end": 46
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_self_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 81,
+              "start": 19,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.selftype_self_not_tainted",
+    "sinks": [
+      {
+        "port": "formal(self)[not_tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 89,
+              "start": 19,
+              "end": 41
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 91,
+              "start": 19,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 90,
+              "start": 19,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_access_other",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_access_self",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_self_class",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 48,
+              "start": 19,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_self_class_direct",
+    "sinks": [
+      {
+        "port": "formal(self)[__class__][tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 44,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_self_extra_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 56,
+              "start": 19,
+              "end": 46
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_self_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 52,
+              "start": 19,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.typevar_self_not_tainted",
+    "sinks": [
+      {
+        "port": "formal(self)[not_tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 60,
+              "start": 19,
+              "end": 41
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 62,
+              "start": 19,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 61,
+              "start": 19,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_access_self",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_self_class",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 27,
+              "start": 19,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_self_class_direct",
+    "sinks": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "obscure:model" },
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" }
+            ],
+            "tito_positions": [ { "line": 24, "start": 19, "end": 23 } ],
+            "origin": {
+              "filename": "self.py",
+              "line": 24,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "self.Foo.untyped_self_class_direct",
+    "callable_line": 23,
+    "code": 5002,
+    "line": 24,
+    "start": 19,
+    "end": 47,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 24,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 24,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.Foo.untyped_self_class_direct:5002:0:Call|_test_sink|0|formal(arg):33e9f88a00753ad8d03b3670dc5ea79a"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_self_extra_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 33,
+              "start": 19,
+              "end": 46
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_self_instance",
+    "sinks": [
+      {
+        "port": "formal(self)[tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 30,
+              "start": 19,
+              "end": 40
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "self.Foo.untyped_self_not_tainted",
+    "sinks": [
+      {
+        "port": "formal(self)[not_tainted_class]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 36,
+              "start": 19,
+              "end": 41
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_extra_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 38,
+              "start": 19,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(self)[not_tainted_instance]",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 37,
+              "start": 19,
+              "end": 44
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
