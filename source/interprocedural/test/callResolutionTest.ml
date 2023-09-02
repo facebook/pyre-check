@@ -9,12 +9,12 @@ open OUnit2
 open Interprocedural
 open Test
 
-let test_resolve_ignoring_optional context =
+let test_resolve_ignoring_errors context =
   let assert_resolved ~source ~expression ~expected =
     let resolution =
       ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
     in
-    CallResolution.resolve_ignoring_optional ~resolution (Test.parse_single_expression expression)
+    CallResolution.resolve_ignoring_errors ~resolution (Test.parse_single_expression expression)
     |> assert_equal ~printer:Type.show expected
   in
   assert_resolved
@@ -35,10 +35,10 @@ let test_resolve_ignoring_optional context =
         return self
   |}
     ~expression:"x.Foo().readonly()"
-    ~expected:(Type.ReadOnly (Type.Primitive "x.Foo"))
+    ~expected:(Type.Primitive "x.Foo")
 
 
 let () =
   "interproceduralCallResolution"
-  >::: ["resolve_ignoring_optional" >:: test_resolve_ignoring_optional]
+  >::: ["resolve_ignoring_errors" >:: test_resolve_ignoring_errors]
   |> Test.run

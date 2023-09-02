@@ -5058,10 +5058,9 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~receiver_type:
-                          (Type.ReadOnly
-                             (Type.parametric
-                                "typing.MutableMapping"
-                                [Single Type.string; Single Type.Any]))
+                          (Type.parametric
+                             "typing.MutableMapping"
+                             [Single Type.string; Single Type.Any])
                         ~return_type:(Some ReturnType.none)
                         (Target.Method
                            { class_name = "typing.Mapping"; method_name = "get"; kind = Normal });

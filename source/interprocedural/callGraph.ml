@@ -1046,7 +1046,7 @@ let rec callee_kind ~resolution callee callee_type =
   | Type.Callable _ -> (
       match Node.value callee with
       | Expression.Name (Name.Attribute { base; _ }) ->
-          let parent_type = CallResolution.resolve_ignoring_optional ~resolution base in
+          let parent_type = CallResolution.resolve_ignoring_errors ~resolution base in
           let is_class () =
             let primitive, _ = Type.split parent_type in
             Type.primitive_name primitive
@@ -1525,7 +1525,7 @@ let resolve_recognized_callees
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
-      CallResolution.resolve_ignoring_optional ~resolution base
+      CallResolution.resolve_ignoring_errors ~resolution base
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~resolution
@@ -1612,7 +1612,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
   | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
       (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
          classes in the Method Resolution Order. *)
-      match CallResolution.resolve_ignoring_optional ~resolution base with
+      match CallResolution.resolve_ignoring_errors ~resolution base with
       | Type.Primitive class_name
       | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
           let find_attribute element =
@@ -1856,7 +1856,7 @@ struct
   let attribute_targets = Context.attribute_targets
 
   let resolve_regular_callees ~resolution ~override_graph ~call_indexer ~return_type ~callee =
-    let callee_type = CallResolution.resolve_ignoring_optional ~resolution callee in
+    let callee_type = CallResolution.resolve_ignoring_errors ~resolution callee in
     log
       "Checking if `%a` is a callable, resolved type is `%a`"
       Expression.pp
@@ -1966,12 +1966,7 @@ struct
       ~special
       ~setter
     =
-    let base_annotation =
-      base
-      |> CallResolution.resolve_ignoring_optional ~resolution
-      |> CallResolution.strip_readonly
-      |> CallResolution.unbind_type_variable
-    in
+    let base_annotation = CallResolution.resolve_ignoring_errors ~resolution base in
 
     log
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \

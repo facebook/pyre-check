@@ -40,11 +40,6 @@ val defining_attribute
   string ->
   AnnotatedAttribute.instantiated_annotation AnnotatedAttribute.t option
 
-(* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
-val resolve_ignoring_optional : resolution:Resolution.t -> Ast.Expression.t -> Type.t
-
-(* Convert `self: ReadOnly[X]` back to just `X` *)
-val strip_readonly : Type.t -> Type.t
-
-(* Convert `TypeVar["X", bound="Y"]` to `Y` *)
-val unbind_type_variable : Type.t -> Type.t
+(* Resolve an expression into a type, ignoring
+ * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
+val resolve_ignoring_errors : resolution:Resolution.t -> Ast.Expression.t -> Type.t

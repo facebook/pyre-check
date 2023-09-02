@@ -41,7 +41,7 @@ class Foo:
         return self
 
     def typevar_self_class_direct(self: TFoo) -> TFoo:
-        _test_sink(self.__class__.tainted_class)  # TODO(T162456424): False Negative attribute access through typevar
+        _test_sink(self.__class__.tainted_class)
         return self
 
     def typevar_self_class(self: TFoo) -> TFoo:

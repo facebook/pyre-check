@@ -2768,6 +2768,77 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "self.Foo.typevar_self_class_direct",
+    "callable_line": 43,
+    "code": 5002,
+    "line": 44,
+    "start": 19,
+    "end": 47,
+    "filename": "self.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "port": "leaf:return",
+                    "name": "Obj{self.Foo.__class__.tainted_class}"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 44,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "self.py",
+              "line": 44,
+              "start": 19,
+              "end": 47
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "self.Foo.typevar_self_class_direct:5002:0:Call|_test_sink|0|formal(arg):7b9a9c9751af87d467cb814daebc5132"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_extra_instance",

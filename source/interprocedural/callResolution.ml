@@ -129,8 +129,23 @@ let defining_attribute ~resolution parent_type attribute =
     Resolution.fallback_attribute ~resolution ~name:attribute class_name
 
 
-(* Resolve an expression into a type, ignoring errors related to accessing `None`. *)
-let rec resolve_ignoring_optional ~resolution expression =
+(* Convert `TypeVar["X", bound="Y"]` to `Y` *)
+let unbind_type_variable = function
+  | Type.Variable { constraints = Type.Record.Variable.Bound bound; _ } -> bound
+  | annotation -> annotation
+
+
+(* Convert `ReadOnly[X]` back to just `X` *)
+let strip_readonly annotation =
+  if Type.ReadOnly.is_readonly annotation then
+    Type.ReadOnly.strip_readonly annotation
+  else
+    annotation
+
+
+(* Resolve an expression into a type, ignoring
+ * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
+let rec resolve_ignoring_errors ~resolution expression =
   let resolve_expression_to_type expression =
     match resolve_ignoring_untracked ~resolution expression, Node.value expression with
     | ( Type.Callable ({ Type.Callable.kind = Anonymous; _ } as callable),
@@ -144,7 +159,7 @@ let rec resolve_ignoring_optional ~resolution expression =
     match Node.value expression with
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         let base_type =
-          resolve_ignoring_optional ~resolution base
+          resolve_ignoring_errors ~resolution base
           |> fun annotation -> Type.optional_value annotation |> Option.value ~default:annotation
         in
         match defining_attribute ~resolution base_type attribute with
@@ -153,16 +168,8 @@ let rec resolve_ignoring_optional ~resolution expression =
         (* Lookup the base_type for the attribute you were interested in *))
     | _ -> resolve_expression_to_type expression
   in
-  Type.optional_value annotation |> Option.value ~default:annotation
-
-
-let unbind_type_variable = function
-  | Type.Variable { constraints = Type.Record.Variable.Bound bound; _ } -> bound
-  | annotation -> annotation
-
-
-let strip_readonly annotation =
-  if Type.ReadOnly.is_readonly annotation then
-    Type.ReadOnly.strip_readonly annotation
-  else
-    annotation
+  annotation
+  |> Type.optional_value
+  |> Option.value ~default:annotation
+  |> strip_readonly
+  |> unbind_type_variable
