@@ -89,3 +89,7 @@ def test_collapse_depth():
     x = {"a": _test_source()}
     y = should_collapse_depth_zero(x, C())
     _test_sink(y["b"])
+
+
+def test_skip_obscure_via_model_query(arg):
+    ...

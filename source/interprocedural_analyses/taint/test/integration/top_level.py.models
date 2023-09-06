@@ -381,7 +381,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {

@@ -305,6 +305,7 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }

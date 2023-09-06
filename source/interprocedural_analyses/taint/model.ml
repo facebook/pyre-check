@@ -213,6 +213,7 @@ module Mode = struct
 
   type t =
     | Obscure
+    | SkipObscure (* Don't treat as obscure *)
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
     | SkipOverrides
@@ -223,6 +224,7 @@ module Mode = struct
 
   let pp formatter = function
     | Obscure -> Format.fprintf formatter "Obscure"
+    | SkipObscure -> Format.fprintf formatter "SkipObscure"
     | SkipAnalysis -> Format.fprintf formatter "SkipAnalysis"
     | SkipDecoratorWhenInlining -> Format.fprintf formatter "SkipDecoratorWhenInlining"
     | SkipOverrides -> Format.fprintf formatter "SkipOverrides"
@@ -237,6 +239,7 @@ module Mode = struct
 
   let from_string = function
     | "Obscure" -> Some Obscure
+    | "SkipObscure" -> Some SkipObscure
     | "SkipAnalysis" -> Some SkipAnalysis
     | "SkipDecoratorWhenInlining" -> Some SkipDecoratorWhenInlining
     | "SkipOverrides" -> Some SkipOverrides
@@ -260,6 +263,16 @@ module ModeSet = struct
 
   let pp formatter modes =
     Format.fprintf formatter "  Modes: %s" (json_to_string ~indent:"    " (to_json modes))
+
+
+  let join_user_modes left right =
+    let result = join left right in
+    (* If one model has `@SkipObscure` and the other does not, we expect the
+     * joined model to have `@SkipObscure` and not `@Obscure`. *)
+    if contains SkipObscure result then
+      remove Obscure result
+    else
+      result
 end
 
 type t = {
@@ -656,16 +669,10 @@ let join_every_frame_with_attach
 
 (* A special case of join, only used for user-provided models. *)
 let join_user_models ({ modes = left_modes; _ } as left) ({ modes = right_modes; _ } as right) =
-  let update_obscure_mode ({ modes; _ } as model) =
-    (* If one model has @SkipObscure and the other does not, we expect the joined model to also have
-       @SkipObscure *)
-    if (not (ModeSet.contains Obscure left_modes)) || not (ModeSet.contains Obscure right_modes)
-    then
-      { model with modes = ModeSet.subtract (ModeSet.singleton Obscure) ~from:modes }
-    else
-      model
+  let join_user_modes model =
+    { model with modes = ModeSet.join_user_modes left_modes right_modes }
   in
-  join left right |> update_obscure_mode |> join_every_frame_with_attach |> may_breadcrumbs_to_must
+  join left right |> join_user_modes |> join_every_frame_with_attach |> may_breadcrumbs_to_must
 
 
 let to_json

@@ -458,7 +458,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {

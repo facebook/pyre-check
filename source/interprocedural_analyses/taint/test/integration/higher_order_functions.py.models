@@ -996,7 +996,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {

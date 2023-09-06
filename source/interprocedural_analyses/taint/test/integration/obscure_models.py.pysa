@@ -20,3 +20,13 @@ def obscure_models.C.obscure_with_multiple_models(self, x, y): ...
 def obscure_models.C.obscure_with_multiple_models(self, x, y: TaintInTaintOut[LocalReturn]): ...
 
 def obscure_models.C.obscure_with_tito(self, x: TaintInTaintOut[Via[a_feature]]): ...
+
+ModelQuery(
+  name = "skip_obscure_model_query",
+  find = "functions",
+  where = [name.equals("test_skip_obscure_via_model_query")],
+  model = [
+    Parameters(TaintInTaintOut),
+    Modes([SkipObscure])
+  ]
+)

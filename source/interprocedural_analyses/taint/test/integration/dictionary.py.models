@@ -2126,7 +2126,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {
@@ -3751,7 +3752,8 @@
         "port": "formal(__key)",
         "tito": { "sources": "All", "sinks": "All" }
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }
 {
@@ -3781,6 +3783,7 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "SkipObscure" ]
   }
 }

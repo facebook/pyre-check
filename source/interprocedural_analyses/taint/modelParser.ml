@@ -2556,7 +2556,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.Sanitize annotations ->
           Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
   | ModelAnnotation.ModeAnnotation model_query_modes ->
-      Ok { model with modes = Model.ModeSet.join model_query_modes model.modes }
+      Ok { model with modes = Model.ModeSet.join_user_modes model_query_modes model.modes }
 
 
 let parse_return_taint
@@ -2822,15 +2822,11 @@ let adjust_sanitize_and_modes_and_skipped_override
           ~original_expression
           arguments
         >>| fun sanitizers -> sanitizers, modes
-    | "SkipAnalysis" -> Ok (sanitizers, Model.ModeSet.add SkipAnalysis modes)
-    | "SkipDecoratorWhenInlining" ->
-        Ok (sanitizers, Model.ModeSet.add SkipDecoratorWhenInlining modes)
-    | "SkipOverrides" -> Ok (sanitizers, Model.ModeSet.add SkipOverrides modes)
-    | "SkipObscure" -> Ok (sanitizers, Model.ModeSet.remove Obscure modes)
-    | "Entrypoint" -> Ok (sanitizers, Model.ModeSet.add Entrypoint modes)
-    | "IgnoreDecorator" -> Ok (sanitizers, Model.ModeSet.add IgnoreDecorator modes)
-    | "SkipModelBroadening" -> Ok (sanitizers, Model.ModeSet.add SkipModelBroadening modes)
-    | _ -> Ok (sanitizers, modes)
+    | _ -> (
+        match Model.Mode.from_string name with
+        | Some mode ->
+            Ok (sanitizers, Model.ModeSet.join_user_modes modes (Model.ModeSet.singleton mode))
+        | _ -> Ok (sanitizers, modes))
   in
   List.fold_result
     top_level_decorators

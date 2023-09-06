@@ -39,6 +39,7 @@ end
 module Mode : sig
   type t =
     | Obscure
+    | SkipObscure (* Don't treat as obscure *)
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
     | SkipOverrides
@@ -68,6 +69,8 @@ module ModeSet : sig
   val contains : Mode.t -> t -> bool
 
   val join : t -> t -> t
+
+  val join_user_modes : t -> t -> t
 end
 
 type t = {
