@@ -72,7 +72,8 @@ def detect_opam_version() -> Tuple[int]:
     version = subprocess.check_output(["opam", "--version"], universal_newlines=True)
 
     try:
-        version = tuple(map(int, version.strip().split(".")))
+        version_semver = version.strip().split('~')[0]
+        version = tuple(map(int, version_semver.split(".")))
     except ValueError:
         LOG.error("Failed to parse output of `opam --version`: `{}`", version.strip())
         raise OpamVersionParseError
