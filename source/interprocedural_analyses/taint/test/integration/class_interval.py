@@ -273,7 +273,7 @@ B7: [3,4]
 """
 
 
-class B7(object):
+class B7:
     def foo(self):
         return self.bar()  # Interval: [3,4]
 
@@ -281,7 +281,7 @@ class B7(object):
         return _test_source()  # Interval: [3,4]
 
 
-class A7(object):
+class A7:
     def bar(self, x):
         return x
 

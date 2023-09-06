@@ -31,7 +31,7 @@ def function2(foo, *bar) -> bool:
     return True
 
 
-class TestClass(object):
+class TestClass:
     def method1(self, foo) -> bool:
         return True
 
