@@ -1253,6 +1253,8 @@ This model clause is different from the others in this section in the sense that
 
 The available modes are:
 - [`Obscure`](pysa_advanced.md#obscure-models)
+  - Marks the function or method as obscure
+- [`SkipObscure`](pysa_advanced.md#obscure-models)
   - Prevents a function or method from being marked as obscure
 - [`SkipAnalysis`](pysa_advanced.md#prevent-inferring-models-with-skipanalysis)
   - Skips inference of the function or model targeted, and forces the use of user-defined models for taint flow
