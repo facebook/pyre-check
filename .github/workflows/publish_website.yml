@@ -10,9 +10,6 @@ on:
 jobs:
   build_docs_job:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.6]
     steps:
     - name: Checkout
       uses: actions/checkout@v3
@@ -21,13 +18,13 @@ jobs:
         cd documentation/website
         yarn install
         yarn run build
-      id: build
+        echo "OUTPUT_TIME=$(date +'%Y-%m-%d %H:%M:%S')" >> $GITHUB_ENV
     - name: Get output time
-      run: echo "The time was ${{ steps.build.outputs.time }}"
+      run: echo "The time was ${{ env.OUTPUT_TIME }} (UTC)"
     - name: Deploy
       if: ${{ github.event_name == 'push' }}
       uses: JamesIves/github-pages-deploy-action@releases/v4
       with:
-          ACCESS_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          TOKEN: ${{ secrets.GITHUB_TOKEN }}
           BRANCH: gh-pages # The branch the action should deploy to.
           FOLDER: documentation/website/build # The folder the action should deploy.
