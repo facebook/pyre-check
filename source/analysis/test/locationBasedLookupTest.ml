@@ -1526,6 +1526,41 @@ let test_resolve_definition_for_symbol context =
   assert_resolved_definition_with_location_string
     ~source:
       {|
+        MY_GLOBAL = "hello"
+
+        def main() -> int:
+          def nested() -> void:
+            MY_GLOBAL.capitalize()
+            #    ^- cursor
+    |}
+    (Some "test:2:0-2:9");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        def my_global() -> int:
+          return 21
+
+        def main() -> int:
+          def nested() -> void:
+            my_global()
+            #    ^- cursor
+    |}
+    (Some "test:2:0-3:11");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        class Global_Class():
+          pass
+
+        def main() -> int:
+          def nested() -> void:
+            Global_Class()
+            #    ^- cursor
+    |}
+    (Some "test:2:0-3:6");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
         from typing import Callable
 
         Foo = list[int]
