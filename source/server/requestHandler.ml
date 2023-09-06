@@ -125,6 +125,47 @@ let create_type_errors_response ~configuration ~build_system errors_environment 
           ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment)))
 
 
+let process_successful_rebuild
+    ~configuration
+    ~subscriptions
+    ~build_system
+    ~overlaid_environment
+    changed_paths_from_filesystem
+    changed_paths_from_rebuild
+  =
+  let open Lwt.Infix in
+  Subscription.batch_send
+    ~response:(create_status_update_response Response.ServerStatus.Rechecking)
+    subscriptions
+  >>= fun () ->
+  let changed_paths =
+    List.concat_map changed_paths_from_filesystem ~f:(create_artifact_path_event ~build_system)
+    |> List.append changed_paths_from_rebuild
+    |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
+  in
+  let () =
+    Scheduler.with_scheduler
+      ~configuration
+      ~should_log_exception:(fun _ -> true)
+      ~f:(fun scheduler ->
+        OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths)
+  in
+  let type_error_subscriptions, status_change_subscriptions =
+    List.partition_tf subscriptions ~f:Subscription.wants_type_errors
+  in
+  Subscription.batch_send
+    type_error_subscriptions
+    ~response:
+      (create_type_errors_response
+         ~configuration
+         ~build_system
+         (OverlaidEnvironment.root overlaid_environment))
+  >>= fun () ->
+  Subscription.batch_send
+    status_change_subscriptions
+    ~response:(create_status_update_response Response.ServerStatus.Ready)
+
+
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:({ ServerState.overlaid_environment; subscriptions; build_system; _ } as state)
@@ -133,7 +174,6 @@ let process_incremental_update_request
   let open Lwt.Infix in
   let paths = List.map paths ~f:PyrePath.create_absolute in
   let subscriptions = ServerState.Subscriptions.all subscriptions in
-  let errors_environment = OverlaidEnvironment.root overlaid_environment in
   match CriticalFile.find critical_files ~within:paths with
   | Some path ->
       let reason = Stop.Reason.CriticalFileUpdate path in
@@ -149,33 +189,12 @@ let process_incremental_update_request
         subscriptions
       >>= fun () ->
       BuildSystem.update build_system source_path_events
-      >>= fun changed_paths_from_rebuild ->
-      Subscription.batch_send
-        ~response:(create_status_update_response Response.ServerStatus.Rechecking)
-        subscriptions
-      >>= fun () ->
-      let changed_paths =
-        List.concat_map source_path_events ~f:(create_artifact_path_event ~build_system)
-        |> List.append changed_paths_from_rebuild
-        |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
-      in
-      let () =
-        Scheduler.with_scheduler
-          ~configuration
-          ~should_log_exception:(fun _ -> true)
-          ~f:(fun scheduler ->
-            OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths)
-      in
-      let type_error_subscriptions, status_change_subscriptions =
-        List.partition_tf subscriptions ~f:Subscription.wants_type_errors
-      in
-      Subscription.batch_send
-        type_error_subscriptions
-        ~response:(create_type_errors_response ~configuration ~build_system errors_environment)
-      >>= fun () ->
-      Subscription.batch_send
-        status_change_subscriptions
-        ~response:(create_status_update_response Response.ServerStatus.Ready)
+      >>= process_successful_rebuild
+            ~configuration
+            ~subscriptions
+            ~build_system
+            ~overlaid_environment
+            source_path_events
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state
