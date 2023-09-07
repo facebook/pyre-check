@@ -5,17 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
-
-[@@@warning "-27"]
-
-open Core
-open Ast
-open Statement
-open Pyre
-open Expression
-module Error = AnalysisError
-
 (** This module allows us to statically catch `RuntimeWarning`s that "coroutine `foo` was never
     awaited".
 
@@ -57,6 +46,13 @@ module Error = AnalysisError
     mark the original awaitable as awaited. So, whenever we detect that a variable is being assigned
     some other variable, we copy over all the awaitables that are pointed to by the other variable. *)
 
+open Core
+open Ast
+open Statement
+open Pyre
+open Expression
+module Error = AnalysisError
+
 (* Return true if the expression is of an awaitable type that will lead to a `RuntimeWarning` that
    `coroutine ... was never awaited`.
 
@@ -72,7 +68,7 @@ module Error = AnalysisError
    which is seen as a function returning an awaitable, since `BuilderClass` satisfies `Awaitable`.
    Given that there is no RuntimeWarning for classes with hand-rolled `__await__`, we can leave them
    out of our analysis. *)
-let can_lead_to_runtime_warning_if_unawaited ~global_resolution = function
+let can_lead_to_runtime_warning_if_unawaited ~global_resolution:_ = function
   | Type.Parametric { name = "typing.Coroutine" | "typing.Awaitable" | "asyncio.futures.Future"; _ }
     ->
       true
