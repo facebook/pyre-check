@@ -102,7 +102,7 @@ def dict_get():
     d = {"a": {0: source()}}
     sink(d.get("a")[0])  # This is an issue.
     sink(d.get("a")[1])  # This is NOT an issue.
-    sink(d.get("b")[0])  # This is currently an issue (false positive).
+    sink(d.get("b")[0])  # This is NOT an issue.
     sink(d.get("b")[1])  # This is NOT an issue.
 
 

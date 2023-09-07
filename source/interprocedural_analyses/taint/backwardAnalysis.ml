@@ -1713,6 +1713,43 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         analyze_expression ~resolution ~taint ~state ~expression:base
     | {
+     callee = { Node.value = Name (Name.Attribute { base; attribute = "get"; _ }); _ };
+     arguments =
+       {
+         Call.Argument.value =
+           {
+             Node.value = Expression.Constant (Constant.String { StringLiteral.value = index; _ });
+             _;
+           };
+         name = None;
+       }
+       :: (([] | [_]) as optional_arguments);
+    }
+      when CallGraph.CallCallees.is_mapping_method callees ->
+        let index = Abstract.TreeDomain.Label.Index index in
+        let taint = add_type_breadcrumbs taint in
+        let state =
+          match optional_arguments with
+          | [{ Call.Argument.value = default_expression; _ }] ->
+              let taint =
+                BackwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:default_expression.Node.location
+                  taint
+              in
+              analyze_expression ~resolution ~taint ~state ~expression:default_expression
+          | [] -> state
+          | _ -> failwith "unreachable"
+        in
+        let taint =
+          taint
+          |> BackwardState.Tree.prepend [index]
+          |> BackwardState.Tree.add_local_first_index index
+          |> BackwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:base.Node.location
+        in
+        analyze_expression ~resolution ~taint ~state ~expression:base
+    | {
      Call.callee =
        {
          Node.value =

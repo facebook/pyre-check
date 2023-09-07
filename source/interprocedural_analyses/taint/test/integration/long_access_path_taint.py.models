@@ -274,27 +274,31 @@
         ]
       },
       {
-        "port": "formal(params)",
+        "port": "formal(params)[app_id]",
         "taint": [
           {
             "kinds": [
-              {
-                "return_paths": { "[timestamp]": 0, "[app_id]": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
+              { "return_paths": { "[app_id]": 3 }, "kind": "LocalReturn" }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "app_id" },
-              { "first-index": "timestamp" },
-              { "always-via": "obscure:model" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "app_id" }
             ],
-            "tito_positions": [
-              { "line": 15, "start": 25, "end": 31 },
-              { "line": 16, "start": 22, "end": 28 }
+            "tito_positions": [ { "line": 16, "start": 22, "end": 28 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(params)[timestamp]",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[timestamp]": 3 }, "kind": "LocalReturn" }
             ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "timestamp" }
+            ],
+            "tito_positions": [ { "line": 15, "start": 25, "end": 31 } ],
             "tito": null
           }
         ]
@@ -354,17 +358,21 @@
             "kinds": [
               {
                 "return_paths": {
-                  "[timestamp]": 0,
+                  "[timestamp]": 3,
                   "[request]": 0,
                   "[kind]": 0,
-                  "[app_id]": 0
+                  "[app_id]": 3
                 },
                 "length": 1,
                 "kind": "LocalReturn"
               }
             ],
             "local_features": [
-              { "always-via": "obscure:model" }, { "always-via": "tito" }
+              { "via": "obscure:model" },
+              { "via": "model-shaping" },
+              { "always-via": "tito" },
+              { "via": "broadening" },
+              { "via": "model-tito-shaping" }
             ],
             "tito_positions": [
               { "line": 24, "start": 19, "end": 25 },

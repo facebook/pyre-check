@@ -1896,6 +1896,50 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
           in
           taint, state
+      | {
+       callee = { Node.value = Name (Name.Attribute { base; attribute = "get"; _ }); _ };
+       arguments =
+         {
+           Call.Argument.value =
+             {
+               Node.value = Expression.Constant (Constant.String { StringLiteral.value = index; _ });
+               _;
+             };
+           name = None;
+         }
+         :: (([] | [_]) as optional_arguments);
+      }
+        when CallGraph.CallCallees.is_mapping_method callees ->
+          let index = Abstract.TreeDomain.Label.Index index in
+          let taint, state =
+            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+            |>> ForwardState.Tree.read [index]
+            |>> ForwardState.Tree.add_local_first_index index
+            |>> ForwardState.Tree.transform
+                  Features.TitoPositionSet.Element
+                  Add
+                  ~f:base.Node.location
+          in
+          let taint, state =
+            match optional_arguments with
+            | [{ Call.Argument.value = default_expression; _ }] ->
+                let default_taint, state =
+                  analyze_expression
+                    ~resolution
+                    ~state
+                    ~is_result_used
+                    ~expression:default_expression
+                  |>> ForwardState.Tree.transform
+                        Features.TitoPositionSet.Element
+                        Add
+                        ~f:default_expression.Node.location
+                in
+                ForwardState.Tree.join taint default_taint, state
+            | [] -> taint, state
+            | _ -> failwith "unreachable "
+          in
+          let taint = add_type_breadcrumbs taint in
+          taint, state
       (* `locals()` is a dictionary from all local names -> values. *)
       | { callee = { Node.value = Name (Name.Identifier "locals"); _ }; arguments = [] } ->
           let add_root_taint locals_taint root =

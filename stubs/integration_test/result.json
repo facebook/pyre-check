@@ -485,6 +485,17 @@
   },
   {
     "code": 5001,
+    "column": 20,
+    "define": "integration_test.cache.test_overrides_cap",
+    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+    "line": 50,
+    "name": "Possible shell injection",
+    "path": "fixture_source/integration_test/cache.py",
+    "stop_column": 28,
+    "stop_line": 50
+  },
+  {
+    "code": 5001,
     "column": 9,
     "define": "integration_test.constructor_tito.test1",
     "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
@@ -845,17 +856,6 @@
     "path": "fixture_source/integration_test/containers.py",
     "stop_column": 22,
     "stop_line": 103
-  },
-  {
-    "code": 5001,
-    "column": 9,
-    "define": "integration_test.containers.dict_get",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 105,
-    "name": "Possible shell injection",
-    "path": "fixture_source/integration_test/containers.py",
-    "stop_column": 22,
-    "stop_line": 105
   },
   {
     "code": 5001,
@@ -1934,16 +1934,5 @@
     "path": "fixture_source/integration_test/top_level.py",
     "stop_column": 23,
     "stop_line": 15
-  },
-  {
-    "code": 5001,
-    "column": 20,
-    "define": "integration_test.cache.test_overrides_cap",
-    "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-    "line": 50,
-    "name": "Possible shell injection",
-    "path": "fixture_source/integration_test/cache.py",
-    "stop_column": 28,
-    "stop_line": 50
   }
 ]

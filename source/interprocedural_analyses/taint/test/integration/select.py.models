@@ -215,9 +215,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
             "origin": {
@@ -243,20 +241,12 @@
     ],
     "tito": [
       {
-        "port": "formal(request)[GET]",
+        "port": "formal(request)[GET][payload]",
         "taint": [
           {
-            "kinds": [
-              {
-                "return_paths": { "": 0 },
-                "length": 1,
-                "kind": "LocalReturn"
-              }
-            ],
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
             "tito": null
@@ -294,9 +284,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
             "origin": {
@@ -323,11 +311,7 @@
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "payload" },
-      { "always-via": "tito" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
     "sink_handle": { "kind": "Return" },
     "master_handle": "select.return_is_RCE:5001:0:Return:75714e82b1119786167df4c408a8f7c4"
   }
@@ -442,7 +426,7 @@
     "callable": "select.view_entry_get",
     "sinks": [
       {
-        "port": "formal(request)[GET]",
+        "port": "formal(request)[GET][payload]",
         "taint": [
           {
             "kinds": [
@@ -452,9 +436,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
             "origin": {
@@ -497,9 +479,7 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" },
-              { "first-index": "payload" },
-              { "always-via": "tito" }
+              { "has": "first-index" }, { "first-index": "payload" }
             ],
             "tito_positions": [ { "line": 37, "start": 9, "end": 20 } ],
             "origin": {
@@ -531,11 +511,7 @@
         ]
       }
     ],
-    "features": [
-      { "has": "first-index" },
-      { "first-index": "payload" },
-      { "always-via": "tito" }
-    ],
+    "features": [ { "has": "first-index" }, { "first-index": "payload" } ],
     "sink_handle": {
       "kind": "Call",
       "callee": "eval",
