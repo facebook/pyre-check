@@ -138,6 +138,9 @@ def _show_progress_log_and_display_type_errors(
     with start.background_logging(log_path):
         type_errors = _read_type_errors(socket_path)
         display_type_errors(type_errors.errors, output=output)
+        if type_errors.build_failure is not None:
+            LOG.warning("You may be seeing stale type checking results. Reason:")
+            LOG.warning(type_errors.build_failure)
         return (
             commands.ExitCode.SUCCESS
             if len(type_errors.errors) == 0
