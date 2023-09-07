@@ -54,6 +54,7 @@ module AnalyzeConfiguration = struct
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
+    build_cache_only: bool;
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
@@ -122,6 +123,7 @@ module AnalyzeConfiguration = struct
           let strict = bool_member "strict" ~default:false json in
           let taint_model_paths = json |> path_list_member "taint_model_paths" ~default:[] in
           let use_cache = bool_member "use_cache" ~default:false json in
+          let build_cache_only = bool_member "build_cache_only" ~default:false json in
           let check_invariants = bool_member "check_invariants" ~default:false json in
           let limit_entrypoints = bool_member "limit_entrypoints" ~default:false json in
           let compact_ocaml_heap = bool_member "compact_ocaml_heap" ~default:false json in
@@ -157,6 +159,7 @@ module AnalyzeConfiguration = struct
               strict;
               taint_model_paths;
               use_cache;
+              build_cache_only;
               check_invariants;
               limit_entrypoints;
               compact_ocaml_heap;
@@ -222,6 +225,7 @@ module AnalyzeConfiguration = struct
         strict;
         taint_model_paths;
         use_cache;
+        build_cache_only;
         inline_decorators;
         repository_root;
         check_invariants;
@@ -278,6 +282,7 @@ module AnalyzeConfiguration = struct
       find_missing_flows;
       dump_model_query_results;
       use_cache;
+      build_cache_only;
       inline_decorators;
       maximum_model_source_tree_width;
       maximum_model_sink_tree_width;
@@ -340,6 +345,7 @@ let run_analyze analyze_configuration =
         ~should_log_exception:(function
           | Taint.TaintConfiguration.TaintConfigurationError _ -> false
           | Taint.ModelVerificationError.ModelVerificationErrors _ -> false
+          | Taint.Cache.BuildCacheOnly -> false
           | _ -> true)
         ~f:(fun scheduler ->
           with_performance_tracking ~debug ~f:(fun () ->
@@ -365,6 +371,7 @@ let on_exception = function
         (`Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)])
       |> Log.print "%s";
       ExitStatus.ModelVerificationError
+  | Taint.Cache.BuildCacheOnly -> ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok
   | exn -> ExitStatus.CheckStatus (CheckCommand.on_exception exn)
 
 

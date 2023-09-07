@@ -372,6 +372,7 @@ let run_taint_analysis
       ({
          Configuration.StaticAnalysis.configuration;
          use_cache;
+         build_cache_only;
          limit_entrypoints;
          compact_ocaml_heap = compact_ocaml_heap_flag;
          _;
@@ -607,6 +608,9 @@ let run_taint_analysis
       ~global_constants
       cache
   in
+  (if use_cache && build_cache_only then
+     let () = Log.info "Cache has been built. Exiting now" in
+     raise Cache.BuildCacheOnly);
 
   Log.info "Purging shared memory...";
   let timer = Timer.start () in

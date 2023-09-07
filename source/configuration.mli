@@ -242,6 +242,7 @@ module StaticAnalysis : sig
     find_missing_flows: MissingFlowKind.t option;
     dump_model_query_results: PyrePath.t option;
     use_cache: bool;
+    build_cache_only: bool;
     inline_decorators: bool;
     maximum_model_source_tree_width: int option;
     maximum_model_sink_tree_width: int option;
@@ -275,6 +276,7 @@ module StaticAnalysis : sig
     ?find_missing_flows:MissingFlowKind.t ->
     ?dump_model_query_results:PyrePath.t ->
     ?use_cache:bool ->
+    ?build_cache_only:bool ->
     ?inline_decorators:bool ->
     ?maximum_model_source_tree_width:int ->
     ?maximum_model_sink_tree_width:int ->

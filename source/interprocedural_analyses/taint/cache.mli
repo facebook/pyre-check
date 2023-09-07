@@ -10,6 +10,8 @@ open Interprocedural
 
 type t
 
+exception BuildCacheOnly
+
 val try_load
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->

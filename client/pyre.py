@@ -487,6 +487,12 @@ def pyre(
     help="Store information in .pyre/pysa.cache for faster runs.",
 )
 @click.option(
+    "--build-cache-only",
+    is_flag=True,
+    default=False,
+    help="Build the cache and exit without computing results..",
+)
+@click.option(
     "--inline-decorators",
     is_flag=True,
     default=False,
@@ -585,6 +591,7 @@ def analyze(
     find_missing_flows: Optional[str],
     dump_model_query_results: Optional[str],
     use_cache: bool,
+    build_cache_only: bool,
     inline_decorators: bool,
     maximum_model_source_tree_width: Optional[int],
     maximum_model_sink_tree_width: Optional[int],
@@ -651,6 +658,7 @@ def analyze(
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,
+            build_cache_only=build_cache_only,
             check_invariants=check_invariants,
             limit_entrypoints=limit_entrypoints,
             compact_ocaml_heap=compact_ocaml_heap,

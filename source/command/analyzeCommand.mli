@@ -47,6 +47,7 @@ module AnalyzeConfiguration : sig
     strict: bool;
     taint_model_paths: PyrePath.t list;
     use_cache: bool;
+    build_cache_only: bool;
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;

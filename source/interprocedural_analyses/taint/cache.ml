@@ -138,6 +138,8 @@ type t = {
   configuration: Configuration.Analysis.t;
 }
 
+exception BuildCacheOnly
+
 let metadata_to_json { status; save_cache; _ } =
   `Assoc ["shared_memory_status", SharedMemoryStatus.to_json status; "save_cache", `Bool save_cache]
 

@@ -294,6 +294,7 @@ class AnalyzeArguments:
     sequential: bool = False
     taint_models_path: List[str] = field(default_factory=list)
     use_cache: bool = False
+    build_cache_only: bool = False
     check_invariants: bool = False
     limit_entrypoints: bool = False
     compact_ocaml_heap: bool = False

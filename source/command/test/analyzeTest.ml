@@ -52,6 +52,7 @@ let test_json_parsing context =
       strict = false;
       taint_model_paths = [];
       use_cache = false;
+      build_cache_only = false;
       no_verify = false;
       verify_dsl = false;
       verify_taint_config_only = false;
@@ -182,6 +183,9 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("use_cache", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with use_cache = true };
+  assert_parsed
+    (`Assoc (("build_cache_only", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with build_cache_only = true };
   assert_parsed
     (`Assoc (("check_invariants", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with check_invariants = true };

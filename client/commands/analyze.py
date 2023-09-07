@@ -70,6 +70,7 @@ class Arguments:
     check_invariants: bool = False
     limit_entrypoints: bool = False
     compact_ocaml_heap: bool = False
+    build_cache_only: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -189,6 +190,7 @@ class Arguments:
             "strict": self.strict,
             "taint_model_paths": self.taint_model_paths,
             "use_cache": self.use_cache,
+            "build_cache_only": self.build_cache_only,
             "check_invariants": self.check_invariants,
             "limit_entrypoints": self.limit_entrypoints,
             "compact_ocaml_heap": self.compact_ocaml_heap,
@@ -293,6 +295,7 @@ def create_analyze_arguments(
         strict=configuration.is_strict(),
         taint_model_paths=taint_models_path,
         use_cache=analyze_arguments.use_cache,
+        build_cache_only=analyze_arguments.build_cache_only,
         check_invariants=analyze_arguments.check_invariants,
         limit_entrypoints=analyze_arguments.limit_entrypoints,
         compact_ocaml_heap=analyze_arguments.compact_ocaml_heap,
