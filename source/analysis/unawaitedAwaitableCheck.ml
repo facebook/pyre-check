@@ -129,12 +129,12 @@ module State (Context : Context) = struct
   type alias_for_awaitable =
     (* This is a variable that refers to an awaitable. *)
     | NamedAlias of Reference.t
-    (* This represents an expression that contains nested aliases.
+    (* This represents a call that contains nested aliases.
 
        For example, if `foo` is an instance of a class that derives from `Awaitable`, then we may
-       have `foo.set_x(1).set_y(2)`. Awaiting the whole expression needs to mark `foo`'s awaitable
-       as awaited. *)
-    | ExpressionWithNestedAliases of { expression_location: Location.t }
+       have `foo.set_x(1).set_y(2)`. Awaiting the whole call needs to mark `foo`'s awaitable as
+       awaited. *)
+    | CallWithNestedAliases of { location: Location.t }
   [@@deriving compare, sexp, show]
 
   module AliasMap = Map.Make (struct
@@ -240,7 +240,7 @@ module State (Context : Context) = struct
             | None -> errors
           in
           Awaitable.Set.fold awaitables ~init:errors ~f:add_reference
-      | ExpressionWithNestedAliases _ -> errors
+      | CallWithNestedAliases _ -> errors
     in
     let error (awaitable, unawaited_awaitable) =
       Error.create
@@ -331,7 +331,7 @@ module State (Context : Context) = struct
       match
         Map.find
           awaitables_for_alias
-          (ExpressionWithNestedAliases { expression_location = Awaitable.to_location awaitable })
+          (CallWithNestedAliases { location = Awaitable.to_location awaitable })
       with
       | Some awaitables ->
           let awaitable_to_awaited_state =
@@ -374,10 +374,7 @@ module State (Context : Context) = struct
       match value with
       | Expression.Name name when is_simple_name name ->
           Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
-      | _ ->
-          Map.find
-            awaitables_for_alias
-            (ExpressionWithNestedAliases { expression_location = location })
+      | _ -> Map.find awaitables_for_alias (CallWithNestedAliases { location })
 
 
   let rec forward_generator
@@ -493,7 +490,7 @@ module State (Context : Context) = struct
                     awaitables_for_alias =
                       Map.set
                         awaitables_for_alias
-                        ~key:(ExpressionWithNestedAliases { expression_location = location })
+                        ~key:(CallWithNestedAliases { location })
                         ~data:awaitables;
                   };
                 nested_awaitable_expressions;
@@ -536,7 +533,7 @@ module State (Context : Context) = struct
                     awaitables_for_alias =
                       Map.set
                         awaitables_for_alias
-                        ~key:(ExpressionWithNestedAliases { expression_location = location })
+                        ~key:(CallWithNestedAliases { location })
                         ~data:awaitables;
                   };
                 nested_awaitable_expressions;
