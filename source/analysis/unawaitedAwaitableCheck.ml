@@ -363,6 +363,23 @@ module State (Context : Context) = struct
     List.fold names ~init:state ~f:mark
 
 
+  let awaitables_pointed_to_by_expression
+      ~state:{ awaitable_to_awaited_state; awaitables_for_alias; _ }
+      { Node.value; location }
+    =
+    let awaitable = Awaitable.create location in
+    if Map.mem awaitable_to_awaited_state awaitable then
+      Some (Awaitable.Set.singleton awaitable)
+    else
+      match value with
+      | Expression.Name name when is_simple_name name ->
+          Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
+      | _ ->
+          Map.find
+            awaitables_for_alias
+            (ExpressionWithNestedAliases { expression_location = location })
+
+
   let rec forward_generator
       ~resolution
       { state; nested_awaitable_expressions }
@@ -444,22 +461,6 @@ module State (Context : Context) = struct
           let state = { state with expect_expressions_to_be_awaited } in
           { state; nested_awaitable_expressions }
     in
-    let find_aliases
-        ~state:{ awaitable_to_awaited_state; awaitables_for_alias; _ }
-        { Node.value; location }
-      =
-      let awaitable = Awaitable.create location in
-      if Map.mem awaitable_to_awaited_state awaitable then
-        Some (Awaitable.Set.singleton awaitable)
-      else
-        match value with
-        | Expression.Name name when is_simple_name name ->
-            Map.find awaitables_for_alias (NamedAlias (name_to_reference_exn name))
-        | _ ->
-            Map.find
-              awaitables_for_alias
-              (ExpressionWithNestedAliases { expression_location = location })
-    in
     let expression = { Node.value = Expression.Call call; location } in
     let {
       state =
@@ -483,7 +484,7 @@ module State (Context : Context) = struct
       let awaitable = Awaitable.create location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
-          match find_aliases ~state base with
+          match awaitables_pointed_to_by_expression ~state base with
           | Some locations ->
               {
                 state =
@@ -526,7 +527,7 @@ module State (Context : Context) = struct
 
              Do this by pretending that the entire expression actually refers to the same
              awaitable(s) pointed to by `base`. *)
-          match find_aliases ~state base with
+          match awaitables_pointed_to_by_expression ~state base with
           | Some locations ->
               {
                 state =
