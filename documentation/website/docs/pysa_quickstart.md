@@ -30,7 +30,7 @@ If you run into any issues along the way, please refer to the [common issues](#c
 <TabItem value="mac">
 
 <!-- TODO(T88801567) Remove all steps related to setuptools and wheel packages once we resolve T88801567 -->
-Pysa runs on Pyre, so we require the [same dependencies as Pyre](getting_started.md#requirements). You will need Python 3.7 or later, and `setuptools` and `wheel` Python packages.
+Pysa runs on Pyre, so we require the [same dependencies as Pyre](getting_started.md#requirements). You will need Python 3.8 or later, and `setuptools` and `wheel` Python packages.
 ```shell
 $ python3.8 -m pip install --upgrade setuptools
 $ pip3 install wheel
