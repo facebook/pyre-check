@@ -5,7 +5,6 @@
 
 import json
 from pathlib import Path
-from typing import Iterable
 
 import testslide
 
@@ -28,9 +27,11 @@ class IncrementalTest(testslide.TestCase):
         assert_not_parsed('["Error"]')
         assert_not_parsed('["TypeErrors"]')
         assert_not_parsed('["TypeErrors", "derp"]')
-        assert_not_parsed('["TypeErrors", {}]')
+        assert_not_parsed('["TypeErrors", {"errors": 42}]')
+        assert_not_parsed('["TypeErrors", {"errors": [], "build_failure": 4.2}]')
 
         assert_parsed('["TypeErrors", []]', incremental.TypeErrors())
+        assert_parsed('["TypeErrors", {}]', incremental.TypeErrors())
         assert_not_parsed('["TypeErrors", ["derp"]]')
         assert_not_parsed('["TypeErrors", [{}]]')
         assert_parsed(
@@ -87,6 +88,44 @@ class IncrementalTest(testslide.TestCase):
                         concise_description="Concise description 2",
                         long_description="Long description 2",
                     ),
+                ],
+                build_failure=None,
+            ),
+        )
+        assert_parsed(
+            json.dumps(
+                [
+                    "TypeErrors",
+                    {
+                        "errors": [
+                            {
+                                "line": 1,
+                                "column": 1,
+                                "stop_line": 3,
+                                "stop_column": 3,
+                                "path": "test.py",
+                                "code": 42,
+                                "name": "Fake name",
+                                "description": "Fake description",
+                            }
+                        ],
+                        "build_failure": "Build failure description",
+                    },
                 ]
+            ),
+            expected=incremental.TypeErrors(
+                errors=[
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=3,
+                        stop_column=3,
+                        path=Path("test.py"),
+                        code=42,
+                        name="Fake name",
+                        description="Fake description",
+                    ),
+                ],
+                build_failure="Build failure description",
             ),
         )

@@ -41,6 +41,7 @@ COMMAND_NAME = "incremental"
 @dataclasses.dataclass(frozen=True)
 class TypeErrors:
     errors: List[error.Error] = dataclasses.field(default_factory=list)
+    build_failure: Optional[str] = None
 
 
 class InvalidServerResponse(Exception):
@@ -63,8 +64,9 @@ class ExitStatus:
 
 def parse_type_error_response_json(response_json: object) -> TypeErrors:
     try:
-        # The response JSON is expected to have the following form:
-        # `["TypeErrors", [error_json0, error_json1, ...]]`
+        # The response JSON is expected to have one of the following form:
+        # `["TypeErrors", [error_json0, error_json1, ...]]` (legacy form)
+        # `["TypeErrors", {"errors": [error_json0, ...], "build_failure": "..."}]`
         if (
             isinstance(response_json, list)
             and len(response_json) > 1
@@ -75,8 +77,22 @@ def parse_type_error_response_json(response_json: object) -> TypeErrors:
                 return TypeErrors(
                     errors=[
                         error.Error.from_json(error_json) for error_json in errors_json
-                    ]
+                    ],
+                    build_failure=None,
                 )
+            elif isinstance(errors_json, dict):
+                error_list = errors_json.get("errors", [])
+                build_failure = errors_json.get("build_failure", None)
+                if isinstance(error_list, list) and (
+                    build_failure is None or isinstance(build_failure, str)
+                ):
+                    return TypeErrors(
+                        errors=[
+                            error.Error.from_json(error_json)
+                            for error_json in error_list
+                        ],
+                        build_failure=build_failure,
+                    )
 
         raise InvalidServerResponse(
             f"Unexpected JSON response from server: {response_json}"

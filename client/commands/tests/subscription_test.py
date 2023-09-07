@@ -32,12 +32,16 @@ class SubscriptionTest(testslide.TestCase):
         assert_not_parsed('{"name": "foo", "no_body": []}')
         assert_not_parsed('{"body": [], "no_name": "foo"}')
         assert_not_parsed('{"name": "foo", "body": ["Malformed"]}')
-        assert_not_parsed('{"name": "foo", "body": ["TypeErrors", {}]}')
+        assert_not_parsed('{"name": "foo", "body": ["TypeErrors", {"errors": 42}]}')
         assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", 42]}')
         assert_not_parsed('{"name": "foo", "body": ["StatusUpdate", []]}')
 
         assert_parsed(
             json.dumps({"name": "foo", "body": ["TypeErrors", []]}),
+            expected=subscription.Response(body=subscription.TypeErrors()),
+        )
+        assert_parsed(
+            json.dumps({"name": "foo", "body": ["TypeErrors", {}]}),
             expected=subscription.Response(body=subscription.TypeErrors()),
         )
         assert_parsed(
