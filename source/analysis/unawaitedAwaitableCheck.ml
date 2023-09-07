@@ -478,14 +478,14 @@ module State (Context : Context) = struct
            ~global_resolution:(Resolution.global_resolution resolution)
            annotation
     then
-      (* If the callee is a method on an awaitable, make the assumption that the returned value is
-         the same awaitable. *)
       let nested_awaitable_expressions = expression :: nested_awaitable_expressions in
       let awaitable = Awaitable.create location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
           match awaitables_pointed_to_by_expression ~state base with
           | Some locations ->
+              (* The callee is an awaitable method on an awaitable `base`, so assume that the
+                 returned value is the same awaitable. *)
               {
                 state =
                   {
