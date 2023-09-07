@@ -980,6 +980,65 @@ let test_method_call =
               awaitable().method()
           |}
           ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+    "don't await async method on an awaited awaitable - should emit error"
+    >>: assert_awaitable_errors
+          {|
+            class Foo:
+              async def foo(self) -> "Foo":
+                return Foo()
+
+              async def async_get_bool(self) -> bool:
+                ...
+
+            async def main() -> None:
+              foo = await Foo().foo()
+
+              if foo.async_get_bool():
+                pass
+          |}
+          ["Unawaited awaitable [1001]: `foo.async_get_bool()` is never awaited."];
+    "don't await async method on an awaitable that is awaited later - don't emit error"
+    (* It's fine to not emit an error because `foo.async_get_bool()` will cause a type error
+       anyway. *)
+    >>: assert_awaitable_errors
+          {|
+            class Foo:
+              async def foo(self) -> "Foo":
+                return Foo()
+
+              async def async_get_bool(self) -> bool:
+                ...
+
+            async def main() -> None:
+              foo = Foo().foo()
+
+              if foo.async_get_bool():
+                pass
+
+              await foo
+          |}
+          [];
+    "don't await async method on the target of `async with` - should emit error"
+    >>: assert_awaitable_errors
+          {|
+            from contextlib import asynccontextmanager
+            from typing import AsyncGenerator
+
+            class Bar:
+              async def async_method(self) -> None: ...
+
+            @asynccontextmanager
+            async def get_bar() -> AsyncGenerator[Bar, None]:
+              yield Bar()
+
+            async def main() -> None:
+              async with get_bar() as bar:
+                bar.async_method()
+
+              async with get_bar() as bar2:
+                await bar2.async_method()
+          |}
+          ["Unawaited awaitable [1001]: `bar.async_method()` is never awaited."];
   ]
 
 

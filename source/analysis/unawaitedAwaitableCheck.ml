@@ -475,9 +475,12 @@ module State (Context : Context) = struct
       let awaitable = Awaitable.create location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
-          match awaitables_pointed_to_by_expression ~state base with
-          | Some awaitables ->
-              (* The callee is an awaitable method on an awaitable `base`, so assume that the
+          match
+            ( awaitables_pointed_to_by_expression ~state base,
+              Map.find awaitable_to_awaited_state awaitable )
+          with
+          | Some awaitables, Some (Unawaited _) ->
+              (* The callee is an awaitable method on an unawaited `base`, so assume that the
                  returned value is the same awaitable. *)
               {
                 state =
@@ -491,7 +494,7 @@ module State (Context : Context) = struct
                   };
                 nested_awaitable_expressions;
               }
-          | None ->
+          | _ ->
               {
                 state =
                   {
