@@ -1315,6 +1315,302 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "dictionary.test_dict_get_foo_tito",
+    "callable_line": 523,
+    "code": 5002,
+    "line": 525,
+    "start": 15,
+    "end": 52,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 525, "start": 28, "end": 51 } ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 525,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 525,
+              "start": 15,
+              "end": 52
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_dict_get_foo_tito:5002:0:Call|_test_sink|1|formal(arg):9f04ec17de4701ad50f86485ee0bb773"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_dict_get_foo_tito",
+    "callable_line": 523,
+    "code": 5002,
+    "line": 524,
+    "start": 15,
+    "end": 52,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 524, "start": 28, "end": 51 } ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 524,
+              "start": 36,
+              "end": 50
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 524,
+              "start": 15,
+              "end": 52
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_dict_get_foo_tito:5002:0:Call|_test_sink|0|formal(arg):4408352e20c4631c12a9145845c828ba"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_dict_get_source",
+    "callable_line": 528,
+    "code": 5002,
+    "line": 531,
+    "start": 15,
+    "end": 27,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "bar" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 531, "start": 15, "end": 16 } ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 529,
+              "start": 16,
+              "end": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 531,
+              "start": 15,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "bar" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_dict_get_source:5002:0:Call|_test_sink|1|formal(arg):7c41d37eaf7d68d302c270d742db92c8"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "dictionary.test_dict_get_source",
+    "callable_line": 528,
+    "code": 5002,
+    "line": 530,
+    "start": 15,
+    "end": 27,
+    "filename": "dictionary.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "port": "leaf:return", "name": "_test_source" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 530, "start": 15, "end": 16 } ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 529,
+              "start": 16,
+              "end": 30
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "dictionary.py",
+              "line": 530,
+              "start": 15,
+              "end": 27
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "has": "first-index" },
+      { "first-index": "foo" },
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "dictionary.test_dict_get_source:5002:0:Call|_test_sink|0|formal(arg):07c3ae4dac9f5059084ab91199d9921d"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "dictionary.test_index_from_tito",
     "callable_line": 326,
     "code": 5002,
@@ -2444,6 +2740,85 @@
               "start": 9,
               "end": 23
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dict_get_foo",
+    "tito": [
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 516, "start": 11, "end": 12 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "dictionary.dict_get_foo_with_default",
+    "tito": [
+      {
+        "port": "formal(default)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 520, "start": 24, "end": 31 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(d)[*]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "": 4 },
+                "length": 1,
+                "kind": "LocalReturn"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" },
+              { "first-index": "foo" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 520, "start": 11, "end": 12 } ],
+            "tito": null
           }
         ]
       }

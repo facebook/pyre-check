@@ -510,3 +510,22 @@ def dictionary_keys_and_any_index_bug(arg: Dict[str, str]) -> Dict[str, str]:
     d = dict_update_keys(arg)
     _test_sink(d.keys())
     return d
+
+
+def dict_get_foo(d: Dict[str, str]) -> Optional[str]:
+    return d.get("foo")
+
+
+def dict_get_foo_with_default(d: Dict[str, str], default: str) -> str:
+    return d.get("foo", default)
+
+
+def test_dict_get_foo_tito() -> None:
+    _test_sink(dict_get_foo({"foo": _test_source()}))  # Issue.
+    _test_sink(dict_get_foo({"bar": _test_source()}))  # Not an issue.
+
+
+def test_dict_get_source() -> None:
+    d = {"foo": _test_source(), "bar": ""}
+    _test_sink(d.get("foo"))  # Issue.
+    _test_sink(d.get("bar"))  # Not an issue.
