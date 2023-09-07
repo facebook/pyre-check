@@ -38,6 +38,11 @@ LOG: logging.Logger = logging.getLogger(__name__)
 COMMAND_NAME = "incremental"
 
 
+@dataclasses.dataclass(frozen=True)
+class TypeErrors:
+    errors: List[error.Error] = dataclasses.field(default_factory=list)
+
+
 class InvalidServerResponse(Exception):
     pass
 
@@ -56,7 +61,7 @@ class ExitStatus:
     connected_to: ServerStatus
 
 
-def parse_type_error_response_json(response_json: object) -> List[error.Error]:
+def parse_type_error_response_json(response_json: object) -> TypeErrors:
     try:
         # The response JSON is expected to have the following form:
         # `["TypeErrors", [error_json0, error_json1, ...]]`
@@ -67,7 +72,11 @@ def parse_type_error_response_json(response_json: object) -> List[error.Error]:
         ):
             errors_json = response_json[1]
             if isinstance(errors_json, list):
-                return [error.Error.from_json(error_json) for error_json in errors_json]
+                return TypeErrors(
+                    errors=[
+                        error.Error.from_json(error_json) for error_json in errors_json
+                    ]
+                )
 
         raise InvalidServerResponse(
             f"Unexpected JSON response from server: {response_json}"
@@ -77,7 +86,7 @@ def parse_type_error_response_json(response_json: object) -> List[error.Error]:
         raise InvalidServerResponse(message) from parsing_error
 
 
-def parse_type_error_response(response: str) -> List[error.Error]:
+def parse_type_error_response(response: str) -> TypeErrors:
     try:
         response_json = json.loads(response)
         return parse_type_error_response_json(response_json)
@@ -86,7 +95,7 @@ def parse_type_error_response(response: str) -> List[error.Error]:
         raise InvalidServerResponse(message) from decode_error
 
 
-def _read_type_errors(socket_path: Path) -> List[error.Error]:
+def _read_type_errors(socket_path: Path) -> TypeErrors:
     with connections.connect(socket_path) as (
         input_channel,
         output_channel,
@@ -112,10 +121,10 @@ def _show_progress_log_and_display_type_errors(
     LOG.info("Waiting for server...")
     with start.background_logging(log_path):
         type_errors = _read_type_errors(socket_path)
-        display_type_errors(type_errors, output=output)
+        display_type_errors(type_errors.errors, output=output)
         return (
             commands.ExitCode.SUCCESS
-            if len(type_errors) == 0
+            if len(type_errors.errors) == 0
             else commands.ExitCode.FOUND_ERRORS
         )
 

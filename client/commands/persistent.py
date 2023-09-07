@@ -174,7 +174,9 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         first_response = await launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler._read_server_response(
             server_input_channel
         )
-        initial_type_errors = incremental.parse_type_error_response(first_response)
+        initial_type_errors = incremental.parse_type_error_response(
+            first_response
+        ).errors
         self.client_type_error_handler.update_type_errors(initial_type_errors)
         await self.client_type_error_handler.show_type_errors_to_client()
         await self._run_subscription_loop(

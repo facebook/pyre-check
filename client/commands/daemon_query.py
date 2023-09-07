@@ -139,7 +139,7 @@ async def attempt_async_overlay_type_errors(
             f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})"
         )
     try:
-        return incremental.parse_type_error_response(response_text)
+        return incremental.parse_type_error_response(response_text).errors
     except incremental.InvalidServerResponse as exception:
         return DaemonQueryFailure(
             f"In attempt async query with response_text, parsing led to uncaught error: ({exception})"
