@@ -815,106 +815,107 @@ let test_state context =
     []
 
 
-let test_method_call context =
-  assert_awaitable_errors
-    ~context
-    {|
-      class C:
-        async def foo() -> int: ...
+let ( >>: ) test_name test_function = test_name >:: fun context -> test_function ~context
 
-      def foo(c: C):
-        await c.foo()
-    |}
-    [];
-  assert_awaitable_errors
-    ~context
-    {|
-      from typing import Awaitable
+let test_method_call =
+  [
+    "await the async method of a non-awaitable object"
+    >>: assert_awaitable_errors
+          {|
+            class C:
+              async def foo() -> int: ...
 
-      class C(Awaitable[int]):
-        async def method(self) -> int: ...
+            def foo(c: C):
+              await c.foo()
+           |}
+          [];
+    "await an unawaited instance of an awaitable class"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
 
-      def awaitable() -> C: ...
+            class C(Awaitable[int]): ...
 
-      async def foo() -> None:
-        await awaitable().method()
-    |}
-    [];
-  assert_awaitable_errors
-    ~context
-    {|
-      from typing import Awaitable
+            def awaitable() -> C: ...
 
-      class C(Awaitable[int]):
-        async def method(self) -> int: ...
+            async def foo() -> None:
+              await awaitable()
+          |}
+          [];
+    "await the async method of a variable having an unawaited awaitable object"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
 
-      def awaitable() -> C: ...
+            class C(Awaitable[int]):
+              async def method(self) -> int: ...
 
-      async def foo() -> None:
-        unawaited = awaitable()
-        await unawaited.method()
-    |}
-    [];
-  assert_awaitable_errors
-    ~context
-    {|
-      from typing import Awaitable
+            def awaitable() -> C: ...
 
-      class C(Awaitable[int]):
-        async def method(self) -> int: ...
+            async def foo() -> None:
+              unawaited = awaitable()
+              await unawaited.method()
+          |}
+          [];
+    "don't await the async method of a variable having an unawaited awaitable object"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
 
-      def awaitable() -> C: ...
+            class C(Awaitable[int]):
+              async def method(self) -> int: ...
 
-      async def foo() -> None:
-        unawaited = awaitable()
-        unawaited.method()
-    |}
-    ["Unawaited awaitable [1001]: `unawaited.method()` is never awaited."];
-  assert_awaitable_errors
-    ~context
-    {|
-      from typing import Awaitable
+            def awaitable() -> C: ...
 
-      class C(Awaitable[int]):
-        def method(self) -> C: ...
+            async def foo() -> None:
+              unawaited = awaitable()
+              unawaited.method()
+          |}
+          ["Unawaited awaitable [1001]: `unawaited.method()` is never awaited."];
+    "await chained async method of unawaited awaitable object"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
 
-        async def other(self) -> int: ...
+            class C(Awaitable[int]):
+              def method(self) -> C: ...
 
-      def awaitable() -> C: ...
+              async def other(self) -> int: ...
 
-      async def foo() -> None:
-        unawaited = awaitable()
-        await unawaited.method().other()
-    |}
-    [];
-  assert_awaitable_errors
-    ~context
-    {|
-      from typing import Awaitable
+            def awaitable() -> C: ...
 
-      class C(Awaitable[int]):
-        def method(self) -> C: ...
-        async def other(self) -> int: ...
+            async def foo() -> None:
+              unawaited = awaitable()
+              await unawaited.method().other()
+          |}
+          [];
+    "await async method chain, part of which was assigned to a variable"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
 
-      def awaitable() -> C: ...
+            class C(Awaitable[int]):
+              def method(self) -> C: ...
+              async def other(self) -> int: ...
 
-      async def foo() -> None:
-        unawaited = awaitable().method()
-        await unawaited.other()
-    |}
-    [];
-  (* If we can't resolve the type of the method as being an awaitable, be unsound and assume the
-     method awaits the awaitable. *)
-  assert_awaitable_errors
-    ~context
-    {|
-      async def awaitable() -> int: ...
+            def awaitable() -> C: ...
 
-      async def foo() -> None:
-        await awaitable().method()
-    |}
-    [];
-  ()
+            async def foo() -> None:
+              unawaited = awaitable().method()
+              await unawaited.other()
+          |}
+          [];
+    "If we can't resolve the type of the method as being an awaitable, be unsound and assume the \
+     method awaits the awaitable."
+    >>: assert_awaitable_errors
+          {|
+            async def awaitable() -> int: ...
+
+            async def foo() -> None:
+              await awaitable().method()
+          |}
+          [];
+  ]
 
 
 let test_aliases context =
@@ -1437,7 +1438,7 @@ let () =
          "forward" >:: test_forward;
          "initial" >:: test_initial;
          "state" >:: test_state;
-         "method" >:: test_method_call;
+         test_list test_method_call;
          "aliases" >:: test_aliases;
          "assign" >:: test_assign;
          "return" >:: test_return;
