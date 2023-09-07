@@ -819,16 +819,26 @@ let ( >>: ) test_name test_function = test_name >:: fun context -> test_function
 
 let test_method_call =
   [
+    "don't await non-async method of non-awaitable - should not error"
+    >>: assert_awaitable_errors
+          {|
+            def non_async() -> int: ...
+
+            async def foo() -> None:
+              non_async()
+          |}
+          [];
     "await the async method of a non-awaitable object"
     >>: assert_awaitable_errors
           {|
             class C:
               async def foo() -> int: ...
 
-            def foo(c: C):
+            async def foo(c: C, c2: C) -> None:
               await c.foo()
+              c2.foo()
            |}
-          [];
+          ["Unawaited awaitable [1001]: `c2.foo()` is never awaited."];
     "await an unawaited instance of an awaitable class"
     >>: assert_awaitable_errors
           {|
@@ -840,6 +850,19 @@ let test_method_call =
 
             async def foo() -> None:
               await awaitable()
+          |}
+          [];
+    "don't await an unawaited instance of an awaitable class - should not emit error"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
+
+            class C(Awaitable[int]): ...
+
+            def awaitable() -> C: ...
+
+            async def foo() -> None:
+              awaitable()
           |}
           [];
     "await the async method of a variable having an unawaited awaitable object"
@@ -889,6 +912,23 @@ let test_method_call =
               await unawaited.method().other()
           |}
           [];
+    "don't await the chained async method of unawaited awaitable object"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
+
+            class C(Awaitable[int]):
+              def method(self) -> C: ...
+
+              async def other(self) -> int: ...
+
+            def awaitable() -> C: ...
+
+            async def foo() -> None:
+              unawaited = awaitable()
+              unawaited.method().other()
+          |}
+          ["Unawaited awaitable [1001]: `unawaited.method().other()` is never awaited."];
     "await async method chain, part of which was assigned to a variable"
     >>: assert_awaitable_errors
           {|
@@ -905,6 +945,22 @@ let test_method_call =
               await unawaited.other()
           |}
           [];
+    "don't await an async method chain, part of which was assigned to a variable"
+    >>: assert_awaitable_errors
+          {|
+            from typing import Awaitable
+
+            class C(Awaitable[int]):
+              def method(self) -> C: ...
+              async def other(self) -> int: ...
+
+            def awaitable() -> C: ...
+
+            async def foo() -> None:
+              unawaited = awaitable().method()
+              unawaited.other()
+          |}
+          ["Unawaited awaitable [1001]: `unawaited.other()` is never awaited."];
     "If we can't resolve the type of the method as being an awaitable, be unsound and assume the \
      method awaits the awaitable."
     >>: assert_awaitable_errors
@@ -915,6 +971,15 @@ let test_method_call =
               await awaitable().method()
           |}
           [];
+    "don't await method of unknown type on an awaitable"
+    >>: assert_awaitable_errors
+          {|
+            async def awaitable() -> int: ...
+
+            async def foo() -> None:
+              awaitable().method()
+          |}
+          ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
   ]
 
 
