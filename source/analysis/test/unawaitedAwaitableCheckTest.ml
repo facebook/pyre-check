@@ -574,25 +574,6 @@ let test_forward context =
     {|
       async def awaitable() -> int: ...
 
-      class C:
-        a = awaitable()
-        def await_the_awaitable(self):
-          await self.a
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      class C:
-        async def foo() -> int: ...
-
-      def foo(c: C):
-        await c.foo()
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      async def awaitable() -> int: ...
-
       async def foo() -> None:
         d = {
           awaitable(): 2,
@@ -673,46 +654,6 @@ let test_forward context =
         [] + [awaitable()]
     |}
     ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
-
-  (* We don't error on methods for classes that are awaitable themselves. *)
-  assert_awaitable_errors
-    {|
-      from typing import Awaitable
-
-      async def awaitable() -> int: ...
-
-      class C(Awaitable[int]):
-        def __init__(self) -> None:
-          self.x = awaitable()
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      from typing import Awaitable
-
-      async def awaitable() -> int: ...
-
-      class C(Awaitable[int]):
-        pass
-
-      class D(C):
-        def __init__(self) -> None:
-          self.x = awaitable()
-    |}
-    [];
-  assert_awaitable_errors
-    {|
-      from typing import Awaitable, Generic, TypeVar
-
-      T = TypeVar("T")
-
-      async def awaitable() -> int: ...
-
-      class C(Awaitable[T], Generic[T):
-        def __init__(self) -> None:
-          self.x = awaitable()
-    |}
-    [];
 
   (* Multiple assignment targets. *)
   assert_awaitable_errors
@@ -874,7 +815,17 @@ let test_state context =
     []
 
 
-let test_attribute_access context =
+let test_method_call context =
+  assert_awaitable_errors
+    ~context
+    {|
+      class C:
+        async def foo() -> int: ...
+
+      def foo(c: C):
+        await c.foo()
+    |}
+    [];
   assert_awaitable_errors
     ~context
     {|
@@ -952,7 +903,6 @@ let test_attribute_access context =
         await unawaited.other()
     |}
     [];
-
   (* If we can't resolve the type of the method as being an awaitable, be unsound and assume the
      method awaits the awaitable. *)
   assert_awaitable_errors
@@ -963,7 +913,8 @@ let test_attribute_access context =
       async def foo() -> None:
         await awaitable().method()
     |}
-    []
+    [];
+  ()
 
 
 let test_aliases context =
@@ -1240,6 +1191,45 @@ let test_getattr context =
 
 let test_attribute_assignment context =
   let assert_awaitable_errors = assert_awaitable_errors ~context in
+  (* We don't error on methods for classes that are awaitable themselves. *)
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      async def awaitable() -> int: ...
+
+      class C(Awaitable[int]):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable
+
+      async def awaitable() -> int: ...
+
+      class C(Awaitable[int]):
+        pass
+
+      class D(C):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      from typing import Awaitable, Generic, TypeVar
+
+      T = TypeVar("T")
+
+      async def awaitable() -> int: ...
+
+      class C(Awaitable[T], Generic[T):
+        def __init__(self) -> None:
+          self.x = awaitable()
+    |}
+    [];
   assert_awaitable_errors
     {|
       from typing import Awaitable
@@ -1262,6 +1252,16 @@ let test_attribute_assignment context =
 
         def set_x(self) -> None:
           self.x = MyQuery()
+    |}
+    [];
+  assert_awaitable_errors
+    {|
+      async def awaitable() -> int: ...
+
+      class C:
+        a = awaitable()
+        def await_the_awaitable(self):
+          await self.a
     |}
     [];
   ()
@@ -1437,7 +1437,7 @@ let () =
          "forward" >:: test_forward;
          "initial" >:: test_initial;
          "state" >:: test_state;
-         "attribute_access" >:: test_attribute_access;
+         "method" >:: test_method_call;
          "aliases" >:: test_aliases;
          "assign" >:: test_assign;
          "return" >:: test_return;
