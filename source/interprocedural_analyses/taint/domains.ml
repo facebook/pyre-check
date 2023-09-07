@@ -1416,9 +1416,18 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
 
 
   let shape ~mold_with_return_access_paths ~breadcrumbs tree =
+    let transform taint =
+      taint
+      |> Taint.add_local_breadcrumbs breadcrumbs
+      |> Taint.transform_call_info
+           CallInfo.Tito
+           Features.CollapseDepth.Self
+           Map
+           ~f:Features.CollapseDepth.approximate
+    in
     let shape_partitioned_tree tree =
       T.shape
-        ~transform:(Taint.add_local_breadcrumbs breadcrumbs)
+        ~transform
         tree
         ~mold:(essential ~preserve_return_access_paths:mold_with_return_access_paths tree)
     in

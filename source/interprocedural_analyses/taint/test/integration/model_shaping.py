@@ -97,3 +97,24 @@ def shape_multi_source():
         return {
             "a": {"b": _cookies()},
         }
+
+
+def tito_shaping(parameters: Dict[str, Any]) -> Dict[str, Any]:
+    return {
+        "foo": parameters.get("foo"),
+        "bar": parameters.get("bar"),
+        "to_string": str(parameters),
+    }
+
+
+def test_tito_shaping() -> None:
+    obj = tito_shaping({"foo": _test_source(), "bar": {}})
+    _test_sink(obj["foo"])  # True Positive
+    _test_sink(obj["bar"])  # TODO(T163123131): False Positive in model shaping
+    _test_sink(obj["to_string"])  # True Positive
+
+    obj = tito_shaping({"foo": {"source": _test_source(), "benign": ""}, "bar": {}})
+    _test_sink(obj["foo"]["source"])  # True Positive
+    _test_sink(obj["foo"]["benign"])  # TODO(T163123131): False Positive in model shaping
+    _test_sink(obj["bar"])  # TODO(T163123131): False Positive in model shaping
+    _test_sink(obj["to_string"])  # True Positive

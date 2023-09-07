@@ -358,10 +358,10 @@
             "kinds": [
               {
                 "return_paths": {
-                  "[timestamp]": 3,
+                  "[timestamp]": 0,
                   "[request]": 0,
                   "[kind]": 0,
-                  "[app_id]": 3
+                  "[app_id]": 0
                 },
                 "length": 1,
                 "kind": "LocalReturn"
