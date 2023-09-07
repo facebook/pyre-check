@@ -19,6 +19,7 @@ import multiprocessing
 import re
 import subprocess
 import textwrap
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from typing import (
@@ -40,18 +41,24 @@ class FilePosition(NamedTuple):
     length: int
 
 
-class TaintOutputIndex(NamedTuple):
+class AnalysisOutputIndex(NamedTuple):
     models: Dict[str, FilePosition] = {}
     issues: Dict[str, List[FilePosition]] = {}
+    call_graphs: Dict[str, FilePosition] = {}
+
+    def update(self, index: "AnalysisOutputIndex") -> None:
+        self.models.update(index.models)
+        self.issues.update(index.issues)
+        self.call_graphs.update(index.call_graphs)
 
 
-class TaintOutputDirectory(NamedTuple):
+class AnalysisOutputDirectory(NamedTuple):
     files: List[Path]
     handles: List[io.BufferedReader]
-    index_: TaintOutputIndex
+    index_: AnalysisOutputIndex
 
 
-__current_directory: Optional[TaintOutputDirectory] = None
+__current_directory: Optional[AnalysisOutputDirectory] = None
 __warned_missing_jq: bool = False
 
 
@@ -62,75 +69,87 @@ def _iter_with_offset(lines: Iterable[bytes]) -> Iterable[Tuple[bytes, int]]:
         offset += len(line)
 
 
-def index_taint_output_file(arguments: Tuple[int, Path]) -> TaintOutputIndex:
+def index_json_output_file(arguments: Tuple[int, Path]) -> AnalysisOutputIndex:
+    start_time = time.time()
     file_index, file_path = arguments
-    index = TaintOutputIndex()
+    index = AnalysisOutputIndex()
 
     print(f"Indexing {file_path}")
     with open(file_path, "rb") as handle:
         for line, offset in _iter_with_offset(handle):
-            message = json.loads(line)
+            try:
+                message = json.loads(line)
+            except UnicodeDecodeError:
+                print(f"ERROR: Unicode Decode Error when parsing: {line}")
+                continue
+
             if "kind" not in message:
                 continue
 
+            file_position = FilePosition(
+                file_index=file_index, offset=offset, length=len(line)
+            )
             kind = message["kind"]
             if kind == "model":
                 callable = message["data"]["callable"]
                 assert callable not in index.models
-                index.models[callable] = FilePosition(
-                    file_index=file_index, offset=offset, length=len(line)
-                )
+                index.models[callable] = file_position
             elif kind == "issue":
                 callable = message["data"]["callable"]
                 if callable not in index.issues:
                     index.issues[callable] = []
-                index.issues[callable].append(
-                    FilePosition(file_index=file_index, offset=offset, length=len(line))
-                )
+                index.issues[callable].append(file_position)
+            elif kind == "call_graph":
+                callable = message["data"]["callable"]
+                index.call_graphs[callable] = file_position
             else:
                 raise AssertionError("Unexpected kind `{kind}` in `{file_path}`")
 
+    duration = time.time() - start_time
+    print(f"Indexed {file_path} in {duration:.2f}s")
     return index
 
 
 def index(path: str = ".") -> None:
-    """Index all available models in the given taint output directory."""
+    """Index all available results in the given analysis output directory."""
 
     taint_output_directory = Path(path)
     if not taint_output_directory.is_dir():
         raise AssertionError(f"No such directory `{path}`")
 
-    taint_output_files: List[Path] = []
+    json_output_files: List[Path] = []
     for filepath in taint_output_directory.iterdir():
         if (
             filepath.is_file()
-            and filepath.name.startswith("taint-output")
             and filepath.suffix == ".json"
+            and (
+                filepath.name.startswith("taint-output")
+                or filepath.name.startswith("call-graph")
+            )
         ):
-            taint_output_files.append(filepath)
+            json_output_files.append(filepath)
 
-    if len(taint_output_files) == 0:
+    if len(json_output_files) == 0:
         raise AssertionError(f"Could not find taint output files in `{path}`")
 
     with multiprocessing.Pool() as pool:
-        index = TaintOutputIndex()
+        index = AnalysisOutputIndex()
         for new_index in pool.imap_unordered(
-            index_taint_output_file, enumerate(taint_output_files), chunksize=1
+            index_json_output_file, enumerate(json_output_files), chunksize=1
         ):
-            index.models.update(new_index.models)
-            index.issues.update(new_index.issues)
+            index.update(new_index)
 
     print(f"Indexed {len(index.models)} models")
 
     global __current_directory
-    __current_directory = TaintOutputDirectory(
-        files=taint_output_files,
-        handles=[open(path, "rb") for path in taint_output_files],
+    __current_directory = AnalysisOutputDirectory(
+        files=json_output_files,
+        handles=[open(path, "rb") for path in json_output_files],
         index_=index,
     )
 
 
-def _assert_loaded() -> TaintOutputDirectory:
+def _assert_loaded() -> AnalysisOutputDirectory:
     current_directory = __current_directory
     if current_directory is None:
         raise AssertionError("call index() first")
@@ -664,6 +683,27 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
         raise AssertionError(f"Unexpected format `{options.format}`")
 
 
+def get_call_graph(callable: str, **kwargs: Union[str, bool]) -> Dict[str, Any]:
+    """Get the call graph for the given callable."""
+    directory = _assert_loaded()
+
+    if callable not in directory.index_.call_graphs:
+        raise AssertionError(f"no call graph for callable `{callable}`.")
+
+    message = json.loads(_read(directory.index_.call_graphs[callable]))
+    assert message["kind"] == "call_graph"
+
+    return message["data"]
+
+
+def print_call_graph(callable: str, **kwargs: Union[str, bool]) -> None:
+    """Pretty print the call graph for the given callable."""
+    call_graph = get_call_graph(callable, **kwargs)
+
+    # TODO(T138283233): Support format=text
+    print_json(call_graph)
+
+
 def print_help() -> None:
     """Print this help message."""
     print("# Pysa Model Explorer")
@@ -676,6 +716,8 @@ def print_help() -> None:
         (print_model, "print_model('foo.bar')"),
         (get_issues, "get_issues('foo.bar')"),
         (print_issues, "print_issues('foo.bar')"),
+        (get_call_graph, "get_call_graph('foo.bar')"),
+        (print_call_graph, "print_call_graph('foo.bar')"),
         (set_formatting, "set_formatting(show_sources=False)"),
         (show_formatting, "show_formatting()"),
         (print_json, "print_json({'a': 'b'})"),
