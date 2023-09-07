@@ -157,21 +157,6 @@ module State (Context : Context) = struct
     expect_expressions_to_be_awaited: bool;
   }
 
-  (* The result of `forward_expression`. *)
-  type forward_expression_result = {
-    state: t;
-    (* The nested awaitable expressions that would be awaited by awaiting/handling the overall
-       expression.
-
-       For example, if the expression is a list containing awaitables (maybe nested), this will have
-       the individual awaitable expressions. That way, if someone passes the overall expression into
-       `asyncio.gather` or some other function, they will all be marked as awaited (or
-       not-unawaited). In short, we won't have to emit unawaited errors for them. *)
-    nested_awaitable_expressions: Expression.t list;
-  }
-
-  let result_state { state; nested_awaitable_expressions = _ } = state
-
   let show { awaitable_to_awaited_state; awaitables_for_alias; expect_expressions_to_be_awaited } =
     let awaitable_to_awaited_state =
       Map.to_alist awaitable_to_awaited_state
@@ -200,6 +185,25 @@ module State (Context : Context) = struct
 
 
   let pp format state = Format.fprintf format "%s" (show state)
+
+  (* The result of `forward_expression`. *)
+  type forward_expression_result = {
+    state: t;
+    (* The nested awaitable expressions that would be awaited by awaiting/handling the overall
+       expression.
+
+       For example, if the expression is a list containing awaitables (maybe nested), this will have
+       the individual awaitable expressions. That way, if someone passes the overall expression into
+       `asyncio.gather` or some other function, they will all be marked as awaited (or
+       not-unawaited). In short, we won't have to emit unawaited errors for them. *)
+    nested_awaitable_expressions: Expression.t list;
+  }
+  [@@deriving show]
+
+  (* Dummy use to avoid unused-declaration error. *)
+  let _ = show_forward_expression_result
+
+  let result_state { state; nested_awaitable_expressions = _ } = state
 
   let bottom =
     {
