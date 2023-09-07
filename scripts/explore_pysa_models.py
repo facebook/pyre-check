@@ -477,20 +477,25 @@ def leaf_name_to_string(leaf: Dict[str, str]) -> str:
     return name
 
 
+def print_location(position: Dict[str, Any], prefix: str, indent: str) -> None:
+    filename = position["filename"]
+    if filename == "*" and "path" in position:
+        filename = position["path"]
+    print(
+        f'{indent}{prefix}{blue(filename)}:{blue(position["line"])}:{blue(position["start"])}'
+    )
+
+
 def print_call_info(local_taint: Dict[str, Any], indent: str) -> None:
     if "call" in local_taint:
         call = local_taint["call"]
-        position = call["position"]
         print(f'{indent}CalleePort: {green(call["port"])}')
         for resolve_to in call["resolves_to"]:
             print(f"{indent}Callee: {blue(resolve_to)}")
-        print(
-            f'{indent}Location: {blue(position["filename"])}:{blue(position["line"])}:{blue(position["start"])}'
-        )
+        print_location(call["position"], prefix="Location: ", indent=indent)
     elif "origin" in local_taint:
-        position = local_taint["origin"]
-        print(
-            f'{indent}Origin: Location: {blue(position["filename"])}:{blue(position["line"])}:{blue(position["start"])}'
+        print_location(
+            local_taint["origin"], prefix="Origin: Location: ", indent=indent
         )
     elif "declaration" in local_taint:
         print(f"{indent}Declaration:")
@@ -649,9 +654,7 @@ def print_issues(callable: str, **kwargs: Union[str, bool]) -> None:
         for issue in issues:
             print("Issue:")
             print(f'  Code: {issue["code"]}')
-            print(
-                f'  Location: {blue(issue["filename"])}:{blue(issue["line"])}:{blue(issue["start"])}'
-            )
+            print_location(issue, "Location: ", indent=" " * 2)
             print(f'  Message: {blue(issue["message"])}')
             print(f'  Handle: {green(issue["master_handle"])}')
             for trace in issue["traces"]:
