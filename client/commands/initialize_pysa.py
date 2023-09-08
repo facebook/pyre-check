@@ -73,12 +73,18 @@ def _setup_environment() -> None:
     run_infer = log.get_yes_no_input("Would you like to generate type annotations?")
     if run_infer:
         subprocess.run(["pyre", "infer", "-i"], check=True)
-    pysa_filter_path = find_pysa_filters_directory()
-    if pysa_filter_path is not None:
-        LOG.info("Importing filters to sapp")
-        subprocess.run(["sapp", "filter", "import", pysa_filter_path], check=True)
-    else:
-        LOG.warning("Couldn't infer filter directory, skipping filter import to sapp.")
+    import_pysa_filter_for_sapp = log.get_yes_no_input(
+        "Would you like to import filters to sapp?"
+    )
+    if import_pysa_filter_for_sapp:
+        pysa_filter_path = find_pysa_filters_directory()
+        if pysa_filter_path is not None:
+            LOG.info("Importing filters to sapp")
+            subprocess.run(["sapp", "filter", "import", pysa_filter_path], check=True)
+        else:
+            LOG.warning(
+                "Couldn't infer filter directory, skipping filter import to sapp."
+            )
 
 
 def run(skip_environment_setup: bool) -> int:
