@@ -277,10 +277,8 @@ def process_raw_elements(
         excepted_path = element.path()
         if excepted_path is None:
             return False
-        if os.path.exists(excepted_path):
-            elements.append(element)
-            return True
-        return False
+        elements.append(element)
+        return True
 
     for raw_element in raw_elements:
         expanded_raw_elements = raw_element.expand_glob()
