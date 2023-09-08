@@ -17,9 +17,7 @@ Pyre daemon. Context on this:
 
 import dataclasses
 import json
-from typing import List, Optional, Union
-
-from .. import error
+from typing import Optional, Union
 
 from . import incremental
 
