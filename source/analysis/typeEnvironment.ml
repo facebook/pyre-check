@@ -238,4 +238,8 @@ let load configuration =
   CheckResultsTable.load configuration
 
 
+let store_without_dependency_keys = CheckResultsTable.store
+
+let load_without_dependency_keys = CheckResultsTable.load
+
 module TypeEnvironmentReadOnly = ReadOnly

@@ -223,7 +223,7 @@ let load_type_environment ~scheduler ~configuration =
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
-    ~f:(fun () -> Ok (TypeEnvironment.load controls))
+    ~f:(fun () -> Ok (TypeEnvironment.load_without_dependency_keys controls))
   >>= fun type_environment ->
   let old_module_tracker =
     TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
@@ -255,7 +255,7 @@ let save_type_environment ~scheduler ~configuration ~environment =
       Memory.SharedMemory.collect `aggressive;
       let module_tracker = TypeEnvironment.module_tracker environment in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-      TypeEnvironment.store environment;
+      TypeEnvironment.store_without_dependency_keys environment;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 

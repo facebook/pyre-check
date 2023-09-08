@@ -50,3 +50,7 @@ val ast_environment : t -> AstEnvironment.t
 val module_tracker : t -> ModuleTracker.t
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+
+val store_without_dependency_keys : t -> unit
+
+val load_without_dependency_keys : EnvironmentControls.t -> t
