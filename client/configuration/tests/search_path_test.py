@@ -278,5 +278,9 @@ class SearchPathTest(testslide.TestCase):
             self.assertEqual(
                 SitePackageElement("foo", "bar", True).path(), "foo/bar.so"
             )
+            self.assertEqual(
+                process_raw_elements([SitePackageRawElement("bar", True)], ["foo"]),
+                [SitePackageElement("foo", "bar", True)],
+            )
         finally:
             shutil.rmtree("foo")
