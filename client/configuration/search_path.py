@@ -83,9 +83,7 @@ class SitePackageElement(Element):
 
     def package_path(self) -> Union[str, None]:
         if not self.is_toplevel_module:
-            if os.path.exists(f"{self.site_root}/{self.package_name}"):
-                return self.package_name
-            return None
+            return self.package_name
 
         this_pkg_filter = re.compile(
             r"{}-([0-99]\.)*dist-info(/)*.*".format(self.package_name)
@@ -275,7 +273,7 @@ def process_raw_elements(
 
     def add_if_exists(element: Element) -> bool:
         excepted_path = element.path()
-        if excepted_path is None:
+        if excepted_path is None or not os.path.exists(excepted_path):
             return False
         elements.append(element)
         return True
