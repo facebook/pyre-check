@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import shutil
 import tempfile
 from pathlib import Path
 from typing import Iterable, Tuple
@@ -577,22 +576,20 @@ class ArgumentsTest(testslide.TestCase):
             )
 
     def test_get_checked_directory_for_simple_source_path(self) -> None:
-        Path.mkdir(Path("super"))
-        Path.mkdir(Path("super/slash"))
+        with tempfile.TemporaryDirectory() as temp_root:
+            Path.mkdir(Path(f"{temp_root}/super"))
+            Path.mkdir(Path(f"{temp_root}/super/slash"))
 
-        element0 = search_path.SimpleElement("ozzie")
-        element1 = search_path.SubdirectoryElement("diva", "flea")
-        element2 = search_path.SitePackageElement("super", "slash")
+            element0 = search_path.SimpleElement("ozzie")
+            element1 = search_path.SubdirectoryElement("diva", "flea")
+            element2 = search_path.SitePackageElement(f"{temp_root}/super", "slash")
 
-        try:
             self.assertCountEqual(
                 SimpleSourcePath(
                     [element0, element1, element2, element0]
                 ).get_checked_directory_allowlist(),
                 [element0.path(), element1.path(), element2.path()],
             )
-        finally:
-            shutil.rmtree("super")
 
     def test_get_checked_directory_for_buck_source_path(self) -> None:
         self.assertCountEqual(

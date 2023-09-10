@@ -276,7 +276,8 @@ class SearchPathTest(testslide.TestCase):
                 f.write("bar.so,,")
 
             self.assertEqual(
-                SitePackageElement(f"{temp_root}/foo", "bar", True).path(), "foo/bar.so"
+                SitePackageElement(f"{temp_root}/foo", "bar", True).path(),
+                f"{temp_root}/foo/bar.so",
             )
             self.assertEqual(
                 process_raw_elements(
