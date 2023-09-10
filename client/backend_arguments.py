@@ -69,6 +69,7 @@ class SimpleSourcePath:
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
+        # pyre-fixme: Incompatible return type [7]: Expected Set[str] but got Set[Optional[str]].
         return {element.path() for element in self.elements if element is not None}
 
     def cleanup(self) -> None:
@@ -98,6 +99,7 @@ class WithUnwatchedDependencySourcePath:
         }
 
     def get_checked_directory_allowlist(self) -> Set[str]:
+        # pyre-fixme: Incompatible return type [7]: Expected Set[str] but got Set[Optional[str]].
         return {element.path() for element in self.elements if element is not None}
 
     def cleanup(self) -> None:
