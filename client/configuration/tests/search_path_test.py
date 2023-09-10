@@ -3,7 +3,6 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import shutil
 import tempfile
 from pathlib import Path
 
@@ -71,47 +70,45 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_path(self) -> None:
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar"))
-
-        try:
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(Path(temp_root), ("foo", "foo/bar"))
             self.assertEqual(SimpleElement("foo").path(), "foo")
             self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
-            self.assertEqual(SitePackageElement("foo", "bar").path(), "foo/bar")
-        finally:
-            shutil.rmtree("foo")
+            self.assertEqual(
+                SitePackageElement(f"{temp_root}/foo", "bar").path(),
+                f"{temp_root}/foo/bar",
+            )
 
     def test_command_line_argument(self) -> None:
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar"))
-
-        try:
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(Path(temp_root), ("foo", "foo/bar"))
             self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
             self.assertEqual(
                 SubdirectoryElement("foo", "bar").command_line_argument(),
                 "foo$bar",
             )
             self.assertEqual(
-                SitePackageElement("foo", "bar").command_line_argument(),
-                "foo$bar",
+                SitePackageElement(f"{temp_root}/foo", "bar").command_line_argument(),
+                f"{temp_root}/foo$bar",
             )
-        finally:
-            shutil.rmtree("foo")
 
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
-        Path.touch(Path("foo/bar.py"))
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(
+                Path(temp_root), ("foo", "foo/bar-1.0.0.dist-info")
+            )
+            Path.touch(Path(f"{temp_root}/foo/bar.py"))
 
-        with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
-            f.write("bar.py")
+            with open(
+                f"{temp_root}/foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8"
+            ) as f:
+                f.write("bar.py,,")
 
-        try:
             self.assertEqual(
-                SitePackageElement("foo", "bar", True).command_line_argument(),
-                "foo$bar.py",
+                SitePackageElement(
+                    f"{temp_root}/foo", "bar", True
+                ).command_line_argument(),
+                f"{temp_root}/foo$bar.py",
             )
-        finally:
-            shutil.rmtree("foo")
 
     def test_expand_global_root(self) -> None:
         self.assertEqual(
@@ -267,20 +264,23 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_toplevel_module_not_pyfile(self) -> None:
-        Path.mkdir(Path("foo"))
-        Path.mkdir(Path("foo/bar-1.0.0.dist-info"))
-        Path.touch(Path("foo/bar.so"))
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(
+                Path(temp_root), ("foo", "foo/bar-1.0.0.dist-info")
+            )
+            Path.touch(Path(f"{temp_root}/foo/bar.so"))
 
-        with open("foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8") as f:
-            f.write("bar.so")
+            with open(
+                f"{temp_root}/foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8"
+            ) as f:
+                f.write("bar.so,,")
 
-        try:
             self.assertEqual(
-                SitePackageElement("foo", "bar", True).path(), "foo/bar.so"
+                SitePackageElement(f"{temp_root}/foo", "bar", True).path(), "foo/bar.so"
             )
             self.assertEqual(
-                process_raw_elements([SitePackageRawElement("bar", True)], ["foo"]),
-                [SitePackageElement("foo", "bar", True)],
+                process_raw_elements(
+                    [SitePackageRawElement("bar", True)], [f"{temp_root}/foo"]
+                ),
+                [SitePackageElement(f"{temp_root}/foo", "bar", True)],
             )
-        finally:
-            shutil.rmtree("foo")
