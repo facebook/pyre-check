@@ -26,17 +26,34 @@ module Subscriptions = struct
   let all subscriptions = Hashtbl.data subscriptions
 end
 
+module DeferredUpdateEvents = struct
+  (* Holds temporarily stashed update events to get processed later. Useful for tolerating build
+     system failures. *)
+  type t = { mutable events: SourcePath.Event.t list }
+
+  let create () = { events = [] }
+
+  let add deferred events = deferred.events <- List.rev_append events deferred.events
+
+  let get_all deferred = List.rev deferred.events
+
+  let clear deferred = deferred.events <- []
+end
+
 type t = {
   build_system: BuildSystem.t;
   overlaid_environment: OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
+  deferred_update_events: DeferredUpdateEvents.t;
 }
 
-let create ?subscriptions ~build_system ~overlaid_environment () =
+let create ?subscriptions ?deferred_update_events ~build_system ~overlaid_environment () =
   {
     build_system;
     overlaid_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
+    deferred_update_events =
+      Option.value deferred_update_events ~default:(DeferredUpdateEvents.create ());
   }
 
 
