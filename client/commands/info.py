@@ -35,6 +35,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
     binary_version: Optional[str]
     log_directory: str
     client_logs: str
+    codenav_client_logs: str
     server_log_directory: str
     codenav_server_log_directory: str
     current_server_logs: str
@@ -62,6 +63,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
             LOG.warn("Could not locate a Pyre binary to run.")
         log_directory = configuration.get_log_directory()
         client_logs = log_directory / "pyre.stderr"
+        codenav_client_logs = log_directory / "pyre__code_navigation.stderr"
         server_log_directory = log_directory / flavor.server_log_subdirectory()
         codenav_server_log_directory = (
             log_directory
@@ -90,6 +92,7 @@ class Info(dataclasses_json.DataClassJsonMixin):
             server_log_directory=str(server_log_directory),
             codenav_server_log_directory=str(codenav_server_log_directory),
             client_logs=str(client_logs),
+            codenav_client_logs=str(codenav_client_logs),
             binary_location=None if binary_location is None else str(binary_location),
             client_version=client_version,
             binary_version=binary_version,
