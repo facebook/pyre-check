@@ -15,6 +15,8 @@ module PrintSignal = Hack_parallel.Std.PrintSignal
 module ArgumentList = struct
   type t = string list [@@deriving sexp_of]
 
+  let empty = []
+
   let to_buck_command ~buck_command arguments = Stdlib.Filename.quote_command buck_command arguments
 
   let length = List.length

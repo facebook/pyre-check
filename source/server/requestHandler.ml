@@ -174,7 +174,11 @@ let process_successful_rebuild
     ~response:(create_status_update_response Response.ServerStatus.Ready)
 
 
-let process_failed_rebuild = function
+let process_failed_rebuild ~subscriptions = function
+  | Buck.Raw.BuckError _ ->
+      Subscription.batch_send
+        subscriptions
+        ~response:(create_status_update_response Response.ServerStatus.Ready)
   | _ as exn ->
       (* We do not currently know how to recover from these exceptions *)
       Lwt.fail exn
@@ -182,7 +186,9 @@ let process_failed_rebuild = function
 
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
-    ~state:({ ServerState.overlaid_environment; subscriptions; build_system; _ } as state)
+    ~state:
+      ({ ServerState.overlaid_environment; subscriptions; build_system; deferred_update_events } as
+      state)
     paths
   =
   let open Lwt.Infix in
@@ -197,22 +203,45 @@ let process_incremental_update_request
       >>= fun () -> Stop.stop_waiting_server reason
   | None ->
       let overall_timer = Timer.start () in
-      let source_path_events = List.map paths ~f:create_source_path_event in
+      let current_source_path_events = List.map paths ~f:create_source_path_event in
+      let current_and_deferred_source_path_events =
+        match ServerState.DeferredUpdateEvents.get_all deferred_update_events with
+        | [] -> current_source_path_events
+        | deferred_events ->
+            Log.log
+              ~section:`Server
+              "%d pre-existing deferred update events detected. Processing them now..."
+              (List.length deferred_events);
+            List.append deferred_events current_source_path_events
+      in
       Subscription.batch_send
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions
       >>= fun () ->
-      update_build_system ~build_system source_path_events
+      update_build_system ~build_system current_and_deferred_source_path_events
       >>= (function
             | Result.Ok changed_paths_from_rebuild ->
+                (* The build has succeeded and deferred events are all processed. *)
+                ServerState.DeferredUpdateEvents.clear deferred_update_events;
                 process_successful_rebuild
                   ~configuration
                   ~subscriptions
                   ~build_system
                   ~overlaid_environment
-                  source_path_events
+                  current_and_deferred_source_path_events
                   changed_paths_from_rebuild
-            | Result.Error exn -> process_failed_rebuild exn)
+            | Result.Error exn ->
+                (* On build errors, stash away the current update and defer their processing until
+                   next update, hoping that the user could fix the error by then. This prevents the
+                   Pyre server from crashing on build failures. *)
+                Log.log
+                  ~section:`Server
+                  "Build failure detected. Deferring %d events..."
+                  (List.length current_source_path_events);
+                ServerState.DeferredUpdateEvents.add
+                  deferred_update_events
+                  current_source_path_events;
+                process_failed_rebuild ~subscriptions exn)
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state

@@ -294,6 +294,9 @@ module Raw : sig
 
     (** Number of arguments in the list*)
     val length : t -> int
+
+    (** Create an empty argument list. Exposed for testing purpose. *)
+    val empty : t
   end
 
   (** Raised when external invocation of `buck` returns an error. The [exit_code] field is set to
