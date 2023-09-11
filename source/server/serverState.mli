@@ -24,7 +24,9 @@ module BuildFailure : sig
 
   val create : unit -> t
 
-  val update : events:SourcePath.Event.t list -> t -> unit
+  val update : events:SourcePath.Event.t list -> error_message:string -> t -> unit
+
+  val get_last_error_message : t -> string option
 
   val get_deferred_events : t -> SourcePath.Event.t list
 

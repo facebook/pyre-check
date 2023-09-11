@@ -174,14 +174,15 @@ let process_successful_rebuild
     ~response:(create_status_update_response Response.ServerStatus.Ready)
 
 
-let process_failed_rebuild ~subscriptions = function
-  | Buck.Raw.BuckError _ ->
-      Subscription.batch_send
-        subscriptions
-        ~response:(create_status_update_response Response.ServerStatus.Ready)
-  | _ as exn ->
-      (* We do not currently know how to recover from these exceptions *)
-      Lwt.fail exn
+let get_buck_error_message ~description ~additional_logs () =
+  let header = Format.sprintf "Cannot build the project: %s." description in
+  if List.is_empty additional_logs then
+    header
+  else
+    Format.sprintf
+      "%s Here are the last few lines of Buck log:\n  ...\n  %s"
+      header
+      (String.concat additional_logs ~sep:"\n  ")
 
 
 let process_incremental_update_request
@@ -229,7 +230,7 @@ let process_incremental_update_request
                   ~overlaid_environment
                   current_and_deferred_source_path_events
                   changed_paths_from_rebuild
-            | Result.Error exn ->
+            | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
                 (* On build errors, stash away the current update and defer their processing until
                    next update, hoping that the user could fix the error by then. This prevents the
                    Pyre server from crashing on build failures. *)
@@ -237,8 +238,17 @@ let process_incremental_update_request
                   ~section:`Server
                   "Build failure detected. Deferring %d events..."
                   (List.length current_source_path_events);
-                ServerState.BuildFailure.update ~events:current_source_path_events build_failure;
-                process_failed_rebuild ~subscriptions exn)
+                let error_message = get_buck_error_message ~description ~additional_logs () in
+                ServerState.BuildFailure.update
+                  ~events:current_source_path_events
+                  ~error_message
+                  build_failure;
+                Subscription.batch_send
+                  subscriptions
+                  ~response:(create_status_update_response Response.ServerStatus.Ready)
+            | Result.Error exn ->
+                (* We do not currently know how to recover from these exceptions *)
+                Lwt.fail exn)
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state

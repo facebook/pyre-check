@@ -28,20 +28,27 @@ end
 
 module BuildFailure = struct
   type t = {
+    (* Holds the error message of last build failure that occurred. *)
+    mutable message: string option;
     (* Holds temporarily stashed update events that lead to the build failure. Intended to be
        processed again at a later point when the build is fixed. *)
     mutable deferred_events: SourcePath.Event.t list;
   }
 
-  let create () = { deferred_events = [] }
+  let create () = { message = None; deferred_events = [] }
 
-  let update ~events build_failure =
+  let update ~events ~error_message build_failure =
+    build_failure.message <- Some error_message;
     build_failure.deferred_events <- List.rev_append events build_failure.deferred_events
 
 
-  let get_deferred_events { deferred_events } = List.rev deferred_events
+  let get_last_error_message { message; _ } = message
 
-  let clear build_failure = build_failure.deferred_events <- []
+  let get_deferred_events { deferred_events; _ } = List.rev deferred_events
+
+  let clear build_failure =
+    build_failure.message <- None;
+    build_failure.deferred_events <- []
 end
 
 type t = {
