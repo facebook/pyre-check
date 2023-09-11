@@ -19,7 +19,6 @@
   pyrelib.analysis
   pyrelib.interprocedural
   pyrelib.path
-  pyrelib.taint
   pyrelib.typeInference
   pyrelib.scheduler
   pyrelib.memory))
