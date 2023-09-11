@@ -894,6 +894,8 @@ module DefineCallGraph = struct
 
   let empty = Location.Map.Tree.empty
 
+  let is_empty = Location.Map.Tree.is_empty
+
   let add call_graph ~location ~callees =
     Location.Map.Tree.set call_graph ~key:location ~data:callees
 
@@ -2666,14 +2668,14 @@ let build_whole_program_call_graph
   let define_call_graphs_read_only = DefineCallGraphSharedMemory.read_only define_call_graphs in
   let call_graph_to_json callable =
     match DefineCallGraphSharedMemory.ReadOnly.get define_call_graphs_read_only ~callable with
-    | Some call_graph ->
+    | Some call_graph when not (DefineCallGraph.is_empty call_graph) ->
         [
           {
             NewlineDelimitedJson.Line.kind = CallGraph;
             data = DefineCallGraph.to_json ~resolution ~resolve_module_path ~callable call_graph;
           };
         ]
-    | None -> []
+    | _ -> []
   in
   let () =
     match save_results_to with
