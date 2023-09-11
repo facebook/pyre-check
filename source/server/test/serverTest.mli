@@ -7,6 +7,11 @@
 
 open Server
 
+val create_type_error_response
+  :  ?build_failure:string ->
+  Analysis.AnalysisError.Instantiated.t list ->
+  Response.t
+
 module Client : sig
   type t
 

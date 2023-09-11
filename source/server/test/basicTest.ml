@@ -78,13 +78,13 @@ let test_basic client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [error_in_test; error_in_test2])
+    ~expected:(create_type_error_response [error_in_test; error_in_test2])
   >>= fun () ->
   (* Query type errors for `test.py`. *)
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
-    ~expected:(Response.TypeErrors [error_in_test])
+    ~expected:(create_type_error_response [error_in_test])
   >>= fun () ->
   (* Sending `IncrementalUpdate` without the corresponding filesystem should have no impact on the
      type errors. *)
@@ -96,7 +96,7 @@ let test_basic client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [error_in_test; error_in_test2])
+    ~expected:(create_type_error_response [error_in_test; error_in_test2])
   >>= fun () ->
   (* Actually test incrementally changes on `test.py`. *)
   let new_test_content =
@@ -114,7 +114,7 @@ let test_basic client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [error_in_test2])
+    ~expected:(create_type_error_response [error_in_test2])
 
 
 let test_basic context =
@@ -224,7 +224,7 @@ let test_watchman_integration ~watchman_mailbox client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [initial_error])
+    ~expected:(create_type_error_response [initial_error])
   >>= fun () ->
   (* Update an existing file and send a watchman response. *)
   let new_test_content =
@@ -242,7 +242,7 @@ let test_watchman_integration ~watchman_mailbox client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [])
+    ~expected:(create_type_error_response [])
   >>= fun () ->
   (* Add a new file and send a watchman response. *)
   let test2_path = PyrePath.create_relative ~root:global_root ~relative:"test2.py" in
@@ -281,7 +281,7 @@ let test_watchman_integration ~watchman_mailbox client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [new_error])
+    ~expected:(create_type_error_response [new_error])
   >>= fun () ->
   (* Remove a file and send a watchman response. *)
   PyrePath.remove test2_path;
@@ -293,7 +293,7 @@ let test_watchman_integration ~watchman_mailbox client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [])
-    ~expected:(Response.TypeErrors [])
+    ~expected:(create_type_error_response [])
 
 
 let test_watchman_integration context =
@@ -397,7 +397,7 @@ let test_subscription_responses_with_type_errors client =
   Client.subscribe
     client
     ~subscription:(Subscription.Request.SubscribeToTypeErrors "foo")
-    ~expected_response:(Response.TypeErrors [error])
+    ~expected_response:(create_type_error_response [error])
   >>= fun () ->
   (* Verifies that we've managed to record the subscriptions in the server state. *)
   assert_bool
@@ -429,7 +429,7 @@ let test_subscription_responses_with_type_errors client =
   >>= fun () ->
   Client.assert_subscription_response
     client
-    ~expected:{ Subscription.Response.name = "foo"; body = Response.TypeErrors [error] }
+    ~expected:{ Subscription.Response.name = "foo"; body = create_type_error_response [error] }
   >>= fun () -> Client.assert_telemetry_response client
 
 
@@ -529,7 +529,7 @@ let test_build_system_failure ~fail_switch client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
-    ~expected:(Response.TypeErrors [error])
+    ~expected:(create_type_error_response [error])
   >>= fun () ->
   (* Server should work with a successful update. *)
   Client.assert_response
@@ -557,7 +557,7 @@ let test_build_system_failure ~fail_switch client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
-    ~expected:(Response.TypeErrors [error])
+    ~expected:(create_type_error_response [error])
   >>= fun () ->
   (* "Fix" the build system failure *)
   fail_switch := false;
@@ -570,7 +570,7 @@ let test_build_system_failure ~fail_switch client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
-    ~expected:(Response.TypeErrors [])
+    ~expected:(create_type_error_response [])
   >>= fun () -> Lwt.return_unit
 
 

@@ -163,12 +163,12 @@ let test_type_errors context =
     Client.assert_response
       client
       ~request:(Request.DisplayTypeError [])
-      ~expected:(Response.TypeErrors [test_error; test2_error])
+      ~expected:(create_type_error_response [test_error; test2_error])
     >>= fun () ->
     Client.assert_response
       client
       ~request:(Request.DisplayTypeError ["/foo/test.py"])
-      ~expected:(Response.TypeErrors [test_error])
+      ~expected:(create_type_error_response [test_error])
   in
   ScratchProject.setup
     ~context
@@ -324,7 +324,7 @@ let test_update context =
     Client.assert_response
       client
       ~request:(Request.DisplayTypeError [])
-      ~expected:(Response.TypeErrors [expected_error])
+      ~expected:(create_type_error_response [expected_error])
     >>= fun () -> Lwt.return_unit
   in
   ScratchProject.setup
