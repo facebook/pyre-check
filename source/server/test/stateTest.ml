@@ -7,7 +7,7 @@
 
 open Base
 open OUnit2
-module Deferred = Server.ServerState.DeferredUpdateEvents
+module BuildFailure = Server.ServerState.BuildFailure
 
 let change_event path =
   PyrePath.create_absolute path
@@ -29,26 +29,29 @@ let assert_events ~context ~expected actual =
 
 
 let test_deferred_updates_empty context =
-  assert_events (Deferred.create () |> Deferred.get_all) ~context ~expected:[]
+  assert_events (BuildFailure.create () |> BuildFailure.get_deferred_events) ~context ~expected:[]
 
 
 let test_deferred_updates_add context =
-  let deferred = Deferred.create () in
+  let build_failure = BuildFailure.create () in
   let event_a = change_event "/foo/a.py" in
   let event_b = remove_event "/foo/b.py" in
   let event_c = remove_event "/bar/c.py" in
   let event_d = change_event "/bar/d.py" in
-  Deferred.add deferred [event_a; event_b];
-  Deferred.add deferred [event_c; event_d];
-  assert_events (Deferred.get_all deferred) ~context ~expected:[event_a; event_b; event_c; event_d];
+  BuildFailure.update build_failure ~events:[event_a; event_b];
+  BuildFailure.update build_failure ~events:[event_c; event_d];
+  assert_events
+    (BuildFailure.get_deferred_events build_failure)
+    ~context
+    ~expected:[event_a; event_b; event_c; event_d];
   ()
 
 
 let test_deferred_updates_clear context =
-  let deferred = Deferred.create () in
-  Deferred.add deferred [change_event "/foo/a.py"; remove_event "/foo/b.py"];
-  Deferred.clear deferred;
-  assert_events (Deferred.get_all deferred) ~context ~expected:[];
+  let build_failure = BuildFailure.create () in
+  BuildFailure.update build_failure ~events:[change_event "/foo/a.py"; remove_event "/foo/b.py"];
+  BuildFailure.clear build_failure;
+  assert_events (BuildFailure.get_deferred_events build_failure) ~context ~expected:[];
   ()
 
 

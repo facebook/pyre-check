@@ -19,14 +19,14 @@ module Subscriptions : sig
   val all : t -> Subscription.t list
 end
 
-module DeferredUpdateEvents : sig
+module BuildFailure : sig
   type t
 
   val create : unit -> t
 
-  val add : t -> SourcePath.Event.t list -> unit
+  val update : events:SourcePath.Event.t list -> t -> unit
 
-  val get_all : t -> SourcePath.Event.t list
+  val get_deferred_events : t -> SourcePath.Event.t list
 
   val clear : t -> unit
 end
@@ -35,12 +35,12 @@ type t = private {
   build_system: BuildSystem.t;
   overlaid_environment: Analysis.OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
-  deferred_update_events: DeferredUpdateEvents.t;
+  build_failure: BuildFailure.t;
 }
 
 val create
   :  ?subscriptions:Subscriptions.t ->
-  ?deferred_update_events:DeferredUpdateEvents.t ->
+  ?build_failure:BuildFailure.t ->
   build_system:BuildSystem.t ->
   overlaid_environment:Analysis.OverlaidEnvironment.t ->
   unit ->

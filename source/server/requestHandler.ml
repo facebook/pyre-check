@@ -187,8 +187,7 @@ let process_failed_rebuild ~subscriptions = function
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:
-      ({ ServerState.overlaid_environment; subscriptions; build_system; deferred_update_events } as
-      state)
+      ({ ServerState.overlaid_environment; subscriptions; build_system; build_failure } as state)
     paths
   =
   let open Lwt.Infix in
@@ -205,7 +204,7 @@ let process_incremental_update_request
       let overall_timer = Timer.start () in
       let current_source_path_events = List.map paths ~f:create_source_path_event in
       let current_and_deferred_source_path_events =
-        match ServerState.DeferredUpdateEvents.get_all deferred_update_events with
+        match ServerState.BuildFailure.get_deferred_events build_failure with
         | [] -> current_source_path_events
         | deferred_events ->
             Log.log
@@ -222,7 +221,7 @@ let process_incremental_update_request
       >>= (function
             | Result.Ok changed_paths_from_rebuild ->
                 (* The build has succeeded and deferred events are all processed. *)
-                ServerState.DeferredUpdateEvents.clear deferred_update_events;
+                ServerState.BuildFailure.clear build_failure;
                 process_successful_rebuild
                   ~configuration
                   ~subscriptions
@@ -238,9 +237,7 @@ let process_incremental_update_request
                   ~section:`Server
                   "Build failure detected. Deferring %d events..."
                   (List.length current_source_path_events);
-                ServerState.DeferredUpdateEvents.add
-                  deferred_update_events
-                  current_source_path_events;
+                ServerState.BuildFailure.update ~events:current_source_path_events build_failure;
                 process_failed_rebuild ~subscriptions exn)
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions

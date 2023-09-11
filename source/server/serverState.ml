@@ -26,34 +26,37 @@ module Subscriptions = struct
   let all subscriptions = Hashtbl.data subscriptions
 end
 
-module DeferredUpdateEvents = struct
-  (* Holds temporarily stashed update events to get processed later. Useful for tolerating build
-     system failures. *)
-  type t = { mutable events: SourcePath.Event.t list }
+module BuildFailure = struct
+  type t = {
+    (* Holds temporarily stashed update events that lead to the build failure. Intended to be
+       processed again at a later point when the build is fixed. *)
+    mutable deferred_events: SourcePath.Event.t list;
+  }
 
-  let create () = { events = [] }
+  let create () = { deferred_events = [] }
 
-  let add deferred events = deferred.events <- List.rev_append events deferred.events
+  let update ~events build_failure =
+    build_failure.deferred_events <- List.rev_append events build_failure.deferred_events
 
-  let get_all deferred = List.rev deferred.events
 
-  let clear deferred = deferred.events <- []
+  let get_deferred_events { deferred_events } = List.rev deferred_events
+
+  let clear build_failure = build_failure.deferred_events <- []
 end
 
 type t = {
   build_system: BuildSystem.t;
   overlaid_environment: OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
-  deferred_update_events: DeferredUpdateEvents.t;
+  build_failure: BuildFailure.t;
 }
 
-let create ?subscriptions ?deferred_update_events ~build_system ~overlaid_environment () =
+let create ?subscriptions ?build_failure ~build_system ~overlaid_environment () =
   {
     build_system;
     overlaid_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
-    deferred_update_events =
-      Option.value deferred_update_events ~default:(DeferredUpdateEvents.create ());
+    build_failure = Option.value build_failure ~default:(BuildFailure.create ());
   }
 
 
