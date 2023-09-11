@@ -125,6 +125,14 @@ let create_type_errors_response ~configuration ~build_system errors_environment 
           ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment)))
 
 
+let update_build_system ~build_system source_path_events =
+  let open Lwt.Infix in
+  Lwt.catch
+    (fun () -> BuildSystem.update build_system source_path_events >>= Lwt.return_ok)
+    (function
+      | _ as exn -> Lwt.return_error exn)
+
+
 let process_successful_rebuild
     ~configuration
     ~subscriptions
@@ -166,6 +174,12 @@ let process_successful_rebuild
     ~response:(create_status_update_response Response.ServerStatus.Ready)
 
 
+let process_failed_rebuild = function
+  | _ as exn ->
+      (* We do not currently know how to recover from these exceptions *)
+      Lwt.fail exn
+
+
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:({ ServerState.overlaid_environment; subscriptions; build_system; _ } as state)
@@ -188,13 +202,17 @@ let process_incremental_update_request
         ~response:(create_status_update_response Response.ServerStatus.Rebuilding)
         subscriptions
       >>= fun () ->
-      BuildSystem.update build_system source_path_events
-      >>= process_successful_rebuild
-            ~configuration
-            ~subscriptions
-            ~build_system
-            ~overlaid_environment
-            source_path_events
+      update_build_system ~build_system source_path_events
+      >>= (function
+            | Result.Ok changed_paths_from_rebuild ->
+                process_successful_rebuild
+                  ~configuration
+                  ~subscriptions
+                  ~build_system
+                  ~overlaid_environment
+                  source_path_events
+                  changed_paths_from_rebuild
+            | Result.Error exn -> process_failed_rebuild exn)
       >>= fun () ->
       Subscription.batch_send ~response:(create_telemetry_response overall_timer) subscriptions
       >>= fun () -> Lwt.return state
