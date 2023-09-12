@@ -9,7 +9,6 @@
 
 open Core
 open Pyre
-open Ast
 open Analysis
 
 let instantiate_error ~lookup_source ~show_error_traces ~module_tracker error =
@@ -285,29 +284,20 @@ let process_overlay_update
   let _ =
     OverlaidEnvironment.update_overlay_with_code overlaid_environment ~code_updates overlay_id
   in
-  let type_errors_for_module errors_environment =
-    let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
-    let qualifier_for_artifact_path artifact_path =
+  match OverlaidEnvironment.overlay overlaid_environment overlay_id with
+  | None -> Response.Error ("Unable to update overlay " ^ overlay_id)
+  | Some errors_environment ->
+      let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
       (* TODO(T126093907) Handle shadowed files correctly; this is not possible without a refactor
          of ModuleTracker and isn't necessary to get early feedback, but what we actually want to do
          is overlay the artifact path even though it is shadowed; this will be a no-op but it is
          needed to behave correctly if the user then deletes the shadowing file. *)
-      ModuleTracker.ReadOnly.lookup_path module_tracker artifact_path
-      |> function
-      | ModuleTracker.PathLookup.Found module_path -> Some (ModulePath.qualifier module_path)
-      | ModuleTracker.PathLookup.ShadowedBy _
-      | ModuleTracker.PathLookup.NotFound ->
-          None
-    in
-    List.filter_map artifact_paths ~f:qualifier_for_artifact_path
-    |> List.concat_map ~f:(ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment)
-    |> instantiate_errors_with_build_system ~build_system ~module_tracker
-  in
-  OverlaidEnvironment.overlay overlaid_environment overlay_id
-  >>| type_errors_for_module
-  |> function
-  | Some errors -> Response.TypeErrors { errors; build_failure }
-  | None -> Response.Error ("Unable to update overlay " ^ overlay_id)
+      let modules = List.filter_map artifact_paths ~f:(PathLookup.module_of_path ~module_tracker) in
+      instantiate_and_create_type_errors_response_for_modules
+        ?build_failure:(ServerState.BuildFailure.get_last_error_message build_failure)
+        ~build_system
+        ~modules
+        errors_environment
 
 
 let process_request
@@ -348,7 +338,7 @@ let process_request
           ~build_system
           ~overlaid_environment
           ~overlay_id
-          ~build_failure:(ServerState.BuildFailure.get_last_error_message build_failure)
+          ~build_failure
           ~source_path:(PyrePath.create_absolute source_path |> SourcePath.create)
           ~code_update:
             (match code_update with
