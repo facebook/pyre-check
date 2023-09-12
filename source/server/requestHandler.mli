@@ -14,7 +14,6 @@ val instantiate_error
 
 val instantiate_error_with_build_system
   :  build_system:BuildSystem.t ->
-  configuration:Configuration.Analysis.t ->
   module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   Analysis.AnalysisError.t ->
   Analysis.AnalysisError.Instantiated.t

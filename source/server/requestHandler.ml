@@ -19,12 +19,10 @@ let instantiate_error ~lookup_source ~show_error_traces ~module_tracker error =
     error
 
 
-let instantiate_error_with_build_system
-    ~build_system
-    ~configuration:{ Configuration.Analysis.show_error_traces; _ }
-    ~module_tracker
-    error
-  =
+let instantiate_error_with_build_system ~build_system ~module_tracker error =
+  let { Configuration.Analysis.show_error_traces; _ } =
+    ModuleTracker.ReadOnly.controls module_tracker |> EnvironmentControls.configuration
+  in
   instantiate_error
     ~lookup_source:(BuildSystem.lookup_source build_system)
     ~show_error_traces
@@ -32,14 +30,11 @@ let instantiate_error_with_build_system
     error
 
 
-let instantiate_errors_with_build_system ~build_system ~configuration ~module_tracker errors =
-  List.map
-    errors
-    ~f:(instantiate_error_with_build_system ~build_system ~configuration ~module_tracker)
+let instantiate_errors_with_build_system ~build_system ~module_tracker errors =
+  List.map errors ~f:(instantiate_error_with_build_system ~build_system ~module_tracker)
 
 
 let process_display_type_error_request
-    ~configuration
     ~state:{ ServerState.overlaid_environment; build_system; build_failure; _ }
     ?overlay_id
     paths
@@ -67,8 +62,7 @@ let process_display_type_error_request
   in
   Response.TypeErrors
     {
-      errors =
-        instantiate_errors_with_build_system errors ~build_system ~configuration ~module_tracker;
+      errors = instantiate_errors_with_build_system errors ~build_system ~module_tracker;
       build_failure = ServerState.BuildFailure.get_last_error_message build_failure;
     }
 
@@ -115,11 +109,7 @@ let create_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
 
 let create_status_update_response status = lazy (Response.StatusUpdate status)
 
-let create_type_errors_response_without_build_failure
-    ~configuration
-    ~build_system
-    errors_environment
-  =
+let create_type_errors_response_without_build_failure ~build_system errors_environment =
   lazy
     (let errors =
        ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
@@ -131,7 +121,6 @@ let create_type_errors_response_without_build_failure
            instantiate_errors_with_build_system
              errors
              ~build_system
-             ~configuration
              ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment);
          build_failure = None;
        })
@@ -177,7 +166,6 @@ let process_successful_rebuild
     type_error_subscriptions
     ~response:
       (create_type_errors_response_without_build_failure
-         ~configuration
          ~build_system
          (OverlaidEnvironment.root overlaid_environment))
   >>= fun () ->
@@ -295,11 +283,7 @@ let process_overlay_update
     in
     List.filter_map artifact_paths ~f:qualifier_for_artifact_path
     |> List.concat_map ~f:(ErrorsEnvironment.ReadOnly.get_errors_for_qualifier errors_environment)
-    |> instantiate_errors_with_build_system
-         ~build_system
-         ~configuration:
-           (ModuleTracker.ReadOnly.controls module_tracker |> EnvironmentControls.configuration)
-         ~module_tracker
+    |> instantiate_errors_with_build_system ~build_system ~module_tracker
   in
   OverlaidEnvironment.overlay overlaid_environment overlay_id
   >>| type_errors_for_module
@@ -309,16 +293,16 @@ let process_overlay_update
 
 
 let process_request
-    ~properties:({ ServerProperties.configuration; _ } as properties)
+    ~properties
     ~state:({ ServerState.overlaid_environment; build_system; build_failure; _ } as state)
     request
   =
   match request with
   | Request.DisplayTypeError paths ->
-      let response = process_display_type_error_request ~configuration ~state paths in
+      let response = process_display_type_error_request ~state paths in
       Lwt.return (state, response)
   | Request.GetOverlayTypeErrors { overlay_id; path } ->
-      let response = process_display_type_error_request ~configuration ~state ~overlay_id [path] in
+      let response = process_display_type_error_request ~state ~overlay_id [path] in
       Lwt.return (state, response)
   | Request.IncrementalUpdate paths ->
       let open Lwt.Infix in
