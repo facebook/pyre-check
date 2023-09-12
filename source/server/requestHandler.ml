@@ -34,21 +34,42 @@ let instantiate_errors_with_build_system ~build_system ~module_tracker errors =
   List.map errors ~f:(instantiate_error_with_build_system ~build_system ~module_tracker)
 
 
-let create_type_errors_response_without_build_failure ~build_system errors_environment =
-  lazy
-    (let errors =
-       ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
-       |> List.sort ~compare:AnalysisError.compare
-     in
-     Response.TypeErrors
-       {
-         errors =
-           instantiate_errors_with_build_system
-             errors
-             ~build_system
-             ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment);
-         build_failure = None;
-       })
+let create_type_errors_response ?build_failure instantiated_errors =
+  Response.TypeErrors { errors = instantiated_errors; build_failure }
+
+
+let instantiate_and_create_type_errors_response
+    ?build_failure
+    ~build_system
+    ~module_tracker
+    raw_errors
+  =
+  instantiate_errors_with_build_system ~build_system ~module_tracker raw_errors
+  |> create_type_errors_response ?build_failure
+
+
+let instantiate_and_create_type_errors_response_for_modules
+    ?build_failure
+    ~build_system
+    ~modules
+    errors_environment
+  =
+  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
+  ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
+  |> List.sort ~compare:AnalysisError.compare
+  |> instantiate_and_create_type_errors_response ~build_system ~module_tracker ?build_failure
+
+
+let instantiate_and_create_type_errors_response_for_all
+    ?build_failure
+    ~build_system
+    errors_environment
+  =
+  instantiate_and_create_type_errors_response_for_modules
+    errors_environment
+    ~build_system
+    ?build_failure
+    ~modules:(ErrorsEnvironment.ReadOnly.project_qualifiers errors_environment)
 
 
 let process_display_type_error_request
@@ -61,8 +82,8 @@ let process_display_type_error_request
     >>= OverlaidEnvironment.overlay overlaid_environment
     |> Option.value ~default:(OverlaidEnvironment.root overlaid_environment)
   in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   let modules =
+    let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
     match paths with
     | [] -> ModuleTracker.ReadOnly.project_qualifiers module_tracker
     | _ ->
@@ -73,15 +94,11 @@ let process_display_type_error_request
         in
         List.concat_map paths ~f:get_module_for_source_path
   in
-  let errors =
-    ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
-    |> List.sort ~compare:AnalysisError.compare
-  in
-  Response.TypeErrors
-    {
-      errors = instantiate_errors_with_build_system errors ~build_system ~module_tracker;
-      build_failure = ServerState.BuildFailure.get_last_error_message build_failure;
-    }
+  instantiate_and_create_type_errors_response_for_modules
+    ?build_failure:(ServerState.BuildFailure.get_last_error_message build_failure)
+    ~build_system
+    ~modules
+    errors_environment
 
 
 let create_info_response
@@ -165,9 +182,10 @@ let process_successful_rebuild
   Subscription.batch_send
     type_error_subscriptions
     ~response:
-      (create_type_errors_response_without_build_failure
-         ~build_system
-         (OverlaidEnvironment.root overlaid_environment))
+      (lazy
+        (instantiate_and_create_type_errors_response_for_all
+           ~build_system
+           (OverlaidEnvironment.root overlaid_environment)))
   >>= fun () ->
   Subscription.batch_send
     status_change_subscriptions
