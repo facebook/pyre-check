@@ -34,6 +34,23 @@ let instantiate_errors_with_build_system ~build_system ~module_tracker errors =
   List.map errors ~f:(instantiate_error_with_build_system ~build_system ~module_tracker)
 
 
+let create_type_errors_response_without_build_failure ~build_system errors_environment =
+  lazy
+    (let errors =
+       ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
+       |> List.sort ~compare:AnalysisError.compare
+     in
+     Response.TypeErrors
+       {
+         errors =
+           instantiate_errors_with_build_system
+             errors
+             ~build_system
+             ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment);
+         build_failure = None;
+       })
+
+
 let process_display_type_error_request
     ~state:{ ServerState.overlaid_environment; build_system; build_failure; _ }
     ?overlay_id
@@ -108,23 +125,6 @@ let create_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
 
 
 let create_status_update_response status = lazy (Response.StatusUpdate status)
-
-let create_type_errors_response_without_build_failure ~build_system errors_environment =
-  lazy
-    (let errors =
-       ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
-       |> List.sort ~compare:AnalysisError.compare
-     in
-     Response.TypeErrors
-       {
-         errors =
-           instantiate_errors_with_build_system
-             errors
-             ~build_system
-             ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment);
-         build_failure = None;
-       })
-
 
 let update_build_system ~build_system source_path_events =
   let open Lwt.Infix in
