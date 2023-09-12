@@ -557,7 +557,10 @@ let test_build_system_failure ~fail_switch client =
   Client.assert_response
     client
     ~request:(Request.DisplayTypeError [PyrePath.absolute test_path])
-    ~expected:(create_type_error_response [error])
+    ~expected:
+      (create_type_error_response
+         ~build_failure:"Cannot build the project: fake description."
+         [error])
   >>= fun () ->
   (* "Fix" the build system failure *)
   fail_switch := false;

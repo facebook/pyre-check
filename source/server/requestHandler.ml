@@ -40,7 +40,7 @@ let instantiate_errors_with_build_system ~build_system ~configuration ~module_tr
 
 let process_display_type_error_request
     ~configuration
-    ~state:{ ServerState.overlaid_environment; build_system; _ }
+    ~state:{ ServerState.overlaid_environment; build_system; build_failure; _ }
     ?overlay_id
     paths
   =
@@ -66,7 +66,11 @@ let process_display_type_error_request
     |> List.sort ~compare:AnalysisError.compare
   in
   Response.TypeErrors
-    (instantiate_errors_with_build_system errors ~build_system ~configuration ~module_tracker)
+    {
+      errors =
+        instantiate_errors_with_build_system errors ~build_system ~configuration ~module_tracker;
+      build_failure = ServerState.BuildFailure.get_last_error_message build_failure;
+    }
 
 
 let create_info_response
@@ -111,18 +115,26 @@ let create_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
 
 let create_status_update_response status = lazy (Response.StatusUpdate status)
 
-let create_type_errors_response ~configuration ~build_system errors_environment =
+let create_type_errors_response_without_build_failure
+    ~configuration
+    ~build_system
+    errors_environment
+  =
   lazy
     (let errors =
        ErrorsEnvironment.ReadOnly.get_all_errors errors_environment
        |> List.sort ~compare:AnalysisError.compare
      in
      Response.TypeErrors
-       (instantiate_errors_with_build_system
-          errors
-          ~build_system
-          ~configuration
-          ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment)))
+       {
+         errors =
+           instantiate_errors_with_build_system
+             errors
+             ~build_system
+             ~configuration
+             ~module_tracker:(ErrorsEnvironment.ReadOnly.module_tracker errors_environment);
+         build_failure = None;
+       })
 
 
 let update_build_system ~build_system source_path_events =
@@ -164,7 +176,7 @@ let process_successful_rebuild
   Subscription.batch_send
     type_error_subscriptions
     ~response:
-      (create_type_errors_response
+      (create_type_errors_response_without_build_failure
          ~configuration
          ~build_system
          (OverlaidEnvironment.root overlaid_environment))
@@ -254,7 +266,13 @@ let process_incremental_update_request
       >>= fun () -> Lwt.return state
 
 
-let process_overlay_update ~build_system ~overlaid_environment ~overlay_id ~source_path ~code_update
+let process_overlay_update
+    ~build_system
+    ~overlaid_environment
+    ~overlay_id
+    ~build_failure
+    ~source_path
+    ~code_update
   =
   let artifact_paths = BuildSystem.lookup_artifact build_system source_path in
   let code_updates = List.map artifact_paths ~f:(fun artifact_path -> artifact_path, code_update) in
@@ -286,13 +304,13 @@ let process_overlay_update ~build_system ~overlaid_environment ~overlay_id ~sour
   OverlaidEnvironment.overlay overlaid_environment overlay_id
   >>| type_errors_for_module
   |> function
-  | Some errors -> Response.TypeErrors errors
+  | Some errors -> Response.TypeErrors { errors; build_failure }
   | None -> Response.Error ("Unable to update overlay " ^ overlay_id)
 
 
 let process_request
     ~properties:({ ServerProperties.configuration; _ } as properties)
-    ~state:({ ServerState.overlaid_environment; build_system; _ } as state)
+    ~state:({ ServerState.overlaid_environment; build_system; build_failure; _ } as state)
     request
   =
   match request with
@@ -328,6 +346,7 @@ let process_request
           ~build_system
           ~overlaid_environment
           ~overlay_id
+          ~build_failure:(ServerState.BuildFailure.get_last_error_message build_failure)
           ~source_path:(PyrePath.create_absolute source_path |> SourcePath.create)
           ~code_update:
             (match code_update with

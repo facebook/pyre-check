@@ -39,7 +39,13 @@ type t =
       relative_local_root: string option;
     }
   | StatusUpdate of ServerStatus.t
-  | TypeErrors of Analysis.AnalysisError.Instantiated.t list
+  | TypeErrors of {
+      errors: Analysis.AnalysisError.Instantiated.t list;
+      (* If the project is not currently buildable, this field will be filled with the error message
+         for the build, while the `errors` field will contain type errors computed when the last
+         time build succeeded. *)
+      build_failure: string option;
+    }
   | Query of Query.Response.t
   | IncrementalTelemetry of IncrementalTelemetry.t
 [@@deriving equal, to_yojson]
