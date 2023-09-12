@@ -26,6 +26,8 @@ module SharedMemory : sig
 
   val get : t -> class_name:ClassHierarchyGraph.class_name -> ClassIntervalSet.t option
 
+  val of_class : t -> string -> ClassIntervalSet.t
+
   val of_type : t -> Type.t option -> ClassIntervalSet.t
 
   val of_definition : t -> Ast.Statement.Define.t Ast.Node.t -> ClassIntervalSet.t

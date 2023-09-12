@@ -43,3 +43,9 @@ val defining_attribute
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
 val resolve_ignoring_errors : resolution:Resolution.t -> Ast.Expression.t -> Type.t
+
+val strip_optional : Type.t -> Type.t
+
+val unbind_type_variable : Type.t -> Type.t
+
+val strip_readonly : Type.t -> Type.t

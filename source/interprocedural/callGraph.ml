@@ -167,8 +167,8 @@ module CallTarget = struct
     index: int;
     (* The return type of the call expression, or `None` for object targets. *)
     return_type: ReturnType.t option;
-    (* The type of the receiver object at this call site, if any. *)
-    receiver_type: Type.t option;
+    (* The class of the receiver object at this call site, if any. *)
+    receiver_class: string option;
   }
   [@@deriving compare, eq, show { with_path = false }]
 
@@ -182,15 +182,29 @@ module CallTarget = struct
     |> List.remove_consecutive_duplicates ~which_to_keep:`First ~equal:equal_ignoring_indices
 
 
+  let receiver_class_from_type annotation =
+    annotation
+    |> CallResolution.strip_optional
+    |> CallResolution.strip_readonly
+    |> CallResolution.unbind_type_variable
+    |> Type.split
+    |> fst
+    |> Type.primitive_name
+    |> function
+    | Some "type" -> None
+    | Some "super" -> None
+    | name -> name
+
+
   let create
       ?(implicit_self = false)
       ?(implicit_dunder_call = false)
       ?(index = 0)
       ?(return_type = Some ReturnType.any)
-      ?receiver_type
+      ?receiver_class
       target
     =
-    { target; implicit_self; implicit_dunder_call; index; return_type; receiver_type }
+    { target; implicit_self; implicit_dunder_call; index; return_type; receiver_class }
 
 
   let equal_ignoring_types
@@ -200,7 +214,7 @@ module CallTarget = struct
         implicit_dunder_call = implicit_dunder_call_left;
         index = index_left;
         return_type = _;
-        receiver_type = _;
+        receiver_class = _;
       }
       {
         target = target_right;
@@ -208,7 +222,7 @@ module CallTarget = struct
         implicit_dunder_call = implicit_dunder_call_right;
         index = index_right;
         return_type = _;
-        receiver_type = _;
+        receiver_class = _;
       }
     =
     Target.equal target_left target_right
@@ -217,13 +231,12 @@ module CallTarget = struct
     && index_left == index_right
 
 
-  let to_json { target; implicit_self; implicit_dunder_call; index; return_type; receiver_type } =
+  let to_json { target; implicit_self; implicit_dunder_call; index; return_type; receiver_class } =
     ["index", `Int index; "target", `String (Target.external_name target)]
     |> JsonHelper.add_flag_if "implicit_self" implicit_self
     |> JsonHelper.add_flag_if "implicit_dunder_call" implicit_dunder_call
     |> JsonHelper.add_optional "return_type" return_type ReturnType.to_json
-    |> JsonHelper.add_optional "receiver_type" receiver_type (fun annotation ->
-           `String (Type.show annotation))
+    |> JsonHelper.add_optional "receiver_class" receiver_class (fun name -> `String name)
     |> fun bindings -> `Assoc (List.rev bindings)
 end
 
@@ -441,21 +454,12 @@ module CallCallees = struct
 
 
   let is_method_of_class ~is_class_name callees =
-    let rec is_class_type = function
-      | Type.Primitive name -> is_class_name name
-      | Type.Parametric { name; _ } -> is_class_name name
-      | Type.Union [NoneType; annotation]
-      | Type.Union [annotation; NoneType] ->
-          is_class_type annotation
-      | Type.Union annotations -> List.for_all ~f:is_class_type annotations
-      | _ -> false
-    in
     let is_call_target = function
-      | { CallTarget.target = Method { class_name; _ }; receiver_type; _ }
-      | { target = Override { class_name; _ }; receiver_type; _ } ->
+      | { CallTarget.target = Method { class_name; _ }; receiver_class = Some receiver_class; _ }
+      | { target = Override { class_name; _ }; receiver_class = Some receiver_class; _ } ->
           (* Is it not enough to check the class name, since methods can be inherited.
            * For instance, `__iter__` is not defined on `Mapping`, but is defined in the parent class `Iterable`. *)
-          is_class_name class_name || receiver_type >>| is_class_type |> Option.value ~default:false
+          is_class_name class_name || is_class_name receiver_class
       | _ -> false
     in
     match callees with
@@ -1013,7 +1017,7 @@ module CallTargetIndexer = struct
       implicit_dunder_call;
       index;
       return_type;
-      receiver_type;
+      receiver_class = receiver_type >>= CallTarget.receiver_class_from_type;
     }
 end
 
@@ -1352,10 +1356,19 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
       let set_return_type call_target =
         { call_target with CallTarget.return_type = Some return_type }
       in
+      let unset_receiver_class call_target =
+        { call_target with CallTarget.receiver_class = None }
+      in
       Some
         (CallCallees.create
-           ~new_targets:(List.map ~f:set_return_type new_callees.call_targets)
-           ~init_targets:(List.map ~f:set_return_type init_callees.call_targets)
+           ~new_targets:
+             (new_callees.call_targets
+             |> List.map ~f:set_return_type
+             |> List.map ~f:unset_receiver_class)
+           ~init_targets:
+             (init_callees.call_targets
+             |> List.map ~f:set_return_type
+             |> List.map ~f:unset_receiver_class)
            ~unresolved:(new_callees.unresolved || init_callees.unresolved)
            ())
 
@@ -2036,7 +2049,7 @@ struct
           implicit_dunder_call = false;
           index = 0;
           return_type = Some ReturnType.any;
-          receiver_type = None;
+          receiver_class = None;
         }
       in
       { callees with call_targets = call_target :: call_targets }

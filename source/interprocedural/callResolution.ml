@@ -129,6 +129,10 @@ let defining_attribute ~resolution parent_type attribute =
     Resolution.fallback_attribute ~resolution ~name:attribute class_name
 
 
+let strip_optional annotation =
+  annotation |> Type.optional_value |> Option.value ~default:annotation
+
+
 (* Convert `TypeVar["X", bound="Y"]` to `Y` *)
 let unbind_type_variable = function
   | Type.Variable { constraints = Type.Record.Variable.Bound bound; _ } -> bound
@@ -168,8 +172,4 @@ let rec resolve_ignoring_errors ~resolution expression =
         (* Lookup the base_type for the attribute you were interested in *))
     | _ -> resolve_expression_to_type expression
   in
-  annotation
-  |> Type.optional_value
-  |> Option.value ~default:annotation
-  |> strip_readonly
-  |> unbind_type_variable
+  annotation |> strip_optional |> strip_readonly |> unbind_type_variable

@@ -131,7 +131,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_method (Reference.create "test.C.m"));
                     ]
                   ())) );
@@ -177,7 +177,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.literal_integer 1)
+                              ~receiver_class:"int"
                               ~return_type:(Some ReturnType.bool)
                               (Target.Method
                                  { class_name = "int"; method_name = "__le__"; kind = Normal });
@@ -190,7 +190,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.literal_integer 1)
+                              ~receiver_class:"int"
                               ~return_type:(Some ReturnType.bool)
                               (Target.Method
                                  { class_name = "int"; method_name = "__gt__"; kind = Normal });
@@ -224,7 +224,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.literal_integer 1)
+                              ~receiver_class:"int"
                               ~return_type:(Some ReturnType.bool)
                               (Target.Method
                                  { class_name = "int"; method_name = "__le__"; kind = Normal });
@@ -237,7 +237,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.literal_integer 1)
+                              ~receiver_class:"int"
                               ~return_type:(Some ReturnType.bool)
                               (Target.Method
                                  { class_name = "int"; method_name = "__gt__"; kind = Normal });
@@ -276,7 +276,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_method (Reference.create "test.C.m"));
                     ]
                   ())) );
@@ -310,7 +310,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_override (Reference.create "test.C.m"));
                     ]
                   ())) );
@@ -343,11 +343,11 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.D")
+                        ~receiver_class:"test.D"
                         (Target.create_method (Reference.create "test.C.m"));
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.D")
+                        ~receiver_class:"test.D"
                         (Target.create_method (Reference.create "test.E.m"));
                     ]
                   ())) );
@@ -373,7 +373,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~implicit_dunder_call:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_method (Reference.create "test.C.__call__"));
                     ]
                   ())) );
@@ -425,7 +425,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.bool)
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_method (Reference.create "test.C.__call__"));
                     ]
                   ())) );
@@ -453,7 +453,7 @@ let test_call_graph_of_define context =
                         ~implicit_self:true
                         ~implicit_dunder_call:true
                         ~return_type:(Some ReturnType.bool)
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.create_method (Reference.create "test.C.__call__"));
                     ]
                   ())) );
@@ -479,7 +479,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "test.C"; method_name = "__init__"; kind = Normal });
                     ]
@@ -488,7 +487,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -512,7 +510,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.meta (Type.Primitive "int"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -521,7 +518,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.meta (Type.Primitive "int"))
                         (Target.Method
                            { class_name = "int"; method_name = "__new__"; kind = Normal });
                     ]
@@ -548,7 +544,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -557,7 +552,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "test.C"; method_name = "__new__"; kind = Normal });
                     ]
@@ -585,7 +579,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                         (Target.Method
                            { class_name = "test.B"; method_name = "__init__"; kind = Normal });
                     ]
@@ -594,7 +587,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -622,7 +614,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -631,7 +622,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                         (Target.Method
                            { class_name = "test.B"; method_name = "__new__"; kind = Normal });
                     ]
@@ -662,7 +652,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                         (Target.Method
                            { class_name = "test.A"; method_name = "__init__"; kind = Normal });
                     ]
@@ -671,7 +660,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -769,7 +757,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -792,7 +779,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.bool)
-                        ~receiver_type:(Type.literal_integer 1)
+                        ~receiver_class:"int"
                         (Target.Method { class_name = "int"; method_name = "__gt__"; kind = Normal });
                     ]
                   ())) );
@@ -818,7 +805,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method
                            { class_name = "test.C"; method_name = "__repr__"; kind = Normal });
                     ]
@@ -901,7 +888,7 @@ let test_call_graph_of_define context =
                         ~implicit_self:true
                         ~implicit_dunder_call:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.Primitive "TestCallableTarget")
+                        ~receiver_class:"TestCallableTarget"
                         (Target.Method
                            {
                              class_name = "TestCallableTarget";
@@ -957,7 +944,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "super"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -965,7 +951,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "super"))
                         (Target.Method
                            { class_name = "super"; method_name = "__init__"; kind = Normal });
                     ]
@@ -979,7 +964,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1043,7 +1028,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1214,7 +1198,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "map"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -1222,7 +1205,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "map"))
                         (Target.Method
                            { class_name = "map"; method_name = "__init__"; kind = Normal });
                     ]
@@ -1263,7 +1245,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.Builder"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -1271,7 +1252,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.Builder"))
                         (Target.Method
                            { class_name = "test.Builder"; method_name = "__init__"; kind = Normal });
                     ]
@@ -1284,7 +1264,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.Builder")
+                        ~receiver_class:"test.Builder"
                         (Target.Method
                            {
                              class_name = "test.Builder";
@@ -1301,7 +1281,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.Builder")
+                        ~receiver_class:"test.Builder"
                         (Target.Method
                            { class_name = "test.Builder"; method_name = "set_saved"; kind = Normal });
                     ]
@@ -1360,7 +1340,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "m"; kind = Normal });
                     ]
                   ())) );
@@ -1391,8 +1371,7 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.integer)
                         ~implicit_self:true
                         ~implicit_dunder_call:true
-                        ~receiver_type:
-                          (Type.parametric "functools._lru_cache_wrapper" [Single Type.integer])
+                        ~receiver_class:"functools._lru_cache_wrapper"
                         (Target.Method
                            {
                              class_name = "functools._lru_cache_wrapper";
@@ -1425,7 +1404,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -1433,7 +1411,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -1446,7 +1423,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "run"; kind = Normal });
                     ]
                   ())) );
@@ -1461,7 +1438,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list (Type.Primitive "test.C"))
+                              ~receiver_class:"list"
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
                           ]
@@ -1473,7 +1450,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.iterator (Type.Primitive "test.C"))
+                              ~receiver_class:"typing.Iterator"
                               (Target.Method
                                  {
                                    class_name = "typing.Iterator";
@@ -1532,8 +1509,7 @@ let test_call_graph_of_define context =
                             CallTarget.create
                               ~implicit_self:true
                               ~return_type:(Some ReturnType.integer)
-                              ~receiver_type:
-                                (Type.parametric "contextlib.ContextManager" [Single Type.integer])
+                              ~receiver_class:"contextlib.ContextManager"
                               (Target.Method
                                  {
                                    class_name = "contextlib.ContextManager";
@@ -1626,7 +1602,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1786,10 +1762,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:
-                          (Type.dictionary
-                             ~key:Type.string
-                             ~value:(Type.meta (Type.Primitive "test.C")))
+                        ~receiver_class:"dict"
                         (Target.Method
                            { class_name = "dict"; method_name = "__getitem__"; kind = Normal });
                     ]
@@ -1802,7 +1775,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                         (Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -1852,7 +1824,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        ~receiver_class:"dict"
                         (Target.Method
                            { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
                     ]
@@ -1872,7 +1844,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        ~receiver_class:"dict"
                         ~index:1
                         (Target.Method
                            { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
@@ -1907,10 +1879,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.dictionary
-                                   ~key:Type.string
-                                   ~value:(Type.dictionary ~key:Type.string ~value:Type.integer))
+                              ~receiver_class:"dict"
                               (Target.Method
                                  { class_name = "dict"; method_name = "__getitem__"; kind = Normal });
                           ]
@@ -1931,7 +1900,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.dictionary ~key:Type.string ~value:Type.integer)
+                        ~receiver_class:"dict"
                         ~index:2
                         (Target.Method
                            { class_name = "dict"; method_name = "__setitem__"; kind = Normal });
@@ -2020,7 +1989,7 @@ let test_call_graph_of_define context =
                         [
                           CallTarget.create
                             ~implicit_self:true
-                            ~receiver_type:Type.string
+                            ~receiver_class:"str"
                             (Target.Method
                                { class_name = "str"; method_name = "__str__"; kind = Normal });
                         ]) );
@@ -2031,7 +2000,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.Primitive "test.C")
+                              ~receiver_class:"test.C"
                               (Target.Method
                                  { class_name = "test.C"; method_name = "m"; kind = Normal });
                           ]
@@ -2126,7 +2095,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "Exception"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -2134,7 +2102,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "Exception"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -2343,7 +2310,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.Primitive "test.Foo")
+                        ~receiver_class:"test.Foo"
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                     ]
@@ -2521,7 +2488,6 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.meta (Type.Primitive "test.Foo"))
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                     ]
@@ -2607,7 +2573,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.Foo"))
                         ~return_type:(Some ReturnType.integer)
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
@@ -2712,7 +2677,7 @@ let test_call_graph_of_define context =
                                CallTarget.create
                                  ~implicit_self:true
                                  ~implicit_dunder_call:true
-                                 ~receiver_type:(Type.Primitive "test.CallableClass")
+                                 ~receiver_class:"test.CallableClass"
                                  (Target.Method
                                     {
                                       class_name = "test.CallableClass";
@@ -2873,7 +2838,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.Token")
+                        ~receiver_class:"test.Token"
                         (Target.Method
                            { class_name = "object"; method_name = "__setattr__"; kind = Normal });
                     ]
@@ -2957,7 +2922,6 @@ let test_call_graph_of_define context =
                       [
                         CallTarget.create
                           ~implicit_self:true
-                          ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                           (Target.Method
                              { class_name = "object"; method_name = "__init__"; kind = Normal });
                       ]
@@ -2965,7 +2929,6 @@ let test_call_graph_of_define context =
                       [
                         CallTarget.create
                           ~implicit_self:true
-                          ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                           (Target.Method
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
                       ]
@@ -2979,7 +2942,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:1
-                          ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                           (Target.Method
                              { class_name = "object"; method_name = "__init__"; kind = Normal });
                       ]
@@ -2988,7 +2950,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:1
-                          ~receiver_type:(Type.meta (Type.Primitive "test.B"))
                           (Target.Method
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
                       ]
@@ -3002,7 +2963,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:2
-                          ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                           (Target.Method
                              { class_name = "object"; method_name = "__init__"; kind = Normal });
                       ]
@@ -3011,7 +2971,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:2
-                          ~receiver_type:(Type.meta (Type.Primitive "test.C"))
                           (Target.Method
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
                       ]
@@ -3025,7 +2984,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:3
-                          ~receiver_type:(Type.meta (Type.Primitive "test.D"))
                           (Target.Method
                              { class_name = "object"; method_name = "__init__"; kind = Normal });
                       ]
@@ -3034,7 +2992,6 @@ let test_call_graph_of_define context =
                         CallTarget.create
                           ~implicit_self:true
                           ~index:3
-                          ~receiver_type:(Type.meta (Type.Primitive "test.D"))
                           (Target.Method
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
                       ]
@@ -3055,7 +3012,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.A")
+                        ~receiver_class:"test.A"
                         (Target.Method
                            { class_name = "test.A"; method_name = "__str__"; kind = Normal });
                     ])) );
@@ -3066,7 +3023,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.B")
+                        ~receiver_class:"test.B"
                         (Target.Method
                            { class_name = "test.B"; method_name = "__repr__"; kind = Normal });
                     ])) );
@@ -3077,7 +3034,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method
                            { class_name = "test.C"; method_name = "__str__"; kind = Normal });
                     ])) );
@@ -3088,7 +3045,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.D")
+                        ~receiver_class:"test.D"
                         (Target.Method
                            { class_name = "object"; method_name = "__repr__"; kind = Normal });
                     ])) );
@@ -3117,22 +3074,22 @@ let test_call_graph_of_define context =
                     (* TODO(T112028293): Properly resolve `__str__` calls on union-typed variables *)
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:(Type.Primitive "test.B")
+                      ~receiver_class:"test.B"
                       (Target.Method
                          { class_name = "object"; method_name = "__str__"; kind = Normal });
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:(Type.Primitive "test.D")
+                      ~receiver_class:"test.D"
                       (Target.Method
                          { class_name = "object"; method_name = "__str__"; kind = Normal });
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:(Type.Primitive "test.A")
+                      ~receiver_class:"test.A"
                       (Target.Method
                          { class_name = "test.A"; method_name = "__str__"; kind = Normal });
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:(Type.Primitive "test.C")
+                      ~receiver_class:"test.C"
                       (Target.Method
                          { class_name = "test.C"; method_name = "__str__"; kind = Normal });
                   ])) );
@@ -3167,7 +3124,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:Type.integer
+                      ~receiver_class:"int"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3178,7 +3135,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:Type.float
+                      ~receiver_class:"float"
                       ~index:1
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
@@ -3190,7 +3147,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:Type.string
+                      ~receiver_class:"str"
                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
                   ])) );
         ( "7:21-7:22",
@@ -3201,7 +3158,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~index:2
-                      ~receiver_type:(Type.list Type.integer)
+                      ~receiver_class:"list"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3213,7 +3170,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~index:3
-                      ~receiver_type:(Type.list Type.integer)
+                      ~receiver_class:"list"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3225,7 +3182,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~index:4
-                      ~receiver_type:(Type.literal_integer 1)
+                      ~receiver_class:"int"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3237,7 +3194,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~index:1
-                      ~receiver_type:(Type.literal_string "str")
+                      ~receiver_class:"str"
                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
                   ])) );
         ( "7:33-7:34",
@@ -3248,7 +3205,7 @@ let test_call_graph_of_define context =
                     CallTarget.create
                       ~implicit_self:true
                       ~index:5
-                      ~receiver_type:Type.float
+                      ~receiver_class:"float"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3325,7 +3282,7 @@ let test_call_graph_of_define context =
                     (* TODO(T112761296): Probably wrong call resolution *)
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:Type.object_primitive
+                      ~receiver_class:"object"
                       (Target.Method
                          { class_name = "object"; method_name = "__repr__"; kind = Normal });
                   ])) );
@@ -3372,7 +3329,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                         (Target.Method
                            { class_name = "object"; method_name = "__init__"; kind = Normal });
                     ]
@@ -3380,7 +3336,6 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.meta (Type.Primitive "test.A"))
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
                     ]
@@ -3394,7 +3349,7 @@ let test_call_graph_of_define context =
                       (* TODO(T146836847): Missing the stringify callee. *)
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.literal_string "hello %s")
+                        ~receiver_class:"str"
                         (Target.Method
                            { class_name = "str"; method_name = "__mod__"; kind = Normal });
                     ]
@@ -3427,7 +3382,7 @@ let test_call_graph_of_define context =
                   [
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:(Type.Primitive "Exception")
+                      ~receiver_class:"Exception"
                       (Target.Method
                          { class_name = "BaseException"; method_name = "__str__"; kind = Normal });
                   ])) );
@@ -3465,7 +3420,6 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.meta (Type.Primitive "type"))
                               (Target.Method
                                  { class_name = "type"; method_name = "__new__"; kind = Normal });
                           ]
@@ -3473,7 +3427,6 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.meta (Type.Primitive "type"))
                               (Target.Method
                                  { class_name = "type"; method_name = "__init__"; kind = Normal });
                           ]
@@ -3509,7 +3462,7 @@ let test_call_graph_of_define context =
                       (Target.Function { name = "BaseException.__str__"; kind = Normal });
                     CallTarget.create
                       ~implicit_self:true
-                      ~receiver_type:Type.string
+                      ~receiver_class:"str"
                       (Target.Method { class_name = "str"; method_name = "__str__"; kind = Normal });
                   ])) );
       ]
@@ -3864,12 +3817,12 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~index:0
-                        ~receiver_type:(Type.Primitive "test.B")
+                        ~receiver_class:"test.B"
                         (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
                       CallTarget.create
                         ~implicit_self:true
                         ~index:0
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -3896,7 +3849,7 @@ let test_call_graph_of_define context =
                           (* Assigned index is 2 instead of 1, because we use the control flow graph
                              traversal order. *)
                         ~index:2
-                        ~receiver_type:(Type.Primitive "test.C")
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -3909,7 +3862,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~index:1
-                        ~receiver_type:(Type.Primitive "test.B")
+                        ~receiver_class:"test.B"
                         (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -3936,7 +3889,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~index:3
-                        ~receiver_type:(Type.Primitive "test.B")
+                        ~receiver_class:"test.B"
                         (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -3963,7 +3916,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.any)
-                        ~receiver_type:(Type.list Type.integer)
+                        ~receiver_class:"list"
                         (Target.Method
                            { class_name = "list"; method_name = "__iter__"; kind = Normal });
                     ]
@@ -3977,7 +3930,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.iterator Type.integer)
+                        ~receiver_class:"typing.Iterator"
                         (Target.Method
                            {
                              class_name = "typing.Iterator";
@@ -4008,7 +3961,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_self:true
                         ~return_type:(Some ReturnType.integer)
-                        ~receiver_type:(Type.list Type.integer)
+                        ~receiver_class:"list"
                         (Target.Method
                            { class_name = "list"; method_name = "__getitem__"; kind = Normal });
                     ]
@@ -4313,10 +4266,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric
-                                   "typing.AsyncIterator"
-                                   [Single (Type.union [Type.integer; Type.string])])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4332,10 +4282,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric
-                                   "typing.AsyncIterator"
-                                   [Single (Type.union [Type.integer; Type.string])])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4383,8 +4330,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4408,8 +4354,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4430,7 +4375,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list Type.integer)
+                              ~receiver_class:"list"
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
                           ]
@@ -4450,8 +4395,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~receiver_class:"typing.Iterator"
                               (Target.Method
                                  {
                                    class_name = "typing.Iterator";
@@ -4472,8 +4416,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterable"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterable";
@@ -4497,8 +4440,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               ~index:1
                               (Target.Method
                                  {
@@ -4527,7 +4469,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list Type.integer)
+                              ~receiver_class:"list"
                               ~index:1
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
@@ -4540,8 +4482,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~receiver_class:"typing.Iterator"
                               ~return_type:
                                 (Some
                                    {
@@ -4566,7 +4507,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.Primitive "test.A")
+                              ~receiver_class:"test.A"
                               (Target.Method
                                  { class_name = "test.A"; method_name = "f"; kind = Normal });
                           ]
@@ -4583,7 +4524,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list Type.integer)
+                              ~receiver_class:"list"
                               ~index:2
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
@@ -4604,8 +4545,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~receiver_class:"typing.Iterator"
                               ~index:2
                               (Target.Method
                                  {
@@ -4627,8 +4567,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterable"
                               ~index:1
                               (Target.Method
                                  {
@@ -4653,8 +4592,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               ~index:2
                               (Target.Method
                                  {
@@ -4676,7 +4614,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list Type.integer)
+                              ~receiver_class:"list"
                               ~index:3
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
@@ -4697,8 +4635,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~receiver_class:"typing.Iterator"
                               ~index:3
                               (Target.Method
                                  {
@@ -4720,8 +4657,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterable"
                               ~index:2
                               (Target.Method
                                  {
@@ -4746,8 +4682,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               ~index:3
                               (Target.Method
                                  {
@@ -4769,7 +4704,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:(Type.list Type.integer)
+                              ~receiver_class:"list"
                               ~index:4
                               (Target.Method
                                  { class_name = "list"; method_name = "__iter__"; kind = Normal });
@@ -4790,8 +4725,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.Iterator" [Single Type.integer])
+                              ~receiver_class:"typing.Iterator"
                               ~index:4
                               (Target.Method
                                  {
@@ -4813,8 +4747,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterable" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterable"
                               ~index:3
                               (Target.Method
                                  {
@@ -4839,8 +4772,7 @@ let test_call_graph_of_define context =
                                      is_float = true;
                                      is_enumeration = false;
                                    })
-                              ~receiver_type:
-                                (Type.parametric "typing.AsyncIterator" [Single Type.integer])
+                              ~receiver_class:"typing.AsyncIterator"
                               ~index:4
                               (Target.Method
                                  {
@@ -4877,10 +4809,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric
-                                   "typing.AsyncIterator"
-                                   [Single (Type.Primitive "test.A")])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4896,10 +4825,7 @@ let test_call_graph_of_define context =
                           [
                             CallTarget.create
                               ~implicit_self:true
-                              ~receiver_type:
-                                (Type.parametric
-                                   "typing.AsyncIterator"
-                                   [Single (Type.Primitive "test.A")])
+                              ~receiver_class:"typing.AsyncIterator"
                               (Target.Method
                                  {
                                    class_name = "typing.AsyncIterator";
@@ -4917,7 +4843,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:(Type.Primitive "test.B")
+                        ~receiver_class:"test.B"
                         (Target.Method
                            { Target.class_name = "test.B"; method_name = "foo"; kind = Normal });
                     ]
@@ -5057,10 +4983,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:
-                          (Type.parametric
-                             "typing.MutableMapping"
-                             [Single Type.string; Single Type.Any])
+                        ~receiver_class:"typing.MutableMapping"
                         ~return_type:(Some ReturnType.none)
                         (Target.Method
                            { class_name = "typing.Mapping"; method_name = "get"; kind = Normal });
@@ -5102,10 +5025,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_self:true
-                        ~receiver_type:
-                          (Type.parametric
-                             "typing.MutableMapping"
-                             [Single Type.string; Single Type.Any])
+                        ~receiver_class:"typing.MutableMapping"
                         ~return_type:(Some ReturnType.none)
                         (Target.Method
                            { class_name = "typing.Mapping"; method_name = "get"; kind = Normal });

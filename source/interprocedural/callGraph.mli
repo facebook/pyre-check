@@ -46,8 +46,8 @@ module CallTarget : sig
     index: int;
     (* The return type of the call expression, or `None` for object targets. *)
     return_type: ReturnType.t option;
-    (* The type of the receiver object at this call site, if any. *)
-    receiver_type: Type.t option;
+    (* The class of the receiver object at this call site, if any. *)
+    receiver_class: string option;
   }
   [@@deriving eq, show, compare]
 
@@ -58,7 +58,7 @@ module CallTarget : sig
     ?implicit_dunder_call:bool ->
     ?index:int ->
     ?return_type:ReturnType.t option ->
-    ?receiver_type:Type.t ->
+    ?receiver_class:string ->
     Target.t ->
     t
 

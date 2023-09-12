@@ -350,7 +350,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          implicit_dunder_call;
          index = _;
          return_type;
-         receiver_type;
+         receiver_class;
        } as call_target)
     =
     let arguments =
@@ -516,7 +516,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let is_self_call = Ast.Expression.is_self_call ~callee in
     let receiver_class_interval =
-      Interprocedural.ClassIntervalSetGraph.SharedMemory.of_type class_interval_graph receiver_type
+      receiver_class
+      >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
+      |> Option.value ~default:Interprocedural.ClassIntervalSet.top
     in
     let analyze_argument
         (arguments_taint, state)
@@ -1305,9 +1307,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state_before_index_access
       call_target
     =
-    let analyze_getitem receiver_type =
+    let analyze_getitem receiver_class =
       let named_tuple_attributes =
-        Analysis.NamedTuple.field_names ~global_resolution receiver_type
+        if
+          Analysis.NamedTuple.is_named_tuple
+            ~global_resolution
+            ~annotation:(Type.Primitive receiver_class)
+        then
+          Analysis.NamedTuple.field_names_from_class_name ~global_resolution receiver_class
+        else
+          None
       in
       match named_tuple_attributes, index_number with
       | Some named_tuple_attributes, Some index_number ->
@@ -1336,16 +1345,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     match call_target with
     | {
         CallGraph.CallTarget.target = Method { method_name = "__getitem__"; _ };
-        receiver_type = Some receiver_type;
+        receiver_class = Some receiver_class;
         _;
       }
     | {
         CallGraph.CallTarget.target = Override { method_name = "__getitem__"; _ };
-        receiver_type = Some receiver_type;
+        receiver_class = Some receiver_class;
         _;
       } ->
         (* Potentially access a named tuple *)
-        analyze_getitem receiver_type
+        analyze_getitem receiver_class
     | _ ->
         (* Not access a named tuple *)
         Lazy.force state_before_index_access

@@ -9,4 +9,9 @@ val field_annotations : global_resolution:GlobalResolution.t -> Type.t -> Type.t
 
 val field_names : global_resolution:GlobalResolution.t -> Type.t -> string list option
 
+val field_names_from_class_name
+  :  global_resolution:GlobalResolution.t ->
+  string ->
+  string list option
+
 val is_named_tuple : global_resolution:GlobalResolution.t -> annotation:Type.t -> bool
