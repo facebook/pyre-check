@@ -149,9 +149,14 @@ module SharedMemory = struct
 
 
   let of_definition handle definition =
+    let open Ast in
     match Target.create definition |> Target.class_name with
-    | Some class_name -> of_class handle class_name
-    | None -> ClassIntervalSet.top
+    | Some class_name
+      when not
+             (Statement.Define.is_class_method (Node.value definition)
+             || Statement.Define.is_static_method (Node.value definition)) ->
+        of_class handle class_name
+    | _ -> ClassIntervalSet.top
 
 
   let cleanup handle intervals =
