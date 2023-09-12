@@ -29,7 +29,9 @@
   statisticsTest
   profilingTest
   algorithmsTest
-  jsonParsingTest)
+  jsonParsingTest
+  criticalFileTest
+  watchmanTest)
  (modules :standard \ test)
  (preprocess
   (pps
@@ -41,7 +43,10 @@
    ppx_deriving_yojson))
  (libraries
   ounit2
+  ounit2-lwt
   pyrelib.service
   pyrelib.analysis
   pyrelib.test
-  pyrelib.algorithms))
+  pyrelib.algorithms
+  pyrelib.criticalFile
+  pyrelib.watchman))

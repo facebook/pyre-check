@@ -7,7 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-open Base
+open Core
 
 type t =
   | BaseName of string

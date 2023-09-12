@@ -8,26 +8,26 @@
 open Core
 open OUnit2
 open Lwt.Infix
-open Server
+open Saved_state
 
 let test_configuration_parsing context =
   let assert_parsed ~expected json_string =
     let json = Yojson.Safe.from_string json_string in
-    match SavedStateAction.of_yojson json with
+    match Action.of_yojson json with
     | Result.Error message ->
         let message = Format.sprintf "Unexpected JSON parsing failure: %s" message in
         assert_failure message
     | Result.Ok actual ->
         assert_equal
           ~ctxt:context
-          ~cmp:[%compare.equal: SavedStateAction.t]
-          ~printer:(fun value -> Sexp.to_string_hum ([%sexp_of: SavedStateAction.t] value))
+          ~cmp:[%compare.equal: Action.t]
+          ~printer:(fun value -> Sexp.to_string_hum ([%sexp_of: Action.t] value))
           expected
           actual
   in
   let assert_not_parsed json_string =
     let json = Yojson.Safe.from_string json_string in
-    match SavedStateAction.of_yojson json with
+    match Action.of_yojson json with
     | Result.Ok _ -> assert_failure "Unexpected JSON parsing success"
     | Result.Error _ -> ()
   in
@@ -46,7 +46,7 @@ let test_configuration_parsing context =
       ]
     |}
     ~expected:
-      (SavedStateAction.LoadFromFile
+      (Action.LoadFromFile
          { shared_memory_path = PyrePath.create_absolute "/some/path"; changed_files_path = None });
   assert_parsed
     {|
@@ -59,7 +59,7 @@ let test_configuration_parsing context =
       ]
     |}
     ~expected:
-      (SavedStateAction.LoadFromFile
+      (Action.LoadFromFile
          {
            shared_memory_path = PyrePath.create_absolute "/some/path";
            changed_files_path = Some (PyrePath.create_absolute "/some/other/path");
@@ -73,8 +73,7 @@ let test_configuration_parsing context =
         }
       ]
     |}
-    ~expected:
-      (SavedStateAction.SaveToFile { shared_memory_path = PyrePath.create_absolute "/some/path" });
+    ~expected:(Action.SaveToFile { shared_memory_path = PyrePath.create_absolute "/some/path" });
   assert_parsed
     {|
       [
@@ -84,8 +83,7 @@ let test_configuration_parsing context =
         }
       ]
     |}
-    ~expected:
-      (SavedStateAction.LoadFromProject { project_name = "my_project"; project_metadata = None });
+    ~expected:(Action.LoadFromProject { project_name = "my_project"; project_metadata = None });
   assert_parsed
     {|
       [
@@ -97,8 +95,7 @@ let test_configuration_parsing context =
       ]
     |}
     ~expected:
-      (SavedStateAction.LoadFromProject
-         { project_name = "my_project"; project_metadata = Some "my_metadata" });
+      (Action.LoadFromProject { project_name = "my_project"; project_metadata = Some "my_metadata" });
   ()
 
 
@@ -123,7 +120,7 @@ let test_query context =
     Watchman.Raw.with_connection mock_raw ~f:(fun watchman_connection ->
         let savedstate_setting =
           {
-            SavedState.Setting.watchman_root;
+            Execution.Setting.watchman_root;
             watchman_filter;
             watchman_connection;
             project_name;
@@ -132,7 +129,7 @@ let test_query context =
             target;
           }
         in
-        SavedState.query savedstate_setting)
+        Execution.query savedstate_setting)
     >>= fun _ ->
     Lwt_mvar.take request_mailbox
     >>= fun actual ->
@@ -153,7 +150,7 @@ let test_query context =
     Watchman.Raw.with_connection mock_raw ~f:(fun watchman_connection ->
         let savedstate_setting =
           {
-            SavedState.Setting.watchman_root;
+            Execution.Setting.watchman_root;
             watchman_filter;
             watchman_connection;
             project_name = "fake_name";
@@ -162,13 +159,13 @@ let test_query context =
             target;
           }
         in
-        SavedState.query savedstate_setting)
+        Execution.query savedstate_setting)
     >>= fun actual ->
     let actual = Result.ok actual in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: SavedState.Queried.t option]
-      ~printer:(fun result -> [%sexp_of: SavedState.Queried.t option] result |> Sexp.to_string_hum)
+      ~cmp:[%compare.equal: Execution.Queried.t option]
+      ~printer:(fun result -> [%sexp_of: Execution.Queried.t option] result |> Sexp.to_string_hum)
       expected
       actual;
     Lwt.return_unit
@@ -216,7 +213,7 @@ let test_query context =
     ~expected:
       (Some
          {
-           SavedState.Queried.bucket = "my_bucket";
+           Execution.Queried.bucket = "my_bucket";
            path = "my_path";
            target;
            changed_files =
@@ -243,7 +240,7 @@ let test_query context =
 
 
 let () =
-  "savedstate_test"
+  "execution_test"
   >::: [
          "configuration_parsing" >:: test_configuration_parsing;
          "query" >:: OUnitLwt.lwt_wrapper test_query;

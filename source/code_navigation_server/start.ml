@@ -181,12 +181,9 @@ let start_server
     let waiters =
       let server_waiter () = on_started properties state in
       let watchman_waiter subscriber =
-        let%lwt () = Server.Watchman.Subscriber.listen ~f:(on_watchman_update ~server) subscriber in
+        let%lwt () = Watchman.Subscriber.listen ~f:(on_watchman_update ~server) subscriber in
         let message = "Lost subscription connection to watchman" in
-        broadcast_server_stop_and_fail
-          ~subscriptions
-          ~message
-          (Server.Watchman.SubscriptionError message)
+        broadcast_server_stop_and_fail ~subscriptions ~message (Watchman.SubscriptionError message)
       in
       let signal_waiters =
         [

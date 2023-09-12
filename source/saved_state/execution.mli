@@ -19,7 +19,7 @@ module Setting : sig
   }
 end
 
-exception SavedStateQueryFailure of string
+exception QueryFailure of string
 
 module Queried : sig
   type t = {

@@ -21,7 +21,7 @@ let test_critical_file_update_request context =
     ScratchProject.setup
       ~context
       ~include_typeshed_stubs:false
-      ~critical_files:[Server.CriticalFile.Extension "derp"]
+      ~critical_files:[CriticalFile.Extension "derp"]
       ["test.derp", ""]
   in
   let root = ScratchProject.source_root_of project in

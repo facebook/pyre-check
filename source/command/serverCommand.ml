@@ -39,7 +39,7 @@ module ServerConfiguration = struct
     taint_model_paths: PyrePath.t list;
     store_type_check_resolution: bool;
     critical_files: CriticalFile.t list;
-    saved_state_action: SavedStateAction.t option;
+    saved_state_action: Saved_state.Action.t option;
     skip_initial_type_check: bool;
     use_lazy_module_tracking: bool;
     analyze_external_sources: bool;
@@ -69,7 +69,7 @@ module ServerConfiguration = struct
             |> member "saved_state_action"
             |> function
             | `Null -> None
-            | _ as json -> SavedStateAction.of_yojson json |> Result.ok_or_failwith |> Option.some
+            | _ as json -> Saved_state.Action.of_yojson json |> Result.ok_or_failwith |> Option.some
           in
           let store_type_check_resolution =
             json |> bool_member "store_type_check_resolution" ~default:false

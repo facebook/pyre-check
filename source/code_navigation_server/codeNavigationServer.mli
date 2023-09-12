@@ -162,7 +162,7 @@ module StartOptions : sig
         (** Watchman setting for the code navigation server. [None] means watchman is disabled. *)
     build_system_initializer: BuildSystem.Initializer.t;
         (** Initializer used to create the build system. *)
-    critical_files: Server.CriticalFile.t list;
+    critical_files: CriticalFile.t list;
         (** A list of files whose changes would immediately bring down the server.*)
   }
 end

@@ -250,7 +250,8 @@ let initialize_server_state
         >>| List.map ~f:PyrePath.create_absolute
         |> Option.value ~default:[]
       in
-      Lwt.return (Result.Ok { SavedState.Fetched.path = shared_memory_path; changed_files })
+      Lwt.return
+        (Result.Ok { Saved_state.Execution.Fetched.path = shared_memory_path; changed_files })
     with
     | exn ->
         let message =
@@ -285,9 +286,9 @@ let initialize_server_state
                 let target =
                   PyrePath.create_relative ~root:log_directory ~relative:"classic/server.state"
                 in
-                SavedState.query_and_fetch_exn
+                Saved_state.Execution.query_and_fetch_exn
                   {
-                    SavedState.Setting.watchman_root;
+                    Saved_state.Execution.Setting.watchman_root;
                     watchman_filter;
                     watchman_connection;
                     project_name;
@@ -302,7 +303,7 @@ let initialize_server_state
             match exn with
             | Watchman.ConnectionError message
             | Watchman.QueryError message
-            | SavedState.SavedStateQueryFailure message ->
+            | Saved_state.Execution.QueryFailure message ->
                 message
             | _ -> Exn.to_string exn
           in
@@ -365,7 +366,7 @@ let initialize_server_state
         Log.warning "%s" message;
         Statistics.event ~name:"saved state failure" ~normals:["reason", message] ();
         build_and_start_from_scratch ~build_system_initializer ()
-    | Result.Ok { SavedState.Fetched.path; changed_files } -> (
+    | Result.Ok { Saved_state.Execution.Fetched.path; changed_files } -> (
         Log.info "Restoring environments from saved state...";
         match load_from_shared_memory path with
         | Result.Error message ->
@@ -406,14 +407,14 @@ let initialize_server_state
   let open Lwt.Infix in
   let get_initial_state ~build_system_initializer () =
     match saved_state_action with
-    | Some (SavedStateAction.LoadFromFile { shared_memory_path; changed_files_path }) ->
+    | Some (Saved_state.Action.LoadFromFile { shared_memory_path; changed_files_path }) ->
         with_performance_logging
           ~normals:["initialization method", "saved state"]
           ~name:"initialization"
           (fun _ ->
             fetch_saved_state_from_files ~shared_memory_path ~changed_files_path ()
             >>= load_from_saved_state ~build_system_initializer)
-    | Some (SavedStateAction.LoadFromProject { project_name; project_metadata }) ->
+    | Some (Saved_state.Action.LoadFromProject { project_name; project_metadata }) ->
         let normals =
           let normals =
             ["initialization method", "saved state"; "saved_state_project", project_name]
@@ -433,7 +434,7 @@ let initialize_server_state
   in
   let store_initial_state state =
     match saved_state_action with
-    | Some (SavedStateAction.SaveToFile { shared_memory_path }) ->
+    | Some (Saved_state.Action.SaveToFile { shared_memory_path }) ->
         ServerState.store ~path:shared_memory_path ~configuration state;
         Log.info "Initial server state written to %a" PyrePath.pp shared_memory_path
     | _ -> ()

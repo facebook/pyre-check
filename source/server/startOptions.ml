@@ -23,6 +23,6 @@ type t = {
   watchman: Watchman.t option;
   build_system_initializer: BuildSystem.Initializer.t;
   critical_files: CriticalFile.t list;
-  saved_state_action: SavedStateAction.t option;
+  saved_state_action: Saved_state.Action.t option;
   skip_initial_type_check: bool;
 }

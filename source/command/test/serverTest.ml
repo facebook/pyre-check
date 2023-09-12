@@ -75,9 +75,9 @@ let test_json_parsing context =
         dummy_server_configuration with
         critical_files =
           [
-            Server.CriticalFile.BaseName "foo.py";
-            Server.CriticalFile.Extension "derp";
-            Server.CriticalFile.FullPath (PyrePath.create_absolute "/home/bar.txt");
+            CriticalFile.BaseName "foo.py";
+            CriticalFile.Extension "derp";
+            CriticalFile.FullPath (PyrePath.create_absolute "/home/bar.txt");
           ];
       };
   assert_parsed
@@ -100,7 +100,7 @@ let test_json_parsing context =
         dummy_server_configuration with
         saved_state_action =
           Some
-            (Server.SavedStateAction.LoadFromProject
+            (Saved_state.Action.LoadFromProject
                { project_name = "project"; project_metadata = None });
       };
   assert_parsed

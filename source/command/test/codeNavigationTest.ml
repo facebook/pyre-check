@@ -64,9 +64,9 @@ let test_json_parsing context =
         dummy_codenav_configuration with
         critical_files =
           [
-            Server.CriticalFile.BaseName "foo.py";
-            Server.CriticalFile.Extension "derp";
-            Server.CriticalFile.FullPath (PyrePath.create_absolute "/home/bar.txt");
+            CriticalFile.BaseName "foo.py";
+            CriticalFile.Extension "derp";
+            CriticalFile.FullPath (PyrePath.create_absolute "/home/bar.txt");
           ];
       };
   ()

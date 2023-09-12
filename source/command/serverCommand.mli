@@ -28,8 +28,8 @@ module ServerConfiguration : sig
     watchman_root: PyrePath.t option;
     taint_model_paths: PyrePath.t list;
     store_type_check_resolution: bool;
-    critical_files: Server.CriticalFile.t list;
-    saved_state_action: Server.SavedStateAction.t option;
+    critical_files: CriticalFile.t list;
+    saved_state_action: Saved_state.Action.t option;
     skip_initial_type_check: bool;
     use_lazy_module_tracking: bool;
     analyze_external_sources: bool;

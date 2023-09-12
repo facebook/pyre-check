@@ -2,12 +2,9 @@
  (names
   startupNotificationTest
   basicTest
-  watchmanTest
-  savedStateTest
   lockTest
   buildSystemTest
   queryTest
-  criticalFileTest
   checksumMapTest
   stateTest)
  (preprocess

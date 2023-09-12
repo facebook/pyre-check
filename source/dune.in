@@ -296,6 +296,47 @@
   pyrelib.search_path))
 
 (library
+ (name criticalFile)
+ (modules criticalFile)
+ (public_name pyrelib.criticalFile)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.path))
+
+(library
+ (name watchman)
+ (modules watchman)
+ (public_name pyrelib.watchman)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.lwtsocketserver
+  pyrelib.lwtsubprocess
+  pyrelib.criticalFile
+  pyrelib.analysis))
+
+(library
  (name pyre)
  (public_name pyrelib.pyre)
  (modules pyre)

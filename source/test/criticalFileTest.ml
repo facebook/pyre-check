@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-open Server
 
 let ( ! ) = PyrePath.create_absolute
 

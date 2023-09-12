@@ -617,7 +617,7 @@ let create_mock_watchman mailbox =
         let%lwt message = Lwt_mvar.take mailbox in
         Lwt.return_some message
   in
-  Server.Watchman.Raw.create_for_testing ~send ~receive ()
+  Watchman.Raw.create_for_testing ~send ~receive ()
 
 
 let test_watchman_integration context =
@@ -688,7 +688,7 @@ let test_watchman_failure context =
     let%lwt () = ScratchProject.test_server_with_one_connection ~f:test_watchman_failure project in
     assert_failure "Server is expected to crash but it returned normally instead"
   with
-  | Server.Watchman.SubscriptionError _ -> Lwt.return_unit
+  | Watchman.SubscriptionError _ -> Lwt.return_unit
 
 
 let ( >:: ) name test = name >:: OUnitLwt.lwt_wrapper test

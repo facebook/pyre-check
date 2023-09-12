@@ -15,7 +15,7 @@ module CodeNavigationConfiguration = struct
     socket_path: PyrePath.t;
     additional_logging_sections: string list;
     watchman_root: PyrePath.t option;
-    critical_files: Server.CriticalFile.t list;
+    critical_files: CriticalFile.t list;
   }
   [@@deriving sexp, compare, hash]
 
@@ -27,9 +27,7 @@ module CodeNavigationConfiguration = struct
       | Result.Error _ as error -> error
       | Result.Ok base ->
           let critical_file_list_member =
-            let to_critical_file json =
-              Server.CriticalFile.of_yojson json |> Result.ok_or_failwith
-            in
+            let to_critical_file json = CriticalFile.of_yojson json |> Result.ok_or_failwith in
             list_member ~f:to_critical_file
           in
 

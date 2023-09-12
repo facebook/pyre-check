@@ -43,7 +43,7 @@ module Setting = struct
   }
 end
 
-exception SavedStateQueryFailure of string
+exception QueryFailure of string
 
 let query_exn
     {
@@ -58,8 +58,7 @@ let query_exn
   =
   let process_watchman_response { Watchman.SinceQuery.Response.relative_paths; saved_state } =
     match saved_state with
-    | None ->
-        raise (SavedStateQueryFailure "Watchman did not send back any saved-state information")
+    | None -> raise (QueryFailure "Watchman did not send back any saved-state information")
     | Some { Watchman.SinceQuery.Response.SavedState.bucket; path; commit_id } -> (
         let changed_files =
           List.map relative_paths ~f:(fun relative ->
@@ -73,7 +72,7 @@ let query_exn
                 PyrePath.pp
                 critical_file
             in
-            raise (SavedStateQueryFailure message)
+            raise (QueryFailure message)
         | None -> { Queried.bucket; path; changed_files; target; commit_id })
   in
   Log.info "Querying watchman for a saved state";

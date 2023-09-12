@@ -11,7 +11,7 @@ module CodeNavigationConfiguration : sig
     socket_path: PyrePath.t;
     additional_logging_sections: string list;
     watchman_root: PyrePath.t option;
-    critical_files: Server.CriticalFile.t list;
+    critical_files: CriticalFile.t list;
   }
   [@@deriving sexp, compare, hash]
 

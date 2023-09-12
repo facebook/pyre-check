@@ -7,7 +7,6 @@
 
 open Core
 open OUnit2
-open Server
 
 let test_low_level_apis _ =
   let open Lwt.Infix in

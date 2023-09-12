@@ -83,18 +83,18 @@ module Raw = struct
               raise (ConnectionError message)
         in
         Lwt.return socket_name
-    | WEXITED 127 ->
+    | Caml_unix.WEXITED 127 ->
         let message = Format.sprintf "Cannot find watchman exectuable under PATH" in
         raise (ConnectionError message)
-    | WEXITED code ->
+    | Caml_unix.WEXITED code ->
         let message = Format.sprintf "Watchman exited code %d, stderr = %S" code stderr in
         raise (ConnectionError message)
-    | WSIGNALED signal ->
+    | Caml_unix.WSIGNALED signal ->
         let message =
           Format.sprintf "watchman signaled with %s signal" (PrintSignal.string_of_signal signal)
         in
         raise (ConnectionError message)
-    | WSTOPPED signal ->
+    | Caml_unix.WSTOPPED signal ->
         let message =
           Format.sprintf "watchman stopped with %s signal" (PrintSignal.string_of_signal signal)
         in
@@ -530,8 +530,8 @@ module SinceQuery = struct
     Raw.Connection.receive connection ()
     >>= function
     | Raw.Response.Ok response -> Lwt.return (Response.of_watchman_response_exn response)
-    | Error message -> raise (QueryError message)
-    | EndOfStream ->
+    | Raw.Response.Error message -> raise (QueryError message)
+    | Raw.Response.EndOfStream ->
         let message = "Failed to receive any response from watchman server" in
         raise (QueryError message)
 
