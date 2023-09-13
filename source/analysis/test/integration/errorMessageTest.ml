@@ -40,7 +40,7 @@ let test_show_error_traces context =
     |}
     [
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
-       `typing.Dict` to avoid runtime subscripting errors.";
+       `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`.";
     ];

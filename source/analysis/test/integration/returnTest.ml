@@ -56,7 +56,7 @@ let test_check_return context =
     |}
     [
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
-       `typing.Dict` to avoid runtime subscripting errors.";
+       `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`.";
     ];
@@ -70,11 +70,11 @@ let test_check_return context =
     |}
     [
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
-       `typing.Dict` to avoid runtime subscripting errors.";
+       `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type that does "
       ^ "not contain `Any`.";
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, received 1, \
-       use `typing.Dict` to avoid runtime subscripting errors.";
+       use `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
     ];
   assert_type_errors
     {|
@@ -85,7 +85,7 @@ let test_check_return context =
     |}
     [
       "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
-       `typing.Type` to avoid runtime subscripting errors.";
+       `typing.Type[<base type>]` to avoid runtime subscripting errors.";
       "Missing return annotation [3]: Return type must be specified as type that does not contain \
        `Any`.";
     ];
@@ -485,7 +485,7 @@ let test_check_return_control_flow context =
     |}
     [
       "Invalid type parameters [24]: Generic type `type` expects 1 type parameter, use \
-       `typing.Type` to avoid runtime subscripting errors.";
+       `typing.Type[<base type>]` to avoid runtime subscripting errors.";
     ];
   assert_type_errors
     {|

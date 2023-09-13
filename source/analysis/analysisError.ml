@@ -1861,9 +1861,9 @@ let rec messages ~concise ~signature location kind =
       let additional =
         let replacement =
           match name with
-          | "dict" -> Some "typing.Dict"
+          | "dict" -> Some "typing.Dict[<key type>, <value type>]"
           | "list" -> Some "typing.List[<element type>]"
-          | "type" -> Some "typing.Type"
+          | "type" -> Some "typing.Type[<base type>]"
           | _ -> None
         in
         replacement

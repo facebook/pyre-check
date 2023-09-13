@@ -951,7 +951,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
-       `typing.Dict` to avoid runtime subscripting errors.";
+       `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
     ];
   assert_test_typed_dictionary
     {|
@@ -963,7 +963,7 @@ let test_check_typed_dictionaries context =
     |}
     [
       "Invalid type parameters [24]: Generic type `dict` expects 2 type parameters, use \
-       `typing.Dict` to avoid runtime subscripting errors.";
+       `typing.Dict[<key type>, <value type>]` to avoid runtime subscripting errors.";
     ];
   assert_test_typed_dictionary
     {|
