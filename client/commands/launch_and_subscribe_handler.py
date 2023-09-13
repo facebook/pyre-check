@@ -367,8 +367,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         try:
             LOG.info(f"Starting Pyre server from configuration: {server_options}")
             await self.launch_and_subscribe(server_options)
-        except asyncio.CancelledError:
-            error_message = "Explicit termination request"
+        except asyncio.CancelledError as error:
+            error_message = f"Explicit termination request: {error}"
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.DISCONNECTED
             )
