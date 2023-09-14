@@ -5,7 +5,17 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module allows us to preprocess source code before it is analyzed. This allows us to cleanly
+   desugar special constructs (e.g., functional Enum/TypedDict declarations into class-based
+   declarations) without polluting the type-checking code with special cases.
+
+   We break this into two phases:
+
+   * phase0: transformations that don't depend on expanding wildcard imports (e.g., selecting
+   platform-specific code)
+
+   * phase1: transformations that depend on expanding wildcard imports (e.g., expanding functional
+   TypedDict declarations, since the `TypedDict` may be imported via wildcard) *)
 
 open Core
 open Ast
