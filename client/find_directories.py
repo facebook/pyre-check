@@ -18,6 +18,7 @@ from __future__ import annotations
 import enum
 import itertools
 import logging
+import subprocess
 import sys
 from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional
@@ -327,3 +328,14 @@ def find_pysa_filters_directory() -> Optional[Path]:
     if excepted_pysa_filter_path.is_dir():
         return excepted_pysa_filter_path
     return None
+
+
+def find_repository_root() -> Optional[Path]:
+    repo_root = None
+    try:
+        hg_root = subprocess.check_output(["hg", "root"], text=True)
+        repo_root = Path(hg_root.strip())
+    except subprocess.CalledProcessError as exception:
+        LOG.debug(f"`hg root` failed with exception `{exception}`")
+        return None
+    return repo_root

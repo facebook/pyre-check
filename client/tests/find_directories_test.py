@@ -5,6 +5,7 @@
 
 # pyre-unsafe
 
+import subprocess
 import tempfile
 from pathlib import Path
 from typing import Iterable, Optional, Tuple, Union
@@ -17,10 +18,12 @@ from ..find_directories import (
     find_outermost_directory_containing_file,
     find_parent_directory_containing_directory,
     find_parent_directory_containing_file,
+    find_repository_root,
     find_typeshed_search_paths,
     FoundRoot,
     get_relative_local_root,
 )
+
 from .setup import ensure_directories_exists, ensure_files_exist
 
 
@@ -544,3 +547,18 @@ class FindTypeshedTest(testslide.TestCase):
                 "combined_stubs",
             ],
         )
+
+
+class FindRepositoryRootTest(testslide.TestCase):
+    def test_find_repository_root_success(self) -> None:
+        test_root_path = "/data/users/unixname/fbsource"
+        self.mock_callable(subprocess, "check_output").to_return_value(test_root_path)
+        repo_root = find_repository_root()
+        self.assertEqual(repo_root, Path(test_root_path))
+
+    def test_find_repository_root_handles_exception(self) -> None:
+        self.mock_callable(subprocess, "check_output").to_raise(
+            subprocess.CalledProcessError(returncode=1, cmd="", output="")
+        )
+        repo_root = find_repository_root()
+        self.assertEqual(repo_root, None)
