@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+The pyre-upgrade command is composed of many subcommands related to upgrading a project or performing codemods. See the module-level documentation for each subcommand for more details.
 """
 
 
