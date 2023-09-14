@@ -123,23 +123,6 @@ let test_immediate_parents _ =
   ()
 
 
-let test_least_upper_bound context =
-  let assert_equal ~expected actual =
-    assert_equal
-      ~ctxt:context
-      ~cmp:[%compare.equal: Type.Primitive.t option]
-      ~printer:(fun bound -> Sexp.to_string_hum ([%sexp_of: Type.Primitive.t option] bound))
-      expected
-      actual
-  in
-  assert_equal (least_upper_bound order "3" "1") ~expected:(Some "3");
-  assert_equal (least_upper_bound order "4" "bottom") ~expected:(Some "4");
-  assert_equal (least_upper_bound order "0" "1") ~expected:(Some "3");
-  assert_equal (least_upper_bound order "0" "2") ~expected:None;
-  assert_equal (least_upper_bound order "0" "2") ~expected:None;
-  assert_equal (least_upper_bound butterfly "0" "1") ~expected:(Some "3")
-
-
 let test_check_integrity _ =
   let assert_ok ~indices order =
     match check_integrity ~indices order with
@@ -578,7 +561,6 @@ let () =
   >::: [
          "check_integrity" >:: test_check_integrity;
          "is_instantiated" >:: test_is_instantiated;
-         "least_upper_bound" >:: test_least_upper_bound;
          "immediate_parents" >:: test_immediate_parents;
          "to_dot" >:: test_to_dot;
          "variables" >:: test_variables;

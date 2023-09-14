@@ -614,6 +614,63 @@ let test_is_transitive_successors context =
   ()
 
 
+let test_least_upper_bound context =
+  let assert_least_upper_bound ~source ~expected left right =
+    let project =
+      ScratchProject.setup
+        ["test.py", source]
+        ~include_typeshed_stubs:false
+        ~include_helper_builtins:false
+        ~context
+    in
+    let read_only =
+      ScratchProject.errors_environment project
+      |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+    in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Type.Primitive.t option]
+      ~printer:(fun bound -> Sexp.to_string_hum ([%sexp_of: Type.Primitive.t option] bound))
+      expected
+      (ClassMetadataEnvironment.ReadOnly.least_upper_bound read_only left right)
+  in
+  let source0 =
+    {|
+    class A0(A3): pass
+    class A1(A3): pass
+    class A2: pass
+    class A3: pass
+    class A4(A2): pass
+    class A5: pass
+    class Bottom(A4, A2, A1, A0): pass
+  |}
+  in
+  let source1 =
+    {|
+    class A0(A3, A2): pass
+    class A1(A3, A2): pass
+    class A2: pass
+    class A3: pass
+  |}
+  in
+  let source2 =
+    {|
+    class One:
+      pass
+    class Two:
+      pass
+    class Zero(Two, One):
+      pass
+  |}
+  in
+  assert_least_upper_bound "test.A3" "test.A1" ~source:source0 ~expected:(Some "test.A3");
+  assert_least_upper_bound "test.A4" "test.Bottom" ~source:source0 ~expected:(Some "test.A4");
+  assert_least_upper_bound "test.A0" "test.A2" ~source:source0 ~expected:(Some "object");
+  assert_least_upper_bound "test.A0" "test.A1" ~source:source1 ~expected:(Some "test.A3");
+  assert_least_upper_bound "test.One" "test.Two" ~source:source2 ~expected:(Some "object");
+  ()
+
+
 let assert_overlay_parents ~context ~overlay ~qualified_class_name expected_successors =
   match
     ClassMetadataEnvironment.ReadOnly.get_class_metadata
@@ -861,6 +918,7 @@ let () =
          "simple_registration" >:: test_simple_registration;
          "updates" >:: test_updates;
          "is_transitive_successors" >:: test_is_transitive_successors;
+         "least_upper_bound" >:: test_least_upper_bound;
          "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
          "overlay_propagation" >:: test_overlay_propagation;
        ]

@@ -1094,37 +1094,6 @@ let test_default_class_hierarchy context =
   assert_type_equal (meet order Type.float Type.complex) Type.float
 
 
-let test_connect_annotations_to_top context =
-  (* Partial partial order:*)
-  (*  0 - 2                *)
-  (*  |                    *)
-  (*  1   object           *)
-  let project =
-    ScratchProject.setup
-      ~context
-      [
-        ( "test.py",
-          {|
-       class One:
-         pass
-       class Two:
-         pass
-       class Zero(Two, One):
-         pass
-    |}
-        );
-      ]
-  in
-  let global_environment = ScratchProject.global_environment project in
-  let order = class_hierarchy global_environment in
-  assert_equal
-    ~ctxt:context
-    ~cmp:[%compare.equal: Type.Primitive.t option]
-    ~printer:(fun bound -> Sexp.to_string_hum ([%sexp_of: Type.Primitive.t option] bound))
-    (Some "object")
-    (ClassHierarchy.least_upper_bound order "test.One" "test.Two")
-
-
 let test_deduplicate context =
   let project =
     ScratchProject.setup
@@ -1322,7 +1291,6 @@ let () =
          "register_globals" >:: test_register_globals;
          "register_implicit_namespace_modules" >:: test_register_implicit_namespace_modules;
          "default_class_hierarchy" >:: test_default_class_hierarchy;
-         "connect_to_top" >:: test_connect_annotations_to_top;
          "deduplicate" >:: test_deduplicate;
          "remove_extra" >:: test_remove_extra_edges_to_object;
          "update_and_compute_dependencies" >:: test_update_and_compute_dependencies;

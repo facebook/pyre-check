@@ -83,12 +83,40 @@ let hierarchy class_hierarchy_handler =
             Type.Primitive.equal target current
             || ClassHierarchy.extends_placeholder_stub class_hierarchy_handler current)
   in
+  let least_upper_bound left right =
+    let get_successors = ClassHierarchy.parents_of class_hierarchy_handler in
+    match
+      ( ClassHierarchy.method_resolution_order_linearize ~get_successors left,
+        ClassHierarchy.method_resolution_order_linearize ~get_successors right )
+    with
+    | Result.Error error, _ ->
+        let message =
+          Format.asprintf
+            "Invalid type order setup for %s: %a"
+            left
+            Sexp.pp_hum
+            (ClassHierarchy.MethodResolutionOrderError.sexp_of_t error)
+        in
+        failwith message
+    | _, Result.Error error ->
+        let message =
+          Format.asprintf
+            "Invalid type order setup for %s: %a"
+            right
+            Sexp.pp_hum
+            (ClassHierarchy.MethodResolutionOrderError.sexp_of_t error)
+        in
+        failwith message
+    | Result.Ok left_mro, Result.Ok right_mro ->
+        let right_mro = String.Hash_set.of_list right_mro in
+        List.find left_mro ~f:(Hash_set.mem right_mro)
+  in
   {
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
     is_transitive_successor;
     variables = ClassHierarchy.variables class_hierarchy_handler;
-    least_upper_bound = ClassHierarchy.least_upper_bound class_hierarchy_handler;
+    least_upper_bound;
   }
 
 

@@ -40,6 +40,13 @@ module MetadataReadOnly : sig
     target:Type.Primitive.t ->
     Type.Primitive.t ->
     bool
+
+  val least_upper_bound
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Type.Primitive.t ->
+    Type.Primitive.t ->
+    Type.Primitive.t option
 end
 
 include

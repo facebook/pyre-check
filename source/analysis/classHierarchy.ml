@@ -283,17 +283,6 @@ let get_generic_parameters ~generic_index edges =
   List.find_map ~f:generic_parameters edges
 
 
-(* NOTE: This function is not symetric: least_upper_boun(A, B) can return different result from
-   least_upper_bound(B, A) when multiple inheritance is involved. *)
-let least_upper_bound (module Handler : Handler) left right =
-  let get_successors = parents_of (module Handler) in
-  let left_mro = method_resolution_order_linearize_exn ~get_successors left in
-  let right_mro =
-    method_resolution_order_linearize_exn ~get_successors right |> String.Hash_set.of_list
-  in
-  List.find left_mro ~f:(Hash_set.mem right_mro)
-
-
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler target;
   let generic_index = IndexTracker.index generic_primitive in
