@@ -28,6 +28,7 @@ from .commands.fix_configuration import FixConfiguration
 from .commands.fixme import Fixme
 from .commands.fixme_all import FixmeAll
 from .commands.fixme_single import FixmeSingle
+from .commands.global_strictness import GlobalStrictness
 from .commands.global_version_update import GlobalVersionUpdate
 from .commands.pysa_version_update import PysaVersionUpdate
 from .commands.strict_default import StrictDefault
@@ -69,6 +70,10 @@ def run(repository: Repository) -> None:
     # Subcommand: Change default pyre mode to strict and adjust module headers.
     strict_default = commands.add_parser("strict-default")
     StrictDefault.add_arguments(strict_default)
+
+    # Subcommand: Changes .pyre_configuration strictness and adds overrides to maintain current strictness for sub-configurations.
+    update_global_strictness = commands.add_parser("update-global-strictness")
+    GlobalStrictness.add_arguments(update_global_strictness)
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
@@ -115,6 +120,7 @@ def run(repository: Repository) -> None:
 
     # Initialize default values.
     arguments = parser.parse_args()
+    # All commands should have the argument `command` set to their `from_arguments``
     if not hasattr(arguments, "command"):
         # Reparsing with `fixme` as default subcommand.
         arguments = parser.parse_args(sys.argv[1:] + ["fixme"])
