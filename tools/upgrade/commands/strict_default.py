@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+strict_default contains a library for running a codemod across a codebase that turns pyre-strict on. Optionally, we can also remove the #pyre-strict and add #pyre-unsafe headers from files where the error count is below a certain threshhold.
 """
 
 
