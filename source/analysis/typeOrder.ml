@@ -386,7 +386,7 @@ module OrderImplementation = struct
                && always_less_or_equal order ~left:right ~right:left ->
             left
         | Primitive left, Primitive right -> (
-            match List.hd (least_upper_bound left right) with
+            match least_upper_bound left right with
             | Some joined ->
                 if Type.Primitive.equal joined left then
                   Type.Primitive left

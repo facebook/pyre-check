@@ -12,7 +12,7 @@ type class_hierarchy = {
     source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
   is_transitive_successor: source:Type.Primitive.t -> target:Type.Primitive.t -> bool;
   variables: Type.Primitive.t -> Type.Variable.t list option;
-  least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t list;
+  least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
 }
 
 type order = {

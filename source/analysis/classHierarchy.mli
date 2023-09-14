@@ -110,7 +110,7 @@ val least_upper_bound
   :  (module Handler) ->
   Type.Primitive.t ->
   Type.Primitive.t ->
-  Type.Primitive.t list
+  Type.Primitive.t option
 
 val check_integrity
   :  indices:IndexTracker.t list ->

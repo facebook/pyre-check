@@ -1119,7 +1119,12 @@ let test_connect_annotations_to_top context =
   in
   let global_environment = ScratchProject.global_environment project in
   let order = class_hierarchy global_environment in
-  assert_equal (ClassHierarchy.least_upper_bound order "test.One" "test.Two") ["object"]
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: Type.Primitive.t option]
+    ~printer:(fun bound -> Sexp.to_string_hum ([%sexp_of: Type.Primitive.t option] bound))
+    (Some "object")
+    (ClassHierarchy.least_upper_bound order "test.One" "test.Two")
 
 
 let test_deduplicate context =

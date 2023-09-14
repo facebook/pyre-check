@@ -322,13 +322,13 @@ let least_common_successor order ~successors left right =
     |> List.map ~f:IndexTracker.annotation
 
 
-let least_upper_bound ((module Handler : Handler) as order) =
+let least_upper_bound ((module Handler : Handler) as order) left right =
   let successors index =
     match parents_of (module Handler) index with
     | Some targets -> targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
     | None -> IndexTracker.Set.empty
   in
-  least_common_successor order ~successors
+  least_common_successor order ~successors left right |> List.hd
 
 
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
