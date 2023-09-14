@@ -13,9 +13,13 @@ strict, remove any configurations strict=True, and any unset configurations will
 from __future__ import annotations
 
 import argparse
+import logging
 
+from ..configuration import Configuration
 from ..repository import Repository
 from .command import Command
+
+LOG: logging.Logger = logging.getLogger(__name__)
 
 
 class GlobalStrictness(Command):
@@ -40,4 +44,27 @@ class GlobalStrictness(Command):
         )
 
     def run(self) -> None:
-        raise NotImplementedError("global strictness is not yet implemented")
+        global_configuration = Configuration(Configuration.find_project_configuration())
+
+        LOG.info(f"Setting global strictness to {self.strict}...")
+        global_configuration.strict = self.strict
+        global_configuration.write()
+        configurations = Configuration.gather_local_configurations()
+
+        LOG.info(
+            f"Found {len(configurations)} configurations. Setting unset configurations to strict={not self.strict}..."
+        )
+        additions = 0
+        removals = 0
+        for configuration in configurations:
+            if configuration.strict is None:
+                additions += 1
+                configuration.strict = not self.strict
+                configuration.write()
+            if configuration.strict == self.strict:
+                removals += 1
+                configuration.strict = None
+                configuration.write()
+        LOG.info(
+            f"Done setting {additions} local configurations to strict={not self.strict} and removing {removals} unnecessary settings."
+        )
