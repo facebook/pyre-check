@@ -56,7 +56,7 @@ let hierarchy global_resolution =
   let class_hierarchy_handler = GlobalResolution.class_hierarchy global_resolution in
   let class_metadata_environment = GlobalResolution.class_metadata_environment global_resolution in
   let is_transitive_successor ~source ~target =
-    ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+    ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
       class_metadata_environment
       ~placeholder_subclass_extends_all:true
       ~target
@@ -68,7 +68,7 @@ let hierarchy global_resolution =
     is_transitive_successor;
     variables = ClassHierarchy.variables class_hierarchy_handler;
     least_upper_bound =
-      ClassMetadataEnvironment.ReadOnly.least_upper_bound class_metadata_environment;
+      ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound class_metadata_environment;
   }
 
 

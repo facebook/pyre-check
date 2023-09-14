@@ -76,7 +76,7 @@ val ast_environment : t -> AstEnvironment.ReadOnly.t
 
 val annotated_global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
 
-val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
 val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 
@@ -100,7 +100,10 @@ val module_tracker : t -> ModuleTracker.ReadOnly.t
 
 val get_module_metadata : t -> Reference.t -> Module.t option
 
-val class_metadata : t -> Type.Primitive.t -> ClassMetadataEnvironment.class_metadata option
+val class_metadata
+  :  t ->
+  Type.Primitive.t ->
+  ClassSuccessorMetadataEnvironment.class_metadata option
 
 val is_protocol : t -> Type.t -> bool
 

@@ -596,7 +596,8 @@ let find_parents ~resolution ~is_transitive ~includes_self class_name =
   let parents =
     if is_transitive then
       match GlobalResolution.class_metadata resolution class_name with
-      | Some { Analysis.ClassMetadataEnvironment.successors = Some successors; _ } -> successors
+      | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
+          successors
       | _ -> []
     else
       Analysis.ClassHierarchy.immediate_parents

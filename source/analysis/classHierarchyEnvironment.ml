@@ -7,7 +7,7 @@
 
 (* ClassHierarchyEnvironment: layer of the environment stack
  * - upstream: AliasEnvironment
- * - downstream: ClassMetadataEnvironment
+ * - downstream: ClassSuccessorMetadataEnvironment
  * - key: the name type, as an IndexTracker.Value
  * - value: ClassHierarchy.Target.t
  *
@@ -17,7 +17,7 @@
  * It is keyed on IndexTracker.Value, which is an int value
  * that "interns" class names to make lookups cheaper; we want
  * fast lookups because we have to do a graph search when computing
- * all ancestors of classes in ClassMetadataEnvironment.
+ * all ancestors of classes in ClassSuccessorMetadataEnvironment.
  *)
 
 open Core

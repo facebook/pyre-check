@@ -16,7 +16,7 @@
   cfgTest
   classHierarchyTest
   classHierarchyEnvironmentTest
-  classMetadataEnvironmentTest
+  classSuccessorMetadataEnvironmentTest
   classSummaryTest
   constraintsSetTest
   dataClassTest

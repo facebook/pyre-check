@@ -1786,7 +1786,8 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
                     (Resolution.global_resolution resolution)
                     class_name
                 with
-                | Some { ClassMetadataEnvironment.successors = Some successors; _ } -> successors
+                | Some { ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
+                    successors
                 | _ -> []
               in
               class_name :: successors

@@ -5,13 +5,13 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* ClassMetadataEnvironment: layer of the environment stack
+(* ClassSuccessorMetadataEnvironment: layer of the environment stack
  * - upstream: ClassHierarchyEnvironment
  * - downstream: AttributeResolution
  * - key: the name type, as an Identifier.t
- * - value: ClassMetadataEnvironment.class_meatadata
+ * - value: ClassSuccessorMetadataEnvironment.class_meatadata
  *
- * The ClassMetadataEnvironment is a cache for metadata about classes
+ * The ClassSuccessorMetadataEnvironment is a cache for metadata about classes
  * that require the full ancestors (`successors`), which includes
  * - the successors list itself
  * - several flags computed based on inheritance

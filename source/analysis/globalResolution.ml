@@ -41,7 +41,7 @@ let class_metadata_environment resolution =
 
 let class_hierarchy_environment resolution =
   class_metadata_environment resolution
-  |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+  |> ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
 
 
 let alias_environment resolution =
@@ -102,7 +102,7 @@ let function_definition ({ dependency; _ } as resolution) =
 
 
 let class_metadata ({ dependency; _ } as resolution) =
-  ClassMetadataEnvironment.ReadOnly.get_class_metadata
+  ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
     ?dependency
     (class_metadata_environment resolution)
 
@@ -321,7 +321,7 @@ let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
 
 let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation =
   Type.primitive_name annotation
-  >>| ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+  >>| ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
         (class_metadata_environment resolution)
         ?dependency
   |> Option.value ~default:false
@@ -355,7 +355,7 @@ let is_transitive_successor
     ~predecessor
     ~successor
   =
-  ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+  ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
     ~placeholder_subclass_extends_all
     (class_metadata_environment resolution)
     ~target:successor
@@ -411,7 +411,9 @@ let constraints ~resolution:({ dependency; _ } as resolution) =
 
 
 let successors ~resolution:({ dependency; _ } as resolution) =
-  ClassMetadataEnvironment.ReadOnly.successors ?dependency (class_metadata_environment resolution)
+  ClassSuccessorMetadataEnvironment.ReadOnly.successors
+    ?dependency
+    (class_metadata_environment resolution)
 
 
 let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)

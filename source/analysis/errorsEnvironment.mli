@@ -60,7 +60,7 @@ module Testing : sig
 
     val attribute_resolution : ReadOnly.t -> AttributeResolution.ReadOnly.t
 
-    val class_metadata_environment : ReadOnly.t -> ClassMetadataEnvironment.ReadOnly.t
+    val class_metadata_environment : ReadOnly.t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
     val class_hierarchy_environment : ReadOnly.t -> ClassHierarchyEnvironment.ReadOnly.t
 
@@ -80,7 +80,9 @@ module Testing : sig
 
     val attribute_resolution : UpdateResult.t -> AttributeResolution.UpdateResult.t
 
-    val class_metadata_environment : UpdateResult.t -> ClassMetadataEnvironment.UpdateResult.t
+    val class_metadata_environment
+      :  UpdateResult.t ->
+      ClassSuccessorMetadataEnvironment.UpdateResult.t
 
     val class_hierarchy_environment : UpdateResult.t -> ClassHierarchyEnvironment.UpdateResult.t
 

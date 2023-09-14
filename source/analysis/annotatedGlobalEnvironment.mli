@@ -19,7 +19,7 @@ module AnnotatedReadOnly : sig
 
   val attribute_resolution : t -> AttributeResolution.ReadOnly.t
 
-  val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+  val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
   (* Shortcut for walking through all of the environments *)
   val ast_environment : t -> AstEnvironment.ReadOnly.t

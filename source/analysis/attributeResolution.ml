@@ -6,7 +6,7 @@
  *)
 
 (* AttributeResolution: layer of the environment stack
- * - upstream: ClassMetadataEnvironment
+ * - upstream: ClassSuccessorMetadataEnvironment
  * - downstream: AnnotatedGlobalEnvironment
  *
  * Unlike most other layers, attribute resolution combines business
@@ -301,7 +301,7 @@ module TypeParameterValidationTypes = struct
 end
 
 let class_hierarchy_environment class_metadata_environment =
-  ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+  ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
 
 
 let alias_environment class_metadata_environment =
@@ -591,7 +591,7 @@ module ClassDecorators = struct
       let class_decorators { ClassSummary.decorators; _ } = decorators in
       name
       |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-           (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+           (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
               class_metadata_environment)
            ?dependency
       >>| Node.value
@@ -607,7 +607,7 @@ module ClassDecorators = struct
             ~keyword_only:"kw_only_default"
             ~has_slots:"slots"
     in
-    ClassMetadataEnvironment.ReadOnly.successors
+    ClassSuccessorMetadataEnvironment.ReadOnly.successors
       class_metadata_environment
       ?dependency
       (Reference.show name)
@@ -650,11 +650,11 @@ module ClassDecorators = struct
     let parent_dataclasses =
       let class_summary =
         UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-          (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+          (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
              class_metadata_environment)
           ?dependency
       in
-      ClassMetadataEnvironment.ReadOnly.successors
+      ClassSuccessorMetadataEnvironment.ReadOnly.successors
         class_metadata_environment
         ?dependency
         (Reference.show name)
@@ -2368,7 +2368,7 @@ class base class_metadata_environment dependency =
     method get_typed_dictionary ~assumptions annotation =
       match annotation with
       | Type.Primitive class_name
-        when ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+        when ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
                class_metadata_environment
                ?dependency
                class_name ->
@@ -2452,7 +2452,7 @@ class base class_metadata_environment dependency =
       in
       let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
       let is_transitive_successor ~source ~target =
-        ClassMetadataEnvironment.ReadOnly.is_transitive_successor
+        ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
           class_metadata_environment
           ~placeholder_subclass_extends_all:true
           ?dependency
@@ -2467,7 +2467,7 @@ class base class_metadata_environment dependency =
             is_transitive_successor;
             variables = ClassHierarchy.variables class_hierarchy_handler;
             least_upper_bound =
-              ClassMetadataEnvironment.ReadOnly.least_upper_bound
+              ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound
                 class_metadata_environment
                 ?dependency;
           };
@@ -2690,7 +2690,7 @@ class base class_metadata_environment dependency =
     method parse_annotation
         ~assumptions
         ?(validation =
-          ClassMetadataEnvironment.MetadataReadOnly.controls class_metadata_environment
+          ClassSuccessorMetadataEnvironment.MetadataReadOnly.controls class_metadata_environment
           |> ParsingValidation.parse_annotation_validation_kind)
         expression =
       let modify_aliases ?replace_unbound_parameters_with_any = function
@@ -2759,11 +2759,11 @@ class base class_metadata_environment dependency =
         let successor_definitions =
           let class_summary =
             UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-              (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+              (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
                  class_metadata_environment)
               ?dependency
           in
-          ClassMetadataEnvironment.ReadOnly.successors
+          ClassSuccessorMetadataEnvironment.ReadOnly.successors
             class_metadata_environment
             ?dependency
             class_name
@@ -2878,12 +2878,12 @@ class base class_metadata_environment dependency =
       let add_special_methods () =
         let class_summary =
           UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-            (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+            (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
                class_metadata_environment)
             ?dependency
         in
         let successor_definitions =
-          ClassMetadataEnvironment.ReadOnly.successors
+          ClassSuccessorMetadataEnvironment.ReadOnly.successors
             class_metadata_environment
             ?dependency
             (Reference.show name)
@@ -2899,7 +2899,7 @@ class base class_metadata_environment dependency =
           List.filter
             (parent_definition :: successor_definitions)
             ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
-              ClassMetadataEnvironment.ReadOnly.is_typed_dictionary
+              ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
                 class_metadata_environment
                 ?dependency
                 (Reference.show name))
@@ -3069,7 +3069,7 @@ class base class_metadata_environment dependency =
         let extends_placeholder_stubs class_name =
           let class_hierarchy =
             ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-              (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+              (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
                  class_metadata_environment)
               ?dependency
           in
@@ -3101,11 +3101,11 @@ class base class_metadata_environment dependency =
       in
       match
         ( UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-            (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+            (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
                class_metadata_environment)
             ?dependency
             class_name,
-          ClassMetadataEnvironment.ReadOnly.get_class_metadata
+          ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
             class_metadata_environment
             ?dependency
             class_name )
@@ -3148,7 +3148,7 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~special_method
         class_name =
-      let handle { ClassMetadataEnvironment.successors; _ } =
+      let handle { ClassSuccessorMetadataEnvironment.successors; _ } =
         let get_table ~accessed_via_metaclass =
           self#single_uninstantiated_attribute_table
             ~assumptions
@@ -3177,7 +3177,7 @@ class base class_metadata_environment dependency =
                 (* Class over meta hierarchy if necessary. *)
                 if accessed_through_class then
                   let successors_of class_name =
-                    ClassMetadataEnvironment.ReadOnly.successors
+                    ClassSuccessorMetadataEnvironment.ReadOnly.successors
                       class_metadata_environment
                       ?dependency
                       class_name
@@ -3198,7 +3198,7 @@ class base class_metadata_environment dependency =
         in
         Sequence.append normal_tables (Sequence.of_lazy metaclass_tables)
       in
-      ClassMetadataEnvironment.ReadOnly.get_class_metadata
+      ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
         class_metadata_environment
         ?dependency
         class_name
@@ -3417,7 +3417,7 @@ class base class_metadata_environment dependency =
               let implementation, overloads =
                 let generics =
                   ClassHierarchyEnvironment.ReadOnly.variables
-                    (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+                    (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
                        class_metadata_environment)
                     ?dependency
                     name
@@ -3788,7 +3788,7 @@ class base class_metadata_environment dependency =
             (* Handle enumeration attributes. *)
             let annotation, visibility =
               let superclasses =
-                ClassMetadataEnvironment.ReadOnly.successors
+                ClassSuccessorMetadataEnvironment.ReadOnly.successors
                   class_metadata_environment
                   ?dependency
                   parent_name
@@ -4051,7 +4051,7 @@ class base class_metadata_environment dependency =
             | _ -> candidate)
       in
       UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-        (ClassMetadataEnvironment.ReadOnly.unannotated_global_environment
+        (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
            class_metadata_environment)
         ?dependency
         target
@@ -4062,7 +4062,7 @@ class base class_metadata_environment dependency =
         match parameters with
         | None ->
             ClassHierarchyEnvironment.ReadOnly.variables
-              (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+              (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
                  class_metadata_environment)
               ?dependency
               target
@@ -4565,7 +4565,7 @@ class base class_metadata_environment dependency =
         in
         let variables =
           ClassHierarchyEnvironment.ReadOnly.variables
-            (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+            (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
                class_metadata_environment)
             ?dependency
         in
@@ -4718,7 +4718,7 @@ class base class_metadata_environment dependency =
       let return_annotation =
         let generics =
           ClassHierarchyEnvironment.ReadOnly.variables
-            (ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+            (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
                class_metadata_environment)
             ?dependency
             class_name
@@ -4745,7 +4745,7 @@ class base class_metadata_environment dependency =
       in
       let definitions =
         class_name
-        :: ClassMetadataEnvironment.ReadOnly.successors
+        :: ClassSuccessorMetadataEnvironment.ReadOnly.successors
              class_metadata_environment
              ?dependency
              class_name
@@ -4973,7 +4973,7 @@ let empty_assumptions =
 
 module ParseAnnotationCache = struct
   module Cache = ManagedCache.Make (struct
-    module PreviousEnvironment = ClassMetadataEnvironment
+    module PreviousEnvironment = ClassSuccessorMetadataEnvironment
     module Key = SharedMemoryKeys.ParseAnnotationKey
 
     module Value = struct
@@ -5249,7 +5249,7 @@ module GlobalAnnotationCache = struct
   end
 end
 
-module PreviousEnvironment = ClassMetadataEnvironment
+module PreviousEnvironment = ClassSuccessorMetadataEnvironment
 include GlobalAnnotationCache
 
 module ReadOnly = struct

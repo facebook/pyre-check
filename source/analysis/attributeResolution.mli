@@ -183,7 +183,7 @@ type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving 
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
-  val class_metadata_environment : t -> ClassMetadataEnvironment.ReadOnly.t
+  val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
   val get_typed_dictionary
     :  t ->
@@ -305,4 +305,4 @@ end
 include
   Environment.S
     with module ReadOnly = AttributeReadOnly
-     and module PreviousEnvironment = ClassMetadataEnvironment
+     and module PreviousEnvironment = ClassSuccessorMetadataEnvironment

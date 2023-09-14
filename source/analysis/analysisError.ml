@@ -3876,7 +3876,7 @@ let filter ~resolution errors =
               | Type.Parametric { name = predecessor; _ } -> (
                   match GlobalResolution.class_metadata resolution predecessor with
                   | None -> false
-                  | Some { ClassMetadataEnvironment.is_mock; _ } -> is_mock)
+                  | Some { ClassSuccessorMetadataEnvironment.is_mock; _ } -> is_mock)
               | _ -> false
             with
             | ClassHierarchy.Untracked _ -> false

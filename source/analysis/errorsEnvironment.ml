@@ -223,7 +223,8 @@ module Testing = struct
 
 
     let class_hierarchy_environment environment =
-      class_metadata_environment environment |> ClassMetadataEnvironment.Testing.ReadOnly.upstream
+      class_metadata_environment environment
+      |> ClassSuccessorMetadataEnvironment.Testing.ReadOnly.upstream
 
 
     let alias_environment environment =
@@ -260,7 +261,7 @@ module Testing = struct
 
     let class_hierarchy_environment update_result =
       class_metadata_environment update_result
-      |> ClassMetadataEnvironment.Testing.UpdateResult.upstream
+      |> ClassSuccessorMetadataEnvironment.Testing.UpdateResult.upstream
 
 
     let alias_environment update_result =

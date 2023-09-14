@@ -120,7 +120,7 @@ module ReadOnly = struct
 
   let ast_environment environment =
     class_metadata_environment environment
-    |> ClassMetadataEnvironment.ReadOnly.class_hierarchy_environment
+    |> ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
     |> ClassHierarchyEnvironment.ReadOnly.alias_environment
     |> AliasEnvironment.ReadOnly.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment

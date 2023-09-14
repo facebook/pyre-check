@@ -2030,7 +2030,7 @@ module State (Context : Context) = struct
                 forward_right (Some not_none_left)
             | _, _ -> forward_right (Some resolved_left)))
     | Call { callee = { Node.value = Name (Name.Identifier "super"); _ } as callee; arguments } -> (
-        let superclass ~class_name { ClassMetadataEnvironment.successors; _ } =
+        let superclass ~class_name { ClassSuccessorMetadataEnvironment.successors; _ } =
           let extends_placeholder_stub_class =
             let class_hierarchy = GlobalResolution.class_hierarchy global_resolution in
             ClassHierarchy.extends_placeholder_stub class_hierarchy class_name
@@ -6951,7 +6951,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     if Define.is_class_toplevel define then
       let check_bases errors =
         let is_final errors expression_value =
-          let add_error { ClassMetadataEnvironment.is_final; _ } =
+          let add_error { ClassSuccessorMetadataEnvironment.is_final; _ } =
             if is_final then
               let error =
                 Error.create
@@ -7142,7 +7142,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         in
         override_errors @ errors
       in
-      let check_inconsistent_mro ~class_name { ClassMetadataEnvironment.successors; _ } =
+      let check_inconsistent_mro ~class_name { ClassSuccessorMetadataEnvironment.successors; _ } =
         match successors with
         | Some _ -> None
         | None ->
