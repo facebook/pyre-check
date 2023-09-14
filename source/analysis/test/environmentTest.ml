@@ -955,8 +955,6 @@ let test_join_type_order context =
   assert_equal
     (TypeOrder.join order (Type.Union [Type.integer; Type.string]) Type.integer)
     (Type.Union [Type.integer; Type.string]);
-  assert_raises (ClassHierarchy.Untracked "test.durp") (fun _ ->
-      TypeOrder.join order bar (Type.Primitive "test.durp"));
 
   (* Special cases. *)
   assert_equal (TypeOrder.join order Type.integer Type.float) Type.float

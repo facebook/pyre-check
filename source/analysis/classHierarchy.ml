@@ -283,52 +283,15 @@ let get_generic_parameters ~generic_index edges =
   List.find_map ~f:generic_parameters edges
 
 
-let least_common_successor order ~successors left right =
-  raise_if_untracked order left;
-  raise_if_untracked order right;
-  if Type.Primitive.compare left right = 0 then
-    [left]
-  else
-    (let rec iterate left right =
-       let successors sources =
-         Set.fold
-           ~init:IndexTracker.Set.empty
-           ~f:(fun sofar index -> Set.union sofar (successors index))
-           sources
-       in
-       let left_successors = successors (List.hd_exn left) in
-       let right_successors = successors (List.hd_exn right) in
-       if Set.is_empty left_successors && Set.is_empty right_successors then
-         []
-       else
-         let intersect left right =
-           let collect = List.fold ~init:IndexTracker.Set.empty ~f:Set.union in
-           Set.inter (collect left) (collect right)
-         in
-         let left = left_successors :: left in
-         let right = right_successors :: right in
-         let left_tail_right = intersect (List.tl_exn left) right in
-         let left_right_tail = intersect left (List.tl_exn right) in
-         if (not (Set.is_empty left_tail_right)) || not (Set.is_empty left_right_tail) then
-           Set.union left_tail_right left_right_tail |> Set.to_list
-         else
-           let left_right = intersect left right in
-           if not (Set.is_empty left_right) then
-             Set.to_list left_right
-           else
-             iterate left right
-     in
-     iterate [IndexTracker.Set.of_list [index_of left]] [IndexTracker.Set.of_list [index_of right]])
-    |> List.map ~f:IndexTracker.annotation
-
-
-let least_upper_bound ((module Handler : Handler) as order) left right =
-  let successors index =
-    match parents_of (module Handler) index with
-    | Some targets -> targets |> List.map ~f:Target.target |> IndexTracker.Set.of_list
-    | None -> IndexTracker.Set.empty
+(* NOTE: This function is not symetric: least_upper_boun(A, B) can return different result from
+   least_upper_bound(B, A) when multiple inheritance is involved. *)
+let least_upper_bound (module Handler : Handler) left right =
+  let get_successors = parents_of (module Handler) in
+  let left_mro = method_resolution_order_linearize_exn ~get_successors left in
+  let right_mro =
+    method_resolution_order_linearize_exn ~get_successors right |> String.Hash_set.of_list
   in
-  least_common_successor order ~successors left right |> List.hd
+  List.find left_mro ~f:(Hash_set.mem right_mro)
 
 
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =

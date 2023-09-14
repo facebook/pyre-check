@@ -137,7 +137,7 @@ let test_least_upper_bound context =
   assert_equal (least_upper_bound order "0" "1") ~expected:(Some "3");
   assert_equal (least_upper_bound order "0" "2") ~expected:None;
   assert_equal (least_upper_bound order "0" "2") ~expected:None;
-  assert_equal (least_upper_bound butterfly "0" "1") ~expected:(Some "2")
+  assert_equal (least_upper_bound butterfly "0" "1") ~expected:(Some "3")
 
 
 let test_check_integrity _ =
