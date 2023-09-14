@@ -175,6 +175,7 @@ class Base(abc.ABC):
     def get_include_suppressed_errors(self) -> Optional[bool]:
         raise NotImplementedError()
 
+    @abc.abstractmethod
     def get_use_errpy_parser(self) -> bool:
         raise NotImplementedError()
 
