@@ -5,7 +5,30 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module allows storing the type of an expression and its attribute chains after refinement.
+
+   For example, say we have an expression `foo` of type `Foo`, having attribute `bar:
+   Optional[Bar]`, with `Bar` having attribute `baz: Optional[Baz]`.
+
+   If we see an if-statement that refines the type, such as:
+
+   `if foo.bar is not None and foo.bar.baz is not None:`
+
+   then, within that block, we would store the information that `foo.bar` is of type `Bar` (not
+   `Optional[Bar]`) and `foo.bar.baz` is of type `Baz` (not `Optional[Baz]`).
+
+   We store the above for arbitrary chains of attributes starting from the base expression `foo`,
+   leading to a tree of attributes (`foo -> bar -> baz`, `foo -> hello -> world`, etc.).
+
+   Refinement.Store: This stores two types of refinements: permanent and temporary.
+
+   For example, if we know that an attribute `bar` is final (e.g., it has type `Final[...]` or is
+   part of a frozen dataclass), then it is safe to permanently refine `foo.bar` as non-`None`, since
+   that attribute cannot be set to `None` again.
+
+   However, if the attribute is not final, then we only mark it temporarily as non-`None`. Any
+   intervening function call on that expression will end up removing these temporary refinements,
+   since that function *could* have set the attribute to `None`. *)
 
 open Core
 open Ast
