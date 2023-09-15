@@ -29,11 +29,9 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 dist_info_in_root: Dict[str, List[str]] = {}
 
-# pyre-fixme[5]: Globally accessible variable `_site_filter` has type `re.Pattern[str]` but no type is specified.
-_site_filter = re.compile(r".*-([0-99]\.)*dist-info")
+_site_filter = re.compile(r".*-([0-99]\.)*dist-info")  # type: re.Pattern[str]
 
-# pyre-fixme[5]: Globally accessible variable `_PYCACHE` has type `re.Pattern[str]` but no type is specified.
-_PYCACHE = re.compile("__pycache__(/)*.*")
+_PYCACHE = re.compile("__pycache__(/)*.*")  # type: re.Pattern[str]
 
 
 def _expand_relative_root(path: str, relative_root: str) -> str:
