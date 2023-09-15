@@ -85,7 +85,7 @@ class SitePackageElement(Element):
 
         this_pkg_filter = re.compile(
             r"{}-([0-99]\.)*dist-info(/)*.*".format(self.package_name)
-        )
+        )  # type: re.Pattern[str]
 
         if self.site_root not in dist_info_in_root:
             dist_info_in_root[self.site_root] = []
@@ -100,10 +100,10 @@ class SitePackageElement(Element):
         else:
             return None
 
-        not_toplevel_patterns: Tuple[re.Pattern[str], re.Pattern[str]] = (
+        not_toplevel_patterns = (
             this_pkg_filter,
             _PYCACHE,
-        )
+        )  # type: Tuple[re.Pattern[str], re.Pattern[str]]
 
         # pyre-fixme[61]: Local variable `dist_info_path` is undefined, or not always defined.
         with open(file=f"{dist_info_path}/RECORD", mode="r") as record:
