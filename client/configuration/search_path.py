@@ -270,8 +270,8 @@ def process_raw_elements(
     elements: List[Element] = []
 
     def add_if_exists(element: Element) -> bool:
-        excepted_path = element.path()
-        if excepted_path is None or not os.path.exists(excepted_path):
+        expected_path = element.path()
+        if expected_path is None or not os.path.exists(expected_path):
             return False
         elements.append(element)
         return True
