@@ -182,20 +182,53 @@ end
 
 module TitoPositionSet = Abstract.ToppedSetDomain.Make (TitoPosition)
 
+module LeafPort = struct
+  type t =
+    | Leaf of {
+        root: string;
+        path: AccessPath.Path.t;
+      }
+    | Producer of {
+        id: int;
+        port: string;
+      }
+    | Anchor of { port: string }
+  [@@deriving equal]
+
+  let pp formatter = function
+    | Leaf { root; path } -> Format.fprintf formatter "Leaf(%s%a)" root AccessPath.Path.pp path
+    | Producer { id; port } -> Format.fprintf formatter "Producer(%d, %s)" id port
+    | Anchor { port } -> Format.fprintf formatter "Anchor(%s)" port
+
+
+  let show = Format.asprintf "%a" pp
+
+  let pp_external formatter = function
+    | Leaf { root; path } -> Format.fprintf formatter "leaf:%s%a" root AccessPath.Path.pp path
+    | Producer { id; port } -> Format.fprintf formatter "producer:%d:%s" id port
+    | Anchor { port } -> Format.fprintf formatter "anchor:%s" port
+
+
+  let show_external = Format.asprintf "%a" pp_external
+end
+
 module LeafName = struct
   let name = "leaf names"
 
   type t = {
     leaf: string;
-    port: string;
+    port: LeafPort.t;
   }
   [@@deriving equal]
 
-  let pp formatter { leaf; port } = Format.fprintf formatter "LeafName(%s, port=%s)" leaf port
+  let pp formatter { leaf; port } =
+    Format.fprintf formatter "LeafName(%s, port=%a)" leaf LeafPort.pp port
+
 
   let show = Format.asprintf "%a" pp
 
-  let to_json { leaf; port } = `Assoc ["name", `String leaf; "port", `String port]
+  let to_json { leaf; port } =
+    `Assoc ["name", `String leaf; "port", `String (LeafPort.show_external port)]
 end
 
 module LeafNameInterned = MakeInterner (LeafName)

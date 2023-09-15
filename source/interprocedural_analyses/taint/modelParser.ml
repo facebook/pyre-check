@@ -925,7 +925,7 @@ let rec parse_annotations
             Features.LeafName.
               {
                 leaf = canonical_name;
-                port = Format.sprintf "producer:%d:%s" producer_id canonical_port;
+                port = Features.LeafPort.Producer { id = producer_id; port = canonical_port };
               }
           in
           match annotation with
@@ -985,7 +985,7 @@ let rec parse_annotations
         let add_cross_repository_information annotation =
           let leaf_name =
             Features.LeafName.
-              { leaf = canonical_name; port = Format.sprintf "anchor:%s" canonical_port }
+              { leaf = canonical_name; port = Features.LeafPort.Anchor { port = canonical_port } }
           in
           match annotation with
           | TaintAnnotation.Source { source; features } ->
