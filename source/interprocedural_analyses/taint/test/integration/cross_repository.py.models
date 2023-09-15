@@ -20,8 +20,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:result",
-                    "name": "crossRepositorySource"
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
                   }
                 ],
                 "length": 3,
@@ -44,7 +44,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -90,7 +90,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -112,8 +112,8 @@
               {
                 "leaves": [
                   {
-                    "port": "anchor:formal(0)",
-                    "name": "crossRepositoryAnchor"
+                    "name": "crossRepositoryAnchor",
+                    "port": "anchor:formal(0)"
                   }
                 ],
                 "kind": "Test"
@@ -198,8 +198,8 @@
               {
                 "leaves": [
                   {
-                    "port": "anchor:formal(0)",
-                    "name": "crossRepositoryAnchor"
+                    "name": "crossRepositoryAnchor",
+                    "port": "anchor:formal(0)"
                   }
                 ],
                 "kind": "Test"
@@ -226,8 +226,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:formal(0)",
-                    "name": "crossRepositorySource"
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
                   }
                 ],
                 "length": 2,
@@ -247,7 +247,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -284,8 +284,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:formal(0)",
-                    "name": "crossRepositorySource"
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
                   }
                 ],
                 "length": 2,
@@ -308,7 +308,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -348,8 +348,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:formal(x)",
-                    "name": "crossRepositorySink"
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
                   }
                 ],
                 "length": 5,
@@ -377,8 +377,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:result",
-                    "name": "crossRepositorySource"
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
                   }
                 ],
                 "length": 3,
@@ -406,8 +406,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:formal(x)",
-                    "name": "crossRepositorySink"
+                    "name": "crossRepositorySink",
+                    "port": "producer:1:formal(x)"
                   }
                 ],
                 "length": 5,
@@ -474,8 +474,8 @@
                 "features": [ { "always-via": "crtex" } ],
                 "leaves": [
                   {
-                    "port": "producer:1:result",
-                    "name": "crossRepositorySource"
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:result"
                   }
                 ],
                 "length": 3,

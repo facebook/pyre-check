@@ -26,7 +26,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               }
@@ -51,7 +51,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TestSink"
               }
             ],
@@ -136,11 +136,11 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               },
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformY@TestSink"
               }
             ],
@@ -205,13 +205,13 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               },
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformY:TransformX@TestSource"
               }
@@ -302,11 +302,11 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TestSink"
               },
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX@TestSink"
               }
             ],
@@ -346,13 +346,13 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TestSource"
               },
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformX@TestSource"
               }
@@ -385,7 +385,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_x" }
+                  { "name": "extra_trace.transform_x", "port": "leaf:arg" }
                 ],
                 "kind": "TransformX:ExtraTraceSink"
               }
@@ -454,7 +454,7 @@
             ],
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "TransformX:TransformY:TransformZ@TestSink"
               }
             ],
@@ -513,7 +513,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformZ:TransformY:TransformX@TestSource"
               }
@@ -563,7 +563,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "TransformY:TransformX@TestSource"
               }
@@ -626,7 +626,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_y" }
+                  { "name": "extra_trace.transform_y", "port": "leaf:arg" }
                 ],
                 "kind": "TransformX@TransformY:ExtraTraceSink"
               }
@@ -755,7 +755,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_y" }
+                  { "name": "extra_trace.transform_y", "port": "leaf:arg" }
                 ],
                 "kind": "TransformY:ExtraTraceSink"
               }
@@ -781,7 +781,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "extra_trace.transform_z" }
+                  { "name": "extra_trace.transform_z", "port": "leaf:arg" }
                 ],
                 "kind": "TransformY@TransformZ:ExtraTraceSink"
               }

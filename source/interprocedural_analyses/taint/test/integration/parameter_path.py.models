@@ -19,7 +19,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -46,7 +46,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -96,7 +96,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -118,8 +118,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:arg[0]",
-                    "name": "parameter_path.sink_on_first"
+                    "name": "parameter_path.sink_on_first",
+                    "port": "leaf:arg[0]"
                   }
                 ],
                 "kind": "Test"
@@ -165,7 +165,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -187,8 +187,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:arg[a]",
-                    "name": "parameter_path.sink_on_key_a"
+                    "name": "parameter_path.sink_on_key_a",
+                    "port": "leaf:arg[a]"
                   }
                 ],
                 "kind": "Test"
@@ -234,7 +234,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -256,8 +256,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:arg[0][1]",
-                    "name": "parameter_path.sink_on_0_1"
+                    "name": "parameter_path.sink_on_0_1",
+                    "port": "leaf:arg[0][1]"
                   }
                 ],
                 "kind": "Test"
@@ -303,7 +303,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -325,8 +325,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:arg[1]",
-                    "name": "parameter_path.sink_on_second"
+                    "name": "parameter_path.sink_on_second",
+                    "port": "leaf:arg[1]"
                   }
                 ],
                 "kind": "Test"
@@ -372,8 +372,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0]",
-                    "name": "parameter_path.source_on_first"
+                    "name": "parameter_path.source_on_first",
+                    "port": "leaf:return[0]"
                   }
                 ],
                 "kind": "Test"
@@ -395,7 +395,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -439,8 +439,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[a]",
-                    "name": "parameter_path.source_on_key_a"
+                    "name": "parameter_path.source_on_key_a",
+                    "port": "leaf:return[a]"
                   }
                 ],
                 "kind": "Test"
@@ -465,7 +465,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -513,8 +513,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[1]",
-                    "name": "parameter_path.source_on_second"
+                    "name": "parameter_path.source_on_second",
+                    "port": "leaf:return[1]"
                   }
                 ],
                 "kind": "Test"
@@ -536,7 +536,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -580,7 +580,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -607,7 +607,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -657,7 +657,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -684,7 +684,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -734,7 +734,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -761,7 +761,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -811,7 +811,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -834,7 +834,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -882,7 +882,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -905,7 +905,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -953,7 +953,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -975,8 +975,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:arg[a]",
-                    "name": "parameter_path.sink_on_member_a"
+                    "name": "parameter_path.sink_on_member_a",
+                    "port": "leaf:arg[a]"
                   }
                 ],
                 "kind": "Test"
@@ -1022,8 +1022,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[a]",
-                    "name": "parameter_path.source_on_member_a"
+                    "name": "parameter_path.source_on_member_a",
+                    "port": "leaf:return[a]"
                   }
                 ],
                 "kind": "Test"
@@ -1048,7 +1048,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1154,8 +1154,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0][1]",
-                    "name": "parameter_path.source_on_0_1"
+                    "name": "parameter_path.source_on_0_1",
+                    "port": "leaf:return[0][1]"
                   }
                 ],
                 "kind": "Test"
@@ -1193,8 +1193,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0][1]",
-                    "name": "parameter_path.source_on_0_1"
+                    "name": "parameter_path.source_on_0_1",
+                    "port": "leaf:return[0][1]"
                   }
                 ],
                 "kind": "Test"
@@ -1216,7 +1216,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],

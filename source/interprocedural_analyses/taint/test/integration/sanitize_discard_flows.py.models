@@ -126,8 +126,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "sanitize_discard_flows.a_source"
+                    "name": "sanitize_discard_flows.a_source",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "NotSink[TestA]@TestA"

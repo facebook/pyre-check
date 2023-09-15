@@ -20,7 +20,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -42,7 +42,7 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -87,7 +87,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -109,7 +109,7 @@
             "is_self_call": false,
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -152,7 +152,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -172,7 +172,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -215,7 +215,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -235,7 +235,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -278,7 +278,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -298,7 +298,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -341,7 +341,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -361,7 +361,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "length": 1,
                 "kind": "MutationSink"
               }
@@ -411,7 +411,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -431,7 +431,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -474,7 +474,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{entrypoint.glob}" }
+                  { "name": "Obj{entrypoint.glob}", "port": "leaf:return" }
                 ],
                 "kind": "GlobalSource"
               }
@@ -494,7 +494,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],
@@ -543,7 +543,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "MutationSink"
               }
             ],

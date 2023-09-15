@@ -108,7 +108,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -141,7 +141,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -174,7 +174,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -207,8 +207,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{django.http.Request.GET}"
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -276,8 +276,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{django.http.Request.GET}"
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -335,7 +335,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -371,8 +371,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:request",
-                    "name": "select.view_entry_field"
+                    "name": "select.view_entry_field",
+                    "port": "leaf:request"
                   }
                 ],
                 "kind": "UserControlled"
@@ -396,7 +396,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -431,7 +431,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -471,8 +471,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{django.http.Request.GET}"
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -497,7 +497,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -540,7 +540,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],
@@ -579,8 +579,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:request",
-                    "name": "select.view_entry_index"
+                    "name": "select.view_entry_index",
+                    "port": "leaf:request"
                   }
                 ],
                 "kind": "UserControlled"
@@ -607,7 +607,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],

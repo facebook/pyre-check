@@ -18,7 +18,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -40,8 +40,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SinkAttributes.x}"
+                    "name": "Obj{via_attribute_name.SinkAttributes.x}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -86,7 +86,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -108,8 +108,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SinkAttributes.y}"
+                    "name": "Obj{via_attribute_name.SinkAttributes.y}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -154,7 +154,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -176,8 +176,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SinkAttributes.z}"
+                    "name": "Obj{via_attribute_name.SinkAttributes.z}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -222,7 +222,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -253,7 +253,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -305,7 +305,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -332,7 +332,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -380,7 +380,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -407,7 +407,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -455,7 +455,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -482,7 +482,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -530,7 +530,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -557,7 +557,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -605,7 +605,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -632,7 +632,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -680,7 +680,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -707,7 +707,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1263,7 +1263,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1282,7 +1282,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1301,7 +1301,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1337,8 +1337,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.x}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.x}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1357,8 +1357,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.y}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.y}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1377,8 +1377,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.z}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.z}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1400,7 +1400,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1439,7 +1439,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1475,8 +1475,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.x}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.x}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1498,7 +1498,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1533,7 +1533,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1569,8 +1569,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.y}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.y}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1592,7 +1592,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1627,7 +1627,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1663,8 +1663,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{via_attribute_name.SourceAttributes.z}"
+                    "name": "Obj{via_attribute_name.SourceAttributes.z}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1686,7 +1686,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],

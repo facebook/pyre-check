@@ -18,7 +18,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_user_controlled" }
+                  { "name": "_user_controlled", "port": "leaf:return" }
                 ],
                 "kind": "UserControlled"
               }
@@ -38,7 +38,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "eval" } ],
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
                 "kind": "RemoteCodeExecution"
               }
             ],

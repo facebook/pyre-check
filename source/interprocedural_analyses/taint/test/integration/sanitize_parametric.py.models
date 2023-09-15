@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "sanitize_parametric.a_source_y"
+                    "name": "sanitize_parametric.a_source_y",
+                    "port": "leaf:return"
                   }
                 ],
                 "length": 1,
@@ -48,8 +48,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:x",
-                    "name": "sanitize_parametric.a_sink_x"
+                    "name": "sanitize_parametric.a_sink_x",
+                    "port": "leaf:x"
                   }
                 ],
                 "length": 1,
@@ -153,8 +153,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:x",
-                    "name": "sanitize_parametric.a_sink_x"
+                    "name": "sanitize_parametric.a_sink_x",
+                    "port": "leaf:x"
                   }
                 ],
                 "kind": "TestA[X]"
@@ -172,8 +172,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:x",
-                    "name": "sanitize_parametric.a_sink_y"
+                    "name": "sanitize_parametric.a_sink_y",
+                    "port": "leaf:x"
                   }
                 ],
                 "kind": "NotSource[TestA]@TestA[Y]"
@@ -206,8 +206,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "sanitize_parametric.a_source_x"
+                    "name": "sanitize_parametric.a_source_x",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "NotSink[TestA]@TestA[X]"
@@ -227,8 +227,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "sanitize_parametric.a_source_y"
+                    "name": "sanitize_parametric.a_source_y",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "TestA[Y]"

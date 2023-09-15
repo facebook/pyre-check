@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[a]",
-                    "name": "applies_to_index.only_applies_to_a_key"
+                    "name": "applies_to_index.only_applies_to_a_key",
+                    "port": "leaf:return[a]"
                   }
                 ],
                 "kind": "Test"
@@ -45,7 +45,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -93,8 +93,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0]",
-                    "name": "applies_to_index.only_applies_to_first"
+                    "name": "applies_to_index.only_applies_to_first",
+                    "port": "leaf:return[0]"
                   }
                 ],
                 "kind": "Test"
@@ -116,7 +116,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -160,8 +160,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[1]",
-                    "name": "applies_to_index.only_applies_to_second"
+                    "name": "applies_to_index.only_applies_to_second",
+                    "port": "leaf:return[1]"
                   }
                 ],
                 "kind": "Test"
@@ -183,7 +183,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -227,8 +227,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[a]",
-                    "name": "applies_to_index.only_applies_to_a_member"
+                    "name": "applies_to_index.only_applies_to_a_member",
+                    "port": "leaf:return[a]"
                   }
                 ],
                 "kind": "Test"
@@ -253,7 +253,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -340,8 +340,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0][1]",
-                    "name": "applies_to_index.only_applies_to_nested"
+                    "name": "applies_to_index.only_applies_to_nested",
+                    "port": "leaf:return[0][1]"
                   }
                 ],
                 "kind": "Test"
@@ -379,8 +379,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return[0][1]",
-                    "name": "applies_to_index.only_applies_to_nested"
+                    "name": "applies_to_index.only_applies_to_nested",
+                    "port": "leaf:return[0][1]"
                   }
                 ],
                 "kind": "Test"
@@ -402,7 +402,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],

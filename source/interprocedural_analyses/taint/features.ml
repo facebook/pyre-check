@@ -187,25 +187,15 @@ module LeafName = struct
 
   type t = {
     leaf: string;
-    port: string option;
+    port: string;
   }
   [@@deriving equal]
 
-  let pp formatter { leaf; port } =
-    match port with
-    | None -> Format.fprintf formatter "LeafName(%s)" leaf
-    | Some port -> Format.fprintf formatter "LeafName(%s, port=%s)" leaf port
-
+  let pp formatter { leaf; port } = Format.fprintf formatter "LeafName(%s, port=%s)" leaf port
 
   let show = Format.asprintf "%a" pp
 
-  let to_json { leaf; port } =
-    let port_assoc =
-      match port with
-      | Some port -> ["port", `String port]
-      | None -> []
-    in
-    `Assoc (port_assoc @ ["name", `String leaf])
+  let to_json { leaf; port } = `Assoc ["name", `String leaf; "port", `String port]
 end
 
 module LeafNameInterned = MakeInterner (LeafName)

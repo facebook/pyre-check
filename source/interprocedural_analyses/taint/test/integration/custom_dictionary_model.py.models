@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "custom_dictionary_model._test_source_2"
+                    "name": "custom_dictionary_model._test_source_2",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test2"
@@ -42,7 +42,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:__key", "name": "dict.__setitem__" }
+                  { "name": "dict.__setitem__", "port": "leaf:__key" }
                 ],
                 "kind": "SinkKey"
               }
@@ -87,8 +87,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "custom_dictionary_model._test_source_2"
+                    "name": "custom_dictionary_model._test_source_2",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test2"
@@ -110,7 +110,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:__value", "name": "dict.__setitem__" }
+                  { "name": "dict.__setitem__", "port": "leaf:__value" }
                 ],
                 "kind": "SinkValue"
               }
@@ -155,7 +155,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -180,7 +180,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -229,7 +229,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -254,7 +254,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],

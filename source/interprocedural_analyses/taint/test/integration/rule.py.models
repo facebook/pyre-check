@@ -18,7 +18,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "rule.source" }
+                  { "name": "rule.source", "port": "leaf:return" }
                 ],
                 "kind": "MyTestSource"
               }
@@ -38,7 +38,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:x", "name": "rule.sink" } ],
+                "leaves": [ { "name": "rule.sink", "port": "leaf:x" } ],
                 "kind": "MyTestSink"
               }
             ],

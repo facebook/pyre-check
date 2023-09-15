@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "issue_grouping.source_b"
+                    "name": "issue_grouping.source_b",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "SourceB"
@@ -45,7 +45,7 @@
                   { "has": "first-index" }, { "first-index": "b" }
                 ],
                 "leaves": [
-                  { "port": "leaf:arg", "name": "issue_grouping.sink_b" }
+                  { "name": "issue_grouping.sink_b", "port": "leaf:arg" }
                 ],
                 "length": 1,
                 "kind": "SinkB"
@@ -95,8 +95,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "issue_grouping.source_a"
+                    "name": "issue_grouping.source_a",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "SourceA"
@@ -121,7 +121,7 @@
                   { "has": "first-index" }, { "first-index": "a" }
                 ],
                 "leaves": [
-                  { "port": "leaf:arg", "name": "issue_grouping.sink_a" }
+                  { "name": "issue_grouping.sink_a", "port": "leaf:arg" }
                 ],
                 "length": 1,
                 "kind": "SinkA"
@@ -163,7 +163,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "issue_grouping.sink_a" }
+                  { "name": "issue_grouping.sink_a", "port": "leaf:arg" }
                 ],
                 "kind": "SinkA"
               }
@@ -187,7 +187,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "issue_grouping.sink_b" }
+                  { "name": "issue_grouping.sink_b", "port": "leaf:arg" }
                 ],
                 "kind": "SinkB"
               }

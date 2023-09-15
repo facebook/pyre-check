@@ -18,7 +18,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -38,7 +38,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -81,7 +81,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "Obj{os.environ}" }
+                  { "name": "Obj{os.environ}", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -101,7 +101,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -145,8 +145,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{model_query_global_variable.foo}"
+                    "name": "Obj{model_query_global_variable.foo}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test1"
@@ -167,7 +167,7 @@
           {
             "kinds": [
               {
-                "leaves": [ { "port": "leaf:self", "name": "list.append" } ],
+                "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
                 "kind": "Test1"
               }
             ],

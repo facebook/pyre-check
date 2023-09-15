@@ -64,8 +64,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "callable_classes.CallableProtocol.__call__"
+                    "name": "callable_classes.CallableProtocol.__call__",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -99,8 +99,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "callable_classes.P.__call__"
+                    "name": "callable_classes.P.__call__",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"

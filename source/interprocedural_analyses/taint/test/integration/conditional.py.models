@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "conditional.some_source"
+                    "name": "conditional.some_source",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "MySource"
@@ -76,8 +76,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "conditional.some_source"
+                    "name": "conditional.some_source",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "MySource"

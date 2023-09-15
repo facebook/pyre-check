@@ -19,8 +19,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -110,8 +110,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.permissive_context"
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "PermissiveContext"
@@ -192,8 +192,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.permissive_context"
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "PermissiveContext"
@@ -274,8 +274,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.permissive_context"
+                    "name": "multiple_sources.permissive_context",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "PermissiveContext"
@@ -356,8 +356,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -402,8 +402,8 @@
                 ],
                 "leaves": [
                   {
-                    "port": "leaf:self",
-                    "name": "multiple_sources.Node.send"
+                    "name": "multiple_sources.Node.send",
+                    "port": "leaf:self"
                   }
                 ],
                 "length": 1,
@@ -460,8 +460,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -542,8 +542,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -816,7 +816,7 @@
                   "multiple_sources.demonstrate_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):38285492ef9da9445793b0ffeda245a0"
                 ],
                 "leaves": [
-                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
@@ -853,8 +853,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -947,7 +947,7 @@
                   "multiple_sources.demonstrate_triggered_context_more_hops:4321:0:Call|multiple_sources.Node.send|0|formal(self):b1f7e0b31503976da817a2722618a44a"
                 ],
                 "leaves": [
-                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
@@ -984,8 +984,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "length": 1,
@@ -1086,8 +1086,8 @@
                 ],
                 "leaves": [
                   {
-                    "port": "leaf:self",
-                    "name": "multiple_sources.Node.send"
+                    "name": "multiple_sources.Node.send",
+                    "port": "leaf:self"
                   }
                 ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[id]]"
@@ -1128,7 +1128,7 @@
                   "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|0|formal(self):a2be6d22a1aa8362f6500da78375547f"
                 ],
                 "leaves": [
-                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
@@ -1149,7 +1149,7 @@
                   "multiple_sources.multiple_triggered_context:4321:0:Call|multiple_sources.Node.send|1|formal(self):9c1d7ba0ef713f59efda3f6d1469d2a5"
                 ],
                 "leaves": [
-                  { "port": "leaf:vc", "name": "multiple_sources.Node.send" }
+                  { "name": "multiple_sources.Node.send", "port": "leaf:vc" }
                 ],
                 "kind": "TriggeredPartialSink[UserControlledAndVC[vc]]"
               }
@@ -1186,8 +1186,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -1283,8 +1283,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"
@@ -1503,8 +1503,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "multiple_sources.user_controlled_input"
+                    "name": "multiple_sources.user_controlled_input",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "UserControlled"

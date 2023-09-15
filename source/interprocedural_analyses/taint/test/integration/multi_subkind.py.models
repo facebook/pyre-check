@@ -18,7 +18,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "multi_subkind.source_a" }
+                  { "name": "multi_subkind.source_a", "port": "leaf:return" }
                 ],
                 "kind": "SourceA[KindA]"
               }
@@ -34,7 +34,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:return", "name": "multi_subkind.source_b" }
+                  { "name": "multi_subkind.source_b", "port": "leaf:return" }
                 ],
                 "kind": "SourceA[KindB]"
               }
@@ -58,7 +58,7 @@
                   { "has": "first-index" }, { "first-index": "a" }
                 ],
                 "leaves": [
-                  { "port": "leaf:arg", "name": "multi_subkind.sink_a" }
+                  { "name": "multi_subkind.sink_a", "port": "leaf:arg" }
                 ],
                 "length": 1,
                 "kind": "SinkA[KindA]"
@@ -82,7 +82,7 @@
                   { "has": "first-index" }, { "first-index": "b" }
                 ],
                 "leaves": [
-                  { "port": "leaf:arg", "name": "multi_subkind.sink_b" }
+                  { "name": "multi_subkind.sink_b", "port": "leaf:arg" }
                 ],
                 "length": 1,
                 "kind": "SinkA[KindB]"
@@ -128,7 +128,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "multi_subkind.sink_a" }
+                  { "name": "multi_subkind.sink_a", "port": "leaf:arg" }
                 ],
                 "kind": "SinkA[KindA]"
               }
@@ -152,7 +152,7 @@
             "kinds": [
               {
                 "leaves": [
-                  { "port": "leaf:arg", "name": "multi_subkind.sink_b" }
+                  { "name": "multi_subkind.sink_b", "port": "leaf:arg" }
                 ],
                 "kind": "SinkA[KindB]"
               }

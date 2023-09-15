@@ -42,8 +42,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:self",
-                    "name": "class_level_taint.ClassSink.sink"
+                    "name": "class_level_taint.ClassSink.sink",
+                    "port": "leaf:self"
                   }
                 ],
                 "kind": "Test"
@@ -83,8 +83,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "class_level_taint.ClassSource.source"
+                    "name": "class_level_taint.ClassSource.source",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -109,8 +109,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:argument",
-                    "name": "class_level_taint.ClassSink.sink"
+                    "name": "class_level_taint.ClassSink.sink",
+                    "port": "leaf:argument"
                   }
                 ],
                 "kind": "Test"

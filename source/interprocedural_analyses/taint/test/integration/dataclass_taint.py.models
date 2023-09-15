@@ -19,7 +19,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -44,7 +44,7 @@
                   { "always-type": "integer" },
                   { "always-type": "scalar" }
                 ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "length": 1,
                 "kind": "Test"
               }
@@ -101,8 +101,8 @@
                 ],
                 "leaves": [
                   {
-                    "port": "leaf:bad",
-                    "name": "dataclass_taint.WeirdDataClass.__init__"
+                    "name": "dataclass_taint.WeirdDataClass.__init__",
+                    "port": "leaf:bad"
                   }
                 ],
                 "length": 1,
@@ -132,7 +132,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -182,7 +182,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -204,8 +204,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}"
+                    "name": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -250,7 +250,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -272,8 +272,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:bad",
-                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__"
+                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
+                    "port": "leaf:bad"
                   }
                 ],
                 "kind": "Test"
@@ -319,7 +319,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -344,8 +344,8 @@
                 ],
                 "leaves": [
                   {
-                    "port": "leaf:bad",
-                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__"
+                    "name": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
+                    "port": "leaf:bad"
                   }
                 ],
                 "kind": "Test"
@@ -561,7 +561,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -800,8 +800,8 @@
                 ],
                 "leaves": [
                   {
-                    "port": "leaf:bad",
-                    "name": "dataclass_taint.WeirdDataClass.__init__"
+                    "name": "dataclass_taint.WeirdDataClass.__init__",
+                    "port": "leaf:bad"
                   }
                 ],
                 "kind": "UserControlled"
@@ -835,8 +835,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}"
+                    "name": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -921,7 +921,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -960,7 +960,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -987,7 +987,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1030,7 +1030,7 @@
               {
                 "features": [ { "always-via": "special_source" } ],
                 "leaves": [
-                  { "port": "leaf:return", "name": "_test_source" }
+                  { "name": "_test_source", "port": "leaf:return" }
                 ],
                 "kind": "Test"
               }
@@ -1115,7 +1115,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1151,8 +1151,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:dc[*]",
-                    "name": "dataclass_taint.test_dataclass_parameter_path"
+                    "name": "dataclass_taint.test_dataclass_parameter_path",
+                    "port": "leaf:dc[*]"
                   }
                 ],
                 "kind": "UserControlled"
@@ -1177,7 +1177,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1217,7 +1217,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1239,7 +1239,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1273,7 +1273,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1293,7 +1293,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1329,8 +1329,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}"
+                    "name": "Obj{dataclass_taint.DataClassWithOtherSource.tainted}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1352,7 +1352,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1388,7 +1388,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1408,7 +1408,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
@@ -1444,8 +1444,8 @@
               {
                 "leaves": [
                   {
-                    "port": "leaf:return",
-                    "name": "Obj{dataclass_taint.DataClassWithSource.tainted}"
+                    "name": "Obj{dataclass_taint.DataClassWithSource.tainted}",
+                    "port": "leaf:return"
                   }
                 ],
                 "kind": "Test"
@@ -1467,7 +1467,7 @@
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "port": "leaf:arg", "name": "_test_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "kind": "Test"
               }
             ],
