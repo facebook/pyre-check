@@ -10,6 +10,9 @@
 
 open Core
 
+(* Core shadows/deprecates the stdlib Unix module. *)
+module Unix = Caml_unix
+
 type section =
   [ `Check
   | `Debug
@@ -92,31 +95,30 @@ end
 
 let is_enabled section = Hash_set.mem GlobalState.enabled (section_to_string section)
 
-let time_zone = ref None
-
-(* A safer version of Time_unix.Zone.local, which defaults to UTC instead of throwing an exception
-   if we cannot figure out local time. See https://github.com/janestreet/core/issues/96 for one
-   example when this can happen *)
-let get_time_zone () =
-  match !time_zone with
-  | Some zone -> zone
-  | None ->
-      let zone =
-        try force Time_unix.Zone.local with
-        | _ -> Time_unix.Zone.utc
-      in
-      time_zone := Some zone;
-      zone
+let format_tm fmt tm =
+  let open Unix in
+  let year = tm.tm_year + 1900 in
+  let month = tm.tm_mon + 1 in
+  Format.fprintf
+    fmt
+    "%d-%02d-%02d %02d:%02d:%02d"
+    year
+    month
+    tm.tm_mday
+    tm.tm_hour
+    tm.tm_min
+    tm.tm_sec
 
 
 let log ~section format =
   let section = section_to_string section in
   if Hash_set.mem GlobalState.enabled section then
-    let zone = get_time_zone () in
+    let localtime = Unix.localtime (Unix.time ()) in
     Format.fprintf
       Format.err_formatter
-      ("%s %s " ^^ format ^^ "\n%!")
-      (Time_unix.format ~zone (Time_unix.now ()) "%Y-%m-%d %H:%M:%S")
+      ("%a %s " ^^ format ^^ "\n%!")
+      format_tm
+      localtime
       (String.uppercase section)
   else
     Format.ifprintf Format.err_formatter format
