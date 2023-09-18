@@ -193,7 +193,7 @@ let run_infer configuration_file =
   exit (ExitStatus.exit_code exit_status)
 
 
-let command =
+let command () =
   let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs type inference"

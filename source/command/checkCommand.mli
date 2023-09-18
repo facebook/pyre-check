@@ -32,6 +32,6 @@ module CheckConfiguration : sig
   val analysis_configuration_of : t -> Configuration.Analysis.t
 end
 
-val command : Command.t
+val command : unit -> Command.t
 
 val on_exception : exn -> ExitStatus.t

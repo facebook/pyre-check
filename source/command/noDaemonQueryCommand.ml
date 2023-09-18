@@ -227,7 +227,7 @@ let run_query configuration_file =
   exit (ExitStatus.exit_code exit_status)
 
 
-let command =
+let command () =
   let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs a full check without a server"

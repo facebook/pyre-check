@@ -57,4 +57,4 @@ module AnalyzeConfiguration : sig
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
 end
 
-val command : Command.t
+val command : unit -> Command.t

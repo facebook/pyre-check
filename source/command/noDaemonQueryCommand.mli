@@ -13,4 +13,4 @@
 
 open Core
 
-val command : Command.t
+val command : unit -> Command.t

@@ -37,4 +37,4 @@ module ServerConfiguration : sig
   [@@deriving sexp, compare, hash, of_yojson]
 end
 
-val command : Command.t
+val command : unit -> Command.t
