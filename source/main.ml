@@ -28,6 +28,7 @@ let commands =
 
 let () =
   try
+    Printexc.record_backtrace true;
     Random.self_init ();
     Scheduler.initialize ();
     Command.group ~summary:"Analyze Python files" commands

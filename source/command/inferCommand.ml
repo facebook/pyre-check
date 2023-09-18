@@ -194,7 +194,6 @@ let run_infer configuration_file =
 
 
 let command =
-  Printexc.record_backtrace true;
   let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs type inference"

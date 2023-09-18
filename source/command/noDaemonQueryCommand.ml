@@ -228,7 +228,6 @@ let run_query configuration_file =
 
 
 let command =
-  Printexc.record_backtrace true;
   let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
   Command.basic
     ~summary:"Runs a full check without a server"
