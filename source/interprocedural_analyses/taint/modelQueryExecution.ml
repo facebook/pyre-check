@@ -1099,18 +1099,19 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~targets
       queries
     =
-    let fold results target =
-      generate_models_from_queries_on_target
-        ~verbose
-        ~resolution
-        ~class_hierarchy_graph
-        ~source_sink_filter
-        ~stubs
-        ~queries
-        target
-      |> ExecutionResult.merge ~model_join:Model.join_user_models results
-    in
-    List.fold targets ~init:ExecutionResult.empty ~f:fold
+    targets
+    |> List.map ~f:(fun target ->
+           generate_models_from_queries_on_target
+             ~verbose
+             ~resolution
+             ~class_hierarchy_graph
+             ~source_sink_filter
+             ~stubs
+             ~queries
+             target)
+    |> Algorithms.fold_balanced
+         ~f:(ExecutionResult.merge ~model_join:Model.join_user_models)
+         ~init:ExecutionResult.empty
 
 
   let generate_cache_from_query_on_target
