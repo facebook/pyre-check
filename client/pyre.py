@@ -35,9 +35,9 @@ from . import (
     frontend_configuration,
     identifiers,
     log,
+    version,
 )
 from .language_server import features as language_server_features
-from .version import __version__
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -49,7 +49,7 @@ def show_pyre_version_as_text(
 ) -> None:
     if binary_version:
         log.stdout.write(f"Binary version: {binary_version}\n")
-    log.stdout.write(f"Client version: {__version__}\n")
+    log.stdout.write(f"Client version: {client_version}\n")
 
 
 def show_pyre_version_as_json(
@@ -65,9 +65,13 @@ def show_pyre_version_as_json(
 def _show_pyre_version(arguments: command_arguments.CommandArguments) -> None:
     # Open-source binary version is usually not useful to show to the user
     if arguments.output == command_arguments.JSON:
-        show_pyre_version_as_json(binary_version=None, client_version=__version__)
+        show_pyre_version_as_json(
+            binary_version=None, client_version=version.__version__
+        )
     else:
-        show_pyre_version_as_text(binary_version=None, client_version=__version__)
+        show_pyre_version_as_text(
+            binary_version=None, client_version=version.__version__
+        )
 
 
 def start_logging_to_directory(
