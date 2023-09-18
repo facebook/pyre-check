@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
 module ExitStatus : sig
   type t =
     | Ok
@@ -37,4 +35,4 @@ module ServerConfiguration : sig
   [@@deriving sexp, compare, hash, of_yojson]
 end
 
-val command : unit -> Command.t
+val command : ?name:string -> unit -> unit Cmdliner.Cmd.t

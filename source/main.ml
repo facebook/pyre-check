@@ -12,18 +12,25 @@ open Commands
 
 let commands () =
   [
-    "analyze", Analyze.command ();
-    "check", Check.command ();
-    "code-navigation", CodeNavigation.command ();
-    "infer", Infer.command ();
-    "server", Server.command ();
+    Analyze.command ();
+    Check.command ();
+    CodeNavigation.command ();
+    Infer.command ();
+    Server.command ();
     (* TODO(T126811354) remove these once the client is updated *)
-    "newanalyze", Analyze.command ();
-    "newcheck", Check.command ();
-    "newinfer", Infer.command ();
-    "newserver", Server.command ();
-    "no-daemon-query", NoDaemonQuery.command ();
+    Analyze.command ~name:"newanalyze" ();
+    Check.command ~name:"newcheck" ();
+    Infer.command ~name:"newinfer" ();
+    Server.command ~name:"newserver" ();
+    NoDaemonQuery.command ();
   ]
+
+
+let run () =
+  let open Cmdliner in
+  let version = Version.version () in
+  let info = Cmd.info "pyre" ~doc:"Analyze Python files" ~version in
+  Cmd.group info (commands ()) |> Cmd.eval |> exit
 
 
 let () =
@@ -31,8 +38,7 @@ let () =
     Printexc.record_backtrace true;
     Random.self_init ();
     Scheduler.initialize ();
-    Command.group ~summary:"Analyze Python files" (commands ())
-    |> Command_unix.run ~build_info:(Version.build_info ()) ~version:(Version.version ())
+    run ()
   with
   | error ->
       Log.error "%s" (Exn.to_string error);
