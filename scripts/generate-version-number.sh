@@ -52,8 +52,6 @@ fi
 
 OUT_DIR="${_OUT_DIR:-"$SCRIPTS_DIRECTORY"/../source}"
 cat > "$OUT_DIR"/version.ml <<EOF
-open Core
-
 let build_info () =
   "${BUILD_INFO}"
 
@@ -61,7 +59,7 @@ let version () =
   "${VERSION}"
 
 let log_version_banner () =
-  Log.info "Running as pid: %d" (Pid.to_int (Core_unix.getpid ()));
+  Log.info "Running as pid: %d" (Unix.getpid ());
   Log.info "Version: %s" (version ());
   Log.info "Build info: %s" (build_info ())
 EOF
