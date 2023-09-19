@@ -55,7 +55,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries core core_unix.time_unix core_unix.sys_unix))
+ (libraries core))
 
 (library
  (name recognized)

@@ -8,9 +8,9 @@
 (* Core logging interface. The use of section here enables us to more easily filter log output by
    prefixing log output with an appropriate section name *)
 
-open Core
-
 (* Core shadows/deprecates the stdlib Unix module. *)
+module Caml_unix = Unix
+open Core
 module Unix = Caml_unix
 
 type section =
@@ -140,7 +140,7 @@ let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
   log
     ~section
     "Unix error %s: %s(%s)"
-    (Core_unix.error_message error_kind [@alert "-deprecated"])
+    (Unix.error_message error_kind [@alert "-deprecated"])
     name
     parameters
 
