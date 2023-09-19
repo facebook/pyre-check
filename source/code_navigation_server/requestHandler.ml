@@ -40,10 +40,19 @@ let get_overlay ~environment overlay_id =
 let get_modules ~module_tracker ~build_system path =
   let modules =
     let source_path = PyrePath.create_absolute path |> SourcePath.create in
-    Server.PathLookup.modules_of_source_path
-      source_path
-      ~module_tracker
-      ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
+    match
+      Server.PathLookup.modules_of_source_path
+        source_path
+        ~module_tracker
+        ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
+    with
+    | [] ->
+        (* Lookup the module as if it's built by a no-op build system *)
+        Server.PathLookup.modules_of_source_path
+          source_path
+          ~module_tracker
+          ~lookup_artifact:BuildSystem.default_lookup_artifact
+    | _ as modules -> modules
   in
   match modules with
   | [] -> Result.Error (Response.ErrorKind.ModuleNotTracked { path })

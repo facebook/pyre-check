@@ -290,15 +290,27 @@ let test_build_system_path_lookup context =
               Query
                 (Query.LocationOfDefinition { path = path_a; client_id; position = position 2 12 }))
           ~kind:"FileNotOpened";
-        (* Try open both `a.py` and `b.py` *)
-        ScratchProject.ClientConnection.assert_error_response
+        (* Try open both `a.py` (no artifact path), `b.py` (artifact path), and `c.py`
+           (nonexistent) *)
+        ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_a; content = None; client_id }))
-          ~kind:"ModuleNotTracked";
+          ~expected:Response.Ok;
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_b; content = None; client_id }))
           ~expected:Response.Ok;
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileOpened
+                   {
+                     path = PyrePath.create_relative ~root ~relative:"c.py" |> PyrePath.absolute;
+                     content = None;
+                     client_id;
+                   }))
+          ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
           ~request:Request.(Query (Query.GetTypeErrors { path = path_b; client_id }))
