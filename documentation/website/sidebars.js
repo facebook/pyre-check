@@ -178,6 +178,7 @@ module.exports = {
             'fb/warning_codes/code-6459',
             'fb/warning_codes/code-6460',
             'fb/warning_codes/code-6461',
+            'fb/warning_codes/code-6467',
             'fb/warning_codes/code-7330',
             'fb/warning_codes/code-7426',
           ],
