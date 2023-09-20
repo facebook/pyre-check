@@ -37,11 +37,8 @@ module ModelQueryRegistryMap = struct
   let get = String.Map.find
 
   let merge ~model_join left right =
-    String.Map.merge left right ~f:(fun ~key:_ -> function
-      | `Both (models1, models2) -> Some (Registry.merge ~join:model_join models1 models2)
-      | `Left models
-      | `Right models ->
-          Some models)
+    String.Map.merge_skewed left right ~combine:(fun ~key:_ left_models right_models ->
+        Registry.merge ~join:model_join left_models right_models)
 
 
   let to_alist = String.Map.to_alist ~key_order:`Increasing
