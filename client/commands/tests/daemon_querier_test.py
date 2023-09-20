@@ -382,33 +382,37 @@ class DaemonQuerierTest(testslide.TestCase):
             )
 
     @setup.async_test
-    async def test_query_definition_fall_back_to_glean_when_disconnected(self) -> None:
-        base_querier = PersistentDaemonQuerier(
-            server_state=server_setup.create_server_state_with_options(
-                language_server_features=LanguageServerFeatures(
-                    definition=DefinitionAvailability.ENABLED
-                )
-            ),
-        )
-        base_querier.server_state.status_tracker.set_status(
-            ConnectionStatus.DISCONNECTED
-        )
-        querier = RemoteIndexBackedQuerier(
-            base_querier=base_querier,
-            index=remote_index.EmptyRemoteIndex(),
-        )
+    async def test_query_definition_fall_back_to_glean_when_in_right_state(
+        self,
+    ) -> None:
+        for fallbackable_state in (
+            ConnectionStatus.DISCONNECTED,
+            ConnectionStatus.NOT_CONNECTED,
+        ):
+            base_querier = PersistentDaemonQuerier(
+                server_state=server_setup.create_server_state_with_options(
+                    language_server_features=LanguageServerFeatures(
+                        definition=DefinitionAvailability.ENABLED
+                    )
+                ),
+            )
+            base_querier.server_state.status_tracker.set_status(fallbackable_state)
+            querier = RemoteIndexBackedQuerier(
+                base_querier=base_querier,
+                index=remote_index.EmptyRemoteIndex(),
+            )
 
-        response = await querier.get_definition_locations(
-            path=Path("bar.py"),
-            position=lsp.PyrePosition(line=42, character=10),
-        )
-        self.assertEqual(
-            response,
-            GetDefinitionLocationsResponse(
-                source=DaemonQuerierSource.GLEAN_INDEXER,
-                data=[],
-            ),
-        )
+            response = await querier.get_definition_locations(
+                path=Path("bar.py"),
+                position=lsp.PyrePosition(line=42, character=10),
+            )
+            self.assertEqual(
+                response,
+                GetDefinitionLocationsResponse(
+                    source=DaemonQuerierSource.GLEAN_INDEXER,
+                    data=[],
+                ),
+            )
 
     @setup.async_test
     async def test_query_references(self) -> None:
