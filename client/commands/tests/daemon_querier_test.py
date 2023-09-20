@@ -382,7 +382,7 @@ class DaemonQuerierTest(testslide.TestCase):
             )
 
     @setup.async_test
-    async def test_query_definition_fall_back_to_glean(self) -> None:
+    async def test_query_definition_fall_back_to_glean_when_disconnected(self) -> None:
         base_querier = PersistentDaemonQuerier(
             server_state=server_setup.create_server_state_with_options(
                 language_server_features=LanguageServerFeatures(
