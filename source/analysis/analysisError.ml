@@ -3069,7 +3069,6 @@ module Instantiated = struct
     code: int;
     name: string;
     description: string;
-    long_description: string;
     concise_description: string;
     define: string;
   }
@@ -3085,8 +3084,6 @@ module Instantiated = struct
   let code { code; _ } = code
 
   let description { description; _ } = description
-
-  let long_description { long_description; _ } = long_description
 
   let concise_description { concise_description; _ } = concise_description
 
@@ -3124,7 +3121,6 @@ module Instantiated = struct
       code = kind_code;
       name = kind_name;
       description = description ~show_error_traces ~concise:false ~separator:" ";
-      long_description = description ~show_error_traces:true ~concise:false ~separator:"\n";
       concise_description = description ~show_error_traces ~concise:true ~separator:"\n";
       define = Reference.show_sanitized (Reference.delocalize signature.name);
     }

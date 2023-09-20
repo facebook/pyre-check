@@ -2630,7 +2630,6 @@ let test_global_leaks context =
                     "code": 3101,
                     "name": "Leak to a mutable datastructure",
                     "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
-                    "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
                     "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                     "define": "foo.immediate_example"
                   },
@@ -2643,7 +2642,6 @@ let test_global_leaks context =
                     "code": 3101,
                     "name": "Leak to a mutable datastructure",
                     "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
-                    "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
                     "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                     "define": "foo.nested_run.do_the_thing"
                   },
@@ -2656,7 +2654,6 @@ let test_global_leaks context =
                     "code": 3101,
                     "name": "Leak to a mutable datastructure",
                     "description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
-                    "long_description": "Leak to a mutable datastructure [3101]: Data write to global variable `foo.glob` of type `typing.List[int]`.",
                     "concise_description": "Leak to a mutable datastructure [3101]: Data write to global variable `glob` of type `typing.List[int]`.",
                     "define": "foo.nested_run_2.do_the_thing_2.another_nest"
                   }

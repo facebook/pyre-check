@@ -544,8 +544,6 @@ module Instantiated : sig
 
   val description : t -> string
 
-  val long_description : t -> string
-
   val concise_description : t -> string
 end
 
