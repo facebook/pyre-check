@@ -40,7 +40,6 @@ class Error:
     code: int
     name: str
     description: str
-    long_description: str = ""
     concise_description: str = ""
 
     @staticmethod
@@ -55,7 +54,6 @@ class Error:
                 code=error_json["code"],
                 name=error_json["name"],
                 description=error_json["description"],
-                long_description=error_json.get("long_description", ""),
                 concise_description=error_json.get("concise_description", ""),
             )
         except KeyError as key_error:
@@ -84,7 +82,6 @@ class Error:
             code=self.code,
             name=self.name,
             description=self.description,
-            long_description=self.long_description,
             concise_description=self.concise_description,
         )
 
@@ -98,7 +95,6 @@ class Error:
             code=self.code,
             name=self.name,
             description=self.description,
-            long_description=self.long_description,
             concise_description=self.concise_description,
         )
 
@@ -112,7 +108,6 @@ class Error:
             "code": self.code,
             "name": self.name,
             "description": self.description,
-            "long_description": self.long_description,
             "concise_description": self.concise_description,
         }
 

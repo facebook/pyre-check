@@ -86,7 +86,6 @@ class ErrorTest(unittest.TestCase):
                 code=2,
                 name="Some name",
                 description="Some description",
-                long_description="Some long description",
             ),
         )
         assert_parsed(

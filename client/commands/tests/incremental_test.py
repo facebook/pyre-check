@@ -59,7 +59,6 @@ class IncrementalTest(testslide.TestCase):
                             "name": "Fake name 2",
                             "description": "Fake description 2",
                             "concise_description": "Concise description 2",
-                            "long_description": "Long description 2",
                         },
                     ],
                 ]
@@ -86,7 +85,6 @@ class IncrementalTest(testslide.TestCase):
                         name="Fake name 2",
                         description="Fake description 2",
                         concise_description="Concise description 2",
-                        long_description="Long description 2",
                     ),
                 ],
                 build_failure=None,

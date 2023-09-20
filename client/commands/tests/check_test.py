@@ -259,7 +259,6 @@ class CheckTest(testslide.TestCase):
                             "name": "Fake name 2",
                             "description": "Fake description 2",
                             "concise_description": "Concise description 2",
-                            "long_description": "Long description 2",
                         },
                     ],
                 }
@@ -285,7 +284,6 @@ class CheckTest(testslide.TestCase):
                     name="Fake name 2",
                     description="Fake description 2",
                     concise_description="Concise description 2",
-                    long_description="Long description 2",
                 ),
             ],
         )
