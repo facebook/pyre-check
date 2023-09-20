@@ -1920,6 +1920,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            original_error_message=None,
         )
         for telemetry in (
             features.TelemetryAvailability.ENABLED,
@@ -1999,6 +2000,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            original_error_message=None,
         )
         for telemetry in (
             features.TelemetryAvailability.ENABLED,
@@ -2081,6 +2083,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            original_error_message=None,
         )
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
@@ -2131,6 +2134,7 @@ class DefinitionTest(ApiTestCase):
                         expected_telemetry_response.data,
                         many=True,
                     ),
+                    additional_keys={"original_error_message": None},
                 ),
             ],
         )
@@ -2168,6 +2172,7 @@ class DefinitionTest(ApiTestCase):
     async def test_definition__indexed(self) -> None:
         tracked_path = Path("/tracked.py")
         expected_editor_response = []
+        original_error_message = "Something original_error_message"
         expected_telemetry_response = daemon_querier.GetDefinitionLocationsResponse(
             source=daemon_querier.DaemonQuerierSource.GLEAN_INDEXER,
             data=[
@@ -2179,6 +2184,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            original_error_message=original_error_message,
         )
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
@@ -2231,6 +2237,7 @@ class DefinitionTest(ApiTestCase):
                         expected_telemetry_response.data,
                         many=True,
                     ),
+                    additional_keys={"original_error_message": original_error_message},
                 ),
             ],
         )
