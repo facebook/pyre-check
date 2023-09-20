@@ -455,6 +455,7 @@ type test_environment = {
   class_interval_graph: ClassIntervalSetGraph.Heap.t;
   class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
   global_constants: GlobalConstants.SharedMemory.t;
+  stubs_shared_memory_handle: Target.HashsetSharedMemory.t;
 }
 
 let set_up_decorator_preprocessing ~handle models =
@@ -533,6 +534,7 @@ let initialize
   let class_hierarchy_graph =
     ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
   in
+  let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =
     let models_source =
       match models_source, add_initial_models with
@@ -573,7 +575,7 @@ let initialize
             ~error_on_unexpected_models:true
             ~error_on_empty_result:verify_empty_model_queries
             ~definitions_and_stubs:(List.rev_append stubs definitions)
-            ~stubs:(Target.HashSet.of_list stubs)
+            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
             queries
         in
         ModelVerificationError.verify_models_and_dsl ~raise_exception:true errors;
@@ -652,6 +654,7 @@ let initialize
     class_interval_graph;
     class_interval_graph_shared_memory;
     global_constants;
+    stubs_shared_memory_handle;
   }
 
 
@@ -782,6 +785,7 @@ let end_to_end_integration_test path context =
       class_interval_graph;
       class_interval_graph_shared_memory;
       global_constants;
+      stubs_shared_memory_handle;
     }
       =
       try
@@ -888,6 +892,7 @@ let end_to_end_integration_test path context =
         class_interval_graph_shared_memory
         class_interval_graph
     in
+    let () = Target.HashsetSharedMemory.cleanup stubs_shared_memory_handle in
     divergent_files, serialized_models
   in
   let divergent_files =

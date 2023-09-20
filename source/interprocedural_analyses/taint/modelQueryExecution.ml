@@ -931,7 +931,7 @@ module type QUERY_KIND = sig
   val generate_model_from_annotations
     :  resolution:GlobalResolution.t ->
     source_sink_filter:SourceSinkFilter.t option ->
-    stubs:Target.t Hash_set.t ->
+    stubs:Target.HashsetSharedMemory.ReadOnly.t ->
     target:Target.t ->
     modelable:Modelable.t ->
     annotation list ->
@@ -1641,7 +1641,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       ~resolution
       ~modelable
       ~source_sink_filter
-      ~is_obscure:(Hash_set.mem stubs callable)
+      ~is_obscure:(Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs callable)
       annotations
 end)
 

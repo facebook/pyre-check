@@ -181,6 +181,6 @@ val generate_models_from_queries
   error_on_unexpected_models:bool ->
   error_on_empty_result:bool ->
   definitions_and_stubs:Interprocedural.Target.t list ->
-  stubs:Interprocedural.Target.t Base.Hash_set.t ->
+  stubs:Interprocedural.Target.HashsetSharedMemory.ReadOnly.t ->
   ModelParseResult.ModelQuery.t list ->
   ExecutionResult.t

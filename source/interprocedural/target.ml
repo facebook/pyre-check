@@ -306,3 +306,31 @@ module SharedMemoryKey = struct
 
   let from_string sexp_string = Sexp.of_string sexp_string |> t_of_sexp
 end
+
+(* Represent a hashset of targets inside the shared memory *)
+module HashsetSharedMemory = struct
+  type target = T.t
+
+  module T =
+    SaveLoadSharedMemory.MakeKeyValue
+      (SharedMemoryKey)
+      (struct
+        type t = unit
+
+        let prefix = Hack_parallel.Std.Prefix.make ()
+
+        let handle_prefix = Hack_parallel.Std.Prefix.make ()
+
+        let description = "A set of targets"
+      end)
+
+  type t = T.t
+
+  let cleanup = T.cleanup
+
+  let from_heap targets = targets |> List.map ~f:(fun target -> target, ()) |> T.of_alist
+
+  module ReadOnly = T.ReadOnly
+
+  let read_only = T.read_only
+end

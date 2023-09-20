@@ -158,3 +158,22 @@ module SharedMemoryKey : sig
 
   val from_string : string -> t
 end
+
+(* Represent a hashset of targets inside the shared memory *)
+module HashsetSharedMemory : sig
+  type target = t
+
+  type t
+
+  val cleanup : t -> unit
+
+  val from_heap : target list -> t
+
+  module ReadOnly : sig
+    type t
+
+    val mem : t -> target -> bool
+  end
+
+  val read_only : t -> ReadOnly.t
+end

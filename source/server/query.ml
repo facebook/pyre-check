@@ -527,6 +527,10 @@ let rec process_request_exn ~type_environment ~build_system request =
             ~environment:type_environment
             ~qualifiers
         in
+        let stubs_shared_memory_handle =
+          Interprocedural.Target.HashsetSharedMemory.from_heap
+            (Interprocedural.FetchCallables.get_stubs initial_callables)
+        in
         Taint.ModelQueryExecution.generate_models_from_queries
           ~resolution:global_resolution
           ~scheduler
@@ -537,9 +541,7 @@ let rec process_request_exn ~type_environment ~build_system request =
           ~error_on_empty_result:true
           ~definitions_and_stubs:
             (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-          ~stubs:
-            (Interprocedural.Target.HashSet.of_list
-               (Interprocedural.FetchCallables.get_stubs initial_callables))
+          ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
           model_queries
       in
       Scheduler.with_scheduler
