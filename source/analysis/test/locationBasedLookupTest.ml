@@ -1744,7 +1744,7 @@ let test_resolve_completions_for_symbol context =
     =
     let type_environment =
       let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-        ScratchProject.setup ~context ["test.py", source] ~external_sources
+        ScratchProject.setup ~context ["test.py", source] ~external_sources ~use_errpy_parser:true
         |> ScratchProject.build_type_environment
       in
       type_environment
@@ -1861,11 +1861,19 @@ let test_resolve_completions_for_symbol context =
       |}
     (* Cursor at column 0 on newline *)
     [];
+  assert_resolved_completion_items
+    ~source:
+      {|
+      class Foo:
+        def foo() -> None: ...
+
+      foo = Foo()
+      foo.
+         #^- cursor
+    |}
+    ["foo"];
   ()
 
-
-(* TODO(T159483467) Add trailing period attribute autocomplete testcase after ERRPY update
-   released *)
 
 (* Annotations *)
 

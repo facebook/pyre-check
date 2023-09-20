@@ -3014,6 +3014,7 @@ module ScratchProject = struct
       ?(populate_call_graph = false)
       ?(use_lazy_module_tracking = false)
       ?(no_validation_on_class_lookup_failure = false)
+      ?(use_errpy_parser = false)
       ?debug
       ?strict
       ?enable_readonly_analysis
@@ -3055,6 +3056,7 @@ module ScratchProject = struct
           ~constraint_solving_style
           ~show_error_traces
           ~parallel:false
+          ~use_errpy_parser
           ?strict
           ?debug
           ?enable_readonly_analysis
