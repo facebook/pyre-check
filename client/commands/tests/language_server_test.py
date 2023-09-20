@@ -1353,7 +1353,14 @@ class ApiTestCase(testslide.TestCase, abc.ABC):
         self,
         operation: str,
         result: Optional[object],
+        additional_keys: Optional[Dict[str, object]] = None,
     ) -> Callable[[str], None]:
+        """
+        operation -  to compare the `operation` key with
+        result - to compare the `response` key with
+        additional_keys - specify these to test specific keys in the recorded telemetry json
+        """
+
         def expectation(actual_json_string: str) -> None:
             actual_telemetry = json.loads(actual_json_string)
             self.assertEqual(actual_telemetry["method"], "telemetry/event")
@@ -1361,6 +1368,9 @@ class ApiTestCase(testslide.TestCase, abc.ABC):
             self.assertEqual(telemetry_params["operation"], operation)
             if result is not None:
                 self.assertEqual(telemetry_params["response"], result)
+            if additional_keys:
+                for key, expected in additional_keys.items():
+                    self.assertEqual(telemetry_params[key], expected)
 
         return expectation
 
@@ -2118,7 +2128,8 @@ class DefinitionTest(ApiTestCase):
                 self._expect_telemetry_event(
                     operation="definition",
                     result=lsp.LspLocation.cached_schema().dump(
-                        expected_telemetry_response.data, many=True
+                        expected_telemetry_response.data,
+                        many=True,
                     ),
                 ),
             ],
@@ -2217,7 +2228,8 @@ class DefinitionTest(ApiTestCase):
                 self._expect_telemetry_event(
                     operation="definition",
                     result=lsp.LspLocation.cached_schema().dump(
-                        expected_telemetry_response.data, many=True
+                        expected_telemetry_response.data,
+                        many=True,
                     ),
                 ),
             ],
