@@ -98,10 +98,15 @@ let test_attribute _ =
       (+Expression.Name
           (Name.Attribute
              { base = +Expression.Constant (Constant.Float 1.0); attribute = "b"; special = false }));
+  assert_parsed
+    "a."
+    ~expected:(+Expression.Name (Name.Attribute { base = !"a"; attribute = ""; special = false }));
 
   (*TODO (T148669698): assert_not_parsed "a.async"; *)
   assert_not_parsed "a.1";
   assert_not_parsed "1 .0 .a";
+  (* TODO (T164371654): fix parsing issues *)
+  assert_not_parsed "Foo().";
   ()
 
 
