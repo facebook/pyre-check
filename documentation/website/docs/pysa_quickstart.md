@@ -230,7 +230,7 @@ If you do use the `module.path.function_name` mentioned in your project and the 
 ----
 **Problem**: Running any `sapp` command results in `SyntaxError: future feature annotations is not defined`
 
-**Solution**: SAPP requires Python 3.7. Ensure you are running a Python version later than Python 3.7
+**Solution**: SAPP requires Python 3.8. Ensure you are running a Python version later than Python 3.8
 ```shell
 $ python3 --version
 ```
