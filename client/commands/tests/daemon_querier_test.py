@@ -6,7 +6,7 @@
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Optional
+from typing import Iterator, List, Optional, Union
 from unittest.mock import CallableMixin, patch
 
 import testslide
@@ -46,6 +46,9 @@ from ..daemon_query_failer import AbstractDaemonQueryFailer
 from ..server_state import ConnectionStatus
 
 from ..tests import server_setup
+
+
+_DaemonQuerier_Failure_Message = "Some kind of failure has occured"
 
 
 @contextmanager
@@ -577,6 +580,48 @@ class DaemonQuerierTest(testslide.TestCase):
                 ),
             ],
         )
+
+    @setup.async_test
+    async def test_query_definition_fall_back_to_glean_on_pyre_exception(self) -> None:
+        mock_querier = GoToDefinitionExceptionDaemonQuerier()
+
+        querier = RemoteIndexBackedQuerier(
+            base_querier=mock_querier,
+            index=remote_index.EmptyRemoteIndex(),
+        )
+
+        response = await querier.get_definition_locations(
+            path=Path("bar.py"),
+            position=lsp.PyrePosition(line=42, character=10),
+        )
+        self.assertEqual(
+            response,
+            GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER,
+                data=[],
+                original_error_message=_DaemonQuerier_Failure_Message,
+            ),
+        )
+
+
+class GoToDefinitionExceptionDaemonQuerier(CodeNavigationDaemonQuerier):
+    def __init__(
+        self,
+    ) -> None:
+        server_state = server_setup.create_server_state_with_options(
+            language_server_features=LanguageServerFeatures(
+                definition=DefinitionAvailability.ENABLED
+            )
+        )
+        server_state.status_tracker.set_status(ConnectionStatus.READY)
+        super().__init__(server_state=server_state)
+
+    async def get_definition_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
+        return DaemonQueryFailure(_DaemonQuerier_Failure_Message)
 
 
 class MockDaemonQueryFailer(AbstractDaemonQueryFailer):

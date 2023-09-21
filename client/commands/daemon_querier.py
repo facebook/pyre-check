@@ -40,6 +40,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class DaemonQuerierSource(str, enum.Enum):
     PYRE_DAEMON: str = "PYRE_DAEMON"
     GLEAN_INDEXER: str = "GLEAN_INDEXER"
+    PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER: str = "PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -118,7 +119,7 @@ def path_to_expression_coverage_response(
     )
 
 
-def should_fall_back_to_glean(server_state: state.ServerState) -> bool:
+def is_server_unavailable(server_state: state.ServerState) -> bool:
     return server_state.status_tracker.get_status().connection_status in {
         state.ConnectionStatus.DISCONNECTED,
         state.ConnectionStatus.NOT_CONNECTED,
@@ -857,25 +858,52 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
-        if should_fall_back_to_glean(self.base_querier.server_state):
+        if is_server_unavailable(self.base_querier.server_state):
             index_result = await self.index.hover(path, position)
             return GetHoverResponse(
                 source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
             )
         return await self.base_querier.get_hover(path, position)
 
+    async def get_definition_locations_from_glean(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        original_error_message: Optional[str] = None,
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+        indexed_result = await self.index.definition(path, position)
+
+        return GetDefinitionLocationsResponse(
+            source=(
+                DaemonQuerierSource.PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER
+                if original_error_message is not None
+                else DaemonQuerierSource.GLEAN_INDEXER
+            ),
+            data=indexed_result,
+            original_error_message=original_error_message,
+        )
+
     async def get_definition_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
-        if should_fall_back_to_glean(self.base_querier.server_state):
-            indexed_result = await self.index.definition(path, position)
-            return GetDefinitionLocationsResponse(
-                source=DaemonQuerierSource.GLEAN_INDEXER,
-                data=indexed_result,
+        if is_server_unavailable(self.base_querier.server_state):
+            return await self.get_definition_locations_from_glean(path, position)
+        base_results = await self.base_querier.get_definition_locations(path, position)
+
+        # If pyre throws an exception or if the definition locations are empty, fall back to glean
+        if isinstance(base_results, daemon_query.DaemonQueryFailure):
+            LOG.warn(
+                f"Pyre threw exception: {base_results.error_message} - falling back to glean"
             )
-        return await self.base_querier.get_definition_locations(path, position)
+            fallback_response = await self.get_definition_locations_from_glean(
+                path, position, original_error_message=base_results.error_message
+            )
+            LOG.warn(f"Got the following response from glean: {fallback_response}")
+            return fallback_response
+
+        return base_results
 
     async def get_completions(
         self,
