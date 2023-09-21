@@ -3095,7 +3095,7 @@ let create_model_from_attribute
 let is_obscure ~definitions ~stubs call_target =
   (* The callable is obscure if and only if it is a type stub or it is not in the set of known
      definitions. *)
-  Hash_set.mem stubs call_target
+  Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs call_target
   || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 

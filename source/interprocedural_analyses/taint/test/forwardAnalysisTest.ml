@@ -45,7 +45,10 @@ let assert_taint ?models ?models_source ~context source expect =
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None
         ~definitions:None
-        ~stubs:(Target.HashSet.create ())
+        ~stubs:
+          ([]
+          |> Interprocedural.Target.HashsetSharedMemory.from_heap
+          |> Interprocedural.Target.HashsetSharedMemory.read_only)
         ~python_version:ModelParser.PythonVersion.default
         ()
     in

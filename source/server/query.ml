@@ -797,7 +797,10 @@ let rec process_request_exn ~type_environment ~build_system request =
                   ~taint_configuration
                   ~source_sink_filter:None
                   ~definitions:None
-                  ~stubs:(Interprocedural.Target.HashSet.create ())
+                  ~stubs:
+                    ([]
+                    |> Interprocedural.Target.HashsetSharedMemory.from_heap
+                    |> Interprocedural.Target.HashsetSharedMemory.read_only)
                   ~python_version
                   ()
                 |> fun { Taint.ModelParseResult.queries; errors; _ } ->
@@ -1019,7 +1022,10 @@ let rec process_request_exn ~type_environment ~build_system request =
               ~taint_configuration
               ~source_sink_filter:None
               ~definitions:None
-              ~stubs:(Interprocedural.Target.HashSet.create ())
+              ~stubs:
+                ([]
+                |> Interprocedural.Target.HashsetSharedMemory.from_heap
+                |> Interprocedural.Target.HashsetSharedMemory.read_only)
               ~python_version
               ()
             |> fun { Taint.ModelParseResult.errors; queries; _ } -> errors, queries

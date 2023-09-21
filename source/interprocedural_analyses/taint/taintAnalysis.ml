@@ -165,7 +165,7 @@ let parse_models_and_queries_from_sources
     ~python_version
     sources
   =
-  (* TODO(T117715045): Do not pass all definitions and stubs explicitly to map_reduce,
+  (* TODO(T117715045): Do not pass all definitions explicitly to map_reduce,
    * since this will marshal-ed between processes and hence is costly. *)
   let map sources =
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
@@ -250,7 +250,7 @@ let initialize_models
       ~resolution
       ~source_sink_filter:taint_configuration.source_sink_filter
       ~definitions:(Some definitions_hashset)
-      ~stubs:stubs_hashset
+      ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory)
   in
   Statistics.performance
     ~name:"Parsed taint models"

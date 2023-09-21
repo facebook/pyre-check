@@ -427,7 +427,10 @@ let get_initial_models ~context =
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
       ~definitions:None
-      ~stubs:(Target.HashSet.create ())
+      ~stubs:
+        ([]
+        |> Interprocedural.Target.HashsetSharedMemory.from_heap
+        |> Interprocedural.Target.HashsetSharedMemory.read_only)
       ~python_version:ModelParser.PythonVersion.default
       ()
   in
@@ -546,6 +549,7 @@ let initialize
     match models_source with
     | None -> Registry.empty, ModelQueryExecution.ModelQueryRegistryMap.empty
     | Some source ->
+        let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
             ~resolution:global_resolution
@@ -554,7 +558,7 @@ let initialize
             ~taint_configuration
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~definitions:(Some (Target.HashSet.of_list definitions))
-            ~stubs:(Target.HashSet.of_list stubs)
+            ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
             ~python_version:ModelParser.PythonVersion.default
             ()
         in
