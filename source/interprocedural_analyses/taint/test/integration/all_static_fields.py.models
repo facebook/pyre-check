@@ -515,11 +515,7 @@
     "callable": "all_static_fields.return_source_async",
     "sources": [
       {
-        "port": "result[__name__]",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "result[__qualname__]",
+        "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

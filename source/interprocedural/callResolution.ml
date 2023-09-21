@@ -147,6 +147,10 @@ let strip_readonly annotation =
     annotation
 
 
+let extract_coroutine_value annotation =
+  annotation |> Type.coroutine_value |> Option.value ~default:annotation
+
+
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
 let rec resolve_ignoring_errors ~resolution expression =

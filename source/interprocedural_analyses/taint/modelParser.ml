@@ -1078,8 +1078,13 @@ let get_class_attributes_transitive ~resolution class_name =
 let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features =
   let open Core.Result in
   let all_static_field_paths () =
+    let is_return = AccessPath.Root.equal root LocalResult in
     let attributes =
       root_annotations
+      |> List.map ~f:(if is_return then CallResolution.extract_coroutine_value else Fn.id)
+      |> List.map ~f:CallResolution.strip_optional
+      |> List.map ~f:CallResolution.strip_readonly
+      |> List.map ~f:CallResolution.unbind_type_variable
       |> List.map ~f:class_names_from_annotation
       |> List.concat
       |> List.map ~f:(get_class_attributes_transitive ~resolution)
