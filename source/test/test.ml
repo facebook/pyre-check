@@ -1397,7 +1397,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class Awaitable(Protocol[_T_co]):
           def __await__(self) -> Generator[Any, None, _T_co]: ...
-        class Coroutine(Awaitable[_V_co], Generic[_T_co, _T_contra, _V_co]): pass
+
+        class Coroutine(Awaitable[_V_co], Generic[_T_co, _T_contra, _V_co]):
+          __name__: str
+          __qualname__: str
 
         class AsyncGenerator(AsyncIterator[_T_co], Generic[_T_co, _T_contra]):
             @abstractmethod

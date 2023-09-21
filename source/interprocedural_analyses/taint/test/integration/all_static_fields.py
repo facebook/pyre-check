@@ -167,3 +167,7 @@ def parameter_sink_empty(parameter: Empty) -> None:
 
 def return_source_empty() -> Empty:
     return Empty()
+
+
+async def return_source_async() -> bool:
+    return True
