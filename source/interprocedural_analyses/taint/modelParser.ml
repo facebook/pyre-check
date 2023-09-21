@@ -1089,6 +1089,7 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
       |> List.concat
       |> List.map ~f:(get_class_attributes_transitive ~resolution)
       |> List.concat
+      |> List.filter ~f:(fun attribute -> not (Ast.Expression.is_dunder_attribute attribute))
       |> List.dedup_and_sort ~compare:Identifier.compare
     in
     match attributes with

@@ -447,7 +447,7 @@
     "callable": "all_static_fields.parameter_sink_type",
     "sinks": [
       {
-        "port": "formal(parameter)[__name__]",
+        "port": "formal(parameter)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -683,7 +683,7 @@
     "callable": "all_static_fields.return_source_type",
     "sources": [
       {
-        "port": "result[__name__]",
+        "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
