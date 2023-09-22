@@ -809,34 +809,26 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
   | _ -> None
 
 
-let resolve_attributes_for_name ~resolution expression =
-  match Node.value expression with
-  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-      (* Resolve prefix to check if this is a method. *)
-      let base_type =
-        match resolve ~resolution base with
-        | Some annotation when Type.is_meta annotation ->
-            (* If it is a call to a class method or static method, `Foo.my_class_method()`, the
-               resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-            Some (Type.single_parameter annotation)
-        | annotation -> annotation
-      in
-      let parent_class_summary =
-        base_type
-        >>| Type.split
-        >>= (fun (parent, _) -> Type.primitive_name parent)
-        >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
-        >>| Node.value
-      in
-      match parent_class_summary with
-      | Some base_class_summary ->
-          base_class_summary
-          |> ClassSummary.attributes
-          |> Identifier.SerializableMap.filter (fun attr_str _attr_value ->
-                 String.is_prefix ~prefix:attribute attr_str)
-          |> Option.some
-      | None -> None)
-  | _ -> None
+let resolve_attributes_for_expression ~resolution expression =
+  (* Resolve prefix to check if this is a method. *)
+  let base_type =
+    match resolve ~resolution expression with
+    | Some annotation when Type.is_meta annotation ->
+        (* If it is a call to a class method or static method, `Foo.my_class_method()`, the resolved
+           expression type will be `Type[Foo]`. Extract the class type `Foo`. *)
+        Some (Type.single_parameter annotation)
+    | annotation -> annotation
+  in
+  let parent_class_summary =
+    base_type
+    >>| Type.split
+    >>= (fun (parent, _) -> Type.primitive_name parent)
+    >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+    >>| Node.value
+  in
+  match parent_class_summary with
+  | Some base_class_summary -> base_class_summary |> ClassSummary.attributes |> Option.some
+  | None -> None
 
 
 let resolution_from_cfg_data
@@ -915,10 +907,16 @@ let resolve_completions_for_symbol
   let completions =
     match symbol_with_definition with
     | Expression expression
-    | TypeAnnotation expression ->
-        resolve_attributes_for_name
-          ~resolution:(resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
-          expression
+    | TypeAnnotation expression -> (
+        match expression with
+        | { Node.value = Expression.Name (Name.Attribute { base; attribute; _ }); _ } ->
+            resolve_attributes_for_expression
+              ~resolution:
+                (resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
+              base
+            >>| Identifier.SerializableMap.filter (fun attr_str _attr_value ->
+                    String.is_prefix ~prefix:attribute attr_str)
+        | _ -> None)
   in
   Log.log
     ~section:`Performance
