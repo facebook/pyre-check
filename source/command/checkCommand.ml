@@ -286,11 +286,8 @@ let run_check_command configuration_file =
   exit (ExitStatus.exit_code exit_status)
 
 
-let doc = "Runs a full check without a server"
-
-let command ?(name = "check") () =
-  let open Cmdliner in
-  let filename = Arg.(required & pos 0 (some string) None & info [] ~docv:"filename") in
-  let term = Term.(const run_check_command $ filename) in
-  let info = Cmd.info name ~doc in
-  Cmd.v info term
+let command () =
+  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
+  Command.basic
+    ~summary:"Runs a full check without a server"
+    (Command.Param.map filename_argument ~f:(fun filename () -> run_check_command filename))

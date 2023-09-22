@@ -11,4 +11,6 @@
     For more information about querying Pyre in general, please consult the following docs:
     https://www.internalfb.com/intern/staticdocs/pyre/docs/querying-pyre/ **)
 
-val command : unit -> unit Cmdliner.Cmd.t
+open Core
+
+val command : unit -> Command.t

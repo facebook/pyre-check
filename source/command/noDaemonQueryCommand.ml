@@ -227,11 +227,8 @@ let run_query configuration_file =
   exit (ExitStatus.exit_code exit_status)
 
 
-let doc = "Runs a full check without a server"
-
 let command () =
-  let open Cmdliner in
-  let filename = Arg.(required & pos 0 (some string) None & info [] ~docv:"filename") in
-  let term = Term.(const run_query $ filename) in
-  let info = Cmd.info "no-daemon-query" ~doc in
-  Cmd.v info term
+  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
+  Command.basic
+    ~summary:"Runs a full check without a server"
+    (Command.Param.map filename_argument ~f:(fun filename () -> run_query filename))

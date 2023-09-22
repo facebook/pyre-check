@@ -19,4 +19,4 @@ module InferConfiguration : sig
   val of_yojson : Yojson.Safe.t -> (t, string) Result.t
 end
 
-val command : ?name:string -> unit -> unit Cmdliner.Cmd.t
+val command : unit -> Command.t

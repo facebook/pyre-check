@@ -435,7 +435,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries cmdliner core pyrelib))
+ (libraries core_unix.command_unix pyrelib))
 
 (alias
  (name DEFAULT)
