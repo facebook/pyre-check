@@ -304,9 +304,9 @@ def find_typeshed_search_paths(
 
 def find_pyre_directory() -> Optional[Path]:
     install_root = Path(sys.prefix)
-    excepted_pyre_path = install_root / "lib/pyre_check/"
-    if excepted_pyre_path.is_dir():
-        return excepted_pyre_path
+    expected_pyre_path = install_root / "lib/pyre_check/"
+    if expected_pyre_path.is_dir():
+        return expected_pyre_path
     return None
 
 
@@ -324,9 +324,9 @@ def find_pysa_filters_directory() -> Optional[Path]:
     pyre_check_path = find_pyre_directory()
     if pyre_check_path is None:
         return None
-    excepted_pysa_filter_path = pyre_check_path / "pysa_filters/"
-    if excepted_pysa_filter_path.is_dir():
-        return excepted_pysa_filter_path
+    expected_pysa_filter_path = pyre_check_path / "pysa_filters/"
+    if expected_pysa_filter_path.is_dir():
+        return expected_pysa_filter_path
     return None
 
 
