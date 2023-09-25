@@ -72,6 +72,11 @@ class ArgumentTest(testslide.TestCase):
                 check_invariants=True,
                 limit_entrypoints=True,
                 compact_ocaml_heap=True,
+                saved_state_arguments=command_arguments.PysaSavedStateArguments(
+                    watchman_root=Path("/root"),
+                    project_name="my_project",
+                    cache_critical_files=["*.py"],
+                ),
             ),
             [
                 ("log_path", "/log"),
@@ -108,6 +113,14 @@ class ArgumentTest(testslide.TestCase):
                 ("check_invariants", True),
                 ("limit_entrypoints", True),
                 ("compact_ocaml_heap", True),
+                (
+                    "saved_state",
+                    {
+                        "watchman_root": "/root",
+                        "project_name": "my_project",
+                        "cache_critical_files": ["*.py"],
+                    },
+                ),
             ],
         )
 
@@ -179,6 +192,11 @@ class ArgumentTest(testslide.TestCase):
                         check_invariants=True,
                         limit_entrypoints=True,
                         compact_ocaml_heap=True,
+                        saved_state_arguments=command_arguments.PysaSavedStateArguments(
+                            watchman_root=Path("/root"),
+                            project_name="test_project",
+                            cache_critical_files=["*.py"],
+                        ),
                     ),
                 ),
                 analyze.Arguments(
@@ -239,5 +257,10 @@ class ArgumentTest(testslide.TestCase):
                     check_invariants=True,
                     limit_entrypoints=True,
                     compact_ocaml_heap=True,
+                    saved_state_arguments=command_arguments.PysaSavedStateArguments(
+                        watchman_root=Path("/root"),
+                        project_name="test_project",
+                        cache_critical_files=["*.py"],
+                    ),
                 ),
             )

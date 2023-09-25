@@ -26,7 +26,7 @@ from __future__ import annotations
 import enum
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import List, Optional, Set
+from typing import Any, Dict, List, Optional, Set
 
 from .identifiers import PyreFlavor
 
@@ -260,6 +260,20 @@ class CoverageArguments:
 
 
 @dataclass(frozen=True)
+class PysaSavedStateArguments:
+    watchman_root: Optional[Path] = None
+    project_name: Optional[str] = None
+    cache_critical_files: List[str] = field(default_factory=list)
+
+    def serialize(self) -> Dict[str, Any]:
+        return {
+            "watchman_root": str(self.watchman_root),
+            "project_name": self.project_name,
+            "cache_critical_files": self.cache_critical_files,
+        }
+
+
+@dataclass(frozen=True)
 class AnalyzeArguments:
     debug: bool = False
     dump_call_graph: Optional[str] = None
@@ -298,6 +312,9 @@ class AnalyzeArguments:
     check_invariants: bool = False
     limit_entrypoints: bool = False
     compact_ocaml_heap: bool = False
+    saved_state_arguments: PysaSavedStateArguments = field(
+        default_factory=PysaSavedStateArguments
+    )
 
 
 @dataclass(frozen=True)

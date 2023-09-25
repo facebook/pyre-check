@@ -71,6 +71,9 @@ class Arguments:
     limit_entrypoints: bool = False
     compact_ocaml_heap: bool = False
     build_cache_only: bool = False
+    saved_state_arguments: command_arguments.PysaSavedStateArguments = (
+        dataclasses.field(default_factory=command_arguments.PysaSavedStateArguments)
+    )
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -194,6 +197,7 @@ class Arguments:
             "check_invariants": self.check_invariants,
             "limit_entrypoints": self.limit_entrypoints,
             "compact_ocaml_heap": self.compact_ocaml_heap,
+            "saved_state": self.saved_state_arguments.serialize(),
         }
 
 
@@ -299,6 +303,7 @@ def create_analyze_arguments(
         check_invariants=analyze_arguments.check_invariants,
         limit_entrypoints=analyze_arguments.limit_entrypoints,
         compact_ocaml_heap=analyze_arguments.compact_ocaml_heap,
+        saved_state_arguments=analyze_arguments.saved_state_arguments,
     )
 
 

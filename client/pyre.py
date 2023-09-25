@@ -666,6 +666,7 @@ def analyze(
             check_invariants=check_invariants,
             limit_entrypoints=limit_entrypoints,
             compact_ocaml_heap=compact_ocaml_heap,
+            saved_state_arguments=command_arguments.PysaSavedStateArguments(),
         ),
     )
 
