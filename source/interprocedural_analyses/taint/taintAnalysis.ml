@@ -377,6 +377,7 @@ let run_taint_analysis
          build_cache_only;
          limit_entrypoints;
          compact_ocaml_heap = compact_ocaml_heap_flag;
+         saved_state;
          _;
        } as static_analysis_configuration)
     ~build_system
@@ -395,7 +396,12 @@ let run_taint_analysis
   in
 
   let cache =
-    Cache.try_load ~scheduler ~configuration ~decorator_configuration ~enabled:use_cache
+    Cache.try_load
+      ~scheduler
+      ~saved_state
+      ~configuration
+      ~decorator_configuration
+      ~enabled:use_cache
   in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)

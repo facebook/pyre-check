@@ -156,23 +156,84 @@ let get_shared_memory_save_path ~configuration =
 
 let ignore_result (_ : ('a, 'b) result) = ()
 
-let initialize_shared_memory ~configuration =
-  let path = get_shared_memory_save_path ~configuration in
-  if not (PyrePath.file_exists path) then (
-    Log.warning "Could not find a cached state.";
-    Error SharedMemoryStatus.NotFound)
-  else
-    SaveLoadSharedMemory.exception_to_error
-      ~error:SharedMemoryStatus.LoadError
-      ~message:"loading cached state"
-      ~f:(fun () ->
-        Log.info
-          "Loading cached state from `%s`"
-          (PyrePath.absolute (get_save_directory ~configuration));
-        let _ = Memory.get_heap_handle configuration in
-        Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
-        Log.info "Cached state successfully loaded.";
-        Ok ())
+module SavedState = struct
+  let fetch_from_project
+      ~configuration
+      ~saved_state:
+        {
+          Configuration.StaticAnalysis.SavedState.watchman_root;
+          cache_critical_files;
+          project_name;
+        }
+    =
+    let open Lwt.Infix in
+    Lwt.catch
+      (fun () ->
+        Watchman.Raw.create_exn ()
+        >>= fun watchman_raw ->
+        Watchman.Raw.with_connection watchman_raw ~f:(fun watchman_connection ->
+            match watchman_root, project_name with
+            | None, _ -> Lwt.return (Result.Error "Missing watchman root")
+            | _, None -> Lwt.return (Result.Error "Missing saved state project name")
+            | Some watchman_root, Some project_name ->
+                let saved_state_storage_location = get_shared_memory_save_path ~configuration in
+                let watchman_filter =
+                  {
+                    Watchman.Filter.base_names = [];
+                    whole_names = cache_critical_files;
+                    suffixes = [];
+                  }
+                in
+                Saved_state.Execution.query_and_fetch_exn
+                  {
+                    Saved_state.Execution.Setting.watchman_root =
+                      PyrePath.create_absolute watchman_root;
+                    watchman_filter;
+                    watchman_connection;
+                    project_name;
+                    project_metadata = None;
+                    critical_files = [];
+                    target = saved_state_storage_location;
+                  }
+                >>= fun fetched -> Lwt.return (Result.Ok fetched)))
+      (fun exn ->
+        let message =
+          match exn with
+          | Watchman.ConnectionError message
+          | Watchman.QueryError message
+          | Saved_state.Execution.QueryFailure message ->
+              message
+          | _ -> Exn.to_string exn
+        in
+        Lwt.return (Result.Error message))
+
+
+  let load ~saved_state ~configuration =
+    let open Lwt.Infix in
+    fetch_from_project ~saved_state ~configuration
+    >>= fun fetched ->
+    match fetched with
+    | Result.Error message ->
+        Log.warning "Could not fetch a saved state: %s" message;
+        Lwt.return_none
+    | Result.Ok { Saved_state.Execution.Fetched.path; changed_files = _ } ->
+        Log.info "Fetched saved state";
+        Lwt.return_some path
+end
+
+let initialize_shared_memory ~path ~configuration =
+  match path with
+  | Some path when PyrePath.file_exists path ->
+      SaveLoadSharedMemory.exception_to_error
+        ~error:SharedMemoryStatus.LoadError
+        ~message:"loading cached state"
+        ~f:(fun () ->
+          Log.info "Loading cached state from `%s`" (PyrePath.absolute path);
+          let _ = Memory.get_heap_handle configuration in
+          Memory.load_shared_memory ~path:(PyrePath.absolute path) ~configuration;
+          Log.info "Cached state successfully loaded.";
+          Ok ())
+  | _ -> Error SharedMemoryStatus.NotFound
 
 
 let check_decorator_invalidation ~decorator_configuration:current_configuration =
@@ -192,14 +253,25 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
       Error SharedMemoryStatus.LoadError
 
 
-let try_load ~scheduler ~configuration ~decorator_configuration ~enabled =
+let locate_or_download_cache_file ~saved_state ~configuration =
+  let local_cache_path = get_shared_memory_save_path ~configuration in
+  if PyrePath.file_exists local_cache_path then
+    let () = Log.info "Using local cache file `%s`" (PyrePath.absolute local_cache_path) in
+    Some local_cache_path
+  else
+    let () = Log.info "Could not find local cache. Fetching cache from saved states." in
+    SavedState.load ~saved_state ~configuration |> Lwt_main.run
+
+
+let try_load ~scheduler ~saved_state ~configuration ~decorator_configuration ~enabled =
   let save_cache = enabled in
   if not enabled then
     { status = SharedMemoryStatus.Disabled; save_cache; scheduler; configuration }
   else
     let open Result in
+    let cache_file_path = locate_or_download_cache_file ~saved_state ~configuration in
     let status =
-      match initialize_shared_memory ~configuration with
+      match initialize_shared_memory ~path:cache_file_path ~configuration with
       | Ok () -> (
           match check_decorator_invalidation ~decorator_configuration with
           | Ok () ->

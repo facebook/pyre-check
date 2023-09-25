@@ -16,6 +16,8 @@
   core_unix
   sexplib
   re2
+  lwt
+  lwt.unix
   ppx_deriving_yojson
   ppx_deriving
   pyrelib.ast
@@ -29,7 +31,9 @@
   pyrelib.alarm
   pyrelib.file
   pyrelib.data_structures
-  pyrelib.taintAnalysisFeatureStats))
+  pyrelib.taintAnalysisFeatureStats
+  pyrelib.watchman
+  pyrelib.saved_state))
 
 (library
  (name taintAnalysis)
