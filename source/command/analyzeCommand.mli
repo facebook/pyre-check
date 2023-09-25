@@ -51,6 +51,7 @@ module AnalyzeConfiguration : sig
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
+    saved_state: Configuration.StaticAnalysis.SavedState.t;
   }
   [@@deriving sexp, compare, hash]
 

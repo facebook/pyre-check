@@ -515,6 +515,17 @@ module MissingFlowKind = struct
 end
 
 module StaticAnalysis = struct
+  module SavedState = struct
+    type t = {
+      watchman_root: string option;
+      project_name: string option;
+      cache_critical_files: string list;
+    }
+    [@@deriving sexp, compare, hash, yojson]
+
+    let empty = { watchman_root = None; project_name = None; cache_critical_files = [] }
+  end
+
   type t = {
     repository_root: PyrePath.t option;
     save_results_to: PyrePath.t option;
@@ -548,6 +559,7 @@ module StaticAnalysis = struct
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
+    saved_state: SavedState.t;
   }
 
   let create
@@ -582,6 +594,7 @@ module StaticAnalysis = struct
       ?(check_invariants = false)
       ?(limit_entrypoints = false)
       ?(compact_ocaml_heap = false)
+      ?(saved_state = SavedState.empty)
       ()
     =
     {
@@ -616,5 +629,6 @@ module StaticAnalysis = struct
       check_invariants;
       limit_entrypoints;
       compact_ocaml_heap;
+      saved_state;
     }
 end

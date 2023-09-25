@@ -59,6 +59,7 @@ let test_json_parsing context =
       check_invariants = false;
       limit_entrypoints = false;
       compact_ocaml_heap = false;
+      saved_state = Configuration.StaticAnalysis.SavedState.empty;
     }
   in
 
@@ -189,6 +190,26 @@ let test_json_parsing context =
   assert_parsed
     (`Assoc (("check_invariants", `Bool true) :: BaseConfigurationTest.dummy_base_json))
     ~expected:{ dummy_analyze_configuration with check_invariants = true };
+  assert_parsed
+    (`Assoc
+      (( "saved_state",
+         `Assoc
+           [
+             "watchman_root", `String "/root";
+             "project_name", `String "my_project";
+             "cache_critical_files", `List [`String "*.py"; `String "*.pysa"];
+           ] )
+      :: BaseConfigurationTest.dummy_base_json))
+    ~expected:
+      {
+        dummy_analyze_configuration with
+        saved_state =
+          {
+            watchman_root = Some "/root";
+            project_name = Some "my_project";
+            cache_critical_files = ["*.py"; "*.pysa"];
+          };
+      };
   ()
 
 

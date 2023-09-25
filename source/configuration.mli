@@ -224,6 +224,17 @@ module MissingFlowKind : sig
 end
 
 module StaticAnalysis : sig
+  module SavedState : sig
+    type t = {
+      watchman_root: string option;
+      project_name: string option;
+      cache_critical_files: string list;
+    }
+    [@@deriving sexp, compare, hash, yojson]
+
+    val empty : t
+  end
+
   type t = {
     repository_root: PyrePath.t option;
     (* A directory to write files in. *)
@@ -258,6 +269,7 @@ module StaticAnalysis : sig
     check_invariants: bool;
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
+    saved_state: SavedState.t;
   }
 
   val create
@@ -292,6 +304,7 @@ module StaticAnalysis : sig
     ?check_invariants:bool ->
     ?limit_entrypoints:bool ->
     ?compact_ocaml_heap:bool ->
+    ?saved_state:SavedState.t ->
     unit ->
     t
 end
