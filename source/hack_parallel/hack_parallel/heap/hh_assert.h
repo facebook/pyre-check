@@ -16,4 +16,6 @@ void raise_assertion_failure(char* msg);
 #define S2(x) S1(x)
 #define LOCATION __FILE__ " : " S2(__LINE__)
 #define assert(f) ((f) ? 0 : raise_assertion_failure(LOCATION))
+#define assert_with_message(f, message) \
+  ((f) ? 0 : raise_assertion_failure(message))
 #endif

@@ -2025,10 +2025,23 @@ static void fread_header(FILE* fp) {
 
   size_t revlen = 0;
   read_all(fileno(fp), (void*)&revlen, sizeof revlen);
-  char revision[revlen];
+  char revision[revlen + 1];
   if (revlen > 0) {
     read_all(fileno(fp), (void*)revision, revlen * sizeof(char));
-    assert(strncmp(revision, BuildInfo_kRevision, revlen) == 0);
+    if (strncmp(revision, BuildInfo_kRevision, revlen) != 0) {
+      revision[revlen] = '\0';
+      char* message_template =
+          "Binary version `%s` that saved the shared memory must be the same as the current binary version `%s` that is loading it";
+      int message_length = strlen(message_template) - 4 + revlen * 2 + 1;
+      char message[message_length];
+      snprintf(
+          message,
+          message_length,
+          message_template,
+          revision,
+          BuildInfo_kRevision);
+      assert_with_message(0, message);
+    }
   }
 }
 
