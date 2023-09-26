@@ -189,6 +189,16 @@ class Setup(NamedTuple):
                 opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
+    def opam_update(self) -> None:
+        self.run(
+            self.opam_command()
+            + [
+                "update",
+                "--root",
+                self.opam_root.as_posix(),
+            ]
+        )
+
     def initialize_opam_switch(self) -> Mapping[str, str]:
         self.check_if_preinstalled()
 
@@ -205,14 +215,9 @@ class Setup(NamedTuple):
                 "https://opam.ocaml.org",
             ]
         )
-        self.run(
-            self.opam_command()
-            + [
-                "update",
-                "--root",
-                self.opam_root.as_posix(),
-            ]
-        )
+
+        self.opam_update()
+
         self.run(
             self.opam_command()
             + [
@@ -399,6 +404,8 @@ def setup(runner_type: Type[Setup]) -> None:
     else:
         if not runner.already_initialized():
             runner.initialize_opam_switch()
+        else:
+            runner.opam_update()
         runner.full_setup(
             pyre_directory,
             run_tests=not parsed.no_tests,
