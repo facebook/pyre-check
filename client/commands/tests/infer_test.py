@@ -528,16 +528,32 @@ class ModuleAnnotationTest(testslide.TestCase):
             ),
         )
 
+    def test_module_annotations_from_infer_output__attributes(self) -> None:
+        def assert_result(
+            path: str,
+            infer_output: infer.RawInferOutputForPath,
+            options: infer.StubGenerationOptions,
+            expected: infer.ModuleAnnotations,
+        ) -> None:
+            self.assertEqual(
+                infer.ModuleAnnotations.from_infer_output(path, infer_output, options),
+                expected,
+            )
+
+        default_path = "test.py"
+        default_qualifier = "test"
+        default_options = infer.StubGenerationOptions()
+
         assert_result(
             path=default_path,
             infer_output=infer.RawInferOutputForPath(
                 qualifier=default_qualifier,
                 attribute_annotations=[
                     infer.RawAttributeAnnotation(
-                        parent="Foo",
+                        parent="foo.bar.test.Foo",
                         name="x",
                         location=infer.RawAnnotationLocation(
-                            qualifier="test", path="test.py", line=3
+                            qualifier="foo.bar.test", path="foo/bar/test.py", line=3
                         ),
                         annotation="int",
                     )
@@ -559,10 +575,10 @@ class ModuleAnnotationTest(testslide.TestCase):
                 qualifier=default_qualifier,
                 attribute_annotations=[
                     infer.RawAttributeAnnotation(
-                        parent="Foo",
+                        parent="foo.bar.test.Foo",
                         name="x",
                         location=infer.RawAnnotationLocation(
-                            qualifier="test", path="test.py", line=3
+                            qualifier="foo.bar.test", path="foo/bar/test.py", line=3
                         ),
                         annotation="int",
                     )
@@ -574,7 +590,7 @@ class ModuleAnnotationTest(testslide.TestCase):
                 options=annotate_attribute_options,
                 attributes=[
                     infer.AttributeAnnotation(
-                        parent="Foo",
+                        parent="foo.bar.test.Foo",
                         name="x",
                         annotation=infer.TypeAnnotation.from_raw(
                             "int",
