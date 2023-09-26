@@ -180,6 +180,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 {"label": "attribute", "kind": "SIMPLE"},
                 {"label": "attribute2", "kind": "METHOD"},
                 {"label": "attribute3", "kind": "PROPERTY"},
+                {"label": "attribute4", "kind": "VARIABLE"},
             ]
         }
         self.assertEqual(
@@ -200,6 +201,10 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                     code_navigation_request.PyreCompletionItem(
                         label="attribute3",
                         kind=code_navigation_request.PyreCompletionItemKind.PROPERTY,
+                    ),
+                    code_navigation_request.PyreCompletionItem(
+                        label="attribute4",
+                        kind=code_navigation_request.PyreCompletionItemKind.VARIABLE,
                     ),
                 ]
             ),

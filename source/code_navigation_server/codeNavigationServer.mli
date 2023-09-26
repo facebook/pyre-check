@@ -476,6 +476,7 @@ module Testing : sig
           | Simple
           | Method
           | Property
+          | Variable
         [@@deriving sexp, compare, yojson { strict = false }]
       end
 
