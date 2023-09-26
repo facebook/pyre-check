@@ -2378,11 +2378,12 @@ module AttributeDetail = struct
   }
   [@@deriving show, compare, sexp]
 
-  let from_attribute (attr : uninstantiated_attribute) : t =
-    let name = AnnotatedAttribute.name attr in
-    let detail = AnnotatedAttribute.parent_name attr in
-    match AnnotatedAttribute.uninstantiated_annotation attr with
-    | { kind = Property _; _ } -> { kind = Property; name; detail }
+  let from_attribute attr =
+    let open AnnotatedAttribute in
+    let name = name attr in
+    let detail = parent_name attr in
+    match uninstantiated_annotation attr with
+    | UninstantiatedAnnotation.{ kind = Property _; _ } -> { kind = Property; name; detail }
     | { kind = Attribute (Callable _); _ } -> { kind = Method; name; detail }
     | _ -> { kind = Variable; name; detail }
 end
