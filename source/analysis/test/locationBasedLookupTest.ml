@@ -1760,21 +1760,16 @@ let test_resolve_completions_for_symbol context =
         right_inclusive_cursor_position
     in
     let attributes =
-      match
-        symbol_data >>= LocationBasedLookup.resolve_completions_for_symbol ~type_environment
-      with
-      | Some attributes_map -> attributes_map
-      | None -> Identifier.SerializableMap.empty
+      symbol_data
+      >>| LocationBasedLookup.resolve_completions_for_symbol ~type_environment
+      |> Option.value ~default:[]
     in
     let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
     assert_equal
-      ~cmp:(fun left right ->
-        let sort_str_list = List.sort ~compare:String.compare in
-        List.equal String.equal (sort_str_list left) (sort_str_list right))
       ~printer:(String.concat ~sep:", ")
       ~pp_diff:(diff ~print:list_diff)
       expected
-      (attributes |> Identifier.SerializableMap.bindings |> List.map ~f:(fun (attr, _) -> attr))
+      (List.map ~f:(fun { label } -> label) attributes)
   in
   assert_resolved_completion_items
     ~source:
@@ -1819,8 +1814,8 @@ let test_resolve_completions_for_symbol context =
         Bar().attribute.foo_attribute
         #                ^- cursor
     |}
-    (* Multi layer class attribute completion *)
-    ["foo_attribute"; "foo_attribute2"; "foo_attribute3"];
+      (* Multi layer class attribute completion *)
+    ["foo_attribute3"; "foo_attribute2"; "foo_attribute"];
   assert_resolved_completion_items
     ~source:
       {|
@@ -1835,8 +1830,9 @@ let test_resolve_completions_for_symbol context =
         Bar().attr
         #      ^- cursor
     |}
-    (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
-    ["attribute"; "attribute2"; "attribute3"];
+      (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
+    ["attribute3"; "attribute2"; "attribute"];
+
   assert_resolved_completion_items
     ~source:
       {|
@@ -1851,8 +1847,8 @@ let test_resolve_completions_for_symbol context =
         Bar().attr
         #         ^- cursor
     |}
-    (* Incomplete attribute string + cursor at end of line, attribute completion *)
-    ["attribute"; "attribute2"; "attribute3"];
+      (* Incomplete attribute string + cursor at end of line, attribute completion *)
+    ["attribute3"; "attribute2"; "attribute"];
   assert_resolved_completion_items
     ~source:{|
         class Foo: ...
@@ -1871,7 +1867,75 @@ let test_resolve_completions_for_symbol context =
       foo.
          #^- cursor
     |}
-    ["foo"];
+    [
+      "foo";
+      "__str__";
+      "__sizeof__";
+      "__setattr__";
+      "__repr__";
+      "__reduce__";
+      "__new__";
+      "__ne__";
+      "__module__";
+      "__init_subclass__";
+      "__init__";
+      "__hash__";
+      "__getattribute__";
+      "__format__";
+      "__eq__";
+      "__doc__";
+      "__dir__";
+      "__delattr__";
+      "__class__";
+    ];
+  assert_resolved_completion_items
+    ~source:
+      {|
+      class Bar:
+        def bar() -> None: ...
+      class Foo(Bar):
+        def foo() -> None: ...
+
+      Foo.
+         #^- cursor
+    |}
+    [
+      "foo";
+      "bar";
+      "__str__";
+      "__sizeof__";
+      "__setattr__";
+      "__repr__";
+      "__reduce__";
+      "__new__";
+      "__ne__";
+      "__module__";
+      "__init_subclass__";
+      "__init__";
+      "__hash__";
+      "__getattribute__";
+      "__format__";
+      "__eq__";
+      "__doc__";
+      "__dir__";
+      "__delattr__";
+      "__class__";
+    ];
+  assert_resolved_completion_items
+    ~source:
+      {|
+      class Foo:
+        def foo() -> None: ...
+
+      Foo.
+         #^- cursor
+    |}
+    ~external_sources:
+      ["builtins.pyi", {|
+      class object:
+        def test(self) -> None: ...
+    |}]
+    ["foo"; "test"];
   ()
 
 

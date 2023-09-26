@@ -61,6 +61,8 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
+type completion_info = { label: string } [@@deriving sexp, show, compare, yojson { strict = false }]
+
 (** This visitor stores the coverage data information for an expression on the key of its location.
 
     It special-case names such as named arguments or the names in comprehensions and generators.
@@ -815,20 +817,17 @@ let resolve_attributes_for_expression ~resolution expression =
     match resolve ~resolution expression with
     | Some annotation when Type.is_meta annotation ->
         (* If it is a call to a class method or static method, `Foo.my_class_method()`, the resolved
-           expression type will be `Type[Foo]`. Extract the class type `Foo`. *)
+           base type will be `Type[Foo]`. Extract the class type `Foo`. *)
         Some (Type.single_parameter annotation)
     | annotation -> annotation
   in
-  let parent_class_summary =
-    base_type
-    >>| Type.split
-    >>= (fun (parent, _) -> Type.primitive_name parent)
-    >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
-    >>| Node.value
-  in
-  match parent_class_summary with
-  | Some base_class_summary -> base_class_summary |> ClassSummary.attributes |> Option.some
-  | None -> None
+  base_type
+  >>| Type.split
+  >>= (fun (parent, _) -> Type.primitive_name parent)
+  >>= GlobalResolution.attribute_names
+        ~resolution:(Resolution.global_resolution resolution)
+        ~transitive:true
+  |> Option.value ~default:[]
 
 
 let resolution_from_cfg_data
@@ -909,14 +908,14 @@ let resolve_completions_for_symbol
     | Expression expression
     | TypeAnnotation expression -> (
         match expression with
-        | { Node.value = Expression.Name (Name.Attribute { base; attribute; _ }); _ } ->
+        | { Node.value = Expression.Name (Name.Attribute { base; attribute = prefix; _ }); _ } ->
             resolve_attributes_for_expression
               ~resolution:
                 (resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
               base
-            >>| Identifier.SerializableMap.filter (fun attr_str _attr_value ->
-                    String.is_prefix ~prefix:attribute attr_str)
-        | _ -> None)
+            |> List.filter ~f:(fun attribute -> String.is_prefix ~prefix attribute)
+            |> List.map ~f:(fun name -> { label = name })
+        | _ -> [])
   in
   Log.log
     ~section:`Performance
@@ -936,13 +935,15 @@ let completion_info_for_position ~type_environment ~module_reference position =
       ~module_reference
       right_inclusive_cursor_position
   in
-  let completions = symbol_data >>= resolve_completions_for_symbol ~type_environment in
+  let completions =
+    symbol_data >>| resolve_completions_for_symbol ~type_environment |> Option.value ~default:[]
+  in
   Log.log
     ~section:`Server
     "Completions for symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    ([%show: ClassSummary.Attribute.t Identifier.SerializableMap.t option] completions);
+    ([%show: completion_info list] completions);
   completions
 
 

@@ -145,28 +145,21 @@ let handle_location_of_definition
 
 
 let get_completion_for_module ~overlay ~position module_reference =
-  let open Option in
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   LocationBasedLookup.completion_info_for_position ~type_environment ~module_reference position
-  >>| Ast.Identifier.SerializableMap.bindings
-  >>| List.map ~f:(fun (identifier, attribute) ->
-          let attribute_kind =
-            match Ast.Node.value attribute with
-            | { ClassSummary.Attribute.kind = Simple _; _ } ->
-                Response.CompletionItem.CompletionItemKind.Simple
-            | { ClassSummary.Attribute.kind = Method _; _ } ->
-                Response.CompletionItem.CompletionItemKind.Method
-            | { ClassSummary.Attribute.kind = Property _; _ } ->
-                Response.CompletionItem.CompletionItemKind.Property
-          in
-          { Response.CompletionItem.label = identifier; kind = attribute_kind })
+  |> List.map ~f:(fun { LocationBasedLookup.label } ->
+         let attribute_kind =
+           (* TODO(T164468487) add back CompletionItemKind *)
+           Response.CompletionItem.CompletionItemKind.Simple
+         in
+         { Response.CompletionItem.label; kind = attribute_kind })
 
 
 let get_completion_in_overlay ~overlay ~build_system ~position path =
   let open Result in
   let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
   get_modules ~module_tracker ~build_system path
-  >>| List.filter_map ~f:(get_completion_for_module ~overlay ~position)
+  >>| List.map ~f:(get_completion_for_module ~overlay ~position)
 
 
 let handle_completion
