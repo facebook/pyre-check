@@ -191,6 +191,7 @@ module AttributeDetail : sig
   type t = {
     kind: kind;
     name: string;
+    detail: string;
   }
   [@@deriving show, compare, sexp]
 end

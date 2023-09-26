@@ -2374,15 +2374,17 @@ module AttributeDetail = struct
   type t = {
     kind: kind;
     name: string;
+    detail: string;
   }
   [@@deriving show, compare, sexp]
 
   let from_attribute (attr : uninstantiated_attribute) : t =
     let name = AnnotatedAttribute.name attr in
+    let detail = AnnotatedAttribute.parent_name attr in
     match AnnotatedAttribute.uninstantiated_annotation attr with
-    | { kind = Property _; _ } -> { kind = Property; name }
-    | { kind = Attribute (Callable _); _ } -> { kind = Method; name }
-    | _ -> { kind = Variable; name }
+    | { kind = Property _; _ } -> { kind = Property; name; detail }
+    | { kind = Attribute (Callable _); _ } -> { kind = Method; name; detail }
+    | _ -> { kind = Variable; name; detail }
 end
 
 class base class_metadata_environment dependency =

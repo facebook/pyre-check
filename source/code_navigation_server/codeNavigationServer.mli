@@ -483,6 +483,7 @@ module Testing : sig
       type t = {
         label: string;
         kind: CompletionItemKind.t;
+        detail: string;
       }
       [@@deriving sexp, compare, yojson { strict = false }]
     end

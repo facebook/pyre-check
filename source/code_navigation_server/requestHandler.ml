@@ -147,7 +147,7 @@ let handle_location_of_definition
 let get_completion_for_module ~overlay ~position module_reference =
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   LocationBasedLookup.completion_info_for_position ~type_environment ~module_reference position
-  |> List.map ~f:(fun { AttributeResolution.AttributeDetail.kind; name } ->
+  |> List.map ~f:(fun { AttributeResolution.AttributeDetail.kind; name; detail } ->
          let attribute_kind =
            match kind with
            | Simple -> Response.CompletionItem.CompletionItemKind.Simple
@@ -155,7 +155,7 @@ let get_completion_for_module ~overlay ~position module_reference =
            | Method -> Response.CompletionItem.CompletionItemKind.Method
            | Property -> Response.CompletionItem.CompletionItemKind.Property
          in
-         { Response.CompletionItem.label = name; kind = attribute_kind })
+         { Response.CompletionItem.label = name; kind = attribute_kind; detail })
 
 
 let get_completion_in_overlay ~overlay ~build_system ~position path =

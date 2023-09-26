@@ -1791,9 +1791,9 @@ let test_resolve_completions_for_symbol context =
     |}
     (* Single layer class attribute completion *)
     [
-      { name = "attribute"; kind = Variable };
-      { name = "attribute2"; kind = Variable };
-      { name = "attribute3"; kind = Variable };
+      { name = "attribute"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1815,9 +1815,9 @@ let test_resolve_completions_for_symbol context =
     |}
       (* Multi layer class attribute completion *)
     [
-      { name = "foo_attribute"; kind = Variable };
-      { name = "foo_attribute2"; kind = Variable };
-      { name = "foo_attribute3"; kind = Variable };
+      { name = "foo_attribute"; kind = Variable; detail = "test.Foo" };
+      { name = "foo_attribute2"; kind = Variable; detail = "test.Foo" };
+      { name = "foo_attribute3"; kind = Variable; detail = "test.Foo" };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1835,9 +1835,9 @@ let test_resolve_completions_for_symbol context =
     |}
       (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
     [
-      { name = "attribute"; kind = Variable };
-      { name = "attribute2"; kind = Variable };
-      { name = "attribute3"; kind = Variable };
+      { name = "attribute"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
     ];
 
   assert_resolved_completion_items
@@ -1856,9 +1856,9 @@ let test_resolve_completions_for_symbol context =
     |}
       (* Incomplete attribute string + cursor at end of line, attribute completion *)
     [
-      { name = "attribute"; kind = Variable };
-      { name = "attribute2"; kind = Variable };
-      { name = "attribute3"; kind = Variable };
+      { name = "attribute"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
     ];
   assert_resolved_completion_items
     ~source:{|
@@ -1879,25 +1879,25 @@ let test_resolve_completions_for_symbol context =
          #^- cursor
     |}
     [
-      { name = "foo"; kind = Method };
-      { name = "__class__"; kind = Property };
-      { name = "__delattr__"; kind = Method };
-      { name = "__dir__"; kind = Method };
-      { name = "__doc__"; kind = Variable };
-      { name = "__eq__"; kind = Method };
-      { name = "__format__"; kind = Method };
-      { name = "__getattribute__"; kind = Method };
-      { name = "__hash__"; kind = Method };
-      { name = "__init__"; kind = Method };
-      { name = "__init_subclass__"; kind = Variable };
-      { name = "__module__"; kind = Variable };
-      { name = "__ne__"; kind = Method };
-      { name = "__new__"; kind = Variable };
-      { name = "__reduce__"; kind = Method };
-      { name = "__repr__"; kind = Method };
-      { name = "__setattr__"; kind = Method };
-      { name = "__sizeof__"; kind = Method };
-      { name = "__str__"; kind = Method };
+      { name = "foo"; kind = Method; detail = "test.Foo" };
+      { name = "__class__"; kind = Property; detail = "object" };
+      { name = "__delattr__"; kind = Method; detail = "object" };
+      { name = "__dir__"; kind = Method; detail = "object" };
+      { name = "__doc__"; kind = Variable; detail = "object" };
+      { name = "__eq__"; kind = Method; detail = "object" };
+      { name = "__format__"; kind = Method; detail = "object" };
+      { name = "__getattribute__"; kind = Method; detail = "object" };
+      { name = "__hash__"; kind = Method; detail = "object" };
+      { name = "__init__"; kind = Method; detail = "object" };
+      { name = "__init_subclass__"; kind = Variable; detail = "object" };
+      { name = "__module__"; kind = Variable; detail = "object" };
+      { name = "__ne__"; kind = Method; detail = "object" };
+      { name = "__new__"; kind = Variable; detail = "object" };
+      { name = "__reduce__"; kind = Method; detail = "object" };
+      { name = "__repr__"; kind = Method; detail = "object" };
+      { name = "__setattr__"; kind = Method; detail = "object" };
+      { name = "__sizeof__"; kind = Method; detail = "object" };
+      { name = "__str__"; kind = Method; detail = "object" };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1911,26 +1911,26 @@ let test_resolve_completions_for_symbol context =
          #^- cursor
     |}
     [
-      { name = "foo"; kind = Method };
-      { name = "bar"; kind = Method };
-      { name = "__class__"; kind = Property };
-      { name = "__delattr__"; kind = Method };
-      { name = "__dir__"; kind = Method };
-      { name = "__doc__"; kind = Variable };
-      { name = "__eq__"; kind = Method };
-      { name = "__format__"; kind = Method };
-      { name = "__getattribute__"; kind = Method };
-      { name = "__hash__"; kind = Method };
-      { name = "__init__"; kind = Method };
-      { name = "__init_subclass__"; kind = Variable };
-      { name = "__module__"; kind = Variable };
-      { name = "__ne__"; kind = Method };
-      { name = "__new__"; kind = Variable };
-      { name = "__reduce__"; kind = Method };
-      { name = "__repr__"; kind = Method };
-      { name = "__setattr__"; kind = Method };
-      { name = "__sizeof__"; kind = Method };
-      { name = "__str__"; kind = Method };
+      { name = "foo"; kind = Method; detail = "test.Foo" };
+      { name = "bar"; kind = Method; detail = "test.Bar" };
+      { name = "__class__"; kind = Property; detail = "object" };
+      { name = "__delattr__"; kind = Method; detail = "object" };
+      { name = "__dir__"; kind = Method; detail = "object" };
+      { name = "__doc__"; kind = Variable; detail = "object" };
+      { name = "__eq__"; kind = Method; detail = "object" };
+      { name = "__format__"; kind = Method; detail = "object" };
+      { name = "__getattribute__"; kind = Method; detail = "object" };
+      { name = "__hash__"; kind = Method; detail = "object" };
+      { name = "__init__"; kind = Method; detail = "object" };
+      { name = "__init_subclass__"; kind = Variable; detail = "object" };
+      { name = "__module__"; kind = Variable; detail = "object" };
+      { name = "__ne__"; kind = Method; detail = "object" };
+      { name = "__new__"; kind = Variable; detail = "object" };
+      { name = "__reduce__"; kind = Method; detail = "object" };
+      { name = "__repr__"; kind = Method; detail = "object" };
+      { name = "__setattr__"; kind = Method; detail = "object" };
+      { name = "__sizeof__"; kind = Method; detail = "object" };
+      { name = "__str__"; kind = Method; detail = "object" };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1946,7 +1946,10 @@ let test_resolve_completions_for_symbol context =
       class object:
         def test(self) -> None: ...
     |}]
-    [{ name = "foo"; kind = Method }; { name = "test"; kind = Method }];
+    [
+      { name = "foo"; kind = Method; detail = "test.Foo" };
+      { name = "test"; kind = Method; detail = "object" };
+    ];
   ()
 
 

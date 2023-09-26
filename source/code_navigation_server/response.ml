@@ -58,6 +58,7 @@ module CompletionItem = struct
   type t = {
     label: string;
     kind: CompletionItemKind.t;
+    detail: string;
   }
   [@@deriving sexp, compare, yojson { strict = false }]
 end
