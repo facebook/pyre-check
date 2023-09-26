@@ -832,15 +832,17 @@ class StubGenerationTest(testslide.TestCase):
         use_future_annotations: bool = False,
         quote_annotations: bool = False,
         simple_annotations: bool = False,
+        test_path: str = "/root/test.py",
+        qualifier: str = "test",
+        root: str = "/root",
     ) -> None:
-        test_path = "/root/test.py"
         infer_output = infer.RawInferOutput.create_from_json(
             {
                 category: [
                     {
                         "location": {
                             "path": test_path,
-                            "qualifier": "test",
+                            "qualifier": qualifier,
                             "line": 1,
                         },
                         **value,
@@ -852,7 +854,7 @@ class StubGenerationTest(testslide.TestCase):
         )
         module_annotations = infer.create_module_annotations(
             infer_output=infer_output,
-            base_path=Path("/root"),
+            base_path=Path(root),
             options=infer.StubGenerationOptions(
                 annotate_attributes=annotate_attributes,
                 use_future_annotations=use_future_annotations,
@@ -1281,6 +1283,48 @@ class StubGenerationTest(testslide.TestCase):
                 attribute_name: "test" = ...
             """,
             annotate_attributes=True,
+        )
+
+    def test_stubs_attributes__path_matches_qualifier(self) -> None:
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "some_attribute",
+                        "parent": "foo.bar.test.Foo",
+                    }
+                ],
+            },
+            """\
+            class Foo:
+                some_attribute: int = ...
+            """,
+            annotate_attributes=True,
+            root="/root",
+            test_path="/root/foo/bar/test.py",
+            qualifier="foo.bar.test",
+        )
+
+    def test_stubs_attributes__full_path_but_does_not_match_qualifier(self) -> None:
+        """TODO(T164419913): If the path differs from the qualifier, we
+        spuriously consider the class to be "nested" and ignore it
+        completely."""
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "some_attribute",
+                        "parent": "foo.bar.test.Foo",
+                    }
+                ],
+            },
+            "",
+            annotate_attributes=True,
+            root="/root",
+            test_path="/root/extra_module/foo/bar/test.py",
+            qualifier="foo.bar.test",
         )
 
     def test_stubs_no_typing_import(self) -> None:
