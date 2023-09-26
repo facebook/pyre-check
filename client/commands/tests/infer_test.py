@@ -170,30 +170,6 @@ class InferTest(testslide.TestCase):
         )
         assert_parsed(
             {
-                "attributes": [
-                    {
-                        "parent": "Foo",
-                        "name": "x",
-                        "location": {"qualifier": "test", "path": "test.py", "line": 3},
-                        "annotation": "int",
-                    }
-                ]
-            },
-            infer.RawInferOutput(
-                attribute_annotations=[
-                    infer.RawAttributeAnnotation(
-                        parent="Foo",
-                        name="x",
-                        location=infer.RawAnnotationLocation(
-                            qualifier="test", path="test.py", line=3
-                        ),
-                        annotation="int",
-                    )
-                ]
-            ),
-        )
-        assert_parsed(
-            {
                 "defines": [
                     {
                         "name": "test.foo",
@@ -259,6 +235,41 @@ class InferTest(testslide.TestCase):
                             ),
                         ],
                         is_async=True,
+                    )
+                ]
+            ),
+        )
+
+    def test_parse_raw_infer_output__attributes(self) -> None:
+        def assert_parsed(
+            input: Dict[str, object], expected: infer.RawInferOutput
+        ) -> None:
+            self.assertEqual(infer.RawInferOutput.create_from_json(input), expected)
+
+        assert_parsed(
+            {
+                "attributes": [
+                    {
+                        "parent": "foo.bar.test.Foo",
+                        "name": "x",
+                        "location": {
+                            "qualifier": "foo.bar.test",
+                            "path": "foo/bar/test.py",
+                            "line": 3,
+                        },
+                        "annotation": "int",
+                    }
+                ]
+            },
+            infer.RawInferOutput(
+                attribute_annotations=[
+                    infer.RawAttributeAnnotation(
+                        parent="foo.bar.test.Foo",
+                        name="x",
+                        location=infer.RawAnnotationLocation(
+                            qualifier="foo.bar.test", path="foo/bar/test.py", line=3
+                        ),
+                        annotation="int",
                     )
                 ]
             ),
