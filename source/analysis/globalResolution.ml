@@ -434,6 +434,22 @@ let attributes
     ?dependency
 
 
+let attribute_details
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(accessed_through_class = false)
+    ?(include_generated_attributes = true)
+    name
+  =
+  AttributeResolution.ReadOnly.attribute_details
+    (attribute_resolution resolution)
+    ~transitive
+    ~accessed_through_class
+    ~include_generated_attributes
+    name
+    ?dependency
+
+
 let instantiate_attribute ~resolution:({ dependency; _ } as resolution) ?instantiated =
   AttributeResolution.ReadOnly.instantiate_attribute
     (attribute_resolution resolution)

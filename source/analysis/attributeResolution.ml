@@ -2363,6 +2363,26 @@ module SignatureSelection = struct
       get_match overloads
 end
 
+module AttributeDetail = struct
+  type kind =
+    | Simple
+    | Variable
+    | Property
+    | Method
+  [@@deriving show, compare, sexp]
+
+  type t = {
+    kind: kind;
+    name: string;
+  }
+  [@@deriving show, compare, sexp]
+
+  let from_attribute (attr : uninstantiated_attribute) : t =
+    let name = AnnotatedAttribute.name attr in
+    (* TODO(T164822193) conditionally choose kind *)
+    { kind = Simple; name }
+end
+
 class base class_metadata_environment dependency =
   object (self)
     method get_typed_dictionary ~assumptions annotation =
@@ -3312,6 +3332,22 @@ class base class_metadata_environment dependency =
       >>| Sequence.fold ~f:collect ~init:([], Identifier.Set.empty)
       >>| fst
       >>| List.rev
+
+    method attribute_details
+        ~assumptions
+        ~transitive
+        ~accessed_through_class
+        ~include_generated_attributes
+        ?(special_method = false)
+        class_name =
+      self#all_attributes
+        ~assumptions
+        ~transitive
+        ~accessed_through_class
+        ~include_generated_attributes
+        ~special_method
+        class_name
+      >>| List.map ~f:AttributeDetail.from_attribute
 
     method instantiate_attribute
         ~assumptions
@@ -5296,6 +5332,8 @@ module ReadOnly = struct
   let all_attributes = add_all_caches_and_empty_assumptions (fun o -> o#all_attributes)
 
   let attribute_names = add_all_caches_and_empty_assumptions (fun o -> o#attribute_names)
+
+  let attribute_details = add_all_caches_and_empty_assumptions (fun o -> o#attribute_details)
 
   let check_invalid_type_parameters =
     add_all_caches_and_empty_assumptions (fun o ->

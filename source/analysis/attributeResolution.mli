@@ -180,6 +180,21 @@ type uninstantiated [@@deriving show]
 
 type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving show]
 
+module AttributeDetail : sig
+  type kind =
+    | Simple
+    | Variable
+    | Property
+    | Method
+  [@@deriving show, compare, sexp]
+
+  type t = {
+    kind: kind;
+    name: string;
+  }
+  [@@deriving show, compare, sexp]
+end
+
 module AttributeReadOnly : sig
   include Environment.ReadOnly
 
@@ -228,6 +243,16 @@ module AttributeReadOnly : sig
     ?special_method:bool ->
     string ->
     Identifier.t list option
+
+  val attribute_details
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    transitive:bool ->
+    accessed_through_class:bool ->
+    include_generated_attributes:bool ->
+    ?special_method:bool ->
+    string ->
+    AttributeDetail.t list option
 
   val all_attributes
     :  t ->
