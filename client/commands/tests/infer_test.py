@@ -1618,3 +1618,19 @@ class StubApplicationTest(testslide.TestCase):
             """,
             None,
         )
+
+    def test_class_attributes(self) -> None:
+        self._assert_in_place(
+            stub_file_contents="""
+            class Foo:
+                some_attribute: int = ...
+            """,
+            code_file_contents="""
+            class Foo:
+                some_attribute = ...
+            """,
+            expected_annotated_code_file_contents="""
+            class Foo:
+                some_attribute: int = ...
+            """,
+        )
