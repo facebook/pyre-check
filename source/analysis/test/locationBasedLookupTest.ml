@@ -1764,12 +1764,7 @@ let test_resolve_completions_for_symbol context =
       >>| LocationBasedLookup.resolve_completions_for_symbol ~type_environment
       |> Option.value ~default:[]
     in
-    let list_diff format list = Format.fprintf format "%s\n" (String.concat ~sep:"\n" list) in
-    assert_equal
-      ~printer:(String.concat ~sep:", ")
-      ~pp_diff:(diff ~print:list_diff)
-      expected
-      (List.map ~f:(fun { label } -> label) attributes)
+    assert_equal ~printer:[%show: AttributeResolution.AttributeDetail.t list] expected attributes
   in
   assert_resolved_completion_items
     ~source:
@@ -1795,7 +1790,11 @@ let test_resolve_completions_for_symbol context =
         #       ^- cursor
     |}
     (* Single layer class attribute completion *)
-    ["attribute3"; "attribute2"; "attribute"];
+    [
+      { name = "attribute"; kind = Variable };
+      { name = "attribute2"; kind = Variable };
+      { name = "attribute3"; kind = Variable };
+    ];
   assert_resolved_completion_items
     ~source:
       {|
@@ -1815,7 +1814,11 @@ let test_resolve_completions_for_symbol context =
         #                ^- cursor
     |}
       (* Multi layer class attribute completion *)
-    ["foo_attribute3"; "foo_attribute2"; "foo_attribute"];
+    [
+      { name = "foo_attribute"; kind = Variable };
+      { name = "foo_attribute2"; kind = Variable };
+      { name = "foo_attribute3"; kind = Variable };
+    ];
   assert_resolved_completion_items
     ~source:
       {|
@@ -1831,7 +1834,11 @@ let test_resolve_completions_for_symbol context =
         #      ^- cursor
     |}
       (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
-    ["attribute3"; "attribute2"; "attribute"];
+    [
+      { name = "attribute"; kind = Variable };
+      { name = "attribute2"; kind = Variable };
+      { name = "attribute3"; kind = Variable };
+    ];
 
   assert_resolved_completion_items
     ~source:
@@ -1848,7 +1855,11 @@ let test_resolve_completions_for_symbol context =
         #         ^- cursor
     |}
       (* Incomplete attribute string + cursor at end of line, attribute completion *)
-    ["attribute3"; "attribute2"; "attribute"];
+    [
+      { name = "attribute"; kind = Variable };
+      { name = "attribute2"; kind = Variable };
+      { name = "attribute3"; kind = Variable };
+    ];
   assert_resolved_completion_items
     ~source:{|
         class Foo: ...
@@ -1868,25 +1879,25 @@ let test_resolve_completions_for_symbol context =
          #^- cursor
     |}
     [
-      "foo";
-      "__str__";
-      "__sizeof__";
-      "__setattr__";
-      "__repr__";
-      "__reduce__";
-      "__new__";
-      "__ne__";
-      "__module__";
-      "__init_subclass__";
-      "__init__";
-      "__hash__";
-      "__getattribute__";
-      "__format__";
-      "__eq__";
-      "__doc__";
-      "__dir__";
-      "__delattr__";
-      "__class__";
+      { name = "foo"; kind = Method };
+      { name = "__class__"; kind = Property };
+      { name = "__delattr__"; kind = Method };
+      { name = "__dir__"; kind = Method };
+      { name = "__doc__"; kind = Variable };
+      { name = "__eq__"; kind = Method };
+      { name = "__format__"; kind = Method };
+      { name = "__getattribute__"; kind = Method };
+      { name = "__hash__"; kind = Method };
+      { name = "__init__"; kind = Method };
+      { name = "__init_subclass__"; kind = Variable };
+      { name = "__module__"; kind = Variable };
+      { name = "__ne__"; kind = Method };
+      { name = "__new__"; kind = Variable };
+      { name = "__reduce__"; kind = Method };
+      { name = "__repr__"; kind = Method };
+      { name = "__setattr__"; kind = Method };
+      { name = "__sizeof__"; kind = Method };
+      { name = "__str__"; kind = Method };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1900,26 +1911,26 @@ let test_resolve_completions_for_symbol context =
          #^- cursor
     |}
     [
-      "foo";
-      "bar";
-      "__str__";
-      "__sizeof__";
-      "__setattr__";
-      "__repr__";
-      "__reduce__";
-      "__new__";
-      "__ne__";
-      "__module__";
-      "__init_subclass__";
-      "__init__";
-      "__hash__";
-      "__getattribute__";
-      "__format__";
-      "__eq__";
-      "__doc__";
-      "__dir__";
-      "__delattr__";
-      "__class__";
+      { name = "foo"; kind = Method };
+      { name = "bar"; kind = Method };
+      { name = "__class__"; kind = Property };
+      { name = "__delattr__"; kind = Method };
+      { name = "__dir__"; kind = Method };
+      { name = "__doc__"; kind = Variable };
+      { name = "__eq__"; kind = Method };
+      { name = "__format__"; kind = Method };
+      { name = "__getattribute__"; kind = Method };
+      { name = "__hash__"; kind = Method };
+      { name = "__init__"; kind = Method };
+      { name = "__init_subclass__"; kind = Variable };
+      { name = "__module__"; kind = Variable };
+      { name = "__ne__"; kind = Method };
+      { name = "__new__"; kind = Variable };
+      { name = "__reduce__"; kind = Method };
+      { name = "__repr__"; kind = Method };
+      { name = "__setattr__"; kind = Method };
+      { name = "__sizeof__"; kind = Method };
+      { name = "__str__"; kind = Method };
     ];
   assert_resolved_completion_items
     ~source:
@@ -1935,7 +1946,7 @@ let test_resolve_completions_for_symbol context =
       class object:
         def test(self) -> None: ...
     |}]
-    ["foo"; "test"];
+    [{ name = "foo"; kind = Method }; { name = "test"; kind = Method }];
   ()
 
 

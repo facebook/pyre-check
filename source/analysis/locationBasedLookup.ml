@@ -61,8 +61,6 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
-type completion_info = { label: string } [@@deriving sexp, show, compare, yojson { strict = false }]
-
 (** This visitor stores the coverage data information for an expression on the key of its location.
 
     It special-case names such as named arguments or the names in comprehensions and generators.
@@ -824,7 +822,7 @@ let resolve_attributes_for_expression ~resolution expression =
   base_type
   >>| Type.split
   >>= (fun (parent, _) -> Type.primitive_name parent)
-  >>= GlobalResolution.attribute_names
+  >>= GlobalResolution.attribute_details
         ~resolution:(Resolution.global_resolution resolution)
         ~transitive:true
   |> Option.value ~default:[]
@@ -913,8 +911,8 @@ let resolve_completions_for_symbol
               ~resolution:
                 (resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
               base
-            |> List.filter ~f:(fun attribute -> String.is_prefix ~prefix attribute)
-            |> List.map ~f:(fun name -> { label = name })
+            |> List.filter ~f:(fun AttributeResolution.AttributeDetail.{ name; _ } ->
+                   String.is_prefix ~prefix name)
         | _ -> [])
   in
   Log.log
@@ -943,7 +941,7 @@ let completion_info_for_position ~type_environment ~module_reference position =
     "Completions for symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    ([%show: completion_info list] completions);
+    ([%show: AttributeResolution.AttributeDetail.t list] completions);
   completions
 
 

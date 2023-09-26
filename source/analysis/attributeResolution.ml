@@ -2379,8 +2379,10 @@ module AttributeDetail = struct
 
   let from_attribute (attr : uninstantiated_attribute) : t =
     let name = AnnotatedAttribute.name attr in
-    (* TODO(T164822193) conditionally choose kind *)
-    { kind = Simple; name }
+    match AnnotatedAttribute.uninstantiated_annotation attr with
+    | { kind = Property _; _ } -> { kind = Property; name }
+    | { kind = Attribute (Callable _); _ } -> { kind = Method; name }
+    | _ -> { kind = Variable; name }
 end
 
 class base class_metadata_environment dependency =

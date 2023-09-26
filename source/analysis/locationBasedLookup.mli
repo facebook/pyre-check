@@ -51,8 +51,6 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
-type completion_info = { label: string } [@@deriving sexp, show, compare, yojson { strict = false }]
-
 type coverage_data_lookup
 
 val create_of_module : TypeEnvironment.ReadOnly.t -> Reference.t -> coverage_data_lookup
@@ -111,13 +109,13 @@ val location_of_definition
 val resolve_completions_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   symbol_and_cfg_data ->
-  completion_info list
+  AttributeResolution.AttributeDetail.t list
 
 val completion_info_for_position
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   Location.position ->
-  completion_info list
+  AttributeResolution.AttributeDetail.t list
 
 val resolve_type_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->

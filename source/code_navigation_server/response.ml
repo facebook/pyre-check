@@ -51,7 +51,7 @@ module CompletionItem = struct
     let to_yojson = function
       | Simple -> `String "SIMPLE"
       | Method -> `String "METHOD"
-      | Property -> `String "PROPETY"
+      | Property -> `String "PROPERTY"
       | Variable -> `String "VARIABLE"
   end
 
