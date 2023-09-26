@@ -808,6 +808,7 @@ class CompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     kind: Optional[CompletionItemKind]
     sortText: str
     filterText: str
+    detail: str
 
 
 @dataclasses.dataclass(frozen=True)

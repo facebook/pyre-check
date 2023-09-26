@@ -522,19 +522,23 @@ class DaemonQuerierTest(testslide.TestCase):
             "completions": [
                 {
                     "label": "completion_1",
-                    "kind": "SIMPLE"
+                    "kind": "SIMPLE",
+                    "detail": "test"
                 },
                 {
                     "label": "completion_2",
-                    "kind": "METHOD"
+                    "kind": "METHOD",
+                    "detail": "test"
                 },
                 {
                     "label": "completion_3",
-                    "kind": "PROPERTY"
+                    "kind": "PROPERTY",
+                    "detail": "test"
                 },
                 {
                     "label": "completion_4",
-                    "kind": "VARIABLE"
+                    "kind": "VARIABLE",
+                    "detail": "test"
                 }
             ]
         }
@@ -569,24 +573,28 @@ class DaemonQuerierTest(testslide.TestCase):
                     kind=lsp.CompletionItemKind.TEXT,
                     sortText="completion_1",
                     filterText="completion_1",
+                    detail="test",
                 ),
                 lsp.CompletionItem(
                     label="completion_2",
                     kind=lsp.CompletionItemKind.METHOD,
                     sortText="completion_2",
                     filterText="completion_2",
+                    detail="test",
                 ),
                 lsp.CompletionItem(
                     label="completion_3",
                     kind=lsp.CompletionItemKind.PROPERTY,
                     sortText="completion_3",
                     filterText="completion_3",
+                    detail="test",
                 ),
                 lsp.CompletionItem(
                     label="completion_4",
                     kind=lsp.CompletionItemKind.VARIABLE,
                     sortText="completion_4",
                     filterText="completion_4",
+                    detail="test",
                 ),
             ],
         )

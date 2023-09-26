@@ -131,6 +131,7 @@ class PyreCompletionItemKind(str, enum.Enum):
 class PyreCompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
     label: str
     kind: PyreCompletionItemKind
+    detail: str
 
     def to_lsp_completion_item(self) -> lsp.CompletionItem:
         return lsp.CompletionItem(
@@ -138,6 +139,7 @@ class PyreCompletionItem(json_mixins.CamlCaseAndExcludeJsonMixin):
             kind=self.kind.to_lsp_completion_item_kind(),
             filterText=self.label,
             sortText=self.label,
+            detail=self.detail,
         )
 
 
