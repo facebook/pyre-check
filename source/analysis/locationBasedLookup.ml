@@ -906,13 +906,11 @@ let resolve_completions_for_symbol
     | Expression expression
     | TypeAnnotation expression -> (
         match expression with
-        | { Node.value = Expression.Name (Name.Attribute { base; attribute = prefix; _ }); _ } ->
+        | { Node.value = Expression.Name (Name.Attribute { base; _ }); _ } ->
             resolve_attributes_for_expression
               ~resolution:
                 (resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
               base
-            |> List.filter ~f:(fun AttributeResolution.AttributeDetail.{ name; _ } ->
-                   String.is_prefix ~prefix name)
         | _ -> [])
   in
   Log.log
