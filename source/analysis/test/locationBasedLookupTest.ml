@@ -1721,7 +1721,9 @@ let test_resolve_definition_for_symbol context =
   ()
 
 
-let test_resolve_completions_for_symbol context =
+let ( >>: ) test_name test_function = test_name >:: fun context -> test_function ~context
+
+let test_resolve_completions_for_symbol =
   let default_external_sources =
     [
       ( "library.py",
@@ -1738,6 +1740,7 @@ let test_resolve_completions_for_symbol context =
   in
   let module_reference = !&"test" in
   let assert_resolved_completion_items
+      ~context
       ?(external_sources = default_external_sources)
       ~source
       expected
@@ -1766,18 +1769,20 @@ let test_resolve_completions_for_symbol context =
     in
     assert_equal ~printer:[%show: AttributeResolution.AttributeDetail.t list] expected attributes
   in
-  assert_resolved_completion_items
-    ~source:
-      {|
-        def getint() -> int:
-                      # ^- cursor
-          return 42
-      |}
-    (* TODO(T158922360) not an attribute, modify this testcase when we support local autocomplete *)
-    [];
-  assert_resolved_completion_items
-    ~source:
-      {|
+  [
+    "TODO(T158922360) not an attribute, modify this testcase when we support local autocomplete"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
+              def getint() -> int:
+                            # ^- cursor
+                return 42
+            |}
+          [];
+    "Single layer class attribute completion"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
         class Foo: ...
 
         class Bar:
@@ -1789,15 +1794,15 @@ let test_resolve_completions_for_symbol context =
         Bar().attribute
         #       ^- cursor
     |}
-    (* Single layer class attribute completion *)
-    [
-      { name = "attribute"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
-    ];
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [
+            { name = "attribute"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute3"; kind = Variable; detail = "test.Bar" };
+          ];
+    "Multi layer class attribute completion"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
         class Foo:
           foo_attribute: int = 1
           foo_attribute2: int = 2
@@ -1813,15 +1818,15 @@ let test_resolve_completions_for_symbol context =
         Bar().attribute.foo_attribute
         #                ^- cursor
     |}
-      (* Multi layer class attribute completion *)
-    [
-      { name = "foo_attribute"; kind = Variable; detail = "test.Foo" };
-      { name = "foo_attribute2"; kind = Variable; detail = "test.Foo" };
-      { name = "foo_attribute3"; kind = Variable; detail = "test.Foo" };
-    ];
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [
+            { name = "foo_attribute"; kind = Variable; detail = "test.Foo" };
+            { name = "foo_attribute2"; kind = Variable; detail = "test.Foo" };
+            { name = "foo_attribute3"; kind = Variable; detail = "test.Foo" };
+          ];
+    "Incomplete attribute string (attr is not a valid attribute), attribute completion"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
         class Foo: ...
 
         class Bar:
@@ -1833,16 +1838,15 @@ let test_resolve_completions_for_symbol context =
         Bar().attr
         #      ^- cursor
     |}
-      (* Incomplete attribute string (attr is not a valid attribute), attribute completion *)
-    [
-      { name = "attribute"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
-    ];
-
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [
+            { name = "attribute"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute3"; kind = Variable; detail = "test.Bar" };
+          ];
+    "Incomplete attribute string + cursor at end of line, attribute completion"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
         class Foo: ...
 
         class Bar:
@@ -1854,23 +1858,23 @@ let test_resolve_completions_for_symbol context =
         Bar().attr
         #         ^- cursor
     |}
-      (* Incomplete attribute string + cursor at end of line, attribute completion *)
-    [
-      { name = "attribute"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute2"; kind = Variable; detail = "test.Bar" };
-      { name = "attribute3"; kind = Variable; detail = "test.Bar" };
-    ];
-  assert_resolved_completion_items
-    ~source:{|
+          [
+            { name = "attribute"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute2"; kind = Variable; detail = "test.Bar" };
+            { name = "attribute3"; kind = Variable; detail = "test.Bar" };
+          ];
+    "Cursor at column 0 on newline"
+    >>: assert_resolved_completion_items
+          ~source:{|
         class Foo: ...
 
        #^- cursor
       |}
-    (* Cursor at column 0 on newline *)
-    [];
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [];
+    "trailing period"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
       class Foo:
         def foo() -> None: ...
 
@@ -1878,30 +1882,31 @@ let test_resolve_completions_for_symbol context =
       foo.
          #^- cursor
     |}
-    [
-      { name = "foo"; kind = Method; detail = "test.Foo" };
-      { name = "__class__"; kind = Property; detail = "object" };
-      { name = "__delattr__"; kind = Method; detail = "object" };
-      { name = "__dir__"; kind = Method; detail = "object" };
-      { name = "__doc__"; kind = Variable; detail = "object" };
-      { name = "__eq__"; kind = Method; detail = "object" };
-      { name = "__format__"; kind = Method; detail = "object" };
-      { name = "__getattribute__"; kind = Method; detail = "object" };
-      { name = "__hash__"; kind = Method; detail = "object" };
-      { name = "__init__"; kind = Method; detail = "object" };
-      { name = "__init_subclass__"; kind = Variable; detail = "object" };
-      { name = "__module__"; kind = Variable; detail = "object" };
-      { name = "__ne__"; kind = Method; detail = "object" };
-      { name = "__new__"; kind = Variable; detail = "object" };
-      { name = "__reduce__"; kind = Method; detail = "object" };
-      { name = "__repr__"; kind = Method; detail = "object" };
-      { name = "__setattr__"; kind = Method; detail = "object" };
-      { name = "__sizeof__"; kind = Method; detail = "object" };
-      { name = "__str__"; kind = Method; detail = "object" };
-    ];
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [
+            { name = "foo"; kind = Method; detail = "test.Foo" };
+            { name = "__class__"; kind = Property; detail = "object" };
+            { name = "__delattr__"; kind = Method; detail = "object" };
+            { name = "__dir__"; kind = Method; detail = "object" };
+            { name = "__doc__"; kind = Variable; detail = "object" };
+            { name = "__eq__"; kind = Method; detail = "object" };
+            { name = "__format__"; kind = Method; detail = "object" };
+            { name = "__getattribute__"; kind = Method; detail = "object" };
+            { name = "__hash__"; kind = Method; detail = "object" };
+            { name = "__init__"; kind = Method; detail = "object" };
+            { name = "__init_subclass__"; kind = Variable; detail = "object" };
+            { name = "__module__"; kind = Variable; detail = "object" };
+            { name = "__ne__"; kind = Method; detail = "object" };
+            { name = "__new__"; kind = Variable; detail = "object" };
+            { name = "__reduce__"; kind = Method; detail = "object" };
+            { name = "__repr__"; kind = Method; detail = "object" };
+            { name = "__setattr__"; kind = Method; detail = "object" };
+            { name = "__sizeof__"; kind = Method; detail = "object" };
+            { name = "__str__"; kind = Method; detail = "object" };
+          ];
+    "trailing period with inheritence"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
       class Bar:
         def bar() -> None: ...
       class Foo(Bar):
@@ -1910,47 +1915,48 @@ let test_resolve_completions_for_symbol context =
       Foo.
          #^- cursor
     |}
-    [
-      { name = "foo"; kind = Method; detail = "test.Foo" };
-      { name = "bar"; kind = Method; detail = "test.Bar" };
-      { name = "__class__"; kind = Property; detail = "object" };
-      { name = "__delattr__"; kind = Method; detail = "object" };
-      { name = "__dir__"; kind = Method; detail = "object" };
-      { name = "__doc__"; kind = Variable; detail = "object" };
-      { name = "__eq__"; kind = Method; detail = "object" };
-      { name = "__format__"; kind = Method; detail = "object" };
-      { name = "__getattribute__"; kind = Method; detail = "object" };
-      { name = "__hash__"; kind = Method; detail = "object" };
-      { name = "__init__"; kind = Method; detail = "object" };
-      { name = "__init_subclass__"; kind = Variable; detail = "object" };
-      { name = "__module__"; kind = Variable; detail = "object" };
-      { name = "__ne__"; kind = Method; detail = "object" };
-      { name = "__new__"; kind = Variable; detail = "object" };
-      { name = "__reduce__"; kind = Method; detail = "object" };
-      { name = "__repr__"; kind = Method; detail = "object" };
-      { name = "__setattr__"; kind = Method; detail = "object" };
-      { name = "__sizeof__"; kind = Method; detail = "object" };
-      { name = "__str__"; kind = Method; detail = "object" };
-    ];
-  assert_resolved_completion_items
-    ~source:
-      {|
+          [
+            { name = "foo"; kind = Method; detail = "test.Foo" };
+            { name = "bar"; kind = Method; detail = "test.Bar" };
+            { name = "__class__"; kind = Property; detail = "object" };
+            { name = "__delattr__"; kind = Method; detail = "object" };
+            { name = "__dir__"; kind = Method; detail = "object" };
+            { name = "__doc__"; kind = Variable; detail = "object" };
+            { name = "__eq__"; kind = Method; detail = "object" };
+            { name = "__format__"; kind = Method; detail = "object" };
+            { name = "__getattribute__"; kind = Method; detail = "object" };
+            { name = "__hash__"; kind = Method; detail = "object" };
+            { name = "__init__"; kind = Method; detail = "object" };
+            { name = "__init_subclass__"; kind = Variable; detail = "object" };
+            { name = "__module__"; kind = Variable; detail = "object" };
+            { name = "__ne__"; kind = Method; detail = "object" };
+            { name = "__new__"; kind = Variable; detail = "object" };
+            { name = "__reduce__"; kind = Method; detail = "object" };
+            { name = "__repr__"; kind = Method; detail = "object" };
+            { name = "__setattr__"; kind = Method; detail = "object" };
+            { name = "__sizeof__"; kind = Method; detail = "object" };
+            { name = "__str__"; kind = Method; detail = "object" };
+          ];
+    "trailing period on non-instance"
+    >>: assert_resolved_completion_items
+          ~source:
+            {|
       class Foo:
         def foo() -> None: ...
 
       Foo.
          #^- cursor
     |}
-    ~external_sources:
-      ["builtins.pyi", {|
+          ~external_sources:
+            ["builtins.pyi", {|
       class object:
         def test(self) -> None: ...
     |}]
-    [
-      { name = "foo"; kind = Method; detail = "test.Foo" };
-      { name = "test"; kind = Method; detail = "object" };
-    ];
-  ()
+          [
+            { name = "foo"; kind = Method; detail = "test.Foo" };
+            { name = "test"; kind = Method; detail = "object" };
+          ];
+  ]
 
 
 (* Annotations *)
@@ -3952,7 +3958,7 @@ let () =
          "narrowest_match" >:: test_narrowest_match;
          "find_narrowest_spanning_symbol" >:: test_find_narrowest_spanning_symbol;
          "resolve_definition_for_symbol" >:: test_resolve_definition_for_symbol;
-         "resolve_completions_for_symbol" >:: test_resolve_completions_for_symbol;
+         test_list test_resolve_completions_for_symbol;
          "lookup_attributes" >:: test_lookup_attributes;
          "lookup_assign" >:: test_lookup_assign;
          "lookup_call_arguments" >:: test_lookup_call_arguments;
