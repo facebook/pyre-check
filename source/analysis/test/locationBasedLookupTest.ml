@@ -3937,6 +3937,18 @@ let test_hover_info_for_position context =
       x = 5
   |}
     { value = Some "typing_extensions.Literal['docstring']"; docstring = None };
+  assert_hover_info_for_position
+    {|
+      def test() -> None:
+          """docstring 'using single-quotes' rest of docstring"""
+          x = 5
+      test
+      # ^- cursor
+  |}
+    {
+      value = Some "() -> None";
+      docstring = Some "docstring 'using single-quotes' rest of docstring";
+    };
   ()
 
 

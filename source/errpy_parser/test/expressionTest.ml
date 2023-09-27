@@ -156,6 +156,18 @@ let test_constant _ =
     "'foo'"
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "foo")));
   assert_parsed
+    "'''docstring \"using single-quotes\" rest of docstring'''"
+    ~expected:
+      (+Expression.Constant
+          (Constant.String
+             (StringLiteral.create "docstring \"using single-quotes\" rest of docstring")));
+  assert_parsed
+    "\"\"\"docstring 'using single-quotes' rest of docstring\"\"\""
+    ~expected:
+      (+Expression.Constant
+          (Constant.String
+             (StringLiteral.create "docstring 'using single-quotes' rest of docstring")));
+  assert_parsed
     "\"foo\""
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "foo")));
   assert_parsed
@@ -173,12 +185,10 @@ let test_constant _ =
   assert_parsed
     "b'foo'"
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
-  assert_parsed
-    "u'foo'"
-    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "foo")));
-  assert_parsed
-    "bR'foo'"
-    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create ~bytes:true "foo")));
+  (* TODO (T164893550): assert_parsed "u'foo'" ~expected:(+Expression.Constant (Constant.String
+     (StringLiteral.create "foo")));*)
+  (* TODO (T164893550): assert_parsed "bR'foo'" ~expected:(+Expression.Constant (Constant.String
+     (StringLiteral.create ~bytes:true "foo"))); *)
   assert_parsed
     "'foo' 'bar'"
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "foobar")));

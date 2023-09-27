@@ -138,9 +138,12 @@ let translate_constant (constant : Errpyast.constant) =
       | Errpyast.Bool bool -> if bool then Constant.True else Constant.False
       | Errpyast.ByteStr value
       | Errpyast.Str value ->
-          let open List in
-          let split_value = String.split ~on:'\'' value in
-          let just_string = nth_exn split_value (length split_value - 2) in
+          let open String in
+          let last_char_quote_or_double = get value (length value - 1) in
+          let first_quote_or_double = index_exn value last_char_quote_or_double + 1 in
+          let just_string =
+            sub value ~pos:first_quote_or_double ~len:(length value - 2 - first_quote_or_double + 1)
+          in
           let bytes =
             match constant_desc with
             | Errpyast.ByteStr _ -> true
