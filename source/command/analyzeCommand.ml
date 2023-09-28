@@ -422,8 +422,11 @@ let run_analyze configuration_file =
   exit (ExitStatus.exit_code exit_status)
 
 
-let command () =
-  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
-  Command.basic
-    ~summary:"Runs taint analysis"
-    (Command.Param.map filename_argument ~f:(fun filename () -> run_analyze filename))
+let doc = "Runs taint analysis"
+
+let command ?(name = "analyze") () =
+  let open Cmdliner in
+  let filename = Arg.(required & pos 0 (some string) None & info [] ~docv:"filename") in
+  let term = Term.(const run_analyze $ filename) in
+  let info = Cmd.info name ~doc in
+  Cmd.v info term

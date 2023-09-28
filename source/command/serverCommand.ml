@@ -322,8 +322,11 @@ let run_server configuration_file =
       exit (ExitStatus.exit_code exit_status)
 
 
-let command () =
-  let filename_argument = Command.Param.(anon ("filename" %: Filename_unix.arg_type)) in
-  Command.basic
-    ~summary:"Starts a new Pyre server."
-    (Command.Param.map filename_argument ~f:(fun filename () -> run_server filename))
+let doc = "Starts a new Pyre server."
+
+let command ?(name = "server") () =
+  let open Cmdliner in
+  let filename = Arg.(required & pos 0 (some string) None & info [] ~docv:"filename") in
+  let term = Term.(const run_server $ filename) in
+  let info = Cmd.info name ~doc in
+  Cmd.v info term
