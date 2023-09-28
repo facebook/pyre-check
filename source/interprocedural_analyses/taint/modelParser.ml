@@ -1079,17 +1079,19 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
   let open Core.Result in
   let all_static_field_paths () =
     let is_return = AccessPath.Root.equal root LocalResult in
+    let string_coroutine = if is_return then CallResolution.extract_coroutine_value else Fn.id in
+    let strip_all =
+      string_coroutine
+      |> Fn.compose CallResolution.strip_optional
+      |> Fn.compose CallResolution.strip_readonly
+      |> Fn.compose CallResolution.unbind_type_variable
+    in
     let attributes =
       root_annotations
-      |> List.map ~f:(if is_return then CallResolution.extract_coroutine_value else Fn.id)
-      |> List.map ~f:CallResolution.strip_optional
-      |> List.map ~f:CallResolution.strip_readonly
-      |> List.map ~f:CallResolution.unbind_type_variable
-      |> List.map ~f:class_names_from_annotation
-      |> List.concat
-      |> List.map ~f:(get_class_attributes_transitive ~resolution)
-      |> List.concat
-      |> List.filter ~f:(fun attribute -> not (Ast.Expression.is_dunder_attribute attribute))
+      |> List.map ~f:strip_all
+      |> List.concat_map ~f:class_names_from_annotation
+      |> List.concat_map ~f:(get_class_attributes_transitive ~resolution)
+      |> List.filter ~f:(Fn.non Ast.Expression.is_dunder_attribute)
       |> List.dedup_and_sort ~compare:Identifier.compare
     in
     match attributes with
@@ -1183,7 +1185,7 @@ let expand_model_labels ~parameter path =
     | TaintPath.Label.TreeLabel label -> Ok (Some label)
     | TaintPath.Label.ParameterName -> expand_parameter_name ()
   in
-  path |> List.map ~f:expand_label |> Core.Result.all >>| List.filter_map ~f:Fn.id
+  path |> List.map ~f:expand_label |> Core.Result.all >>| List.filter_opt
 
 
 let input_path_for_tito ~input_root ~kind ~features =
@@ -3273,21 +3275,17 @@ let rec parse_statement
           Node.create_with_default_location (Expression.Name (Name.Identifier name))
         in
         let class_source_base { Call.Argument.value; _ } =
-          let name = Expression.show value in
-          if String.is_prefix name ~prefix:"TaintSource[" then
-            Some (Either.First value)
-          else if String.equal name "SkipAnalysis" then
-            Some (Either.Second (decorator_with_name "SkipAnalysis"))
-          else if String.equal name "SkipOverrides" then
-            Some (Either.Second (decorator_with_name "SkipOverrides"))
-          else if String.equal name "Entrypoint" then
-            Some (Either.Second (decorator_with_name "Entrypoint"))
-          else if String.equal name "SkipModelBroadening" then
-            Some (Either.Second (decorator_with_name "SkipModelBroadening"))
-          else
-            None
+          match Expression.show value with
+          | "SkipAnalysis" -> Some (Either.Second (decorator_with_name "SkipAnalysis"))
+          | "SkipOverrides" -> Some (Either.Second (decorator_with_name "SkipOverrides"))
+          | "Entrypoint" -> Some (Either.Second (decorator_with_name "Entrypoint"))
+          | "SkipModelBroadening" ->
+              Some (Either.Second (decorator_with_name "SkipModelBroadening"))
+          | name when String.is_prefix name ~prefix:"TaintSource[" -> Some (Either.First value)
+          | _ -> None
         in
-        List.filter_map base_arguments ~f:class_source_base
+        base_arguments
+        |> List.filter_map ~f:class_source_base
         |> List.fold ~init:([], []) ~f:(fun (source_annotations, decorators) -> function
              | Either.First source_annotation -> source_annotation :: source_annotations, decorators
              | Either.Second decorator -> source_annotations, decorator :: decorators)
@@ -3297,7 +3295,8 @@ let rec parse_statement
         || (not (List.is_empty source_annotations))
         || not (List.is_empty extra_decorators)
       then
-        ModelVerifier.class_summaries ~resolution name
+        name
+        |> ModelVerifier.class_summaries ~resolution
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =
@@ -3388,10 +3387,10 @@ let rec parse_statement
        { Assign.target = { Node.value = Name name; _ } as target; annotation = Some annotation; _ };
    location;
   } ->
+      let annotation_string = Expression.show annotation in
       if not (is_simple_name name) then
         [Error (model_verification_error ~path ~location (InvalidIdentifier target))]
-      else if Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintInTaintOut["
-      then
+      else if String.is_prefix annotation_string ~prefix:"Sanitize[TaintInTaintOut[" then
         [
           Error
             (model_verification_error
@@ -3404,9 +3403,9 @@ let rec parse_statement
                   }));
         ]
       else if
-        Expression.show annotation |> String.equal "Sanitize"
-        || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSource"
-        || Expression.show annotation |> String.is_prefix ~prefix:"Sanitize[TaintSink"
+        String.equal annotation_string "Sanitize"
+        || String.is_prefix annotation_string ~prefix:"Sanitize[TaintSource"
+        || String.is_prefix annotation_string ~prefix:"Sanitize[TaintSink"
       then
         let name = name_to_reference_exn name in
         let arguments =
@@ -3432,13 +3431,13 @@ let rec parse_statement
                });
         ]
       else if
-        Expression.show annotation |> String.is_substring ~substring:"TaintSource["
-        || Expression.show annotation |> String.is_substring ~substring:"TaintSink["
-        || Expression.show annotation |> String.is_substring ~substring:"TaintInTaintOut["
-        || Expression.show annotation |> String.equal "ViaTypeOf"
-        || Expression.show annotation |> String.is_substring ~substring:"ViaTypeOf["
-        || Expression.show annotation |> String.equal "ViaAttributeName"
-        || Expression.show annotation |> String.is_substring ~substring:"ViaAttributeName["
+        String.equal annotation_string "ViaTypeOf"
+        || String.equal annotation_string "ViaAttributeName"
+        || String.is_substring annotation_string ~substring:"TaintSource["
+        || String.is_substring annotation_string ~substring:"TaintSink["
+        || String.is_substring annotation_string ~substring:"TaintInTaintOut["
+        || String.is_substring annotation_string ~substring:"ViaTypeOf["
+        || String.is_substring annotation_string ~substring:"ViaAttributeName["
       then
         let name = name_to_reference_exn name in
         parse_annotations
