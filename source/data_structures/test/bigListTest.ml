@@ -15,13 +15,13 @@ let test_add _ =
   assert_equal (BigList.to_list list) [7; 5]
 
 
-let test_merge _ =
+let test_append _ =
   let list_1 = BigList.of_list [1; 2; 3] in
   let list_2 = BigList.of_list [3; 5] in
-  assert_equal (BigList.merge list_1 list_2 |> BigList.to_list) [5; 3; 1; 2; 3];
-  assert_equal (BigList.merge list_2 list_1 |> BigList.to_list) [5; 3; 1; 2; 3];
-  assert_equal (BigList.merge list_1 BigList.empty |> BigList.to_list) [1; 2; 3];
-  assert_equal (BigList.merge BigList.empty list_1 |> BigList.to_list) [1; 2; 3]
+  assert_equal (BigList.append [1; 2; 3] list_2 |> BigList.to_list) [1; 2; 3; 3; 5];
+  assert_equal (BigList.append [3; 5] list_1 |> BigList.to_list) [3; 5; 1; 2; 3];
+  assert_equal (BigList.append [1; 2; 3] BigList.empty |> BigList.to_list) [1; 2; 3];
+  assert_equal (BigList.append [] list_1 |> BigList.to_list) [1; 2; 3]
 
 
 let test_length _ =
@@ -32,5 +32,5 @@ let test_length _ =
 
 let () =
   "sizedListTest"
-  >::: ["add" >:: test_add; "merge" >:: test_merge; "length" >:: test_length]
+  >::: ["add" >:: test_add; "append" >:: test_append; "length" >:: test_length]
   |> run_test_tt_main
