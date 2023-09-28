@@ -70,3 +70,20 @@ def setitem() -> None:
     x[2] = _test_source()
     _test_sink(x[2])
     _test_sink(x[3])
+
+
+def setitem_wrapper(x: List[int]) -> None:
+    # TODO(T165056052): Model source on parameter
+    x[0] = _test_source()
+
+
+def setitem_no_wrapper(x: List[int]) -> None:
+    x = []
+    x[0] = _test_source()
+
+
+def setitem_wrapper_issue() -> None:
+    # TODO(T165056297): False Negative from the fact that we have an empty model for setitem_wrapper
+    x: List[int] = []
+    setitem_wrapper(x)
+    _test_sink(x[0])
