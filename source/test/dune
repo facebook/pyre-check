@@ -15,7 +15,6 @@
   core_unix
   core_unix.filename_unix
   ounit2
-  pyrelib.taint
   pyrelib.service
   pyrelib.analysis))
 

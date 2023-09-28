@@ -22,7 +22,6 @@ let assert_fixpoint
     source
     ~expect:{ iterations = expect_iterations; expect }
   =
-  let scheduler = Test.mock_scheduler () in
   let {
     static_analysis_configuration;
     taint_configuration;
@@ -59,7 +58,7 @@ let assert_fixpoint
   in
   let fixpoint_state =
     TaintFixpoint.compute
-      ~scheduler
+      ~scheduler:(Test.mock_scheduler ())
       ~type_environment
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)

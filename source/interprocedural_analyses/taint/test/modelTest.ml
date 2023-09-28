@@ -94,6 +94,7 @@ let set_up_environment
   let source = Test.trim_extra_indentation model_source in
   let global_resolution = ScratchProject.build_global_resolution project in
 
+  ModelVerifier.ClassDefinitionsCache.invalidate ();
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~resolution:global_resolution
@@ -207,6 +208,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
   in
   let error_message =
     let path = path >>| PyrePath.create_absolute in
+    ModelVerifier.ClassDefinitionsCache.invalidate ();
     ModelParser.parse
       ~resolution:global_resolution
       ~taint_configuration

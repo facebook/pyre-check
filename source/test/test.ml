@@ -2979,10 +2979,7 @@ let create_type_alias_table type_aliases =
   aliases
 
 
-let mock_scheduler () =
-  Taint.ModelVerifier.ClassDefinitionsCache.invalidate ();
-  Scheduler.create_sequential ()
-
+let mock_scheduler () = Scheduler.create_sequential ()
 
 module ScratchProject = struct
   type t = {

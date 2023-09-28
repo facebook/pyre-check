@@ -550,6 +550,7 @@ let initialize
     | None -> Registry.empty, ModelQueryExecution.ModelQueryRegistryMap.empty
     | Some source ->
         let stubs_shared_memory = Target.HashsetSharedMemory.from_heap stubs in
+        ModelVerifier.ClassDefinitionsCache.invalidate ();
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
             ~resolution:global_resolution

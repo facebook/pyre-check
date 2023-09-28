@@ -14,6 +14,7 @@ open Taint
 module Global = ModelVerifier.Global
 
 let assert_resolve ~context sources name ~expect =
+  ModelVerifier.ClassDefinitionsCache.invalidate ();
   let resolution =
     ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
   in
