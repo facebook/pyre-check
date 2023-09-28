@@ -6,29 +6,30 @@
 # flake8: noqa
 
 from builtins import _test_sink, _test_source
+from typing import List, Tuple
 
 
-def create_zipped_source():
-    x = [_test_source(), 1]
+def create_zipped_source() -> zip[Tuple[int, int]]:
+    x: List[int] = [_test_source(), 1]
     y = [2, 3]
     return zip(x, y)
 
 
-def zipped_source_access_path():
+def zipped_source_access_path() -> int:
     # TODO(T134884591): False positive
     x = [_test_source(), 1]
     y = [2, 3]
     return list(zip(x, y))[1][0]
 
 
-def create_zipped_source_with_all_tainted():
+def create_zipped_source_with_all_tainted() -> zip[Tuple[int, int, int]]:
     x = [_test_source()]
     y = [_test_source()]
     z = [_test_source()]
     return zip(x, y, z)
 
 
-def zipped_element_to_sink(x):
+def zipped_element_to_sink(x: int) -> None:
     l1 = [x]
     l2 = [1]
 
@@ -36,7 +37,7 @@ def zipped_element_to_sink(x):
         _test_sink(x)
 
 
-def zipped_element_not_flowing_to_sink(x):
+def zipped_element_not_flowing_to_sink(x) -> None:
     l1 = [x]
     l2 = [1]
 
@@ -49,14 +50,14 @@ class Woot:
         ...
 
 
-def push_pop_no_taint():
+def push_pop_no_taint() -> List[int]:
     x = []
     x.append(_test_source())
     x.pop()
     return x
 
 
-def push_pop_taint():
+def push_pop_taint() -> List[int]:
     x = []
     x.append(_test_source())
     x.append(1)
@@ -64,7 +65,7 @@ def push_pop_taint():
     return x
 
 
-def setitem():
+def setitem() -> None:
     x = [""] * 10
     x[2] = _test_source()
     _test_sink(x[2])

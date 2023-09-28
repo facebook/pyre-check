@@ -2,13 +2,13 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "list.setitem",
-    "callable_line": 67,
+    "callable": "lists.setitem",
+    "callable_line": 68,
     "code": 5002,
-    "line": 70,
+    "line": 71,
     "start": 15,
     "end": 19,
-    "filename": "list.py",
+    "filename": "lists.py",
     "message": "Data from [Test] source(s) may reach [Test] sink(s)",
     "traces": [
       {
@@ -28,8 +28,8 @@
               { "has": "first-index" }, { "first-index": "<numeric>" }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 69,
+              "filename": "lists.py",
+              "line": 70,
               "start": 11,
               "end": 25
             }
@@ -48,8 +48,8 @@
               }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 70,
+              "filename": "lists.py",
+              "line": 71,
               "start": 15,
               "end": 19
             }
@@ -69,7 +69,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "list.setitem:5002:0:Call|_test_sink|0|formal(arg):39b84c826b80ea41f6c0254c302817fe"
+    "master_handle": "lists.setitem:5002:0:Call|_test_sink|0|formal(arg):ccabaa5708a8750d374f01ec1d3513d8"
   }
 }
 {
@@ -141,7 +141,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.create_zipped_source",
+    "callable": "lists.create_zipped_source",
     "sources": [
       {
         "port": "result[*][0]",
@@ -157,10 +157,10 @@
               }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 12,
-              "start": 9,
-              "end": 23
+              "filename": "lists.py",
+              "line": 13,
+              "start": 20,
+              "end": 34
             }
           }
         ]
@@ -171,7 +171,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.create_zipped_source_with_all_tainted",
+    "callable": "lists.create_zipped_source_with_all_tainted",
     "sources": [
       {
         "port": "result[*][0]",
@@ -187,8 +187,8 @@
               }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 25,
+              "filename": "lists.py",
+              "line": 26,
               "start": 9,
               "end": 23
             }
@@ -209,8 +209,8 @@
               }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 26,
+              "filename": "lists.py",
+              "line": 27,
               "start": 9,
               "end": 23
             }
@@ -231,8 +231,8 @@
               }
             ],
             "origin": {
-              "filename": "list.py",
-              "line": 27,
+              "filename": "lists.py",
+              "line": 28,
               "start": 9,
               "end": 23
             }
@@ -245,7 +245,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.push_pop_no_taint",
+    "callable": "lists.push_pop_no_taint",
     "sources": [
       {
         "port": "result",
@@ -261,10 +261,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 54, "start": 13, "end": 27 } ],
+            "tito_positions": [ { "line": 55, "start": 13, "end": 27 } ],
             "origin": {
-              "filename": "list.py",
-              "line": 54,
+              "filename": "lists.py",
+              "line": 55,
               "start": 13,
               "end": 27
             }
@@ -277,7 +277,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.push_pop_taint",
+    "callable": "lists.push_pop_taint",
     "sources": [
       {
         "port": "result",
@@ -293,10 +293,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 61, "start": 13, "end": 27 } ],
+            "tito_positions": [ { "line": 62, "start": 13, "end": 27 } ],
             "origin": {
-              "filename": "list.py",
-              "line": 61,
+              "filename": "lists.py",
+              "line": 62,
               "start": 13,
               "end": 27
             }
@@ -309,7 +309,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.zipped_element_to_sink",
+    "callable": "lists.zipped_element_to_sink",
     "sinks": [
       {
         "port": "formal(x)",
@@ -322,9 +322,12 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
             "origin": {
-              "filename": "list.py",
-              "line": 36,
+              "filename": "lists.py",
+              "line": 37,
               "start": 19,
               "end": 20
             }
@@ -337,7 +340,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "list.zipped_source_access_path",
+    "callable": "lists.zipped_source_access_path",
     "sources": [
       {
         "port": "result",
@@ -356,14 +359,16 @@
               { "has": "first-index" },
               { "first-index": "<numeric>" },
               { "always-via": "obscure:model" },
+              { "always-type": "integer" },
+              { "always-type": "scalar" },
               { "always-via": "tito-broadening" },
               { "always-via": "tito" },
               { "always-via": "broadening" }
             ],
-            "tito_positions": [ { "line": 21, "start": 16, "end": 25 } ],
+            "tito_positions": [ { "line": 22, "start": 16, "end": 25 } ],
             "origin": {
-              "filename": "list.py",
-              "line": 19,
+              "filename": "lists.py",
+              "line": 20,
               "start": 9,
               "end": 23
             }

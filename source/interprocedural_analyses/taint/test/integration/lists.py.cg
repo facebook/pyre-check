@@ -1,0 +1,12 @@
+@generated
+Call dependencies
+lists.create_zipped_source_with_all_tainted (fun) -> [_test_source (fun) object.__init__ (method) zip.__new__ (method)]
+lists.zipped_element_not_flowing_to_sink (fun) -> [_test_sink (fun) object.__init__ (method) zip.__iter__ (method) zip.__new__ (method) zip.__next__ (method)]
+lists.$toplevel (fun) -> []
+lists.create_zipped_source (fun) -> [_test_source (fun) object.__init__ (method) zip.__new__ (method)]
+lists.push_pop_no_taint (fun) -> [_test_source (fun) list.append (method) typing.MutableSequence.pop (method)]
+lists.push_pop_taint (fun) -> [_test_source (fun) list.append (method) typing.MutableSequence.pop (method)]
+lists.setitem (fun) -> [_test_sink (fun) _test_source (fun) list.__getitem__ (method) list.__mul__ (method) list.__setitem__ (method)]
+lists.zipped_element_to_sink (fun) -> [_test_sink (fun) object.__init__ (method) zip.__iter__ (method) zip.__new__ (method) zip.__next__ (method)]
+lists.zipped_source_access_path (fun) -> [_test_source (fun) list.__getitem__ (method) list.__init__ (method) object.__init__ (method) object.__new__ (method) tuple.__getitem__ (method) zip.__new__ (method)]
+lists.Woot.$class_toplevel (method) -> []
