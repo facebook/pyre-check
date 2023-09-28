@@ -35,14 +35,15 @@ module SocketAddress = struct
      may not be able to remove defunct sockets in some cases even though it is safe to do so. *)
   let remove_existing_socket_file_if_needed socket_path =
     let lock_path = PyrePath.with_suffix socket_path ~suffix:".lock" in
-    match
-      Lock_file_blocking.create
-        ~close_on_exec:true
-        ~unlink_on_exit:true
+    let lock_file_descriptor =
+      Unix.openfile
         (PyrePath.absolute lock_path)
-    with
-    | true -> PyrePath.remove_if_exists socket_path
-    | false -> ()
+        [Unix.O_WRONLY; Unix.O_CREAT; Unix.O_CLOEXEC]
+        0o664
+    in
+    match Unix.lockf lock_file_descriptor Unix.F_TLOCK 0 with
+    | exception _ -> ()
+    | _ -> PyrePath.remove_if_exists socket_path
 
 
   let create_from_address address = address

@@ -133,7 +133,7 @@
  (public_name pyrelib.lwtsocketserver)
  (preprocess
   (pps lwt_ppx))
- (libraries core_unix.lock_file_blocking lwt lwt.unix pyrelib.path))
+ (libraries lwt lwt.unix pyrelib.path))
 
 (library
  (name lwtSubprocess)
