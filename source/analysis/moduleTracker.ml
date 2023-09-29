@@ -188,7 +188,7 @@ module ModulePaths = struct
       let find_in_root search_path =
         let root = SearchPath.get_root search_path in
         let candidate_path = PyrePath.create_relative ~root ~relative in
-        if PyrePath.is_directory candidate_path then
+        if PyrePath.directory_exists candidate_path then
           Some candidate_path
         else
           None

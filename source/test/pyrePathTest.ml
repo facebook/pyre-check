@@ -58,11 +58,11 @@ let test_get_relative_to_root context =
   assert_equal (PyrePath.get_relative_to_root ~root ~path:unrelated) (Some "other")
 
 
-let test_is_directory context =
+let test_directory_exists context =
   let path, _ = bracket_tmpfile context in
-  assert_false (!path |> PyrePath.is_directory);
+  assert_false (!path |> PyrePath.directory_exists);
   let path = bracket_tmpdir context in
-  assert_true (!path |> PyrePath.is_directory)
+  assert_true (!path |> PyrePath.directory_exists)
 
 
 let test_is_python_file _ =
@@ -149,9 +149,9 @@ let test_create_directory_recursively context =
   let third_level = PyrePath.create_relative ~root:second_level ~relative:"c" in
   PyrePath.create_directory_recursively third_level |> Result.ok_or_failwith;
 
-  assert_true (PyrePath.is_directory first_level);
-  assert_true (PyrePath.is_directory second_level);
-  assert_true (PyrePath.is_directory third_level);
+  assert_true (PyrePath.directory_exists first_level);
+  assert_true (PyrePath.directory_exists second_level);
+  assert_true (PyrePath.directory_exists third_level);
   ()
 
 
@@ -240,7 +240,7 @@ let () =
          "absolute" >:: test_absolute;
          "directory_contains" >:: test_directory_contains;
          "get_relative_to_root" >:: test_get_relative_to_root;
-         "is_directory" >:: test_is_directory;
+         "directory_exists" >:: test_directory_exists;
          "is_python_file" >:: test_is_python_file;
          "file_exists" >:: test_file_exists;
          "last" >:: test_last;

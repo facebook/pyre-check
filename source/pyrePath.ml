@@ -92,16 +92,6 @@ let append path ~element =
       Relative { root; relative }
 
 
-let is_directory path =
-  absolute path
-  |> fun path ->
-  match Sys_unix.is_directory path with
-  | `Yes -> true
-  | `No
-  | `Unknown ->
-      false
-
-
 let get_suffix_path = function
   | Absolute path -> path
   | Relative { relative; _ } -> relative
@@ -117,6 +107,16 @@ let file_exists path =
   absolute path
   |> fun path ->
   match Sys_unix.file_exists path with
+  | `Yes -> true
+  | `No
+  | `Unknown ->
+      false
+
+
+let directory_exists path =
+  absolute path
+  |> fun path ->
+  match Sys_unix.is_directory path with
   | `Yes -> true
   | `No
   | `Unknown ->
@@ -254,10 +254,10 @@ let with_suffix path ~suffix =
 
 let get_matching_files_recursively ~suffix ~paths =
   let rec expand path =
-    if is_directory path then
+    if directory_exists path then
       let expand_directory_entry entry =
         let path = append path ~element:entry in
-        if is_directory path then
+        if directory_exists path then
           expand path
         else if String.is_suffix ~suffix entry then
           [path]

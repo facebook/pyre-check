@@ -62,12 +62,12 @@ let create_parent_directory_and_symlink ~target link =
 
 
 let populate ~source_root ~artifact_root build_map =
-  if not (PyrePath.is_directory source_root) then
+  if not (PyrePath.directory_exists source_root) then
     let message =
       Stdlib.Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root
     in
     Lwt.return (Result.Error message)
-  else if not (PyrePath.is_directory artifact_root) then
+  else if not (PyrePath.directory_exists artifact_root) then
     let message =
       Stdlib.Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
     in
@@ -82,12 +82,12 @@ let populate ~source_root ~artifact_root build_map =
 
 
 let update ~source_root ~artifact_root difference =
-  if not (PyrePath.is_directory source_root) then
+  if not (PyrePath.directory_exists source_root) then
     let message =
       Stdlib.Format.asprintf "Source root is not a directory: %a" PyrePath.pp source_root
     in
     Lwt.return (Result.Error message)
-  else if not (PyrePath.is_directory artifact_root) then
+  else if not (PyrePath.directory_exists artifact_root) then
     let message =
       Stdlib.Format.asprintf "Artifact root is not a directory: %a" PyrePath.pp artifact_root
     in

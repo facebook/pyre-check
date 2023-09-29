@@ -31,8 +31,6 @@ val append : t -> element:path -> t
 
 val follow_symbolic_link : t -> t option
 
-val is_directory : t -> bool
-
 val get_suffix_path : t -> string
 
 val is_path_python_stub : string -> bool
@@ -40,6 +38,8 @@ val is_path_python_stub : string -> bool
 val is_path_python_init : string -> bool
 
 val file_exists : t -> bool
+
+val directory_exists : t -> bool
 
 val list
   :  ?file_filter:(string -> bool) ->

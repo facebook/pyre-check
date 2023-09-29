@@ -468,7 +468,7 @@ module Analysis = struct
 
   let validate_paths { project_root; source_paths; search_paths; _ } =
     let check_directory_exists directory =
-      if not (PyrePath.is_directory directory) then
+      if not (PyrePath.directory_exists directory) then
         raise (Invalid_argument (Format.asprintf "`%a` is not a directory" PyrePath.pp directory))
     in
     let check_path_exists path =
