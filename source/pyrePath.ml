@@ -78,7 +78,7 @@ let get_relative_to_root ~root ~path =
   String.chop_prefix ~prefix:root (absolute path)
 
 
-let current_working_directory () = create_absolute (Sys_unix.getcwd ())
+let current_working_directory () = create_absolute (Caml.Sys.getcwd ())
 
 let append path ~element =
   match path with
@@ -133,9 +133,9 @@ let follow_symbolic_link path =
   | Core_unix.Unix_error _ -> None
 
 
-(* Variant of Sys_unix.readdir where names are sorted in alphabetical order *)
+(* Variant of Sys.readdir where names are sorted in alphabetical order *)
 let read_directory_ordered_raw path =
-  let entries = Sys_unix.readdir path in
+  let entries = Caml.Sys.readdir path in
   Array.sort ~compare:String.compare entries;
   entries
 
@@ -264,7 +264,7 @@ let get_matching_files_recursively ~suffix ~paths =
         else
           []
       in
-      Sys_unix.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
+      Caml.Sys.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
     else if String.is_suffix ~suffix (absolute path) then
       [path]
     else
