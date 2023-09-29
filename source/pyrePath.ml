@@ -141,8 +141,8 @@ let read_directory_ordered_raw path =
 
 let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~root () =
   let rec list sofar path =
-    match Sys_unix.is_directory path with
-    | `Yes ->
+    match stat_no_eintr_raw path with
+    | Some { Unix.st_kind = Unix.S_DIR; _ } ->
         if directory_filter path then (
           match read_directory_ordered_raw path with
           | entries ->
