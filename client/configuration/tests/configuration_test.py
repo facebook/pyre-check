@@ -1216,7 +1216,7 @@ class ConfigurationTest(testslide.TestCase):
             root_path = Path(root)
             pyproject_config: str = """
             [tool.pyre]
-            excludes = ["This configuration only for test reading data from pyproject.toml"]
+            exclude = ["This configuration only for test reading data from pyproject.toml"]
             """
             with open(
                 root_path / PYPROJECT_CONFIGURATION_FILE, "w", encoding="UTF-8"
