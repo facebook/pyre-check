@@ -36,8 +36,8 @@ from pyre_extensions import ParameterSpecification
 
 from ..find_directories import (
     CODENAV_CONFIGURATION_FILE,
-    CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
+    PYRE_CONFIGURATION_FILE,
 )
 
 
@@ -67,7 +67,7 @@ def write_configuration_file(
     if codenav:
         configuration_file = CODENAV_CONFIGURATION_FILE
     else:
-        configuration_file = CONFIGURATION_FILE
+        configuration_file = PYRE_CONFIGURATION_FILE
     if relative is None:
         (root / configuration_file).write_text(json.dumps(content))
     else:

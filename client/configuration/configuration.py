@@ -45,13 +45,15 @@ from typing import (
 )
 
 import psutil
+import tomli
 
 from .. import command_arguments, dataclasses_merge, find_directories, identifiers
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
-    CONFIGURATION_FILE,
     get_relative_local_root,
     LOCAL_CONFIGURATION_FILE,
+    PYPROJECT_CONFIGURATION_FILE,
+    PYRE_CONFIGURATION_FILE,
 )
 from . import (
     exceptions,
@@ -245,7 +247,9 @@ class PartialConfiguration:
         )
 
     @staticmethod
-    def from_string(contents: str) -> "PartialConfiguration":
+    def from_string(
+        contents: str, is_pyproject_dot_toml: bool = False
+    ) -> "PartialConfiguration":
         def is_list_of_string(elements: object) -> bool:
             return isinstance(elements, list) and all(
                 isinstance(element, str) for element in elements
@@ -332,7 +336,13 @@ class PartialConfiguration:
             return search_path
 
         try:
-            configuration_json = json.loads(contents)
+            if is_pyproject_dot_toml:
+                # For usual, we write pyproject.toml as
+                # [tool.pyre]
+                # ...<configurations>
+                configuration_json = tomli.loads(contents)["tool"]["pyre"]
+            else:
+                configuration_json = json.loads(contents)
 
             dot_pyre_directory = ensure_option_type(
                 configuration_json, "dot_pyre_directory", str
@@ -493,10 +503,12 @@ class PartialConfiguration:
             raise exceptions.InvalidConfiguration("Invalid JSON file") from error
 
     @staticmethod
-    def from_file(path: Path) -> "PartialConfiguration":
+    def from_file(
+        path: Path, is_pyproject_dot_toml: bool = False
+    ) -> "PartialConfiguration":
         try:
             contents = path.read_text(encoding="utf-8")
-            return PartialConfiguration.from_string(contents)
+            return PartialConfiguration.from_string(contents, is_pyproject_dot_toml)
         except OSError as error:
             raise exceptions.InvalidConfiguration(
                 f"Error when reading {path}"
@@ -911,7 +923,7 @@ def create_configuration(
         if found_root is None:
             raise exceptions.InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f" {CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {PYRE_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
@@ -931,9 +943,17 @@ def create_configuration(
     else:
         project_root = found_root.global_root
         relative_local_root = None
-        partial_configuration = PartialConfiguration.from_file(
-            project_root / CONFIGURATION_FILE
-        ).expand_relative_paths(str(project_root))
+        if (project_root / PYRE_CONFIGURATION_FILE).is_file():
+            partial_configuration = PartialConfiguration.from_file(
+                project_root / PYRE_CONFIGURATION_FILE
+            ).expand_relative_paths(str(project_root))
+        else:
+            LOG.debug(
+                "Could not find `.pyre_configuration` in the project root.Searching for `pyproject.toml`..."
+            )
+            partial_configuration = PartialConfiguration.from_file(
+                project_root / PYPROJECT_CONFIGURATION_FILE, is_pyproject_dot_toml=True
+            ).expand_relative_paths(str(project_root))
         local_root = found_root.local_root
         if local_root is not None:
             relative_local_root = get_relative_local_root(project_root, local_root)

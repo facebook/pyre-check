@@ -16,9 +16,9 @@ from typing import Optional
 from pyre_extensions import override
 
 from ....client.find_directories import (
-    CONFIGURATION_FILE,
     find_global_and_local_root,
     LOCAL_CONFIGURATION_FILE,
+    PYRE_CONFIGURATION_FILE,
 )
 from .. import UserError
 from ..configuration import Configuration
@@ -40,7 +40,7 @@ def _get_configuration_path(local_configuration: Optional[Path]) -> Optional[Pat
         if local_root:
             return local_root / LOCAL_CONFIGURATION_FILE
         else:
-            return found_root.global_root / CONFIGURATION_FILE
+            return found_root.global_root / PYRE_CONFIGURATION_FILE
 
 
 class StrictDefault(ErrorSuppressingCommand):
