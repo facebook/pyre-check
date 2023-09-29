@@ -267,7 +267,9 @@ class PysaSavedStateArguments:
 
     def serialize(self) -> Dict[str, Any]:
         return {
-            "watchman_root": str(self.watchman_root),
+            "watchman_root": str(self.watchman_root)
+            if self.watchman_root is not None
+            else None,
             "project_name": self.project_name,
             "cache_critical_files": self.cache_critical_files,
         }
