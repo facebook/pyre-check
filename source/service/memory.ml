@@ -141,8 +141,8 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
     try Core_unix.mkdir (PyrePath.absolute root) with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
     | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) ->
-        PyrePath.remove_if_exists table_path;
-        PyrePath.remove_if_exists dependencies_path
+        PyrePath.unlink_if_exists table_path;
+        PyrePath.unlink_if_exists dependencies_path
     | e -> raise e
   in
   { directory = root; table_path; dependencies_path }

@@ -703,7 +703,7 @@ module IncrementalTest = struct
             Some ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged (ArtifactPath.create path))
         | Some _, None ->
             (* A file is removed *)
-            PyrePath.remove path;
+            PyrePath.unlink_if_exists path;
             Some ArtifactPath.Event.(create ~kind:Kind.Deleted (ArtifactPath.create path))
         | _, _ -> None
       in

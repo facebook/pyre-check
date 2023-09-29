@@ -192,7 +192,7 @@ let test_buck_update_sources context =
   assert_artifact_events_equal ~context ~expected:[] result;
 
   update_build_map_flag := true;
-  PyrePath.remove raw_source_path0;
+  PyrePath.unlink_if_exists raw_source_path0;
   let artifact_path0 =
     PyrePath.create_relative ~root:artifact_root ~relative:"artifact0.py" |> ArtifactPath.create
   in

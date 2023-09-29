@@ -195,18 +195,9 @@ let search_upwards ~target ~target_type ~root =
   directory_has_target (absolute root)
 
 
-let remove path =
-  try Sys_unix.remove (absolute path) with
-  | Sys_error _ -> Log.debug "Unable to remove file at %a" pp path
-
-
-let remove_if_exists path =
-  let path = absolute path in
-  match Sys_unix.file_exists path with
-  | `Yes -> Core_unix.remove path
-  | `No
-  | `Unknown ->
-      ()
+let unlink_if_exists path =
+  try Unix.unlink (absolute path) with
+  | Unix.Unix_error ((Unix.ENOENT | Unix.ENOTDIR), _, _) -> ()
 
 
 let remove_recursively path =

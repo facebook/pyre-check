@@ -19,5 +19,5 @@ let consume ~log_path () =
   match File.create path |> File.content with
   | None -> None
   | Some content ->
-      PyrePath.remove path;
+      PyrePath.unlink_if_exists path;
       Some content

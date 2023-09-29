@@ -46,7 +46,7 @@ let test_event_format context =
   let output_name = PyrePath.absolute output_path in
   PyreProfiling.GlobalState.initialize ~profiling_output:output_name ();
   let assert_event ~name ~event_type ~timestamp ~tags event =
-    PyrePath.remove_if_exists output_path;
+    PyrePath.unlink_if_exists output_path;
     PyreProfiling.log_performance_event event;
     assert_event ~name ~event_type ~timestamp ~tags output_path
   in

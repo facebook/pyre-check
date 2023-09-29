@@ -68,7 +68,7 @@ let remove_sharded_files ~directory ~filename_prefix =
          let filename = PyrePath.last path in
          String.is_prefix filename ~prefix:filename_prefix
          && String.is_suffix filename ~suffix:".json")
-  |> List.iter ~f:PyrePath.remove
+  |> List.iter ~f:PyrePath.unlink_if_exists
 
 
 let write_sharded_files

@@ -43,7 +43,7 @@ module SocketAddress = struct
     in
     match Unix.lockf lock_file_descriptor Unix.F_TLOCK 0 with
     | exception _ -> ()
-    | _ -> PyrePath.remove_if_exists socket_path
+    | _ -> PyrePath.unlink_if_exists socket_path
 
 
   let create_from_address address = address

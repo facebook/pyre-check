@@ -60,9 +60,7 @@ end
 
 val search_upwards : target:string -> target_type:FileType.t -> root:t -> t option
 
-val remove : t -> unit
-
-val remove_if_exists : t -> unit
+val unlink_if_exists : t -> unit
 
 (* Remove every file under the given directory, but not the directory itself. *)
 val remove_contents_of_directory : t -> (unit, string) Result.t

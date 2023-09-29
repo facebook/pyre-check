@@ -252,7 +252,7 @@ let test_file_update_request context =
         open_file ~client_id ~path:(PyrePath.absolute test_path);
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
-          PyrePath.remove test_path;
+          PyrePath.unlink_if_exists test_path;
           Lwt.return_unit);
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -659,7 +659,7 @@ let test_watchman_integration context =
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test2.py"]));
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
-          PyrePath.remove test_path;
+          PyrePath.unlink_if_exists test_path;
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
         ScratchProject.ClientConnection.assert_error_response
           ~request:

@@ -21,10 +21,10 @@ module GlobalState = struct
 
   let initialize ?profiling_output ?memory_profiling_output () =
     Option.iter profiling_output ~f:(fun output ->
-        PyrePath.remove_if_exists (PyrePath.create_absolute output);
+        PyrePath.unlink_if_exists (PyrePath.create_absolute output);
         global_state.profiling_output <- Some output);
     Option.iter memory_profiling_output ~f:(fun output ->
-        PyrePath.remove_if_exists (PyrePath.create_absolute output);
+        PyrePath.unlink_if_exists (PyrePath.create_absolute output);
         global_state.memory_profiling_output <- Some output);
     ()
 

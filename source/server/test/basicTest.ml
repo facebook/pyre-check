@@ -284,7 +284,7 @@ let test_watchman_integration ~watchman_mailbox client =
     ~expected:(create_type_error_response [new_error])
   >>= fun () ->
   (* Remove a file and send a watchman response. *)
-  PyrePath.remove test2_path;
+  PyrePath.unlink_if_exists test2_path;
   Lwt_mvar.put
     watchman_mailbox
     (watchman_update_response ~root:(PyrePath.absolute global_root) ["test2.py"])

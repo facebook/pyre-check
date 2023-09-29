@@ -42,7 +42,9 @@ let lookup_exn tracker reference =
 
 let create_file root relative = create_file (PyrePath.create_relative ~root ~relative)
 
-let remove_file root relative = PyrePath.create_relative ~root ~relative |> PyrePath.remove
+let remove_file root relative =
+  PyrePath.create_relative ~root ~relative |> PyrePath.unlink_if_exists
+
 
 module TestFiles = struct
   type t =
@@ -1310,7 +1312,7 @@ module IncrementalTest = struct
             Some ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged (ArtifactPath.create path))
         | Remove ->
             (* A file is removed *)
-            PyrePath.remove path;
+            PyrePath.unlink_if_exists path;
             Some ArtifactPath.Event.(create ~kind:Kind.Deleted (ArtifactPath.create path))
         | LeftAlone -> None
       in

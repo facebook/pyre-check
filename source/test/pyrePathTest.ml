@@ -155,13 +155,13 @@ let test_create_directory_recursively context =
   ()
 
 
-let test_remove context =
+let test_unlink_if_exists context =
   let path, _ = bracket_tmpfile context in
   let path = !path in
   assert_true (PyrePath.file_exists path);
-  PyrePath.remove path;
+  PyrePath.unlink_if_exists path;
   assert_false (PyrePath.file_exists path);
-  PyrePath.remove path
+  PyrePath.unlink_if_exists path
 
 
 let test_remove_contents_of_directory context =
@@ -246,7 +246,7 @@ let () =
          "last" >:: test_last;
          "get_directory" >:: test_get_directory;
          "create_directory_recursively" >:: test_create_directory_recursively;
-         "remove" >:: test_remove;
+         "unlink_if_exists" >:: test_unlink_if_exists;
          "remove_contents_of_directory" >:: test_remove_contents_of_directory;
          "read_directory_ordered" >:: test_read_directory_ordered;
        ]
