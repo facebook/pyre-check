@@ -9,6 +9,9 @@
 
 open Core
 
+(* Core shadows/deprecates the stdlib Unix module. *)
+module Unix = Caml_unix
+
 type path = string [@@deriving compare, show, sexp, hash]
 
 type t =
@@ -103,24 +106,20 @@ let is_path_python_init path =
   String.is_suffix ~suffix:"__init__.pyi" path || String.is_suffix ~suffix:"__init__.py" path
 
 
-let file_exists path =
-  absolute path
-  |> fun path ->
-  match Sys_unix.file_exists path with
-  | `Yes -> true
-  | `No
-  | `Unknown ->
-      false
+let rec stat_no_eintr_raw path =
+  try Some (Unix.stat path) with
+  | Unix.Unix_error (Unix.EINTR, _, _) -> stat_no_eintr_raw path
+  | Unix.Unix_error ((Unix.ENOENT | Unix.ENOTDIR), _, _) -> None
 
+
+let stat_no_eintr path = stat_no_eintr_raw (absolute path)
+
+let file_exists path = Option.is_some (stat_no_eintr path)
 
 let directory_exists path =
-  absolute path
-  |> fun path ->
-  match Sys_unix.is_directory path with
-  | `Yes -> true
-  | `No
-  | `Unknown ->
-      false
+  match stat_no_eintr path with
+  | Some { Unix.st_kind = Unix.S_DIR; _ } -> true
+  | _ -> false
 
 
 let last path =
