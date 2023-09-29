@@ -420,11 +420,10 @@ let assert_is_none test = assert_true (Option.is_none test)
 let assert_unreached () = assert_true false
 
 (* Override `OUnit`s functions the return absolute paths. *)
-let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> Filename_unix.realpath
+let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> CamlUnix.realpath
 
 let bracket_tmpfile ?suffix context =
-  bracket_tmpfile ?suffix context
-  |> fun (filename, channel) -> Filename_unix.realpath filename, channel
+  bracket_tmpfile ?suffix context |> fun (filename, channel) -> CamlUnix.realpath filename, channel
 
 
 let typeshed_stubs ?(include_helper_builtins = true) () =
