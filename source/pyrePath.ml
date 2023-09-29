@@ -203,27 +203,27 @@ let unlink_if_exists path =
 let remove_recursively path =
   let rec do_remove path =
     try
-      let stats = Core_unix.lstat path in
-      match stats.Core_unix.st_kind with
-      | Core_unix.S_DIR ->
+      let stats = Unix.lstat path in
+      match stats.Unix.st_kind with
+      | Unix.S_DIR ->
           let contents = Caml.Sys.readdir path in
           List.iter (Array.to_list contents) ~f:(fun name ->
               let name = Filename.concat path name in
               do_remove name);
-          Core_unix.rmdir path
-      | Core_unix.S_LNK
-      | Core_unix.S_REG
-      | Core_unix.S_CHR
-      | Core_unix.S_BLK
-      | Core_unix.S_FIFO
-      | Core_unix.S_SOCK ->
-          Core_unix.unlink path
+          Unix.rmdir path
+      | Unix.S_LNK
+      | Unix.S_REG
+      | Unix.S_CHR
+      | Unix.S_BLK
+      | Unix.S_FIFO
+      | Unix.S_SOCK ->
+          Unix.unlink path
     with
     (* Path has been deleted out from under us - can ignore it. *)
     | Sys_error message ->
         Log.warning "Error occurred when removing %s recursively: %s" path message;
         ()
-    | Core_unix.Unix_error (Core_unix.ENOENT, _, _) -> ()
+    | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
   in
   do_remove (absolute path)
 
