@@ -180,16 +180,17 @@ end
 
 (* Walk up from the root to try and find a directory/target. *)
 let search_upwards ~target ~target_type ~root =
-  let exists =
-    match target_type with
-    | FileType.File -> Sys_unix.is_file
-    | FileType.Directory -> Sys_unix.is_directory
-  in
   let rec directory_has_target directory =
-    match exists (directory ^/ target) with
-    | `Yes -> Some (create_absolute directory)
-    | _ when [%compare.equal: path] (Filename.dirname directory) directory -> None
-    | _ -> directory_has_target (Filename.dirname directory)
+    match target_type, stat_no_eintr_raw (directory ^/ target) with
+    | FileType.Directory, Some { Unix.st_kind = Unix.S_DIR; _ }
+    | FileType.File, Some { Unix.st_kind = Unix.S_REG; _ } ->
+        Some (create_absolute directory)
+    | _ ->
+        let parent_directory = Filename.dirname directory in
+        if [%compare.equal: path] parent_directory directory then
+          None
+        else
+          directory_has_target parent_directory
   in
   directory_has_target (absolute root)
 
