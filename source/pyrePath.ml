@@ -129,7 +129,7 @@ let last path =
 
 let follow_symbolic_link path =
   try absolute path |> create_absolute ~follow_symbolic_links:true |> Option.some with
-  | Core_unix.Unix_error _ -> None
+  | Unix.Unix_error _ -> None
 
 
 (* Variant of Sys.readdir where names are sorted in alphabetical order *)
