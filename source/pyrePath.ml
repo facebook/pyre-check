@@ -29,7 +29,7 @@ let absolute = function
 
 let create_absolute ?(follow_symbolic_links = false) path =
   if follow_symbolic_links then
-    Absolute (Filename_unix.realpath path)
+    Absolute (Unix.realpath path)
   else
     Absolute path
 
