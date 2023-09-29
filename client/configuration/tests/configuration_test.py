@@ -1211,7 +1211,7 @@ class ConfigurationTest(testslide.TestCase):
                 ],
             )
 
-    def test_pyproject_dot_toml_configuration(self):
+    def test_pyproject_dot_toml_configuration(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root)
             pyproject_config: str = """
