@@ -53,13 +53,13 @@ let pp format path = Format.fprintf format "%s" (absolute path)
 
 let get_directory path = absolute path |> Filename.dirname |> create_absolute
 
-let create_directory_recursively ?permission path =
+let create_directory_recursively ?(permission = 0o777) path =
   let rec do_create = function
     | path when not (Caml.Sys.file_exists path) -> (
         match do_create (Filename.dirname path) with
         | Result.Error _ as error -> error
         | Result.Ok () ->
-            Core_unix.mkdir path ?perm:permission;
+            Unix.mkdir path permission;
             Result.Ok ())
     | path when Caml.Sys.is_directory path -> Result.Ok ()
     | path ->
