@@ -7,9 +7,9 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-open Core
-
 (* Core shadows/deprecates the stdlib Unix module. *)
+module Caml_unix = Unix
+open Core
 module Unix = Caml_unix
 
 type path = string [@@deriving compare, show, sexp, hash]

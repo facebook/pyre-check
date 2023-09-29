@@ -201,8 +201,6 @@
    ppx_sexp_conv))
  (libraries
   core
-  core_unix
-  core_unix.filename_unix
   sexplib
   ppxlib
   ppx_deriving
