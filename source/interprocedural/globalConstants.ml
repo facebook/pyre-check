@@ -121,7 +121,7 @@ module SharedMemory = struct
            ())
       ~initial:handle
       ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~environment ~qualifiers))
-      ~reduce:(fun left_handle right_handle -> merge_same_handle left_handle right_handle)
+      ~reduce:(fun smaller larger -> merge_same_handle ~smaller ~larger)
       ~inputs:qualifiers
       ()
 end

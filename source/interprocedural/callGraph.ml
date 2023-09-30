@@ -2651,10 +2651,12 @@ let build_whole_program_call_graph
         (right_define_call_graphs, right_whole_program_call_graph)
       =
       (* We should check the keys in two define call graphs are disjoint. If not disjoint, we should
-         fail the analysis. But we don't perform such check due to performance reasons. *)
+       * fail the analysis. But we don't perform such check due to performance reasons.
+       * Additionally, since this `reduce` is used in `Scheduler.map_reduce`, the right parameter
+       * is accumulated, so we must select left as smaller and right as larger for O(n) merging. *)
       ( DefineCallGraphSharedMemory.merge_same_handle
-          left_define_call_graphs
-          right_define_call_graphs,
+          ~smaller:left_define_call_graphs
+          ~larger:right_define_call_graphs,
         WholeProgramCallGraph.merge_disjoint
           left_whole_program_call_graph
           right_whole_program_call_graph )

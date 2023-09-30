@@ -145,15 +145,15 @@ struct
 
 
   let merge_same_handle
-      { Handle.first_class_handle = left_first_class_handle; keys = left_keys }
-      { Handle.first_class_handle = right_first_class_handle; keys = right_keys }
+      ~smaller:{ Handle.first_class_handle = smaller_first_class_handle; keys = smaller_keys }
+      ~larger:{ Handle.first_class_handle = larger_first_class_handle; keys = larger_keys }
     =
-    if not (FirstClass.equal left_first_class_handle right_first_class_handle) then
+    if not (FirstClass.equal smaller_first_class_handle larger_first_class_handle) then
       failwith "Cannot merge with different handles"
     else
       {
-        Handle.first_class_handle = left_first_class_handle;
-        keys = List.append left_keys right_keys;
+        Handle.first_class_handle = smaller_first_class_handle;
+        keys = List.append smaller_keys larger_keys;
       }
 
 
