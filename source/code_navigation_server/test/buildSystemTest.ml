@@ -250,6 +250,7 @@ let test_build_system_path_lookup context =
   let root = ScratchProject.source_root_of project in
   let path_a = PyrePath.create_relative ~root ~relative:"a.py" |> PyrePath.absolute in
   let path_b = PyrePath.create_relative ~root ~relative:"b.py" |> PyrePath.absolute in
+  let path_c = PyrePath.create_relative ~root ~relative:"c.py" |> PyrePath.absolute in
   let expected_error =
     Analysis.AnalysisError.Instantiated.of_yojson
       (`Assoc
@@ -290,8 +291,7 @@ let test_build_system_path_lookup context =
               Query
                 (Query.LocationOfDefinition { path = path_a; client_id; position = position 2 12 }))
           ~kind:"FileNotOpened";
-        (* Try open both `a.py` (no artifact path), `b.py` (artifact path), and `c.py`
-           (nonexistent) *)
+        (* Try open `a.py` (no artifact path), `b.py` (artifact path), and `c.py` (nonexistent) *)
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(Command (Command.FileOpened { path = path_a; content = None; client_id }))
@@ -302,14 +302,7 @@ let test_build_system_path_lookup context =
           ~expected:Response.Ok;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(
-              Command
-                (Command.FileOpened
-                   {
-                     path = PyrePath.create_relative ~root ~relative:"c.py" |> PyrePath.absolute;
-                     content = None;
-                     client_id;
-                   }))
+            Request.(Command (Command.FileOpened { path = path_c; content = None; client_id }))
           ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response

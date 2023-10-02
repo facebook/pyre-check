@@ -46,8 +46,9 @@ let get_modules ~module_tracker ~build_system path =
         ~module_tracker
         ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
     with
+    (* In case there's no build system artifacts for this source, lookup the module as if it's built
+       by a no-op build system (using normal source path mapping) *)
     | [] ->
-        (* Lookup the module as if it's built by a no-op build system *)
         Server.PathLookup.modules_of_source_path
           source_path
           ~module_tracker
