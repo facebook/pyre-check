@@ -1190,7 +1190,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
         rename_edits = await self.querier.get_rename(
-            document_path, parameters.position.to_pyre_position(), parameters.new_name
+            document_path,
+            parameters.position.to_pyre_position(),
+            parameters.new_name,
         )
         error_message = None
         if isinstance(rename_edits, DaemonQueryFailure):

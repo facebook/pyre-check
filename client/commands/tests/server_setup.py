@@ -98,6 +98,7 @@ def create_server_state_with_options(
     strict_default: bool = DEFAULT_IS_STRICT,
     excludes: Optional[Sequence[str]] = DEFAULT_EXCLUDES,
     flavor: identifiers.PyreFlavor = DEFAULT_FLAVOR,
+    opened_documents: Optional[Dict[Path, state.OpenedDocumentState]] = None,
 ) -> state.ServerState:
     return state.ServerState(
         create_server_options(
@@ -108,7 +109,8 @@ def create_server_state_with_options(
             strict_default,
             excludes,
             flavor,
-        )
+        ),
+        opened_documents=opened_documents or {},
     )
 
 

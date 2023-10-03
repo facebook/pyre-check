@@ -11,6 +11,8 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 
+from ... import backend_arguments
+
 from ...language_server import (
     connections,
     daemon_connection,
@@ -31,6 +33,7 @@ from ...language_server.features import (
     TypeCoverageAvailability,
 )
 from ...tests import setup
+from .. import server_state as state, start
 from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
@@ -46,7 +49,6 @@ from ..daemon_query_failer import AbstractDaemonQueryFailer
 from ..server_state import ConnectionStatus
 
 from ..tests import server_setup
-
 
 _DaemonQuerier_Failure_Message = "Some kind of failure has occured"
 
@@ -416,6 +418,35 @@ class DaemonQuerierTest(testslide.TestCase):
                     data=[],
                 ),
             )
+
+    @setup.async_test
+    async def test_query_definition_fall_back_to_glean(self) -> None:
+        base_querier = PersistentDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                language_server_features=LanguageServerFeatures(
+                    definition=DefinitionAvailability.ENABLED
+                )
+            ),
+        )
+        base_querier.server_state.status_tracker.set_status(
+            state.ConnectionStatus.DISCONNECTED
+        )
+        querier = RemoteIndexBackedQuerier(
+            base_querier=base_querier,
+            index=remote_index.EmptyRemoteIndex(),
+        )
+
+        response = await querier.get_definition_locations(
+            path=Path("bar.py"),
+            position=lsp.PyrePosition(line=42, character=10),
+        )
+        self.assertEqual(
+            response,
+            GetDefinitionLocationsResponse(
+                source=DaemonQuerierSource.GLEAN_INDEXER,
+                data=[],
+            ),
+        )
 
     @setup.async_test
     async def test_query_references(self) -> None:
@@ -793,14 +824,101 @@ class MockGleanRemoteIndex(remote_index.AbstractRemoteIndex):
 
 class RefactoringTest(testslide.TestCase):
     @setup.async_test
-    async def test_rename(self) -> None:
+    async def test_libcst_based_rename(self) -> None:
+        test_text = """
+def foo(bar: int):
+    result = bar * 3
+    return result
+
+print(foo(10))
+"""
+        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+            tmpfile = tempfile.NamedTemporaryFile(suffix=".py", dir=tmpdir)
+            tmpfile.write(test_text.encode("utf-8"))
+            tmpfile.flush()
+            test_path = Path(tmpfile.name)
+            mocked_glean_index = MockGleanRemoteIndex()
+            start_arguments = start.Arguments(
+                base_arguments=backend_arguments.BaseArguments(
+                    source_paths=backend_arguments.SimpleSourcePath(),
+                    log_path="/log/path",
+                    global_root=tmpdir,
+                ),
+                socket_path=Path("irrelevant_socket_path.sock"),
+            )
+            querier = RemoteIndexBackedQuerier(
+                CodeNavigationDaemonQuerier(
+                    server_state=server_setup.create_server_state_with_options(
+                        language_server_features=LanguageServerFeatures(),
+                        opened_documents={
+                            test_path: state.OpenedDocumentState(code=test_text),
+                        },
+                        start_arguments=start_arguments,
+                    ),
+                ),
+                index=mocked_glean_index,
+            )
+
+            # replace foo with test
+            workspaceEdits = await querier.get_rename(
+                test_path, lsp.PyrePosition(2, 4), "test"
+            )
+            expected = lsp.WorkspaceEdit(
+                changes={
+                    str(test_path.as_uri()): [
+                        lsp.TextEdit(
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=1, character=4),
+                                end=lsp.LspPosition(line=1, character=7),
+                            ),
+                            new_text="test",
+                        ),
+                        lsp.TextEdit(
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=5, character=6),
+                                end=lsp.LspPosition(line=5, character=9),
+                            ),
+                            new_text="test",
+                        ),
+                    ]
+                }
+            )
+            self.assertEqual(expected, workspaceEdits)
+
+            # replace bar with test
+            workspaceEdits = await querier.get_rename(
+                test_path, lsp.PyrePosition(2, 9), "test"
+            )
+            expected = lsp.WorkspaceEdit(
+                changes={
+                    str(test_path.as_uri()): [
+                        lsp.TextEdit(
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=1, character=8),
+                                end=lsp.LspPosition(line=1, character=11),
+                            ),
+                            new_text="test",
+                        ),
+                        lsp.TextEdit(
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=2, character=13),
+                                end=lsp.LspPosition(line=2, character=16),
+                            ),
+                            new_text="test",
+                        ),
+                    ]
+                }
+            )
+            self.assertEqual(expected, workspaceEdits)
+            tmpfile.close()
+
+    @setup.async_test
+    async def test_glean_based_rename(self) -> None:
         """
         Validates the following:
             1. Valid WorkspaceEdit response is returned
             2. TextEdits return the locations from definitions and references
         """
-
-        # Setup test data
         mocked_glean_index = MockGleanRemoteIndex()
         foo_file = "file:///foo.py"
         bar_file = "file:///bar.py"
@@ -837,10 +955,8 @@ class RefactoringTest(testslide.TestCase):
             ),
         ]
         querier = RemoteIndexBackedQuerier(
-            CodeNavigationDaemonQuerier(
-                server_state=server_setup.create_server_state_with_options(
-                    language_server_features=LanguageServerFeatures(),
-                ),
+            server_setup.MockDaemonQuerier(
+                mock_references_response=[],
             ),
             index=mocked_glean_index,
         )
@@ -849,17 +965,35 @@ class RefactoringTest(testslide.TestCase):
             Path("test.py"), lsp.PyrePosition(10, 0), "test"
         )
 
-        self.assertIsNotNone(workspaceEdits)
-        self.assertFalse(isinstance(workspaceEdits, DaemonQueryFailure))
-
-        textEdits = workspaceEdits.changes
-        self.assertIsNotNone(textEdits)
-
-        # foo.py and bar.py
-        self.assertEqual(len(textEdits.keys()), 2)
-        foo_edits = textEdits[foo_file]
-        bar_edits = textEdits[bar_file]
-
-        self.assertEqual(len(foo_edits), 2)
-        self.assertEqual(len(bar_edits), 1)
-        self.assertEqual(bar_edits[0].new_text, "test")
+        # originally 1 definition from foo, 2 references from foo, 1 reference from bar
+        # only 2 edits from foo_file, as definitions are not fetched by glean
+        expected = lsp.WorkspaceEdit(
+            changes={
+                foo_file: [
+                    lsp.TextEdit(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=9, character=6),
+                            end=lsp.LspPosition(line=9, character=11),
+                        ),
+                        new_text="test",
+                    ),
+                    lsp.TextEdit(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=20, character=4),
+                            end=lsp.LspPosition(line=20, character=9),
+                        ),
+                        new_text="test",
+                    ),
+                ],
+                bar_file: [
+                    lsp.TextEdit(
+                        range=lsp.LspRange(
+                            start=lsp.LspPosition(line=5, character=1),
+                            end=lsp.LspPosition(line=5, character=6),
+                        ),
+                        new_text="test",
+                    )
+                ],
+            }
+        )
+        self.assertEqual(expected, workspaceEdits)

@@ -31,7 +31,12 @@ from ..language_server import (
     protocol as lsp,
     remote_index,
 )
-from . import daemon_query, expression_level_coverage, server_state as state
+from . import (
+    daemon_query,
+    expression_level_coverage,
+    libcst_util,
+    server_state as state,
+)
 from .daemon_query_failer import AbstractDaemonQueryFailer
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -744,7 +749,13 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
-        return []
+        if path not in self.server_state.opened_documents.keys():
+            return []
+        code = self.server_state.opened_documents[path].code
+        global_root = Path(
+            self.server_state.server_options.start_arguments.base_arguments.global_root
+        )
+        return libcst_util.find_references(path, global_root, code, position)
 
     async def update_overlay(
         self,
@@ -945,7 +956,18 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         position: lsp.PyrePosition,
         new_text: str,
     ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        references = await self.index.references(path, position)
+        references: List[lsp.LspLocation] = []
+        # generate cst and fetch local references
+        local_references = await self.base_querier.get_reference_locations(
+            path, position
+        )
+        if (
+            not isinstance(local_references, daemon_query.DaemonQueryFailure)
+            and local_references is not None
+        ):
+            references.extend(local_references)
+        # fetch global references
+        references.extend(await self.index.references(path, position))
         if len(references) == 0:
             return None
         changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
