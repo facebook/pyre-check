@@ -23,44 +23,86 @@
  *)
 
 open Core
-module IntInterval = Interval_lib.Interval.Int
-include IntInterval
 
-let lower_bound_exn interval = Option.value_exn (IntInterval.lbound interval)
+type t =
+  | Empty
+  | Interval of {
+      lower_bound: int;
+      upper_bound: int;
+    }
 
-let upper_bound_exn interval = Option.value_exn (IntInterval.ubound interval)
+let empty = Empty
 
-let meet left right = IntInterval.intersect left right
+let create lower_bound upper_bound =
+  if lower_bound > upper_bound then Empty else Interval { lower_bound; upper_bound }
 
-let join left right = IntInterval.convex_hull [left; right]
+
+let lower_bound_exn = function
+  | Empty -> failwith "lower_bound_exn: Empty"
+  | Interval { lower_bound; _ } -> lower_bound
+
+
+let upper_bound_exn = function
+  | Empty -> failwith "upper_bound_exn: Empty"
+  | Interval { upper_bound; _ } -> upper_bound
+
+
+let meet left right =
+  match left, right with
+  | Interval left, Interval right ->
+      let lower_bound = max left.lower_bound right.lower_bound in
+      let upper_bound = min left.upper_bound right.upper_bound in
+      create lower_bound upper_bound
+  | _ -> Empty
+
+
+let join left right =
+  match left, right with
+  | Empty, _ -> right
+  | _, Empty -> left
+  | Interval left, Interval right ->
+      let lower_bound = min left.lower_bound right.lower_bound in
+      let upper_bound = max left.upper_bound right.upper_bound in
+      create lower_bound upper_bound
+
 
 let equal left right =
-  IntInterval.is_subset left ~of_:right && IntInterval.is_subset right ~of_:left
+  match left, right with
+  | Empty, Empty -> true
+  | Interval left, Interval right ->
+      left.lower_bound == right.lower_bound && left.upper_bound == right.upper_bound
+  | _ -> false
 
 
-let is_empty = IntInterval.is_empty
+let is_empty = function
+  | Empty -> true
+  | _ -> false
+
 
 let bottom = empty
 
 let top = create min_int max_int
 
-let is_top interval =
-  (not (is_empty interval)) && lbound_exn interval == min_int && ubound_exn interval == max_int
+let is_top = function
+  | Empty -> false
+  | Interval { lower_bound; upper_bound } -> lower_bound == min_int && upper_bound == max_int
 
 
-let less_or_equal ~left ~right = IntInterval.is_subset left ~of_:right
+let less_or_equal ~left ~right =
+  match left, right with
+  | Empty, _ -> true
+  | _, Empty -> false
+  | Interval left, Interval right ->
+      left.lower_bound >= right.lower_bound && left.upper_bound <= right.upper_bound
 
-let pp_interval formatter interval =
-  if is_empty interval then
-    Format.fprintf formatter "<empty>"
-  else if is_top interval then
-    Format.fprintf formatter "<top>"
-  else
-    Format.fprintf
-      formatter
-      "%d,%d"
-      (Option.value_exn (IntInterval.lbound interval))
-      (Option.value_exn (IntInterval.ubound interval))
+
+let pp_interval formatter = function
+  | Empty -> Format.fprintf formatter "<empty>"
+  | Interval { lower_bound; upper_bound } ->
+      if lower_bound == min_int && upper_bound == max_int then
+        Format.fprintf formatter "<top>"
+      else
+        Format.fprintf formatter "%d,%d" lower_bound upper_bound
 
 
 let pp formatter interval = Format.fprintf formatter "@[[%a]@]" pp_interval interval

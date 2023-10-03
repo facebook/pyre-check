@@ -12,7 +12,6 @@
    ppx_deriving_yojson))
  (libraries
   core
-  core_unix.interval_lib
   sexplib
   yojson
   ppxlib
