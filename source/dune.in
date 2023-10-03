@@ -199,12 +199,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries
-  core
-  sexplib
-  ppxlib
-  ppx_deriving
-  pyrelib.log))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log))
 
 (library
  (name sourcePath)
@@ -304,12 +299,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries
-  core
-  sexplib
-  ppxlib
-  ppx_deriving
-  pyrelib.path))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.path))
 
 (library
  (name watchman)
