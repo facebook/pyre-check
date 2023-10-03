@@ -162,6 +162,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
+  core_unix
   pyrelib.configuration
   pyrelib.timer
   pyrelib.file
@@ -179,7 +180,12 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries pyrelib.configuration pyrelib.timer pyrelib.profiling yojson))
+ (libraries
+  core_unix
+  pyrelib.configuration
+  pyrelib.timer
+  pyrelib.profiling
+  yojson))
 
 (library
  (name alarm)
