@@ -1402,7 +1402,7 @@ class SaveAndOpenTest(ApiTestCase):
                     )
                 },
             ),
-            querier=server_setup.MockDaemonQuerier(),
+            daemon_querier=server_setup.MockDaemonQuerier(),
         )
         await api.process_did_save_request(
             lsp.DidSaveTextDocumentParameters(
@@ -1419,7 +1419,7 @@ class SaveAndOpenTest(ApiTestCase):
         api = server_setup.create_pyre_language_server_api(
             output_channel=connections.create_memory_text_writer(),
             server_state=server_state,
-            querier=server_setup.MockDaemonQuerier(),
+            daemon_querier=server_setup.MockDaemonQuerier(),
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -1473,7 +1473,7 @@ class TypeCoverageTest(ApiTestCase):
         api = server_setup.create_pyre_language_server_api(
             output_channel=connections.AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
-            querier=querier,
+            daemon_querier=querier,
         )
         await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(
@@ -1503,7 +1503,7 @@ class TypeCoverageTest(ApiTestCase):
         api = server_setup.create_pyre_language_server_api(
             output_channel=connections.AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
-            querier=querier,
+            daemon_querier=querier,
         )
         await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(

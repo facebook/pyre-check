@@ -292,6 +292,7 @@ async def run_persistent(
             output_channel=stdout,
             server_state=server_state,
             querier=querier,
+            index_querier=daemon_querier.EmptyQuerier(server_state=server_state),
             client_type_error_handler=client_type_error_handler,
         ),
     )

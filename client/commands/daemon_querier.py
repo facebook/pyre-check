@@ -251,6 +251,102 @@ class AbstractDaemonQuerier(abc.ABC):
         return self.server_state.server_options.language_server_features
 
 
+class EmptyQuerier(AbstractDaemonQuerier):
+    async def get_type_errors(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        raise NotImplementedError()
+
+    async def get_type_coverage(
+        self,
+        path: Path,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+        raise NotImplementedError()
+
+    async def get_hover(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+        raise NotImplementedError()
+
+    async def get_definition_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+        raise NotImplementedError()
+
+    async def get_completions(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+        raise NotImplementedError()
+
+    async def get_reference_locations(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+        raise NotImplementedError()
+
+    async def get_init_call_hierarchy(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        raise NotImplementedError()
+
+    async def get_call_hierarchy_from_item(
+        self,
+        path: Path,
+        call_hierarchy_item: lsp.CallHierarchyItem,
+        relation_direction: lsp.PyreCallHierarchyRelationDirection,
+    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        raise NotImplementedError()
+
+    async def get_rename(
+        self,
+        path: Path,
+        position: lsp.PyrePosition,
+        new_text: str,
+    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+        raise NotImplementedError()
+
+    async def handle_file_opened(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    async def handle_file_closed(
+        self,
+        path: Path,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    async def update_overlay(
+        self,
+        path: Path,
+        code: str,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    async def handle_register_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+    async def handle_dispose_client(
+        self,
+    ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
+        raise NotImplementedError()
+
+
 class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def _query_modules_of_path(
         self,

@@ -65,7 +65,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=server_setup.MockDaemonQuerier(),
+            queriers=[server_setup.MockDaemonQuerier()],
         )
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="BusyBuilding")
@@ -109,7 +109,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
                 client_output_channel, server_state
             ),
-            querier=querier,
+            queriers=[querier],
         )
         await server_handler.client_setup()
 

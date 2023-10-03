@@ -298,12 +298,15 @@ mock_server_state: state.ServerState = state.ServerState(
 def create_pyre_language_server_api(
     output_channel: connections.AsyncTextWriter,
     server_state: state.ServerState,
-    querier: querier.AbstractDaemonQuerier,
+    daemon_querier: querier.AbstractDaemonQuerier,
+    index_querier: Optional[querier.AbstractDaemonQuerier] = None,
 ) -> ls.PyreLanguageServerApi:
+    index_querier = index_querier or querier.EmptyQuerier(server_state)
     return ls.PyreLanguageServer(
         output_channel=output_channel,
         server_state=server_state,
-        querier=querier,
+        querier=daemon_querier,
+        index_querier=index_querier,
         client_type_error_handler=type_error_handler.ClientTypeErrorHandler(
             client_output_channel=output_channel,
             server_state=server_state,
@@ -314,6 +317,7 @@ def create_pyre_language_server_api(
 def create_pyre_language_server_api_and_output(
     opened_documents: Dict[Path, state.OpenedDocumentState],
     querier: MockDaemonQuerier,
+    index_querier: Optional[MockDaemonQuerier] = None,
     server_options: options.PyreServerOptions = mock_initial_server_options,
     connection_status: state.ConnectionStatus = DEFAULT_CONNECTION_STATUS,
 ) -> Tuple[ls.PyreLanguageServerApi, connections.MemoryBytesWriter]:
@@ -327,7 +331,8 @@ def create_pyre_language_server_api_and_output(
     api = create_pyre_language_server_api(
         output_channel=output_channel,
         server_state=server_state,
-        querier=querier,
+        daemon_querier=querier,
+        index_querier=index_querier,
     )
     return api, output_writer
 
@@ -343,7 +348,7 @@ def create_pyre_language_server_dispatcher(
     api = create_pyre_language_server_api(
         output_channel=output_channel,
         server_state=server_state,
-        querier=querier,
+        daemon_querier=querier,
     )
     dispatcher = ls.PyreLanguageServerDispatcher(
         input_channel=input_channel,

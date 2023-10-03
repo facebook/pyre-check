@@ -19,9 +19,11 @@ import asyncio
 import dataclasses
 import logging
 import random
+from collections import defaultdict
 from pathlib import Path
 from typing import (
     ClassVar,
+    DefaultDict,
     Dict,
     Generic,
     List,
@@ -317,6 +319,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
     server_state: state.ServerState
 
     querier: daemon_querier.AbstractDaemonQuerier
+    index_querier: daemon_querier.AbstractDaemonQuerier
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
 
     async def write_telemetry(
