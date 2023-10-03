@@ -162,7 +162,6 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
-  core_unix
   pyrelib.configuration
   pyrelib.timer
   pyrelib.file
