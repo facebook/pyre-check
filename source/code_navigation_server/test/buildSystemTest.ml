@@ -307,7 +307,7 @@ let test_build_system_path_lookup context =
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
           ~request:Request.(Query (Query.GetTypeErrors { path = path_b; client_id }))
-          ~expected:(Response.TypeErrors [expected_error]);
+          ~expected:(Response.TypeErrors { errors = [expected_error] });
         (* Server should be aware of `b.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
           ~request:

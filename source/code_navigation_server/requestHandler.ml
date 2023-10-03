@@ -81,7 +81,7 @@ let handle_get_type_errors ~path ~client_id { State.environment; build_system; c
   >>= fun overlay_id ->
   let overlay = get_overlay ~environment overlay_id in
   get_type_errors_in_overlay ~overlay ~build_system path
-  >>| fun type_errors -> Response.TypeErrors type_errors
+  >>| fun type_errors -> Response.TypeErrors { errors = type_errors }
 
 
 let get_hover_content_for_module ~overlay ~position module_reference =

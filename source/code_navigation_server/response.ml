@@ -75,7 +75,7 @@ end
 type t =
   | Ok
   | Error of ErrorKind.t
-  | TypeErrors of Analysis.AnalysisError.Instantiated.t list
+  | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
   | Completion of { completions: CompletionItem.t list }

@@ -521,7 +521,7 @@ module Testing : sig
       | Ok  (** This response will be used for acknowledging successful processing of a request. *)
       | Error of ErrorKind.t
           (** This response will be sent when the server runs into errors when processing a request. *)
-      | TypeErrors of Analysis.AnalysisError.Instantiated.t list
+      | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
           (** Response for {!Request.GetTypeErrors}. *)
       | Hover of { contents: HoverContent.t list }
           (** Response for {!Request.Hover}. [contents] contains a list of items that will be shown

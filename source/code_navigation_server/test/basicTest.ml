@@ -80,7 +80,7 @@ let test_get_type_errors_request context =
     ScratchProject.ClientConnection.assert_response
       client
       ~request:Request.(Query (Query.GetTypeErrors { client_id; path }))
-      ~expected:(Response.TypeErrors [expected_error])
+      ~expected:(Response.TypeErrors { errors = [expected_error] })
   in
   ScratchProject.test_server_with
     project

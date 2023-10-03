@@ -46,7 +46,7 @@ let assert_type_error_count ~client_id ~path ~expected client =
       Request.(Query (Query.GetTypeErrors { path; client_id }))
   in
   match Yojson.Safe.from_string raw_response with
-  | `List [`String "TypeErrors"; `List errors] ->
+  | `List [`String "TypeErrors"; `Assoc [("errors", `List errors)]] ->
       assert_equal
         ~ctxt:(ScratchProject.ClientConnection.get_context client)
         ~cmp:Int.equal
