@@ -7,7 +7,9 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module Caml_unix = Unix
 open Core
+module Unix = Caml_unix
 module Gc = Caml.Gc
 module Set = Caml.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
@@ -138,9 +140,9 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
   let table_path = PyrePath.create_relative ~root ~relative:"table" in
   let dependencies_path = PyrePath.create_relative ~root ~relative:"deps" in
   let () =
-    try Core_unix.mkdir (PyrePath.absolute root) with
+    try Unix.mkdir (PyrePath.absolute root) 0o777 with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-    | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) ->
+    | Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
         PyrePath.unlink_if_exists table_path;
         PyrePath.unlink_if_exists dependencies_path
     | e -> raise e
@@ -148,13 +150,28 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
   { directory = root; table_path; dependencies_path }
 
 
+let rec waitpid_no_eintr flags pid =
+  try Unix.waitpid flags pid with
+  | Unix.Unix_error (Unix.EINTR, _, _) -> waitpid_no_eintr flags pid
+
+
 let run_tar arguments =
-  let { Core_unix.Process_info.pid; _ } = Core_unix.create_process ~prog:"tar" ~args:arguments in
-  if Result.is_error (Core_unix.waitpid pid) then
-    raise
-      (TarError (Format.sprintf "unable to run tar command %s " (List.to_string ~f:Fn.id arguments)))
-  else
-    ()
+  let open Unix in
+  let in_read, in_write = Unix.pipe ~cloexec:true () in
+  let out_read, out_write = Unix.pipe ~cloexec:true () in
+  let err_read, err_write = Unix.pipe ~cloexec:true () in
+  let pid =
+    Unix.create_process "tar" (Array.of_list ("tar" :: arguments)) in_read out_write err_write
+  in
+  List.iter ~f:close [in_read; out_write; err_write];
+  let _, process_status = waitpid_no_eintr [] pid in
+  List.iter ~f:close [in_write; out_read; err_read];
+  match process_status with
+  | Unix.WEXITED 0 -> ()
+  | _ ->
+      raise
+        (TarError
+           (Format.sprintf "unable to run tar command %s " (List.to_string ~f:Fn.id arguments)))
 
 
 exception SavedStateLoadingFailure of string
