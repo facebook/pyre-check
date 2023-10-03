@@ -13,8 +13,6 @@
  (libraries
   cmdliner
   core
-  core_unix
-  core_unix.filename_unix
   sexplib
   ppxlib
   yojson
