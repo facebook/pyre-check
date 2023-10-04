@@ -499,8 +499,10 @@ class PartialConfiguration:
                     LOG.warning(f"Unrecognized configuration item: {unrecognized_key}")
 
             return partial_configuration
-        except json.JSONDecodeError as error:
-            raise exceptions.InvalidConfiguration("Invalid JSON file") from error
+        except (json.JSONDecodeError, tomli.TOMLDecodeError) as error:
+            raise exceptions.InvalidConfiguration(
+                f'Invalid {"TOML" if is_pyproject_dot_toml else "JSON"} file'
+            ) from error
 
     @staticmethod
     def from_file(
