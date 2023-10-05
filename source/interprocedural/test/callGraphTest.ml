@@ -5033,6 +5033,38 @@ let test_call_graph_of_define context =
                   ())) );
       ]
     ();
+  assert_call_graph_of_define
+    ~source:{|
+      x = ""
+      def foo():
+        global x
+        x = "str"
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "5:2-5:3",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.global_targets =
+                   [CallTarget.create ~return_type:None (Target.Object "test.x")];
+               }) );
+      ]
+    ();
+  (* TODO(T165690928): Add nonlocal to call graph *)
+  assert_call_graph_of_define
+    ~source:
+      {|
+      def outer():
+        x = ""
+        def inner():
+          nonlocal x
+          x = "str"
+      |}
+    ~define_name:"$local_test?outer$inner"
+    ~expected:[]
+    ();
   ()
 
 
