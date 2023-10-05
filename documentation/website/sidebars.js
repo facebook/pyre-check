@@ -110,6 +110,7 @@ module.exports = {
         'pysa-explore',
         'pysa-coverage',
         'pysa-tips',
+        'fb/pysa-cache',
       ],
     },
     'static-analysis-post-processor',
