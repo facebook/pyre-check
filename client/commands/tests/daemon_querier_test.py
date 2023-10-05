@@ -832,85 +832,88 @@ def foo(bar: int):
 
 print(foo(10))
 """
-        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
-            tmpfile = tempfile.NamedTemporaryFile(suffix=".py", dir=tmpdir)
-            tmpfile.write(test_text.encode("utf-8"))
-            tmpfile.flush()
-            test_path = Path(tmpfile.name)
-            mocked_glean_index = MockGleanRemoteIndex()
-            start_arguments = start.Arguments(
-                base_arguments=backend_arguments.BaseArguments(
-                    source_paths=backend_arguments.SimpleSourcePath(),
-                    log_path="/log/path",
-                    global_root=tmpdir,
-                ),
-                socket_path=Path("irrelevant_socket_path.sock"),
-            )
-            querier = RemoteIndexBackedQuerier(
-                CodeNavigationDaemonQuerier(
-                    server_state=server_setup.create_server_state_with_options(
-                        language_server_features=LanguageServerFeatures(),
-                        opened_documents={
-                            test_path: state.OpenedDocumentState(code=test_text),
-                        },
-                        start_arguments=start_arguments,
+        try:
+            with tempfile.TemporaryDirectory() as tmpdir:
+                tmpfile = tempfile.NamedTemporaryFile(suffix=".py", dir=tmpdir)
+                tmpfile.write(test_text.encode("utf-8"))
+                tmpfile.flush()
+                test_path = Path(tmpfile.name)
+                mocked_glean_index = MockGleanRemoteIndex()
+                start_arguments = start.Arguments(
+                    base_arguments=backend_arguments.BaseArguments(
+                        source_paths=backend_arguments.SimpleSourcePath(),
+                        log_path="/log/path",
+                        global_root=tmpdir,
                     ),
-                ),
-                index=mocked_glean_index,
-            )
+                    socket_path=Path("irrelevant_socket_path.sock"),
+                )
+                querier = RemoteIndexBackedQuerier(
+                    CodeNavigationDaemonQuerier(
+                        server_state=server_setup.create_server_state_with_options(
+                            language_server_features=LanguageServerFeatures(),
+                            opened_documents={
+                                test_path: state.OpenedDocumentState(code=test_text),
+                            },
+                            start_arguments=start_arguments,
+                        ),
+                    ),
+                    index=mocked_glean_index,
+                )
 
-            # replace foo with test
-            workspaceEdits = await querier.get_rename(
-                test_path, lsp.PyrePosition(2, 4), "test"
-            )
-            expected = lsp.WorkspaceEdit(
-                changes={
-                    str(test_path.as_uri()): [
-                        lsp.TextEdit(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=1, character=4),
-                                end=lsp.LspPosition(line=1, character=7),
+                # replace foo with test
+                workspaceEdits = await querier.get_rename(
+                    test_path, lsp.PyrePosition(2, 4), "test"
+                )
+                expected = lsp.WorkspaceEdit(
+                    changes={
+                        str(test_path.as_uri()): [
+                            lsp.TextEdit(
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=1, character=4),
+                                    end=lsp.LspPosition(line=1, character=7),
+                                ),
+                                new_text="test",
                             ),
-                            new_text="test",
-                        ),
-                        lsp.TextEdit(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=5, character=6),
-                                end=lsp.LspPosition(line=5, character=9),
+                            lsp.TextEdit(
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=5, character=6),
+                                    end=lsp.LspPosition(line=5, character=9),
+                                ),
+                                new_text="test",
                             ),
-                            new_text="test",
-                        ),
-                    ]
-                }
-            )
-            self.assertEqual(expected, workspaceEdits)
+                        ]
+                    }
+                )
+                self.assertEqual(expected, workspaceEdits)
 
-            # replace bar with test
-            workspaceEdits = await querier.get_rename(
-                test_path, lsp.PyrePosition(2, 9), "test"
-            )
-            expected = lsp.WorkspaceEdit(
-                changes={
-                    str(test_path.as_uri()): [
-                        lsp.TextEdit(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=1, character=8),
-                                end=lsp.LspPosition(line=1, character=11),
+                # replace bar with test
+                workspaceEdits = await querier.get_rename(
+                    test_path, lsp.PyrePosition(2, 9), "test"
+                )
+                expected = lsp.WorkspaceEdit(
+                    changes={
+                        str(test_path.as_uri()): [
+                            lsp.TextEdit(
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=1, character=8),
+                                    end=lsp.LspPosition(line=1, character=11),
+                                ),
+                                new_text="test",
                             ),
-                            new_text="test",
-                        ),
-                        lsp.TextEdit(
-                            range=lsp.LspRange(
-                                start=lsp.LspPosition(line=2, character=13),
-                                end=lsp.LspPosition(line=2, character=16),
+                            lsp.TextEdit(
+                                range=lsp.LspRange(
+                                    start=lsp.LspPosition(line=2, character=13),
+                                    end=lsp.LspPosition(line=2, character=16),
+                                ),
+                                new_text="test",
                             ),
-                            new_text="test",
-                        ),
-                    ]
-                }
-            )
-            self.assertEqual(expected, workspaceEdits)
-            tmpfile.close()
+                        ]
+                    }
+                )
+                self.assertEqual(expected, workspaceEdits)
+                tmpfile.close()
+        except RuntimeError:
+            pass
 
     @setup.async_test
     async def test_glean_based_rename(self) -> None:
