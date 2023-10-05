@@ -156,6 +156,14 @@ let get_shared_memory_save_path ~configuration =
 
 let ignore_result (_ : ('a, 'b) result) = ()
 
+let ensure_save_directory_exists ~configuration =
+  let directory = PyrePath.absolute (get_save_directory ~configuration) in
+  try Core_unix.mkdir directory with
+  (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
+  | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
+  | e -> raise e
+
+
 module SavedState = struct
   let fetch_from_project
       ~configuration
@@ -177,6 +185,7 @@ module SavedState = struct
             | _, None -> Lwt.return (Result.Error "Missing saved state project name")
             | Some watchman_root, Some project_name ->
                 let saved_state_storage_location = get_shared_memory_save_path ~configuration in
+                let () = ensure_save_directory_exists ~configuration in
                 let watchman_filter =
                   {
                     Watchman.Filter.base_names = [];
@@ -358,14 +367,6 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
     | _ -> compute_and_save_environment (), status
   in
   environment, { cache with status }
-
-
-let ensure_save_directory_exists ~configuration =
-  let directory = PyrePath.absolute (get_save_directory ~configuration) in
-  try Core_unix.mkdir directory with
-  (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-  | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
-  | e -> raise e
 
 
 let save_shared_memory ~configuration =
