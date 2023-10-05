@@ -31,9 +31,6 @@ let name_location
     }
 
 
-(* A pp for strings that, unlike Core.String.pp, does not include quotes *)
-let pp_name format name = Format.fprintf format "%s" name
-
 module Assign = struct
   type t = {
     target: Expression.t;
@@ -1856,7 +1853,8 @@ module PrettyPrinter = struct
             in
             Format.fprintf formatter "@[<v>from %a import %a@]" pp_from from pp_imports imports)
     | Match _ -> Format.fprintf formatter "%s" "match"
-    | Nonlocal nonlocal_list -> pp_list formatter pp_name "," nonlocal_list
+    | Nonlocal nonlocals ->
+        Format.fprintf formatter "nonlocal %s" (String.concat nonlocals ~sep:", ")
     | Pass -> Format.fprintf formatter "%s" "pass"
     | Raise { Raise.expression; _ } ->
         Format.fprintf formatter "raise %a" pp_expression_option ("", expression)

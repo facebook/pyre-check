@@ -1241,6 +1241,27 @@ let test_qualify_source _ =
     |};
   assert_qualify
     {|
+      global_constant = 1
+      def foo():
+        nonlocal_constant = 2
+        def bar():
+          global global_constant
+          nonlocal nonlocal_constant
+          global_constant = 3
+          nonlocal_constant = 4
+   |}
+    {|
+      $local_qualifier$global_constant = 1
+      def qualifier.foo():
+        $local_qualifier?foo$nonlocal_constant = 2
+        def $local_qualifier?foo$bar():
+          global global_constant
+          nonlocal nonlocal_constant
+          $local_qualifier$global_constant = 3
+          $local_qualifier?foo?bar$nonlocal_constant = 4
+    |};
+  assert_qualify
+    {|
       def foo(parameter):
         parameter = 1
     |}
@@ -1710,6 +1731,52 @@ let test_qualify_source _ =
       class qualifier: ...
     |} {|
       class qualifier.qualifier: ...
+    |};
+  assert_qualify
+    {|
+      def foo():
+        x: str = ""
+        def bar():
+          nonlocal x
+          x = "x"
+
+        def baz():
+          y = x
+    |}
+    {|
+      def qualifier.foo():
+        $local_qualifier?foo$x: str = ""
+        def $local_qualifier?foo$bar():
+          nonlocal x
+          $local_qualifier?foo?bar$x = "x"
+
+        def $local_qualifier?foo$baz():
+          $local_qualifier?foo?baz$y = $local_qualifier?foo$x
+    |};
+  assert_qualify
+    {|
+      def foo(x: str):
+        def bar():
+          nonlocal x
+          x = "x"
+    |}
+    {|
+      def qualifier.foo($parameter$x: str):
+        def $local_qualifier?foo$bar():
+          nonlocal x
+          $parameter$x = "x"
+    |};
+  (* TODO(T165661440) Fix nested qualification *)
+  assert_qualify
+    {|
+      def foo(x: str):
+        def bar():
+          x = "x"
+    |}
+    {|
+      def qualifier.foo($parameter$x: str):
+        def $local_qualifier?foo$bar():
+          $parameter$x = "x"
     |};
   ()
 
