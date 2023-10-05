@@ -1258,7 +1258,7 @@ let test_qualify_source _ =
           global global_constant
           nonlocal nonlocal_constant
           $local_qualifier$global_constant = 3
-          $local_qualifier?foo?bar$nonlocal_constant = 4
+          $local_qualifier?foo$nonlocal_constant = 4
     |};
   assert_qualify
     {|
@@ -1748,7 +1748,7 @@ let test_qualify_source _ =
         $local_qualifier?foo$x: str = ""
         def $local_qualifier?foo$bar():
           nonlocal x
-          $local_qualifier?foo?bar$x = "x"
+          $local_qualifier?foo$x = "x"
 
         def $local_qualifier?foo$baz():
           $local_qualifier?foo?baz$y = $local_qualifier?foo$x

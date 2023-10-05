@@ -364,6 +364,14 @@ module Qualify (Context : QualifyContext) = struct
             List.fold identifiers ~init:immutables ~f:register_global
           in
           { scope with immutables }
+      | Nonlocal identifiers ->
+          let immutables =
+            let register_nonlocal immutables identifier =
+              Set.add immutables (Reference.create identifier)
+            in
+            List.fold identifiers ~init:immutables ~f:register_nonlocal
+          in
+          { scope with immutables }
       | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let scope = explore_scope ~scope body in
           let scope =
