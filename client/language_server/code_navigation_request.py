@@ -337,6 +337,21 @@ async def async_handle_definition_request(
     )
 
 
+async def async_handle_type_errors_request(
+    socket_path: Path,
+    type_errors_request: TypeErrorsRequest,
+) -> Union[TypeErrorsResponse, ErrorResponse]:
+    raw_request = json.dumps(["Query", type_errors_request.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_request
+    )
+    if isinstance(response, daemon_connection.DaemonConnectionFailure):
+        return ErrorResponse(message=response.error_message)
+    return parse_raw_response(
+        response, expected_response_kind="TypeErrors", response_type=TypeErrorsResponse
+    )
+
+
 async def async_handle_completion_request(
     socket_path: Path,
     completion_request: lsp.CompletionRequest,
