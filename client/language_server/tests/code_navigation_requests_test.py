@@ -11,6 +11,8 @@ import testslide
 
 from marshmallow import ValidationError
 
+from ... import error
+
 from .. import code_navigation_request, protocol as lsp
 
 
@@ -79,6 +81,22 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                     "path": "/a/b.py",
                     "client_id": "foo",
                     "position": {"line": 1, "column": 2},
+                },
+            ],
+        )
+
+    def test_serialize_type_errors_request(self) -> None:
+        request = code_navigation_request.TypeErrorsRequest(
+            path="/a/b.py",
+            client_id="foo",
+        )
+        self.assertEqual(
+            request.to_json(),
+            [
+                "GetTypeErrors",
+                {
+                    "path": "/a/b.py",
+                    "client_id": "foo",
                 },
             ],
         )
@@ -173,6 +191,46 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 ]
             ),
         )
+
+    def test_type_errors_response(self) -> None:
+        response = {
+            "errors": [
+                {
+                    "line": 7,
+                    "column": 10,
+                    "stop_line": 7,
+                    "stop_column": 18,
+                    "path": "test.py",
+                    "code": 16,
+                    "name": "Undefined attribute",
+                    "description": "Undefined attribute [16]: `int` has no attribute `format`.",
+                    "concise_description": "Undefined attribute [16]: `int` has no attribute `format`.",
+                },
+            ]
+        }
+        parsed_response = code_navigation_request.parse_response(
+            response,
+            response_type=code_navigation_request.TypeErrorsResponse,
+        )
+        if isinstance(parsed_response, code_navigation_request.ErrorResponse):
+            self.fail()
+        else:
+            self.assertListEqual(
+                parsed_response.to_errors_response(),
+                [
+                    error.Error(
+                        line=7,
+                        column=10,
+                        stop_line=7,
+                        stop_column=18,
+                        path=Path("test.py"),
+                        code=16,
+                        name="Undefined attribute",
+                        description="Undefined attribute [16]: `int` has no attribute `format`.",
+                        concise_description="Undefined attribute [16]: `int` has no attribute `format`.",
+                    )
+                ],
+            )
 
     def test_completion_response(self) -> None:
         response = {

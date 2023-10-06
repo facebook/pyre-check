@@ -15,7 +15,7 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Type, TypeVar, Union
 
-from .. import dataclasses_json_extensions as json_mixins
+from .. import dataclasses_json_extensions as json_mixins, error
 
 from . import daemon_connection, protocol as lsp
 
@@ -56,6 +56,21 @@ class LocationOfDefinitionRequest:
                     "line": self.position.line,
                     "column": self.position.character,
                 },
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeErrorsRequest:
+    path: str
+    client_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "GetTypeErrors",
+            {
+                "path": self.path,
+                "client_id": self.client_id,
             },
         ]
 
@@ -105,6 +120,14 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     definitions: List[DefinitionResponse]
+
+
+@dataclasses.dataclass(frozen=True)
+class TypeErrorsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    errors: List[Dict[str, Any]]
+
+    def to_errors_response(self) -> List[error.Error]:
+        return [error.Error.from_json(error_response) for error_response in self.errors]
 
 
 class PyreCompletionItemKind(str, enum.Enum):
