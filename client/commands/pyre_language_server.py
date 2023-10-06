@@ -19,11 +19,9 @@ import asyncio
 import dataclasses
 import logging
 import random
-from collections import defaultdict
 from pathlib import Path
 from typing import (
     ClassVar,
-    DefaultDict,
     Dict,
     Generic,
     List,
