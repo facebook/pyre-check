@@ -709,12 +709,7 @@ class FailableDaemonQuerierTest(testslide.TestCase):
         await codenav_querier.get_hover(
             path=Path("bar1.py"), position=lsp.PyrePosition(line=42, character=10)
         )
-        try:
-            await codenav_querier.get_type_errors(path=Path("bar2.py"))
-            self.fail("Expected NotImplementedError to be raised.")
-        except NotImplementedError:
-            pass
-
+        await codenav_querier.get_type_errors(path=Path("bar2.py"))
         await codenav_querier.get_definition_locations(
             path=Path("bar3.py"), position=lsp.PyrePosition(line=42, character=10)
         )

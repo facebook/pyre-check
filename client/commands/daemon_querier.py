@@ -767,7 +767,15 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
     ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
-        raise NotImplementedError()
+        type_errors_request = code_navigation_request.TypeErrorsRequest(
+            path=str(path), client_id=self._get_client_id()
+        )
+        response = await code_navigation_request.async_handle_type_errors_request(
+            self.socket_path, type_errors_request
+        )
+        if isinstance(response, code_navigation_request.ErrorResponse):
+            return daemon_query.DaemonQueryFailure(response.message)
+        return response.to_errors_response()
 
     async def get_type_coverage(
         self,
