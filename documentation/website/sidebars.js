@@ -105,13 +105,16 @@ module.exports = {
       ],
     },
     {
-      'User Docs': [
-        'pysa-false-positives-negatives',
-        'pysa-explore',
-        'pysa-coverage',
-        'pysa-tips',
-        'fb/pysa-cache',
-      ],
+      'User Docs',
+      ...fbContent({
+        internal: ['fb/pysa-cache'],
+        external: [
+          'pysa-false-positives-negatives',
+          'pysa-explore',
+          'pysa-coverage',
+          'pysa-tips'
+        ],
+      })
     },
     'static-analysis-post-processor',
     ...fbContent({
