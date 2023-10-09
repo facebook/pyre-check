@@ -104,18 +104,16 @@ module.exports = {
         'pysa-model-dsl',
       ],
     },
-    {
-      'User Docs',
-      ...fbContent({
-        internal: ['fb/pysa-cache'],
-        external: [
-          'pysa-false-positives-negatives',
-          'pysa-explore',
-          'pysa-coverage',
-          'pysa-tips'
-        ],
-      })
-    },
+    'User Docs',
+    ...fbContent({
+      internal: ['fb/pysa-cache'],
+      external: [
+        'pysa-false-positives-negatives',
+        'pysa-explore',
+        'pysa-coverage',
+        'pysa-tips'
+      ],
+    }),
     'static-analysis-post-processor',
     ...fbContent({
       internal: [
