@@ -32,7 +32,7 @@ from typing import (
     Union,
 )
 
-from .. import background_tasks, json_rpc, log, timer
+from .. import background_tasks, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import commands, daemon_querier, find_symbols, server_state as state
@@ -432,6 +432,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
             document_path, parameters.text_document.text
         )
 
+        if (
+            self.get_language_server_features().type_errors.is_enabled()
+            # TODO (T165048078): hack to get this working only for codenav server
+            and self.server_state.server_options.flavor
+            == identifiers.PyreFlavor.CODE_NAVIGATION
+        ):
+            await self.send_overlay_type_errors(document_path=document_path)
+
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
     ) -> None:
@@ -542,6 +550,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
             # the case that the overlay environment is up to date.
             pyre_code_updated=False,
         )
+
+        if (
+            self.get_language_server_features().type_errors.is_enabled()
+            # TODO (T165048078): hack to get this working only for codenav server
+            and self.server_state.server_options.flavor
+            == identifiers.PyreFlavor.CODE_NAVIGATION
+        ):
+            await self.send_overlay_type_errors(document_path=document_path)
 
         await self.write_telemetry(
             {
