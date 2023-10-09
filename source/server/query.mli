@@ -32,6 +32,7 @@ module Request : sig
     | SaveServerState of PyrePath.t
     | Superclasses of Reference.t list
     | Type of Expression.t
+    | IsTypechecked of string list
     | TypesInFiles of string list
     | ValidateTaintModels of {
         path: string option;
@@ -128,6 +129,12 @@ module Response : sig
     }
     [@@deriving equal, to_yojson]
 
+    type typechecked = {
+      path: string;
+      is_typechecked: bool;
+    }
+    [@@deriving equal, to_yojson]
+
     type global_leak_errors = {
       global_leaks: Analysis.AnalysisError.Instantiated.t list;
       query_errors: string list;
@@ -158,6 +165,7 @@ module Response : sig
       | Success of string
       | Superclasses of superclasses_mapping list
       | Type of Type.t
+      | IsTypechecked of typechecked list
       | TypesByPath of types_at_path list
     [@@deriving equal, to_yojson]
   end

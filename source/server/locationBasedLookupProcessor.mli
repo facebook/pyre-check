@@ -17,6 +17,8 @@ type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
 
+type module_path = (Ast.ModulePath.t, error_reason) Result.t
+
 val find_all_resolved_types_for_path
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   build_system:BuildSystem.t ->
@@ -34,3 +36,9 @@ val get_lookup
   type_environment:TypeEnvironment.ReadOnly.t ->
   string ->
   (LocationBasedLookup.coverage_data_lookup, error_reason) result
+
+val get_module_path
+  :  type_environment:TypeEnvironment.ReadOnly.t ->
+  build_system:BuildSystem.t ->
+  string ->
+  module_path

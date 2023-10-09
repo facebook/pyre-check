@@ -21,7 +21,29 @@ type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
 type coverage_by_location = (LocationBasedLookup.coverage_for_path, error_reason) Result.t
 
+type module_path = (Ast.ModulePath.t, error_reason) Result.t
+
+let get_module_path ~type_environment ~build_system path =
+  let full_path =
+    let { Configuration.Analysis.local_root = root; _ } =
+      TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
+    in
+    PyrePath.create_relative ~root ~relative:path |> SourcePath.create
+  in
+  match BuildSystem.lookup_artifact build_system full_path with
+  | [] -> Result.Error FileNotFound
+  | analysis_path :: _ -> (
+      (* If a source path corresponds to multiple artifacts, randomly pick an artifact and compute
+         results for it. *)
+      let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
+      match ModuleTracker.ReadOnly.lookup_path module_tracker analysis_path with
+      | ModuleTracker.PathLookup.Found module_path -> Result.Ok module_path
+      | ModuleTracker.PathLookup.ShadowedBy _ -> Result.Error StubShadowing
+      | ModuleTracker.PathLookup.NotFound -> Result.Error FileNotFound)
+
+
 let get_lookup ~build_system ~type_environment path =
+  let module_path = get_module_path ~type_environment ~build_system path in
   let generate_lookup_for_existent_path { ModulePath.qualifier; _ } =
     let timer = Timer.start () in
     let lookup = LocationBasedLookup.create_of_module type_environment qualifier in
@@ -31,23 +53,9 @@ let get_lookup ~build_system ~type_environment path =
       (Timer.stop_in_ms timer);
     Result.Ok lookup
   in
-  let generate_lookup_for_nonexistent_path error_reason = Result.Error error_reason in
-  let full_path =
-    let { Configuration.Analysis.local_root = root; _ } =
-      TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
-    in
-    PyrePath.create_relative ~root ~relative:path |> SourcePath.create
-  in
-  match BuildSystem.lookup_artifact build_system full_path with
-  | [] -> generate_lookup_for_nonexistent_path FileNotFound
-  | analysis_path :: _ -> (
-      (* If a source path corresponds to multiple artifacts, randomly pick an artifact and compute
-         results for it. *)
-      let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
-      match ModuleTracker.ReadOnly.lookup_path module_tracker analysis_path with
-      | ModuleTracker.PathLookup.Found module_path -> generate_lookup_for_existent_path module_path
-      | ModuleTracker.PathLookup.ShadowedBy _ -> generate_lookup_for_nonexistent_path StubShadowing
-      | ModuleTracker.PathLookup.NotFound -> generate_lookup_for_nonexistent_path FileNotFound)
+  match module_path with
+  | Result.Ok path -> generate_lookup_for_existent_path path
+  | Result.Error error_reason -> Result.Error error_reason
 
 
 let find_all_resolved_types_for_path ~type_environment ~build_system path =

@@ -501,6 +501,18 @@ let test_handle_query_basic context =
     ~query:"modules_of_path('/non_existent_file.py')"
     (Single (Base.FoundModules []))
   >>= fun () ->
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let handle = "my_test_file.py" in
+  let path = PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute in
+  assert_type_query_response
+    ~custom_source_root
+    ~handle
+    ~source:""
+    ~query:(Format.sprintf "is_typechecked('%s')" path)
+    (Single (Base.IsTypechecked [{ Base.path; is_typechecked = true }]))
+  >>= fun () ->
   let temporary_directory = OUnit2.bracket_tmpdir context in
   assert_type_query_response
     ~source:""
