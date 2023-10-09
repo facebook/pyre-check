@@ -107,7 +107,13 @@ module.exports = {
 	...fbContent({
       internal: [
         {
-          'User Docs': ['fb/pysa-cache']
+          'User Docs': [
+            'pysa-false-positives-negatives',
+            'pysa-explore',
+            'pysa-coverage',
+            'pysa-tips',
+            'fb/pysa-cache'
+          ]
         }
       ],
       external: [
