@@ -33,6 +33,7 @@ module Request : sig
     | Superclasses of Reference.t list
     | Type of Expression.t
     | IsTypechecked of string list
+    | TypecheckedPaths
     | TypesInFiles of string list
     | ValidateTaintModels of {
         path: string option;
@@ -166,6 +167,7 @@ module Response : sig
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | IsTypechecked of typechecked list
+      | TypecheckedPaths of string list
       | TypesByPath of types_at_path list
     [@@deriving equal, to_yojson]
   end

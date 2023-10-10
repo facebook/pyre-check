@@ -589,6 +589,18 @@ let test_handle_types_query context =
              };
            ]))
   >>= fun () ->
+  let custom_source_root =
+    OUnit2.bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let handle = "test.py" in
+  let path = PyrePath.append custom_source_root ~element:handle |> PyrePath.absolute in
+  assert_type_query_response_with_local_root
+    ~custom_source_root
+    ~handle
+    ~source:""
+    ~query:"typechecked_paths()"
+    (fun _ -> Single (Base.TypecheckedPaths [path]))
+  >>= fun () ->
   assert_type_query_response_with_local_root
     ~source:
       {|

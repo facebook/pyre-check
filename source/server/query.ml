@@ -41,6 +41,7 @@ module Request = struct
     | Superclasses of Reference.t list
     | Type of Expression.t
     | IsTypechecked of string list
+    | TypecheckedPaths
     | TypesInFiles of string list
     | ValidateTaintModels of {
         path: string option;
@@ -182,6 +183,7 @@ module Response = struct
       | Superclasses of superclasses_mapping list
       | Type of Type.t
       | IsTypechecked of typechecked list
+      | TypecheckedPaths of string list
       | TypesByPath of types_at_path list
     [@@deriving equal]
 
@@ -223,6 +225,7 @@ module Response = struct
                      ~f:(fun error -> AnalysisError.Instantiated.to_yojson error)
                      global_leaks) );
             ]
+      | TypecheckedPaths paths -> `List (List.map paths ~f:(fun path -> `String path))
       | ModelVerificationErrors errors ->
           `Assoc ["errors", `List (List.map errors ~f:Taint.ModelVerificationError.to_json)]
       | FoundAttributes attributes ->
@@ -427,6 +430,7 @@ let rec parse_request_exn query =
           Request.SaveServerState (PyrePath.create_absolute (string path))
       | "superclasses", names -> Superclasses (List.map ~f:reference names)
       | "type", [argument] -> Type (expression argument)
+      | "typechecked_paths", _ -> Request.TypecheckedPaths
       | "types", paths -> Request.TypesInFiles (List.map ~f:string paths)
       | "is_typechecked", paths -> Request.IsTypechecked (List.map ~f:string paths)
       | "validate_taint_models", arguments -> parse_validate_taint_models arguments
@@ -709,6 +713,15 @@ let rec process_request_exn ~type_environment ~build_system request =
         get_program_call_graph ()
         |> Reference.Map.fold ~f:create_response_with_caller ~init:[]
         |> fun result -> Single (Base.Callgraph result)
+    (* Attempt to build a query for the files that are checked by a given configuration *)
+    | TypecheckedPaths ->
+        Single
+          (Base.TypecheckedPaths
+             (ModuleTracker.ReadOnly.module_paths module_tracker
+             |> List.filter ~f:(fun { ModulePath.is_external; _ } -> not is_external)
+             |> List.map ~f:(fun { ModulePath.raw = { relative; _ }; _ } ->
+                    let { Configuration.Analysis.project_root = root; _ } = configuration in
+                    PyrePath.create_relative ~root ~relative |> PyrePath.absolute)))
     | ExpressionLevelCoverage paths ->
         let read_text_file path =
           try In_channel.read_lines path |> List.map ~f:(fun x -> Result.Ok x) with
