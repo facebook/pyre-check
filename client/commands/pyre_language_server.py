@@ -387,7 +387,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         document_path: Path,
         position: lsp.LspPosition,
     ) -> Optional[str]:
-        sample_percent = 5
+        sample_percent = 10
         if random.randrange(0, 100) >= sample_percent:
             LOG.debug("Skipping file content sampling.")
             return None
