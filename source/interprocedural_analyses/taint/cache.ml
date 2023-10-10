@@ -131,11 +131,37 @@ module PreviousAnalysisSetupSharedMemory = struct
   let save_to_cache = T.save_to_cache
 end
 
+module ChangedFiles = struct
+  let show_files files = files |> List.map ~f:PyrePath.show |> String.concat ~sep:", "
+
+  let should_invalidate_type_environment_if_changed path =
+    let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
+    let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path) in
+    not (is_pysa_model path || is_taint_config path)
+
+
+  let from_type_environment ~scheduler ~configuration old_type_environment =
+    let old_module_tracker =
+      old_type_environment |> TypeEnvironment.ast_environment |> AstEnvironment.module_tracker
+    in
+    let new_module_tracker =
+      configuration |> Analysis.EnvironmentControls.create |> Analysis.ModuleTracker.create
+    in
+    Interprocedural.ChangedPaths.compute_locally_changed_paths
+      ~scheduler
+      ~configuration
+      ~old_module_tracker
+      ~new_module_tracker
+    |> List.map ~f:ArtifactPath.raw
+    |> List.filter ~f:should_invalidate_type_environment_if_changed
+end
+
 type t = {
   status: SharedMemoryStatus.t;
   save_cache: bool;
   scheduler: Scheduler.t;
   configuration: Configuration.Analysis.t;
+  no_file_changes_reported_by_watchman: bool;
 }
 
 exception BuildCacheOnly
@@ -164,70 +190,95 @@ let ensure_save_directory_exists ~configuration =
   | e -> raise e
 
 
-module SavedState = struct
-  let fetch_from_project
-      ~configuration
-      ~saved_state:
-        {
-          Configuration.StaticAnalysis.SavedState.watchman_root;
-          cache_critical_files;
-          project_name;
-        }
-    =
-    let open Lwt.Infix in
-    Lwt.catch
-      (fun () ->
-        Watchman.Raw.create_exn ()
-        >>= fun watchman_raw ->
-        Watchman.Raw.with_connection watchman_raw ~f:(fun watchman_connection ->
-            match watchman_root, project_name with
-            | None, _ -> Lwt.return (Result.Error "Missing watchman root")
-            | _, None -> Lwt.return (Result.Error "Missing saved state project name")
-            | Some watchman_root, Some project_name ->
-                let saved_state_storage_location = get_shared_memory_save_path ~configuration in
-                let () = ensure_save_directory_exists ~configuration in
-                let watchman_filter =
-                  {
-                    Watchman.Filter.base_names = [];
-                    whole_names = cache_critical_files;
-                    suffixes = [];
-                  }
-                in
-                Saved_state.Execution.query_and_fetch_exn
-                  {
-                    Saved_state.Execution.Setting.watchman_root =
-                      PyrePath.create_absolute watchman_root;
-                    watchman_filter;
-                    watchman_connection;
-                    project_name;
-                    project_metadata = None;
-                    critical_files = [];
-                    target = saved_state_storage_location;
-                  }
-                >>= fun fetched -> Lwt.return (Result.Ok fetched)))
-      (fun exn ->
-        let message =
-          match exn with
-          | Watchman.ConnectionError message
-          | Watchman.QueryError message
-          | Saved_state.Execution.QueryFailure message ->
-              message
-          | _ -> Exn.to_string exn
-        in
-        Lwt.return (Result.Error message))
+module FileLoading = struct
+  type t =
+    | LocalCache of { cache_path: PyrePath.t }
+    | SavedState of {
+        cache_path: PyrePath.t;
+        file_changes_reported_by_watchman: PyrePath.t list;
+      }
+
+  module SavedState = struct
+    let fetch_from_project
+        ~configuration
+        ~saved_state:
+          {
+            Configuration.StaticAnalysis.SavedState.watchman_root;
+            cache_critical_files;
+            project_name;
+          }
+      =
+      let open Lwt.Infix in
+      Lwt.catch
+        (fun () ->
+          Watchman.Raw.create_exn ()
+          >>= fun watchman_raw ->
+          Watchman.Raw.with_connection watchman_raw ~f:(fun watchman_connection ->
+              match watchman_root, project_name with
+              | None, _ -> Lwt.return (Result.Error "Missing watchman root")
+              | _, None -> Lwt.return (Result.Error "Missing saved state project name")
+              | Some watchman_root, Some project_name ->
+                  let saved_state_storage_location = get_shared_memory_save_path ~configuration in
+                  let () = ensure_save_directory_exists ~configuration in
+                  let watchman_filter =
+                    {
+                      Watchman.Filter.base_names = [];
+                      whole_names = cache_critical_files;
+                      suffixes = [];
+                    }
+                  in
+                  Saved_state.Execution.query_and_fetch_exn
+                    {
+                      Saved_state.Execution.Setting.watchman_root =
+                        PyrePath.create_absolute watchman_root;
+                      watchman_filter;
+                      watchman_connection;
+                      project_name;
+                      project_metadata = None;
+                      critical_files = [];
+                      target = saved_state_storage_location;
+                    }
+                  >>= fun fetched -> Lwt.return (Result.Ok fetched)))
+        (fun exn ->
+          let message =
+            match exn with
+            | Watchman.ConnectionError message
+            | Watchman.QueryError message
+            | Saved_state.Execution.QueryFailure message ->
+                message
+            | _ -> Exn.to_string exn
+          in
+          Lwt.return (Result.Error message))
 
 
-  let load ~saved_state ~configuration =
-    let open Lwt.Infix in
-    fetch_from_project ~saved_state ~configuration
-    >>= fun fetched ->
-    match fetched with
-    | Result.Error message ->
-        Log.warning "Could not fetch a saved state: %s" message;
-        Lwt.return_none
-    | Result.Ok { Saved_state.Execution.Fetched.path; changed_files = _ } ->
-        Log.info "Fetched saved state";
-        Lwt.return_some path
+    let load ~saved_state ~configuration =
+      let open Lwt.Infix in
+      fetch_from_project ~saved_state ~configuration
+      >>= fun fetched ->
+      match fetched with
+      | Result.Error message ->
+          Log.warning "Could not fetch a saved state: %s" message;
+          Lwt.return_none
+      | Result.Ok { Saved_state.Execution.Fetched.path; changed_files } ->
+          let () = Log.info "Fetched saved state" in
+          let () =
+            if List.is_empty changed_files then
+              Log.info "Watchman detected no file changes"
+            else
+              Log.info "Watchman detected file changes: %s" (ChangedFiles.show_files changed_files)
+          in
+          Lwt.return_some
+            (SavedState { cache_path = path; file_changes_reported_by_watchman = changed_files })
+  end
+
+  let locate_cache_and_detect_file_changes ~saved_state ~configuration =
+    let local_cache_path = get_shared_memory_save_path ~configuration in
+    if PyrePath.file_exists local_cache_path then
+      let () = Log.info "Using local cache file `%s`" (PyrePath.absolute local_cache_path) in
+      Some (LocalCache { cache_path = local_cache_path })
+    else
+      let () = Log.info "Could not find local cache. Fetching cache from saved states." in
+      SavedState.load ~saved_state ~configuration |> Lwt_main.run
 end
 
 let initialize_shared_memory ~path ~configuration =
@@ -262,70 +313,59 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
       Error SharedMemoryStatus.LoadError
 
 
-let locate_or_download_cache_file ~saved_state ~configuration =
-  let local_cache_path = get_shared_memory_save_path ~configuration in
-  if PyrePath.file_exists local_cache_path then
-    let () = Log.info "Using local cache file `%s`" (PyrePath.absolute local_cache_path) in
-    Some local_cache_path
-  else
-    let () = Log.info "Could not find local cache. Fetching cache from saved states." in
-    SavedState.load ~saved_state ~configuration |> Lwt_main.run
-
-
 let try_load ~scheduler ~saved_state ~configuration ~decorator_configuration ~enabled =
   let save_cache = enabled in
   if not enabled then
-    { status = SharedMemoryStatus.Disabled; save_cache; scheduler; configuration }
+    {
+      status = SharedMemoryStatus.Disabled;
+      save_cache;
+      scheduler;
+      configuration;
+      no_file_changes_reported_by_watchman = false;
+    }
   else
     let open Result in
-    let cache_file_path = locate_or_download_cache_file ~saved_state ~configuration in
-    let status =
-      match initialize_shared_memory ~path:cache_file_path ~configuration with
-      | Ok () -> (
-          match check_decorator_invalidation ~decorator_configuration with
-          | Ok () ->
-              let entry_status = EntryStatus.empty in
-              PreviousAnalysisSetupSharedMemory.load_from_cache entry_status
-          | Error error ->
-              (* If there exist updates to certain decorators, it wastes memory and might not be
-                 safe to leave the old type environment in the shared memory. *)
-              Log.info "Resetting shared memory";
-              Memory.reset_shared_memory ();
-              error)
-      | Error error -> error
+    let cache_path, no_file_changes_reported_by_watchman, must_invalidate_cache =
+      match FileLoading.locate_cache_and_detect_file_changes ~saved_state ~configuration with
+      | Some (FileLoading.SavedState { cache_path; file_changes_reported_by_watchman }) ->
+          let exist_file_changes_reported_by_watchman =
+            not (List.is_empty file_changes_reported_by_watchman)
+          in
+          ( Some cache_path,
+            not exist_file_changes_reported_by_watchman,
+            exist_file_changes_reported_by_watchman )
+      | Some (FileLoading.LocalCache { cache_path }) -> Some cache_path, false, false
+      | None -> None, false, false
     in
-    { status; save_cache; scheduler; configuration }
+    let status =
+      if must_invalidate_cache then
+        let () = Log.info "Detected source code changes. Ignoring existing cache." in
+        SharedMemoryStatus.InvalidByCodeChange
+      else
+        match initialize_shared_memory ~path:cache_path ~configuration with
+        | Ok () -> (
+            match check_decorator_invalidation ~decorator_configuration with
+            | Ok () ->
+                let entry_status = EntryStatus.empty in
+                PreviousAnalysisSetupSharedMemory.load_from_cache entry_status
+            | Error error ->
+                (* If there exist updates to certain decorators, it wastes memory and might not be
+                   safe to leave the old type environment in the shared memory. *)
+                Log.info "Resetting shared memory";
+                Memory.reset_shared_memory ();
+                error)
+        | Error error -> error
+    in
+    { status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman }
 
 
-let load_type_environment ~scheduler ~configuration =
+let load_type_environment ~configuration =
   let open Result in
   let controls = Analysis.EnvironmentControls.create configuration in
-  Log.info "Determining if source files have changed since cache was created.";
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
     ~f:(fun () -> Ok (TypeEnvironment.load_without_dependency_keys controls))
-  >>= fun type_environment ->
-  let old_module_tracker =
-    TypeEnvironment.ast_environment type_environment |> AstEnvironment.module_tracker
-  in
-  let new_module_tracker = Analysis.ModuleTracker.create controls in
-  let changed_paths =
-    let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
-    let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path) in
-    Interprocedural.ChangedPaths.compute_locally_changed_paths
-      ~scheduler
-      ~configuration
-      ~old_module_tracker
-      ~new_module_tracker
-    |> List.map ~f:ArtifactPath.raw
-    |> List.filter ~f:(fun path -> not (is_pysa_model path || is_taint_config path))
-  in
-  match changed_paths with
-  | [] -> Ok type_environment
-  | _ ->
-      Log.warning "Changes to source files detected, ignoring existing cache.";
-      Error SharedMemoryStatus.InvalidByCodeChange
 
 
 let save_type_environment ~scheduler ~configuration ~environment =
@@ -341,7 +381,25 @@ let save_type_environment ~scheduler ~configuration ~environment =
       Ok ())
 
 
-let type_environment ({ status; save_cache; scheduler; configuration } as cache) f =
+let type_environment
+    ({ status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman } as
+    cache)
+    f
+  =
+  let no_file_changes_detected_by_comparing_type_environments old_type_environment =
+    Log.info "Determining if source files have changed since cache was created.";
+    let changed_files =
+      ChangedFiles.from_type_environment ~scheduler ~configuration old_type_environment
+    in
+    if List.is_empty changed_files then
+      let () = Log.info "No source file change is detected." in
+      true
+    else
+      let () =
+        Log.info "Changes to source files detected: %s" (ChangedFiles.show_files changed_files)
+      in
+      false
+  in
   let compute_and_save_environment () =
     let environment = f () in
     if save_cache then
@@ -351,15 +409,23 @@ let type_environment ({ status; save_cache; scheduler; configuration } as cache)
   let environment, status =
     match status with
     | Loaded _ -> (
-        match load_type_environment ~scheduler ~configuration with
+        match load_type_environment ~configuration with
         | Ok environment ->
-            let status =
-              SharedMemoryStatus.set_entry_usage
-                ~entry:Entry.TypeEnvironment
-                ~usage:Usage.Used
-                status
-            in
-            environment, status
+            if
+              no_file_changes_reported_by_watchman
+              || no_file_changes_detected_by_comparing_type_environments environment
+            then
+              let status =
+                SharedMemoryStatus.set_entry_usage
+                  ~entry:Entry.TypeEnvironment
+                  ~usage:Usage.Used
+                  status
+              in
+              environment, status
+            else
+              let () = Log.info "Resetting shared memory due to source file changes" in
+              Memory.reset_shared_memory ();
+              compute_and_save_environment (), SharedMemoryStatus.InvalidByCodeChange
         | Error error_status ->
             Log.info "Resetting shared memory due to failing to load the type environment";
             Memory.reset_shared_memory ();
