@@ -827,7 +827,7 @@ def foo(bar: int):
 
 print(foo(10))
 """
-        with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as tmpdir:
+        with tempfile.TemporaryDirectory() as tmpdir:
             tmpfile = tempfile.NamedTemporaryFile(suffix=".py", dir=tmpdir)
             tmpfile.write(test_text.encode("utf-8"))
             tmpfile.flush()
