@@ -66,3 +66,19 @@ def propagate_multiple_add_feature(parameter):
 def test_add_multiple_feature(parameter):
     propagate_multiple_add_feature(parameter)
     _test_sink(parameter)
+
+
+def tito_with_feature(x):
+    ...
+
+
+# AddFeatureToArgument accumulates breadcrumbs from calls along the path.
+def add_feature_to_argument_accumulates_features(x):
+    x = tito_with_feature(x)
+    add_feature_to_first(x, 0)
+
+
+def source_add_feature_to_argument_accumulates_features():
+    x = _test_source()
+    add_feature_to_argument_accumulates_features(x)
+    return x

@@ -18,3 +18,8 @@ def add_feature_to_argument.add_via_value_of(
   second
 ):
     ...
+
+def add_feature_to_argument.tito_with_feature(
+  x: TaintInTaintOut[ViaDynamicFeature[via_tito_with_feature]],
+):
+  ...

@@ -124,6 +124,45 @@
 {
   "kind": "model",
   "data": {
+    "callable": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
+    "sinks": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  {
+                    "name": "add_feature_to_argument.add_feature_to_first",
+                    "port": "leaf:first"
+                  }
+                ],
+                "kind": "AddFeatureToArgument"
+              }
+            ],
+            "local_features": [
+              { "always-via": "via_tito_with_feature" },
+              { "always-via": "obscure:model" },
+              { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 77, "start": 26, "end": 27 } ],
+            "origin": {
+              "filename": "add_feature_to_argument.py",
+              "line": 78,
+              "start": 25,
+              "end": 26
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "add_feature_to_argument.add_feature_to_first",
     "sinks": [
       {
@@ -350,6 +389,42 @@
 {
   "kind": "model",
   "data": {
+    "callable": "add_feature_to_argument.source_add_feature_to_argument_accumulates_features",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "via_tito_with_feature" },
+              { "always-via": "obscure:model" },
+              { "always-via": "string_concat_lhs" },
+              { "always-via": "tito" }
+            ],
+            "origin": {
+              "filename": "add_feature_to_argument.py",
+              "line": 82,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "add_feature_to_argument.test_add_feature_to_sink",
     "sinks": [
       {
@@ -557,5 +632,29 @@
         ]
       }
     ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "add_feature_to_argument.tito_with_feature",
+    "tito": [
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "via_tito_with_feature" } ],
+                "return_paths": { "": 0 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
   }
 }
