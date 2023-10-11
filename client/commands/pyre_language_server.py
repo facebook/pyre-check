@@ -329,6 +329,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             self.server_state.server_options.language_server_features.telemetry.is_enabled()
         )
         if should_write_telemetry:
+            parameters = dict(parameters)
             parameters[
                 "project_identifier"
             ] = self.server_state.server_options.project_identifier
