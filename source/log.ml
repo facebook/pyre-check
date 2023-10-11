@@ -9,9 +9,8 @@
    prefixing log output with an appropriate section name *)
 
 (* Core shadows/deprecates the stdlib Unix module. *)
-module Caml_unix = Unix
+module CamlUnix = Unix
 open Core
-module Unix = Caml_unix
 
 type section =
   [ `Check
@@ -96,7 +95,7 @@ end
 let is_enabled section = Hash_set.mem GlobalState.enabled (section_to_string section)
 
 let format_tm fmt tm =
-  let open Unix in
+  let open CamlUnix in
   let year = tm.tm_year + 1900 in
   let month = tm.tm_mon + 1 in
   Format.fprintf
@@ -113,7 +112,7 @@ let format_tm fmt tm =
 let log ~section format =
   let section = section_to_string section in
   if Hash_set.mem GlobalState.enabled section then
-    let localtime = Unix.localtime (Unix.time ()) in
+    let localtime = CamlUnix.localtime (CamlUnix.time ()) in
     Format.fprintf
       Format.err_formatter
       ("%a %s " ^^ format ^^ "\n%!")
@@ -140,7 +139,7 @@ let log_unix_error ?(section = `Error) (error_kind, name, parameters) =
   log
     ~section
     "Unix error %s: %s(%s)"
-    (Unix.error_message error_kind [@alert "-deprecated"])
+    (CamlUnix.error_message error_kind [@alert "-deprecated"])
     name
     parameters
 

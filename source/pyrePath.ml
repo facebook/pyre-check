@@ -8,9 +8,8 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 (* Core shadows/deprecates the stdlib Unix module. *)
-module Caml_unix = Unix
+module CamlUnix = Unix
 open Core
-module Unix = Caml_unix
 
 type path = string [@@deriving compare, show, sexp, hash]
 
@@ -29,7 +28,7 @@ let absolute = function
 
 let create_absolute ?(follow_symbolic_links = false) path =
   if follow_symbolic_links then
-    Absolute (Unix.realpath path)
+    Absolute (CamlUnix.realpath path)
   else
     Absolute path
 
@@ -59,7 +58,7 @@ let create_directory_recursively ?(permission = 0o777) path =
         match do_create (Filename.dirname path) with
         | Result.Error _ as error -> error
         | Result.Ok () ->
-            Unix.mkdir path permission;
+            CamlUnix.mkdir path permission;
             Result.Ok ())
     | path when Caml.Sys.is_directory path -> Result.Ok ()
     | path ->
@@ -107,9 +106,9 @@ let is_path_python_init path =
 
 
 let rec stat_no_eintr_raw path =
-  try Some (Unix.stat path) with
-  | Unix.Unix_error (Unix.EINTR, _, _) -> stat_no_eintr_raw path
-  | Unix.Unix_error ((Unix.ENOENT | Unix.ENOTDIR), _, _) -> None
+  try Some (CamlUnix.stat path) with
+  | CamlUnix.Unix_error (CamlUnix.EINTR, _, _) -> stat_no_eintr_raw path
+  | CamlUnix.Unix_error ((CamlUnix.ENOENT | CamlUnix.ENOTDIR), _, _) -> None
 
 
 let stat_no_eintr path = stat_no_eintr_raw (absolute path)
@@ -118,7 +117,7 @@ let file_exists path = Option.is_some (stat_no_eintr path)
 
 let directory_exists path =
   match stat_no_eintr path with
-  | Some { Unix.st_kind = Unix.S_DIR; _ } -> true
+  | Some { CamlUnix.st_kind = CamlUnix.S_DIR; _ } -> true
   | _ -> false
 
 
@@ -129,7 +128,7 @@ let last path =
 
 let follow_symbolic_link path =
   try absolute path |> create_absolute ~follow_symbolic_links:true |> Option.some with
-  | Unix.Unix_error _ -> None
+  | CamlUnix.Unix_error _ -> None
 
 
 (* Variant of Sys.readdir where names are sorted in alphabetical order *)
@@ -142,7 +141,7 @@ let read_directory_ordered_raw path =
 let list ?(file_filter = fun _ -> true) ?(directory_filter = fun _ -> true) ~root () =
   let rec list sofar path =
     match stat_no_eintr_raw path with
-    | Some { Unix.st_kind = Unix.S_DIR; _ } ->
+    | Some { CamlUnix.st_kind = CamlUnix.S_DIR; _ } ->
         if directory_filter path then (
           match read_directory_ordered_raw path with
           | entries ->
@@ -182,8 +181,8 @@ end
 let search_upwards ~target ~target_type ~root =
   let rec directory_has_target directory =
     match target_type, stat_no_eintr_raw (directory ^/ target) with
-    | FileType.Directory, Some { Unix.st_kind = Unix.S_DIR; _ }
-    | FileType.File, Some { Unix.st_kind = Unix.S_REG; _ } ->
+    | FileType.Directory, Some { CamlUnix.st_kind = CamlUnix.S_DIR; _ }
+    | FileType.File, Some { CamlUnix.st_kind = CamlUnix.S_REG; _ } ->
         Some (create_absolute directory)
     | _ ->
         let parent_directory = Filename.dirname directory in
@@ -196,34 +195,34 @@ let search_upwards ~target ~target_type ~root =
 
 
 let unlink_if_exists path =
-  try Unix.unlink (absolute path) with
-  | Unix.Unix_error ((Unix.ENOENT | Unix.ENOTDIR), _, _) -> ()
+  try CamlUnix.unlink (absolute path) with
+  | CamlUnix.Unix_error ((CamlUnix.ENOENT | CamlUnix.ENOTDIR), _, _) -> ()
 
 
 let remove_recursively path =
   let rec do_remove path =
     try
-      let stats = Unix.lstat path in
-      match stats.Unix.st_kind with
-      | Unix.S_DIR ->
+      let stats = CamlUnix.lstat path in
+      match stats.CamlUnix.st_kind with
+      | CamlUnix.S_DIR ->
           let contents = Caml.Sys.readdir path in
           List.iter (Array.to_list contents) ~f:(fun name ->
               let name = Filename.concat path name in
               do_remove name);
-          Unix.rmdir path
-      | Unix.S_LNK
-      | Unix.S_REG
-      | Unix.S_CHR
-      | Unix.S_BLK
-      | Unix.S_FIFO
-      | Unix.S_SOCK ->
-          Unix.unlink path
+          CamlUnix.rmdir path
+      | CamlUnix.S_LNK
+      | CamlUnix.S_REG
+      | CamlUnix.S_CHR
+      | CamlUnix.S_BLK
+      | CamlUnix.S_FIFO
+      | CamlUnix.S_SOCK ->
+          CamlUnix.unlink path
     with
     (* Path has been deleted out from under us - can ignore it. *)
     | Sys_error message ->
         Log.warning "Error occurred when removing %s recursively: %s" path message;
         ()
-    | Unix.Unix_error (Unix.ENOENT, _, _) -> ()
+    | CamlUnix.Unix_error (CamlUnix.ENOENT, _, _) -> ()
   in
   do_remove (absolute path)
 

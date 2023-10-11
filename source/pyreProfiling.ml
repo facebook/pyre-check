@@ -7,9 +7,9 @@
 
 (* Profiling logic for internal Pyre behaviour. *)
 
-module Caml_unix = Unix
+(* Core shadows/deprecates the stdlib Unix module. *)
+module CamlUnix = Unix
 open Core
-module Unix = Caml_unix
 module Worker = Hack_parallel.Std.Worker
 module SharedMemory = Hack_parallel.Std.SharedMemory
 
@@ -61,7 +61,7 @@ module Event = struct
 
   let create ?(timestamp = now_in_microseconds ()) ?(tags = []) ~event_type name =
     let name = String.filter ~f:Char.is_print name in
-    let pid = Unix.getpid () in
+    let pid = CamlUnix.getpid () in
     let worker_id = Worker.current_worker_id () in
     { name; worker_id; pid; event_type; timestamp; tags }
 end

@@ -7,9 +7,9 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
-module Caml_unix = Unix
+(* Core shadows/deprecates the stdlib Unix module. *)
+module CamlUnix = Unix
 open Core
-module Unix = Caml_unix
 module Gc = Caml.Gc
 module Set = Caml.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
@@ -140,9 +140,9 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
   let table_path = PyrePath.create_relative ~root ~relative:"table" in
   let dependencies_path = PyrePath.create_relative ~root ~relative:"deps" in
   let () =
-    try Unix.mkdir (PyrePath.absolute root) 0o777 with
+    try CamlUnix.mkdir (PyrePath.absolute root) 0o777 with
     (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-    | Unix.Unix_error ((EEXIST | EISDIR), _, _) ->
+    | CamlUnix.Unix_error ((EEXIST | EISDIR), _, _) ->
         PyrePath.unlink_if_exists table_path;
         PyrePath.unlink_if_exists dependencies_path
     | e -> raise e
@@ -151,23 +151,21 @@ let prepare_saved_state_directory { Configuration.Analysis.log_directory; _ } =
 
 
 let rec waitpid_no_eintr flags pid =
-  try Unix.waitpid flags pid with
-  | Unix.Unix_error (Unix.EINTR, _, _) -> waitpid_no_eintr flags pid
+  try CamlUnix.waitpid flags pid with
+  | CamlUnix.Unix_error (EINTR, _, _) -> waitpid_no_eintr flags pid
 
 
 let run_tar arguments =
-  let open Unix in
-  let in_read, in_write = Unix.pipe ~cloexec:true () in
-  let out_read, out_write = Unix.pipe ~cloexec:true () in
-  let err_read, err_write = Unix.pipe ~cloexec:true () in
-  let pid =
-    Unix.create_process "tar" (Array.of_list ("tar" :: arguments)) in_read out_write err_write
-  in
+  let open CamlUnix in
+  let in_read, in_write = pipe ~cloexec:true () in
+  let out_read, out_write = pipe ~cloexec:true () in
+  let err_read, err_write = pipe ~cloexec:true () in
+  let pid = create_process "tar" (Array.of_list ("tar" :: arguments)) in_read out_write err_write in
   List.iter ~f:close [in_read; out_write; err_write];
   let _, process_status = waitpid_no_eintr [] pid in
   List.iter ~f:close [in_write; out_read; err_read];
   match process_status with
-  | Unix.WEXITED 0 -> ()
+  | WEXITED 0 -> ()
   | _ ->
       raise
         (TarError
