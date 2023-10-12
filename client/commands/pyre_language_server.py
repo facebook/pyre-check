@@ -17,6 +17,7 @@ import abc
 import asyncio
 
 import dataclasses
+import json
 import logging
 import random
 from pathlib import Path
@@ -439,7 +440,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             and self.server_state.server_options.flavor
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
-            await self.send_overlay_type_errors(document_path=document_path)
+            await self.send_overlay_type_errors(
+                document_path=document_path, activity_key=activity_key
+            )
 
     async def process_close_request(
         self, parameters: lsp.DidCloseTextDocumentParameters
@@ -460,14 +463,37 @@ class PyreLanguageServer(PyreLanguageServerApi):
     async def send_overlay_type_errors(
         self,
         document_path: Path,
+        activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
         result = await self.querier.get_type_errors(document_path)
+        error_message = None
         if isinstance(result, DaemonQueryFailure):
-            return
-        await self.client_type_error_handler.show_overlay_type_errors(
-            path=document_path,
-            type_errors=result,
+            error_message = result.error_message
+            result_str = "[]"
+        else:
+            await self.client_type_error_handler.show_overlay_type_errors(
+                path=document_path,
+                type_errors=result,
+            )
+            result_str = json.dumps([error.to_json() for error in result])
+
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "typeErrors",
+                "filePath": str(document_path),
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "duration_ms": type_errors_timer.stop_in_millisecond(),
+                "error_message": error_message,
+                "type_errors": result_str,
+                **daemon_status_before.as_telemetry_dict(),
+            },
+            activity_key,
         )
 
     async def process_did_change_request(
@@ -507,6 +533,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         ):
             await self.send_overlay_type_errors(
                 document_path=document_path,
+                activity_key=activity_key,
             )
         await self.write_telemetry(
             {
@@ -558,7 +585,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
             and self.server_state.server_options.flavor
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
-            await self.send_overlay_type_errors(document_path=document_path)
+            await self.send_overlay_type_errors(
+                document_path=document_path, activity_key=activity_key
+            )
 
         await self.write_telemetry(
             {

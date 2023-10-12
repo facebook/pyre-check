@@ -1645,6 +1645,10 @@ class DidChangeTest(ApiTestCase):
                 expectations = [
                     expect_diagnostics,
                     self._expect_telemetry_event(
+                        operation="typeErrors",
+                        result=None,
+                    ),
+                    self._expect_telemetry_event(
                         operation="didChange",
                         result=None,
                     ),
@@ -1707,6 +1711,10 @@ class DidChangeTest(ApiTestCase):
             if telemetry.is_enabled():
                 expectations = [
                     expect_diagnostics,
+                    self._expect_telemetry_event(
+                        operation="typeErrors",
+                        result=None,
+                    ),
                     self._expect_telemetry_event(
                         operation="didChange",
                         result=None,
