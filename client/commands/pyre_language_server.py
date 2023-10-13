@@ -527,14 +527,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
             is_dirty=True,
             pyre_code_updated=False,
         )
-        if (
-            process_unsaved_changes
-            and self.get_language_server_features().type_errors.is_enabled()
-        ):
-            await self.send_overlay_type_errors(
-                document_path=document_path,
-                activity_key=activity_key,
-            )
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -550,6 +542,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
             },
             activity_key,
         )
+        if (
+            process_unsaved_changes
+            and self.get_language_server_features().type_errors.is_enabled()
+        ):
+            await self.send_overlay_type_errors(
+                document_path=document_path, activity_key=activity_key
+            )
 
     async def process_did_save_request(
         self,
@@ -579,16 +578,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
             pyre_code_updated=False,
         )
 
-        if (
-            self.get_language_server_features().type_errors.is_enabled()
-            # TODO (T165048078): hack to get this working only for codenav server
-            and self.server_state.server_options.flavor
-            == identifiers.PyreFlavor.CODE_NAVIGATION
-        ):
-            await self.send_overlay_type_errors(
-                document_path=document_path, activity_key=activity_key
-            )
-
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -604,6 +593,16 @@ class PyreLanguageServer(PyreLanguageServerApi):
             },
             activity_key,
         )
+
+        if (
+            self.get_language_server_features().type_errors.is_enabled()
+            # TODO (T165048078): hack to get this working only for codenav server
+            and self.server_state.server_options.flavor
+            == identifiers.PyreFlavor.CODE_NAVIGATION
+        ):
+            await self.send_overlay_type_errors(
+                document_path=document_path, activity_key=activity_key
+            )
 
     async def process_type_coverage_request(
         self,
