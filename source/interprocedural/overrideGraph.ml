@@ -151,9 +151,10 @@ module Heap = struct
             true
           else begin
             Log.info
-              "Omitting overrides for `%s`, as it has %d overrides."
+              "Omitting overrides for `%s`. The number of overrides %d exceeds the limit %d."
               (Target.show_pretty member)
-              number_of_overrides;
+              number_of_overrides
+              cap;
             skipped_overrides := member :: !skipped_overrides;
             false
           end
