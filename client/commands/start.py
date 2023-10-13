@@ -224,7 +224,7 @@ def get_critical_files(
     configuration_name = (
         find_directories.CODENAV_CONFIGURATION_FILE
         if flavor == identifiers.PyreFlavor.CODE_NAVIGATION
-        else find_directories.PYRE_CONFIGURATION_FILE
+        else find_directories.JSON_CONFIGURATION_FILE
     )
     local_root = configuration.get_local_root()
     return [

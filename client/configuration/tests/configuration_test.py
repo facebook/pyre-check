@@ -13,7 +13,7 @@ from pathlib import Path
 import testslide
 
 from ... import command_arguments
-from ...find_directories import CODENAV_CONFIGURATION_FILE, PYPROJECT_CONFIGURATION_FILE
+from ...find_directories import CODENAV_CONFIGURATION_FILE, TOML_CONFIGURATION_FILE
 from ...tests.setup import (
     ensure_directories_exists,
     ensure_files_exist,
@@ -1219,12 +1219,12 @@ class ConfigurationTest(testslide.TestCase):
             exclude = ["This configuration only for test reading data from pyproject.toml"]
             """
             with open(
-                root_path / PYPROJECT_CONFIGURATION_FILE, "w", encoding="UTF-8"
+                root_path / TOML_CONFIGURATION_FILE, "w", encoding="UTF-8"
             ) as configuration_file:
                 configuration_file.write(pyproject_config)
             self.assertEqual(
                 PartialConfiguration.from_file(
-                    root_path / PYPROJECT_CONFIGURATION_FILE, is_pyproject_dot_toml=True
+                    root_path / TOML_CONFIGURATION_FILE, is_pyproject_dot_toml=True
                 ).excludes,
                 ["This configuration only for test reading data from pyproject.toml"],
             )

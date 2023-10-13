@@ -51,9 +51,9 @@ from .. import command_arguments, dataclasses_merge, find_directories, identifie
 from ..filesystem import expand_global_root, expand_relative_path
 from ..find_directories import (
     get_relative_local_root,
+    JSON_CONFIGURATION_FILE,
     LOCAL_CONFIGURATION_FILE,
-    PYPROJECT_CONFIGURATION_FILE,
-    PYRE_CONFIGURATION_FILE,
+    TOML_CONFIGURATION_FILE,
 )
 from . import (
     exceptions,
@@ -925,7 +925,7 @@ def create_configuration(
         if found_root is None:
             raise exceptions.InvalidConfiguration(
                 "A local configuration path was explicitly specified, but no"
-                + f" {PYRE_CONFIGURATION_FILE} file was found in {search_base}"
+                + f" {JSON_CONFIGURATION_FILE} file was found in {search_base}"
                 + " or its parents."
             )
         elif found_root.local_root is None:
@@ -945,16 +945,16 @@ def create_configuration(
     else:
         project_root = found_root.global_root
         relative_local_root = None
-        if (project_root / PYRE_CONFIGURATION_FILE).is_file():
+        if (project_root / JSON_CONFIGURATION_FILE).is_file():
             partial_configuration = PartialConfiguration.from_file(
-                project_root / PYRE_CONFIGURATION_FILE
+                project_root / JSON_CONFIGURATION_FILE
             ).expand_relative_paths(str(project_root))
         else:
             LOG.debug(
                 "Could not find `.pyre_configuration` in the project root.Searching for `pyproject.toml`..."
             )
             partial_configuration = PartialConfiguration.from_file(
-                project_root / PYPROJECT_CONFIGURATION_FILE, is_pyproject_dot_toml=True
+                project_root / TOML_CONFIGURATION_FILE, is_pyproject_dot_toml=True
             ).expand_relative_paths(str(project_root))
         local_root = found_root.local_root
         if local_root is not None:

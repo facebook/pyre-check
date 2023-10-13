@@ -24,8 +24,8 @@ from pathlib import Path
 from typing import Callable, List, NamedTuple, Optional
 
 
-PYRE_CONFIGURATION_FILE: str = ".pyre_configuration"
-PYPROJECT_CONFIGURATION_FILE: str = "pyproject.toml"
+JSON_CONFIGURATION_FILE: str = ".pyre_configuration"
+TOML_CONFIGURATION_FILE: str = "pyproject.toml"
 LOCAL_CONFIGURATION_FILE: str = ".pyre_configuration.local"
 CODENAV_CONFIGURATION_FILE: str = ".pyre_configuration.codenav"
 BINARY_NAME: str = "pyre.bin"
@@ -124,7 +124,7 @@ def find_outermost_directory_containing_file(
 def find_global_root(base: Path) -> Optional[Path]:
     """Pyre always runs from the directory containing the nearest .pyre_configuration,
     if one exists."""
-    return find_parent_directory_containing_file(base, PYRE_CONFIGURATION_FILE)
+    return find_parent_directory_containing_file(base, JSON_CONFIGURATION_FILE)
 
 
 def get_relative_local_root(
@@ -155,7 +155,7 @@ def find_global_and_local_root(base: Path) -> Optional[FoundRoot]:
     If both global and local exist, return them as a pair.
     """
     found_global_root = find_parent_directory_containing_file(
-        base, PYRE_CONFIGURATION_FILE
+        base, JSON_CONFIGURATION_FILE
     )
     if found_global_root is None:
         return None
