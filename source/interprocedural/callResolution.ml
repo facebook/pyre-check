@@ -80,6 +80,16 @@ let is_super ~resolution ~define expression =
         false
 
 
+(* A nonlocal variable is neither global nor local *)
+let is_nonlocal ~resolution ~define variable =
+  let define_list = Reference.as_list (Reference.delocalize define) in
+  let variable_list = Reference.as_list (Reference.delocalize variable) in
+  let is_prefix = List.is_prefix ~equal:String.equal ~prefix:define_list variable_list in
+  let is_global = Resolution.is_global resolution ~reference:variable in
+  let is_nonlocal = (not is_prefix) && (not is_global) && Reference.is_local variable in
+  is_nonlocal
+
+
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
 let resolve_ignoring_untracked ~resolution expression =
   try Resolution.resolve_expression_to_type resolution expression with

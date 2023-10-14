@@ -14,6 +14,9 @@ val extract_constant_name : Expression.t -> string option
 (* Evaluates to whether the provided expression is a superclass of define. *)
 val is_super : resolution:Resolution.t -> define:Statement.Define.t Node.t -> Expression.t -> bool
 
+(* Evaluate to whether a variable is nonlocal to a given define *)
+val is_nonlocal : resolution:Resolution.t -> define:Reference.t -> Reference.t -> bool
+
 (* Check whether `successor` extends `predecessor`.
  * Returns false on untracked types.
  * Returns `reflexive` if `predecessor` and `successor` are equal. *)
