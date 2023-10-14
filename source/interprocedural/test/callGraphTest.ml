@@ -1745,6 +1745,7 @@ let test_call_graph_of_define context =
                      {
                        IdentifierCallees.global_targets =
                          [CallTarget.create ~return_type:None (Target.Object "test.d")];
+                       nonlocal_targets = [];
                      } );
                  ( "__getitem__",
                    ExpressionCallees.from_attribute_access
@@ -2874,6 +2875,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                 nonlocal_targets = [];
                }) );
       ]
     ();
@@ -4878,6 +4880,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.x")];
+                 nonlocal_targets = [];
                }) );
         ( "10:2-10:3",
           LocationCallees.Singleton
@@ -4885,6 +4888,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:0 ~return_type:None (Target.Object "test.y")];
+                 nonlocal_targets = [];
                }) );
         ( "12:2-12:8",
           LocationCallees.Singleton
@@ -4903,6 +4907,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.x")];
+                 nonlocal_targets = [];
                }) );
         ( "13:2-13:8",
           LocationCallees.Singleton
@@ -4921,6 +4926,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~index:1 ~return_type:None (Target.Object "test.y")];
+                 nonlocal_targets = [];
                }) );
       ]
     ();
@@ -4944,6 +4950,7 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                 nonlocal_targets = [];
                }) );
       ]
     ();
@@ -5049,10 +5056,10 @@ let test_call_graph_of_define context =
                {
                  IdentifierCallees.global_targets =
                    [CallTarget.create ~return_type:None (Target.Object "test.x")];
+                 nonlocal_targets = [];
                }) );
       ]
     ();
-  (* TODO(T165690928): Add nonlocal to call graph *)
   assert_call_graph_of_define
     ~source:
       {|
@@ -5063,7 +5070,37 @@ let test_call_graph_of_define context =
           x = "str"
       |}
     ~define_name:"$local_test?outer$inner"
-    ~expected:[]
+    ~expected:
+      [
+        ( "6:4-6:5",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.nonlocal_targets =
+                   [CallTarget.create ~return_type:None (Target.Object "test.outer.x")];
+                 global_targets = [];
+               }) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:{|
+      def outer():
+        x = ""
+        def inner():
+          y = x
+      |}
+    ~define_name:"$local_test?outer$inner"
+    ~expected:
+      [
+        ( "5:8-5:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_identifier
+               {
+                 IdentifierCallees.nonlocal_targets =
+                   [CallTarget.create ~return_type:None (Target.Object "test.outer.x")];
+                 global_targets = [];
+               }) );
+      ]
     ();
   ()
 

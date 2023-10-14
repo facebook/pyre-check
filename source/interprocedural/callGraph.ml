@@ -620,18 +620,43 @@ end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
 module IdentifierCallees = struct
-  type t = { global_targets: CallTarget.t list } [@@deriving eq, show { with_path = false }]
+  type t = {
+    global_targets: CallTarget.t list;
+    nonlocal_targets: CallTarget.t list;
+  }
+  [@@deriving eq, show { with_path = false }]
 
-  let deduplicate { global_targets } = { global_targets = CallTarget.dedup_and_sort global_targets }
+  type identifier_reference =
+    | Global of Reference.t
+    | Nonlocal of Reference.t
 
-  let join { global_targets = left_global_targets } { global_targets = right_global_targets } =
-    { global_targets = List.rev_append left_global_targets right_global_targets }
+  let deduplicate { global_targets; nonlocal_targets } =
+    {
+      global_targets = CallTarget.dedup_and_sort global_targets;
+      nonlocal_targets = CallTarget.dedup_and_sort nonlocal_targets;
+    }
 
 
-  let all_targets { global_targets } = List.map ~f:CallTarget.target global_targets
+  let join
+      { global_targets = left_global_targets; nonlocal_targets = left_nonlocal_targets }
+      { global_targets = right_global_targets; nonlocal_targets = right_nonlocal_targets }
+    =
+    {
+      global_targets = List.rev_append left_global_targets right_global_targets;
+      nonlocal_targets = List.rev_append left_nonlocal_targets right_nonlocal_targets;
+    }
 
-  let to_json { global_targets } =
-    `Assoc ["globals", `List (List.map ~f:CallTarget.to_json global_targets)]
+
+  let all_targets { global_targets; nonlocal_targets } =
+    List.map ~f:CallTarget.target (global_targets @ nonlocal_targets)
+
+
+  let to_json { global_targets; nonlocal_targets } =
+    `Assoc
+      [
+        "globals", `List (List.map ~f:CallTarget.to_json global_targets);
+        "nonlocals", `List (List.map ~f:CallTarget.to_json nonlocal_targets);
+      ]
 end
 
 (** An aggregate of callees for formatting strings. *)
@@ -1723,12 +1748,14 @@ let resolve_attribute_access_properties
   { property_targets; is_attribute }
 
 
-let as_global_reference ~resolution expression =
+let as_identifier_reference ~define ~resolution expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
       let reference = Reference.create identifier in
       if Resolution.is_global resolution ~reference then
-        Some (Reference.delocalize reference)
+        Some (IdentifierCallees.Global (Reference.delocalize reference))
+      else if CallResolution.is_nonlocal ~resolution ~define reference then
+        Some (IdentifierCallees.Nonlocal (Reference.delocalize reference))
       else
         None
   | Name name -> (
@@ -1738,20 +1765,31 @@ let as_global_reference ~resolution expression =
       >>= function
       | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
           { from; name; remaining = []; _ } ->
-          Some (Reference.combine from (Reference.create name))
+          Some (IdentifierCallees.Global (Reference.combine from (Reference.create name)))
       | _ -> None)
   | _ -> None
 
 
-let is_builtin_reference reference = reference |> Reference.single |> Option.is_some
+let is_builtin_reference = function
+  | IdentifierCallees.Global reference -> reference |> Reference.single |> Option.is_some
+  | Nonlocal _ -> false
 
-let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special =
+
+let resolve_attribute_access_global_targets
+    ~define
+    ~resolution
+    ~base_annotation
+    ~base
+    ~attribute
+    ~special
+  =
   let expression =
     Expression.Name (Name.Attribute { Name.Attribute.base; attribute; special })
     |> Node.create_with_default_location
   in
-  match as_global_reference ~resolution expression with
-  | Some global -> [global]
+  match as_identifier_reference ~define ~resolution expression with
+  | Some (IdentifierCallees.Global global) -> [global]
+  | Some (Nonlocal _) -> []
   | None ->
       let global_resolution = Resolution.global_resolution resolution in
       let rec find_targets targets = function
@@ -1805,24 +1843,38 @@ let resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~
       find_targets [] base_annotation
 
 
-let resolve_identifier ~resolution ~call_indexer ~identifier =
+let resolve_identifier ~define ~resolution ~call_indexer ~identifier =
   Expression.Name (Name.Identifier identifier)
   |> Node.create_with_default_location
-  |> as_global_reference ~resolution
+  |> as_identifier_reference ~define ~resolution
   |> Option.filter ~f:(Fn.non is_builtin_reference)
-  >>| Target.create_object
-  >>| fun global ->
-  {
-    IdentifierCallees.global_targets =
-      [
-        CallTargetIndexer.create_target
-          call_indexer
-          ~implicit_self:false
-          ~implicit_dunder_call:false
-          ~return_type:None
-          global;
-      ];
-  }
+  >>| function
+  | IdentifierCallees.Global global ->
+      {
+        IdentifierCallees.global_targets =
+          [
+            CallTargetIndexer.create_target
+              call_indexer
+              ~implicit_self:false
+              ~implicit_dunder_call:false
+              ~return_type:None
+              (Target.create_object global);
+          ];
+        nonlocal_targets = [];
+      }
+  | Nonlocal nonlocal ->
+      {
+        IdentifierCallees.nonlocal_targets =
+          [
+            CallTargetIndexer.create_target
+              call_indexer
+              ~implicit_self:false
+              ~implicit_dunder_call:false
+              ~return_type:None
+              (Target.create_object nonlocal);
+          ];
+        global_targets = [];
+      }
 
 
 (* This is a bit of a trick. The only place that knows where the local annotation map keys is the
@@ -1835,6 +1887,8 @@ module DefineCallGraphFixpoint (Context : sig
   val local_annotations : LocalAnnotationMap.ReadOnly.t option
 
   val qualifier : Reference.t
+
+  val name : Reference.t
 
   val parent : Reference.t option
 
@@ -2004,7 +2058,13 @@ struct
     in
 
     let global_targets =
-      resolve_attribute_access_global_targets ~resolution ~base_annotation ~base ~attribute ~special
+      resolve_attribute_access_global_targets
+        ~define:Context.name
+        ~resolution
+        ~base_annotation
+        ~base
+        ~attribute
+        ~special
       |> List.map ~f:Target.create_object
       (* Use a hashset here for faster lookups. *)
       |> List.filter ~f:(Hash_set.mem attribute_targets)
@@ -2105,7 +2165,7 @@ struct
             |> ExpressionCallees.from_attribute_access
             |> register_targets ~expression_identifier:attribute
         | Expression.Name (Name.Identifier identifier) ->
-            resolve_identifier ~resolution ~call_indexer ~identifier
+            resolve_identifier ~define:Context.name ~resolution ~call_indexer ~identifier
             >>| ExpressionCallees.from_identifier
             >>| register_targets ~expression_identifier:identifier
             |> ignore
@@ -2418,6 +2478,8 @@ let call_graph_of_define
     let local_annotations = TypeEnvironment.ReadOnly.get_local_annotations environment name
 
     let qualifier = qualifier
+
+    let name = name
 
     let parent = parent
 

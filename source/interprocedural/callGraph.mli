@@ -159,7 +159,11 @@ end
 
 (** An aggregate of all possible callees for a given identifier expression, i.e `foo`. *)
 module IdentifierCallees : sig
-  type t = { global_targets: CallTarget.t list } [@@deriving eq, show]
+  type t = {
+    global_targets: CallTarget.t list;
+    nonlocal_targets: CallTarget.t list;
+  }
+  [@@deriving eq, show]
 
   val to_json : t -> Yojson.Safe.t
 end

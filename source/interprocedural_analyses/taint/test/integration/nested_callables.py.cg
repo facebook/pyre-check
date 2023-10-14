@@ -2,8 +2,8 @@
 Call dependencies
 $local_nested_callables?access_parameter_in_inner_scope_sink$inner (fun) -> [_test_sink (fun)]
 $local_nested_callables?access_parameter_in_inner_scope_tito$inner (fun) -> []
-$local_nested_callables?access_variables_in_outer_scope_issue$inner (fun) -> [_test_sink (fun)]
-$local_nested_callables?access_variables_in_outer_scope_source$inner (fun) -> []
+$local_nested_callables?access_variables_in_outer_scope_issue$inner (fun) -> [_test_sink (fun) nested_callables.access_variables_in_outer_scope_issue.x (object)]
+$local_nested_callables?access_variables_in_outer_scope_source$inner (fun) -> [nested_callables.access_variables_in_outer_scope_source.x (object)]
 $local_nested_callables?outer_calling_other_function$inner_calling_other_function (fun) -> [nested_callables.some_sink (fun)]
 $local_nested_callables?foo$inner_with_model (fun) -> [_test_source (fun)]
 $local_nested_callables?test_mutation_of_class$set_a (fun) -> [_test_source (fun)]
