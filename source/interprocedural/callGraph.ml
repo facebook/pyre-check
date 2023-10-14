@@ -1726,9 +1726,9 @@ let resolve_attribute_access_properties
 let as_global_reference ~resolution expression =
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) ->
-      let reference = Reference.delocalize (Reference.create identifier) in
+      let reference = Reference.create identifier in
       if Resolution.is_global resolution ~reference then
-        Some reference
+        Some (Reference.delocalize reference)
       else
         None
   | Name name -> (
