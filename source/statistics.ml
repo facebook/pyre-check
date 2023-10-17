@@ -25,9 +25,17 @@ module GlobalState = struct
 
   let flush_timeout = 6.0 *. 3600.0 (* Seconds. *)
 
-  let username = Option.value (Sys.getenv "USER") ~default:(Core_unix.getlogin ())
+  let username =
+    match Sys.getenv "USER" with
+    | Some username -> username
+    | None -> Core_unix.getlogin ()
 
-  let hostname = Option.value (Sys.getenv "HOSTNAME") ~default:(Core_unix.gethostname ())
+
+  let hostname =
+    match Sys.getenv "HOSTNAME" with
+    | Some hostname -> hostname
+    | None -> Core_unix.gethostname ()
+
 
   let global_state =
     let current_time = Core_unix.time () in
