@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module CamlUnix = Unix
 open Core
 open OUnit2
 module Request = CodeNavigationServer.Testing.Request
@@ -479,7 +480,7 @@ let test_get_info_request context =
               Info
                 {
                   socket = PyrePath.show project.start_options.socket_path;
-                  pid = Core_unix.getpid () |> Pid.to_int;
+                  pid = CamlUnix.getpid ();
                   version = Version.version ();
                   global_root = PyrePath.show root;
                   relative_local_root = None;

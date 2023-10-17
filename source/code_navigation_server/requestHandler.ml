@@ -524,7 +524,7 @@ let handle_query
       Response.Info
         {
           version = Version.version ();
-          pid = Core_unix.getpid () |> Core.Pid.to_int;
+          pid = Unix.getpid ();
           socket = PyrePath.absolute socket_path;
           global_root = PyrePath.absolute project_root;
           relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;

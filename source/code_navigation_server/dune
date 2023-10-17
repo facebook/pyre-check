@@ -13,7 +13,6 @@
    lwt_ppx))
  (libraries
   core
-  core_unix
   ppx_deriving_yojson.runtime
   pyrelib.lwtsocketserver
   pyrelib.lwtsubprocess
