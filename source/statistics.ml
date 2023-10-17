@@ -60,15 +60,7 @@ module GlobalState = struct
     global_state.project_root <- old_state.project_root
 end
 
-module Cache : sig
-  val with_cache : f:(string list String.Table.t -> 'a) -> 'a
-end = struct
-  let cache = String.Table.create ()
-
-  let lock = Error_checking_mutex.create ()
-
-  let with_cache ~f = Error_checking_mutex.critical_section lock ~f:(fun () -> f cache)
-end
+let cache = String.Table.create ()
 
 let disable () =
   let open GlobalState in
@@ -154,9 +146,8 @@ let flush () =
         Out_channel.flush out_channel;
         Core_unix.close_process_out out_channel |> ignore
       in
-      Cache.with_cache ~f:(fun cache ->
-          Hashtbl.iteri ~f:flush_category cache;
-          Hashtbl.clear cache);
+      Hashtbl.iteri ~f:flush_category cache;
+      Hashtbl.clear cache;
       GlobalState.global_state.GlobalState.last_flush_timestamp <- Core_unix.time ();
       ()
 
@@ -164,13 +155,11 @@ let flush () =
 let flush_cache = flush
 
 let log ?(flush = false) category sample =
-  Cache.with_cache ~f:(fun cache ->
-      match Hashtbl.find cache category with
-      | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
-      | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
+  (match Hashtbl.find cache category with
+  | Some samples -> Hashtbl.set ~key:category ~data:(sample :: samples) cache
+  | _ -> Hashtbl.set ~key:category ~data:[sample] cache);
   let samples_count () =
-    Cache.with_cache ~f:(fun cache ->
-        Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data))
+    Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data)
   in
   let exceeds_timeout () =
     let current_time = Core_unix.time () in
