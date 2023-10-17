@@ -3131,7 +3131,7 @@ module ScratchProject = struct
 
 
   let delete_from_root ~root ~relative =
-    PyrePath.create_relative ~root ~relative |> PyrePath.absolute |> Core_unix.remove
+    PyrePath.create_relative ~root ~relative |> PyrePath.absolute |> CamlUnix.unlink
 
 
   let add_to_local_root project content ~relative =

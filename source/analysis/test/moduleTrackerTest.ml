@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module CamlUnix = Unix
 open Core
 open Ast
 open OUnit2
@@ -496,13 +497,12 @@ let test_module_path_directory_filter3 context =
   in
   create_file local_root "a.py";
   create_file search_root "b.py";
-  Core_unix.symlink
-    ~link_name:(PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute)
-    ~target:(PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute);
-  Core_unix.symlink
-    ~link_name:
-      (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute)
-    ~target:(PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute);
+  CamlUnix.symlink
+    (PyrePath.create_relative ~root:local_root ~relative:"a.py" |> PyrePath.absolute)
+    (PyrePath.create_relative ~root:link_local_root ~relative:"a.py" |> PyrePath.absolute);
+  CamlUnix.symlink
+    (PyrePath.create_relative ~root:search_root ~relative:"b.py" |> PyrePath.absolute)
+    (PyrePath.create_relative ~root:link_search_root ~relative:"b.py" |> PyrePath.absolute);
 
   let configuration =
     Configuration.Analysis.create

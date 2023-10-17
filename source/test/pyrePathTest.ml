@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module CamlUnix = Unix
 open Core
 open OUnit2
 open Test
@@ -179,29 +180,29 @@ let test_remove_contents_of_directory context =
   let _, root = root context in
   (* Empty directory *)
   let root0 = PyrePath.create_relative ~root ~relative:"test0" in
-  Core_unix.mkdir (PyrePath.absolute root0);
+  CamlUnix.mkdir (PyrePath.absolute root0) 0o777;
   assert_success root0;
 
   (* Files *)
   let root1 = PyrePath.create_relative ~root ~relative:"test1" in
-  Core_unix.mkdir (PyrePath.absolute root1);
+  CamlUnix.mkdir (PyrePath.absolute root1) 0o777;
   touch (PyrePath.create_relative ~root:root1 ~relative:"file");
   assert_success root1;
 
   (* Subdirectory *)
   let root2 = PyrePath.create_relative ~root ~relative:"test2" in
   let subdirectory = PyrePath.create_relative ~root:root2 ~relative:"subdirectory" in
-  Core_unix.mkdir (PyrePath.absolute root2);
-  Core_unix.mkdir (PyrePath.absolute subdirectory);
+  CamlUnix.mkdir (PyrePath.absolute root2) 0o777;
+  CamlUnix.mkdir (PyrePath.absolute subdirectory) 0o777;
   touch (PyrePath.create_relative ~root:subdirectory ~relative:"file");
   assert_success root2;
 
   (* Mixed *)
   let root3 = PyrePath.create_relative ~root ~relative:"test3" in
   let subdirectory = PyrePath.create_relative ~root:root3 ~relative:"subdirectory" in
-  Core_unix.mkdir (PyrePath.absolute root3);
+  CamlUnix.mkdir (PyrePath.absolute root3) 0o777;
   touch (PyrePath.create_relative ~root:root3 ~relative:"file0");
-  Core_unix.mkdir (PyrePath.absolute subdirectory);
+  CamlUnix.mkdir (PyrePath.absolute subdirectory) 0o777;
   touch (PyrePath.create_relative ~root:subdirectory ~relative:"file1");
   assert_success root3;
 
@@ -222,7 +223,7 @@ let test_read_directory_ordered context =
   assert_equal ~ctxt:context ~printer:[%show: PyrePath.t list] should_be_empty [];
   let inner_directory = PyrePath.create_relative ~root ~relative:"inner_directory" in
   let inner_file = PyrePath.create_relative ~root ~relative:"inner_file.txt" in
-  Core_unix.mkdir (PyrePath.absolute inner_directory);
+  CamlUnix.mkdir (PyrePath.absolute inner_directory) 0o777;
   touch inner_file;
   let should_have_two_entries = PyrePath.read_directory_ordered root in
   assert_equal
