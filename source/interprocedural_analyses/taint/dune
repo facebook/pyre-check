@@ -13,7 +13,6 @@
    ppx_deriving_yojson))
  (libraries
   core
-  core_unix
   sexplib
   re2
   lwt

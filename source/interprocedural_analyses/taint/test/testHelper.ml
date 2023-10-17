@@ -7,6 +7,7 @@
 
 (* TestHelper: utility functions for unit and integration tests. *)
 
+module CamlUnix = Unix
 module TypeCheck = Analysis.TypeCheck
 open Core
 open OUnit2
@@ -680,7 +681,7 @@ let end_to_end_integration_test path context =
     in
     let write_output ~suffix ?(initial = false) content =
       try output_filename ~suffix ~initial |> File.create ~content |> File.write with
-      | Core_unix.Unix_error _ ->
+      | CamlUnix.Unix_error _ ->
           failwith (Format.asprintf "Could not write `%s` file for %a" suffix PyrePath.pp path)
     in
     let remove_old_output ~suffix =
@@ -691,7 +692,7 @@ let end_to_end_integration_test path context =
     in
     let get_expected ~suffix =
       try PyrePath.with_suffix path ~suffix |> File.create |> File.content with
-      | Core_unix.Unix_error _ -> None
+      | CamlUnix.Unix_error _ -> None
     in
     match get_expected ~suffix with
     | None ->
@@ -723,7 +724,7 @@ let end_to_end_integration_test path context =
         let model_path = PyrePath.with_suffix path ~suffix:".pysa" in
         File.create model_path |> File.content
       with
-      | Core_unix.Unix_error _ -> None
+      | CamlUnix.Unix_error _ -> None
     in
     let taint_configuration =
       try
@@ -746,7 +747,7 @@ let end_to_end_integration_test path context =
                             ~location;
                         ]))
       with
-      | Core_unix.Unix_error _ -> None
+      | CamlUnix.Unix_error _ -> None
     in
     let add_initial_models = Option.is_none models_source && Option.is_none taint_configuration in
     let taint_configuration =

@@ -10,6 +10,7 @@
  * by writing the shared memory into a file and restoring it later.
  *)
 
+module CamlUnix = Unix
 open Core
 open Pyre
 module TypeEnvironment = Analysis.TypeEnvironment
@@ -184,9 +185,9 @@ let ignore_result (_ : ('a, 'b) result) = ()
 
 let ensure_save_directory_exists ~configuration =
   let directory = PyrePath.absolute (get_save_directory ~configuration) in
-  try Core_unix.mkdir directory with
+  try CamlUnix.mkdir directory 0o777 with
   (* [mkdir] on MacOSX returns [EISDIR] instead of [EEXIST] if the directory already exists. *)
-  | Core_unix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
+  | CamlUnix.Unix_error ((EEXIST | EISDIR), _, _) -> ()
   | e -> raise e
 
 

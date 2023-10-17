@@ -6,8 +6,6 @@
   (pps ppx_sexp_message ppx_deriving.show))
  (libraries
   core
-  core_unix
-  core_unix.sys_unix
   ounit2
   pyrelib.test
   pyrelib.ast
