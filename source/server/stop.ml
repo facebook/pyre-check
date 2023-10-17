@@ -7,6 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module CamlUnix = Unix
 open Core
 
 module Reason = struct
@@ -53,7 +54,7 @@ let get_last_server_stop_reason () = !last_server_stop_reason
 let stop_waiting_server reason =
   last_server_stop_reason := Some reason;
   (* Send the process itself a SIGINT. *)
-  let () = Signal_unix.send_exn Signal.int (`Pid (Core_unix.getpid ())) in
+  let () = CamlUnix.kill (CamlUnix.getpid ()) Caml.Sys.sigint in
   (* Block forever and wait for the signal to be caught. This way, client who requested the stop can
      actually tell when the server is down by monitoring when its connection with the server gets
      dropped. *)

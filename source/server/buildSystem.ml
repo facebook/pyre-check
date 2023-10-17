@@ -132,7 +132,7 @@ module BuckBuildSystem = struct
     let timer = Timer.start () in
     Lwt.catch
       (fun () ->
-        let start_timestamp = Core_unix.time () |> Int.of_float in
+        let start_timestamp = Unix.time () |> Int.of_float in
         f ()
         >>= fun { WithMetadata.data = result; metadata } ->
         let millisecond = Timer.stop_in_ms timer in

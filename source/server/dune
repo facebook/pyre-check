@@ -12,8 +12,6 @@
    ppx_deriving_yojson))
  (libraries
   core
-  core_unix
-  core_unix.signal_unix
   pyrelib.service
   pyrelib.ast
   pyrelib.analysis

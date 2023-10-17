@@ -7,6 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module CamlUnix = Unix
 open Core
 open Pyre
 open Analysis
@@ -110,7 +111,7 @@ let create_info_response
   Response.Info
     {
       version = Version.version ();
-      pid = Core_unix.getpid () |> Pid.to_int;
+      pid = CamlUnix.getpid ();
       socket = PyrePath.absolute socket_path;
       global_root = PyrePath.show project_root;
       relative_local_root = PyrePath.get_relative_to_root ~root:project_root ~path:local_root;

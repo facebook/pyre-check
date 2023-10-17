@@ -487,11 +487,11 @@ let wait_for_signal ~on_caught signals =
   let open Lwt in
   let waiter, resolver = wait () in
   List.iter signals ~f:(fun signal ->
-      let signal = Signal_unix.to_system_int signal in
+      let signal = Signal.to_caml_int signal in
       Lwt_unix.on_signal signal (wakeup resolver) |> ignore);
   waiter
   >>= fun signal ->
-  let signal = Signal_unix.of_system_int signal in
+  let signal = Signal.of_caml_int signal in
   Log.info "Server interrupted with signal `%s`" (Signal.to_string signal);
   on_caught signal
 
