@@ -7,6 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module CamlUnix = Unix
 open Core
 
 module ExitStatus = struct
@@ -231,9 +232,9 @@ let on_exception = function
   | Base.Exn.Finally (Hack_parallel.Std.Worker.Worker_exited_abnormally (pid, status), _) ->
       let message =
         match status with
-        | Caml_unix.WEXITED return_code -> Format.sprintf "exited with return code %d" return_code
-        | Caml_unix.WSIGNALED signal -> Format.sprintf "was killed with signal %d" signal
-        | Caml_unix.WSTOPPED signal -> Format.sprintf "was stopped with signal %d" signal
+        | CamlUnix.WEXITED return_code -> Format.sprintf "exited with return code %d" return_code
+        | CamlUnix.WSIGNALED signal -> Format.sprintf "was killed with signal %d" signal
+        | CamlUnix.WSTOPPED signal -> Format.sprintf "was stopped with signal %d" signal
       in
       Log.error
         "Pyre encountered an internal exception: Worker_exited_abnormally: process %d %s"

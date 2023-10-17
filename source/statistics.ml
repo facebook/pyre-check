@@ -8,6 +8,7 @@
 (* Loggers of performance and other notworthy events which we wish to persist to scuba via
    perfpipe. *)
 
+module CamlUnix = Unix
 open Core
 open Pyre
 
@@ -28,17 +29,21 @@ module GlobalState = struct
   let username =
     match Sys.getenv "USER" with
     | Some username -> username
-    | None -> Core_unix.getlogin ()
+    | None -> (
+        let uid = CamlUnix.getuid () in
+        match CamlUnix.getpwuid uid with
+        | { CamlUnix.pw_name; _ } -> pw_name
+        | exception Caml.Not_found -> CamlUnix.getlogin ())
 
 
   let hostname =
     match Sys.getenv "HOSTNAME" with
     | Some hostname -> hostname
-    | None -> Core_unix.gethostname ()
+    | None -> CamlUnix.gethostname ()
 
 
   let global_state =
-    let current_time = Core_unix.time () in
+    let current_time = CamlUnix.time () in
     {
       logger = None;
       last_flush_timestamp = current_time;
@@ -133,7 +138,7 @@ let sample ?(integers = []) ?(normals = []) ?(metadata = true) () =
         | None -> integers
       in
       [
-        "time", Core_unix.time () |> Int.of_float;
+        "time", CamlUnix.time () |> Int.of_float;
         "start_time", GlobalState.global_state.GlobalState.start_time |> Int.of_float;
       ]
       @ integers
@@ -149,14 +154,14 @@ let flush () =
   | Some logger ->
       let flush_category ~key ~data =
         let command = Format.sprintf "%s %s" logger key in
-        let out_channel = Core_unix.open_process_out command in
+        let out_channel = CamlUnix.open_process_out command in
         List.iter ~f:(Printf.fprintf out_channel "%s\n") data;
         Out_channel.flush out_channel;
-        Core_unix.close_process_out out_channel |> ignore
+        CamlUnix.close_process_out out_channel |> ignore
       in
       Hashtbl.iteri ~f:flush_category cache;
       Hashtbl.clear cache;
-      GlobalState.global_state.GlobalState.last_flush_timestamp <- Core_unix.time ();
+      GlobalState.global_state.GlobalState.last_flush_timestamp <- CamlUnix.time ();
       ()
 
 
@@ -170,7 +175,7 @@ let log ?(flush = false) category sample =
     Hashtbl.fold cache ~init:0 ~f:(fun ~key:_ ~data count -> count + List.length data)
   in
   let exceeds_timeout () =
-    let current_time = Core_unix.time () in
+    let current_time = CamlUnix.time () in
     Float.(
       current_time -. GlobalState.global_state.GlobalState.last_flush_timestamp
       >= GlobalState.flush_timeout)
@@ -306,7 +311,7 @@ let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
       "root", global_state.project_name;
     ]
   in
-  let default_integers = ["time", Core_unix.time () |> Int.of_float] in
+  let default_integers = ["time", CamlUnix.time () |> Int.of_float] in
   format_as_json
     ~integers:(List.append default_integers integers)
     ~normals:(List.append default_normals normals)
@@ -317,11 +322,11 @@ let buck_event ?(flush = false) ?(integers = []) ?(normals = []) () =
 let log_worker_exception ~pid ~origin status =
   let message =
     match status with
-    | Caml_unix.WEXITED exit_code ->
+    | CamlUnix.WEXITED exit_code ->
         Printf.sprintf "Worker process %d exited with code %d" pid exit_code
-    | Caml_unix.WSTOPPED signal_number ->
+    | CamlUnix.WSTOPPED signal_number ->
         Printf.sprintf "Worker process %d was stopped by signal %d" pid signal_number
-    | Caml_unix.WSIGNALED signal_number ->
+    | CamlUnix.WSIGNALED signal_number ->
         Printf.sprintf "Worker process %d was kill by signal %d" pid signal_number
   in
   event

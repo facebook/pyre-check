@@ -7,6 +7,7 @@
 
 (* TODO(T132410158) Add a module-level doc comment. *)
 
+module CamlUnix = Unix
 open Core
 open Server
 
@@ -237,7 +238,7 @@ let start_server_and_wait ~event_channel server_configuration =
       (fun () -> ServerEvent.write ~output_channel:event_channel event)
       (function
         | Lwt_io.Channel_closed _
-        | Caml_unix.Unix_error (Caml_unix.EPIPE, _, _) ->
+        | CamlUnix.Unix_error (CamlUnix.EPIPE, _, _) ->
             Lwt.return_unit
         | exn -> Lwt.fail exn)
   in

@@ -180,7 +180,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
-  core_unix
+  core
   pyrelib.configuration
   pyrelib.timer
   pyrelib.profiling

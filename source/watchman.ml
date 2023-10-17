@@ -8,6 +8,7 @@
 (* This module includes the API to communicate with watchman, the primary file watching service used
    on pyre. *)
 
+module CamlUnix = Unix
 open Core
 module PrintSignal = Hack_parallel.Std.PrintSignal
 
@@ -69,7 +70,7 @@ module Raw = struct
     LwtSubprocess.run "watchman" ~arguments:["--no-pretty"; "get-sockname"]
     >>= fun { LwtSubprocess.Completed.status; stdout; stderr } ->
     match status with
-    | Caml_unix.WEXITED 0 ->
+    | CamlUnix.WEXITED 0 ->
         let socket_name =
           try
             Yojson.Safe.from_string stdout
@@ -83,18 +84,18 @@ module Raw = struct
               raise (ConnectionError message)
         in
         Lwt.return socket_name
-    | Caml_unix.WEXITED 127 ->
+    | CamlUnix.WEXITED 127 ->
         let message = Format.sprintf "Cannot find watchman exectuable under PATH" in
         raise (ConnectionError message)
-    | Caml_unix.WEXITED code ->
+    | CamlUnix.WEXITED code ->
         let message = Format.sprintf "Watchman exited code %d, stderr = %S" code stderr in
         raise (ConnectionError message)
-    | Caml_unix.WSIGNALED signal ->
+    | CamlUnix.WSIGNALED signal ->
         let message =
           Format.sprintf "watchman signaled with %s signal" (PrintSignal.string_of_signal signal)
         in
         raise (ConnectionError message)
-    | Caml_unix.WSTOPPED signal ->
+    | CamlUnix.WSTOPPED signal ->
         let message =
           Format.sprintf "watchman stopped with %s signal" (PrintSignal.string_of_signal signal)
         in
