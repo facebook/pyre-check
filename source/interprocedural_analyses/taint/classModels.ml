@@ -10,8 +10,8 @@
  * For instance, this defines the behavior of `NamedTuple` and dataclasses,
  * rather than trying to infer the behavior from the actual implementation,
  * which is highly dynamic and not well suited for static analysis (e.g,
- * `NamedTuple` uses `exec`:
- * https://hg.python.org/cpython/file/b14308524cff/Lib/collections/__init__.py#l368).
+ * `NamedTuple` uses `eval`:
+ * https://github.com/python/cpython/blob/7029c1a1c5b864056aa00298b1d0e0269f073f99/Lib/collections/__init__.py#L441).
  *)
 
 open Core
