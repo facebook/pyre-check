@@ -155,7 +155,7 @@ let check_expectation
       ~message:(Format.asprintf "Model not found for %a" Target.pp callable)
       (get_model callable)
   in
-  assert_equal ~printer:Model.ModeSet.show modes expected_analysis_modes;
+  assert_equal ~cmp:Model.ModeSet.equal ~printer:Model.ModeSet.show modes expected_analysis_modes;
   let sink_taint_map =
     Domains.BackwardState.fold
       Domains.BackwardState.KeyValue

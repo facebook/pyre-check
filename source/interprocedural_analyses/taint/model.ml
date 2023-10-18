@@ -265,14 +265,19 @@ module ModeSet = struct
     Format.fprintf formatter "  Modes: %s" (json_to_string ~indent:"    " (to_json modes))
 
 
-  let join_user_modes left right =
-    let result = join left right in
-    (* If one model has `@SkipObscure` and the other does not, we expect the
-     * joined model to have `@SkipObscure` and not `@Obscure`. *)
-    if contains SkipObscure result then
-      remove Obscure result
-    else
-      result
+  let resolve_conflicting_modes result =
+    let resolve_conflicts ~to_keep ~to_discard result =
+      if contains to_keep result && contains to_discard result then
+        remove to_discard result
+      else
+        result
+    in
+    (* If a mode set has both `to_keep` and `to_discard`, we expect it to keep `to_keep` and discard
+       `to_discard`. *)
+    result |> resolve_conflicts ~to_keep:SkipObscure ~to_discard:Obscure
+
+
+  let join_user_modes left right = join left right |> resolve_conflicting_modes
 end
 
 type t = {

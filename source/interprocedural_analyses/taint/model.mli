@@ -71,6 +71,8 @@ module ModeSet : sig
   val join : t -> t -> t
 
   val join_user_modes : t -> t -> t
+
+  val of_list : Mode.t list -> t
 end
 
 type t = {

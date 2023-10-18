@@ -13,6 +13,27 @@ open TestHelper
 module Target = Interprocedural.Target
 open Taint
 
+let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
+  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, _ =
+    Test.ScratchProject.build_type_environment_and_postprocess project
+  in
+  let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment type_environment in
+  let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
+  let ast_source =
+    Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+    |> fun option -> Option.value_exn option
+  in
+  let initial_callables =
+    Interprocedural.FetchCallables.from_source
+      ~configuration:(Test.ScratchProject.configuration_of project)
+      ~resolution:global_resolution
+      ~include_unit_tests:false
+      ~source:ast_source
+  in
+  ( Interprocedural.FetchCallables.get_stubs initial_callables,
+    Interprocedural.FetchCallables.get_definitions initial_callables )
+
+
 let set_up_environment
     ?source
     ?rules
@@ -28,7 +49,8 @@ let set_up_environment
     | None -> model_source
     | Some source -> source
   in
-  let project = ScratchProject.setup ~context ["test.py", source] in
+  let source_file_name = "test.py" in
+  let project = ScratchProject.setup ~context [source_file_name, source] in
   let taint_configuration =
     let named name = { AnnotationParser.name; kind = Named; location = None } in
     let sources =
@@ -95,15 +117,18 @@ let set_up_environment
   let global_resolution = ScratchProject.build_global_resolution project in
 
   ModelVerifier.ClassDefinitionsCache.invalidate ();
+  let stubs, definitions =
+    get_stubs_and_definitions ~source_file_name ~global_resolution ~project
+  in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~resolution:global_resolution
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
-      ~definitions:None
+      ~definitions:(Some (Interprocedural.Target.HashSet.of_list definitions))
       ~stubs:
-        ([]
+        (stubs
         |> Interprocedural.Target.HashsetSharedMemory.from_heap
         |> Interprocedural.Target.HashsetSharedMemory.read_only)
       ~python_version:ModelParser.PythonVersion.default
@@ -141,6 +166,7 @@ let assert_model
         in
         assert_equal
           ~cmp:Ast.Reference.SerializableSet.equal
+          ~printer:Ast.Reference.SerializableSet.show
           expected_set
           (Registry.skip_overrides models)
     | None -> ()
@@ -267,6 +293,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -286,6 +313,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -305,6 +333,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -324,6 +353,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -343,6 +373,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -362,6 +393,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -381,6 +413,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -400,6 +433,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -419,6 +453,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -438,6 +473,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -461,6 +497,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -483,6 +520,7 @@ let test_models_with_if context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -547,7 +585,14 @@ let test_source_models context =
   let assert_invalid_model = assert_invalid_model ~context in
   assert_model
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "TestTest"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~model_source:"os.environ: TaintSource[TestTest] = ..."
@@ -565,6 +610,7 @@ let test_source_models context =
         outcome
           ~kind:`Function
           ~returns:[Sources.NamedSource "Test"; Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -581,17 +627,38 @@ let test_source_models context =
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSource[Test, ViaValueOf[x]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f() -> TaintSource[Test, ViaValueOf[x]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:{|def test.f(x) -> TaintSource[Test, ViaValueOf[x, WithTag["tag"]]]: ...|}
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_invalid_model
     ~source:"def f(x: int): ..."
@@ -603,17 +670,38 @@ let test_source_models context =
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSource[Test, ViaTypeOf[x]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f() -> TaintSource[Test, ViaTypeOf[x]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:{|def test.f(x) -> TaintSource[Test, ViaTypeOf[x, WithTag["tag"]]]: ...|}
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:
@@ -653,12 +741,26 @@ let test_source_models context =
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> AppliesTo[0, TaintSource[Test]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSource[Test, ReturnPath[_[0]]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   assert_model
     ~source:
@@ -686,6 +788,7 @@ let test_source_models context =
         outcome
           ~kind:`Function
           ~returns:[Sources.ParametricSource { source_name = "WithSubkind"; subkind = "Subkind" }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.f";
       ]
     ();
@@ -700,6 +803,7 @@ let test_source_models context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
@@ -713,13 +817,21 @@ let test_source_models context =
         outcome
           ~kind:`Function
           ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
     ();
   assert_model
     ~source:"def f(x: int): ..."
     ~model_source:"def test.f(x) -> TaintSource[Test, ReturnPath[_.all_static_fields()]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.f"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.f";
+      ]
     ();
   ()
 
@@ -732,7 +844,14 @@ let test_global_sanitize context =
       @Sanitize
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function ~global_sanitizer:Sanitize.all "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~global_sanitizer:Sanitize.all
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_invalid_model
     ~model_source:{|
@@ -762,6 +881,7 @@ let test_global_sanitize context =
         outcome
           ~kind:`Function
           ~global_sanitizer:(Sanitize.from_tito_only SanitizeTransformSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -818,6 +938,7 @@ let test_global_sanitize context =
             (Sanitize.from_tito_only
                (SanitizeTransformSet.from_sources
                   (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test"))))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -835,6 +956,7 @@ let test_global_sanitize context =
             (Sanitize.from_tito_only
                (SanitizeTransformSet.from_sinks
                   (SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test"))))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -866,6 +988,7 @@ let test_global_sanitize context =
                    SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test");
                  sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -881,7 +1004,7 @@ let test_global_sanitize context =
         outcome
           ~kind:`Function
           ~global_sanitizer:Sanitize.all
-          ~analysis_modes:(Model.ModeSet.singleton SkipDecoratorWhenInlining)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipDecoratorWhenInlining; Obscure])
           "test.taint";
       ]
     ();
@@ -894,7 +1017,7 @@ let test_global_sanitize context =
       [
         outcome
           ~kind:`Function
-          ~analysis_modes:(Model.ModeSet.singleton IgnoreDecorator)
+          ~analysis_modes:(Model.ModeSet.of_list [IgnoreDecorator; Obscure])
           "test.taint";
       ]
     ();
@@ -924,6 +1047,7 @@ let test_sanitize_single_trace context =
         outcome
           ~kind:`Function
           ~global_sanitizer:(Sanitize.from_sources_only SanitizeTransform.SourceSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -937,6 +1061,7 @@ let test_sanitize_single_trace context =
         outcome
           ~kind:`Function
           ~global_sanitizer:(Sanitize.from_sinks_only SanitizeTransform.SinkSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -984,6 +1109,7 @@ let test_sanitize_single_trace context =
           ~global_sanitizer:
             (Sanitize.from_sources_only
                (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test")))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1004,6 +1130,7 @@ let test_sanitize_single_trace context =
                     SanitizeTransform.Source.Named "UserControlled";
                     SanitizeTransform.Source.Named "Test";
                   ]))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1019,6 +1146,7 @@ let test_sanitize_single_trace context =
           ~global_sanitizer:
             (Sanitize.from_sinks_only
                (SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test")))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1038,6 +1166,7 @@ let test_sanitize_single_trace context =
                   [
                     SanitizeTransform.Sink.Named "TestSink"; SanitizeTransform.Sink.Named "OtherSink";
                   ]))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1156,6 +1285,7 @@ let test_parameter_sanitize context =
         outcome
           ~kind:`Function
           ~parameter_sanitizers:[{ name = "x"; sanitize = Sanitize.all }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1185,6 +1315,7 @@ let test_parameter_sanitize context =
           ~kind:`Function
           ~parameter_sanitizers:
             [{ name = "x"; sanitize = Sanitize.from_tito_only SanitizeTransformSet.all }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1222,6 +1353,7 @@ let test_parameter_sanitize context =
                     (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test"));
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1247,6 +1379,7 @@ let test_parameter_sanitize context =
                        ]);
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1270,6 +1403,7 @@ let test_parameter_sanitize context =
                           (SanitizeTransform.Source.Named "Test")));
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1291,6 +1425,7 @@ let test_parameter_sanitize context =
                        (SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test")));
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1318,6 +1453,7 @@ let test_parameter_sanitize context =
                   };
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1345,6 +1481,7 @@ let test_parameter_sanitize context =
                     };
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ()
@@ -1357,7 +1494,14 @@ let test_return_sanitize context =
     ~model_source:{|
       def test.taint(x) -> Sanitize: ...
     |}
-    ~expect:[outcome ~kind:`Function ~return_sanitizer:Sanitize.all "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sanitizer:Sanitize.all
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_invalid_model
     ~model_source:{|
@@ -1384,6 +1528,7 @@ let test_return_sanitize context =
         outcome
           ~kind:`Function
           ~return_sanitizer:(Sanitize.from_tito_only SanitizeTransformSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1406,6 +1551,7 @@ let test_return_sanitize context =
           ~return_sanitizer:
             (Sanitize.from_sources_only
                (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test")))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1425,6 +1571,7 @@ let test_return_sanitize context =
                     SanitizeTransform.Source.Named "UserControlled";
                     SanitizeTransform.Source.Named "Test";
                   ]))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1444,6 +1591,7 @@ let test_return_sanitize context =
                    SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test");
                  sinks = SanitizeTransform.SinkSet.empty;
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1462,6 +1610,7 @@ let test_return_sanitize context =
                  SanitizeTransformSet.sources = SanitizeTransform.SourceSet.empty;
                  sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1485,6 +1634,7 @@ let test_return_sanitize context =
                   sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                 };
             }
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1504,6 +1654,7 @@ let test_return_sanitize context =
                    SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test");
                  sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ()
@@ -1517,7 +1668,14 @@ let test_parameters_sanitize context =
       @Sanitize(Parameters)
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function ~parameters_sanitizer:Sanitize.all "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameters_sanitizer:Sanitize.all
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_invalid_model
     ~model_source:{|
@@ -1548,6 +1706,7 @@ let test_parameters_sanitize context =
         outcome
           ~kind:`Function
           ~parameters_sanitizer:(Sanitize.from_tito_only SanitizeTransformSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1585,6 +1744,7 @@ let test_parameters_sanitize context =
           ~parameters_sanitizer:
             (Sanitize.from_sources_only
                (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test")))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1605,6 +1765,7 @@ let test_parameters_sanitize context =
                     SanitizeTransform.Source.Named "UserControlled";
                     SanitizeTransform.Source.Named "Test";
                   ]))
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1625,6 +1786,7 @@ let test_parameters_sanitize context =
                    SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test");
                  sinks = SanitizeTransform.SinkSet.empty;
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1644,6 +1806,7 @@ let test_parameters_sanitize context =
                  SanitizeTransformSet.sources = SanitizeTransform.SourceSet.empty;
                  sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1668,6 +1831,7 @@ let test_parameters_sanitize context =
                   sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                 };
             }
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -1688,6 +1852,7 @@ let test_parameters_sanitize context =
                    SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test");
                  sinks = SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "Test");
                })
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ()
@@ -1705,6 +1870,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1715,6 +1881,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1729,6 +1896,7 @@ let test_sink_models context =
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1743,6 +1911,7 @@ let test_sink_models context =
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1754,6 +1923,7 @@ let test_sink_models context =
           ~kind:`Function
           ~returns:[Sources.NamedSource "Demo"]
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.NamedSink "Demo"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.both";
       ]
     ();
@@ -1774,6 +1944,7 @@ let test_sink_models context =
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1790,6 +1961,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1806,6 +1978,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1822,6 +1995,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1832,6 +2006,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.xss";
       ]
     ();
@@ -1843,6 +2018,7 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
       ]
     ();
@@ -1854,6 +2030,7 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
       ]
     ();
@@ -1865,6 +2042,7 @@ let test_sink_models context =
           ~kind:`Function
           ~sink_parameters:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
       ]
     ();
@@ -1876,6 +2054,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.NamedSink "XSS"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -1897,16 +2076,31 @@ let test_sink_models context =
                   [Sinks.ParametricSink { sink_name = "TestSinkWithSubkind"; subkind = "Subkind" }];
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
   assert_model
     ~model_source:"def test.multiple() -> TaintSink[XSS]: ..."
-    ~expect:[outcome ~kind:`Function ~return_sinks:[Sinks.NamedSink "XSS"] "test.multiple"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sinks:[Sinks.NamedSink "XSS"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.multiple";
+      ]
     ();
   assert_model
     ~model_source:"def test.multiple() -> TaintSink[XSS, ReturnPath[_[0]]]: ..."
-    ~expect:[outcome ~kind:`Function ~return_sinks:[Sinks.NamedSink "XSS"] "test.multiple"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~return_sinks:[Sinks.NamedSink "XSS"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.multiple";
+      ]
     ();
   ()
 
@@ -1933,6 +2127,7 @@ let test_cross_repository_models context =
           ~kind:`Function
           ~source_parameters:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
       ]
     ();
@@ -1957,6 +2152,7 @@ let test_cross_repository_models context =
           ~kind:`Function
           ~source_parameters:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
       ]
     ();
@@ -1979,6 +2175,7 @@ let test_cross_repository_models context =
           ~kind:`Function
           ~source_parameters:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
       ]
     ();
@@ -2000,6 +2197,7 @@ let test_cross_repository_models context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_sink";
       ]
     ()
@@ -2020,6 +2218,7 @@ let test_class_models context =
         outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Sink.method";
         outcome
           ~kind:`Method
@@ -2028,6 +2227,7 @@ let test_class_models context =
               { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "TestSink"] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Sink.method_with_multiple_parameters";
       ]
     ();
@@ -2050,6 +2250,7 @@ let test_class_models context =
                 sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"];
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Sink.method";
         outcome
           ~kind:`Method
@@ -2058,6 +2259,7 @@ let test_class_models context =
               { name = "first"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Sink.method_with_multiple_parameters";
       ]
     ();
@@ -2073,6 +2275,7 @@ let test_class_models context =
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~returns:[Sources.NamedSource "TestTest"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.SinkAndSource.method";
       ]
     ();
@@ -2090,10 +2293,15 @@ let test_class_models context =
       |}
     ~expect:
       [
-        outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.method";
         outcome
           ~kind:`Method
           ~returns:[Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.Source.method";
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Source.method_with_multiple_parameters";
       ]
     ();
@@ -2109,6 +2317,7 @@ let test_class_models context =
         outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.AnnotatedSink.method";
       ]
     ();
@@ -2124,6 +2333,7 @@ let test_class_models context =
         outcome
           ~kind:`Method
           ~returns:[Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.AnnotatedSource.method";
       ]
     ();
@@ -2139,6 +2349,7 @@ let test_class_models context =
         outcome
           ~kind:`Method
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.SourceWithDefault.method";
       ]
     ();
@@ -2151,7 +2362,13 @@ let test_class_models context =
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
     ~expect:
-      [outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.method"]
+      [
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.Source.method";
+      ]
     ();
   assert_model
     ~source:
@@ -2162,7 +2379,13 @@ let test_class_models context =
       |}
     ~model_source:"class test.Source(TaintSource[UserControlled]): ..."
     ~expect:
-      [outcome ~kind:`Method ~returns:[Sources.NamedSource "UserControlled"] "test.Source.prop"]
+      [
+        outcome
+          ~kind:`Method
+          ~returns:[Sources.NamedSource "UserControlled"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.Source.prop";
+      ]
     ();
   assert_model
     ~source:
@@ -2176,11 +2399,11 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~analysis_modes:(Model.ModeSet.singleton SkipAnalysis)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis; Obscure])
           "test.SkipMe.method";
         outcome
           ~kind:`Method
-          ~analysis_modes:(Model.ModeSet.singleton SkipAnalysis)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis; Obscure])
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
@@ -2196,11 +2419,11 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipModelBroadening; Obscure])
           "test.SkipMe.method";
         outcome
           ~kind:`Method
-          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipModelBroadening; Obscure])
           "test.SkipMe.method_with_multiple_parameters";
       ]
     ();
@@ -2228,6 +2451,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2239,6 +2463,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2250,6 +2475,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2261,6 +2487,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2273,6 +2500,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2286,6 +2514,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2299,6 +2528,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2312,6 +2542,7 @@ let test_taint_in_taint_out_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -2327,6 +2558,7 @@ let test_taint_in_taint_out_models_alternate context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ()
@@ -2372,6 +2604,7 @@ let test_taint_in_taint_out_transform context =
                   ];
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ()
@@ -2385,7 +2618,12 @@ let test_modes context =
       def test.taint(x): ...
     |}
     ~expect:
-      [outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton SkipAnalysis) "test.taint"]
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.of_list [Obscure; SkipAnalysis])
+          "test.taint";
+      ]
     ();
   assert_model
     ~context
@@ -2397,9 +2635,26 @@ let test_modes context =
       [
         outcome
           ~kind:`Function
-          ~analysis_modes:(Model.ModeSet.singleton SkipModelBroadening)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipModelBroadening; Obscure])
           "test.taint";
       ]
+    ();
+  assert_model
+    ~context
+    ~model_source:{|
+      def test.taint(x): ...|}
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
+    ();
+  (* Test conflicting modes. *)
+  assert_model
+    ~context
+    ~model_source:{|
+      def test.taint(x): ...
+
+      @SkipObscure
+      def test.taint(x): ...|}
+    ~expect:
+      [outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton SkipObscure) "test.taint"]
     ();
   ()
 
@@ -2415,7 +2670,7 @@ let test_skip_inlining_decorator context =
       [
         outcome
           ~kind:`Function
-          ~analysis_modes:(Model.ModeSet.singleton SkipDecoratorWhenInlining)
+          ~analysis_modes:(Model.ModeSet.of_list [SkipDecoratorWhenInlining; Obscure])
           "test.my_decorator";
       ]
     ();
@@ -2431,6 +2686,7 @@ let test_taint_in_taint_out_update_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.ParameterUpdate 0] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
     ();
@@ -2442,6 +2698,7 @@ let test_taint_in_taint_out_update_models context =
           ~kind:`Function
           ~tito_parameters:
             [{ name = "arg2"; sinks = [Sinks.ParameterUpdate 0; Sinks.ParameterUpdate 1] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
     ();
@@ -2452,6 +2709,7 @@ let test_taint_in_taint_out_update_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
     ();
@@ -2464,6 +2722,7 @@ let test_taint_in_taint_out_update_models context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.ParameterUpdate 0] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
     ();
@@ -2480,6 +2739,7 @@ let test_union_models context =
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.both";
       ]
     ()
@@ -2489,13 +2749,27 @@ let test_source_breadcrumbs context =
   assert_model
     ~context
     ~model_source:"def test.source() -> TaintSource[Test, Via[special]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.source"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
     ();
   assert_model
     ~context
     ~model_source:
       "def test.source() -> TaintSource[Test, ViaDynamicFeature[NotSpecifiedInConfig]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.source"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
     ()
 
 
@@ -2508,6 +2782,7 @@ let test_sink_breadcrumbs context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ()
@@ -2522,6 +2797,7 @@ let test_tito_breadcrumbs context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ()
@@ -2531,7 +2807,14 @@ let test_attach_features context =
   let assert_model = assert_model ~context in
   assert_model
     ~model_source:"def test.source() -> AttachToSource[Via[special]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Attach] "test.source"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.Attach]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
     ();
   assert_model
     ~model_source:"def test.sink(arg: AttachToSink[Via[special]]): ..."
@@ -2540,6 +2823,7 @@ let test_attach_features context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -2550,6 +2834,7 @@ let test_attach_features context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ()
@@ -2589,6 +2874,7 @@ let test_partial_sinks context =
               { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
             ]
           ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.partial_sink";
       ]
     ()
@@ -5363,7 +5649,14 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "TestTest"] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "TestTest"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~rules:
@@ -5379,7 +5672,14 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~rules:
@@ -5400,6 +5700,7 @@ let test_filter_by_rules context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5417,7 +5718,14 @@ let test_filter_by_rules context =
         };
       ]
     ~model_source:"def test.taint(x: TaintSink[TestSink]): ..."
-    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~rules:
@@ -5451,6 +5759,7 @@ let test_filter_by_rules context =
               { name = "x"; sinks = [Sinks.PartialSink { kind = "Test"; label = "a" }] };
               { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.partial_sink";
       ]
     ();
@@ -5473,6 +5782,7 @@ let test_filter_by_rules context =
         outcome
           ~kind:`Function
           ~returns:[Sources.ParametricSource { source_name = "WithSubkind"; subkind = "A" }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5501,6 +5811,7 @@ let test_filter_by_rules context =
                 sinks = [Sinks.ParametricSink { sink_name = "TestSinkWithSubkind"; subkind = "A" }];
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5512,12 +5823,26 @@ let test_filter_by_sources context =
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:"def test.taint() -> TaintSource[Test]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:"def test.taint() -> TaintSource[TestTest]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "WithSubkind"])
@@ -5527,19 +5852,34 @@ let test_filter_by_sources context =
         outcome
           ~kind:`Function
           ~returns:[Sources.ParametricSource { source_name = "WithSubkind"; subkind = "A" }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:"def test.taint() -> TaintSource[WithSubkind[A]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   (* Does not affect AttachTo *)
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:"def test.source() -> AttachToSource[Via[special]]: ..."
-    ~expect:[outcome ~kind:`Function ~returns:[Sources.Attach] "test.source"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.Attach]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
     ();
   (* Filters sanitizers *)
   assert_model
@@ -5560,6 +5900,7 @@ let test_filter_by_sources context =
                     (SanitizeTransform.SourceSet.singleton (SanitizeTransform.Source.Named "Test"));
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5568,7 +5909,14 @@ let test_filter_by_sources context =
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSource[TestTest]]): ...
     |}
-    ~expect:[outcome ~kind:`Function ~parameter_sanitizers:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~parameter_sanitizers:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
@@ -5581,6 +5929,7 @@ let test_filter_by_sources context =
         outcome
           ~kind:`Function
           ~global_sanitizer:(Sanitize.from_sources_only SanitizeTransform.SourceSet.all)
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5591,14 +5940,14 @@ let test_filter_by_sources context =
       @SanitizeSingleTrace(TaintSource[TestTest])
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
   assert_model
     ~filtered_sources:(Sources.Set.of_list [Sources.NamedSource "Test"])
     ~model_source:{|
       def test.taint(x) -> Sanitize[TaintSource[TestTest]]: ...
     |}
-    ~expect:[outcome ~kind:`Function "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
   ()
 
@@ -5613,13 +5962,21 @@ let test_filter_by_sinks context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
     ~model_source:"def test.taint(x: TaintSink[OtherSink]): ..."
-    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSinkWithSubkind"])
@@ -5635,13 +5992,21 @@ let test_filter_by_sinks context =
                 sinks = [Sinks.ParametricSink { sink_name = "TestSinkWithSubkind"; subkind = "A" }];
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
     ~model_source:"def test.taint(x: TaintSink[TestSinkWithSubkind[A]]): ..."
-    ~expect:[outcome ~kind:`Function ~sink_parameters:[] "test.taint"]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.taint";
+      ]
     ();
   (* Does not affect AttachTo, Tito, Transform *)
   assert_model
@@ -5652,6 +6017,7 @@ let test_filter_by_sinks context =
         outcome
           ~kind:`Function
           ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
     ();
@@ -5663,6 +6029,7 @@ let test_filter_by_sinks context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
     ();
@@ -5674,6 +6041,7 @@ let test_filter_by_sinks context =
         outcome
           ~kind:`Function
           ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
     ();
@@ -5696,6 +6064,7 @@ let test_filter_by_sinks context =
                     (SanitizeTransform.SinkSet.singleton (SanitizeTransform.Sink.Named "TestSink"));
               };
             ]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
     ();
@@ -5704,14 +6073,14 @@ let test_filter_by_sinks context =
     ~model_source:{|
       def test.taint(x: Sanitize[TaintSink[OtherSink]]): ...
     |}
-    ~expect:[outcome ~kind:`Function "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
     ~model_source:{|
       def test.taint(x) -> Sanitize[TaintSink[OtherSink]]: ...
     |}
-    ~expect:[outcome ~kind:`Function "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
   assert_model
     ~filtered_sinks:(Sinks.Set.of_list [Sinks.NamedSink "TestSink"])
@@ -5720,7 +6089,7 @@ let test_filter_by_sinks context =
       @SanitizeSingleTrace(TaintSink[OtherSink])
       def test.taint(x): ...
     |}
-    ~expect:[outcome ~kind:`Function "test.taint"]
+    ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
   ()
 
