@@ -1727,6 +1727,90 @@ class DidChangeTest(ApiTestCase):
                 expectations,
             )
 
+    @setup.async_test
+    async def test_did_change__debounce(self) -> None:
+        unsaved_file_content_list = [f"# some example code {i}" for i in range(3)]
+        tracked_path = Path("/tracked.py")
+        querier = server_setup.MockDaemonQuerier(
+            mock_type_errors=[
+                error.Error(
+                    line=1,
+                    column=1,
+                    stop_line=2,
+                    stop_column=2,
+                    path=Path("/tracked.py"),
+                    code=42,
+                    name="name",
+                    description="description",
+                ),
+            ]
+        )
+        (api, output_writer) = server_setup.create_pyre_language_server_api_and_output(
+            opened_documents={
+                tracked_path: state.OpenedDocumentState(
+                    code=unsaved_file_content_list[0],
+                )
+            },
+            querier=querier,
+            server_options=server_setup.create_server_options(
+                language_server_features=features.LanguageServerFeatures(
+                    unsaved_changes=features.UnsavedChangesAvailability.ENABLED,
+                    type_errors=features.TypeErrorsAvailability.ENABLED,
+                    telemetry=features.TelemetryAvailability.ENABLED,
+                ),
+            ),
+        )
+        for i in range(len(unsaved_file_content_list)):
+            await api.process_did_change_request(
+                parameters=lsp.DidChangeTextDocumentParameters(
+                    text_document=lsp.TextDocumentIdentifier(
+                        uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                    ),
+                    content_changes=[
+                        lsp.ContentChange(text=unsaved_file_content_list[i])
+                    ],
+                ),
+            )
+        self.assertEqual(
+            querier.requests,
+            [
+                # we expect to be able to send only the first request, since the
+                # remaining requests will put the server in a non-ready state
+                {"path": tracked_path, "code": unsaved_file_content_list[i]}
+                for i in range(len(unsaved_file_content_list))
+            ],
+        )
+        expect_diagnostics = self._expect_diagnostics(
+            uri="file:///tracked.py",
+            diagnostics=[
+                lsp.Diagnostic(
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=0, character=1),
+                        end=lsp.LspPosition(line=1, character=2),
+                    ),
+                    message="description",
+                    severity=lsp.DiagnosticSeverity.ERROR,
+                    code=None,
+                    source="Pyre",
+                )
+            ],
+        )
+        expectations = [
+            self._expect_telemetry_event(
+                operation="didChange",
+                result=None,
+            ),
+            expect_diagnostics,
+            self._expect_telemetry_event(
+                operation="typeErrors",
+                result=None,
+            ),
+        ] * 3
+        self._assert_output_messages(
+            output_writer,
+            expectations,
+        )
+
 
 class HoverTest(ApiTestCase):
     @setup.async_test
