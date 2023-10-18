@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import asyncio
+import dataclasses
 import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
@@ -314,13 +315,20 @@ def create_pyre_language_server_api(
     )
 
 
-def create_pyre_language_server_api_and_output(
+@dataclasses.dataclass(frozen=True)
+class PyreLanguageServerApiSetup:
+    api: ls.PyreLanguageServerApi
+    output_writer: connections.MemoryBytesWriter
+    server_state: state.ServerState
+
+
+def create_pyre_language_server_api_setup(
     opened_documents: Dict[Path, state.OpenedDocumentState],
     querier: MockDaemonQuerier,
     index_querier: Optional[MockDaemonQuerier] = None,
     server_options: options.PyreServerOptions = mock_initial_server_options,
     connection_status: state.ConnectionStatus = DEFAULT_CONNECTION_STATUS,
-) -> Tuple[ls.PyreLanguageServerApi, connections.MemoryBytesWriter]:
+) -> PyreLanguageServerApiSetup:
     output_writer = connections.MemoryBytesWriter()
     output_channel = connections.AsyncTextWriter(output_writer)
     server_state = state.ServerState(
@@ -334,7 +342,11 @@ def create_pyre_language_server_api_and_output(
         daemon_querier=querier,
         index_querier=index_querier,
     )
-    return api, output_writer
+    return PyreLanguageServerApiSetup(
+        api=api,
+        output_writer=output_writer,
+        server_state=server_state,
+    )
 
 
 def create_pyre_language_server_dispatcher(
