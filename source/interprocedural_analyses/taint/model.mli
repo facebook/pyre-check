@@ -42,7 +42,9 @@ module Mode : sig
     | SkipObscure (* Don't treat as obscure *)
     | SkipAnalysis (* Don't analyze at all *)
     | SkipDecoratorWhenInlining
-    | SkipOverrides
+    | SkipOverrides (* Don't analyze any override *)
+    | AnalyzeAllOverrides
+    (* Force analyzing all overrides, regardless of SkipOverrides or maximum overrides *)
     | Entrypoint
     | IgnoreDecorator
     | SkipModelBroadening

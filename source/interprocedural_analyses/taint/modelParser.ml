@@ -2871,6 +2871,7 @@ let create_model_from_signature
           | ["SkipAnalysis"]
           | ["SkipDecoratorWhenInlining"]
           | ["SkipOverrides"]
+          | ["AnalyzeAllOverrides"]
           | ["Entrypoint"]
           | ["SkipObscure"]
           | ["IgnoreDecorator"]
@@ -3278,6 +3279,8 @@ let rec parse_statement
           match Expression.show value with
           | "SkipAnalysis" -> Some (Either.Second (decorator_with_name "SkipAnalysis"))
           | "SkipOverrides" -> Some (Either.Second (decorator_with_name "SkipOverrides"))
+          | "AnalyzeAllOverrides" ->
+              Some (Either.Second (decorator_with_name "AnalyzeAllOverrides"))
           | "Entrypoint" -> Some (Either.Second (decorator_with_name "Entrypoint"))
           | "SkipModelBroadening" ->
               Some (Either.Second (decorator_with_name "SkipModelBroadening"))

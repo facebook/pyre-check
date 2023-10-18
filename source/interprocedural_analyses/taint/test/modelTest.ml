@@ -2645,6 +2645,20 @@ let test_modes context =
       def test.taint(x): ...|}
     ~expect:[outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton Obscure) "test.taint"]
     ();
+  assert_model
+    ~context
+    ~model_source:{|
+      @AnalyzeAllOverrides
+      def test.taint(x): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.of_list [AnalyzeAllOverrides; Obscure])
+          "test.taint";
+      ]
+    ();
   (* Test conflicting modes. *)
   assert_model
     ~context
@@ -2655,6 +2669,39 @@ let test_modes context =
       def test.taint(x): ...|}
     ~expect:
       [outcome ~kind:`Function ~analysis_modes:(Model.ModeSet.singleton SkipObscure) "test.taint"]
+    ();
+  assert_model
+    ~context
+    ~model_source:
+      {|
+      @SkipOverrides
+      def test.taint(x): ...
+
+      @AnalyzeAllOverrides
+      def test.taint(x): ... |}
+    ~expected_skipped_overrides:[]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.of_list [AnalyzeAllOverrides; Obscure])
+          "test.taint";
+      ]
+    ();
+  assert_model
+    ~context
+    ~model_source:{|
+      @SkipOverrides
+      @AnalyzeAllOverrides
+      def test.taint(x): ... |}
+    ~expected_skipped_overrides:[]
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.of_list [AnalyzeAllOverrides; Obscure])
+          "test.taint";
+      ]
     ();
   ()
 
