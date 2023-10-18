@@ -545,6 +545,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         if (
             process_unsaved_changes
             and self.get_language_server_features().type_errors.is_enabled()
+            and self.server_state.status_tracker.get_status().connection_status
+            == state.ConnectionStatus.READY
         ):
             await self.send_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key

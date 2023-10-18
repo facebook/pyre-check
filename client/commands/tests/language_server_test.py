@@ -1770,13 +1770,15 @@ class DidChangeTest(ApiTestCase):
                     ],
                 ),
             )
+            setup.server_state.status_tracker.set_status(
+                state.ConnectionStatus.INCREMENTAL_CHECK
+            )
         self.assertEqual(
             querier.requests,
             [
                 # we expect to be able to send only the first request, since the
                 # remaining requests will put the server in a non-ready state
-                {"path": tracked_path, "code": unsaved_file_content_list[i]}
-                for i in range(len(unsaved_file_content_list))
+                {"path": tracked_path, "code": unsaved_file_content_list[0]}
             ],
         )
         expect_diagnostics = self._expect_diagnostics(
@@ -1804,7 +1806,15 @@ class DidChangeTest(ApiTestCase):
                 operation="typeErrors",
                 result=None,
             ),
-        ] * 3
+            self._expect_telemetry_event(
+                operation="didChange",
+                result=None,
+            ),
+            self._expect_telemetry_event(
+                operation="didChange",
+                result=None,
+            ),
+        ]
         self._assert_output_messages(
             output_writer,
             expectations,
