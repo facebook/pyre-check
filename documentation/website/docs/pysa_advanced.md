@@ -729,6 +729,16 @@ By default, Pysa skips overrides on some functions that are typically
 problematic. You can find the full list of default-skipped functions in
 [`stubs/taint/skipped_overrides.pysa`](https://github.com/facebook/pyre-check/blob/main/stubs/taint/skipped_overrides.pysa)
 
+## Force to analyze all overrides
+
+We also allow the use of decorator `@AnalyzeAllOverrides` to force analyzing all overriding methods of a given method, regardless of the configured maximum number of overrides to analyze (e.g., via command line option `--maximum-overrides-to-analyze`), or if there simultaneously exists an `@SkipOverrides` on the given method. An example is:
+```python
+@AnalyzeAllOverrides
+def BaseClass.method(self): ...
+```
+
+Decorator `@AnalyzeAllOverrides` is often used to reduce false negatives, by analyzing all overrides of some selected methods. This offers a more fine-grained option than tweaking `--maximum-overrides-to-analyze` for all methods. Adding decorator `@AnalyzeAllOverrides` to some selected methods is faster than using a large threshold of maximum overrides for all methods, but achieves better precision than using a small threshold.
+
 ## Limit the trace length for better signal and performance
 
 By default, Pysa will find all flows from sources to sinks matching a rule.
