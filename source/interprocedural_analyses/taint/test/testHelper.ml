@@ -603,9 +603,12 @@ let initialize
   let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
-  let override_graph_heap =
+  let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =
     OverrideGraph.Heap.from_source ~environment:type_environment ~include_unit_tests:true ~source
     |> OverrideGraph.Heap.skip_overrides ~to_skip:(Registry.skip_overrides user_models)
+    |> OverrideGraph.Heap.cap_overrides
+         ~analyze_all_overrides_targets:(Registry.analyze_all_overrides initial_models)
+         ~maximum_overrides:(TaintConfiguration.maximum_overrides_to_analyze taint_configuration)
   in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
   let override_graph_shared_memory_read_only =

@@ -179,3 +179,55 @@ class SkippedOverrides:
 class ExtendsSkipped(SkippedOverrides):
     def method(self, arg):
         _test_sink(arg)
+
+
+class AnalyzeAllOverrides:
+    # Expect to be analyzed, even if there are more overrides
+    # than the configuration of max overrides, due to @AnalyzeAllOverrides
+    def return_source(self):
+        pass
+
+
+class AnalyzeAllOverridesChild1(AnalyzeAllOverrides):
+    def return_source(self):
+        pass
+
+
+class AnalyzeAllOverridesChild2(AnalyzeAllOverrides):
+    def return_source(self):
+        pass
+
+
+class AnalyzeAllOverridesChild3(AnalyzeAllOverrides):
+    def return_source(self):
+        return _test_source()
+
+
+def call_analyze_call_overrides(a: AnalyzeAllOverrides):
+    a.return_source()
+
+
+class TooManyOverrides:
+    # Expect to be skipped, because there are more overrides
+    # than the configuration of max overrides.
+    def return_source(self):
+        pass
+
+
+class TooManyOverridesChild1(TooManyOverrides):
+    def return_source(self):
+        pass
+
+
+class TooManyOverridesChild2(TooManyOverrides):
+    def return_source(self):
+        pass
+
+
+class TooManyOverridesChild3(TooManyOverrides):
+    def return_source(self):
+        return _test_source()
+
+
+def call_too_many_overrides(t: TooManyOverrides):
+    t.return_source()

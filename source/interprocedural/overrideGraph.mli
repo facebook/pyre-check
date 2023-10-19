@@ -37,7 +37,11 @@ module Heap : sig
   }
 
   (** If a method has too many overrides, ignore them. *)
-  val cap_overrides : maximum_overrides:int option -> t -> cap_overrides_result
+  val cap_overrides
+    :  analyze_all_overrides_targets:Target.Set.t ->
+    maximum_overrides:int option ->
+    t ->
+    cap_overrides_result
 end
 
 (** Override graph in the shared memory, a mapping from a method to classes directly overriding it. *)
@@ -89,5 +93,6 @@ val build_whole_program_overrides
   include_unit_tests:bool ->
   skip_overrides_targets:Reference.SerializableSet.t ->
   maximum_overrides:int option ->
+  analyze_all_overrides_targets:Target.Set.t ->
   qualifiers:Reference.t list ->
   whole_program_overrides

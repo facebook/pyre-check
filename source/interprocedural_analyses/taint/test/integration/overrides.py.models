@@ -15,7 +15,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -44,7 +44,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -96,7 +96,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -175,7 +175,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -204,7 +204,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -256,7 +256,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 13 } ],
+            "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -335,7 +335,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "receiver_interval": [ { "lower": 14, "upper": 19 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -359,7 +359,7 @@
             }
           },
           {
-            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "receiver_interval": [ { "lower": 14, "upper": 19 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -388,7 +388,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 11 } ],
+            "receiver_interval": [ { "lower": 14, "upper": 19 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -440,7 +440,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 7, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -469,7 +469,7 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 7, "upper": 10 } ],
+            "receiver_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -521,7 +521,7 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 5, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -593,12 +593,77 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{overrides.AnalyzeAllOverrides.return_source}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            }
+          }
+        ]
+      }
+    ],
+    "modes": [ "AnalyzeAllOverrides" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Ovr{overrides.AnalyzeAllOverridesChild3.return_source}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
                 "kind": "Test"
               }
             ],
@@ -651,7 +716,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 12 } ],
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -712,7 +777,7 @@
         "taint": [
           {
             "caller_interval": [
-              { "lower": 3, "upper": 4 }, { "lower": 7, "upper": 10 }
+              { "lower": 11, "upper": 12 }, { "lower": 15, "upper": 18 }
             ],
             "is_self_call": false,
             "kinds": [
@@ -754,7 +819,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 12 } ],
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -786,7 +851,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 10 } ],
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -827,7 +892,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 10 } ],
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -868,7 +933,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 10 } ],
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -999,7 +1064,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1013,6 +1078,38 @@
               "line": 35,
               "start": 19,
               "end": 22
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overrides.AnalyzeAllOverridesChild3.return_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overrides.py",
+              "line": 203,
+              "start": 15,
+              "end": 29
             }
           }
         ]
@@ -1093,7 +1190,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 12 } ],
+            "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1225,7 +1322,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 10 } ],
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1255,7 +1352,7 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 10 } ],
+            "caller_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1287,7 +1384,7 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 15, "upper": 16 } ],
+            "caller_interval": [ { "lower": 23, "upper": 24 } ],
             "is_self_call": false,
             "kinds": [
               {
@@ -1341,6 +1438,38 @@
       }
     ],
     "modes": [ "SkipOverrides" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "overrides.TooManyOverridesChild3.return_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 31, "upper": 32 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "overrides.py",
+              "line": 229,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
   }
 }
 {

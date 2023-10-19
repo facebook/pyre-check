@@ -28,6 +28,10 @@ let skip_overrides models =
   |> Reference.SerializableSet.of_list
 
 
+let analyze_all_overrides models =
+  targets_with_mode models ~mode:Model.Mode.AnalyzeAllOverrides |> Target.Set.of_list
+
+
 let skip_analysis models =
   targets_with_mode models ~mode:Model.Mode.SkipAnalysis |> Target.Set.of_list
 

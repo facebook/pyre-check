@@ -139,32 +139,40 @@ module Heap = struct
   }
 
   (** If a method has too many overrides, ignore them. *)
-  let cap_overrides ~maximum_overrides overrides =
+  let cap_overrides ~analyze_all_overrides_targets ~maximum_overrides overrides =
     (* Keep the information of whether we're skipping overrides in a ref that we accumulate while we
        filter the map. *)
     let skipped_overrides = ref [] in
     let keep_override_edge ~key:member ~data:subtypes =
-      let number_of_overrides = List.length subtypes in
-      match maximum_overrides with
-      | Some cap ->
-          if number_of_overrides < cap then
+      if Target.Set.mem member analyze_all_overrides_targets then
+        let () =
+          Log.info
+            "Analyzing all overrides of `%s` as per @AnalyzeAllOverrides"
+            (Target.show_pretty member)
+        in
+        true
+      else
+        let number_of_overrides = List.length subtypes in
+        match maximum_overrides with
+        | Some cap ->
+            if number_of_overrides < cap then
+              true
+            else begin
+              Log.info
+                "Omitting overrides for `%s`. The number of overrides %d exceeds the limit %d."
+                (Target.show_pretty member)
+                number_of_overrides
+                cap;
+              skipped_overrides := member :: !skipped_overrides;
+              false
+            end
+        | None ->
+            if number_of_overrides > 50 then
+              Log.warning
+                "`%s` has %d overrides, this might slow down the analysis considerably."
+                (Target.show_pretty member)
+                number_of_overrides;
             true
-          else begin
-            Log.info
-              "Omitting overrides for `%s`. The number of overrides %d exceeds the limit %d."
-              (Target.show_pretty member)
-              number_of_overrides
-              cap;
-            skipped_overrides := member :: !skipped_overrides;
-            false
-          end
-      | None ->
-          if number_of_overrides > 50 then
-            Log.warning
-              "`%s` has %d overrides, this might slow down the analysis considerably."
-              (Target.show_pretty member)
-              number_of_overrides;
-          true
     in
     let overrides = Target.Map.Tree.filteri overrides ~f:keep_override_edge in
     { overrides; skipped_overrides = !skipped_overrides }
@@ -255,6 +263,7 @@ let build_whole_program_overrides
     ~include_unit_tests
     ~skip_overrides_targets
     ~maximum_overrides
+    ~analyze_all_overrides_targets
     ~qualifiers
   =
   let overrides =
@@ -284,7 +293,7 @@ let build_whole_program_overrides
       ()
   in
   let { Heap.overrides = override_graph_heap; skipped_overrides } =
-    Heap.cap_overrides ~maximum_overrides overrides
+    Heap.cap_overrides ~analyze_all_overrides_targets ~maximum_overrides overrides
   in
   let override_graph_shared_memory = SharedMemory.from_heap override_graph_heap in
   let () =

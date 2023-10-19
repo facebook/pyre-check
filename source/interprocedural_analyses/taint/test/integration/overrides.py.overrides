@@ -2,6 +2,10 @@
 Overrides
 overrides.A.__init__ (override) -> [overrides.A.__init__ (method)]
 overrides.A.methodA (override) -> [overrides.A.methodA (method)]
+overrides.AnalyzeAllOverrides.return_source (override) -> [overrides.AnalyzeAllOverrides.return_source (method) overrides.AnalyzeAllOverridesChild1.return_source (override) overrides.AnalyzeAllOverridesChild2.return_source (override) overrides.AnalyzeAllOverridesChild3.return_source (override)]
+overrides.AnalyzeAllOverridesChild1.return_source (override) -> [overrides.AnalyzeAllOverridesChild1.return_source (method)]
+overrides.AnalyzeAllOverridesChild2.return_source (override) -> [overrides.AnalyzeAllOverridesChild2.return_source (method)]
+overrides.AnalyzeAllOverridesChild3.return_source (override) -> [overrides.AnalyzeAllOverridesChild3.return_source (method)]
 overrides.B.__init__ (override) -> [overrides.B.__init__ (method) overrides.C.__init__ (override)]
 overrides.B.classMethod (override) -> [overrides.B.classMethod (method) overrides.C.classMethod (override)]
 overrides.B.methodB (override) -> [overrides.B.methodB (method) overrides.D.methodB (override)]
