@@ -63,6 +63,7 @@ end
 module AnalysisSetup = struct
   type t = {
     maximum_overrides: int option;
+    analyze_all_overrides_targets: Interprocedural.Target.Set.t;
     attribute_targets: Interprocedural.Target.Set.t;
     skip_analysis_targets: Interprocedural.Target.Set.t;
     skip_overrides_targets: Ast.Reference.SerializableSet.t;
@@ -452,6 +453,7 @@ let save_shared_memory ~configuration =
 
 let save
     ~maximum_overrides
+    ~analyze_all_overrides_targets
     ~attribute_targets
     ~skip_analysis_targets
     ~skip_overrides_targets
@@ -475,6 +477,7 @@ let save
       PreviousAnalysisSetupSharedMemory.save_to_cache
         {
           AnalysisSetup.maximum_overrides;
+          analyze_all_overrides_targets;
           attribute_targets;
           skip_analysis_targets;
           skip_overrides_targets;
@@ -565,25 +568,35 @@ module OverrideGraphSharedMemory = struct
   let is_reusable
       ~skip_overrides_targets
       ~maximum_overrides
+      ~analyze_all_overrides_targets
       {
         AnalysisSetup.maximum_overrides = previous_maximum_overrides;
+        analyze_all_overrides_targets = previous_analyze_all_overrides_targets;
         skip_overrides_targets = previous_skip_overrides_targets;
         _;
       }
     =
-    let no_change_in_skip_overrides =
-      Ast.Reference.SerializableSet.equal previous_skip_overrides_targets skip_overrides_targets
-    in
     let no_change_in_maximum_overrides =
       Option.equal Int.equal maximum_overrides previous_maximum_overrides
     in
-    no_change_in_skip_overrides && no_change_in_maximum_overrides
+    let no_change_in_analyze_all_overrides_targets =
+      Interprocedural.Target.Set.equal
+        previous_analyze_all_overrides_targets
+        analyze_all_overrides_targets
+    in
+    let no_change_in_skip_overrides =
+      Ast.Reference.SerializableSet.equal previous_skip_overrides_targets skip_overrides_targets
+    in
+    no_change_in_skip_overrides
+    && no_change_in_analyze_all_overrides_targets
+    && no_change_in_maximum_overrides
 
 
   let load_or_compute_if_unloadable
-      ~skip_overrides_targets
       ~previous_analysis_setup:{ AnalysisSetup.skipped_overrides; _ }
+      ~skip_overrides_targets
       ~maximum_overrides
+      ~analyze_all_overrides_targets
       entry_status
       compute_value
     =
@@ -602,7 +615,7 @@ module OverrideGraphSharedMemory = struct
             ~usage:SaveLoadSharedMemory.Usage.Used
             entry_status )
     | Error error ->
-        ( compute_value ~skip_overrides_targets ~maximum_overrides (),
+        ( compute_value ~skip_overrides_targets ~maximum_overrides ~analyze_all_overrides_targets (),
           EntryStatus.add ~name:Entry.OverrideGraph ~usage:error entry_status )
 
 
@@ -617,21 +630,27 @@ module OverrideGraphSharedMemory = struct
   let load_or_compute_if_stale_or_unloadable
       ~skip_overrides_targets
       ~maximum_overrides
+      ~analyze_all_overrides_targets
       ({ status; _ } as cache)
       compute_value
     =
     match status with
     | Loaded ({ previous_analysis_setup; entry_status } as loaded) ->
         let reusable =
-          is_reusable ~skip_overrides_targets ~maximum_overrides previous_analysis_setup
+          is_reusable
+            ~skip_overrides_targets
+            ~analyze_all_overrides_targets
+            ~maximum_overrides
+            previous_analysis_setup
         in
         if reusable then
           let () = Log.info "Trying to reuse the override graph from the cache." in
           let value, entry_status =
             load_or_compute_if_unloadable
-              ~skip_overrides_targets
               ~previous_analysis_setup
+              ~skip_overrides_targets
               ~maximum_overrides
+              ~analyze_all_overrides_targets
               entry_status
               compute_value
           in
@@ -646,8 +665,15 @@ module OverrideGraphSharedMemory = struct
               ~usage:(SaveLoadSharedMemory.Usage.Unused Stale)
               cache
           in
-          compute_value ~skip_overrides_targets ~maximum_overrides (), cache
-    | _ -> compute_value ~skip_overrides_targets ~maximum_overrides (), cache
+          ( compute_value
+              ~skip_overrides_targets
+              ~maximum_overrides
+              ~analyze_all_overrides_targets
+              (),
+            cache )
+    | _ ->
+        ( compute_value ~skip_overrides_targets ~maximum_overrides ~analyze_all_overrides_targets (),
+          cache )
 end
 
 let override_graph = OverrideGraphSharedMemory.load_or_compute_if_stale_or_unloadable

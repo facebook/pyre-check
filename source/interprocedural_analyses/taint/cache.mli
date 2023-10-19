@@ -22,6 +22,7 @@ val try_load
 
 val save
   :  maximum_overrides:int option ->
+  analyze_all_overrides_targets:Interprocedural.Target.Set.t ->
   attribute_targets:Interprocedural.Target.Set.t ->
   skip_analysis_targets:Interprocedural.Target.Set.t ->
   skip_overrides_targets:Ast.Reference.SerializableSet.t ->
@@ -53,9 +54,11 @@ val metadata_to_json : t -> Yojson.Safe.t
 val override_graph
   :  skip_overrides_targets:Ast.Reference.SerializableSet.t ->
   maximum_overrides:int option ->
+  analyze_all_overrides_targets:Interprocedural.Target.Set.t ->
   t ->
   (skip_overrides_targets:Ast.Reference.SerializableSet.t ->
   maximum_overrides:int option ->
+  analyze_all_overrides_targets:Interprocedural.Target.Set.t ->
   unit ->
   Interprocedural.OverrideGraph.whole_program_overrides) ->
   Interprocedural.OverrideGraph.whole_program_overrides * t

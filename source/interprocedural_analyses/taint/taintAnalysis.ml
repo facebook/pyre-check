@@ -511,8 +511,9 @@ let run_taint_analysis
     Cache.override_graph
       ~skip_overrides_targets
       ~maximum_overrides
+      ~analyze_all_overrides_targets
       cache
-      (fun ~skip_overrides_targets ~maximum_overrides () ->
+      (fun ~skip_overrides_targets ~maximum_overrides ~analyze_all_overrides_targets () ->
         Interprocedural.OverrideGraph.build_whole_program_overrides
           ~static_analysis_configuration
           ~scheduler
@@ -610,6 +611,7 @@ let run_taint_analysis
       ~attribute_targets
       ~skip_analysis_targets
       ~skip_overrides_targets
+      ~analyze_all_overrides_targets
       ~skipped_overrides
       ~override_graph_shared_memory
       ~initial_callables

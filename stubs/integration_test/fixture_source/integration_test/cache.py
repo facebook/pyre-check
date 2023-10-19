@@ -41,6 +41,7 @@ class AnotherBase:
     def method(self, x):
         pass
 
+
 class AnotherOverride(AnotherBase):
     def method(self, x):
         sink(x)
@@ -48,6 +49,7 @@ class AnotherOverride(AnotherBase):
 
 def test_overrides_cap(instance: AnotherBase):
     instance.method(source())
+
 
 def test_skip_analysis():
     sink(source())
@@ -59,3 +61,27 @@ class Token:
 
 def test_attribute(token: Token) -> None:
     sink(token.token)
+
+
+class YetAnotherBase:
+    def method(self, x):
+        pass
+
+
+class YetAnotherOverride1(YetAnotherBase):
+    def method(self, x):
+        sink(x)
+
+
+class YetAnotherOverride2(YetAnotherBase):
+    def method(self, x):
+        pass
+
+
+class YetAnotherOverride3(YetAnotherBase):
+    def method(self, x):
+        pass
+
+
+def test_analyze_all_overrides(b: YetAnotherBase):
+    b.method(source())

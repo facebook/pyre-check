@@ -589,7 +589,70 @@ class Test:
         _exit_or_continue(returncode, self.exit_on_error)
 
     @save_restore_cache
-    def run_test_changed_overrides(self) -> None:
+    def run_test_changed_analyze_all_overrides(self) -> None:
+        """
+        Run Pysa after removing a @AnalyzeAllOverrides model to test cache invalidation.
+        Pysa should detect that the override graph has changed and fall back
+        to doing a clean run.
+        """
+        # Remove a test taint file
+        test_model_path = Path("test_taint/analyze_all_overrides.pysa")
+        # Save contents for cleanup phase
+        original_content = open(test_model_path).read()
+        try:
+            test_model_path.unlink()
+        except FileNotFoundError:
+            LOG.warning(f"Could not remove up {test_model_path.absolute()}.")
+            pass
+
+        LOG.info("Testing cache invalidation after changes in @AnalyzeAllOverrides:")
+        pysa_command = _pysa_command(
+            self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
+        )
+        expected_cache_usage = {
+            "shared_memory_status": {
+                "Loaded": {
+                    "CallGraph": "(Unused Stale)",
+                    "ClassHierarchyGraph": "Used",
+                    "ClassIntervalGraph": "Used",
+                    "GlobalConstants": "Used",
+                    "InitialCallables": "Used",
+                    "PreviousAnalysisSetup": "Used",
+                    "OverrideGraph": "(Unused Stale)",
+                    "TypeEnvironment": "Used",
+                }
+            },
+            "save_cache": True,
+        }
+
+        # Expected should have one less issue due to skipping overrides
+        issue = {
+            "code": 5001,
+            "column": 13,
+            "define": "integration_test.cache.test_analyze_all_overrides",
+            "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
+            "line": 87,
+            "name": "Possible shell injection",
+            "path": "fixture_source/integration_test/cache.py",
+            "stop_column": 21,
+            "stop_line": 87
+        }
+        new_expected = copy.deepcopy(self.expected)
+        new_expected.remove(issue)
+        returncode = _run_and_check_output(
+            pysa_command,
+            new_expected,
+            self.save_results_to,
+            expected_cache_usage,
+        )
+
+        # Restore the original model file
+        open(test_model_path, "w").write(original_content)
+
+        _exit_or_continue(returncode, self.exit_on_error)
+
+    @save_restore_cache
+    def run_test_changed_skip_overrides(self) -> None:
         """
         Run Pysa after removing a @SkipOverrides model to test cache invalidation.
         Pysa should detect that the override graph has changed and fall back
@@ -686,11 +749,11 @@ class Test:
             "column": 20,
             "define": "integration_test.cache.test_overrides_cap",
             "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-            "line": 50,
+            "line": 51,
             "name": "Possible shell injection",
             "path": "fixture_source/integration_test/cache.py",
             "stop_column": 28,
-            "stop_line": 50,
+            "stop_line": 51,
         }
         new_expected = copy.deepcopy(self.expected)
         new_expected.remove(issue)
@@ -744,11 +807,11 @@ class Test:
             "column": 9,
             "define": "integration_test.cache.test_skip_analysis",
             "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-            "line": 53,
+            "line": 55,
             "name": "Possible shell injection",
             "path": "fixture_source/integration_test/cache.py",
             "stop_column": 17,
-            "stop_line": 53,
+            "stop_line": 55,
         }
         returncode = _run_and_check_output(
             pysa_command,
@@ -792,11 +855,11 @@ class Test:
             "column": 9,
             "define": "integration_test.cache.new_definition",
             "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-            "line": 64,
+            "line": 90,
             "name": "Possible shell injection",
             "path": "fixture_source/integration_test/cache.py",
             "stop_column": 17,
-            "stop_line": 64,
+            "stop_line": 90,
         }
         returncode = _run_and_check_output(
             pysa_command,
@@ -851,11 +914,11 @@ class Test:
             "column": 9,
             "define": "integration_test.cache.test_attribute",
             "description": "Possible shell injection [5001]: Data from [UserControlled] source(s) may reach [RemoteCodeExecution] sink(s)",
-            "line": 61,
+            "line": 63,
             "name": "Possible shell injection",
             "path": "fixture_source/integration_test/cache.py",
             "stop_column": 20,
-            "stop_line": 61,
+            "stop_line": 63,
         }
         returncode = _run_and_check_output(
             pysa_command,
@@ -910,7 +973,8 @@ def run_tests(exit_on_error: bool) -> None:
         test_class.run_test_changed_source_files()
         test_class.run_test_changed_definitions()
         test_class.run_test_changed_decorators()
-        test_class.run_test_changed_overrides()
+        test_class.run_test_changed_skip_overrides()
+        test_class.run_test_changed_analyze_all_overrides()
         test_class.run_test_changed_overrides_cap()
         test_class.run_test_changed_skip_analysis()
         test_class.run_test_changed_attribute_targets()
