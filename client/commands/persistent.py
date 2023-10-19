@@ -84,7 +84,6 @@ def process_initialize_request(
 
 
 READY_MESSAGE: str = "Pyre has completed an incremental check and is currently watching on further source changes."
-READY_SHORT: str = "Pyre Ready"
 
 
 class PyrePersistentSubscriptionResponseParser(
@@ -126,7 +125,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         await self.client_type_error_handler.show_type_errors_to_client()
         await self.client_status_message_handler.log_and_show_status_message_to_client(
             READY_MESSAGE,
-            short_message=READY_SHORT,
+            short_message=f"{self.server_state.server_options.flavor.simple_name()} Ready",
             level=lsp.MessageType.INFO,
         )
 
@@ -134,6 +133,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
         self,
         status_update_subscription: subscription.StatusUpdate,
     ) -> None:
+        flavor_simple_name = self.server_state.server_options.flavor.simple_name()
         if not self.get_type_errors_availability().is_disabled():
             await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Rebuilding":
@@ -142,7 +142,7 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy rebuilding the project for type checking...",
-                short_message="Pyre (waiting for Buck)",
+                short_message=f"{flavor_simple_name} (waiting for Buck)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Rechecking":
@@ -151,14 +151,14 @@ class PyrePersistentDaemonLaunchAndSubscribeHandler(
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "Pyre is busy re-type-checking the project...",
-                short_message="Pyre (checking)",
+                short_message=f"{flavor_simple_name} (checking)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Ready":
             self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 READY_MESSAGE,
-                short_message=READY_SHORT,
+                short_message=f"{flavor_simple_name} Ready",
                 level=lsp.MessageType.INFO,
             )
 

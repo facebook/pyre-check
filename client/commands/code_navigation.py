@@ -44,9 +44,6 @@ from .daemon_query_failer import AbstractDaemonQueryFailer
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
-READY_MESSAGE: str = "Pyre's code navigation server has completed an incremental check and is currently watching on further source changes."
-READY_SHORT: str = "Pyre CodeNav Ready"
-
 
 async def _read_server_response(
     server_input_channel: connections.AsyncTextReader,
@@ -101,6 +98,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     async def handle_status_update_event(
         self, status_update_subscription: subscription.StatusUpdate
     ) -> None:
+        flavor_simple_name = self.server_state.server_options.flavor.simple_name()
         if not self.get_type_errors_availability().is_disabled():
             await self.client_type_error_handler.clear_type_errors_for_client()
         if status_update_subscription.kind == "Stop":
@@ -109,7 +107,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server has stopped.",
-                short_message="Pyre code-nav (stopped)",
+                short_message=f"{flavor_simple_name} (stopped)",
                 level=lsp.MessageType.WARNING,
             )
             raise launch_and_subscribe_handler.PyreDaemonShutdown(
@@ -121,7 +119,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server is busy re-building the project...",
-                short_message="Pyre code-nav (building)",
+                short_message=f"{flavor_simple_name} (building)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "BusyChecking":
@@ -130,14 +128,14 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             )
             await self.client_status_message_handler.log_and_show_status_message_to_client(
                 "The Pyre code-navigation server is busy re-type-checking the project...",
-                short_message="Pyre code-nav (checking)",
+                short_message=f"{flavor_simple_name} (checking)",
                 level=lsp.MessageType.WARNING,
             )
         elif status_update_subscription.kind == "Idle":
             self.server_state.status_tracker.set_status(state.ConnectionStatus.READY)
             await self.client_status_message_handler.log_and_show_status_message_to_client(
-                READY_MESSAGE,
-                short_message=READY_SHORT,
+                "Pyre's code navigation server has completed an incremental check and is currently watching on further source changes.",
+                short_message=f"{flavor_simple_name} Ready",
                 level=lsp.MessageType.INFO,
             )
 

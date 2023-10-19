@@ -23,6 +23,10 @@ def get_project_identifier(
     return project_identifier
 
 
+class IllegalFlavorException(Exception):
+    pass
+
+
 class PyreFlavor(enum.Enum):
     """
     The pyre flavor acts as a name of a particular language-server + daemon
@@ -67,3 +71,11 @@ class PyreFlavor(enum.Enum):
 
     def server_log_subdirectory(self) -> str:
         return self.value
+
+    def simple_name(self) -> str:
+        if self == PyreFlavor.CLASSIC:
+            return "Type Checking"
+        elif self == PyreFlavor.CODE_NAVIGATION:
+            return "Language Services"
+        else:
+            raise IllegalFlavorException(f"No simple name defined for flavor {self}")

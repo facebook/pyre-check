@@ -46,3 +46,20 @@ class ProjectIdentifierTest(testslide.TestCase):
             relative_local_root="foo/bar",
             expected="my/project//foo/bar",
         )
+
+    def test_simple_name(self) -> None:
+        def assert_simple_name(
+            flavor: identifiers.PyreFlavor,
+            expected: str,
+        ) -> None:
+            self.assertEqual(
+                flavor.simple_name(),
+                expected,
+            )
+
+        assert_simple_name(identifiers.PyreFlavor.CLASSIC, "Type Checking")
+        assert_simple_name(identifiers.PyreFlavor.CODE_NAVIGATION, "Language Services")
+        self.assertRaises(
+            identifiers.IllegalFlavorException,
+            identifiers.PyreFlavor.SHADOW.simple_name,
+        )

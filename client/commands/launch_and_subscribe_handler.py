@@ -185,7 +185,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                 "it was not able to handle incrementally. "
                 "A new Pyre server will be started next time you open or save "
                 "a .py file",
-                short_message="Pyre Stopped",
+                short_message=f"{self.server_state.server_options.flavor.simple_name()} Stopped",
                 level=lsp.MessageType.ERROR,
                 fallback_to_notification=True,
             )
@@ -208,14 +208,14 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                 await self.client_status_message_handler.log_and_show_status_message_to_client(
                     "Established connection with existing Pyre server at "
                     f"`{project_identifier}`.",
-                    short_message="Pyre Ready",
+                    short_message=f"{server_options.flavor.simple_name()} Ready",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
                 )
             else:
                 await self.client_status_message_handler.log_and_show_status_message_to_client(
                     f"Pyre server at `{project_identifier}` has been initialized.",
-                    short_message="Pyre Ready",
+                    short_message=f"{server_options.flavor.simple_name()} Ready",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
                 )
@@ -261,7 +261,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         await self.client_status_message_handler.log_and_show_status_message_to_client(
             f"Starting a new Pyre server at `{project_identifier}` in "
             "the background.",
-            short_message="Starting Pyre...",
+            short_message=f"Starting {flavor.simple_name()}...",
             level=lsp.MessageType.WARNING,
             fallback_to_notification=True,
         )
@@ -306,7 +306,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
             await self.client_status_message_handler.show_status_message_to_client(
                 f"Cannot start a new Pyre server at `{project_identifier}`. "
                 f"{start_status.message}",
-                short_message="Pyre Stopped",
+                short_message=f"{server_options.flavor.simple_name()} Stopped",
                 level=lsp.MessageType.INFO,
                 fallback_to_notification=False,
             )
@@ -328,7 +328,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                 await self.client_status_message_handler.show_status_message_to_client(
                     f"Cannot start a new Pyre server at `{project_identifier}`. "
                     f"{start_status.message}",
-                    short_message="Pyre Stopped",
+                    short_message=f"{server_options.flavor.simple_name()} Stopped",
                     level=lsp.MessageType.INFO,
                     fallback_to_notification=True,
                 )
@@ -345,7 +345,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
                 await self.client_status_message_handler.show_status_message_to_client(
                     f"Pyre server restart at `{project_identifier}` has been "
                     "failing repeatedly. Disabling The Pyre plugin for now.",
-                    short_message="Pyre Disabled",
+                    short_message=f"{server_options.flavor.simple_name()} Disabled",
                     level=lsp.MessageType.ERROR,
                     fallback_to_notification=True,
                 )
