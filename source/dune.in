@@ -55,7 +55,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries core))
+ (libraries core unix))
 
 (library
  (name recognized)
@@ -162,6 +162,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
+  unix
   pyrelib.configuration
   pyrelib.timer
   pyrelib.file
@@ -190,7 +191,7 @@
  (name alarm)
  (modules alarm)
  (public_name pyrelib.alarm)
- (libraries pyrelib.log pyrelib.statistics))
+ (libraries unix pyrelib.log pyrelib.statistics))
 
 (library
  (name pyrePath)
@@ -204,7 +205,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries core sexplib ppxlib ppx_deriving pyrelib.log))
+ (libraries core unix sexplib ppxlib ppx_deriving pyrelib.log))
 
 (library
  (name sourcePath)

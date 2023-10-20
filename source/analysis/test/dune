@@ -59,6 +59,7 @@
    ppx_hash))
  (libraries
   ounit2
+  unix
   sexplib
   ppxlib
   ppx_hash

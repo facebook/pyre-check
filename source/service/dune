@@ -78,4 +78,11 @@
    ppx_compare
    ppx_sexp_conv
    ppx_deriving_yojson))
- (libraries base64 core sexplib ppxlib pyrelib.configuration hack_parallel))
+ (libraries
+  base64
+  core
+  unix
+  sexplib
+  ppxlib
+  pyrelib.configuration
+  hack_parallel))
