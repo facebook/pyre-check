@@ -86,9 +86,6 @@ type call_wrapper = { wrap: 'x 'b. ('x -> 'b) -> 'x -> 'b }
 
 type t = {
 
-  id: int; (* Simple id for the worker. This is not the worker pid: on
-              Windows, we spawn a new worker for each job. *)
-
   (* The call wrapper will wrap any workload sent to the worker (via "call"
    * below) before invoking the workload.
    *
@@ -133,7 +130,6 @@ and 'a delayed =
 and 'a ephemeral_worker = {
 
   worker: t;      (* The associated worker *)
-  ephemeral_worker_pid: int; (* The actual ephemeral worker pid *)
 
   (* The file descriptor we might pass to select in order to
      wait for the ephemeral worker to finish its job. *)
@@ -276,7 +272,7 @@ let make_one spawn id =
     current_worker_id := id;
     f input
   in
-  let worker = { call_wrapper = { wrap }; id; busy = false; killed = false; prespawned; spawn } in
+  let worker = { call_wrapper = { wrap }; busy = false; killed = false; prespawned; spawn } in
   worker
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
@@ -332,7 +328,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   in
   (* Mark the worker as busy. *)
   let infd = Daemon.descr_of_in_channel inc in
-  let ephemeral_worker = { result; ephemeral_worker_pid; infd; worker = w; } in
+  let ephemeral_worker = { result; infd; worker = w; } in
   w.busy <- true;
   let request =
     let { wrap } = w.call_wrapper in
