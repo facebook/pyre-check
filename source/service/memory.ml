@@ -24,12 +24,7 @@ module FirstClass = SharedMemory.FirstClass
 
 type bytes = int
 
-type configuration = {
-  heap_handle: SharedMemory.handle;
-  minor_heap_size: bytes;
-}
-
-let configuration : configuration option ref = ref None
+let heap_handle : SharedMemory.handle option ref = ref None
 
 (* Defined in `Gc` module. *)
 let best_fit_allocation_policy = 2
@@ -45,7 +40,7 @@ let worker_garbage_control =
 
 
 let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
-  match !configuration with
+  match !heap_handle with
   | None ->
       (* 4 MB *)
       let minor_heap_size = 4 * 1024 * 1024 in
@@ -74,10 +69,10 @@ let initialize ~heap_size ~dep_table_pow ~hash_table_pow ~log_level () =
         heap_size
         dep_table_pow
         hash_table_pow;
-      let heap_handle = SharedMemory.init shared_mem_config in
-      configuration := Some { heap_handle; minor_heap_size };
-      { heap_handle; minor_heap_size }
-  | Some configuration -> configuration
+      let handle = SharedMemory.init shared_mem_config in
+      heap_handle := Some handle;
+      handle
+  | Some heap_handle -> heap_handle
 
 
 let initialize_for_tests () =
@@ -105,7 +100,7 @@ let get_heap_handle
     else
       0
   in
-  let { heap_handle; _ } =
+  let heap_handle =
     initialize
       ~heap_size
       ~dep_table_pow:dependency_table_power
@@ -125,7 +120,7 @@ let report_statistics () =
   Hack_parallel.Std.Measure.print_distributions ()
 
 
-let is_initialized () = Option.is_some !configuration
+let is_initialized () = Option.is_some !heap_handle
 
 exception TarError of string
 
