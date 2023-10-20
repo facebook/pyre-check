@@ -2791,7 +2791,7 @@ let test_namespace_insensitive_compare _ =
     let namespace = Type.Variable.Namespace.create_fresh () in
     Type.Variable { no_namespace_variable with namespace }
   in
-  assert_false (Type.compare namespaced_variable_1 namespaced_variable_2 == 0);
+  assert_false (Type.equal namespaced_variable_1 namespaced_variable_2);
   assert_equal (Type.namespace_insensitive_compare namespaced_variable_1 namespaced_variable_2) 0;
   assert_equal
     (Type.namespace_insensitive_compare

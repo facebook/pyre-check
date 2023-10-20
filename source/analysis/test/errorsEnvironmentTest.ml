@@ -341,7 +341,7 @@ let test_error_filtering context =
     in
     Memory.reset_shared_memory ();
     assert_equal
-      ~printer:(List.to_string ~f:ident)
+      ~printer:(List.to_string ~f:Fn.id)
       ~cmp:(List.equal String.equal)
       expected_errors
       errors

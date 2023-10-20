@@ -12,7 +12,7 @@ open Ast
 let test_remove_leading_underscores _ =
   let assert_removed identifier expected =
     let removed = identifier |> Identifier.remove_leading_underscores in
-    assert_equal ~printer:ident removed expected
+    assert_equal ~printer:Fn.id removed expected
   in
   assert_removed "$local_0$x" "$local_0$x";
   assert_removed "$local_0$_x" "$local_0$x";

@@ -15,12 +15,12 @@ module Usage : sig
   type error =
     | LoadError
     | Stale
-  [@@deriving show]
+  [@@deriving compare, show]
 
   type t =
     | Used
     | Unused of error
-  [@@deriving show]
+  [@@deriving compare, show]
 end
 
 module type SingleValueValueType = sig

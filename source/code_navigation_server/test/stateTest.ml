@@ -16,7 +16,8 @@ let assert_working_set ~context ~expected actual =
   assert_equal
     ~ctxt:context
     ~cmp:[%compare.equal: SourcePath.t list]
-    ~printer:(fun paths -> Format.asprintf "%a" Sexp.pp_hum ([%sexp_of: SourcePath.t list] paths))
+    ~printer:(fun paths ->
+      Caml.Format.asprintf "%a" Sexp.pp_hum ([%sexp_of: SourcePath.t list] paths))
     (sort actual)
     (sort expected)
 

@@ -181,7 +181,7 @@ module TraceLength = struct
     let name = "trace length"
   end)
 
-  let increase n = if n < max_int then n + 1 else n
+  let increase n = if n < Int.max_value then n + 1 else n
 end
 
 (* This should be associated with every call site *)
@@ -208,7 +208,7 @@ module CallInfoIntervals = struct
   let is_top { caller_interval; receiver_interval; is_self_call } =
     ClassIntervalSet.is_top caller_interval
     && ClassIntervalSet.is_top receiver_interval
-    && is_self_call == false
+    && not is_self_call
 
 
   let to_json { caller_interval; receiver_interval; is_self_call } =
@@ -459,7 +459,7 @@ module Frame = struct
 
   let subtract to_remove ~from =
     (* Do not partially subtract slots, since this is unsound. *)
-    if to_remove == from then
+    if phys_equal to_remove from then
       bottom
     else if is_bottom to_remove then
       from
@@ -722,7 +722,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
 
   let subtract to_remove ~from =
     (* Do not partially subtract slots, since this is unsound. *)
-    if to_remove == from then
+    if phys_equal to_remove from then
       bottom
     else if is_bottom to_remove then
       from

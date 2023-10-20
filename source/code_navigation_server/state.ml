@@ -20,7 +20,7 @@ module Client = struct
     }
 
     let to_string { client_id; source_path } =
-      Format.sprintf "%s:%s" client_id (string_of_source_path source_path)
+      Caml.Format.sprintf "%s:%s" client_id (string_of_source_path source_path)
   end
 
   module Single = struct

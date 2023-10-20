@@ -22,7 +22,7 @@ let count { registered; _ } = Hashtbl.length registered
 
 let register ~output_channel { next_identifier; registered } =
   let key = !next_identifier in
-  incr next_identifier;
+  Int.incr next_identifier;
   (* NOTE(grievejia): This [add_exn] is safe unless the number of subscriptions exceeds
      [Int.max_value], which seems unlikely. *)
   Hashtbl.add_exn registered ~key ~data:output_channel;

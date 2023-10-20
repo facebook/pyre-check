@@ -55,7 +55,7 @@ let test_compute_locally_changed_files context =
              PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path))
     in
     assert_equal
-      ~printer:(List.to_string ~f:ident)
+      ~printer:(List.to_string ~f:Fn.id)
       (List.sort ~compare:String.compare expected)
       (List.sort ~compare:String.compare actual)
   in

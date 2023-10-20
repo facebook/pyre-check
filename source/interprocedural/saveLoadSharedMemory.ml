@@ -18,12 +18,12 @@ module Usage = struct
   type error =
     | LoadError
     | Stale
-  [@@deriving show { with_path = false }]
+  [@@deriving compare, show { with_path = false }]
 
   type t =
     | Used
     | Unused of error
-  [@@deriving show { with_path = false }]
+  [@@deriving compare, show { with_path = false }]
 end
 
 module type SingleValueValueType = sig

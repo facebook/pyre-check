@@ -708,7 +708,9 @@ module CallGraphSharedMemory = struct
     (* Technically we should also compare the changes in the definitions, but such comparison is
        unnecessary because we invalidate the cache when there is a source code change -- which
        implies no change in the definitions. *)
-    EntryStatus.get Entry.OverrideGraph entry_status == SaveLoadSharedMemory.Usage.Used
+    [%compare.equal: SaveLoadSharedMemory.Usage.t]
+      (EntryStatus.get Entry.OverrideGraph entry_status)
+      SaveLoadSharedMemory.Usage.Used
     && compare_attribute_targets ~previous_attribute_targets ~attribute_targets
     && compare_skip_analysis_targets ~previous_skip_analysis_targets ~skip_analysis_targets
 

@@ -211,7 +211,7 @@ let merge_entries name from into = match (from, into) with
         | None, into -> into
         | from, None -> from
         | Some { bucket_size = from; _; }, Some { bucket_size = into; _; }
-          when from <> into -> Printf.kprintf failwith
+          when from <> into -> Printf.ksprintf failwith
                                  "Merging buckets for %s failed: bucket sizes %f, %f"
                                  name from into
         | Some { bucket_size; buckets = from; }, Some { buckets = into; _; } ->

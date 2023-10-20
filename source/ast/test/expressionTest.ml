@@ -164,7 +164,7 @@ let test_normalize _ =
 
 let test_pp _ =
   let assert_pp_equal source expected =
-    assert_equal ~printer:ident (Expression.show source) expected
+    assert_equal ~printer:Fn.id (Expression.show source) expected
   in
   let simple_expression =
     +Expression.BooleanOperator

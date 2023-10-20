@@ -703,7 +703,7 @@ let process_function_type_comment
                 let annotation_count = List.length annotations in
                 (* For methods, it is allowed to have one extra `self` and `cls` parameter without
                    annotation. *)
-                if Option.is_some parent && annotation_count == parameter_count - 1 then
+                if Option.is_some parent && Int.equal annotation_count (parameter_count - 1) then
                   None :: annotations
                 else
                   annotations
@@ -711,7 +711,7 @@ let process_function_type_comment
           match List.zip parameters parameter_annotations with
           | List.Or_unequal_lengths.Unequal_lengths ->
               let message =
-                Format.sprintf
+                Caml.Format.sprintf
                   "Function signature type comment has %d parameter types, while the corresponding \
                    function contains %d parameters"
                   (List.length parameter_annotations)

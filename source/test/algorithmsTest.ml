@@ -25,7 +25,7 @@ let test_fold_correctness _ =
   loop ~f:( ^ ) ~cmp:String.equal input_strings;
   loop ~f:( + ) ~cmp:( = ) input_ints;
   (* Non associative operator *)
-  loop ~f:( - ) ~cmp:( != ) input_ints;
+  loop ~f:( - ) ~cmp:Int.( <> ) input_ints;
   ()
 
 

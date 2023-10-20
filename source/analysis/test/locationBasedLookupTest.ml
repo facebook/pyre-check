@@ -37,7 +37,9 @@ let find_indicated_multi_line_range source =
     match String.substr_index line ~pattern:"start line" with
     | Some _ ->
         (* The indicator points to the start of the current line. *)
-        let start_column = String.lfindi line ~f:(fun _ character -> character != ' ') in
+        let start_column =
+          String.lfindi line ~f:(fun _ character -> not (Char.equal character ' '))
+        in
         Some { Location.line = line_number + 1; column = Option.value_exn start_column }
     | None -> None
   in

@@ -34,7 +34,7 @@ let remove_gaps_between_nonoverlapping_intervals list =
         let first_upper = ClassInterval.upper_bound_exn first_interval in
         let second_lower = ClassInterval.lower_bound_exn second_interval in
         let second_upper = ClassInterval.upper_bound_exn second_interval in
-        if first_upper + 1 == second_lower then
+        if Int.equal (first_upper + 1) second_lower then
           remove_gaps (ClassInterval.create first_lower second_upper :: tail) result
         else
           remove_gaps (second_interval :: tail) (first_interval :: result)

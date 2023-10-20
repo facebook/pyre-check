@@ -4845,7 +4845,7 @@ class base class_metadata_environment dependency =
                If the user has erroneously marked the `__new__` method as returning something other
                than an instance of the class, such as `None`, replace the return type with the
                synthesized return type, such as `Base[T1, T2]`. *)
-            (not (String.equal class_name new_parent_name)) or not is_instance_of_current_class
+            (not (String.equal class_name new_parent_name)) || not is_instance_of_current_class
           in
           if should_ignore_return_type then
             return_annotation

@@ -199,7 +199,7 @@ let test_to_dot _ =
     handler order, Hash_set.to_list order.all_indices
   in
   assert_equal
-    ~printer:ident
+    ~printer:Fn.id
     ({|
       digraph {
         343776663[label="object"]

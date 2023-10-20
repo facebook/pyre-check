@@ -226,9 +226,9 @@ module CallTarget = struct
       }
     =
     Target.equal target_left target_right
-    && implicit_self_left == implicit_self_right
-    && implicit_dunder_call_left == implicit_dunder_call_right
-    && index_left == index_right
+    && Bool.equal implicit_self_left implicit_self_right
+    && Bool.equal implicit_dunder_call_left implicit_dunder_call_right
+    && Int.equal index_left index_right
 
 
   let to_json { target; implicit_self; implicit_dunder_call; index; return_type; receiver_class } =
@@ -257,9 +257,9 @@ module HigherOrderParameter = struct
       { index = index_left; call_targets = call_targets_left; unresolved = unresolved_left }
       { index = index_right; call_targets = call_targets_right; unresolved = unresolved_right }
     =
-    index_left == index_right
+    Int.equal index_left index_right
     && List.equal CallTarget.equal_ignoring_types call_targets_left call_targets_right
-    && unresolved_left == unresolved_right
+    && Bool.equal unresolved_left unresolved_right
 
 
   let join
@@ -450,7 +450,7 @@ module CallCallees = struct
     && HigherOrderParameterMap.equal_ignoring_types
          higher_order_parameter_lefts
          higher_order_parameter_rights
-    && unresolved_left == unresolved_right
+    && Bool.equal unresolved_left unresolved_right
 
 
   let is_method_of_class ~is_class_name callees =
@@ -603,7 +603,7 @@ module AttributeAccessCallees = struct
     =
     List.equal CallTarget.equal_ignoring_types property_targets_left property_targets_right
     && List.equal CallTarget.equal_ignoring_types global_targets_left global_targets_right
-    && is_attribute_left == is_attribute_right
+    && Bool.equal is_attribute_left is_attribute_right
 
 
   let empty = { property_targets = []; global_targets = []; is_attribute = true }

@@ -390,7 +390,7 @@ let rec translate_expression (expression : Errpyast.expr) =
               }
         | _ ->
             let fail_message =
-              Format.asprintf
+              Caml.Format.asprintf
                 "not yet implemented expression: %s"
                 (Errpyast.show_expr_desc expression_desc)
             in
@@ -954,4 +954,4 @@ let parse_module text =
                  errors = List.map ~f:make_syntax_error recoverable_errors;
                }))
   | Error error_string -> Result.Error (ParserError.Unrecoverable error_string)
-  | exception e -> Result.Error (ParserError.Unrecoverable (Printexc.to_string e))
+  | exception e -> Result.Error (ParserError.Unrecoverable (Caml.Printexc.to_string e))

@@ -259,7 +259,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
           accum ^ "\n" ^ string)
       ^ "\n]"
   in
-  assert_equal ~printer:ident expect error_message
+  assert_equal ~printer:Fn.id expect error_message
 
 
 let assert_queries ?source ?rules ~context ~model_source ~expect () =
@@ -8197,7 +8197,7 @@ let test_access_path _ =
   in
   let assert_invalid_path ~source ~expected =
     match parse_access_path source with
-    | Error error -> assert_equal ~printer:ident expected (ModelVerificationError.display error)
+    | Error error -> assert_equal ~printer:Fn.id expected (ModelVerificationError.display error)
     | Ok _ -> assert_bool (Format.sprintf "Unexpected valid access path for: %s" source) false
   in
   let index_label index = TaintPath.Label.TreeLabel (TreeLabel.Index index) in

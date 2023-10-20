@@ -491,9 +491,9 @@ Abstract.SimpleDomain.Make (struct
 
   let less_or_equal ~left ~right = left >= right
 
-  let bottom = max_int
+  let bottom = Int.max_value
 
-  let show length = if Int.equal length max_int then "<bottom>" else string_of_int length
+  let show length = if Int.equal length Int.min_value then "<bottom>" else string_of_int length
 end)
 
 module CollapseDepth = struct

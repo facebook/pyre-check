@@ -162,7 +162,7 @@ let save_results_to_directory
   let root = local_root |> PyrePath.absolute in
   let open_file ~filename =
     let path = PyrePath.append result_directory ~element:filename in
-    open_out (PyrePath.absolute path)
+    Out_channel.create (PyrePath.absolute path)
   in
   let save_models () =
     let model_to_json callable =
@@ -199,7 +199,7 @@ let save_results_to_directory
   let save_errors () =
     let out_channel = open_file ~filename:"errors.json" in
     Yojson.Safe.to_channel out_channel (`List errors);
-    close_out out_channel
+    Out_channel.close out_channel
   in
   let save_metadata () =
     let out_channel = open_file ~filename:"taint-metadata.json" in
@@ -234,7 +234,7 @@ let save_results_to_directory
         ]
     in
     Yojson.Safe.to_channel out_channel metadata_json;
-    close_out out_channel
+    Out_channel.close out_channel
   in
   remove_existing_models ();
   save_models ();

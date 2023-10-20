@@ -29,7 +29,7 @@ let test_load_from_string context =
     match ChecksumMap.load_from_string text with
     | Result.Error _ -> ()
     | Result.Ok _ ->
-        let message = Format.sprintf "Unexpected load success on %s" text in
+        let message = Caml.Format.sprintf "Unexpected load success on %s" text in
         assert_failure message
   in
 

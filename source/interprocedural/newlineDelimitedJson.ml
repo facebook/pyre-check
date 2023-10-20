@@ -55,11 +55,11 @@ let write_line ~out_channel line =
 
 
 let write_file ~path ~configuration ~to_json_lines elements =
-  let out_channel = open_out (PyrePath.absolute path) in
+  let out_channel = Out_channel.create (PyrePath.absolute path) in
   write_header ~out_channel configuration;
   List.iter elements ~f:(fun element ->
       element |> to_json_lines |> List.iter ~f:(write_line ~out_channel));
-  close_out out_channel
+  Out_channel.close out_channel
 
 
 let remove_sharded_files ~directory ~filename_prefix =

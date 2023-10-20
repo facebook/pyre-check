@@ -22,7 +22,7 @@ let timestamp_string () =
 (* We might want to log to both stderr and a file. Shelling out to tee isn't cross-platform.
  * We could dup2 stderr to a pipe and have a child process write to both original stderr and the
  * file, but that's kind of overkill. This is good enough *)
-let dupe_log: (string * out_channel) option ref = ref None
+let dupe_log: (string * Out_channel.t) option ref = ref None
 let set_log filename fd =
   dupe_log := Some (filename, fd)
 let get_log_name () = Option.map !dupe_log ~f:fst

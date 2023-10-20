@@ -70,7 +70,7 @@ let equal left right =
   match left, right with
   | Empty, Empty -> true
   | Interval left, Interval right ->
-      left.lower_bound == right.lower_bound && left.upper_bound == right.upper_bound
+      Int.equal left.lower_bound right.lower_bound && Int.equal left.upper_bound right.upper_bound
   | _ -> false
 
 
@@ -81,11 +81,12 @@ let is_empty = function
 
 let bottom = empty
 
-let top = create min_int max_int
+let top = create Int.min_value Int.max_value
 
 let is_top = function
   | Empty -> false
-  | Interval { lower_bound; upper_bound } -> lower_bound == min_int && upper_bound == max_int
+  | Interval { lower_bound; upper_bound } ->
+      Int.equal lower_bound Int.min_value && Int.equal upper_bound Int.max_value
 
 
 let less_or_equal ~left ~right =
@@ -99,7 +100,7 @@ let less_or_equal ~left ~right =
 let pp_interval formatter = function
   | Empty -> Format.fprintf formatter "<empty>"
   | Interval { lower_bound; upper_bound } ->
-      if lower_bound == min_int && upper_bound == max_int then
+      if Int.equal lower_bound Int.min_value && Int.equal upper_bound Int.max_value then
         Format.fprintf formatter "<top>"
       else
         Format.fprintf formatter "%d,%d" lower_bound upper_bound

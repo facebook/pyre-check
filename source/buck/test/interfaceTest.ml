@@ -26,7 +26,7 @@ let test_parse_buck_normalized_targets_query_output context =
   let assert_not_parsed output =
     try
       let _ = Interface.V1.parse_buck_normalized_targets_query_output output in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -83,7 +83,7 @@ let test_parse_buck_changed_targets_query_output context =
   let assert_not_parsed output =
     try
       let _ = Interface.V1.parse_buck_changed_targets_query_output output in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -220,7 +220,7 @@ let test_parse_buck_build_output context =
   let assert_not_parsed output =
     try
       let _ = Interface.V1.parse_buck_build_output output in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -290,7 +290,7 @@ let test_parse_merged_sourcedb_v2 context =
   let assert_not_parsed output =
     try
       let _ = Yojson.Safe.from_string output |> Interface.V2.parse_merged_sourcedb in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -345,7 +345,7 @@ let test_parse_merged_sourcedb_lazy context =
   let assert_not_parsed output =
     try
       let _ = Yojson.Safe.from_string output |> Interface.Lazy.parse_merged_sourcedb in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -374,7 +374,7 @@ let test_parse_buck_bxl_output_v2 context =
   let assert_not_parsed output =
     try
       let _ = Interface.V2.parse_bxl_output output in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -407,7 +407,7 @@ let test_parse_buck_bxl_output_lazy context =
   let assert_not_parsed output =
     try
       let _ = Interface.Lazy.parse_bxl_output output in
-      let message = Format.sprintf "Unexpected parsing success: %s" output in
+      let message = Caml.Format.sprintf "Unexpected parsing success: %s" output in
       assert_failure message
     with
     | Interface.JsonError _ -> ()
@@ -573,7 +573,7 @@ let test_buck_changed_targets_to_build_map context =
     | Result.Error _ -> ()
     | Result.Ok _ ->
         let message =
-          Format.asprintf
+          Caml.Format.asprintf
             "Unexpected parsing success: %a"
             Sexp.pp
             ([%sexp_of: Interface.V1.BuckChangedTargetsQueryOutput.t list] changed_targets)

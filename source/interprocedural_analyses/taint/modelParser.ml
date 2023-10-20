@@ -366,7 +366,7 @@ let rec parse_annotations
     | Tuple expressions ->
         List.map expressions ~f:(extract_via_tag ~requires_parameter_name via_kind)
         |> all
-        >>| List.find_map ~f:ident
+        >>| List.find_map ~f:Fn.id
     | _ ->
         Error
           (annotation_error

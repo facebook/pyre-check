@@ -83,7 +83,7 @@ let test_first_matching_decorator context =
             | None -> "None"
           in
           assert_equal ~printer ~cmp:(Option.equal equal_decorator) expected actual
-      | _ -> assert_true (Option.is_empty expected)
+      | _ -> assert_true (Option.is_none expected)
     in
     assert_logic expected
   in

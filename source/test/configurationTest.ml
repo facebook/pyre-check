@@ -24,7 +24,7 @@ let test_search_path _ =
            ())
       |> List.map ~f:SearchPath.show
     in
-    assert_equal ~printer:(List.to_string ~f:ident) expected search_paths
+    assert_equal ~printer:(List.to_string ~f:Fn.id) expected search_paths
   in
   assert_search_paths ~source_paths:["/a"] ["/a"];
   assert_search_paths ~source_paths:["/a"] ["/a"];

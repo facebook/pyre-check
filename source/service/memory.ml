@@ -274,7 +274,7 @@ module Interner (Value : InternerValueType) = struct
     let id =
       value
       |> Value.to_string
-      |> Digest.string
+      |> Md5.digest_string
       |> Md5_lib.to_binary
       |> Caml.Bytes.of_string
       |> fun md5 -> Caml.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc

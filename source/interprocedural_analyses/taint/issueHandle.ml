@@ -114,7 +114,7 @@ module T = struct
     let full_handle =
       Format.asprintf "%s:%d:%d:%s" (Target.external_name callable) code version sink_handle
     in
-    let hash = full_handle |> Digest.string |> Digest.to_hex in
+    let hash = full_handle |> Md5.digest_string |> Md5.to_hex in
     let short_handle =
       String.sub
         full_handle
