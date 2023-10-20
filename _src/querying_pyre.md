@@ -149,10 +149,6 @@ $ pyre query "defines(a)"
 }
 ```
 
-### Dump call graph
-
-The command `dump_call_graph()` returns a comprehensive JSON mapping each call to a list of callees.
-
 ### Dump class hierarchy
 
 The command `dump_class_hierarchy()` returns the entire class hierarchy as Pyre understands it; elides type variables.
