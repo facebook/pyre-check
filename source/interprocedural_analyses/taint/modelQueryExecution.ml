@@ -148,7 +148,6 @@ module ModelQueryRegistryMap = struct
   let errors_for_queries_without_output ~model_query_results ~queries =
     let module LoggingGroup = struct
       type t = {
-        name: string;
         models_count: int;
         (* Location and path of the first query in the group. *)
         location: Location.t;
@@ -188,7 +187,7 @@ module ModelQueryRegistryMap = struct
           logging_group_map, errors
       | Some logging_group_name ->
           let update = function
-            | None -> { LoggingGroup.name = logging_group_name; models_count; location; path }
+            | None -> { LoggingGroup.models_count; location; path }
             | Some existing -> LoggingGroup.add existing models_count
           in
           let logging_group_map =
