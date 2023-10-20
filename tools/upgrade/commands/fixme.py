@@ -4,7 +4,12 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Fixes errors provided through stdin for a whole project using Pyre. This
+differs from fixme_single and fixme_all in the sense that this does not take
+.pyre_configuration.local files into account.
+
+If your project contains sub-projects (.pyre_configuration.local files), then
+consider using fixme_single or fixme_all instead.
 """
 
 

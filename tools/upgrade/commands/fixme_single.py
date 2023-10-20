@@ -4,7 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Fixes errors provided through stdin for a single Pyre sub project
+(directory with a .pyre_configuration.local).
 """
 
 
