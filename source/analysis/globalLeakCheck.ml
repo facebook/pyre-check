@@ -52,11 +52,9 @@ module State (Context : Context) = struct
   }
 
   type leaked_global = {
-    reference: Reference.t;
     kind: Error.kind;
     location: Location.t;
   }
-  [@@warning "-69"]
 
   type result = {
     (* represents the list of globals from the current expression and sub-expression that will be
@@ -124,8 +122,7 @@ module State (Context : Context) = struct
 
   let append_errors_for_reachable_globals ~resolution ~location construct_leak_kind globals errors =
     List.map
-      ~f:(fun { global; _ } ->
-        { reference = global; location; kind = construct_leak_kind ~resolution global })
+      ~f:(fun { global; _ } -> { location; kind = construct_leak_kind ~resolution global })
       globals
     @ errors
 

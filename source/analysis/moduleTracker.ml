@@ -61,7 +61,6 @@ module ReadOnly = struct
     all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
   }
-  [@@warning "-69"]
 
   let controls { controls; _ } = controls ()
 
@@ -111,9 +110,7 @@ module ModulePaths = struct
     type t = {
       valid_suffixes: String.Set.t;
       excludes: Str.regexp list;
-      configuration: Configuration.Analysis.t;
     }
-    [@@warning "-69"]
 
     let create ({ Configuration.Analysis.excludes; _ } as configuration) =
       {
@@ -121,7 +118,6 @@ module ModulePaths = struct
           ".py" :: ".pyi" :: Configuration.Analysis.extension_suffixes configuration
           |> String.Set.of_list;
         excludes;
-        configuration;
       }
 
 
@@ -976,7 +972,6 @@ module Base = struct
     controls: EnvironmentControls.t;
     get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
   }
-  [@@warning "-69"]
 
   let load_raw_code ~configuration module_path =
     let path = ModulePath.full_path ~configuration module_path in
@@ -1066,11 +1061,9 @@ module Overlay = struct
 
   type t = {
     parent: ReadOnly.t;
-    controls: EnvironmentControls.t;
     overlaid_code: string ModulePath.Table.t;
     overlaid_qualifiers: Reference.Hash_set.t;
   }
-  [@@warning "-69"]
 
   let owns_qualifier { overlaid_qualifiers; _ } qualifier =
     Hash_set.mem overlaid_qualifiers qualifier
@@ -1086,7 +1079,6 @@ module Overlay = struct
   let create parent =
     {
       parent;
-      controls = ReadOnly.controls parent |> EnvironmentControls.create_for_overlay;
       overlaid_code = ModulePath.Table.create ();
       overlaid_qualifiers = Reference.Hash_set.create ();
     }

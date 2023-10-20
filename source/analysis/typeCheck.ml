@@ -25,12 +25,10 @@ type class_name_and_is_abstract_and_is_protocol = {
 }
 
 type exit_state_of_define = {
-  resolution: Resolution.t;
   errors: Error.t list;
   local_annotations: LocalAnnotationMap.t option;
   callees: Callgraph.callee_with_locations list option;
 }
-[@@warning "-69"]
 
 module LocalErrorMap = struct
   type t = Error.t list Int.Table.t
@@ -7466,14 +7464,12 @@ let exit_state ~resolution (module Context : Context) =
   in
   let global_resolution = Resolution.global_resolution resolution in
   if Define.is_stub define then
-    let resolution = Option.value_exn (State.resolution initial) in
     let errors_sofar =
       Option.value_exn
         ~message:"analysis context has no error map"
         (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
     in
     {
-      resolution;
       errors =
         emit_errors_on_exit (module Context) ~errors_sofar ~resolution ()
         |> filter_errors (module Context) ~global_resolution;
@@ -7520,7 +7516,7 @@ let exit_state ~resolution (module Context : Context) =
         ~message:"analysis context has no error map"
         (Context.error_map >>| LocalErrorMap.all_errors >>| Error.deduplicate)
     in
-    let resolution, errors =
+    let _, errors =
       match exit with
       | None -> resolution, errors
       | Some post_state ->
@@ -7529,7 +7525,7 @@ let exit_state ~resolution (module Context : Context) =
             emit_errors_on_exit (module Context) ~errors_sofar:errors ~resolution ()
             |> filter_errors (module Context) ~global_resolution )
     in
-    { resolution; errors; local_annotations = Some local_annotations; callees = Some callees })
+    { errors; local_annotations = Some local_annotations; callees = Some callees })
 
 
 let compute_local_annotations ~global_environment name =
