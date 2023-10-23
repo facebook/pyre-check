@@ -18,9 +18,8 @@ import enum
 import json
 import logging
 import os
-from collections import defaultdict
 from pathlib import Path
-from typing import Callable, DefaultDict, List, Optional, Union
+from typing import Callable, List, Optional, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
 
@@ -204,15 +203,6 @@ class AbstractDaemonQuerier(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     async def handle_file_opened(
         self,
         path: Path,
@@ -306,14 +296,6 @@ class EmptyQuerier(AbstractDaemonQuerier):
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        raise NotImplementedError()
-
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
         raise NotImplementedError()
 
     async def handle_file_opened(
@@ -521,16 +503,6 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             "Call hierarchy (from item) is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        return daemon_query.DaemonQueryFailure(
-            "Rename is not supported in the pyre persistent client. Please use code-navigation. "
-        )
-
     async def handle_file_opened(
         self,
         path: Path,
@@ -688,19 +660,6 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
             await self.base_querier.get_call_hierarchy_from_item(
                 path, call_hierarchy_item, relation_direction
             )
-            if failure is None
-            else failure
-        )
-
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        failure = self.get_query_failure(str(path))
-        return (
-            await self.base_querier.get_rename(path, position, new_text)
             if failure is None
             else failure
         )
@@ -892,14 +851,6 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return []
 
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        return None
-
     async def handle_file_opened(
         self,
         path: Path,
@@ -1053,32 +1004,6 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         return await self.index.call_hierarchy_from_item(
             path, call_hierarchy_item, relation_direction
         )
-
-    async def get_rename(
-        self,
-        path: Path,
-        position: lsp.PyrePosition,
-        new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
-        references: List[lsp.LspLocation] = []
-        # generate cst and fetch local references
-        local_references = await self.base_querier.get_reference_locations(
-            path, position
-        )
-        if (
-            not isinstance(local_references, daemon_query.DaemonQueryFailure)
-            and local_references is not None
-        ):
-            references.extend(local_references)
-        # fetch global references
-        references.extend(await self.index.references(path, position))
-        if len(references) == 0:
-            return None
-        changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
-        for reference in references:
-            changes[reference.uri].append(lsp.TextEdit(reference.range, new_text))
-
-        return lsp.WorkspaceEdit(changes=changes)
 
     async def handle_file_opened(
         self,
