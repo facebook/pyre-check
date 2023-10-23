@@ -20,9 +20,11 @@ import dataclasses
 import json
 import logging
 import random
+from collections import defaultdict
 from pathlib import Path
 from typing import (
     ClassVar,
+    DefaultDict,
     Dict,
     Generic,
     List,
@@ -1237,27 +1239,58 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
             )
-        rename_edits = await self.querier.get_rename(
-            document_path,
-            parameters.position.to_pyre_position(),
-            parameters.new_name,
+
+        references: List[lsp.LspLocation] = []
+        references_responses = await asyncio.gather(
+            self.querier.get_reference_locations(
+                document_path, parameters.position.to_pyre_position()
+            ),
+            self.index_querier.get_reference_locations(
+                document_path, parameters.position.to_pyre_position()
+            ),
         )
-        error_message = None
-        if isinstance(rename_edits, DaemonQueryFailure):
+
+        local_references = references_responses[0]
+        local_references_error_message = None
+        local_references_count = 0
+        if isinstance(local_references, DaemonQueryFailure):
             LOG.info(
                 daemon_failure_string(
-                    "rename",
-                    str(type(rename_edits)),
-                    rename_edits.error_message,
+                    "querier.get_reference_locations",
+                    str(type(local_references)),
+                    local_references.error_message,
                 )
             )
-            error_message = rename_edits.error_message
+            local_references_error_message = local_references.error_message
+        else:
+            references.extend(local_references)
+            local_references_count = len(local_references)
 
-        raw_response = (
-            None
-            if rename_edits is None
-            else lsp.WorkspaceEdit.cached_schema().dump(rename_edits)
-        )
+        global_references = references_responses[1]
+        global_references_error_message = None
+        global_references_count = 0
+        if isinstance(global_references, DaemonQueryFailure):
+            LOG.info(
+                daemon_failure_string(
+                    "index_querier.get_reference_locations",
+                    str(type(global_references)),
+                    global_references.error_message,
+                )
+            )
+            global_references_error_message = global_references.error_message
+        else:
+            references.extend(global_references)
+            global_references_count = len(global_references)
+
+        changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
+        for reference in references:
+            changes[reference.uri].append(
+                lsp.TextEdit(reference.range, parameters.new_name)
+            )
+
+        rename_edits = lsp.WorkspaceEdit(changes=changes)
+
+        raw_response = lsp.WorkspaceEdit.cached_schema().dump(rename_edits)
         LOG.info(f"Rename response: {raw_response}")
 
         await lsp.write_json_rpc(
@@ -1272,12 +1305,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "operation": "rename",
                 "filepath": str(document_path),
                 "non_empty": rename_edits is not None,
+                "local_references_count": local_references_count,
+                "global_references_count": global_references_count,
                 "response": raw_response,
                 "duration_ms": request_timer.stop_in_millisecond(),
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
-                "error_message": error_message,
+                "error_message": f"local:{local_references_error_message}, global:{global_references_error_message}",
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,

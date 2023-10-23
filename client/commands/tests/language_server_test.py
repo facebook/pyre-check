@@ -2493,3 +2493,87 @@ class DocumentSymbolsTest(ApiTestCase):
                     )
                 ],
             )
+
+
+class RenameSymbolTest(ApiTestCase):
+    def setUp(self) -> None:
+        self.maxDiff = None
+
+    @setup.async_test
+    async def test_rename_symbol_request(self) -> None:
+        tracked_path = Path("/tracked.py")
+        lsp_line = 3
+        daemon_line = lsp_line + 1
+        test_uri = "file:///path/to/foo.py"
+        test_range = lsp.LspRange(
+            start=lsp.LspPosition(line=5, character=6),
+            end=lsp.LspPosition(line=5, character=9),
+        )
+        test_text = "test"
+        reference_response = [
+            lsp.LspLocation(
+                uri=test_uri,
+                range=test_range,
+            )
+        ]
+        workspace_edit_response = {
+            "changes": {
+                "file:///path/to/foo.py": [
+                    lsp.TextEdit(
+                        range=test_range,
+                        new_text=test_text,
+                    ),
+                    lsp.TextEdit(  # Duplicates are not handled yet
+                        range=test_range,
+                        new_text=test_text,
+                    ),
+                ],
+            }
+        }
+        querier = server_setup.MockDaemonQuerier(
+            mock_references_response=reference_response,
+        )
+        index_querier = server_setup.MockDaemonQuerier(
+            mock_references_response=reference_response,
+        )
+        setup = server_setup.create_pyre_language_server_api_setup(
+            opened_documents={
+                tracked_path: state.OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
+            },
+            querier=querier,
+            index_querier=index_querier,
+        )
+        api = setup.api
+        output_writer = setup.output_writer
+        await api.process_rename_request(
+            lsp.RenameParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+                new_name=test_text,
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            querier.requests,
+            [
+                {
+                    "path": tracked_path,
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                }
+            ],
+        )
+        print(f"output_writer:{output_writer.items()}")
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    result=lsp.WorkspaceEdit.cached_schema().dump(
+                        workspace_edit_response
+                    ),
+                )
+            ],
+        )
