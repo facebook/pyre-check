@@ -1847,6 +1847,7 @@ class HoverTest(ApiTestCase):
                     )
                 },
                 querier=querier,
+                index_querier=querier,
                 server_options=server_setup.create_server_options(
                     language_server_features=features.LanguageServerFeatures(
                         telemetry=telemetry
@@ -1919,6 +1920,7 @@ class HoverTest(ApiTestCase):
                     )
                 },
                 querier=querier,
+                index_querier=querier,
                 server_options=server_setup.create_server_options(
                     language_server_features=features.LanguageServerFeatures(
                         unsaved_changes=features.UnsavedChangesAvailability.ENABLED,
@@ -2037,6 +2039,7 @@ class DefinitionTest(ApiTestCase):
                     )
                 },
                 querier=querier,
+                index_querier=querier,
                 server_options=server_setup.create_server_options(
                     language_server_features=features.LanguageServerFeatures(
                         telemetry=telemetry
@@ -2116,6 +2119,7 @@ class DefinitionTest(ApiTestCase):
                     )
                 },
                 querier=querier,
+                index_querier=querier,
                 server_options=server_setup.create_server_options(
                     language_server_features=features.LanguageServerFeatures(
                         unsaved_changes=features.UnsavedChangesAvailability.ENABLED,
@@ -2194,6 +2198,7 @@ class DefinitionTest(ApiTestCase):
                 )
             },
             querier=querier,
+            index_querier=querier,
             server_options=server_setup.create_server_options(
                 language_server_features=features.LanguageServerFeatures(
                     definition=features.DefinitionAvailability.SHADOW,
@@ -2253,6 +2258,7 @@ class DefinitionTest(ApiTestCase):
                 )
             },
             querier=querier,
+            index_querier=querier,
         )
         api = setup.api
         output_writer = setup.output_writer
@@ -2299,6 +2305,7 @@ class DefinitionTest(ApiTestCase):
                 )
             },
             querier=querier,
+            index_querier=querier,
             server_options=server_setup.create_server_options(
                 language_server_features=features.LanguageServerFeatures(
                     definition=features.DefinitionAvailability.SHADOW,
@@ -2373,6 +2380,7 @@ class ReferencesTest(ApiTestCase):
                 )
             },
             querier=querier,
+            index_querier=querier,
         )
         api = setup.api
         output_writer = setup.output_writer
@@ -2418,6 +2426,7 @@ class ReferencesTest(ApiTestCase):
                 )
             },
             querier=querier,
+            index_querier=querier,
         )
         api = setup.api
         output_writer = setup.output_writer

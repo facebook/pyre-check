@@ -677,7 +677,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         hover_timer = timer.Timer()
 
         await self.update_overlay_if_needed(document_path)
-        result = await self.querier.get_hover(
+        # TODO Bring out the state logic and use regular querier
+        result = await self.index_querier.get_hover(
             path=document_path,
             position=parameters.position.to_pyre_position(),
         )
@@ -740,7 +741,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         overall_timer = timer.Timer()
         overlay_update_duration = await self.update_overlay_if_needed(document_path)
         query_timer = timer.Timer()
-        raw_result = await self.querier.get_definition_locations(
+        # TODO Bring out the state logic and use regular querier
+        raw_result = await self.index_querier.get_definition_locations(
             path=document_path,
             position=position.to_pyre_position(),
         )
@@ -996,7 +998,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             return
 
-        reference_locations = await self.querier.get_reference_locations(
+        reference_locations = await self.index_querier.get_reference_locations(
             path=document_path,
             position=parameters.position.to_pyre_position(),
         )
@@ -1094,7 +1096,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         request_timer = timer.Timer()
 
-        call_hierarchy_items = await self.querier.get_call_hierarchy_from_item(
+        call_hierarchy_items = await self.index_querier.get_call_hierarchy_from_item(
             path=document_path,
             call_hierarchy_item=parameters.item,
             relation_direction=lsp.PyreCallHierarchyRelationDirection.PARENT,
@@ -1167,7 +1169,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         request_timer = timer.Timer()
 
-        call_hierarchy_items = await self.querier.get_call_hierarchy_from_item(
+        call_hierarchy_items = await self.index_querier.get_call_hierarchy_from_item(
             path=document_path,
             call_hierarchy_item=parameters.item,
             relation_direction=lsp.PyreCallHierarchyRelationDirection.CHILD,
