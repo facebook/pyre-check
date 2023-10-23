@@ -2812,26 +2812,26 @@ foo(10)
                 }
             ],
         )
-        self._assert_output_messages(
-            output_writer,
-            [
-                self._expect_success_message(
-                    result=lsp.WorkspaceEdit.cached_schema().dump(
-                        {
-                            "changes": {
-                                "file:///global/root/path/to/foo.py": [
-                                    lsp.TextEdit(
-                                        range=local_test_range_2,
-                                        new_text=test_text,
-                                    ),
-                                    lsp.TextEdit(
-                                        range=local_test_range_1,
-                                        new_text=test_text,
-                                    ),
-                                ],
-                            }
-                        }
-                    ),
-                )
-            ],
+
+        expected = server_setup.success_response_json(
+            result=lsp.WorkspaceEdit.cached_schema().dump(
+                {
+                    "changes": {
+                        "file:///global/root/path/to/foo.py": [
+                            lsp.TextEdit(
+                                range=local_test_range_2,
+                                new_text=test_text,
+                            ),
+                            lsp.TextEdit(
+                                range=local_test_range_1,
+                                new_text=test_text,
+                            ),
+                        ],
+                    }
+                }
+            ),
         )
+        actual = server_setup.extract_json_from_json_rpc_message(
+            output_writer.items()[0]
+        )
+        self._assert_json_equal(actual, expected)
