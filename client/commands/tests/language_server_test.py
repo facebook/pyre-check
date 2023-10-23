@@ -201,6 +201,74 @@ class SourceCodeContextTest(testslide.TestCase):
             "t",
         )
 
+    def test_text_at_range(self) -> None:
+        test_text = """
+import bar
+
+def foo() -> None:
+    print("Hello")
+"""
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=1, character=0),
+                    end=lsp.LspPosition(line=1, character=6),
+                ),
+            ),
+            "import",
+        )
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=1, character=0),
+                    end=lsp.LspPosition(line=2, character=0),
+                ),
+            ),
+            "import bar\n",
+        )
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=1, character=0),
+                    end=lsp.LspPosition(line=3, character=3),
+                ),
+            ),
+            "import bar\n\ndef",
+        )
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=-1, character=0),
+                    end=lsp.LspPosition(line=1, character=6),
+                ),
+            ),
+            None,
+        )
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=1, character=0),
+                    end=lsp.LspPosition(line=1, character=27),
+                ),
+            ),
+            None,
+        )
+        self.assertEqual(
+            pyre_language_server.SourceCodeContext.text_at_range(
+                test_text,
+                lsp.LspRange(
+                    start=lsp.LspPosition(line=0, character=6),
+                    end=lsp.LspPosition(line=0, character=4),
+                ),
+            ),
+            None,
+        )
+
 
 class ReadLspRequestTest(testslide.TestCase):
     @setup.async_test
@@ -2510,17 +2578,21 @@ class RenameSymbolTest(ApiTestCase):
 
     @setup.async_test
     async def test_rename_symbol_request(self) -> None:
-        tracked_path = Path("/tracked.py")
-        lsp_line = 3
+        test_code = """
+foo(10)
+foo(20)
+"""
+        tracked_path = Path("/global/root/path/to/foo.py")
+        lsp_line = 1
         daemon_line = lsp_line + 1
-        test_uri = "file:///path/to/foo.py"
+        test_uri = "file://" + str(tracked_path)
         test_range1 = lsp.LspRange(
-            start=lsp.LspPosition(line=5, character=6),
-            end=lsp.LspPosition(line=5, character=9),
+            start=lsp.LspPosition(line=1, character=0),
+            end=lsp.LspPosition(line=1, character=3),
         )
         test_range2 = lsp.LspRange(
-            start=lsp.LspPosition(line=7, character=6),
-            end=lsp.LspPosition(line=7, character=9),
+            start=lsp.LspPosition(line=2, character=0),
+            end=lsp.LspPosition(line=2, character=3),
         )
         test_text = "test"
         local_reference_response = [
@@ -2537,7 +2609,7 @@ class RenameSymbolTest(ApiTestCase):
         ]
         workspace_edit_response = {
             "changes": {
-                "file:///path/to/foo.py": [
+                test_uri: [
                     lsp.TextEdit(
                         range=test_range1,
                         new_text=test_text,
@@ -2556,11 +2628,7 @@ class RenameSymbolTest(ApiTestCase):
             mock_references_response=global_reference_response,
         )
         setup = server_setup.create_pyre_language_server_api_setup(
-            opened_documents={
-                tracked_path: state.OpenedDocumentState(
-                    code=server_setup.DEFAULT_FILE_CONTENTS
-                )
-            },
+            opened_documents={tracked_path: state.OpenedDocumentState(code=test_code)},
             querier=querier,
             index_querier=index_querier,
         )
@@ -2571,7 +2639,7 @@ class RenameSymbolTest(ApiTestCase):
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
                 ),
-                position=lsp.LspPosition(line=lsp_line, character=4),
+                position=lsp.LspPosition(line=lsp_line, character=2),
                 new_name=test_text,
             ),
             request_id=server_setup.DEFAULT_REQUEST_ID,
@@ -2581,11 +2649,10 @@ class RenameSymbolTest(ApiTestCase):
             [
                 {
                     "path": tracked_path,
-                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    "position": lsp.PyrePosition(line=daemon_line, character=2),
                 }
             ],
         )
-        print(f"output_writer:{output_writer.items()}")
         self._assert_output_messages(
             output_writer,
             [
@@ -2599,13 +2666,16 @@ class RenameSymbolTest(ApiTestCase):
 
     @setup.async_test
     async def test_rename_symbol_request_dedupes_references(self) -> None:
-        tracked_path = Path("/tracked.py")
-        lsp_line = 3
+        test_code = """
+foo()
+"""
+        tracked_path = Path("/global/root/path/to/foo.py")
+        lsp_line = 1
         daemon_line = lsp_line + 1
-        test_uri = "file:///path/to/foo.py"
+        test_uri = "file://" + str(tracked_path)
         test_range = lsp.LspRange(
-            start=lsp.LspPosition(line=5, character=6),
-            end=lsp.LspPosition(line=5, character=9),
+            start=lsp.LspPosition(line=1, character=0),
+            end=lsp.LspPosition(line=1, character=3),
         )
         test_text = "test"
         reference_response = [
@@ -2616,7 +2686,7 @@ class RenameSymbolTest(ApiTestCase):
         ]
         workspace_edit_response = {
             "changes": {
-                "file:///path/to/foo.py": [
+                test_uri: [
                     lsp.TextEdit(
                         range=test_range,
                         new_text=test_text,
@@ -2631,11 +2701,7 @@ class RenameSymbolTest(ApiTestCase):
             mock_references_response=reference_response,
         )
         setup = server_setup.create_pyre_language_server_api_setup(
-            opened_documents={
-                tracked_path: state.OpenedDocumentState(
-                    code=server_setup.DEFAULT_FILE_CONTENTS
-                )
-            },
+            opened_documents={tracked_path: state.OpenedDocumentState(code=test_code)},
             querier=querier,
             index_querier=index_querier,
         )
@@ -2646,7 +2712,7 @@ class RenameSymbolTest(ApiTestCase):
                 text_document=lsp.TextDocumentIdentifier(
                     uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
                 ),
-                position=lsp.LspPosition(line=lsp_line, character=4),
+                position=lsp.LspPosition(line=lsp_line, character=2),
                 new_name=test_text,
             ),
             request_id=server_setup.DEFAULT_REQUEST_ID,
@@ -2656,17 +2722,115 @@ class RenameSymbolTest(ApiTestCase):
             [
                 {
                     "path": tracked_path,
-                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    "position": lsp.PyrePosition(line=daemon_line, character=2),
                 }
             ],
         )
-        print(f"output_writer:{output_writer.items()}")
         self._assert_output_messages(
             output_writer,
             [
                 self._expect_success_message(
                     result=lsp.WorkspaceEdit.cached_schema().dump(
                         workspace_edit_response
+                    ),
+                )
+            ],
+        )
+
+    @setup.async_test
+    async def test_rename_symbol_filters_incorrect_references(self) -> None:
+        local_test_code = """
+def foo(x:int) -> None:
+    print(x)
+
+foo(10)
+"""
+        local_test_range_1 = lsp.LspRange(
+            start=lsp.LspPosition(line=1, character=4),
+            end=lsp.LspPosition(line=1, character=7),
+        )
+        local_test_range_2 = lsp.LspRange(
+            start=lsp.LspPosition(line=4, character=0),
+            end=lsp.LspPosition(line=4, character=3),
+        )
+        test_text = "test"
+        querier = server_setup.MockDaemonQuerier(
+            mock_references_response=[
+                lsp.LspLocation(
+                    uri="file:///global/root/path/to/foo.py",
+                    range=local_test_range_1,
+                ),
+                lsp.LspLocation(
+                    uri="file:///global/root/path/to/foo.py",
+                    range=local_test_range_2,
+                ),
+            ],
+        )
+        index_querier = server_setup.MockDaemonQuerier(
+            mock_references_response=[
+                lsp.LspLocation(
+                    uri="file:///global/root/path/to/bar.py",
+                    range=lsp.LspRange(
+                        start=lsp.LspPosition(line=0, character=0),
+                        end=lsp.LspPosition(line=0, character=3),
+                    ),
+                )
+            ],
+        )
+        setup = server_setup.create_pyre_language_server_api_setup(
+            opened_documents={
+                Path("/global/root/path/to/foo.py"): state.OpenedDocumentState(
+                    code=local_test_code
+                ),
+                Path("/global/root/path/to/bar.py"): state.OpenedDocumentState(
+                    code="bar"
+                ),
+            },
+            querier=querier,
+            index_querier=index_querier,
+        )
+        api = setup.api
+        output_writer = setup.output_writer
+        await api.process_rename_request(
+            lsp.RenameParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(
+                        Path("/global/root/path/to/foo.py")
+                    ).unparse(),
+                ),
+                position=lsp.LspPosition(line=4, character=2),
+                new_name=test_text,
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            querier.requests,
+            [
+                {
+                    "path": Path("/global/root/path/to/foo.py"),
+                    "position": lsp.PyrePosition(line=5, character=2),
+                }
+            ],
+        )
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    result=lsp.WorkspaceEdit.cached_schema().dump(
+                        {
+                            "changes": {
+                                "file:///global/root/path/to/foo.py": [
+                                    lsp.TextEdit(
+                                        range=local_test_range_2,
+                                        new_text=test_text,
+                                    ),
+                                    lsp.TextEdit(
+                                        range=local_test_range_1,
+                                        new_text=test_text,
+                                    ),
+                                ],
+                            }
+                        }
                     ),
                 )
             ],

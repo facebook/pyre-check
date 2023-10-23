@@ -38,7 +38,7 @@ from typing import (
 from .. import background_tasks, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
-from . import commands, daemon_querier, find_symbols, server_state as state
+from . import commands, daemon_querier, find_symbols, libcst_util, server_state as state
 
 from .daemon_querier import DaemonQuerierSource
 
@@ -139,6 +139,44 @@ class SourceCodeContext:
             return None
 
         return lines[position.line][position.character]
+
+    @staticmethod
+    def text_at_range(
+        source: str,
+        text_range: lsp.LspRange,
+    ) -> Optional[str]:
+        start = text_range.start
+        end = text_range.end
+        lines = source.splitlines()
+
+        if (
+            start.line >= len(lines)
+            or start.line < 0
+            or start.character < 0
+            or start.character >= len(lines[start.line])
+        ):
+            return None
+        if (
+            end.line >= len(lines)
+            or end.line < 0
+            or end.character < 0
+            or end.character > len(lines[end.line])
+        ):
+            return None
+        if start.line > end.line or (
+            start.line == end.line and start.character > end.character
+        ):
+            return None
+
+        if start.line == end.line:
+            return lines[start.line][start.character : end.character]
+
+        result = ""
+        result += lines[start.line][start.character :]
+        for line_num in range(start.line + 1, end.line):
+            result += "\n" + lines[line_num]
+        result += "\n" + lines[end.line][: end.character]
+        return result
 
 
 QueryResultType = TypeVar("QueryResultType")
@@ -1226,6 +1264,66 @@ class PyreLanguageServer(PyreLanguageServerApi):
             activity_key,
         )
 
+    def dedupe_references(
+        self,
+        document_path: Path,
+        position: lsp.PyrePosition,
+        references: List[lsp.LspLocation],
+    ) -> List[lsp.LspLocation]:
+        """
+        Removes extra/erroneous references by:
+        1. Deduping references with identical LspRange
+            a. References from an index will overlap with references locally calculated.
+        2. Filtering out references that don't point to the same symbol
+            a. References from an index can be stale and mispoint.
+        """
+        deduped_references = list(set(references))
+        code_text = self.server_state.opened_documents[document_path].code
+        global_root = (
+            self.server_state.server_options.start_arguments.base_arguments.global_root
+        )
+        symbol_range = libcst_util.find_symbol_range(
+            document_path,
+            Path(global_root),
+            code_text,
+            position,
+        )
+        LOG.debug(f"symbol_range: {symbol_range}")
+        text_at_range = SourceCodeContext.text_at_range(code_text, symbol_range)
+        LOG.debug(f"text_at_range: {text_at_range}")
+        filtered_references = []
+        for reference in deduped_references:
+            destination_filepath = Path(lsp.DocumentUri.parse(reference.uri).path)
+            if destination_filepath in self.server_state.opened_documents:
+                code_text = self.server_state.opened_documents[
+                    destination_filepath
+                ].code
+            else:
+                # Annoying workaround to handle files that are not opened yet.
+                # Daemon fetches it by reading, whereas the LS reads in code from
+                # didChange/didOpen requests. For files we didn't receive requests
+                # for, we need to open the file and read it ourselves.
+                # @lint-ignore FIXIT1
+                with open(destination_filepath, "r") as f:
+                    code_text = f.read()
+                    self.server_state.opened_documents[
+                        destination_filepath
+                    ] = OpenedDocumentState(
+                        code=code_text,
+                        is_dirty=False,
+                        pyre_code_updated=True,
+                    )
+            text_to_replace = SourceCodeContext.text_at_range(
+                code_text, reference.range
+            )
+            if text_to_replace == text_at_range:
+                filtered_references.append(reference)
+            else:
+                LOG.info(
+                    f"Filtering out reference {reference} because it doesn't match text at symbol range: {text_to_replace}"
+                )
+        return filtered_references
+
     async def process_rename_request(
         self,
         parameters: lsp.RenameParameters,
@@ -1265,6 +1363,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             local_references_error_message = local_references.error_message
         else:
+            LOG.info(f"Local references: {local_references}")
             references.extend(local_references)
             local_references_count = len(local_references)
 
@@ -1281,10 +1380,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             global_references_error_message = global_references.error_message
         else:
+            LOG.info(f"Global references: {global_references}")
             references.extend(global_references)
             global_references_count = len(global_references)
 
-        deduped_references = list(set(references))
+        deduped_references = self.dedupe_references(
+            document_path, parameters.position.to_pyre_position(), references
+        )
 
         changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
         for reference in deduped_references:

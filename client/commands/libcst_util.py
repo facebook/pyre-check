@@ -49,6 +49,10 @@ class QualifiedNameWithPositionVisitor(libcst.CSTVisitor):
     def __init__(self, position: lsp.LspPosition) -> None:
         self.name_to_ranges: DefaultDict[str, List[lsp.LspRange]] = defaultdict(list)
         self.qualified_names: List[str] = []
+        self.symbol_range: lsp.LspRange = lsp.LspRange(
+            start=lsp.LspPosition(line=0, character=0),
+            end=lsp.LspPosition(line=0, character=0),
+        )
         self.position: lsp.LspPosition = position
 
     def visit_Name(  # noqa: B906 - these are leaf nodes, no need to have recursive visits
@@ -73,6 +77,7 @@ class QualifiedNameWithPositionVisitor(libcst.CSTVisitor):
                         metadata.FullyQualifiedNameProvider, node
                     )
                 ]
+                self.symbol_range = lsp_range
             for qualified_name in self.get_metadata(
                 metadata.FullyQualifiedNameProvider, node
             ):
@@ -84,6 +89,9 @@ class QualifiedNameWithPositionVisitor(libcst.CSTVisitor):
             if include_builtins or qualified_name not in BUILTINS_BLOCKLIST:
                 results.extend(self.name_to_ranges[qualified_name])
         return results
+
+    def find_symbol_range(self) -> lsp.LspRange:
+        return self.symbol_range
 
 
 def generate_qualified_name_with_position_visitor(
@@ -124,3 +132,15 @@ def find_references(
         )
         for reference in references
     ]
+
+
+def find_symbol_range(
+    path: Path,
+    global_root: Path,
+    code: str,
+    position: lsp.PyrePosition,
+) -> lsp.LspRange:
+    visitor = generate_qualified_name_with_position_visitor(
+        path, global_root, code, position
+    )
+    return visitor.find_symbol_range()
