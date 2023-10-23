@@ -1284,8 +1284,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
             references.extend(global_references)
             global_references_count = len(global_references)
 
+        deduped_references = list(set(references))
+
         changes: DefaultDict[str, List[lsp.TextEdit]] = defaultdict(list)
-        for reference in references:
+        for reference in deduped_references:
             changes[reference.uri].append(
                 lsp.TextEdit(reference.range, parameters.new_name)
             )
