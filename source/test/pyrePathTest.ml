@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module CamlUnix = Unix
 open Core
 open OUnit2
 open Test
