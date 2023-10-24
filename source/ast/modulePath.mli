@@ -44,6 +44,12 @@ val relative : t -> string
 
 val is_in_project : t -> bool
 
+val create_for_in_memory_scratch_project
+  :  configuration:Configuration.Analysis.t ->
+  relative:string ->
+  is_external:bool ->
+  t
+
 val create_for_testing : relative:string -> is_external:bool -> priority:int -> t
 
 val qualifier_from_relative_path : string -> Reference.t

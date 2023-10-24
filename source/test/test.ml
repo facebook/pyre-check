@@ -3065,7 +3065,9 @@ module ScratchProject = struct
         let in_memory_sources =
           let to_in_memory_source (relative, content) ~is_external =
             let code = trim_extra_indentation content in
-            let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority:1 in
+            let module_path =
+              ModulePath.create_for_in_memory_scratch_project ~configuration ~relative ~is_external
+            in
             module_path, code
           in
           List.map sources ~f:(to_in_memory_source ~is_external:false)

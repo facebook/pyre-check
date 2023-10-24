@@ -185,12 +185,25 @@ let relative { raw = { Raw.relative; _ }; _ } = relative
 
 let is_in_project { is_external; _ } = not is_external
 
-let create_for_testing ~relative ~is_external ~priority =
-  let raw = Raw.{ relative; priority } in
+let create_from_raw_for_testing ~is_external ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
   let is_stub = PyrePath.is_path_python_stub relative in
   let is_init = PyrePath.is_path_python_init relative in
   { raw; qualifier; is_stub; is_external; is_init }
+
+
+let create_for_testing ~relative ~is_external ~priority =
+  let raw = Raw.{ relative; priority } in
+  create_from_raw_for_testing ~is_external raw
+
+
+let create_for_in_memory_scratch_project ~configuration ~relative ~is_external =
+  let raw =
+    let { Configuration.Analysis.local_root; _ } = configuration in
+    let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
+    Raw.create ~configuration (ArtifactPath.create path_in_local_root) |> Option.value_exn
+  in
+  create_from_raw_for_testing ~is_external raw
 
 
 let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
