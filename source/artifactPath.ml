@@ -19,16 +19,16 @@ module Event = struct
       | CreatedOrChanged
       | Deleted
       | Unknown
-    [@@deriving sexp, compare]
+    [@@deriving show, sexp, compare]
   end
 
-  type artifact_path = t [@@deriving sexp, compare]
+  type artifact_path = t [@@deriving show, sexp, compare]
 
   type t = {
     kind: Kind.t;
     path: artifact_path;
   }
-  [@@deriving sexp, compare]
+  [@@deriving show, sexp, compare]
 
   let create ~kind path = { kind; path }
 end

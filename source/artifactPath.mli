@@ -17,7 +17,7 @@ module Event : sig
       | CreatedOrChanged
       | Deleted
       | Unknown
-    [@@deriving sexp, compare]
+    [@@deriving show, sexp, compare]
   end
 
   type artifact_path = t
@@ -26,7 +26,7 @@ module Event : sig
     kind: Kind.t;
     path: artifact_path;
   }
-  [@@deriving sexp, compare]
+  [@@deriving show, sexp, compare]
 
   val create : kind:Kind.t -> artifact_path -> t
 end
