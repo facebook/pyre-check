@@ -119,6 +119,9 @@ let on_watchman_update ~server paths =
     { Request.FileUpdateEvent.kind; path = PyrePath.absolute path }
   in
   let update_command = Request.Command.FileUpdate (List.map paths ~f:create_file_update_event) in
+  Log.info
+    "Processing command `%s`"
+    (Request.Command.sexp_of_t update_command |> Sexp.to_string |> Log.truncate ~size:400);
   (* File watcher does not care about the content of the the response. *)
   let%lwt _ = handle_command_and_stop_if_necessary ~server update_command in
   Lwt.return_unit
