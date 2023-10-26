@@ -24,6 +24,7 @@ import re
 import shutil
 import subprocess
 import sys
+import textwrap
 from pathlib import Path
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Set, TypeVar, Union
 
@@ -43,6 +44,7 @@ from ..libcst_vendored_visitors import ApplyTypeAnnotationsVisitor
 from . import commands, start
 
 LOG: logging.Logger = logging.getLogger(__name__)
+MAX_NESTED_CLASS_STRING_LENGTH: int = 1000
 
 
 @dataclasses.dataclass(frozen=True)
@@ -579,8 +581,13 @@ class ModuleAnnotations:
             else:
                 classes.setdefault(relative_parent_class, []).append(annotation)
         if len(nested_classes) > 0:
+            nested_classes_string = textwrap.shorten(
+                ", ".join(sorted(nested_classes)),
+                width=MAX_NESTED_CLASS_STRING_LENGTH,
+                placeholder="...",
+            )
             LOG.warning(
-                f"In file {self.path}, ignored {len(nested_classes)} nested classes"
+                f"In file {self.path}, ignored {len(nested_classes)} nested classes: {nested_classes_string}"
             )
         return classes
 
