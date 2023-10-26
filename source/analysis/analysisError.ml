@@ -462,7 +462,10 @@ module ReadOnly = struct
     let pp_reference = pp_reference ~concise in
     let readonly_entrypoint_message =
       if is_readonly_entrypoint then
-        "\nNote that this is a zone entrypoint and any captured variables are treated as readonly"
+        "\n\
+         Note that this is a zone entrypoint and any captured variables are treated as readonly. \
+         Wiki: \
+         https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/"
       else
         ""
     in

@@ -798,7 +798,9 @@ let test_function_call context =
       "ReadOnly violation - Calling mutating method on readonly type [3005]: Method \
        `test.Foo.some_method` may modify its object. Cannot call it on readonly expression `self` \
        of type `pyre_extensions.ReadOnly[Foo]`.\n\
-       Note that this is a zone entrypoint and any captured variables are treated as readonly";
+       Note that this is a zone entrypoint and any captured variables are treated as readonly. \
+       Wiki: \
+       https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
       "Incompatible parameter type [6]: In call `Foo.some_method`, for 1st positional argument, \
        expected `str` but got `int`.";
       "Incompatible parameter type [6]: In call `Foo.some_classmethod`, for 1st positional \
@@ -1220,7 +1222,9 @@ let test_captured_variable_for_specially_decorated_functions context =
       "Revealed type [-1]: Revealed type for `parameter` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
        since it is readonly.\n\
-       Note that this is a zone entrypoint and any captured variables are treated as readonly";
+       Note that this is a zone entrypoint and any captured variables are treated as readonly. \
+       Wiki: \
+       https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
       "Revealed type [-1]: Revealed type for `not_captured` is `Foo`.";
     ];
   (* Outer local variable should be marked as readonly within the entrypoint. *)
@@ -1246,7 +1250,9 @@ let test_captured_variable_for_specially_decorated_functions context =
       "Revealed type [-1]: Revealed type for `local_variable` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
        since it is readonly.\n\
-       Note that this is a zone entrypoint and any captured variables are treated as readonly";
+       Note that this is a zone entrypoint and any captured variables are treated as readonly. \
+       Wiki: \
+       https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
     ];
   assert_type_errors
     {|
@@ -1293,7 +1299,9 @@ let test_captured_variable_for_specially_decorated_functions context =
       "Revealed type [-1]: Revealed type for `self` is `pyre_extensions.ReadOnly[Foo]`.";
       "ReadOnly violation - Assigning to readonly attribute [3003]: Cannot assign to attribute `x` \
        since it is readonly.\n\
-       Note that this is a zone entrypoint and any captured variables are treated as readonly";
+       Note that this is a zone entrypoint and any captured variables are treated as readonly. \
+       Wiki: \
+       https://www.internalfb.com/intern/wiki/IG_Policy_Zones_User_Guide/Policy_Zone_APIs/Leak_Safety/ReadOnly_Propagation/";
     ];
   (* `cls` captured in a nested entrypoint should be marked as readonly. *)
   assert_type_errors
