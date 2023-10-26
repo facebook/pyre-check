@@ -734,7 +734,8 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
             return daemon_query.DaemonQueryFailure(response.message)
-        return response.to_errors_response()
+        # TODO(T165048078): determine if this error should be kept for code navigation (are we committing to unsafe mode in codenav?)
+        return [error for error in response.to_errors_response() if error.code != 0]
 
     async def get_type_coverage(
         self,
