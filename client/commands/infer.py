@@ -463,6 +463,7 @@ class AttributeAnnotation(FieldAnnotation):
 
 @dataclasses.dataclass(frozen=True)
 class ModuleAnnotations:
+    qualifier: str
     path: str
     options: StubGenerationOptions
     globals_: List[GlobalAnnotation] = dataclasses.field(default_factory=list)
@@ -487,6 +488,7 @@ class ModuleAnnotations:
             )
 
         return ModuleAnnotations(
+            qualifier=infer_output.qualifier,
             path=path,
             globals_=[
                 GlobalAnnotation(

@@ -439,7 +439,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             infer_output=infer.RawInferOutputForPath(qualifier=default_qualifier),
             options=default_options,
             expected=infer.ModuleAnnotations(
-                path=default_path, options=default_options
+                qualifier=default_qualifier, path=default_path, options=default_options
             ),
         )
 
@@ -467,6 +467,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             ),
             options=default_options,
             expected=infer.ModuleAnnotations(
+                qualifier=default_qualifier,
                 path=default_path,
                 options=default_options,
                 functions=[
@@ -513,6 +514,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             ),
             options=default_options,
             expected=infer.ModuleAnnotations(
+                qualifier=default_qualifier,
                 path=default_path,
                 options=default_options,
                 globals_=[
@@ -561,6 +563,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             ),
             options=default_options,
             expected=infer.ModuleAnnotations(
+                qualifier=default_qualifier,
                 path=default_path,
                 options=default_options,
             ),
@@ -586,6 +589,7 @@ class ModuleAnnotationTest(testslide.TestCase):
             ),
             options=annotate_attribute_options,
             expected=infer.ModuleAnnotations(
+                qualifier=default_qualifier,
                 path=default_path,
                 options=annotate_attribute_options,
                 attributes=[
@@ -721,6 +725,7 @@ class ModuleAnnotationTest(testslide.TestCase):
     def test_module_annotation_stubs_path(self) -> None:
         self.assertEqual(
             infer.ModuleAnnotations(
+                qualifier="derp",
                 path="derp.py",
                 options=infer.StubGenerationOptions(),
             ).stubs_path(Path("/root")),
