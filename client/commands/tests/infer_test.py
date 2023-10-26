@@ -1312,9 +1312,6 @@ class StubGenerationTest(testslide.TestCase):
         )
 
     def test_stubs_attributes__full_path_but_does_not_match_qualifier(self) -> None:
-        """TODO(T164419913): If the path differs from the qualifier, we
-        spuriously consider the class to be "nested" and ignore it
-        completely."""
         self._assert_stubs(
             {
                 "attributes": [
@@ -1322,6 +1319,27 @@ class StubGenerationTest(testslide.TestCase):
                         "annotation": "int",
                         "name": "some_attribute",
                         "parent": "foo.bar.test.Foo",
+                    }
+                ],
+            },
+            """\
+            class Foo:
+                some_attribute: int = ...
+            """,
+            annotate_attributes=True,
+            root="/root",
+            test_path="/root/extra_module/foo/bar/test.py",
+            qualifier="foo.bar.test",
+        )
+
+    def test_stubs_attributes__nested_class_is_ignored(self) -> None:
+        self._assert_stubs(
+            {
+                "attributes": [
+                    {
+                        "annotation": "int",
+                        "name": "some_attribute",
+                        "parent": "foo.bar.test.Foo.MyNestedClass",
                     }
                 ],
             },

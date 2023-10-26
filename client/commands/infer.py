@@ -558,12 +558,6 @@ class ModuleAnnotations:
     def _indent(stub: str) -> str:
         return "    " + stub.replace("\n", "\n    ")
 
-    def _relativize(self, parent: str) -> Sequence[str]:
-        path = (
-            str(self.path).split(".", 1)[0].replace("/", ".").replace(".__init__", "")
-        )
-        return parent.replace(path, "", 1).strip(".").split(".")
-
     @property
     def classes(self) -> Dict[str, List[Union[AttributeAnnotation, MethodAnnotation]]]:
         """
@@ -577,16 +571,16 @@ class ModuleAnnotations:
         ```
         """
         classes: Dict[str, List[Union[AttributeAnnotation, MethodAnnotation]]] = {}
-        nested_class_count = 0
+        nested_classes = set()
         for annotation in [*self.attributes, *self.methods]:
-            parent = self._relativize(annotation.parent)
-            if len(parent) == 1:
-                classes.setdefault(parent[0], []).append(annotation)
+            relative_parent_class = annotation.parent.removeprefix(self.qualifier + ".")
+            if "." in relative_parent_class:
+                nested_classes.add(relative_parent_class)
             else:
-                nested_class_count += 1
-        if nested_class_count > 0:
+                classes.setdefault(relative_parent_class, []).append(annotation)
+        if len(nested_classes) > 0:
             LOG.warning(
-                f"In file {self.path}, ignored {nested_class_count} nested classes"
+                f"In file {self.path}, ignored {len(nested_classes)} nested classes"
             )
         return classes
 
