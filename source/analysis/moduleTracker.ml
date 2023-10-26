@@ -44,14 +44,6 @@ type raw_code = string
 
 type message = string
 
-module PathLookup = struct
-  type t =
-    | Found of Ast.ModulePath.t
-    | ShadowedBy of Ast.ModulePath.t
-    | NotFound
-  [@@deriving show, sexp, compare]
-end
-
 module ReadOnly = struct
   type t = {
     lookup_module_path: Reference.t -> ModulePath.t option;
@@ -83,16 +75,12 @@ module ReadOnly = struct
 
   let lookup_path tracker path =
     let configuration = controls tracker |> EnvironmentControls.configuration in
-    match ModulePath.create ~configuration path with
-    | None -> PathLookup.NotFound
-    | Some { ModulePath.raw; qualifier; _ } -> (
-        match lookup_module_path tracker qualifier with
-        | None -> PathLookup.NotFound
-        | Some ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
-            if ModulePath.Raw.equal raw tracked_raw then
-              PathLookup.Found module_path
-            else
-              PathLookup.ShadowedBy module_path)
+    let open Option in
+    ModulePath.create ~configuration path
+    >>= fun { ModulePath.raw; qualifier; _ } ->
+    lookup_module_path tracker qualifier
+    >>= fun ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
+    Option.some_if (ModulePath.Raw.equal raw tracked_raw) module_path
 
 
   let tracked_explicit_modules tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier

@@ -17,14 +17,6 @@ module IncrementalUpdate : sig
   [@@deriving show, sexp, compare, eq]
 end
 
-module PathLookup : sig
-  type t =
-    | Found of Ast.ModulePath.t
-    | ShadowedBy of Ast.ModulePath.t
-    | NotFound
-  [@@deriving show, sexp, compare]
-end
-
 module ReadOnly : sig
   type t
 
@@ -38,7 +30,7 @@ module ReadOnly : sig
 
   val lookup_relative_path : t -> Ast.Reference.t -> string option
 
-  val lookup_path : t -> ArtifactPath.t -> PathLookup.t
+  val lookup_path : t -> ArtifactPath.t -> Ast.ModulePath.t option
 
   val module_paths : t -> Ast.ModulePath.t list
 

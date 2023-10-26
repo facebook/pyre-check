@@ -11,10 +11,8 @@ open Base
 
 let module_of_path ~module_tracker path =
   match Analysis.ModuleTracker.ReadOnly.lookup_path module_tracker path with
-  | Analysis.ModuleTracker.PathLookup.Found { Ast.ModulePath.qualifier; _ } -> Some qualifier
-  | ShadowedBy _
-  | NotFound ->
-      None
+  | Some { Ast.ModulePath.qualifier; _ } -> Some qualifier
+  | None -> None
 
 
 let modules_of_source_path ~lookup_artifact ~module_tracker path =

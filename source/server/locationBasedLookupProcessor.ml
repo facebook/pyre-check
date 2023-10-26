@@ -34,10 +34,8 @@ let get_module_path ~type_environment ~build_system path =
          results for it. *)
       let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
       match ModuleTracker.ReadOnly.lookup_path module_tracker analysis_path with
-      | ModuleTracker.PathLookup.Found module_path -> Result.Ok module_path
-      | ModuleTracker.PathLookup.ShadowedBy _
-      | ModuleTracker.PathLookup.NotFound ->
-          Result.Error FileNotFound)
+      | Some module_path -> Result.Ok module_path
+      | None -> Result.Error FileNotFound)
 
 
 let get_lookup ~build_system ~type_environment path =
