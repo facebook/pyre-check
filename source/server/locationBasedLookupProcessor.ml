@@ -12,10 +12,7 @@ open Core
 open Ast
 open Analysis
 
-type error_reason =
-  | StubShadowing
-  | FileNotFound
-[@@deriving sexp, show, compare, to_yojson]
+type error_reason = FileNotFound [@@deriving sexp, show, compare, to_yojson]
 
 type types_by_location = ((Location.t * Type.t) list, error_reason) Result.t
 
@@ -38,8 +35,9 @@ let get_module_path ~type_environment ~build_system path =
       let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
       match ModuleTracker.ReadOnly.lookup_path module_tracker analysis_path with
       | ModuleTracker.PathLookup.Found module_path -> Result.Ok module_path
-      | ModuleTracker.PathLookup.ShadowedBy _ -> Result.Error StubShadowing
-      | ModuleTracker.PathLookup.NotFound -> Result.Error FileNotFound)
+      | ModuleTracker.PathLookup.ShadowedBy _
+      | ModuleTracker.PathLookup.NotFound ->
+          Result.Error FileNotFound)
 
 
 let get_lookup ~build_system ~type_environment path =

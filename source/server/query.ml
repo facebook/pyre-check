@@ -513,7 +513,6 @@ let rec process_request_exn ~type_environment ~build_system request =
         ~init:""
         ~f:(fun sofar (path, error_reason) ->
           let print_reason = function
-            | LocationBasedLookupProcessor.StubShadowing -> " (file shadowed by .pyi stub file)"
             | LocationBasedLookupProcessor.FileNotFound -> " (file not found)"
           in
           Format.asprintf

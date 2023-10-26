@@ -2385,7 +2385,7 @@ let test_expression_level_coverage context =
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute),
         build_error_response
           (PyrePath.append custom_source_root ~element:"bar.py" |> PyrePath.absolute)
-          "file shadowed by .pyi stub file" );
+          "file not found" );
       (* Test @not_existing.txt not found *)
       ( Format.sprintf
           "expression_level_coverage('@%s')"
