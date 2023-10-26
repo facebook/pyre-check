@@ -16,7 +16,6 @@
   ppx_deriving_yojson.runtime
   pyrelib.lwtsocketserver
   pyrelib.lwtsubprocess
-  pyrelib.service
   pyrelib.ast
   pyrelib.analysis
   pyrelib.fetchSavedState

@@ -1,10 +1,5 @@
 (tests
- (names
-  dependencyTrackedMemoryTest
-  ignoreTest
-  memoryTest
-  schedulerTest
-  inferTest)
+ (names dependencyTrackedMemoryTest ignoreTest memoryTest schedulerTest)
  (preprocess
   (pps ppx_deriving.show ppx_sexp_conv ppx_compare ppx_sexp_message ppx_hash))
  (libraries
@@ -12,6 +7,5 @@
   pyrelib.ast
   pyrelib.analysis
   pyrelib.test
-  pyrelib.service
   pyrelib.dependencyTrackedMemory
   pyrelib.memory))

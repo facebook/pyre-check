@@ -10,7 +10,7 @@ open OUnit2
 
 let should_analyze_file ~paths_to_modify path =
   PyrePath.create_absolute path
-  |> Service.Infer.should_analyze_file
+  |> TypeInference.Service.should_analyze_file
        ~paths_to_modify:(List.map paths_to_modify ~f:PyrePath.create_absolute)
 
 

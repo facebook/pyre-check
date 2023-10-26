@@ -9,7 +9,6 @@
 
 open Core
 open Analysis
-open Pyre
 
 type environment_data = {
   global_environment: AnnotatedGlobalEnvironment.ReadOnly.t;
@@ -57,6 +56,7 @@ let run_infer
     ~paths_to_modify
     { global_environment; qualifiers }
   =
+  let open Option in
   Log.info "Running inference...";
   let timer = Timer.start () in
   let global_resolution = GlobalResolution.create global_environment in
@@ -76,7 +76,7 @@ let run_infer
   let map qualifiers =
     let analyze_qualifier qualifier =
       let analyze_source source =
-        TypeInference.Local.infer_for_module
+        TypeInferenceLocal.infer_for_module
           ~configuration
           ~global_resolution
           ~filename_lookup
@@ -98,4 +98,4 @@ let run_infer
       ()
   in
   Statistics.performance ~name:"inference" ~phase_name:"Type inference" ~timer ();
-  TypeInference.Data.GlobalResult.from_local_results ~global_resolution results
+  TypeInferenceData.GlobalResult.from_local_results ~global_resolution results

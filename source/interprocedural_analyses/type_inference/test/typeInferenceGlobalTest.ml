@@ -22,12 +22,12 @@ let type_inference_result ~context ~test_source =
   let global_environment, configuration = scratch_project |> environment_data in
   let scheduler = Test.mock_scheduler () in
   let global_result =
-    Service.Infer.run_infer
+    TypeInference.Service.run_infer
       ~configuration
       ~scheduler
       ~filename_lookup:(fun _ -> None)
       ~paths_to_modify:None
-      Service.Infer.{ global_environment; qualifiers = [Reference.create "test"] }
+      TypeInference.Service.{ global_environment; qualifiers = [Reference.create "test"] }
   in
   global_result
 

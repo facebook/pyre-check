@@ -19,11 +19,11 @@
   ppx_deriving
   ppx_deriving_yojson
   ppx_deriving_yojson.runtime
-  pyrelib.service
   pyrelib.ast
   pyrelib.analysis
   pyrelib.pyre
   pyrelib.server
   pyrelib.codeNavigationServer
   pyrelib.version
+  pyrelib.typeInference
   pyrelib.taintAnalysis))

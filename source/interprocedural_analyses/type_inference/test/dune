@@ -1,5 +1,9 @@
 (tests
- (names typeInferenceDataTest typeInferenceGlobalTest typeInferenceLocalTest)
+ (names
+  typeInferenceDataTest
+  typeInferenceGlobalTest
+  typeInferenceLocalTest
+  typeInferenceServiceTest)
  (preprocess
   (pps ppx_sexp_message ppx_deriving.show ppx_deriving.eq))
  (libraries

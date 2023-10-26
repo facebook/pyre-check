@@ -20,4 +20,4 @@ val run_infer
   filename_lookup:(Ast.Reference.t -> string option) ->
   paths_to_modify:PyrePath.t list option ->
   environment_data ->
-  TypeInference.Data.GlobalResult.t
+  TypeInferenceData.GlobalResult.t

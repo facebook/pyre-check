@@ -12,7 +12,6 @@
    ppx_deriving_yojson))
  (libraries
   core
-  pyrelib.service
   pyrelib.ast
   pyrelib.analysis
   pyrelib.pyre

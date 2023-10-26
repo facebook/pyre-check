@@ -114,8 +114,8 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
       ~configuration
       ~should_log_exception:(fun _ -> true)
       ~f:(fun scheduler ->
-        let ({ Service.Infer.global_environment; _ } as environment_data) =
-          Service.Infer.build_environment_data ~configuration ()
+        let ({ TypeInference.Service.global_environment; _ } as environment_data) =
+          TypeInference.Service.build_environment_data ~configuration ()
         in
         let filename_lookup qualifier =
           let module_tracker =
@@ -127,7 +127,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
             ~module_tracker
             qualifier
         in
-        Service.Infer.run_infer
+        TypeInference.Service.run_infer
           ~configuration
           ~scheduler
           ~filename_lookup

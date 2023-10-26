@@ -12,3 +12,4 @@
 
 module Data = TypeInferenceData
 module Local = TypeInferenceLocal
+module Service = Service

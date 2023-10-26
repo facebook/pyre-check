@@ -385,7 +385,6 @@
   pyrelib.pyreParser
   pyrelib.analysis
   pyrelib.ast
-  pyrelib.service
   pyrelib.commands
   pyrelib.configuration
   pyrelib.pyre
