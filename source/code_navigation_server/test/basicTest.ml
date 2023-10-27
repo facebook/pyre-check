@@ -312,17 +312,10 @@ let test_file_and_local_update context =
         open_file ~path:(PyrePath.absolute test_path) ~client_id;
         open_file ~path:(PyrePath.absolute test2_path) ~client_id;
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:2;
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Command
-                (Command.LocalUpdate
-                   {
-                     path = PyrePath.absolute test_path;
-                     content = Some "from test2 import x";
-                     client_id;
-                   }))
-          ~expected:Response.Ok;
+        local_update
+          ~path:(PyrePath.absolute test_path)
+          ~content:(Some "from test2 import x")
+          ~client_id;
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
         (fun _ ->
           File.create test2_path ~content:"x: int = 42" |> File.write;

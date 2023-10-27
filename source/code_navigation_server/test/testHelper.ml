@@ -39,6 +39,12 @@ let close_file ~client_id ~path =
     ~expected:Response.Ok
 
 
+let local_update ~client_id ~path ~content =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Command (Command.LocalUpdate { path; client_id; content }))
+    ~expected:Response.Ok
+
+
 let assert_type_error_count ~client_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
