@@ -110,6 +110,7 @@ class BuckSourcePath:
     artifact_root: Path
     checked_directory: Path
     targets: Sequence[str] = dataclasses.field(default_factory=list)
+    targets_fallback_sources: Optional[Sequence[search_path.Element]] = None
     mode: Optional[str] = None
     isolation_prefix: Optional[str] = None
     bxl_builder: Optional[str] = None
@@ -119,9 +120,15 @@ class BuckSourcePath:
         mode = self.mode
         isolation_prefix = self.isolation_prefix
         bxl_builder = self.bxl_builder
+        targets_fallback_sources = self.targets_fallback_sources
         return {
             "kind": "buck",
             "targets": self.targets,
+            **(
+                {}
+                if targets_fallback_sources is None
+                else {"targets_fallback_sources": targets_fallback_sources}
+            ),
             **({} if mode is None else {"mode": mode}),
             **(
                 {}
@@ -291,7 +298,9 @@ def _get_global_or_local_root(
 
 
 def get_source_path(
-    configuration: frontend_configuration.Base, artifact_root_name: str
+    configuration: frontend_configuration.Base,
+    artifact_root_name: str,
+    flavor: identifiers.PyreFlavor,
 ) -> SourcePath:
     source_directories = configuration.is_source_directories_defined()
     targets = configuration.get_buck_targets()
@@ -314,7 +323,16 @@ def get_source_path(
         else:
             return SimpleSourcePath(elements)
 
-    if targets is not None and not source_directories:
+    if (
+        source_directories
+        and targets is not None
+        and flavor == identifiers.PyreFlavor.CLASSIC
+    ):
+        raise configuration_module.InvalidConfiguration(
+            "`source_directories` and `targets` are mutually exclusive for typechecking"
+        )
+
+    if targets is not None:
         use_buck2 = configuration.uses_buck2()
         search_base = _get_global_or_local_root(configuration)
         source_root = (
@@ -325,21 +343,19 @@ def get_source_path(
                 "Cannot find a buck root for the specified targets. "
                 + "Make sure the project is covered by a `.buckconfig` file."
             )
-
+        source_directories = configuration.get_existent_source_directories()
         return BuckSourcePath(
             source_root=source_root,
             artifact_root=configuration.get_dot_pyre_directory() / artifact_root_name,
             checked_directory=search_base,
             targets=targets,
+            targets_fallback_sources=None
+            if len(source_directories) == 0
+            else source_directories,
             mode=buck_mode,
             isolation_prefix=configuration.get_buck_isolation_prefix(),
             bxl_builder=configuration.get_buck_bxl_builder(),
             use_buck2=use_buck2,
-        )
-
-    if source_directories and targets is not None:
-        raise configuration_module.InvalidConfiguration(
-            "`source_directories` and `targets` are mutually exclusive"
         )
 
     raise configuration_module.InvalidConfiguration(
@@ -360,7 +376,7 @@ def get_source_path_for_server(
         # Prevent artifact roots of different local projects from clashing with
         # each other.
         artifact_root_name = str(Path(artifact_root_name) / relative_local_root)
-    return get_source_path(configuration, artifact_root_name)
+    return get_source_path(configuration, artifact_root_name, flavor)
 
 
 def get_source_path_for_check(
@@ -369,7 +385,9 @@ def get_source_path_for_check(
     # Artifact for one-off check command should not be a fixed constant, to prevent
     # concurrent check commands overwriting each other's artifacts. Here we use process
     # ID to isolate the artifact root of each individual check command.
-    return get_source_path(configuration, str(os.getpid()))
+    return get_source_path(
+        configuration, str(os.getpid()), identifiers.PyreFlavor.CLASSIC
+    )
 
 
 def get_checked_directory_allowlist(

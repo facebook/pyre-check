@@ -109,6 +109,7 @@ class ArgumentsTest(testslide.TestCase):
                 artifact_root=Path("/artifact"),
                 checked_directory=Path("/source"),
                 targets=["//foo:bar"],
+                targets_fallback_sources=[search_path.SimpleElement("/source")],
                 mode="opt",
                 isolation_prefix=".lsp",
                 bxl_builder="//foo.bxl:build",
@@ -119,6 +120,7 @@ class ArgumentsTest(testslide.TestCase):
                 "source_root": "/source",
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar"],
+                "targets_fallback_sources": [search_path.SimpleElement("/source")],
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
                 "bxl_builder": "//foo.bxl:build",
@@ -298,6 +300,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 SimpleSourcePath([raw_element.to_element()]),
             )
@@ -317,6 +320,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 SimpleSourcePath([]),
             )
@@ -347,6 +351,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 WithUnwatchedDependencySourcePath(
                     elements=[raw_element.to_element()],
@@ -378,6 +383,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 SimpleSourcePath(
                     elements=[raw_element.to_element()],
@@ -408,6 +414,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="artifact_root",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "buck_root",
@@ -442,6 +449,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="artifact_root",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "repo_root",
@@ -483,6 +491,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="artifact_root/local",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 ),
                 BuckSourcePath(
                     source_root=root_path / "project/local",
@@ -504,7 +513,11 @@ class ArgumentsTest(testslide.TestCase):
             )
             setup.write_configuration_file(
                 root_path / "repo_root" / "buck_root",
-                {"targets": ["//ct:lavos"], "bxl_builder": "//ct:robo"},
+                {
+                    "targets": ["//ct:lavos"],
+                    "bxl_builder": "//ct:robo",
+                    "source_directories": ["./"],
+                },
             )
             self.assertEqual(
                 get_source_path_for_server(
@@ -524,6 +537,11 @@ class ArgumentsTest(testslide.TestCase):
                     artifact_root=root_path / ".pyre" / "link_trees__code_navigation",
                     checked_directory=root_path / "repo_root" / "buck_root",
                     targets=["//ct:lavos"],
+                    targets_fallback_sources=[
+                        search_path.SimpleElement(
+                            str(root_path / "repo_root" / "buck_root")
+                        )
+                    ],
                     bxl_builder="//ct:robo",
                     use_buck2=True,
                 ),
@@ -545,6 +563,7 @@ class ArgumentsTest(testslide.TestCase):
                         )
                     ),
                     artifact_root_name="irrelevant",
+                    flavor=identifiers.PyreFlavor.CLASSIC,
                 )
 
     def test_get_source_path__no_source_specified(self) -> None:
@@ -559,6 +578,7 @@ class ArgumentsTest(testslide.TestCase):
                     )
                 ),
                 artifact_root_name="irrelevant",
+                flavor=identifiers.PyreFlavor.CLASSIC,
             )
 
     def test_get_source_path__confliciting_source_specified(self) -> None:
@@ -573,6 +593,7 @@ class ArgumentsTest(testslide.TestCase):
                     )
                 ),
                 artifact_root_name="irrelevant",
+                flavor=identifiers.PyreFlavor.CLASSIC,
             )
 
     def test_get_checked_directory_for_simple_source_path(self) -> None:
