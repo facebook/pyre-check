@@ -20,6 +20,7 @@ import asyncio
 import contextlib
 import dataclasses
 import logging
+import traceback
 from pathlib import Path
 from typing import AsyncIterator, Union
 
@@ -101,5 +102,5 @@ async def attempt_send_async_raw_request(
     ) as error:
         return DaemonConnectionFailure(
             "Could not establish connection with an existing Pyre server "
-            f"at {socket_path}: {error}"
+            f"at {socket_path}: {error}. Type: {type(error)}. Stacktrace: {traceback.format_exc( limit = None, chain = True)}"
         )
