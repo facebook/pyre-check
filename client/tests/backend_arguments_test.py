@@ -120,7 +120,7 @@ class ArgumentsTest(testslide.TestCase):
                 "source_root": "/source",
                 "artifact_root": "/artifact",
                 "targets": ["//foo:bar"],
-                "targets_fallback_sources": [search_path.SimpleElement("/source")],
+                "targets_fallback_sources": ["/source"],
                 "mode": "opt",
                 "isolation_prefix": ".lsp",
                 "bxl_builder": "//foo.bxl:build",

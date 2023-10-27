@@ -127,7 +127,12 @@ class BuckSourcePath:
             **(
                 {}
                 if targets_fallback_sources is None
-                else {"targets_fallback_sources": targets_fallback_sources}
+                else {
+                    "targets_fallback_sources": [
+                        element.command_line_argument()
+                        for element in targets_fallback_sources
+                    ],
+                }
             ),
             **({} if mode is None else {"mode": mode}),
             **(
