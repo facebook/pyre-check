@@ -5,7 +5,11 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module allows creating source-to-source transformers for expressions and statements.
+
+   It uses module functors to make a transformer using a given statement/expression transformer
+   module. It also has helpers to create simple transformers based on functions, without
+   instantiating a whole transformer module. *)
 
 open Core
 open Pyre
