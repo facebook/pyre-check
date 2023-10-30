@@ -712,15 +712,20 @@ let rec process_request_exn ~type_environment ~build_system request =
         get_program_call_graph ()
         |> Reference.Map.fold ~f:create_response_with_caller ~init:[]
         |> fun result -> Single (Base.Callgraph result)
-    (* Attempt to build a query for the files that are checked by a given configuration *)
     | TypecheckedPaths ->
         Single
           (Base.TypecheckedPaths
              (ModuleTracker.ReadOnly.module_paths module_tracker
              |> List.filter ~f:(fun { ModulePath.is_external; _ } -> not is_external)
-             |> List.map ~f:(fun { ModulePath.raw = { relative; _ }; _ } ->
-                    let { Configuration.Analysis.project_root = root; _ } = configuration in
-                    PyrePath.create_relative ~root ~relative |> PyrePath.absolute)))
+             |> List.map ~f:(fun { ModulePath.qualifier; _ } ->
+                    PathLookup.instantiate_path_with_build_system
+                      ~build_system
+                      ~module_tracker
+                      qualifier)
+             |> List.filter ~f:Option.is_some
+             |> List.map ~f:(function
+                    | Some x -> x
+                    | None -> assert false)))
     | ExpressionLevelCoverage paths ->
         let read_text_file path =
           try In_channel.read_lines path |> List.map ~f:(fun x -> Result.Ok x) with
