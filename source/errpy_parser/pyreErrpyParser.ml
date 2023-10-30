@@ -144,12 +144,13 @@ let translate_constant (constant : Errpyast.constant) =
           let just_string =
             sub value ~pos:first_quote_or_double ~len:(length value - 2 - first_quote_or_double + 1)
           in
+          let newlines_unescaped = Str.(global_replace (regexp "\\\\n") "\n" just_string) in
           let bytes =
             match constant_desc with
             | Errpyast.ByteStr _ -> true
             | _ -> false
           in
-          Constant.String (StringLiteral.create ~bytes just_string)
+          Constant.String (StringLiteral.create ~bytes newlines_unescaped)
       | Errpyast.Num num -> (
           match num with
           | Int int -> Constant.Integer int

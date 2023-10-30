@@ -192,22 +192,29 @@ let test_constant _ =
   assert_parsed
     "'foo' 'bar'"
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "foobar")));
-  (*TODO (T148669698): assert_parsed "\"'\"" ~expected:(+Expression.Constant (Constant.String
-    (StringLiteral.create "'")));*)
+  assert_parsed
+    "\"'\""
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "'")));
   assert_parsed
     "'\"'"
     ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "\"")));
-
-  (*TODO (T148669698): assert_parsed "\"\\\"\"" ~expected:(+Expression.Constant (Constant.String
-    (StringLiteral.create "\"")));*)
-  (*TODO (T148669698): assert_parsed "\"\\'\"" ~expected:(+Expression.Constant (Constant.String
-    (StringLiteral.create "'")));*)
-  (*TODO (T148669698): assert_parsed "\"\"\"\nfoo\"\"\"" ~expected:(+Expression.Constant
-    (Constant.String (StringLiteral.create "\nfoo")));*)
-  (*TODO (T148669698): assert_parsed "\"f.o\\no\"" ~expected:(+Expression.Constant (Constant.String
-    (StringLiteral.create "f.o\no")));*)
-  (*TODO (T148669698): assert_not_parsed "ub'foo'";*)
-  (*TODO (T148669698): assert_not_parsed "ur'foo'";*)
+  assert_parsed
+    "'''\n something \n'''"
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "\n something \n")));
+  assert_parsed
+    "\"\\\"\""
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "\"")));
+  assert_parsed
+    "\"\\'\""
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "'")));
+  assert_parsed
+    "\"\"\"\nfoo\"\"\""
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "\nfoo")));
+  assert_parsed
+    "\"f.o\\no\""
+    ~expected:(+Expression.Constant (Constant.String (StringLiteral.create "f.o\no")));
+  assert_not_parsed "ub'foo'";
+  assert_not_parsed "ur'foo'";
   ()
 
 
