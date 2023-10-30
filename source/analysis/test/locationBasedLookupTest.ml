@@ -2756,9 +2756,20 @@ let test_classify_coverage_data _ =
   assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.Set[int]" None;
   assert_coverage_gap_parse_both
     ~expression:"x"
+    ~type_:"typing.Dict[str, typing.Any]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
+  assert_coverage_gap_parse_both
+    ~expression:"x"
+    ~type_:"typing.Dict[typing.Any, str]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
+  assert_coverage_gap_parse_both
+    ~expression:"x"
     ~type_:"typing.Dict[typing.Any, typing.Any]"
     (Some LocationBasedLookup.ContainerParameterIsAny);
-  assert_coverage_gap_parse_both ~expression:"x" ~type_:"typing.Dict[str, typing.Any]" None;
+  assert_coverage_gap_parse_both
+    ~expression:"x"
+    ~type_:"typing.Dict[str, typing.Any]"
+    (Some LocationBasedLookup.ContainerParameterIsAny);
   assert_coverage_gap_parse_both ~expression:"Foo[Any]" ~type_:"Foo[Any]" None;
   (* TODO(T123023697): We only identify coverage gaps in Callable when all the parameters are
      Unknown or Any. Task handles niche cases such as keyword-only or positional arguments*)

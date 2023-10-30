@@ -954,7 +954,7 @@ let classify_coverage_data { expression; type_ } =
           | None -> make_coverage_gap (TypeIsAny OtherExpressionIsAny))
       | _ -> make_coverage_gap (TypeIsAny OtherExpressionIsAny))
   | Parametric { name = "list" | "set"; parameters = [Single Any] }
-  | Parametric { name = "dict"; parameters = [Single Any; Single Any] } ->
+  | Parametric { name = "dict"; parameters = [Single Any; Single _] | [Single _; Single Any] } ->
       make_coverage_gap ContainerParameterIsAny
   | Callable { implementation = { annotation = Type.Any; _ }; _ } ->
       make_coverage_gap CallableReturnIsAny
