@@ -32,7 +32,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class ExitCode(enum.IntEnum):
     SUCCESS = 0
     FOUND_ERRORS = 1
-    # See client/commands/command.py for more exit codes.
+    # See client/commands/commands.py for more exit codes.
 
 
 # We use NamedTuple instead of dataclasses for Python3.5/6 support.
