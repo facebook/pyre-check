@@ -473,6 +473,7 @@ let get_initializer source_paths =
         source_root;
         artifact_root;
         targets;
+        targets_fallback_sources = _;
       } ->
       let builder =
         match use_buck2 with

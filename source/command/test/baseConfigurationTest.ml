@@ -110,7 +110,8 @@ let test_json_parsing context =
             "bxl_builder": "//my/builder.bxl:build",
             "use_buck2": true,
             "source_root": "/buck/root",
-            "artifact_root": "/build/root"
+            "artifact_root": "/build/root",
+            "targets_fallback_sources": ["/build/"]
         },
         "global_root": "/project"
       }
@@ -128,6 +129,7 @@ let test_json_parsing context =
               use_buck2 = true;
               source_root = PyrePath.create_absolute "/buck/root";
               artifact_root = PyrePath.create_absolute "/build/root";
+              targets_fallback_sources = Some [SearchPath.create "/build/"];
             };
       };
   (* Test instagram source path *)

@@ -34,11 +34,13 @@ module Buck = struct
     source_root: PyrePath.t;
     (* This is the root of directory where built artifacts will be placed. *)
     artifact_root: PyrePath.t;
+    targets_fallback_sources: SearchPath.t list option;
   }
   [@@deriving sexp, compare, hash]
 
   let of_yojson json =
     let open JsonParsing.YojsonUtils in
+    let open Yojson.Safe.Util in
     try
       let mode = optional_string_member "mode" json in
       let isolation_prefix = optional_string_member "isolation_prefix" json in
@@ -47,8 +49,23 @@ module Buck = struct
       let targets = string_list_member "targets" json ~default:[] in
       let source_root = path_member "source_root" json in
       let artifact_root = path_member "artifact_root" json in
+      let targets_fallback_sources =
+        optional_list_member
+          "targets_fallback_sources"
+          ~f:(fun json -> to_string json |> SearchPath.create)
+          json
+      in
       Result.Ok
-        { mode; isolation_prefix; bxl_builder; use_buck2; targets; source_root; artifact_root }
+        {
+          mode;
+          isolation_prefix;
+          bxl_builder;
+          use_buck2;
+          targets;
+          source_root;
+          artifact_root;
+          targets_fallback_sources;
+        }
     with
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
@@ -57,7 +74,16 @@ module Buck = struct
 
 
   let to_yojson
-      { mode; isolation_prefix; bxl_builder; use_buck2; targets; source_root; artifact_root }
+      {
+        mode;
+        isolation_prefix;
+        bxl_builder;
+        use_buck2;
+        targets;
+        source_root;
+        artifact_root;
+        targets_fallback_sources;
+      }
     =
     let result =
       [
@@ -81,6 +107,14 @@ module Buck = struct
       match bxl_builder with
       | None -> result
       | Some bxl_builder -> ("bxl_builder", `String bxl_builder) :: result
+    in
+    let result =
+      match targets_fallback_sources with
+      | None -> result
+      | Some sources ->
+          ( "targets_fallback_sources",
+            [%to_yojson: string list] (List.map sources ~f:SearchPath.show) )
+          :: result
     in
     `Assoc result
 end
@@ -218,7 +252,8 @@ module SourcePaths = struct
     | Simple sources
     | WithUnwatchedDependency { sources; _ } ->
         sources
-    | Buck { Buck.artifact_root; _ } -> [SearchPath.Root artifact_root]
+    | Buck { Buck.artifact_root; targets_fallback_sources; _ } ->
+        SearchPath.Root artifact_root :: Option.value ~default:[] targets_fallback_sources
 end
 
 module RemoteLogging = struct

@@ -456,6 +456,7 @@ let test_filter_creation context =
               targets = [];
               source_root = PyrePath.create_absolute "/source";
               artifact_root = PyrePath.create_absolute "/artifact";
+              targets_fallback_sources = Some [];
             })
        ())
     ~expected:

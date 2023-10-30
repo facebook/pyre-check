@@ -16,6 +16,7 @@ module Buck : sig
     source_root: PyrePath.t;
     (* This is the root of directory where built artifacts will be placed. *)
     artifact_root: PyrePath.t;
+    targets_fallback_sources: SearchPath.t list option;
   }
   [@@deriving sexp, compare, hash, yojson]
 end
