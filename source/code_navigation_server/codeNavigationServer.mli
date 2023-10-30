@@ -350,10 +350,13 @@ module Testing : sig
                 response will contain an empty list if the server do not have any hover text to show
                 at the location.
 
-                If the given file was not previously opened by a `{!Command.FileOpened}` command for
-                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
-                error. If the provided module is opened but not covered by the code navigation
-                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+                This query opts for availability over correctness. At the time of the query, if the
+                given file was not previously opened by a `{!Command.FileOpened}` command for the
+                client, the server will return a best-effort response without relying on the
+                intended server state. If the provided module is opened but not covered by the code
+                navigation server, the server will also provide a best-effort response and will only
+                return a {!Response.ErrorKind.ModuleNotTracked} error if it cannot find the file on
+                the filesystem. *)
         | LocationOfDefinition of {
             path: string;
             position: Ast.Location.position;
@@ -364,24 +367,29 @@ module Testing : sig
                 {!Response.Completion} response as a result. The server will respond with an empty
                 list if it does not have any completion content to show at the location.
 
-                If the given file was not previously opened by a `{!Command.FileOpened}` command for
-                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
-                error. If the provided module is opened but not covered by the code navigation
-                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+                This query opts for availability over correctness. At the time of the query, if the
+                given file was not previously opened by a `{!Command.FileOpened}` command for the
+                client, the server will return a best-effort response without relying on the
+                intended server state. If the provided module is opened but not covered by the code
+                navigation server, the server will also provide a best-effort response and will only
+                return a {!Response.ErrorKind.ModuleNotTracked} error if it cannot find the file on
+                the filesystem. *)
         | Completion of {
             path: string;
             position: Ast.Location.position;
             client_id: string;
           }
-            (** A query that asks the server to return the location of definitions for a given
-                cursor point in a given module. The server will send back a
-                {!Response.LocationOfDefinition} response as result. The response will contain an
-                empty list if a definition cannot be found.
+            (** A query that asks the server to return the completions for a given cursor point in a
+                given module. The server will send back a {!Response.Completion} response as result.
+                The response will contain an empty list if a completion cannot be found.
 
-                If the given file was not previously opened by a `{!Command.FileOpened}` command for
-                the client, the server will respond with a {!Response.ErrorKind.FileNotOpened}
-                error. If the provided module is opened but not covered by the code navigation
-                server, the server will respond with a {!Response.ErrorKind.ModuleNotTracked} error. *)
+                This query opts for availability over correctness. At the time of the query, if the
+                given file was not previously opened by a `{!Command.FileOpened}` command for the
+                client, the server will return a best-effort response without relying on the
+                intended server state. If the provided module is opened but not covered by the code
+                navigation server, the server will also provide a best-effort response and will only
+                return a {!Response.ErrorKind.ModuleNotTracked} error if it cannot find the file on
+                the filesystem. *)
         | GetInfo
             (** A query that asks for server metadata, intended to be consumed by the `pyre servers`
                 command. *)
@@ -433,7 +441,7 @@ module Testing : sig
                 corresponding state was not registered with the server. *)
         | FileNotOpened of { path: string }
             (** This error occurs when the client has send a command on a file not tracked by the
-                server. *)
+                server. NOTE: certain queries can bypass tracking and not require file opens. *)
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 

@@ -22,12 +22,26 @@ module ServerInternal = struct
   }
 end
 
+(* Get overlay ID without checking if the file is added to the working set. *)
+let get_overlay_id_unsafe ~path ~client_id client_states =
+  let source_path = PyrePath.create_absolute path |> SourcePath.create in
+  match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
+  | `ClientNotRegistered -> Result.Error (Response.ErrorKind.ClientNotRegistered { client_id })
+  | _ -> Result.Ok { State.Client.OverlayId.client_id; source_path }
+
+
 let get_overlay_id ~path ~client_id client_states =
   let source_path = PyrePath.create_absolute path |> SourcePath.create in
   match State.Client.WorkingSet.lookup client_states ~client_id ~source_path with
   | `ClientNotRegistered -> Result.Error (Response.ErrorKind.ClientNotRegistered { client_id })
   | `FileNotAdded -> Result.Error (Response.ErrorKind.FileNotOpened { path })
   | `Ok overlay_id -> Result.Ok overlay_id
+
+
+let get_or_create_overlay ~environment overlay_id =
+  let overlay_id = State.Client.OverlayId.to_string overlay_id in
+  OverlaidEnvironment.get_or_create_overlay environment overlay_id
+  |> ErrorsEnvironment.Overlay.read_only
 
 
 let get_overlay ~environment overlay_id =
@@ -98,9 +112,9 @@ let get_hover_in_overlay ~overlay ~build_system ~position module_ =
 
 let handle_hover ~path ~position ~client_id { State.environment; build_system; client_states; _ } =
   let open Result in
-  get_overlay_id ~path ~client_id client_states
+  get_overlay_id_unsafe ~path ~client_id client_states
   >>= fun overlay_id ->
-  let overlay = get_overlay ~environment overlay_id in
+  let overlay = get_or_create_overlay ~environment overlay_id in
   get_hover_in_overlay ~overlay ~build_system ~position path
   >>| fun contents ->
   Response.(
@@ -138,9 +152,9 @@ let handle_location_of_definition
     { State.environment; build_system; client_states; _ }
   =
   let open Result in
-  get_overlay_id ~path ~client_id client_states
+  get_overlay_id_unsafe ~path ~client_id client_states
   >>= fun overlay_id ->
-  let overlay = get_overlay ~environment overlay_id in
+  let overlay = get_or_create_overlay ~environment overlay_id in
   get_location_of_definition_in_overlay ~overlay ~build_system ~position path
   >>| fun definitions -> Response.(LocationOfDefinition { definitions })
 
@@ -173,9 +187,9 @@ let handle_completion
     { State.environment; build_system; client_states; _ }
   =
   let open Result in
-  get_overlay_id ~path ~client_id client_states
+  get_overlay_id_unsafe ~path ~client_id client_states
   >>= fun overlay_id ->
-  let overlay = get_overlay ~environment overlay_id in
+  let overlay = get_or_create_overlay ~environment overlay_id in
   get_completion_in_overlay ~overlay ~build_system ~position path
   >>| List.concat
   >>| fun completions -> Response.(Completion { completions })
@@ -502,25 +516,19 @@ let handle_query
       in
       Server.ExclusiveLock.read state ~f
   | Request.Query.Hover { path; position; client_id } ->
-      let f state =
-        let response = handle_hover ~path ~position ~client_id state |> response_from_result in
-        Lwt.return response
-      in
-      Server.ExclusiveLock.read state ~f
+      let state = Server.ExclusiveLock.unsafe_read state in
+      let response = handle_hover ~path ~position ~client_id state |> response_from_result in
+      Lwt.return response
   | Request.Query.LocationOfDefinition { path; position; client_id } ->
-      let f state =
-        let response =
-          handle_location_of_definition ~path ~position ~client_id state |> response_from_result
-        in
-        Lwt.return response
+      let state = Server.ExclusiveLock.unsafe_read state in
+      let response =
+        handle_location_of_definition ~path ~position ~client_id state |> response_from_result
       in
-      Server.ExclusiveLock.read state ~f
+      Lwt.return response
   | Request.Query.Completion { path; position; client_id } ->
-      let f state =
-        let response = handle_completion ~path ~position ~client_id state |> response_from_result in
-        Lwt.return response
-      in
-      Server.ExclusiveLock.read state ~f
+      let state = Server.ExclusiveLock.unsafe_read state in
+      let response = handle_completion ~path ~position ~client_id state |> response_from_result in
+      Lwt.return response
   | Request.Query.GetInfo ->
       Response.Info
         {

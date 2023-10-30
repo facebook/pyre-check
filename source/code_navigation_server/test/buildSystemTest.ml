@@ -284,13 +284,16 @@ let test_build_system_path_lookup context =
         ScratchProject.ClientConnection.assert_error_response
           ~request:Request.(Query (Query.GetTypeErrors { path = path_a; client_id }))
           ~kind:"FileNotOpened";
-        (* Server should not be aware of `a.py` on gotodef query *)
-        ScratchProject.ClientConnection.assert_error_response
+        (* Server should be aware of `a.py` on gotodef query *)
+        ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
               Query
                 (Query.LocationOfDefinition { path = path_a; client_id; position = position 2 12 }))
-          ~kind:"FileNotOpened";
+          ~expected:
+            Response.(
+              LocationOfDefinition
+                { definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }] });
         (* Try open `a.py` (no artifact path), `b.py` (artifact path), and `c.py` (nonexistent) *)
         ScratchProject.ClientConnection.assert_response
           ~request:

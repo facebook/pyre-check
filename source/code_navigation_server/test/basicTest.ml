@@ -375,7 +375,7 @@ let test_hover_request context =
           ~request:
             Request.(
               Query (Query.Hover { client_id; path = "/doesnotexist.py"; position = position 1 0 }))
-          ~kind:"FileNotOpened";
+          ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
@@ -443,7 +443,7 @@ let test_location_of_definition_request context =
               Query
                 (Query.LocationOfDefinition
                    { client_id; path = "/doesnotexist.py"; position = position 1 0 }))
-          ~kind:"FileNotOpened";
+          ~kind:"ModuleNotTracked";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
