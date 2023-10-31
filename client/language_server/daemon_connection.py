@@ -22,7 +22,7 @@ import dataclasses
 import logging
 import traceback
 from pathlib import Path
-from typing import AsyncIterator, Union
+from typing import AsyncIterator, Optional, Union
 
 from .. import dataclasses_json_extensions as json_mixins, log
 from . import connections
@@ -34,6 +34,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @dataclasses.dataclass(frozen=True)
 class DaemonConnectionFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
     error_message: str
+    error_source: Optional[Exception] = None
 
 
 def send_raw_request(socket_path: Path, raw_request: str) -> str:
@@ -101,6 +102,7 @@ async def attempt_send_async_raw_request(
         ConnectionError,
     ) as error:
         return DaemonConnectionFailure(
-            "Could not establish connection with an existing Pyre server "
-            f"at {socket_path}: {error}. Type: {type(error)}. Stacktrace: {traceback.format_exc( limit = None, chain = True)}"
+            error_message="Could not establish connection with an existing Pyre server "
+            f"at {socket_path}: {error}. Type: {type(error)}. Stacktrace: {traceback.format_exc( limit = None, chain = True)}",
+            error_source=error,
         )

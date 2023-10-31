@@ -44,8 +44,9 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
+    ) -> Optional[Exception]:
         await asyncio.Event().wait()
+        return None
 
     async def process_hover_request(
         self,
@@ -119,7 +120,7 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
         parameters: lsp.CompletionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> None:
+    ) -> Optional[Exception]:
         raise NotImplementedError()
 
     async def process_document_symbols_request(
