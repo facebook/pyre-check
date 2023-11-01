@@ -34,7 +34,7 @@ from typing import (
     Union,
 )
 
-from .. import background_tasks, identifiers, json_rpc, log, timer
+from .. import background_tasks, error, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import commands, daemon_querier, find_symbols, libcst_util, server_state as state
@@ -432,17 +432,27 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
-        result = await self.querier.get_type_errors(document_path)
-        error_message = None
-        if isinstance(result, DaemonQueryFailure):
-            error_message = result.error_message
-            result_str = "[]"
-        else:
-            await self.client_type_error_handler.show_overlay_type_errors(
-                path=document_path,
-                type_errors=result,
-            )
-            result_str = json.dumps([error.to_json() for error in result])
+        result: Dict[str, List[error.Error]] = {}
+        error_messages: Dict[str, str] = {}
+        # TODO: should I only do this for codenav type checking?
+        for opened_document in self.server_state.opened_documents:
+            query_result = await self.querier.get_type_errors(opened_document)
+            if isinstance(query_result, DaemonQueryFailure):
+                error_messages[str(opened_document)] = query_result.error_message
+            else:
+                await self.client_type_error_handler.show_overlay_type_errors(
+                    path=opened_document,
+                    type_errors=query_result,
+                )
+                result[str(opened_document)] = query_result
+
+        error_message = json.dumps(error_messages) if len(error_messages) > 0 else None
+        result_str = json.dumps(
+            {
+                path: [error.to_json() for error in errors]
+                for path, errors in result.items()
+            }
+        )
 
         await self.write_telemetry(
             {
