@@ -740,10 +740,10 @@ module IncrementalTest = struct
         ModuleTracker.ReadOnly.project_qualifiers
           (AstEnvironment.ReadOnly.module_tracker ast_environment)
         |> List.iter ~f:(fun qualifier ->
-               AstEnvironment.ReadOnly.get_processed_source
-                 ast_environment
-                 ~track_dependency:true
-                 qualifier
+               let dependency =
+                 SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
+               in
+               AstEnvironment.ReadOnly.get_processed_source ast_environment ~dependency qualifier
                |> ignore)
     in
     (* Update filesystem *)
@@ -1121,7 +1121,8 @@ let test_overlay context =
   let () =
     AstEnvironment.ReadOnly.get_processed_source
       read_only
-      ~track_dependency:true
+      ~dependency:
+        (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport !&"depends_on_module"))
       !&"depends_on_module"
     |> Option.is_some
     |> assert_bool "Expected to be able to load processed source for b.py"

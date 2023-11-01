@@ -21,7 +21,11 @@ end
 module ReadOnly : sig
   type t
 
-  val get_processed_source : t -> ?track_dependency:bool -> Reference.t -> Source.t option
+  val get_processed_source
+    :  t ->
+    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+    Reference.t ->
+    Source.t option
 
   val controls : t -> EnvironmentControls.t
 

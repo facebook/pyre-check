@@ -55,6 +55,11 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
+let get_processed_source ast_environment qualifier =
+  let dependency = SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier) in
+  AstEnvironment.ReadOnly.get_processed_source ast_environment ~dependency qualifier
+
+
 module ResolvedReference = struct
   type export =
     | FromModuleGetattr
@@ -785,12 +790,7 @@ module FromReadOnlyUpstream = struct
 
     let try_load_module { environment; ast_environment } qualifier =
       if not (Modules.mem environment.modules qualifier) then
-        match
-          AstEnvironment.ReadOnly.get_processed_source
-            ~track_dependency:true
-            ast_environment
-            qualifier
-        with
+        match get_processed_source ast_environment qualifier with
         | Some source -> set_module_data environment source
         | None ->
             if
@@ -915,10 +915,7 @@ module FromReadOnlyUpstream = struct
 
   let cold_start ({ ast_environment; _ } as environment) =
     (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-    AstEnvironment.ReadOnly.get_processed_source
-      ast_environment
-      ~track_dependency:true
-      Reference.empty
+    get_processed_source ast_environment Reference.empty
     >>| set_module_data environment
     |> Option.value ~default:()
 

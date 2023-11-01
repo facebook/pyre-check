@@ -181,7 +181,7 @@ module ReadOnly = struct
     Transform.transform () source |> Transform.source
 
 
-  let get_and_preprocess_source ?dependency environment qualifier =
+  let get_processed_source environment ?dependency qualifier =
     let preprocessing = Preprocessing.preprocess_phase1 in
     (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No
        need to explicitly record the dependency. *)
@@ -203,16 +203,6 @@ module ReadOnly = struct
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
         create_source ~typecheck_flags ~module_path statements |> preprocessing
-
-
-  let get_processed_source environment ?(track_dependency = false) qualifier =
-    let dependency =
-      if track_dependency then
-        Some (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier))
-      else
-        None
-    in
-    get_and_preprocess_source ?dependency environment qualifier
 end
 
 module UpdateResult = struct
