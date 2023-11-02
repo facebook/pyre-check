@@ -24,8 +24,7 @@ let test_simple_registration context =
         {
           ClassHierarchy.Edges.parents =
             List.map
-              ~f:(fun name ->
-                { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] })
+              ~f:(fun name -> { ClassHierarchy.Target.target = name; parameters = [] })
               expected_edges;
           generic_base = None;
           has_placeholder_stub_parent = expected_extends_placeholder_stub;
@@ -35,7 +34,7 @@ let test_simple_registration context =
       ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
       ~printer:(fun edges -> [%sexp_of: ClassHierarchy.Edges.t option] edges |> Sexp.to_string_hum)
       expected_edges
-      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name))
+      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only name)
   in
   assert_registers
     ["test.py", {|
@@ -117,7 +116,7 @@ let test_parents_and_inferred_generic_base context =
     in
     let create_target (name, concretes) =
       {
-        ClassHierarchy.Target.target = IndexTracker.index name;
+        ClassHierarchy.Target.target = name;
         parameters = List.map concretes ~f:(fun single -> Type.Parameter.Single single);
       }
     in
@@ -133,7 +132,7 @@ let test_parents_and_inferred_generic_base context =
       ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
       ~printer:(fun edges -> [%sexp_of: ClassHierarchy.Edges.t option] edges |> Sexp.to_string_hum)
       expected
-      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only (IndexTracker.index name))
+      (ClassHierarchyEnvironment.ReadOnly.get_edges read_only name)
   in
   assert_registers
     {|
@@ -382,15 +381,12 @@ let test_updates context =
                 {
                   ClassHierarchy.Edges.parents =
                     List.map expectation ~f:(fun name ->
-                        { ClassHierarchy.Target.target = IndexTracker.index name; parameters = [] });
+                        { ClassHierarchy.Target.target = name; parameters = [] });
                   generic_base = None;
                   has_placeholder_stub_parent = false;
                 })
           in
-          ClassHierarchyEnvironment.ReadOnly.get_edges
-            read_only
-            ~dependency
-            (IndexTracker.index class_name)
+          ClassHierarchyEnvironment.ReadOnly.get_edges read_only ~dependency class_name
           |> assert_equal
                ~cmp:[%compare.equal: ClassHierarchy.Edges.t option]
                ~printer:(fun edges ->

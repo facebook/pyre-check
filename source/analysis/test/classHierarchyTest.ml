@@ -17,7 +17,7 @@ let ( ! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Single
  *  0 - 2
  *    X
  *  1 - 3 *)
-let butterfly, butterfly_indices =
+let butterfly, butterfly_class_names =
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
   insert order "0";
@@ -28,7 +28,7 @@ let butterfly, butterfly_indices =
   connect order ~predecessor:"0" ~successor:"3";
   connect order ~predecessor:"1" ~successor:"2";
   connect order ~predecessor:"1" ~successor:"3";
-  handler order, Hash_set.to_list order.all_indices
+  handler order, Hash_set.to_list order.all_class_names
 
 
 (*          0 - 3
@@ -36,7 +36,7 @@ let butterfly, butterfly_indices =
  *          BOTTOM  - b - 1      TOP
  *          |  \       /
  *          4 -- 2 --- *)
-let order, order_indices =
+let order, order_class_names =
   let bottom = "bottom" in
   let order = MockClassHierarchyHandler.create () in
   let open MockClassHierarchyHandler in
@@ -54,7 +54,7 @@ let order, order_indices =
   connect order ~predecessor:bottom ~successor:"1";
   connect order ~predecessor:bottom ~successor:"2";
   connect order ~predecessor:bottom ~successor:"4";
-  handler order, Hash_set.to_list order.all_indices
+  handler order, Hash_set.to_list order.all_class_names
 
 
 let diamond_order =
@@ -124,42 +124,42 @@ let test_immediate_parents _ =
 
 
 let test_check_integrity _ =
-  let assert_ok ~indices order =
-    match check_integrity ~indices order with
+  let assert_ok ~class_names order =
+    match check_integrity ~class_names order with
     | Result.Ok _ -> ()
     | Result.Error _ -> assert_failure "unexpected failure"
   in
-  let assert_cyclic ~indices order =
-    match check_integrity ~indices order with
+  let assert_cyclic ~class_names order =
+    match check_integrity ~class_names order with
     | Result.Error (ClassHierarchy.CheckIntegrityError.Cyclic _) -> ()
     | _ -> assert_failure "expected a cyclic error but did not get one"
   in
-  let assert_incomplete ~indices order =
-    match check_integrity ~indices order with
+  let assert_incomplete ~class_names order =
+    match check_integrity ~class_names order with
     | Result.Error (ClassHierarchy.CheckIntegrityError.Incomplete _) -> ()
     | _ -> assert_failure "expected a cyclic error but did not get one"
   in
 
-  assert_ok order ~indices:order_indices;
-  assert_ok butterfly ~indices:butterfly_indices;
+  assert_ok order ~class_names:order_class_names;
+  assert_ok butterfly ~class_names:butterfly_class_names;
 
   (*(* 0 <-> 1 *)*)
-  let order, indices =
+  let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
     insert order "1";
     connect order ~predecessor:"0" ~successor:"1";
     connect order ~predecessor:"1" ~successor:"0";
-    handler order, Hash_set.to_list order.all_indices
+    handler order, Hash_set.to_list order.all_class_names
   in
-  assert_cyclic order ~indices;
+  assert_cyclic order ~class_names;
 
   (* 0 -> 1
    * ^    |
    *  \   v
    * .  - 2 -> 3 *)
-  let order, indices =
+  let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
@@ -170,17 +170,17 @@ let test_check_integrity _ =
     connect order ~predecessor:"1" ~successor:"2";
     connect order ~predecessor:"2" ~successor:"0";
     connect order ~predecessor:"2" ~successor:"3";
-    handler order, Hash_set.to_list order.all_indices
+    handler order, Hash_set.to_list order.all_class_names
   in
-  assert_cyclic order ~indices;
+  assert_cyclic order ~class_names;
 
-  let order, indices =
+  let order, class_names =
     let order = MockClassHierarchyHandler.create () in
     let open MockClassHierarchyHandler in
     insert order "0";
-    handler order, [IndexTracker.index "1"]
+    handler order, ["1"]
   in
-  assert_incomplete order ~indices;
+  assert_incomplete order ~class_names;
   ()
 
 
@@ -196,22 +196,22 @@ let test_to_dot _ =
     connect order ~predecessor:"0" ~successor:"1" ~parameters:![Type.string];
 
     (*connect_annotations_to_object order ["0"; "1"; "2"; "object"];*)
-    handler order, Hash_set.to_list order.all_indices
+    handler order, Hash_set.to_list order.all_class_names
   in
   assert_equal
     ~printer:Fn.id
     ({|
       digraph {
-        343776663[label="object"]
-        453441034[label="1"]
-        564400327[label="2"]
-        680650890[label="0"]
-        680650890 -> 453441034[label="(str)"]
-        680650890 -> 564400327
+        0[label="0"]
+        1[label="1"]
+        2[label="2"]
+        object[label="object"]
+        0 -> 1[label="(str)"]
+        0 -> 2
       }
     |}
     |> Test.trim_extra_indentation)
-    ("\n" ^ to_dot order ~indices:keys)
+    ("\n" ^ to_dot order ~class_names:keys)
 
 
 let test_variables _ =

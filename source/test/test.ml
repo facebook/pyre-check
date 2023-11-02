@@ -3421,31 +3421,27 @@ let assert_equivalent_attributes
 
 module MockClassHierarchyHandler = struct
   type t = {
-    edges: ClassHierarchy.Edges.t IndexTracker.Table.t;
-    all_indices: IndexTracker.Hash_set.t;
+    edges: ClassHierarchy.Edges.t Identifier.Table.t;
+    all_class_names: Identifier.Hash_set.t;
   }
 
   let create () =
-    { edges = IndexTracker.Table.create (); all_indices = IndexTracker.Hash_set.create () }
+    { edges = Identifier.Table.create (); all_class_names = Identifier.Hash_set.create () }
 
 
-  let copy { edges; all_indices } =
-    { edges = Hashtbl.copy edges; all_indices = Hash_set.copy all_indices }
+  let copy { edges; all_class_names } =
+    { edges = Hashtbl.copy edges; all_class_names = Hash_set.copy all_class_names }
 
 
   let pp format { edges; _ } =
     let print_edge (source, { ClassHierarchy.Edges.parents; _ }) =
       let targets =
         let target { ClassHierarchy.Target.target; parameters } =
-          Format.asprintf
-            "%s [%a]"
-            (IndexTracker.annotation target)
-            (Type.pp_parameters ~pp_type:Type.pp_concise)
-            parameters
+          Format.asprintf "%s [%a]" target (Type.pp_parameters ~pp_type:Type.pp_concise) parameters
         in
         List.map parents ~f:target |> String.concat ~sep:", "
       in
-      Format.fprintf format "  %s -> %s\n" (IndexTracker.annotation source) targets
+      Format.fprintf format "  %s -> %s\n" source targets
     in
     Format.fprintf format "Edges:\n";
     List.iter ~f:print_edge (Hashtbl.to_alist edges)
@@ -3459,13 +3455,11 @@ module MockClassHierarchyHandler = struct
     (module struct
       let edges = Hashtbl.find order.edges
 
-      let contains annotation = Hash_set.mem order.all_indices (IndexTracker.index annotation)
+      let contains annotation = Hash_set.mem order.all_class_names annotation
     end : ClassHierarchy.Handler)
 
 
   let connect ?(parameters = []) order ~predecessor ~successor =
-    let predecessor = IndexTracker.index predecessor in
-    let successor = IndexTracker.index successor in
     let edges = order.edges in
     (* Add edges. *)
     let new_target = { ClassHierarchy.Target.target = successor; parameters } in
@@ -3484,18 +3478,16 @@ module MockClassHierarchyHandler = struct
 
 
   let set_extends_placeholder_stub order annotation =
-    let index = IndexTracker.index annotation in
-    Hashtbl.change order.edges index ~f:(function
+    Hashtbl.change order.edges annotation ~f:(function
         | None -> None
         | Some edges -> Some { edges with has_placeholder_stub_parent = true })
 
 
   let insert order annotation =
-    let index = IndexTracker.index annotation in
-    Hash_set.add order.all_indices index;
+    Hash_set.add order.all_class_names annotation;
     Hashtbl.set
       order.edges
-      ~key:index
+      ~key:annotation
       ~data:
         {
           ClassHierarchy.Edges.parents = [];

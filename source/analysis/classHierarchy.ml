@@ -35,7 +35,7 @@ end
 
 module Target = struct
   type t = {
-    target: IndexTracker.t;
+    target: Identifier.t;
     parameters: Type.Parameter.t list;
   }
   [@@deriving compare, sexp, show]
@@ -114,12 +114,10 @@ module Edges = struct
 end
 
 module type Handler = sig
-  val edges : IndexTracker.t -> Edges.t option
+  val edges : Identifier.t -> Edges.t option
 
   val contains : Type.Primitive.t -> bool
 end
-
-let index_of annotation = IndexTracker.index annotation
 
 let parents_of (module Handler : Handler) target =
   Handler.edges target >>| fun { parents; _ } -> parents
@@ -222,11 +220,8 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
       raise (Cyclic class_name));
     let visited = String.Set.add visited class_name in
     let successors =
-      let create_annotation { Target.target = index; _ } = IndexTracker.annotation index in
-      index_of class_name
-      |> get_successors
-      |> Option.value ~default:[]
-      |> List.map ~f:create_annotation
+      let create_annotation { Target.target = index; _ } = index in
+      class_name |> get_successors |> Option.value ~default:[] |> List.map ~f:create_annotation
     in
     let linearized_successors = List.map successors ~f:(linearize ~visited) in
     class_name :: merge (List.append linearized_successors [successors])
@@ -243,14 +238,14 @@ let method_resolution_order_linearize ~get_successors class_name =
 
 
 let immediate_parents (module Handler : Handler) class_name =
-  index_of class_name
+  class_name
   |> parents_of (module Handler)
-  >>| List.map ~f:(fun target -> Target.target target |> IndexTracker.annotation)
+  >>| List.map ~f:Target.target
   |> Option.value ~default:[]
 
 
 let extends_placeholder_stub (module Handler : Handler) class_name =
-  index_of class_name |> extends_placeholder_stub_of_target (module Handler)
+  class_name |> extends_placeholder_stub_of_target (module Handler)
 
 
 let parameters_to_variables parameters =
@@ -267,25 +262,22 @@ let variables ?(default = None) (module Handler : Handler) = function
          the type order here. *)
       Some [Unary (Type.Variable.Unary.create ~variance:Covariant "_T_meta")]
   | primitive_name ->
-      let generic_index = index_of generic_primitive in
-      let primitive_index = index_of primitive_name in
-      parents_and_generic_of_target (module Handler) primitive_index
+      parents_and_generic_of_target (module Handler) primitive_name
       >>= List.find ~f:(fun { Target.target; _ } ->
-              [%compare.equal: IndexTracker.t] target generic_index)
+              [%compare.equal: Identifier.t] target generic_primitive)
       >>| (fun { Target.parameters; _ } -> parameters_to_variables parameters)
       |> Option.value ~default
 
 
-let get_generic_parameters ~generic_index edges =
+let get_generic_parameters ~generic_primitive edges =
   let generic_parameters { Target.target; parameters } =
-    Option.some_if ([%compare.equal: IndexTracker.t] generic_index target) parameters
+    Option.some_if ([%compare.equal: Identifier.t] generic_primitive target) parameters
   in
   List.find_map ~f:generic_parameters edges
 
 
 let instantiate_successors_parameters ((module Handler : Handler) as handler) ~source ~target =
   raise_if_untracked handler target;
-  let generic_index = IndexTracker.index generic_primitive in
   match source with
   | Type.Bottom ->
       let to_any = function
@@ -293,9 +285,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
         | ParameterVariadic _ -> [CallableParameters Undefined]
         | TupleVariadic _ -> Type.OrderedTypes.to_parameters Type.Variable.Variadic.Tuple.any
       in
-      index_of target
+      target
       |> parents_and_generic_of_target (module Handler)
-      >>= get_generic_parameters ~generic_index
+      >>= get_generic_parameters ~generic_primitive
       >>= parameters_to_variables
       >>| List.concat_map ~f:to_any
   | _ ->
@@ -311,7 +303,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       in
       let handle_split (primitive, parameters) =
         let worklist = Queue.create () in
-        Queue.enqueue worklist { Target.target = index_of primitive; parameters };
+        Queue.enqueue worklist { Target.target = primitive; parameters };
         let rec iterate worklist =
           match Queue.dequeue worklist with
           | Some { Target.target = target_index; parameters } ->
@@ -321,9 +313,9 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                    replaced with the concrete parameter corresponding to the type variable. This
                    function takes a target with concrete parameters and its supertypes, and
                    instantiates the supertypes accordingly. *)
-                let get_instantiated_successors ~generic_index ~parameters successors =
+                let get_instantiated_successors ~generic_primitive ~parameters successors =
                   let variables =
-                    get_generic_parameters successors ~generic_index
+                    get_generic_parameters successors ~generic_primitive
                     >>= parameters_to_variables
                     |> Option.value ~default:[]
                   in
@@ -367,12 +359,12 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
                   List.map successors ~f:instantiate_parameters
                 in
                 parents_and_generic_of_target (module Handler) target_index
-                >>| get_instantiated_successors ~generic_index ~parameters
+                >>| get_instantiated_successors ~generic_primitive ~parameters
               in
-              if [%compare.equal: IndexTracker.t] target_index (index_of target) then
+              if [%compare.equal: Identifier.t] target_index target then
                 match target with
                 | "typing.Callable" -> Some parameters
-                | _ -> instantiated_successors >>= get_generic_parameters ~generic_index
+                | _ -> instantiated_successors >>= get_generic_parameters ~generic_primitive
               else (
                 instantiated_successors >>| List.iter ~f:(Queue.enqueue worklist) |> ignore;
                 iterate worklist)
@@ -383,57 +375,54 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
       split >>= handle_split
 
 
-let check_for_cycles_exn (module Handler : Handler) ~(indices : IndexTracker.t list) =
-  let started_from = ref IndexTracker.Set.empty in
+let check_for_cycles_exn (module Handler : Handler) ~(class_names : Identifier.t list) =
+  let started_from = ref Identifier.Set.empty in
   let find_cycle start =
     if not (Set.mem !started_from start) then
-      let rec visit reverse_visited index =
-        if List.mem ~equal:[%compare.equal: IndexTracker.t] reverse_visited index then (
-          let trace = List.rev_map ~f:IndexTracker.annotation (index :: reverse_visited) in
+      let rec visit reverse_visited class_name =
+        if List.mem ~equal:[%compare.equal: Identifier.t] reverse_visited class_name then (
+          let trace = List.rev (class_name :: reverse_visited) in
           Log.error "Order is cyclic:\nTrace: %s" (String.concat ~sep:" -> " trace);
-          raise (Cyclic (IndexTracker.annotation index)))
-        else if not (Set.mem !started_from index) then (
-          started_from := Set.add !started_from index;
-          match parents_of (module Handler) index with
+          raise (Cyclic class_name))
+        else if not (Set.mem !started_from class_name) then (
+          started_from := Set.add !started_from class_name;
+          match parents_of (module Handler) class_name with
           | Some successors ->
               successors
               |> List.map ~f:Target.target
-              |> List.iter ~f:(visit (index :: reverse_visited))
+              |> List.iter ~f:(visit (class_name :: reverse_visited))
           | None -> ())
       in
       visit [] start
   in
-  List.iter indices ~f:find_cycle
+  List.iter class_names ~f:find_cycle
 
 
-let check_integrity ~indices (module Handler : Handler) =
-  let no_edges key = Handler.edges key |> Option.is_none in
-  match List.find indices ~f:no_edges with
-  | Some key ->
-      let name = IndexTracker.show key in
+let check_integrity ~class_names (module Handler : Handler) =
+  let no_edges name = Handler.edges name |> Option.is_none in
+  match List.find class_names ~f:no_edges with
+  | Some name ->
       Log.error "Inconsistency in type order: No edges for key %s" name;
       Result.Error (CheckIntegrityError.Incomplete name)
   | None -> (
-      try Result.Ok (check_for_cycles_exn ~indices (module Handler)) with
+      try Result.Ok (check_for_cycles_exn ~class_names (module Handler)) with
       | Cyclic name -> Result.Error (CheckIntegrityError.Cyclic name))
 
 
-let to_dot (module Handler : Handler) ~indices =
-  let indices = List.sort ~compare:IndexTracker.compare indices in
-  let nodes = List.map indices ~f:(fun index -> index, IndexTracker.annotation index) in
+let to_dot (module Handler : Handler) ~class_names =
+  let class_names = List.sort ~compare:Identifier.compare class_names in
+  let nodes = List.map class_names ~f:(fun class_name -> class_name, class_name) in
   let buffer = Buffer.create 10000 in
   Buffer.add_string buffer "digraph {\n";
   List.iter
-    ~f:(fun (index, annotation) ->
-      Format.asprintf "  %s[label=\"%s\"]\n" (IndexTracker.show index) annotation
-      |> Buffer.add_string buffer)
+    ~f:(fun (class_name, annotation) ->
+      Format.asprintf "  %s[label=\"%s\"]\n" class_name annotation |> Buffer.add_string buffer)
     nodes;
-  let add_edges index =
-    parents_of (module Handler) index
+  let add_edges class_name =
+    parents_of (module Handler) class_name
     >>| List.sort ~compare:Target.compare
     >>| List.iter ~f:(fun { Target.target = successor; parameters } ->
-            Format.asprintf "  %s -> %s" (IndexTracker.show index) (IndexTracker.show successor)
-            |> Buffer.add_string buffer;
+            Format.asprintf "  %s -> %s" class_name successor |> Buffer.add_string buffer;
             if not (List.is_empty parameters) then
               Format.asprintf
                 "[label=\"(%a)\"]"
@@ -443,6 +432,6 @@ let to_dot (module Handler : Handler) ~indices =
             Buffer.add_string buffer "\n")
     |> ignore
   in
-  List.iter ~f:add_edges indices;
+  List.iter ~f:add_edges class_names;
   Buffer.add_string buffer "}";
   Buffer.contents buffer

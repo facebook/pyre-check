@@ -588,21 +588,15 @@ let test_populate context =
   assert_equal (parse_annotation environment !"test.S2") Type.string;
   let assert_superclasses ?(superclass_parameters = fun _ -> []) ~environment base ~superclasses =
     let (module TypeOrderHandler) = class_hierarchy environment in
-    let index annotation = IndexTracker.index annotation in
-    let targets = ClassHierarchy.parents_of (module TypeOrderHandler) (index base) in
+    let targets = ClassHierarchy.parents_of (module TypeOrderHandler) base in
     let to_target annotation =
-      {
-        ClassHierarchy.Target.target = index annotation;
-        parameters = superclass_parameters annotation;
-      }
+      { ClassHierarchy.Target.target = annotation; parameters = superclass_parameters annotation }
     in
     let show_targets = function
       | None -> ""
       | Some targets ->
           let show_target { ClassHierarchy.Target.target; parameters } =
-            let index = IndexTracker.show target in
-            let target = IndexTracker.annotation target in
-            Format.asprintf "%s: %s%a" index target (Type.pp_parameters ~pp_type:Type.pp) parameters
+            Format.asprintf "%s%a" target (Type.pp_parameters ~pp_type:Type.pp) parameters
           in
           List.to_string targets ~f:show_target
     in
@@ -1113,14 +1107,13 @@ let test_deduplicate context =
   in
   let global_environment = ScratchProject.global_environment project in
   let (module Handler) = class_hierarchy global_environment in
-  let index_of annotation = IndexTracker.index annotation in
   let module TargetAsserter (ListOrSet : ClassHierarchy.Target.ListOrSet) = struct
     let assert_targets edges from target parameters create =
       assert_equal
         ~cmp:ListOrSet.equal
         ~printer:(ListOrSet.to_string ~f:ClassHierarchy.Target.show)
-        (find_unsafe edges (index_of from))
-        (create { ClassHierarchy.Target.target = index_of target; parameters })
+        (find_unsafe edges from)
+        (create { ClassHierarchy.Target.target; parameters })
   end
   in
   let module ForwardAsserter = TargetAsserter (ClassHierarchy.Target.List) in
@@ -1156,15 +1149,14 @@ let test_remove_extra_edges_to_object context =
   in
   let global_environment = ScratchProject.global_environment project in
   let (module Handler) = class_hierarchy global_environment in
-  let zero_index = IndexTracker.index "test.Zero" in
-  let one_index = IndexTracker.index "test.One" in
   let printer edges = [%sexp_of: ClassHierarchy.Edges.t] edges |> Sexp.to_string_hum in
   assert_equal
     ~cmp:[%compare.equal: ClassHierarchy.Edges.t]
     ~printer
-    (find_unsafe Handler.edges zero_index)
+    (find_unsafe Handler.edges "test.Zero")
     {
-      ClassHierarchy.Edges.parents = [{ ClassHierarchy.Target.target = one_index; parameters = [] }];
+      ClassHierarchy.Edges.parents =
+        [{ ClassHierarchy.Target.target = "test.One"; parameters = [] }];
       generic_base = None;
       has_placeholder_stub_parent = false;
     };

@@ -8,16 +8,13 @@
 (* ClassHierarchyEnvironment: layer of the environment stack
  * - upstream: AliasEnvironment
  * - downstream: ClassSuccessorMetadataEnvironment
- * - key: the name type, as an IndexTracker.Value
+ * - key: the name type, as an Identifier.t
  * - value: ClassHierarchy.Target.t
  *
  * The ClassHierarchyEnvironment tracks the direct parents
  * of types.
  *
- * It is keyed on IndexTracker.Value, which is an int value
- * that "interns" class names to make lookups cheaper; we want
- * fast lookups because we have to do a graph search when computing
- * all ancestors of classes in ClassSuccessorMetadataEnvironment.
+ * It is keyed on class name as an Identifier.t
  *)
 
 open Core
@@ -105,7 +102,6 @@ let compute_generic_base parsed_bases =
 
 
 let get_parents alias_environment name ~dependency =
-  let object_index = IndexTracker.index "object" in
   let parse_annotation =
     AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
       ?dependency
@@ -178,8 +174,7 @@ let get_parents alias_environment name ~dependency =
   in
   let is_not_primitive_cycle (parent, _) = not (String.equal name parent) in
   let convert_to_targets =
-    List.map ~f:(fun (name, parameters) ->
-        { ClassHierarchy.Target.target = IndexTracker.index name; parameters })
+    List.map ~f:(fun (name, parameters) -> { ClassHierarchy.Target.target = name; parameters })
   in
   let deduplicate targets =
     let deduplicate (visited, sofar) ({ ClassHierarchy.Target.target; _ } as edge) =
@@ -188,11 +183,11 @@ let get_parents alias_environment name ~dependency =
       else
         Set.add visited target, edge :: sofar
     in
-    List.fold targets ~f:deduplicate ~init:(IndexTracker.Set.empty, []) |> snd |> List.rev
+    List.fold targets ~f:deduplicate ~init:(Identifier.Set.empty, []) |> snd |> List.rev
   in
   let remove_extra_edges_to_object targets =
     let not_object_edge { ClassHierarchy.Target.target; _ } =
-      not ([%compare.equal: IndexTracker.t] target object_index)
+      not ([%compare.equal: Identifier.t] target "object")
     in
     match List.filter targets ~f:not_object_edge with
     | [] -> targets
@@ -222,8 +217,7 @@ let get_parents alias_environment name ~dependency =
         compute_generic_base parsed_bases
         >>= fun base ->
         extract_supertype (Type.expression base)
-        >>= fun (name, parameters) ->
-        Some { ClassHierarchy.Target.target = IndexTracker.index name; parameters }
+        >>= fun (name, parameters) -> Some { ClassHierarchy.Target.target = name; parameters }
       in
       let has_placeholder_stub_parent =
         compute_extends_placeholder_stub_class
@@ -238,14 +232,14 @@ let get_parents alias_environment name ~dependency =
 
 module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
-  module Key = IndexTracker.IndexKey
+  module Key = SharedMemoryKeys.StringKey
   module Value = EdgesValue
 
   type trigger = string [@@deriving sexp, compare]
 
-  let convert_trigger = IndexTracker.index
+  let convert_trigger = Fn.id
 
-  let key_to_trigger = IndexTracker.annotation
+  let key_to_trigger = Fn.id
 
   module TriggerSet = Type.Primitive.Set
 
@@ -260,7 +254,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
 
   let trigger_to_dependency name = SharedMemoryKeys.ClassConnect name
 
-  let show_key = IndexTracker.annotation
+  let show_key = Fn.id
 
   let overlay_owns_key module_tracker_overlay index =
     key_to_trigger index |> ModuleTracker.Overlay.owns_identifier module_tracker_overlay
@@ -280,8 +274,8 @@ module ReadOnly = struct
     let unannotated_global_environment =
       alias_environment read_only |> AliasEnvironment.ReadOnly.unannotated_global_environment
     in
-    let indices =
-      unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_indices
+    let class_names =
+      unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
     in
     let class_hierarchy =
       (module struct
@@ -292,7 +286,7 @@ module ReadOnly = struct
           |> Option.is_some
       end : ClassHierarchy.Handler)
     in
-    ClassHierarchy.check_integrity class_hierarchy ~indices
+    ClassHierarchy.check_integrity class_hierarchy ~class_names
 
 
   let class_hierarchy ?dependency read_only =

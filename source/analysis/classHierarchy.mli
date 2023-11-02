@@ -25,7 +25,7 @@ end
 
 module Target : sig
   type t = {
-    target: IndexTracker.t;
+    target: Ast.Identifier.t;
     parameters: Type.Parameter.t list;
   }
   [@@deriving compare, sexp, show]
@@ -75,12 +75,12 @@ end
 (** The handler module for interfacing with ClassHierarchy lookups. See [Environment_handler] for
     more. *)
 module type Handler = sig
-  val edges : IndexTracker.t -> Edges.t option
+  val edges : Ast.Identifier.t -> Edges.t option
 
   val contains : Type.Primitive.t -> bool
 end
 
-val parents_of : (module Handler) -> IndexTracker.t -> Target.t list option
+val parents_of : (module Handler) -> Ast.Identifier.t -> Target.t list option
 
 (* Returns true if the class hierarchy contains the given class. *)
 val contains : (module Handler) -> Type.Primitive.t -> bool
@@ -92,7 +92,7 @@ val contains : (module Handler) -> Type.Primitive.t -> bool
 val is_instantiated : (module Handler) -> Type.t -> bool
 
 val method_resolution_order_linearize
-  :  get_successors:(IndexTracker.t -> Target.t list option) ->
+  :  get_successors:(Ast.Identifier.t -> Target.t list option) ->
   Type.Primitive.t ->
   (Type.Primitive.t list, MethodResolutionOrderError.t) result
 
@@ -107,11 +107,11 @@ val variables
   Type.Variable.t list option
 
 val check_integrity
-  :  indices:IndexTracker.t list ->
+  :  class_names:Ast.Identifier.t list ->
   (module Handler) ->
   (unit, CheckIntegrityError.t) result
 
-val to_dot : (module Handler) -> indices:IndexTracker.t list -> string
+val to_dot : (module Handler) -> class_names:Ast.Identifier.t list -> string
 
 val instantiate_successors_parameters
   :  (module Handler) ->

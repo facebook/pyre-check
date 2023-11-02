@@ -13,7 +13,7 @@ module HierarchyReadOnly : sig
   val get_edges
     :  t ->
     ?dependency:DependencyKey.registered ->
-    IndexTracker.t ->
+    Ast.Identifier.t ->
     ClassHierarchy.Edges.t option
 
   val alias_environment : t -> AliasEnvironment.ReadOnly.t
