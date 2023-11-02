@@ -51,8 +51,6 @@ module ReadOnly : sig
 
   val all_classes : t -> Type.Primitive.t list
 
-  val all_indices : t -> IndexTracker.t list
-
   val all_unannotated_globals : t -> Reference.t list
 
   (* All other functions are dependency tracked *)

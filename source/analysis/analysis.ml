@@ -55,7 +55,6 @@ module TypeEnvironment = TypeEnvironment
 module TypeOperation = TypeOperation
 module TypeOrder = TypeOrder
 module TypeConstraints = TypeConstraints
-module IndexTracker = IndexTracker
 module UnannotatedGlobalEnvironment = UnannotatedGlobalEnvironment
 module UninitializedLocalCheck = UninitializedLocalCheck
 module WeakenMutableLiterals = WeakenMutableLiterals

@@ -96,7 +96,6 @@ module ReadOnly = struct
     ast_environment: AstEnvironment.ReadOnly.t;
     class_exists: ?dependency:DependencyKey.registered -> string -> bool;
     all_classes: unit -> Type.Primitive.t list;
-    all_indices: unit -> IndexTracker.t list;
     all_unannotated_globals: unit -> Reference.t list;
     get_define_names: ?dependency:DependencyKey.registered -> Reference.t -> Reference.t list;
     get_class_summary:
@@ -116,8 +115,6 @@ module ReadOnly = struct
   let unannotated_global_environment = Fn.id
 
   let all_classes { all_classes; _ } = all_classes ()
-
-  let all_indices { all_indices; _ } = all_indices ()
 
   let all_unannotated_globals { all_unannotated_globals; _ } = all_unannotated_globals ()
 
@@ -979,12 +976,6 @@ module FromReadOnlyUpstream = struct
       ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
       |> KeyTracker.get_class_keys key_tracker
     in
-    let all_indices () =
-      all_classes ()
-      |> Type.Primitive.Set.of_list
-      |> IndexTracker.indices
-      |> IndexTracker.Set.to_list
-    in
     let all_unannotated_globals () =
       ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
       |> KeyTracker.get_unannotated_global_keys key_tracker
@@ -999,7 +990,6 @@ module FromReadOnlyUpstream = struct
       get_unannotated_global;
       get_define_names;
       all_classes;
-      all_indices;
       all_unannotated_globals;
     }
 
@@ -1192,7 +1182,7 @@ module Overlay = struct
 
   let read_only ({ parent; from_read_only_upstream; _ } as environment) =
     let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
-    let { ReadOnly.all_classes; all_indices; all_unannotated_globals; _ } = parent in
+    let { ReadOnly.all_classes; all_unannotated_globals; _ } = parent in
     let { ReadOnly.ast_environment; _ } = this_read_only in
     let if_owns ~owns ~f ?dependency key =
       if owns key then
@@ -1216,7 +1206,6 @@ module Overlay = struct
       get_function_definition = if_owns ~owns:owns_reference ~f:ReadOnly.get_function_definition;
       get_unannotated_global = if_owns ~owns:owns_reference ~f:ReadOnly.get_unannotated_global;
       all_classes;
-      all_indices;
       all_unannotated_globals;
     }
 end
