@@ -36,6 +36,60 @@ type class_metadata = {
 }
 [@@deriving compare, show]
 
+module UpstreamAnalysis = struct
+  module Queries = struct
+    type t = {
+      get_class_summary: string -> ClassSummary.t Node.t option;
+      get_class_hierarchy: unit -> (module ClassHierarchy.Handler);
+    }
+  end
+
+  let produce_class_metadata Queries.{ get_class_hierarchy; get_class_summary; _ } class_name =
+    let add definition =
+      let successors annotation =
+        let (module Handler) = get_class_hierarchy () in
+        match
+          ClassHierarchy.method_resolution_order_linearize
+            ~get_successors:(ClassHierarchy.parents_of (module Handler))
+            annotation
+        with
+        | Result.Ok (_ :: successors) -> Some successors
+        | Result.Ok [] -> Some []
+        | Result.Error _ -> None
+      in
+      let successors = successors class_name in
+      let is_final =
+        definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
+      in
+      let is_test =
+        List.exists
+          ~f:Type.Primitive.is_unit_test
+          (class_name :: Option.value successors ~default:[])
+      in
+      let is_mock =
+        let is_mock_class = function
+          | "unittest.mock.Base"
+          | "mock.Base"
+          | "unittest.mock.NonCallableMock"
+          | "mock.NonCallableMock" ->
+              true
+          | _ -> false
+        in
+        List.exists ~f:is_mock_class (class_name :: Option.value successors ~default:[])
+      in
+      let is_protocol = ClassSummary.is_protocol (Node.value definition) in
+      let is_abstract = ClassSummary.is_abstract (Node.value definition) in
+      let is_typed_dictionary =
+        let total_typed_dictionary_name = Type.TypedDictionary.class_name ~total:true in
+        List.exists
+          ~f:([%compare.equal: Type.Primitive.t] total_typed_dictionary_name)
+          (Option.value successors ~default:[])
+      in
+      { is_test; is_mock; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
+    in
+    get_class_summary class_name >>| add
+end
+
 module ClassMetadataValue = struct
   type t = class_metadata option
 
@@ -45,62 +99,6 @@ module ClassMetadataValue = struct
 
   let equal = Memory.equal_from_compare (Option.compare compare_class_metadata)
 end
-
-let produce_class_metadata class_hierarchy_environment class_name ~dependency =
-  let alias_environment =
-    ClassHierarchyEnvironment.ReadOnly.alias_environment class_hierarchy_environment
-  in
-  let unannotated_global_environment =
-    alias_environment |> AliasEnvironment.ReadOnly.unannotated_global_environment
-  in
-  let add definition =
-    let successors annotation =
-      let (module Handler) =
-        ClassHierarchyEnvironment.ReadOnly.class_hierarchy class_hierarchy_environment ?dependency
-      in
-      match
-        ClassHierarchy.method_resolution_order_linearize
-          ~get_successors:(ClassHierarchy.parents_of (module Handler))
-          annotation
-      with
-      | Result.Ok (_ :: successors) -> Some successors
-      | Result.Ok [] -> Some []
-      | Result.Error _ -> None
-    in
-    let successors = successors class_name in
-    let is_final =
-      definition |> fun { Node.value = definition; _ } -> ClassSummary.is_final definition
-    in
-    let is_test =
-      List.exists ~f:Type.Primitive.is_unit_test (class_name :: Option.value successors ~default:[])
-    in
-    let is_mock =
-      let is_mock_class = function
-        | "unittest.mock.Base"
-        | "mock.Base"
-        | "unittest.mock.NonCallableMock"
-        | "mock.NonCallableMock" ->
-            true
-        | _ -> false
-      in
-      List.exists ~f:is_mock_class (class_name :: Option.value successors ~default:[])
-    in
-    let is_protocol = ClassSummary.is_protocol (Node.value definition) in
-    let is_abstract = ClassSummary.is_abstract (Node.value definition) in
-    let is_typed_dictionary =
-      let total_typed_dictionary_name = Type.TypedDictionary.class_name ~total:true in
-      List.exists
-        ~f:([%compare.equal: Type.Primitive.t] total_typed_dictionary_name)
-        (Option.value successors ~default:[])
-    in
-    { is_test; is_mock; successors; is_final; is_protocol; is_abstract; is_typed_dictionary }
-  in
-  UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-    unannotated_global_environment
-    class_name
-    ?dependency
-  >>| add
-
 
 module MetadataTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
@@ -117,7 +115,27 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
 
   let lazy_incremental = false
 
-  let produce_value = produce_class_metadata
+  let produce_value class_hierarchy_environment class_name ~dependency =
+    let unannotated_global_environment =
+      class_hierarchy_environment
+      |> ClassHierarchyEnvironment.ReadOnly.alias_environment
+      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+    in
+    let upstream =
+      UpstreamAnalysis.Queries.
+        {
+          get_class_summary =
+            UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
+              ?dependency
+              unannotated_global_environment;
+          get_class_hierarchy = fun () ->
+            ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+              class_hierarchy_environment
+              ?dependency;
+        }
+    in
+    UpstreamAnalysis.produce_class_metadata upstream class_name
+
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.RegisterClassMetadata name -> Some name
