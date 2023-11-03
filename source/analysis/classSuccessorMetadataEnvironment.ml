@@ -90,6 +90,43 @@ module UpstreamAnalysis = struct
     get_class_summary class_name >>| add
 end
 
+module DownstreamAnalysis = struct
+  module Queries = struct
+    type t = {
+      get_class_hierarchy: unit -> (module ClassHierarchy.Handler);
+      get_class_metadata: Type.Primitive.t -> class_metadata option;
+    }
+  end
+
+  let successors { Queries.get_class_metadata; _ } class_name =
+    match get_class_metadata class_name with
+    | Some { successors = Some successors; _ } -> successors
+    | _ -> []
+
+
+  (* NOTE: This function is not symetric: least_upper_bound(A, B) can return different result from
+     least_upper_bound(B, A) when multiple inheritance is involved. *)
+  let least_upper_bound { Queries.get_class_metadata; _ } left right =
+    match get_class_metadata left, get_class_metadata right with
+    | Some { successors = Some left_mro; _ }, Some { successors = Some right_mro; _ } ->
+        let right_mro_set = String.Hash_set.of_list (right :: right_mro) in
+        List.find (left :: left_mro) ~f:(Hash_set.mem right_mro_set)
+    | _, _ -> None
+
+
+  let is_transitive_successor (Queries.{ get_class_hierarchy; _ } as queries) ~placeholder_subclass_extends_all ~target source =
+    let class_hierarchy = get_class_hierarchy () in
+    let extends_placeholder_stub =
+      ClassHierarchy.extends_placeholder_stub class_hierarchy
+    in
+    let counts_as_extends_target current =
+      [%compare.equal: Type.Primitive.t] current target
+      || (placeholder_subclass_extends_all && extends_placeholder_stub current)
+    in
+    let successors_of_source = successors queries source in
+    List.exists (source :: successors_of_source) ~f:counts_as_extends_target
+end
+
 module ClassMetadataValue = struct
   type t = class_metadata option
 
@@ -168,38 +205,27 @@ module ReadOnly = struct
 
   let class_hierarchy_environment = upstream_environment
 
-  let successors read_only ?dependency class_name =
-    match get_class_metadata read_only ?dependency class_name with
-    | Some { successors = Some successors; _ } -> successors
-    | _ -> []
-
-
-  let is_transitive_successor read_only ?dependency ~placeholder_subclass_extends_all ~target source
-    =
-    let class_hierarcy =
+  let from_pure_logic ?dependency read_only f =
+    let get_class_hierarchy () =
       ClassHierarchyEnvironment.ReadOnly.class_hierarchy
         ?dependency
         (class_hierarchy_environment read_only)
     in
-    let extends_placeholder_stub = ClassHierarchy.extends_placeholder_stub class_hierarcy in
-    let counts_as_extends_target current =
-      [%compare.equal: Type.Primitive.t] current target
-      || (placeholder_subclass_extends_all && extends_placeholder_stub current)
-    in
-    let successors_of_source = successors read_only ?dependency source in
-    List.exists (source :: successors_of_source) ~f:counts_as_extends_target
+    f
+      DownstreamAnalysis.Queries.
+        { get_class_metadata = get_class_metadata ?dependency read_only; get_class_hierarchy }
 
 
-  (* NOTE: This function is not symetric: least_upper_bound(A, B) can return different result from
-     least_upper_bound(B, A) when multiple inheritance is involved. *)
-  let least_upper_bound read_only ?dependency left right =
-    match
-      get_class_metadata read_only ?dependency left, get_class_metadata read_only ?dependency right
-    with
-    | Some { successors = Some left_mro; _ }, Some { successors = Some right_mro; _ } ->
-        let right_mro_set = String.Hash_set.of_list (right :: right_mro) in
-        List.find (left :: left_mro) ~f:(Hash_set.mem right_mro_set)
-    | _, _ -> None
+  let successors read_only ?dependency =
+    from_pure_logic ?dependency read_only DownstreamAnalysis.successors
+
+
+  let is_transitive_successor read_only ?dependency =
+    from_pure_logic ?dependency read_only DownstreamAnalysis.is_transitive_successor
+
+
+  let least_upper_bound read_only ?dependency =
+    from_pure_logic ?dependency read_only DownstreamAnalysis.least_upper_bound
 end
 
 module MetadataReadOnly = ReadOnly
