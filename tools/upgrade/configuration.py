@@ -181,6 +181,11 @@ class Configuration:
             return
         self.strict = True
 
+    # Pyre is now strict by default, so in most cases we want to
+    # remove the strict flag from the config file.
+    def use_strict_default(self) -> None:
+        self.strict = None
+
     def add_targets(self, targets: List[str]) -> None:
         existing_targets = self.targets
         if existing_targets:

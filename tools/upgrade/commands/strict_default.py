@@ -121,7 +121,7 @@ class StrictDefault(ErrorSuppressingCommand):
             raise UserError("Cannot find a path to configuration")
         configuration = Configuration(configuration_path)
         LOG.info("Processing %s", configuration.get_directory())
-        configuration.add_strict()
+        configuration.use_strict_default()
         configuration.write()
 
         source_paths = configuration.get_source_paths()
