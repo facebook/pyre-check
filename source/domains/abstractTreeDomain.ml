@@ -972,7 +972,7 @@ module Make (Config : CONFIG) (Element : ELEMENT) () = struct
         | _ -> Checks.true_witness
       in
       let result = LabelMap.find_false_witness ~f:check_less_or_equal left_label_map in
-      if Checks.is_true result then
+      if Checks.is_true result && Option.is_some left_star then
         LabelMap.find_false_witness ~f:check_star_left right_label_map
       else
         result
