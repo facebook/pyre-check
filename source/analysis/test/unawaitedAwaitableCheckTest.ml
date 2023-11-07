@@ -1542,7 +1542,6 @@ let test_class_satisfying_awaitable context =
 
 let test_non_async_function context =
   let assert_awaitable_errors = assert_awaitable_errors ~context in
-  (* Don't error for unawaited awaitables within a non-async function. *)
   assert_awaitable_errors
     {|
       from typing import Awaitable
@@ -1552,7 +1551,7 @@ let test_non_async_function context =
       def main() -> None:
         unawaited = foo()
     |}
-    [];
+    ["Unawaited awaitable [1001]: Awaitable assigned to `unawaited` is never awaited."];
   ()
 
 

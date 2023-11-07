@@ -892,7 +892,7 @@ module State (Context : Context) = struct
   let backward ~statement_key:_ _ ~statement:_ = failwith "Not implemented"
 end
 
-let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define =
+let check_define ~resolution ~local_annotations ~qualifier define =
   let module Context = struct
     let qualifier = qualifier
 
@@ -910,15 +910,6 @@ let unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define 
   |> Fixpoint.exit
   >>| State.errors
   |> Option.value ~default:[]
-
-
-let should_check_define { Node.value = define; _ } = Define.is_async define
-
-let check_define ~resolution ~local_annotations ~qualifier define =
-  if not (should_check_define define) then
-    []
-  else
-    unawaited_awaitable_errors ~resolution ~local_annotations ~qualifier define
 
 
 let check_module_TESTING_ONLY
