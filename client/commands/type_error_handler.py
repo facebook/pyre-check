@@ -12,9 +12,9 @@ import logging
 from pathlib import Path
 from typing import Dict, List, Optional, Sequence
 
-from . import backend_arguments, error, json_rpc
-from .commands import server_state
-from .language_server import connections, protocol as lsp
+from .. import backend_arguments, error, json_rpc
+from ..language_server import connections, protocol as lsp
+from . import server_state
 
 
 LOG: logging.Logger = logging.getLogger(__name__)

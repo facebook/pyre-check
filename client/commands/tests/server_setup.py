@@ -9,14 +9,7 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import (
-    backend_arguments,
-    background_tasks,
-    error,
-    identifiers,
-    json_rpc,
-    type_error_handler,
-)
+from ... import backend_arguments, background_tasks, error, identifiers, json_rpc
 from ...language_server import connections, daemon_connection, features, protocol as lsp
 from .. import (
     daemon_querier as querier,
@@ -25,6 +18,7 @@ from .. import (
     pyre_server_options as options,
     server_state as state,
     start,
+    type_error_handler,
 )
 
 DEFAULT_BINARY = "/bin/pyre"

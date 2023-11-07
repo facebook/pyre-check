@@ -11,9 +11,9 @@ status messages to the LSP client.
 import logging
 from typing import Optional
 
-from . import json_rpc
-from .commands import server_state
-from .language_server import connections, features, protocol as lsp
+from .. import json_rpc
+from ..language_server import connections, features, protocol as lsp
+from . import server_state
 
 LOG: logging.Logger = logging.getLogger(__name__)
 

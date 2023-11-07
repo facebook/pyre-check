@@ -19,15 +19,7 @@ import traceback
 
 from typing import Callable, List, Optional
 
-from .. import (
-    backend_arguments,
-    background_tasks,
-    log_lsp_event,
-    status_message_handler,
-    timer,
-    type_error_handler,
-    version,
-)
+from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
 from ..language_server import connections, features, protocol as lsp, remote_index
 from . import (
     daemon_querier,
@@ -36,7 +28,9 @@ from . import (
     pyre_language_server,
     pyre_server_options,
     server_state as state,
+    status_message_handler,
     subscription,
+    type_error_handler,
 )
 
 from .daemon_query_failer import AbstractDaemonQueryFailer

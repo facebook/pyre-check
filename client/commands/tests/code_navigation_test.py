@@ -9,11 +9,16 @@ from typing import Set, Union
 
 import testslide
 
-from ... import status_message_handler, type_error_handler
 from ...language_server import connections, daemon_connection, protocol as lsp
 from ...tests import setup
 
-from .. import pyre_server_options, server_state as state, subscription
+from .. import (
+    pyre_server_options,
+    server_state as state,
+    status_message_handler,
+    subscription,
+    type_error_handler,
+)
 from ..code_navigation import PyreCodeNavigationDaemonLaunchAndSubscribeHandler
 from ..tests import server_setup
 

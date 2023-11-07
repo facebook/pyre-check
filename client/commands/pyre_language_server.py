@@ -22,22 +22,19 @@ import logging
 import random
 from collections import defaultdict
 from pathlib import Path
-from typing import (
-    DefaultDict,
-    Dict,
-    Generic,
-    List,
-    Optional,
-    Set,
-    TYPE_CHECKING,
-    TypeVar,
-    Union,
-)
+from typing import DefaultDict, Dict, Generic, List, Optional, Set, TypeVar, Union
 
 from .. import background_tasks, error, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
-from . import commands, daemon_querier, find_symbols, libcst_util, server_state as state
+from . import (
+    commands,
+    daemon_querier,
+    find_symbols,
+    libcst_util,
+    server_state as state,
+    type_error_handler,
+)
 
 from .daemon_querier import DaemonQuerierSource
 
@@ -47,8 +44,6 @@ from .server_state import OpenedDocumentState
 
 from .source_code_context import SourceCodeContext
 
-if TYPE_CHECKING:
-    from .. import type_error_handler
 
 LOG: logging.Logger = logging.getLogger(__name__)
 CONSECUTIVE_START_ATTEMPT_THRESHOLD: int = 5

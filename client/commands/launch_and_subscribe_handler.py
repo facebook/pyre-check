@@ -17,17 +17,17 @@ import asyncio
 import logging
 import traceback
 from pathlib import Path
-from typing import Dict, Optional, TYPE_CHECKING
+from typing import Dict, Optional
 
-from .. import (
-    backend_arguments,
-    background_tasks,
-    log_lsp_event,
-    status_message_handler,
-    timer,
-)
+from .. import backend_arguments, background_tasks, log_lsp_event, timer
 from ..language_server import connections, features, protocol as lsp
-from . import pyre_server_options, server_state as state, subscription
+from . import (
+    pyre_server_options,
+    server_state as state,
+    status_message_handler,
+    subscription,
+    type_error_handler,
+)
 from .initialization import (
     async_start_pyre_server,
     BuckStartFailure,
@@ -37,8 +37,6 @@ from .initialization import (
 from .pyre_server_options import PyreServerOptionsReader
 from .server_state import ServerState
 
-if TYPE_CHECKING:
-    from .. import type_error_handler
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
