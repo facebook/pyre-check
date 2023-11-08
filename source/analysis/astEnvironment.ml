@@ -315,11 +315,10 @@ module FromReadOnlyUpstream = struct
 
   let parse_source_with_cpython
       ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
-      ~context
       ~module_tracker
       ({ ModulePath.qualifier; _ } as module_path)
     =
-    let parse raw_code =
+    let parse context raw_code =
       let typecheck_flags =
         Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
       in
@@ -339,7 +338,7 @@ module FromReadOnlyUpstream = struct
             ()
     in
     match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
-    | Ok raw_code -> parse raw_code
+    | Ok raw_code -> (PyreNewParser.with_context parse) raw_code
     | Error message ->
         Error
           {
@@ -429,36 +428,29 @@ module FromReadOnlyUpstream = struct
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let configuration = EnvironmentControls.configuration controls in
-    let augment_parser_output from_parser =
-      match from_parser with
-      | Success source ->
-          let source =
-            let EnvironmentControls.PythonVersionInfo.
-                  { major_version; minor_version; micro_version }
-              =
-              EnvironmentControls.python_version_info controls
-            in
-            Preprocessing.replace_version_specific_code
-              ~major_version
-              ~minor_version
-              ~micro_version
-              source
-            |> Preprocessing.preprocess_phase0
-          in
-          RawSources.add_parsed_source raw_sources source
-      | Error { location; message; is_suppressed } ->
-          RawSources.add_unparsed_source
-            raw_sources
-            { ParserError.module_path; location; message; is_suppressed }
+    let parse =
+      match configuration with
+      | { use_errpy_parser = false; _ } -> parse_source_with_cpython
+      | _ -> parse_source_with_errpy
     in
-    (match configuration with
-    | { use_errpy_parser = false; _ } ->
-        let do_parse context =
-          parse_source_with_cpython ~configuration ~context ~module_tracker module_path
+    match parse ~configuration ~module_tracker module_path with
+    | Success source ->
+        let source =
+          let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
+            EnvironmentControls.python_version_info controls
+          in
+          Preprocessing.replace_version_specific_code
+            ~major_version
+            ~minor_version
+            ~micro_version
+            source
+          |> Preprocessing.preprocess_phase0
         in
-        PyreNewParser.with_context do_parse
-    | _ -> parse_source_with_errpy ~configuration ~module_tracker module_path)
-    |> augment_parser_output
+        RawSources.add_parsed_source raw_sources source
+    | Error { location; message; is_suppressed } ->
+        RawSources.add_unparsed_source
+          raw_sources
+          { ParserError.module_path; location; message; is_suppressed }
 
 
   let load_raw_sources ~scheduler ~ast_environment module_paths =
