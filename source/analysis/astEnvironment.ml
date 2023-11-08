@@ -266,17 +266,10 @@ module FromReadOnlyUpstream = struct
 
   let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
 
-  type parse_result =
-    | Success of Source.t
-    | Error of {
-        location: Location.t;
-        message: string;
-        is_suppressed: bool;
-      }
-
-  let create_parse_result
+  let create_parse_error
       ~configuration
       ~typecheck_flags
+      ~module_path
       ~line
       ~column
       ~end_line
@@ -310,7 +303,7 @@ module FromReadOnlyUpstream = struct
       in
       { Location.start; stop }
     in
-    Error { location; message; is_suppressed }
+    ParserError.{ location; message; is_suppressed; module_path }
 
 
   let parse_raw_code_with_cpython
@@ -325,17 +318,19 @@ module FromReadOnlyUpstream = struct
       match
         PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
       with
-      | Ok statements -> Success (create_source ~typecheck_flags ~module_path statements)
+      | Ok statements -> Ok (create_source ~typecheck_flags ~module_path statements)
       | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
-          create_parse_result
-            ~configuration
-            ~typecheck_flags
-            ~line
-            ~column
-            ~end_line
-            ~end_column
-            ~message
-            ()
+          Error
+            (create_parse_error
+               ~configuration
+               ~typecheck_flags
+               ~module_path
+               ~line
+               ~column
+               ~end_line
+               ~end_column
+               ~message
+               ())
     in
     PyreNewParser.with_context parse
 
@@ -371,23 +366,25 @@ module FromReadOnlyUpstream = struct
     match PyreErrpyParser.parse_module raw_code with
     | Ok statements ->
         log_errpy_ok ~recovered_count:0;
-        Success (create_source ~typecheck_flags ~module_path statements)
+        Ok (create_source ~typecheck_flags ~module_path statements)
     | Error parserError -> (
         match parserError with
         | Recoverable recoverable ->
             log_errpy_ok ~recovered_count:(List.length recoverable.errors);
-            Success (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
+            Ok (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
         | Unrecoverable error_string ->
             log_errpy_error ~error_string;
-            create_parse_result
-              ~configuration
-              ~typecheck_flags
-              ~line:1
-              ~column:1
-              ~end_line:1
-              ~end_column:1
-              ~message:error_string
-              ())
+            Error
+              (create_parse_error
+                 ~configuration
+                 ~typecheck_flags
+                 ~module_path
+                 ~line:1
+                 ~column:1
+                 ~end_line:1
+                 ~end_column:1
+                 ~message:error_string
+                 ()))
 
 
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
@@ -403,18 +400,20 @@ module FromReadOnlyUpstream = struct
       | Ok raw_code -> parse_raw_code ~configuration module_path raw_code
       | Error message ->
           Error
-            {
-              location =
-                {
-                  Location.start = { Location.line = 1; column = 1 };
-                  stop = { Location.line = 1; column = 1 };
-                };
-              message;
-              is_suppressed = false;
-            }
+            ParserError.
+              {
+                location =
+                  {
+                    Location.start = { Location.line = 1; column = 1 };
+                    stop = { Location.line = 1; column = 1 };
+                  };
+                message;
+                is_suppressed = false;
+                module_path;
+              }
     in
     match parse_result with
-    | Success source ->
+    | Ok source ->
         let source =
           let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
             EnvironmentControls.python_version_info controls
@@ -427,10 +426,7 @@ module FromReadOnlyUpstream = struct
           |> Preprocessing.preprocess_phase0
         in
         RawSources.add_parsed_source raw_sources source
-    | Error { location; message; is_suppressed } ->
-        RawSources.add_unparsed_source
-          raw_sources
-          { ParserError.module_path; location; message; is_suppressed }
+    | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error
 
 
   let load_raw_sources ~scheduler ~ast_environment module_paths =
