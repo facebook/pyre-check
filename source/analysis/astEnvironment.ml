@@ -387,45 +387,47 @@ module FromReadOnlyUpstream = struct
                  ()))
 
 
-  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
-    let controls = ModuleTracker.ReadOnly.controls module_tracker in
+  let load_and_parse ~controls ~get_raw_code module_path =
     let configuration = EnvironmentControls.configuration controls in
     let parse_raw_code =
       match configuration with
       | { use_errpy_parser = false; _ } -> parse_raw_code_with_cpython
       | _ -> parse_raw_code_with_errpy
     in
-    let parse_result =
-      match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
-      | Ok raw_code -> parse_raw_code ~configuration module_path raw_code
-      | Error message ->
-          Error
-            ParserError.
-              {
-                location =
-                  {
-                    Location.start = { Location.line = 1; column = 1 };
-                    stop = { Location.line = 1; column = 1 };
-                  };
-                message;
-                is_suppressed = false;
-                module_path;
-              }
+    let post_process_source source =
+      let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
+        EnvironmentControls.python_version_info controls
+      in
+      Preprocessing.replace_version_specific_code
+        ~major_version
+        ~minor_version
+        ~micro_version
+        source
+      |> Preprocessing.preprocess_phase0
     in
-    match parse_result with
-    | Ok source ->
-        let source =
-          let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
-            EnvironmentControls.python_version_info controls
-          in
-          Preprocessing.replace_version_specific_code
-            ~major_version
-            ~minor_version
-            ~micro_version
-            source
-          |> Preprocessing.preprocess_phase0
-        in
-        RawSources.add_parsed_source raw_sources source
+    match get_raw_code module_path with
+    | Ok raw_code ->
+        parse_raw_code ~configuration module_path raw_code |> Result.map ~f:post_process_source
+    | Error message ->
+        Error
+          ParserError.
+            {
+              location =
+                {
+                  Location.start = { Location.line = 1; column = 1 };
+                  stop = { Location.line = 1; column = 1 };
+                };
+              message;
+              is_suppressed = false;
+              module_path;
+            }
+
+
+  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
+    let controls = ModuleTracker.ReadOnly.controls module_tracker in
+    let get_raw_code = ModuleTracker.ReadOnly.get_raw_code module_tracker in
+    match load_and_parse ~controls ~get_raw_code module_path with
+    | Ok source -> RawSources.add_parsed_source raw_sources source
     | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error
 
 
