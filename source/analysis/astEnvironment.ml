@@ -313,12 +313,12 @@ module FromReadOnlyUpstream = struct
     Error { location; message; is_suppressed }
 
 
-  let parse_source_with_cpython
+  let parse_raw_code_with_cpython
       ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
-      ~module_tracker
       ({ ModulePath.qualifier; _ } as module_path)
+      raw_code
     =
-    let parse context raw_code =
+    let parse context =
       let typecheck_flags =
         Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
       in
@@ -337,103 +337,83 @@ module FromReadOnlyUpstream = struct
             ~message
             ()
     in
-    match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
-    | Ok raw_code -> (PyreNewParser.with_context parse) raw_code
-    | Error message ->
-        Error
-          {
-            location =
-              {
-                Location.start = { Location.line = 1; column = 1 };
-                stop = { Location.line = 1; column = 1 };
-              };
-            message;
-            is_suppressed = false;
-          }
+    PyreNewParser.with_context parse
 
 
-  let parse_source_with_errpy
-      ~configuration
-      ~module_tracker
-      ({ ModulePath.qualifier; _ } as module_path)
+  let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as module_path) raw_code
     =
     let timer = Timer.start () in
-
-    let parse raw_code =
-      let log_errpy_ok ~recovered_count =
-        let integers = ["recovered_count", recovered_count] in
-        let normals =
-          match recovered_count with
-          | 0 -> []
-          | _ -> (
-              match Int.equal (Random.int 100) 0 with
-              | false -> []
-              | true ->
-                  (*so as to avoid a torrent of data we only log 1/100 of the sources where there is
-                    error recovery for the purposes of error recovery quality management *)
-                  ["raw_code", raw_code])
-        in
-        Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
+    let log_errpy_ok ~recovered_count =
+      let integers = ["recovered_count", recovered_count] in
+      let normals =
+        match recovered_count with
+        | 0 -> []
+        | _ -> (
+            match Int.equal (Random.int 100) 0 with
+            | false -> []
+            | true ->
+                (*so as to avoid a torrent of data we only log 1/100 of the sources where there is
+                  error recovery for the purposes of error recovery quality management *)
+                ["raw_code", raw_code])
       in
-
-      let log_errpy_error ~error_string =
-        Statistics.errpy_call
-          ~flush:true
-          ~name:"error"
-          ~timer
-          ~integers:[]
-          ~normals:["raw_code", raw_code; "error", error_string]
-          ()
-      in
-
-      let typecheck_flags =
-        Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
-      in
-      match PyreErrpyParser.parse_module raw_code with
-      | Ok statements ->
-          log_errpy_ok ~recovered_count:0;
-          Success (create_source ~typecheck_flags ~module_path statements)
-      | Error parserError -> (
-          match parserError with
-          | Recoverable recoverable ->
-              log_errpy_ok ~recovered_count:(List.length recoverable.errors);
-              Success (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
-          | Unrecoverable error_string ->
-              log_errpy_error ~error_string;
-              create_parse_result
-                ~configuration
-                ~typecheck_flags
-                ~line:1
-                ~column:1
-                ~end_line:1
-                ~end_column:1
-                ~message:error_string
-                ())
+      Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
     in
-    match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
-    | Ok raw_code -> parse raw_code
-    | Error message ->
-        Error
-          {
-            location =
-              {
-                Location.start = { Location.line = 1; column = 1 };
-                stop = { Location.line = 1; column = 1 };
-              };
-            message;
-            is_suppressed = false;
-          }
+    let log_errpy_error ~error_string =
+      Statistics.errpy_call
+        ~flush:true
+        ~name:"error"
+        ~timer
+        ~integers:[]
+        ~normals:["raw_code", raw_code; "error", error_string]
+        ()
+    in
+    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
+    match PyreErrpyParser.parse_module raw_code with
+    | Ok statements ->
+        log_errpy_ok ~recovered_count:0;
+        Success (create_source ~typecheck_flags ~module_path statements)
+    | Error parserError -> (
+        match parserError with
+        | Recoverable recoverable ->
+            log_errpy_ok ~recovered_count:(List.length recoverable.errors);
+            Success (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
+        | Unrecoverable error_string ->
+            log_errpy_error ~error_string;
+            create_parse_result
+              ~configuration
+              ~typecheck_flags
+              ~line:1
+              ~column:1
+              ~end_line:1
+              ~end_column:1
+              ~message:error_string
+              ())
 
 
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let configuration = EnvironmentControls.configuration controls in
-    let parse =
+    let parse_raw_code =
       match configuration with
-      | { use_errpy_parser = false; _ } -> parse_source_with_cpython
-      | _ -> parse_source_with_errpy
+      | { use_errpy_parser = false; _ } -> parse_raw_code_with_cpython
+      | _ -> parse_raw_code_with_errpy
     in
-    match parse ~configuration ~module_tracker module_path with
+    let parse_result =
+      match ModuleTracker.ReadOnly.get_raw_code module_tracker module_path with
+      | Ok raw_code -> parse_raw_code ~configuration module_path raw_code
+      | Error message ->
+          Error
+            {
+              location =
+                {
+                  Location.start = { Location.line = 1; column = 1 };
+                  stop = { Location.line = 1; column = 1 };
+                };
+              message;
+              is_suppressed = false;
+            }
+    in
+    match parse_result with
     | Success source ->
         let source =
           let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
