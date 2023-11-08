@@ -208,65 +208,56 @@ module UpstreamAnalysis = struct
             }
 end
 
-let wildcard_exports_of ({ Source.module_path = { ModulePath.is_stub; _ }; _ } as source) =
-  let open Expression in
-  let open UnannotatedGlobal in
-  let extract_dunder_all = function
-    | {
-        Collector.Result.name = "__all__";
-        unannotated_global =
-          SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
-      } ->
-        let to_identifier = function
-          | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
-              Some name
-          | _ -> None
+module DownstreamAnalysis = struct
+  module Queries = struct
+    type t = { get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option }
+  end
+
+  let wildcard_exports_of ({ Source.module_path = { ModulePath.is_stub; _ }; _ } as source) =
+    let open Expression in
+    let open UnannotatedGlobal in
+    let extract_dunder_all = function
+      | {
+          Collector.Result.name = "__all__";
+          unannotated_global =
+            SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
+        } ->
+          let to_identifier = function
+            | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->
+                Some name
+            | _ -> None
+          in
+          Some (List.filter_map ~f:to_identifier names)
+      | _ -> None
+    in
+    let unannotated_globals = Collector.from_source source in
+    match List.find_map unannotated_globals ~f:extract_dunder_all with
+    | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
+    | _ ->
+        let unannotated_globals =
+          (* Stubs have a slightly different rule with re-export *)
+          let filter_unaliased_import = function
+            | {
+                Collector.Result.unannotated_global =
+                  Imported
+                    ( ImportEntry.Module { implicit_alias; _ }
+                    | ImportEntry.Name { implicit_alias; _ } );
+                _;
+              } ->
+                not implicit_alias
+            | _ -> true
+          in
+          if is_stub then
+            List.filter unannotated_globals ~f:filter_unaliased_import
+          else
+            unannotated_globals
         in
-        Some (List.filter_map ~f:to_identifier names)
-    | _ -> None
-  in
-  let unannotated_globals = Collector.from_source source in
-  match List.find_map unannotated_globals ~f:extract_dunder_all with
-  | Some names -> names |> List.dedup_and_sort ~compare:Identifier.compare
-  | _ ->
-      let unannotated_globals =
-        (* Stubs have a slightly different rule with re-export *)
-        let filter_unaliased_import = function
-          | {
-              Collector.Result.unannotated_global =
-                Imported
-                  (ImportEntry.Module { implicit_alias; _ } | ImportEntry.Name { implicit_alias; _ });
-              _;
-            } ->
-              not implicit_alias
-          | _ -> true
-        in
-        if is_stub then
-          List.filter unannotated_globals ~f:filter_unaliased_import
-        else
-          unannotated_globals
-      in
-      List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
-      |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
-      |> List.dedup_and_sort ~compare:Identifier.compare
+        List.map unannotated_globals ~f:(fun { Collector.Result.name; _ } -> name)
+        |> List.filter ~f:(fun name -> not (String.is_prefix name ~prefix:"_"))
+        |> List.dedup_and_sort ~compare:Identifier.compare
 
 
-module ReadOnly = struct
-  type t = {
-    module_tracker: ModuleTracker.ReadOnly.t;
-    get_raw_source:
-      ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-      Reference.t ->
-      (Source.t, ParserError.t) Result.t option;
-  }
-
-  let module_tracker { module_tracker; _ } = module_tracker
-
-  let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
-
-  let get_raw_source { get_raw_source; _ } = get_raw_source
-
-  let expand_wildcard_imports ?dependency environment source =
+  let expand_wildcard_imports Queries.{ get_raw_source; _ } source =
     let open Statement in
     let module Transform = Transform.MakeStatementTransformer (struct
       include Transform.Identity
@@ -299,7 +290,7 @@ module ReadOnly = struct
                 match Hash_set.strict_add visited_modules qualifier with
                 | Error _ -> ()
                 | Ok () -> (
-                    match get_raw_source environment ?dependency qualifier with
+                    match get_raw_source qualifier with
                     | None
                     | Some (Result.Error _) ->
                         ()
@@ -343,17 +334,17 @@ module ReadOnly = struct
     Transform.transform () source |> Transform.source
 
 
-  let get_processed_source environment ?dependency qualifier =
+  let get_processed_source (Queries.{ get_raw_source; _ } as queries) qualifier =
     let preprocessing = Preprocessing.preprocess_phase1 in
     (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No
        need to explicitly record the dependency. *)
-    get_raw_source environment ?dependency:None qualifier
+    get_raw_source qualifier
     >>| function
     | Result.Ok source ->
-        expand_wildcard_imports ?dependency environment source
+        expand_wildcard_imports queries source
         |> preprocessing
         |> DecoratorPreprocessing.preprocess_source ~get_source:(fun qualifier ->
-               get_raw_source ?dependency environment qualifier >>= Result.ok)
+               get_raw_source qualifier >>= Result.ok)
     | Result.Error
         {
           ParserError.module_path =
@@ -365,6 +356,35 @@ module ReadOnly = struct
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
         UpstreamAnalysis.create_source ~typecheck_flags ~module_path statements |> preprocessing
+end
+
+module ReadOnly = struct
+  type t = {
+    module_tracker: ModuleTracker.ReadOnly.t;
+    get_raw_source:
+      ?dependency:SharedMemoryKeys.DependencyKey.registered ->
+      Reference.t ->
+      (Source.t, ParserError.t) Result.t option;
+  }
+
+  let module_tracker { module_tracker; _ } = module_tracker
+
+  let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
+
+  let get_raw_source { get_raw_source; _ } = get_raw_source
+
+  let get_processed_source environment ?dependency qualifier =
+    (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
+       `update`. No need to explicitly record the dependency. But we do need to record all other
+       modules used *)
+    let get_raw_source_and_maybe_track qualifier_to_load =
+      let maybe_dependency =
+        if Reference.equal qualifier_to_load qualifier then None else dependency
+      in
+      get_raw_source environment ?dependency:maybe_dependency qualifier_to_load
+    in
+    let queries = DownstreamAnalysis.Queries.{ get_raw_source = get_raw_source_and_maybe_track } in
+    DownstreamAnalysis.get_processed_source queries qualifier
 end
 
 module UpdateResult = struct
