@@ -38,7 +38,7 @@ module ParserError = struct
   [@@deriving sexp, compare, hash]
 end
 
-module UpstreamAnalysis = struct
+module IncomingDataComputation = struct
   module Queries = struct
     type t = { get_raw_code: ModulePath.t -> (string, string) Result.t }
   end
@@ -208,7 +208,7 @@ module UpstreamAnalysis = struct
             }
 end
 
-module DownstreamAnalysis = struct
+module OutgoingDataComputation = struct
   module Queries = struct
     type t = { get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option }
   end
@@ -355,7 +355,8 @@ module DownstreamAnalysis = struct
         let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
-        UpstreamAnalysis.create_source ~typecheck_flags ~module_path statements |> preprocessing
+        IncomingDataComputation.create_source ~typecheck_flags ~module_path statements
+        |> preprocessing
 end
 
 module ReadOnly = struct
@@ -383,8 +384,10 @@ module ReadOnly = struct
       in
       get_raw_source environment ?dependency:maybe_dependency qualifier_to_load
     in
-    let queries = DownstreamAnalysis.Queries.{ get_raw_source = get_raw_source_and_maybe_track } in
-    DownstreamAnalysis.get_processed_source queries qualifier
+    let queries =
+      OutgoingDataComputation.Queries.{ get_raw_source = get_raw_source_and_maybe_track }
+    in
+    OutgoingDataComputation.get_processed_source queries qualifier
 end
 
 module UpdateResult = struct
@@ -452,9 +455,9 @@ module FromReadOnlyUpstream = struct
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let get_raw_code = ModuleTracker.ReadOnly.get_raw_code module_tracker in
     match
-      UpstreamAnalysis.load_and_parse
+      IncomingDataComputation.load_and_parse
         ~controls
-        UpstreamAnalysis.Queries.{ get_raw_code }
+        IncomingDataComputation.Queries.{ get_raw_code }
         module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source

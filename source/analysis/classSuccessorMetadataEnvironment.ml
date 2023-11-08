@@ -36,7 +36,7 @@ type class_metadata = {
 }
 [@@deriving compare, show]
 
-module UpstreamAnalysis = struct
+module IncomingDataComputation = struct
   module Queries = struct
     type t = {
       get_class_summary: string -> ClassSummary.t Node.t option;
@@ -90,7 +90,7 @@ module UpstreamAnalysis = struct
     get_class_summary class_name >>| add
 end
 
-module DownstreamAnalysis = struct
+module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
       get_class_hierarchy: unit -> (module ClassHierarchy.Handler);
@@ -114,11 +114,14 @@ module DownstreamAnalysis = struct
     | _, _ -> None
 
 
-  let is_transitive_successor (Queries.{ get_class_hierarchy; _ } as queries) ~placeholder_subclass_extends_all ~target source =
+  let is_transitive_successor
+      (Queries.{ get_class_hierarchy; _ } as queries)
+      ~placeholder_subclass_extends_all
+      ~target
+      source
+    =
     let class_hierarchy = get_class_hierarchy () in
-    let extends_placeholder_stub =
-      ClassHierarchy.extends_placeholder_stub class_hierarchy
-    in
+    let extends_placeholder_stub = ClassHierarchy.extends_placeholder_stub class_hierarchy in
     let counts_as_extends_target current =
       [%compare.equal: Type.Primitive.t] current target
       || (placeholder_subclass_extends_all && extends_placeholder_stub current)
@@ -159,19 +162,20 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
       |> AliasEnvironment.ReadOnly.unannotated_global_environment
     in
     let upstream =
-      UpstreamAnalysis.Queries.
+      IncomingDataComputation.Queries.
         {
           get_class_summary =
             UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
               ?dependency
               unannotated_global_environment;
-          get_class_hierarchy = fun () ->
-            ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-              class_hierarchy_environment
-              ?dependency;
+          get_class_hierarchy =
+            (fun () ->
+              ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+                class_hierarchy_environment
+                ?dependency);
         }
     in
-    UpstreamAnalysis.produce_class_metadata upstream class_name
+    IncomingDataComputation.produce_class_metadata upstream class_name
 
 
   let filter_upstream_dependency = function
@@ -212,20 +216,20 @@ module ReadOnly = struct
         (class_hierarchy_environment read_only)
     in
     f
-      DownstreamAnalysis.Queries.
+      OutgoingDataComputation.Queries.
         { get_class_metadata = get_class_metadata ?dependency read_only; get_class_hierarchy }
 
 
   let successors read_only ?dependency =
-    from_pure_logic ?dependency read_only DownstreamAnalysis.successors
+    from_pure_logic ?dependency read_only OutgoingDataComputation.successors
 
 
   let is_transitive_successor read_only ?dependency =
-    from_pure_logic ?dependency read_only DownstreamAnalysis.is_transitive_successor
+    from_pure_logic ?dependency read_only OutgoingDataComputation.is_transitive_successor
 
 
   let least_upper_bound read_only ?dependency =
-    from_pure_logic ?dependency read_only DownstreamAnalysis.least_upper_bound
+    from_pure_logic ?dependency read_only OutgoingDataComputation.least_upper_bound
 end
 
 module MetadataReadOnly = ReadOnly
