@@ -80,7 +80,7 @@ let test_get_type_errors_request context =
   let assert_type_errors ~path client =
     ScratchProject.ClientConnection.assert_response
       client
-      ~request:Request.(Query (Query.GetTypeErrors { client_id; path }))
+      ~request:Request.(Query (Query.GetTypeErrors { client_id; path = None; paths = [path] }))
       ~expected:(Response.TypeErrors { errors = [expected_error] })
   in
   ScratchProject.test_server_with
@@ -92,14 +92,20 @@ let test_get_type_errors_request context =
         open_file ~client_id ~path:(PyrePath.absolute test_path);
         assert_type_errors ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
-          ~request:Request.(Query (Query.GetTypeErrors { client_id; path = "/doesnotexist.py" }))
+          ~request:
+            Request.(
+              Query (Query.GetTypeErrors { client_id; path = None; paths = ["/doesnotexist.py"] }))
           ~kind:"FileNotOpened";
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
               Query
                 (Query.GetTypeErrors
-                   { client_id = "doesnotexist"; path = PyrePath.absolute test_path }))
+                   {
+                     client_id = "doesnotexist";
+                     path = None;
+                     paths = [PyrePath.absolute test_path];
+                   }))
           ~kind:"ClientNotRegistered";
         close_file ~client_id ~path:(PyrePath.absolute test_path);
         dispose_client ~client_id;
@@ -248,7 +254,10 @@ let test_file_update_request context =
         register_client ~client_id;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id; path = None; paths = [PyrePath.absolute test_path] }))
           ~kind:"FileNotOpened";
         open_file ~client_id ~path:(PyrePath.absolute test_path);
         assert_type_error_count_for_path ~path:(PyrePath.absolute test_path) ~client_id ~expected:1;
@@ -264,12 +273,18 @@ let test_file_update_request context =
           ~expected:Response.Ok;
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id; path = None; paths = [PyrePath.absolute test_path] }))
           ~kind:"ModuleNotTracked";
         close_file ~client_id ~path:(PyrePath.absolute test_path);
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id; path = None; paths = [PyrePath.absolute test_path] }))
           ~kind:"FileNotOpened";
         (fun _ ->
           File.create test2_path ~content:"reveal_type(43)\nreveal_type(44)" |> File.write;
@@ -657,7 +672,10 @@ let test_watchman_integration context =
           Lwt_mvar.put watchman_mailbox (watchman_update_response ["test.py"]));
         ScratchProject.ClientConnection.assert_error_response
           ~request:
-            Request.(Query (Query.GetTypeErrors { client_id; path = PyrePath.absolute test_path }))
+            Request.(
+              Query
+                (Query.GetTypeErrors
+                   { client_id; path = None; paths = [PyrePath.absolute test_path] }))
           ~kind:"ModuleNotTracked";
         close_file ~client_id ~path:(PyrePath.absolute test_path);
         dispose_client ~client_id;

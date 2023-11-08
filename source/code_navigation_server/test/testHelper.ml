@@ -49,7 +49,7 @@ let assert_type_error_count ~client_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request
       client
-      Request.(Query (Query.GetTypeErrors { path; client_id }))
+      Request.(Query (Query.GetTypeErrors { path = Some path; paths = [path]; client_id }))
   in
   match Yojson.Safe.from_string raw_response with
   | `List [`String "TypeErrors"; `Assoc [("errors", `List errors)]] ->

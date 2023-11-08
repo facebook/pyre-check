@@ -89,12 +89,16 @@ let get_type_errors_in_overlay ~overlay ~build_system path =
             ~module_tracker)
 
 
-let handle_get_type_errors ~path ~client_id { State.environment; build_system; client_states; _ } =
+let handle_get_type_errors ~paths ~client_id { State.environment; build_system; client_states; _ } =
   let open Result in
-  get_overlay_id ~path ~client_id client_states
-  >>= fun overlay_id ->
-  let overlay = get_overlay ~environment overlay_id in
-  get_type_errors_in_overlay ~overlay ~build_system path
+  let get_type_errors_for_path type_error_result path =
+    get_overlay_id ~path ~client_id client_states
+    >>= fun overlay_id ->
+    let overlay = get_overlay ~environment overlay_id in
+    get_type_errors_in_overlay ~overlay ~build_system path
+    >>| fun type_errors -> type_errors @ type_error_result
+  in
+  List.fold_result ~init:[] ~f:get_type_errors_for_path paths
   >>| fun type_errors -> Response.TypeErrors { errors = type_errors }
 
 
@@ -509,9 +513,10 @@ let handle_query
         _;
       }
   = function
-  | Request.Query.GetTypeErrors { path; client_id } ->
+  | Request.Query.GetTypeErrors { path; paths; client_id } ->
       let f state =
-        let response = handle_get_type_errors ~path ~client_id state |> response_from_result in
+        let paths = Option.value_map ~default:paths ~f:(fun path -> [path]) path in
+        let response = handle_get_type_errors ~paths ~client_id state |> response_from_result in
         Lwt.return response
       in
       Server.ExclusiveLock.read state ~f

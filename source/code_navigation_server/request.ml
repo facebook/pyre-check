@@ -57,8 +57,10 @@ end
 
 module Query = struct
   type t =
+    (* TODO(T165048078): remove path once API change is ready *)
     | GetTypeErrors of {
-        path: string;
+        paths: (string list[@default []]);
+        path: (string option[@default None]);
         client_id: string;
       }
     | Hover of {
