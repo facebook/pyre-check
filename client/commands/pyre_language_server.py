@@ -290,9 +290,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "project_identifier"
             ] = self.server_state.server_options.project_identifier
             # TODO:(T165048078): remove this if we decide against pursuing global lazy type check
-            parameters[
-                "type_errors_availability"
-            ] = self.get_language_server_features().type_errors.is_enabled()
+            parameters["enabled_features"] = {
+                "type_errors_enabled": self.get_language_server_features().type_errors.is_enabled()
+            }
             await lsp.write_json_rpc_ignore_connection_error(
                 self.output_channel,
                 json_rpc.Request(
