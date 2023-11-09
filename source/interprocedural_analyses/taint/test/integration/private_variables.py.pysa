@@ -1,0 +1,32 @@
+def _test_sink(arg: TaintSink[Test, Via[special_sink]]): ...
+def _test_source() -> TaintSource[Test, Via[special_source]]: ...
+
+private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled: TaintSource[Test]
+private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled: TaintSink[Test]
+
+# TODO(T169448194): Support models on private attributes
+#private_variables.PrivateAttributeSourceModels.__model_unmangled: TaintSource[Test]
+#private_variables.PrivateAttributeSinkModels.__model_unmangled: TaintSink[Test]
+
+ModelQuery(
+  name = "get_private_attribute_sources",
+  find = "attributes",
+  where = [
+    name.matches(".*model_query.*"),
+    cls.name.equals("PrivateAttributeSourceModels"),
+  ],
+  model = [
+    AttributeModel(TaintSource[Test])
+  ]
+)
+ModelQuery(
+  name = "get_private_attribute_sinks",
+  find = "attributes",
+  where = [
+    name.matches(".*model_query.*"),
+    cls.name.equals("PrivateAttributeSinkModels"),
+  ],
+  model = [
+    AttributeModel(TaintSink[Test])
+  ]
+)
