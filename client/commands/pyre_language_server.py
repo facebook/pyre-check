@@ -192,7 +192,7 @@ class PyreLanguageServerApi(abc.ABC):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> Optional[Exception]:
+    ) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -201,7 +201,7 @@ class PyreLanguageServerApi(abc.ABC):
         parameters: lsp.CompletionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> Optional[Exception]:
+    ) -> None:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -745,7 +745,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> Optional[Exception]:
+    ) -> None:
         document_path: Optional[
             Path
         ] = parameters.text_document.document_uri().to_file_path()
@@ -755,7 +755,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
         document_path = document_path.resolve()
         if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
+            return await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
                     id=request_id,
@@ -763,7 +763,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
-            return None
         daemon_status_before = self.server_state.status_tracker.get_status()
         shadow_mode = self.get_language_server_features().definition.is_shadow()
         # In shadow mode, we need to return an empty response immediately
@@ -785,11 +784,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         if isinstance(result, DaemonQueryFailure):
             error_message = result.error_message
             output_result = []
-            error_source = result.error_source
         else:
             error_message = None
             output_result = result
-            error_source = None
         # Unless we are in shadow mode, we send the response as output
         if not shadow_mode:
             await lsp.write_json_rpc(
@@ -839,14 +836,12 @@ class PyreLanguageServer(PyreLanguageServerApi):
             activity_key,
         )
 
-        return error_source
-
     async def process_completion_request(
         self,
         parameters: lsp.CompletionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
-    ) -> Optional[Exception]:
+    ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
         if document_path is None:
             raise json_rpc.InvalidRequestError(
@@ -855,7 +850,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         document_path = document_path.resolve()
 
         if document_path not in self.server_state.opened_documents:
-            await lsp.write_json_rpc(
+            return await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
                     id=request_id,
@@ -863,7 +858,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=[],
                 ),
             )
-            return None
         daemon_status_before = self.server_state.status_tracker.get_status()
         completion_timer = timer.Timer()
 
@@ -881,10 +875,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 )
             )
             error_message = result.error_message
-            error_source = result.error_source
             result = []
-        else:
-            error_source = None
 
         raw_result = [completion_item.to_dict() for completion_item in result]
 
@@ -915,8 +906,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
             },
             activity_key,
         )
-
-        return error_source
 
     async def process_document_symbols_request(
         self,
@@ -1425,58 +1414,42 @@ class PyreLanguageServerDispatcher:
         await _wait_for_exit(self.input_channel, self.output_channel)
         return commands.ExitCode.SUCCESS
 
-    async def _restart_if_needed(
-        self, error_source: Optional[Exception] = None
-    ) -> None:
+    async def _try_restart_pyre_daemon(self) -> None:
         if (
             self.server_state.consecutive_start_failure
-            >= CONSECUTIVE_START_ATTEMPT_THRESHOLD
+            < CONSECUTIVE_START_ATTEMPT_THRESHOLD
         ):
+            await self.daemon_manager.ensure_task_running()
+        else:
             LOG.info(
                 "Not restarting Pyre since failed consecutive start attempt limit"
                 " has been reached."
             )
-            return
-
-        if isinstance(
-            error_source,
-            (
-                connections.ConnectionFailure,
-                asyncio.IncompleteReadError,
-                ConnectionError,
-            ),
-        ):  # do we think the daemon is probably down at this point?
-            # Terminate any existing daemon processes before starting a new one
-            LOG.info("Forcing pyre daemon restart...")
-            await self.daemon_manager.ensure_task_stop()  # make sure it's down
-
-        # restart if needed
-        if not self.daemon_manager.is_task_running():
-            # Just check to ensure that the daemon is running and restart if needed
-            await self.daemon_manager.ensure_task_running()
 
     async def dispatch_nonblocking_request(self, request: json_rpc.Request) -> None:
         if request.method == "exit" or request.method == "shutdown":
             raise Exception("Exit and shutdown requests should be blocking")
         elif request.method == "textDocument/definition":
-            error_source = await self.api.process_definition_request(
+            await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,
                 request.activity_key,
             )
-            await self._restart_if_needed(error_source)
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/completion":
             LOG.debug("Received 'textDocument/completion' request.")
-            error_source = await self.api.process_completion_request(
+            await self.api.process_completion_request(
                 lsp.CompletionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,
                 request.activity_key,
             )
-            await self._restart_if_needed(error_source)
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didOpen":
             await self.api.process_open_request(
                 lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
@@ -1484,14 +1457,16 @@ class PyreLanguageServerDispatcher:
                 ),
                 request.activity_key,
             )
-            await self._restart_if_needed()
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didChange":
             await self.api.process_did_change_request(
                 lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 )
             )
-            await self._restart_if_needed()
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/didClose":
             await self.api.process_close_request(
                 lsp.DidCloseTextDocumentParameters.from_json_rpc_parameters(
@@ -1505,7 +1480,8 @@ class PyreLanguageServerDispatcher:
                 ),
                 request.activity_key,
             )
-            await self._restart_if_needed()
+            if not self.daemon_manager.is_task_running():
+                await self._try_restart_pyre_daemon()
         elif request.method == "textDocument/hover":
             await self.api.process_hover_request(
                 lsp.HoverParameters.from_json_rpc_parameters(

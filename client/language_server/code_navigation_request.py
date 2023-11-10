@@ -78,7 +78,6 @@ class TypeErrorsRequest:
 @dataclasses.dataclass(frozen=True)
 class ErrorResponse:
     message: str
-    error_source: Optional[Exception] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -312,9 +311,7 @@ async def async_handle_hover_request(
         socket_path, raw_request
     )
     if isinstance(response, daemon_connection.DaemonConnectionFailure):
-        return ErrorResponse(
-            message=response.error_message, error_source=response.error_source
-        )
+        return ErrorResponse(message=response.error_message)
     response = parse_raw_response(
         response, expected_response_kind="Hover", response_type=HoverResponse
     )
@@ -332,9 +329,7 @@ async def async_handle_definition_request(
         socket_path, raw_request
     )
     if isinstance(response, daemon_connection.DaemonConnectionFailure):
-        return ErrorResponse(
-            message=response.error_message, error_source=response.error_source
-        )
+        return ErrorResponse(message=response.error_message)
     return parse_raw_response(
         response,
         expected_response_kind="LocationOfDefinition",
@@ -351,9 +346,7 @@ async def async_handle_type_errors_request(
         socket_path, raw_request
     )
     if isinstance(response, daemon_connection.DaemonConnectionFailure):
-        return ErrorResponse(
-            message=response.error_message, error_source=response.error_source
-        )
+        return ErrorResponse(message=response.error_message)
     return parse_raw_response(
         response, expected_response_kind="TypeErrors", response_type=TypeErrorsResponse
     )
@@ -368,9 +361,7 @@ async def async_handle_completion_request(
         socket_path, raw_request
     )
     if isinstance(response, daemon_connection.DaemonConnectionFailure):
-        return ErrorResponse(
-            message=response.error_message, error_source=response.error_source
-        )
+        return ErrorResponse(message=response.error_message)
     return parse_raw_response(
         response,
         expected_response_kind="Completion",

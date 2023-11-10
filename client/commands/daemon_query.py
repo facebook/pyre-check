@@ -44,7 +44,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 @dataclasses.dataclass(frozen=True)
 class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
     error_message: str
-    error_source: Optional[Exception] = None
 
 
 def execute_query(socket_path: Path, query_text: str) -> Response:
@@ -70,8 +69,7 @@ async def attempt_async_query(
     )
     if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
         return DaemonQueryFailure(
-            error_message=f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})",
-            error_source=response_text.error_source,
+            f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})"
         )
     try:
         return Response.parse(response_text)
@@ -138,8 +136,7 @@ async def attempt_async_overlay_type_errors(
     )
     if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
         return DaemonQueryFailure(
-            error_message=f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})",
-            error_source=response_text.error_source,
+            f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})"
         )
     try:
         return incremental.parse_type_error_response(response_text).errors
