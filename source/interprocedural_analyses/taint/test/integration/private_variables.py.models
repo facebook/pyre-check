@@ -658,6 +658,84 @@
     "callable": "private_variables.test_private_attribute_sink_models",
     "callable_line": 132,
     "code": 5002,
+    "line": 136,
+    "start": 53,
+    "end": 67,
+    "filename": "private_variables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "private_variables.py",
+              "line": 136,
+              "start": 53,
+              "end": 67
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "private_variables.py",
+                "line": 136,
+                "start": 53,
+                "end": 67
+              },
+              "resolves_to": [
+                "private_variables.PrivateAttributeSinkModels.set_model_unmangled"
+              ],
+              "port": "formal(value)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
+      "index": 0,
+      "parameter": "formal(value)"
+    },
+    "master_handle": "private_variables.test_private_attribute_sink_models:5002:0:Call|private_variables.PrivateAttributeSinkModels.set_model_unmangled|0|formal(value):a76f9f6a184d57961e97a9b5d51a8c9e"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "private_variables.test_private_attribute_sink_models",
+    "callable_line": 132,
+    "code": 5002,
     "line": 138,
     "start": 49,
     "end": 63,
@@ -882,6 +960,82 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "private_variables.test_private_attribute_source_models:5002:0:Call|_test_sink|2|formal(arg):db185230e24788978ba1dc76019c4bdc"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "private_variables.test_private_attribute_source_models",
+    "callable_line": 106,
+    "code": 5002,
+    "line": 110,
+    "start": 15,
+    "end": 67,
+    "filename": "private_variables.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "private_variables.py",
+                "line": 110,
+                "start": 15,
+                "end": 67
+              },
+              "resolves_to": [
+                "private_variables.PrivateAttributeSourceModels.get_model_unmangled"
+              ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "private_variables.py",
+              "line": 110,
+              "start": 15,
+              "end": 67
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 1,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "private_variables.test_private_attribute_source_models:5002:0:Call|_test_sink|1|formal(arg):c3611be485a9a8bbba942d8faf6fa6fa"
   }
 }
 {
@@ -1221,6 +1375,18 @@
 {
   "kind": "model",
   "data": {
+    "callable": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
+    "sinks": [
+      {
+        "port": "formal($global)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled}",
     "sources": [
       {
@@ -1234,6 +1400,18 @@
   "kind": "model",
   "data": {
     "callable": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_query}",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
     "sources": [
       {
         "port": "result",
@@ -1404,6 +1582,40 @@
 {
   "kind": "model",
   "data": {
+    "callable": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
+    "sinks": [
+      {
+        "port": "formal(value)",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_unmangled}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "private_variables.py",
+              "line": 126,
+              "start": 8,
+              "end": 30
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.__init__",
     "tito": [
       {
@@ -1512,6 +1724,34 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false,
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "Obj{private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_unmangled}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "private_variables.py",
+              "line": 100,
+              "start": 15,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ],
     "tito": [
       {
         "port": "formal(self)[_PrivateAttributeSourceModels__model_unmangled]",

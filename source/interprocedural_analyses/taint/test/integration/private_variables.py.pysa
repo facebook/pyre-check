@@ -4,9 +4,8 @@ def _test_source() -> TaintSource[Test, Via[special_source]]: ...
 private_variables.PrivateAttributeSourceModels._PrivateAttributeSourceModels__model_mangled: TaintSource[Test]
 private_variables.PrivateAttributeSinkModels._PrivateAttributeSinkModels__model_mangled: TaintSink[Test]
 
-# TODO(T169448194): Support models on private attributes
-#private_variables.PrivateAttributeSourceModels.__model_unmangled: TaintSource[Test]
-#private_variables.PrivateAttributeSinkModels.__model_unmangled: TaintSink[Test]
+private_variables.PrivateAttributeSourceModels.__model_unmangled: TaintSource[Test]
+private_variables.PrivateAttributeSinkModels.__model_unmangled: TaintSink[Test]
 
 ModelQuery(
   name = "get_private_attribute_sources",

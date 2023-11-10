@@ -3198,6 +3198,20 @@ module ModelQueryArguments = struct
     }
 end
 
+(* Expand private variables, which are class attributes starting with two underscores and have at
+   most one trailing underscore. *)
+let mangle_private_variable name =
+  match List.rev (Reference.as_list name) with
+  | attribute_name :: class_name :: rest
+    when String.is_prefix ~prefix:"__" attribute_name
+         && (not (String.is_suffix ~suffix:"__" attribute_name))
+         && not (String.equal class_name "__class__") ->
+      Format.sprintf "_%s%s" class_name attribute_name :: class_name :: rest
+      |> List.rev
+      |> Reference.create_from_list
+  | _ -> name
+
+
 let rec parse_statement
     ~resolution
     ~path
@@ -3410,7 +3424,7 @@ let rec parse_statement
         || String.is_prefix annotation_string ~prefix:"Sanitize[TaintSource"
         || String.is_prefix annotation_string ~prefix:"Sanitize[TaintSink"
       then
-        let name = name_to_reference_exn name in
+        let name = name |> name_to_reference_exn |> mangle_private_variable in
         let arguments =
           match annotation.Node.value with
           | Expression.Call { arguments; _ } -> Some arguments
@@ -3442,7 +3456,7 @@ let rec parse_statement
         || String.is_substring annotation_string ~substring:"ViaTypeOf["
         || String.is_substring annotation_string ~substring:"ViaAttributeName["
       then
-        let name = name_to_reference_exn name in
+        let name = name |> name_to_reference_exn |> mangle_private_variable in
         parse_annotations
           ~path
           ~location
