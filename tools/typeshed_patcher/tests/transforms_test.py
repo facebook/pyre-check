@@ -343,3 +343,105 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
         )
+
+    def test_replace__ann_assign(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                x: int
+                y: str
+                z: float
+                """
+            ),
+            transform=transforms.ReplaceTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="y",
+                content=textwrap.dedent(
+                    """
+                    w: str
+                    """
+                ),
+            ),
+            expected_code=(
+                """
+                x: int
+                w: str
+                z: float
+                """
+            ),
+        )
+
+    def test_replace__function_with_overloads(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                def f(x: int) -> int: ...
+                @overload
+                def g(x: int) -> int: ...
+                @overload
+                def g(x: float) -> float: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+            transform=transforms.ReplaceTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="g",
+                content=textwrap.dedent(
+                    """
+                    T = TypeVar('T')
+                    def g(x: T) -> T: ...
+                    """
+                ),
+            ),
+            expected_code=(
+                """
+                def f(x: int) -> int: ...
+                T = TypeVar('T')
+                def g(x: T) -> T: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+        )
+
+    def test_replace__nested_class(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                class OuterClass0:
+                    class InnerClass1:
+                        x: int
+                class OuterClass1:
+                    class InnerClass0:
+                        x: int
+                    class InnerClass1:
+                        x: int
+                    class InnerClass2:
+                        x: int
+                class OuterClass2:
+                    class InnerClass1:
+                        x: int
+                """
+            ),
+            transform=transforms.ReplaceTransform(
+                parent=patch.QualifiedName.from_string("OuterClass1.InnerClass1"),
+                name="x",
+                content="y: float",
+            ),
+            expected_code=(
+                """
+                class OuterClass0:
+                    class InnerClass1:
+                        x: int
+                class OuterClass1:
+                    class InnerClass0:
+                        x: int
+                    class InnerClass1:
+                        y: float
+                    class InnerClass2:
+                        x: int
+                class OuterClass2:
+                    class InnerClass1:
+                        x: int
+                """
+            ),
+        )

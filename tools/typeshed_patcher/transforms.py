@@ -241,6 +241,38 @@ class DeleteTransform(PatchTransform):
         )
 
 
+class ReplaceTransform(PatchTransform):
+    def __init__(
+        self,
+        parent: patch.QualifiedName,
+        name: str,
+        content: str,
+    ) -> None:
+        def patch_parent_body(
+            existing_body: Sequence[libcst.BaseStatement],
+        ) -> Sequence[libcst.BaseStatement]:
+            statements_to_add = statements_from_content(content)
+            new_body: list[libcst.BaseStatement] = []
+            added_replacements = False
+            for statement in existing_body:
+                if matches_name(name, statement):
+                    if not added_replacements:
+                        added_replacements = True
+                        new_body.extend(statements_to_add)
+                else:
+                    new_body.append(statement)
+            if not added_replacements:
+                raise ValueError(
+                    f"Could not find replacement target {name} in {parent}"
+                )
+            return new_body
+
+        super().__init__(
+            parent=parent,
+            parent_scope_patcher=patch_parent_body,
+        )
+
+
 def run_transform(code: str, transform: PatchTransform) -> str:
     original_module = libcst.parse_module(code)
     transformed_module = transform.transform_module(original_module)
