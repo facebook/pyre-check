@@ -1,4 +1,4 @@
-# Work-in-progress spec for Pyre's patches to typeshed stubs.
+# Work-in -progress spec for Pyre's patches to typeshed stubs.
 #
 # The current patches still live as diff patches in scripts/typeshed-patches,
 # this file is our progress on using a new name-based specification for
@@ -306,6 +306,148 @@ content = '''
 # Define `__str__` and `__repr__` explicitly so pysa can mark them as sources
 def __str__(self) -> str: ...  # noqa: Y029
 def __repr__(self) -> str: ...  # noqa: Y029
+'''
+
+
+# Add additional imports at the top of typing.pyi
+[["stdlib/typing.pyi"]]
+action = "add"
+position = "top"
+content = '''
+from typing_extensions import Self
+from pyre_extensions import ReadOnly
+'''
+
+# Avoid using a type alias for AsyncContextManager
+[["stdlib/typing.pyi"]]
+action = "replace"
+name = "AsyncContextManager"
+content = '''
+
+@runtime_checkable
+class AsyncContextManager(Protocol[_T_co]):
+    async def __aenter__(self) -> _T_co: ...
+    @abstractmethod
+    async def __aexit__(
+        self, __exc_type: Type[BaseException] | None, __exc_value: BaseException | None, __traceback: TracebackType | None
+    ) -> bool | None: ...
+'''
+
+# Make Container protocol read-only only (no overloads)
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Container"
+name = "__contains__"
+content = '''
+@abstractmethod
+def __contains__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+'''
+
+
+# Add read-only overloads for Collection.__getitem__
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Sequence"
+name = "__getitem__"
+content = '''
+@overload
+@abstractmethod
+def __getitem__(self, index: int) -> _T_co: ...
+@overload
+@abstractmethod
+def __getitem__(self, index: slice) -> Sequence[_T_co]: ...
+@overload
+@abstractmethod
+def __getitem__(self: ReadOnly[Self], __i: SupportsIndex) -> ReadOnly[_T_co]: ...
+@overload
+@abstractmethod
+def __getitem__(self: ReadOnly[Self], __s: slice) -> ReadOnly[Self]: ...
+'''
+
+# Add read-only overloads for Collection.__iter__
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Sequence"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[_T_co]: ...
+@overload
+def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_T_co]]: ...
+'''
+
+# Add read-only overloads for ItemsView.__iter__
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "ItemsView"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[tuple[_KT_co, _VT_co]]: ...
+@overload
+def __iter__(self: ReadOnly[Self]) -> Iterator[tuple[ReadOnly[_KT_co], ReadOnly[_VT_co]]]: ...
+'''
+
+# Add read-only overloads for KeysView.__iter__
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "KeysView"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[_KT_co]: ...
+@overload
+def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_KT_co]]: ...
+'''
+
+# Add read-only overloads for ValuesView.__iter__
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "ValuesView"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[_VT_co]: ...
+@overload
+def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_VT_co]]: ...
+'''
+
+# Add read-only overloads to several Mapping methods, or mark as read-only
+
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Mapping"
+name = "__getitem__"
+content = '''
+@overload
+@abstractmethod
+def __getitem__(self, __key: _KT) -> _VT_co: ...
+@overload
+@abstractmethod
+def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co]: ...
+'''
+
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Mapping"
+name = "get"
+content = '''
+@overload
+def get(self, __key: _KT) -> _VT_co | None: ...
+@overload
+def get(self, __key: _KT, default: _VT_co | _T) -> _VT_co | _T: ...
+@overload
+def get(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co | None]: ...
+@overload
+def get(self: ReadOnly[Self], __key: ReadOnly[_KT], default: ReadOnly[_VT_co | _T]) -> ReadOnly[_VT_co | _T]: ...
+'''
+
+[["stdlib/typing.pyi"]]
+action = "replace"
+parent = "Mapping"
+name = "__contains__"
+content = '''
+def __contains__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
 '''
 
 
