@@ -212,3 +212,134 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
         )
+
+    def test_delete__ann_assign(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                x: int
+                y: str
+                z: float
+                """
+            ),
+            transform=transforms.DeleteTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="y",
+            ),
+            expected_code=(
+                """
+                x: int
+                z: float
+                """
+            ),
+        )
+
+    def test_delete__class(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                class A: pass
+                @classdecorator
+                class B: pass
+                class C: pass
+                """
+            ),
+            transform=transforms.DeleteTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="B",
+            ),
+            expected_code=(
+                """
+                class A: pass
+                class C: pass
+                """
+            ),
+        )
+
+    def test_delete__function(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                def f(x: int) -> int: ...
+                def g(x: int) -> int: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+            transform=transforms.DeleteTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="g",
+            ),
+            expected_code=(
+                """
+                def f(x: int) -> int: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+        )
+
+    def test_delete__overloads(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                def f(x: int) -> int: ...
+                @overload
+                def g(x: int) -> int: ...
+                @overload
+                def g(x: int) -> int: ...
+                def g(object) -> object: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+            transform=transforms.DeleteTransform(
+                parent=patch.QualifiedName.from_string(""),
+                name="g",
+            ),
+            expected_code=(
+                """
+                def f(x: int) -> int: ...
+                def h(x: int) -> int: ...
+                """
+            ),
+        )
+
+    def test_delete__in_nested_class(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                class OuterClass0:
+                    class InnerClass1:
+                        x: int
+                class OuterClass1:
+                    class InnerClass0:
+                        x: int
+                    class InnerClass1:
+                        x: int
+                    class InnerClass2:
+                        x: int
+                class OuterClass2:
+                    class InnerClass1:
+                        x: int
+                """
+            ),
+            transform=transforms.DeleteTransform(
+                parent=patch.QualifiedName.from_string("OuterClass1.InnerClass1"),
+                name="x",
+            ),
+            expected_code=(
+                """
+                class OuterClass0:
+                    class InnerClass1:
+                        x: int
+                class OuterClass1:
+                    class InnerClass0:
+                        x: int
+                    class InnerClass1:
+                        pass
+                    class InnerClass2:
+                        x: int
+                class OuterClass2:
+                    class InnerClass1:
+                        x: int
+                """
+            ),
+        )

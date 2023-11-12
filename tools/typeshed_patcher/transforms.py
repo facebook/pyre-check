@@ -170,6 +170,77 @@ class AddTransform(PatchTransform):
         )
 
 
+def matches_name(
+    name: str,
+    statement: libcst.BaseStatement | libcst.BaseSmallStatement,
+) -> bool:
+    """
+    Given a statement in the parent scope, determine whether it
+    matches the name (used for delete and replace actions).
+
+    Note that we don't match all possible forms - for example
+    currently definitions inside of an if-block will be skipped.
+    As a result it is important that transform classes always
+    verify that they found their target name and raise otherwise,
+    so that we'll be alerted if the code needs to be generalized.
+    """
+    if isinstance(statement, libcst.SimpleStatementLine):
+        if len(statement.body) != 1:
+            raise ValueError(
+                f"Did not expect compound statement line {statement} "
+                "in a stub scope we patch."
+            )
+        return matches_name(name, statement.body[0])
+    if isinstance(statement, libcst.AnnAssign):
+        target = statement.target
+        if isinstance(target, libcst.Name):
+            return target.value == name
+        else:
+            raise ValueError(
+                "Did not expect non-name target {target} "
+                "of AnnAssign in a stub scope we patch."
+            )
+    if isinstance(statement, libcst.FunctionDef):
+        return statement.name.value == name
+    if isinstance(statement, libcst.ClassDef):
+        return statement.name.value == name
+    # Note: we currently don't support a number of more complex
+    # cases, such as patching inside an if block.
+    else:
+        return False
+
+
+class DeleteTransform(PatchTransform):
+    def __init__(
+        self,
+        parent: patch.QualifiedName,
+        name: str,
+    ) -> None:
+        def patch_parent_body(
+            existing_body: Sequence[libcst.BaseStatement],
+        ) -> Sequence[libcst.BaseStatement]:
+            new_body = [
+                statement
+                for statement in existing_body
+                if not matches_name(name, statement)
+            ]
+            # Always make sure we successfully deleted the target. This
+            # might fail if the target has disappeared, or if our
+            # `matches_name` logic needs to be extended.
+            if len(new_body) == len(existing_body):
+                raise ValueError(f"Could not find deletion target {name} in {parent}")
+            # There's an edge case where we delete the entire scope body;
+            # we can deal with this by inserting a pass.
+            if len(new_body) == 0:
+                new_body = [libcst.SimpleStatementLine([libcst.Pass()])]
+            return new_body
+
+        super().__init__(
+            parent=parent,
+            parent_scope_patcher=patch_parent_body,
+        )
+
+
 def run_transform(code: str, transform: PatchTransform) -> str:
     original_module = libcst.parse_module(code)
     transformed_module = transform.transform_module(original_module)
