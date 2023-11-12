@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Sequence
+from typing import Protocol, Sequence
 
 import libcst
 import libcst.codemod
@@ -27,6 +27,14 @@ def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
     return module.body
 
 
+class ParentScopePatcher(Protocol):
+    def __call__(
+        self,
+        existing_body: Sequence[libcst.BaseStatement],
+    ) -> Sequence[libcst.BaseStatement]:
+        ...
+
+
 class PatchTransform(libcst.codemod.ContextAwareTransformer):
 
     CONTEXT_KEY = "PatchTransform"
@@ -38,19 +46,14 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
     def __init__(
         self,
         parent: patch.QualifiedName,
+        parent_scope_patcher: ParentScopePatcher,
     ) -> None:
         super().__init__(libcst.codemod.CodemodContext())
-        # All of the actions take a parent
+        self.parent_scope_patcher = parent_scope_patcher
+        # State to track current scope name and find the parent
         self.parent = parent.to_string()
-        # Tracking visitor state
         self.current_names = []
         self.found_parent = False
-
-    def visit_ClassDef(
-        self,
-        node: libcst.ClassDef,
-    ) -> None:
-        self.current_names.append(node.name.value)
 
     def get_current_name(self) -> str:
         return ".".join(self.current_names)
@@ -70,38 +73,11 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         else:
             return False
 
-
-class AddTransform(PatchTransform):
-
-    statements_to_add: Sequence[libcst.BaseStatement]
-    add_position: patch.AddPosition
-
-    def __init__(
+    def visit_ClassDef(
         self,
-        parent: patch.QualifiedName,
-        content: str,
-        add_position: patch.AddPosition,
+        node: libcst.ClassDef,
     ) -> None:
-        super().__init__(parent=parent)
-        # Data determining what to transform
-        self.statements_to_add = statements_from_content(content)
-        self.add_position = add_position
-
-    def extend_body(
-        self, body: Sequence[libcst.BaseStatement]
-    ) -> Sequence[libcst.BaseStatement]:
-        if self.add_position == patch.AddPosition.TOP_OF_SCOPE:
-            return [
-                *self.statements_to_add,
-                *body,
-            ]
-        elif self.add_position == patch.AddPosition.BOTTOM_OF_SCOPE:
-            return [
-                *body,
-                *self.statements_to_add,
-            ]
-        else:
-            raise RuntimeError(f"Unexpected add_position value {self.add_position}")
+        self.current_names.append(node.name.value)
 
     def transform_parent_class(
         self,
@@ -119,7 +95,7 @@ class AddTransform(PatchTransform):
         outer_body = node.body
         if isinstance(outer_body, libcst.IndentedBlock):
             new_outer_body = outer_body.with_changes(
-                body=self.extend_body(outer_body.body)
+                body=self.parent_scope_patcher(outer_body.body)
             )
         else:
             inner_body_as_base_statements = [
@@ -129,7 +105,7 @@ class AddTransform(PatchTransform):
                 for statement in outer_body.body
             ]
             new_outer_body = libcst.IndentedBlock(
-                body=self.extend_body(inner_body_as_base_statements)
+                body=self.parent_scope_patcher(inner_body_as_base_statements)
             )
         return node.with_changes(body=new_outer_body)
 
@@ -148,7 +124,7 @@ class AddTransform(PatchTransform):
         self,
         node: libcst.Module,
     ) -> libcst.Module:
-        return node.with_changes(body=self.extend_body(node.body))
+        return node.with_changes(body=self.parent_scope_patcher(node.body))
 
     def leave_Module(
         self,
@@ -162,6 +138,36 @@ class AddTransform(PatchTransform):
         if not self.found_parent:
             raise ValueError(f"Did not find any classes matching {self.parent}")
         return out
+
+
+class AddTransform(PatchTransform):
+    def __init__(
+        self,
+        parent: patch.QualifiedName,
+        content: str,
+        add_position: patch.AddPosition,
+    ) -> None:
+        def patch_parent_body(
+            existing_body: Sequence[libcst.BaseStatement],
+        ) -> Sequence[libcst.BaseStatement]:
+            statements_to_add = statements_from_content(content)
+            if add_position == patch.AddPosition.TOP_OF_SCOPE:
+                return [
+                    *statements_to_add,
+                    *existing_body,
+                ]
+            elif add_position == patch.AddPosition.BOTTOM_OF_SCOPE:
+                return [
+                    *existing_body,
+                    *statements_to_add,
+                ]
+            else:
+                raise RuntimeError(f"Unexpected add_position value {add_position}")
+
+        super().__init__(
+            parent=parent,
+            parent_scope_patcher=patch_parent_body,
+        )
 
 
 def run_transform(code: str, transform: PatchTransform) -> str:
