@@ -4,7 +4,10 @@
 # LICENSE file in the root directory of this source tree.
 
 """
-TODO(T132414938) Add a module-level docstring
+Defines an abstract interface representing a typeshed that allows
+us to use different "backings" (e.g. in-memory for tests or raw
+data pulled from github vs a local directory where we have one)
+in most of our patching code.
 """
 
 
