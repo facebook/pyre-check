@@ -7,7 +7,7 @@ import textwrap
 
 import testslide
 
-from .. import patch, transforms
+from .. import patch_specs, transforms
 
 
 class PatchTransformsTest(testslide.TestCase):
@@ -41,14 +41,14 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 content=textwrap.dedent(
                     """
                     from foo import Bar
                     a: Bar
                     """
                 ),
-                add_position=patch.AddPosition.TOP_OF_SCOPE,
+                add_position=patch_specs.AddPosition.TOP_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -67,14 +67,14 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 content=textwrap.dedent(
                     """
                     def f(x: int) -> int: ...
                     y: float
                     """
                 ),
-                add_position=patch.AddPosition.BOTTOM_OF_SCOPE,
+                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -94,14 +94,14 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string("MyClass"),
+                parent=patch_specs.QualifiedName.from_string("MyClass"),
                 content=textwrap.dedent(
                     """
                     a: float
                     def f(self, x: int) -> int: ...
                     """
                 ),
-                add_position=patch.AddPosition.TOP_OF_SCOPE,
+                add_position=patch_specs.AddPosition.TOP_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -122,14 +122,14 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string("MyClass"),
+                parent=patch_specs.QualifiedName.from_string("MyClass"),
                 content=textwrap.dedent(
                     """
                     a: float
                     def f(self, x: int) -> int: ...
                     """
                 ),
-                add_position=patch.AddPosition.BOTTOM_OF_SCOPE,
+                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -151,14 +151,14 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string("MyClass"),
+                parent=patch_specs.QualifiedName.from_string("MyClass"),
                 content=textwrap.dedent(
                     """
                     a: float
                     def f(self, x: int) -> int: ...
                     """
                 ),
-                add_position=patch.AddPosition.BOTTOM_OF_SCOPE,
+                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -189,13 +189,13 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.AddTransform(
-                parent=patch.QualifiedName.from_string("OuterClass1.InnerClass1"),
+                parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
                 content=textwrap.dedent(
                     """
                     def f(self, x: int) -> int: ...
                     """
                 ),
-                add_position=patch.AddPosition.BOTTOM_OF_SCOPE,
+                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -223,7 +223,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.DeleteTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="y",
             ),
             expected_code=(
@@ -245,7 +245,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.DeleteTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="B",
             ),
             expected_code=(
@@ -266,7 +266,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.DeleteTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="g",
             ),
             expected_code=(
@@ -291,7 +291,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.DeleteTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="g",
             ),
             expected_code=(
@@ -322,7 +322,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.DeleteTransform(
-                parent=patch.QualifiedName.from_string("OuterClass1.InnerClass1"),
+                parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
                 name="x",
             ),
             expected_code=(
@@ -354,7 +354,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.ReplaceTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="y",
                 content=textwrap.dedent(
                     """
@@ -384,7 +384,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.ReplaceTransform(
-                parent=patch.QualifiedName.from_string(""),
+                parent=patch_specs.QualifiedName.from_string(""),
                 name="g",
                 content=textwrap.dedent(
                     """
@@ -423,7 +423,7 @@ class PatchTransformsTest(testslide.TestCase):
                 """
             ),
             transform=transforms.ReplaceTransform(
-                parent=patch.QualifiedName.from_string("OuterClass1.InnerClass1"),
+                parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
                 name="x",
                 content="y: float",
             ),

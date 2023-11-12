@@ -9,7 +9,7 @@ from typing import Callable, List, Mapping, TypeVar
 
 import testslide
 
-from ..patch import (
+from ..patch_specs import (
     Action,
     action_from_json,
     AddAction,

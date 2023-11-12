@@ -14,7 +14,7 @@ from typing import Protocol, Sequence
 import libcst
 import libcst.codemod
 
-from . import patch
+from . import patch_specs
 
 
 def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
@@ -45,7 +45,7 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
 
     def __init__(
         self,
-        parent: patch.QualifiedName,
+        parent: patch_specs.QualifiedName,
         parent_scope_patcher: ParentScopePatcher,
     ) -> None:
         super().__init__(libcst.codemod.CodemodContext())
@@ -143,20 +143,20 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
 class AddTransform(PatchTransform):
     def __init__(
         self,
-        parent: patch.QualifiedName,
+        parent: patch_specs.QualifiedName,
         content: str,
-        add_position: patch.AddPosition,
+        add_position: patch_specs.AddPosition,
     ) -> None:
         def patch_parent_body(
             existing_body: Sequence[libcst.BaseStatement],
         ) -> Sequence[libcst.BaseStatement]:
             statements_to_add = statements_from_content(content)
-            if add_position == patch.AddPosition.TOP_OF_SCOPE:
+            if add_position == patch_specs.AddPosition.TOP_OF_SCOPE:
                 return [
                     *statements_to_add,
                     *existing_body,
                 ]
-            elif add_position == patch.AddPosition.BOTTOM_OF_SCOPE:
+            elif add_position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
                 return [
                     *existing_body,
                     *statements_to_add,
@@ -213,7 +213,7 @@ def matches_name(
 class DeleteTransform(PatchTransform):
     def __init__(
         self,
-        parent: patch.QualifiedName,
+        parent: patch_specs.QualifiedName,
         name: str,
     ) -> None:
         def patch_parent_body(
@@ -244,7 +244,7 @@ class DeleteTransform(PatchTransform):
 class ReplaceTransform(PatchTransform):
     def __init__(
         self,
-        parent: patch.QualifiedName,
+        parent: patch_specs.QualifiedName,
         name: str,
         content: str,
     ) -> None:
