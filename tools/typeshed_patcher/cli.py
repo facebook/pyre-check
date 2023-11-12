@@ -14,7 +14,7 @@ import sys
 
 import click
 
-from . import upstream
+from . import patching, upstream
 
 
 @click.group()
@@ -48,6 +48,53 @@ def fetch_upstream(
         target=pathlib.Path(target),
     )
     print(f"Finished writing upstream typeshed to {target}")
+
+
+@pyre_typeshed_patcher.command()
+@click.option(
+    "--source",
+    type=str,
+    required=True,
+    help="Directory of the source (original) typeshed",
+)
+@click.option(
+    "--stub-path",
+    type=str,
+    required=True,
+    help="Relative path of the stub file to patch",
+)
+@click.option(
+    "--patch-specs",
+    type=str,
+    default=None,
+    help="Path to the patch specs toml file",
+)
+@click.option(
+    "--target",
+    type=str,
+    default=None,
+    help="Where to write patch result (default of None just prints the diff)",
+)
+@click.option(
+    "--overwrite/--no-overwrite",
+    type=bool,
+    default=False,
+    help="Overwrite the target if it exists",
+)
+def patch_one_file(
+    source: str,
+    stub_path: str,
+    patch_specs: str,
+    target: str | None,
+    overwrite: bool,
+) -> None:
+    patching.patch_one_file_entrypoint(
+        source=pathlib.Path(source),
+        stub_path=pathlib.Path(stub_path),
+        patch_specs_toml=pathlib.Path(patch_specs),
+        target=pathlib.Path(target) if target else None,
+        overwrite=overwrite,
+    )
 
 
 if __name__ == "__main__":

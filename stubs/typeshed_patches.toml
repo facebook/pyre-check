@@ -1,0 +1,22 @@
+# Work-in-progress spec for Pyre's patches to typeshed stubs.
+#
+# The current patches still live as diff patches in scripts/typeshed-patches,
+# this file is our progress on using a new name-based specification for
+# patches that should be much easier to maintain.
+
+# Strip the @abstractmethod decorator on `Number.__hash__`
+[["stdlib/numbers.pyi"]]
+parent = "Number"
+action = "replace"
+name = "__hash__"
+content = '''
+def __hash__(self) -> int: ...
+'''
+
+
+# The __dataclass_fields__ here causes confusion for Pyre today,
+# possibly due to our existing hardcoded support for dataclasses.
+[["stdlib/_typeshed/__init__.pyi"]]
+action = "replace"
+parent = "DataclassInstance"
+name = "__dataclass_fields__"

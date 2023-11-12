@@ -187,7 +187,7 @@ class PatchedTypeshed(Typeshed):
     def __init__(
         self,
         base: Typeshed,
-        patch_results: Dict[pathlib.Path, Optional[str]],
+        patch_results: Mapping[pathlib.Path, Optional[str]],
     ) -> None:
         self.base = base
         self.updated_files = {
