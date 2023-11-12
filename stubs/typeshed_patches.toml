@@ -308,10 +308,19 @@ def __str__(self) -> str: ...  # noqa: Y029
 def __repr__(self) -> str: ...  # noqa: Y029
 '''
 
+
+# Strip the __call__ method from EnumMeta.  TODO(T77220912): debug the root
+# problem that forced ust to add this patch and remove it.
+[["stdlib/enum.pyi"]]
+action = "delete"
+parent = "EnumMeta"
+name = "__call__"
+
+
 # Strip the @abstractmethod dekeyscorator on `Number.__hash__`
 [["stdlib/numbers.pyi"]]
-parent = "Number"
 action = "replace"
+parent = "Number"
 name = "__hash__"
 content = '''
 def __hash__(self) -> int: ...
