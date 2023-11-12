@@ -159,25 +159,51 @@ def run_action(
         )
 
 
+def run_actions_in_sequence(
+    actions: Iterable[patch_specs.Action],
+    existing_body: Sequence[libcst.BaseStatement],
+    parent: str,
+) -> Sequence[libcst.BaseStatement]:
+    body = existing_body
+    for action in actions:
+        body = run_action(
+            action=action,
+            existing_body=body,
+            parent=parent,
+        )
+    return body
+
+
 class PatchTransform(libcst.codemod.ContextAwareTransformer):
 
     CONTEXT_KEY = "PatchTransform"
 
-    parent: str
+    actions_by_parent: dict[str, list[patch_specs.Action]]
+    processed_parents: set[str]
+
     current_names: list[str]
-    found_parent: bool
 
     def __init__(
         self,
-        parent: patch_specs.QualifiedName,
-        action: patch_specs.Action,
+        actions_by_parent: dict[str, list[patch_specs.Action]],
     ) -> None:
         super().__init__(libcst.codemod.CodemodContext())
-        self.action = action
+        self.actions_by_parent = actions_by_parent
         # State to track current scope name and find the parent
-        self.parent = parent.to_string()
         self.current_names = []
-        self.found_parent = False
+        self.processed_parents = set()
+
+    @staticmethod
+    def from_patches(
+        patches: Iterable[patch_specs.Patch],
+    ) -> PatchTransform:
+        actions_by_parent: dict[str, list[patch_specs.Action]] = {}
+        for patch in patches:
+            parent = patch.parent.to_string()
+            if parent not in actions_by_parent:
+                actions_by_parent[parent] = []
+            actions_by_parent[parent].append(patch.action)
+        return PatchTransform(actions_by_parent=actions_by_parent)
 
     def get_current_name(self) -> str:
         return ".".join(self.current_names)
@@ -186,16 +212,6 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         this_name = self.get_current_name()
         self.current_names.pop()
         return this_name
-
-    def is_parent(self, current_name: str) -> bool:
-        if current_name == self.parent:
-            if self.found_parent:
-                raise ValueError(f"Encountered two classes with name {self.parent}")
-            else:
-                self.found_parent = True
-            return True
-        else:
-            return False
 
     def visit_ClassDef(
         self,
@@ -206,6 +222,8 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
     def transform_parent_class(
         self,
         node: libcst.ClassDef,
+        actions: Iterable[patch_specs.Action],
+        parent: str,
     ) -> libcst.ClassDef:
         """
         Add statements to a class body.
@@ -219,10 +237,10 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         outer_body = node.body
         if isinstance(outer_body, libcst.IndentedBlock):
             new_outer_body = outer_body.with_changes(
-                body=run_action(
-                    action=self.action,
+                body=run_actions_in_sequence(
+                    actions=actions,
                     existing_body=outer_body.body,
-                    parent=self.parent,
+                    parent=parent,
                 ),
             )
         else:
@@ -233,10 +251,10 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
                 for statement in outer_body.body
             ]
             new_outer_body = libcst.IndentedBlock(
-                body=run_action(
-                    action=self.action,
+                body=run_actions_in_sequence(
+                    actions=actions,
                     existing_body=inner_body_as_base_statements,
-                    parent=self.parent,
+                    parent=parent,
                 ),
             )
         return node.with_changes(body=new_outer_body)
@@ -246,49 +264,49 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         original_node: libcst.ClassDef,
         updated_node: libcst.ClassDef,
     ) -> libcst.ClassDef:
-        current_name = self.pop_current_name()
-        if self.is_parent(current_name):
-            return self.transform_parent_class(updated_node)
-        else:
+        parent = self.pop_current_name()
+        if parent not in self.actions_by_parent:
             return updated_node
+        if parent in self.processed_parents:
+            raise ValueError(f"Encountered two classes with name {parent}")
+        self.processed_parents.add(parent)
+        return self.transform_parent_class(
+            updated_node,
+            actions=self.actions_by_parent[parent],
+            parent=parent,
+        )
 
-    def transform_parent_module(
+    def transform_global_scope(
         self,
         node: libcst.Module,
     ) -> libcst.Module:
-        return node.with_changes(
-            body=run_action(
-                action=self.action,
-                existing_body=node.body,
-                parent=self.parent,
+        GLOBAL = ""
+        if GLOBAL in self.actions_by_parent:
+            self.processed_parents.add(GLOBAL)
+            return node.with_changes(
+                body=run_actions_in_sequence(
+                    actions=self.actions_by_parent[GLOBAL],
+                    existing_body=node.body,
+                    parent="<global_scope>",
+                )
             )
-        )
+        else:
+            return node
+
+    def verify_all_parents_found(self) -> None:
+        expected_parents = set(self.actions_by_parent.keys())
+        missed_parents = expected_parents - self.processed_parents
+        if len(missed_parents) > 0:
+            raise ValueError(f"Did not find parents {missed_parents}")
 
     def leave_Module(
         self,
         original_node: libcst.Module,
         updated_node: libcst.Module,
     ) -> libcst.Module:
-        if self.is_parent(self.get_current_name()):
-            out = self.transform_parent_module(updated_node)
-        else:
-            out = updated_node
-        if not self.found_parent:
-            raise ValueError(f"Did not find any classes matching {self.parent}")
-        return out
-
-
-def apply_patch(
-    code: str,
-    patch: patch_specs.Patch,
-) -> str:
-    original_module = libcst.parse_module(code)
-    transform = PatchTransform(
-        action=patch.action,
-        parent=patch.parent,
-    )
-    transformed_module = transform.transform_module(original_module)
-    return transformed_module.code
+        node = self.transform_global_scope(updated_node)
+        self.verify_all_parents_found()
+        return node
 
 
 def apply_patches_in_sequence(
@@ -296,10 +314,6 @@ def apply_patches_in_sequence(
     patches: Iterable[patch_specs.Patch],
 ) -> str:
     module = libcst.parse_module(code)
-    for patch in patches:
-        transform = PatchTransform(
-            action=patch.action,
-            parent=patch.parent,
-        )
-        module = transform.transform_module(module)
+    transform = PatchTransform.from_patches(patches)
+    module = transform.transform_module(module)
     return module.code

@@ -17,9 +17,9 @@ class PatchTransformsTest(testslide.TestCase):
         patch: patch_specs.Patch,
         expected_code: str,
     ) -> None:
-        actual_output = transforms.apply_patch(
+        actual_output = transforms.apply_patches_in_sequence(
             code=textwrap.dedent(original_code),
-            patch=patch,
+            patches=[patch],
         )
         try:
             self.assertEqual(
