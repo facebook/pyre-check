@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Iterable, Protocol, Sequence
+from typing import Iterable, Sequence
 
 import libcst
 import libcst.codemod
@@ -30,12 +30,133 @@ def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
         raise ValueError(f"Failed to parse content:\n---\n{content}\n---\n{e.message}")
 
 
-class ParentScopePatcher(Protocol):
-    def __call__(
-        self,
-        existing_body: Sequence[libcst.BaseStatement],
-    ) -> Sequence[libcst.BaseStatement]:
-        ...
+def statement_matches_name(
+    name: str,
+    statement: libcst.BaseStatement | libcst.BaseSmallStatement,
+) -> bool:
+    """
+    Given a statement in the parent scope, determine whether it
+    matches the name (used for delete and replace actions).
+
+    Note that we don't match all possible forms - for example
+    currently definitions inside of an if-block will be skipped.
+    As a result it is important that transform classes always
+    verify that they found their target name and raise otherwise,
+    so that we'll be alerted if the code needs to be generalized.
+    """
+    if isinstance(statement, libcst.SimpleStatementLine):
+        if len(statement.body) != 1:
+            raise ValueError(
+                f"Did not expect compound statement line {statement} "
+                "in a stub scope we patch."
+            )
+        return statement_matches_name(name, statement.body[0])
+    if isinstance(statement, libcst.AnnAssign):
+        target = statement.target
+        if isinstance(target, libcst.Name):
+            return target.value == name
+        else:
+            raise ValueError(
+                "Did not expect non-name target {target} "
+                "of AnnAssign in a stub scope we patch."
+            )
+    if isinstance(statement, libcst.FunctionDef):
+        return statement.name.value == name
+    if isinstance(statement, libcst.ClassDef):
+        return statement.name.value == name
+    # Note: we currently don't support a number of more complex
+    # cases, such as patching inside an if block.
+    else:
+        return False
+
+
+def run_add_action(
+    action: patch_specs.AddAction,
+    existing_body: Sequence[libcst.BaseStatement],
+) -> Sequence[libcst.BaseStatement]:
+    statements_to_add = statements_from_content(action.content)
+    if action.position == patch_specs.AddPosition.TOP_OF_SCOPE:
+        return [
+            *statements_to_add,
+            *existing_body,
+        ]
+    elif action.position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
+        return [
+            *existing_body,
+            *statements_to_add,
+        ]
+    else:
+        raise RuntimeError(f"Unknown position {action.position}")
+
+
+def run_delete_action(
+    action: patch_specs.DeleteAction,
+    existing_body: Sequence[libcst.BaseStatement],
+    parent: str,
+) -> Sequence[libcst.BaseStatement]:
+    new_body = [
+        statement
+        for statement in existing_body
+        if not statement_matches_name(action.name, statement)
+    ]
+    # Always make sure we successfully deleted the target. This
+    # might fail if the target has disappeared, or if our
+    # `matches_name` logic needs to be extended.
+    if len(new_body) == len(existing_body):
+        raise ValueError(f"Could not find deletion target {action.name} in {parent}")
+    # There's an edge case where we delete the entire scope body;
+    # we can deal with this by inserting a pass.
+    if len(new_body) == 0:
+        new_body = [libcst.SimpleStatementLine([libcst.Pass()])]
+    return new_body
+
+
+def run_replace_action(
+    action: patch_specs.ReplaceAction,
+    existing_body: Sequence[libcst.BaseStatement],
+    parent: str,
+) -> Sequence[libcst.BaseStatement]:
+    statements_to_add = statements_from_content(action.content)
+    new_body: list[libcst.BaseStatement] = []
+    added_replacements = False
+    for statement in existing_body:
+        if statement_matches_name(action.name, statement):
+            if not added_replacements:
+                added_replacements = True
+                new_body.extend(statements_to_add)
+        else:
+            new_body.append(statement)
+    if not added_replacements:
+        raise ValueError(f"Could not find replacement target {action.name} in {parent}")
+    return new_body
+
+
+def run_action(
+    action: patch_specs.Action,
+    existing_body: Sequence[libcst.BaseStatement],
+    parent: str,
+) -> Sequence[libcst.BaseStatement]:
+    if isinstance(action, patch_specs.AddAction):
+        return run_add_action(
+            action=action,
+            existing_body=existing_body,
+        )
+    elif isinstance(action, patch_specs.DeleteAction):
+        return run_delete_action(
+            action=action,
+            existing_body=existing_body,
+            parent=parent,
+        )
+    elif isinstance(action, patch_specs.ReplaceAction):
+        return run_replace_action(
+            action=action,
+            existing_body=existing_body,
+            parent=parent,
+        )
+    else:
+        raise NotImplementedError(
+            f"No transform implemented yet for patch {type(action)}"
+        )
 
 
 class PatchTransform(libcst.codemod.ContextAwareTransformer):
@@ -49,10 +170,10 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
     def __init__(
         self,
         parent: patch_specs.QualifiedName,
-        parent_scope_patcher: ParentScopePatcher,
+        action: patch_specs.Action,
     ) -> None:
         super().__init__(libcst.codemod.CodemodContext())
-        self.parent_scope_patcher = parent_scope_patcher
+        self.action = action
         # State to track current scope name and find the parent
         self.parent = parent.to_string()
         self.current_names = []
@@ -98,7 +219,11 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         outer_body = node.body
         if isinstance(outer_body, libcst.IndentedBlock):
             new_outer_body = outer_body.with_changes(
-                body=self.parent_scope_patcher(outer_body.body)
+                body=run_action(
+                    action=self.action,
+                    existing_body=outer_body.body,
+                    parent=self.parent,
+                ),
             )
         else:
             inner_body_as_base_statements = [
@@ -108,7 +233,11 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
                 for statement in outer_body.body
             ]
             new_outer_body = libcst.IndentedBlock(
-                body=self.parent_scope_patcher(inner_body_as_base_statements)
+                body=run_action(
+                    action=self.action,
+                    existing_body=inner_body_as_base_statements,
+                    parent=self.parent,
+                ),
             )
         return node.with_changes(body=new_outer_body)
 
@@ -127,7 +256,13 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         self,
         node: libcst.Module,
     ) -> libcst.Module:
-        return node.with_changes(body=self.parent_scope_patcher(node.body))
+        return node.with_changes(
+            body=run_action(
+                action=self.action,
+                existing_body=node.body,
+                parent=self.parent,
+            )
+        )
 
     def leave_Module(
         self,
@@ -143,171 +278,15 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
         return out
 
 
-class AddTransform(PatchTransform):
-    def __init__(
-        self,
-        parent: patch_specs.QualifiedName,
-        action: patch_specs.AddAction,
-    ) -> None:
-        def patch_parent_body(
-            existing_body: Sequence[libcst.BaseStatement],
-        ) -> Sequence[libcst.BaseStatement]:
-            statements_to_add = statements_from_content(action.content)
-            if action.position == patch_specs.AddPosition.TOP_OF_SCOPE:
-                return [
-                    *statements_to_add,
-                    *existing_body,
-                ]
-            elif action.position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
-                return [
-                    *existing_body,
-                    *statements_to_add,
-                ]
-            else:
-                raise RuntimeError(f"Unknown position {action.position}")
-
-        super().__init__(
-            parent=parent,
-            parent_scope_patcher=patch_parent_body,
-        )
-
-
-def matches_name(
-    name: str,
-    statement: libcst.BaseStatement | libcst.BaseSmallStatement,
-) -> bool:
-    """
-    Given a statement in the parent scope, determine whether it
-    matches the name (used for delete and replace actions).
-
-    Note that we don't match all possible forms - for example
-    currently definitions inside of an if-block will be skipped.
-    As a result it is important that transform classes always
-    verify that they found their target name and raise otherwise,
-    so that we'll be alerted if the code needs to be generalized.
-    """
-    if isinstance(statement, libcst.SimpleStatementLine):
-        if len(statement.body) != 1:
-            raise ValueError(
-                f"Did not expect compound statement line {statement} "
-                "in a stub scope we patch."
-            )
-        return matches_name(name, statement.body[0])
-    if isinstance(statement, libcst.AnnAssign):
-        target = statement.target
-        if isinstance(target, libcst.Name):
-            return target.value == name
-        else:
-            raise ValueError(
-                "Did not expect non-name target {target} "
-                "of AnnAssign in a stub scope we patch."
-            )
-    if isinstance(statement, libcst.FunctionDef):
-        return statement.name.value == name
-    if isinstance(statement, libcst.ClassDef):
-        return statement.name.value == name
-    # Note: we currently don't support a number of more complex
-    # cases, such as patching inside an if block.
-    else:
-        return False
-
-
-class DeleteTransform(PatchTransform):
-    def __init__(
-        self,
-        parent: patch_specs.QualifiedName,
-        action: patch_specs.DeleteAction,
-    ) -> None:
-        def patch_parent_body(
-            existing_body: Sequence[libcst.BaseStatement],
-        ) -> Sequence[libcst.BaseStatement]:
-            new_body = [
-                statement
-                for statement in existing_body
-                if not matches_name(action.name, statement)
-            ]
-            # Always make sure we successfully deleted the target. This
-            # might fail if the target has disappeared, or if our
-            # `matches_name` logic needs to be extended.
-            if len(new_body) == len(existing_body):
-                raise ValueError(
-                    f"Could not find deletion target {action.name} in {parent}"
-                )
-            # There's an edge case where we delete the entire scope body;
-            # we can deal with this by inserting a pass.
-            if len(new_body) == 0:
-                new_body = [libcst.SimpleStatementLine([libcst.Pass()])]
-            return new_body
-
-        super().__init__(
-            parent=parent,
-            parent_scope_patcher=patch_parent_body,
-        )
-
-
-class ReplaceTransform(PatchTransform):
-    def __init__(
-        self,
-        parent: patch_specs.QualifiedName,
-        action: patch_specs.ReplaceAction,
-    ) -> None:
-        def patch_parent_body(
-            existing_body: Sequence[libcst.BaseStatement],
-        ) -> Sequence[libcst.BaseStatement]:
-            statements_to_add = statements_from_content(action.content)
-            new_body: list[libcst.BaseStatement] = []
-            added_replacements = False
-            for statement in existing_body:
-                if matches_name(action.name, statement):
-                    if not added_replacements:
-                        added_replacements = True
-                        new_body.extend(statements_to_add)
-                else:
-                    new_body.append(statement)
-            if not added_replacements:
-                raise ValueError(
-                    f"Could not find replacement target {action.name} in {parent}"
-                )
-            return new_body
-
-        super().__init__(
-            parent=parent,
-            parent_scope_patcher=patch_parent_body,
-        )
-
-
-def patch_to_transform(
-    patch: patch_specs.Patch,
-) -> PatchTransform:
-    parent = patch.parent
-    action = patch.action
-    if isinstance(action, patch_specs.AddAction):
-        return AddTransform(
-            parent=parent,
-            action=action,
-        )
-    elif isinstance(action, patch_specs.DeleteAction):
-        return DeleteTransform(
-            parent=parent,
-            action=action,
-        )
-    elif isinstance(action, patch_specs.ReplaceAction):
-        return ReplaceTransform(
-            parent=parent,
-            action=action,
-        )
-    else:
-        raise NotImplementedError(
-            f"No transform implemented yet for patch {type(action)}"
-        )
-
-
 def apply_patch(
     code: str,
     patch: patch_specs.Patch,
 ) -> str:
     original_module = libcst.parse_module(code)
-    transform = patch_to_transform(patch)
+    transform = PatchTransform(
+        action=patch.action,
+        parent=patch.parent,
+    )
     transformed_module = transform.transform_module(original_module)
     return transformed_module.code
 
@@ -318,6 +297,9 @@ def apply_patches_in_sequence(
 ) -> str:
     module = libcst.parse_module(code)
     for patch in patches:
-        transform = patch_to_transform(patch)
+        transform = PatchTransform(
+            action=patch.action,
+            parent=patch.parent,
+        )
         module = transform.transform_module(module)
     return module.code
