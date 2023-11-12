@@ -4,7 +4,311 @@
 # this file is our progress on using a new name-based specification for
 # patches that should be much easier to maintain.
 
-# Strip the @abstractmethod decorator on `Number.__hash__`
+# Add imports + typevars to the top
+[["stdlib/builtins.pyi"]]
+action = "add"
+position = "top"
+content = '''
+from pyre_extensions import Add, Multiply, Divide, ReadOnly
+
+from typing import TypeVar
+N1 = TypeVar("N1", bound=int)
+N2 = TypeVar("N2", bound=int)
+'''
+
+# Mark __eq__, __str__, and __repr__ as *always* read-only on object
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "object"
+name = "__eq__"
+content = '''
+def __eq__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "object"
+name = "__str__"
+content = '''
+def __str__(self: ReadOnly[Self]) -> str: ...  # noqa: Y029
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "object"
+name = "__repr__"
+content = '''
+def __repr__(self: ReadOnly[Self]) -> str: ...  # noqa: Y029
+'''
+
+# Define type-level arithmetic operations (used in shape types)
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__add__"
+content = '''
+def __add__(self: N1, __x: N2) -> Add[N1, N2]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__sub__"
+content = '''
+def __sub__(self: N1, __x: N2) -> Add[N1, Multiply[Literal[-1], N2]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__mul__"
+content = '''
+def __mul__(self: N1, __x: N2) -> Multiply[N1, N2]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__floordiv__"
+content = '''
+def __floordiv__(self: N1, __x: N2) -> Divide[N1, N2]: ...
+'''
+
+
+# Mark __eq__ as read-only on int and float
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "int"
+name = "__eq__"
+content = '''
+def __eq__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "float"
+name = "__eq__"
+content = '''
+def __eq__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
+'''
+
+# Mark or override a variety of string methods as ReadOnly
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "str"
+name = "isdigit"
+content = '''
+def isdigit(self: ReadOnly[Self]) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "str"
+name = "lower"
+content = '''
+@overload
+def lower(self: LiteralString) -> LiteralString: ...
+@overload
+def lower(self: ReadOnly[Self]) -> str: ...  # type: ignore [misc]
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "str"
+name = "__eq__"
+content = '''
+def __eq__(self: ReadOnly[Self], __x: Readonly[object]) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "str"
+name = "__getitem__"
+content = '''
+def __getitem__(self: ReadOnly[Self], __i: SupportsIndex | slice) -> str: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "str"
+name = "__contains__"
+content = '''
+def __contains__(self, __o: str) -> bool: ...  # type: ignore[override]
+'''
+
+# Add read-only overloads for list __iter__ + __getitem__, and make __contains__ read-only
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "list"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[_T]: ...
+@overload
+def __iter__(self: ReadOnly[Self]) -> Iterator[ReadOnly[_T]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "list"
+name = "__getitem__"
+content = '''
+@overload
+def __getitem__(self, __i: SupportsIndex) -> _T: ...
+@overload
+def __getitem__(self, __s: slice) -> list[_T]: ...
+@overload
+def __getitem__(self: ReadOnly[Self], __i: SupportsIndex) -> ReadOnly[_T]: ...
+@overload
+def __getitem__(self: ReadOnly[Self], __s: slice) -> list[ReadOnly[_T]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "list"
+name = "__contains__"
+content = '''
+def __contains__(self: ReadOnly[Self], __o: ReadOnly[object]) -> bool: ...
+'''
+
+# Add read-only overloads for a handful of dict
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "keys"
+content = '''
+@overload
+def keys(self) -> dict_keys[_KT, _VT]: ...
+@overload
+def keys(self: ReadOnly[Self]) -> ReadOnly[dict_keys[_KT, _VT]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "values"
+content = '''
+@overload
+def values(self) -> dict_values[_KT, _VT]: ...
+@overload
+def values(self: ReadOnly[Self]) -> ReadOnly[dict_values[_KT, _VT]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "items"
+content = '''
+@overload
+def items(self) -> dict_items[_KT, _VT]: ...
+@overload
+def items(self: ReadOnly[Self]) -> ReadOnly[dict_items[_KT, _VT]]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "get"
+content = '''
+@overload
+def get(self, __key: _KT) -> _VT | None: ...
+@overload
+def get(self, __key: _KT, __default: _VT | _T) -> _VT | _T: ...
+@overload
+def get(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT | None]: ...
+@overload
+def get(self: ReadOnly[Self], __key: ReadOnly[_KT], __default: ReadOnly[_VT | _T]) -> ReadOnly[_VT | _T]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "__getitem__"
+content = '''
+@overload
+def __getitem__(self, __key: _KT) -> _VT: ...
+@overload
+def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT]: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "dict"
+name = "__iter__"
+content = '''
+@overload
+def __iter__(self) -> Iterator[_KT]: ...
+@overload
+def __iter__(self: ReadOnly[dict[_KT, _VT]]) -> Iterator[ReadOnly[_KT]]: ...
+'''
+
+# Mark a couple of set methods as read-only
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "set"
+name = "__contains__"
+content = '''
+def __contains__(self, __o: ReadOnly[object]) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+parent = "set"
+name = "__sub__"
+content = '''
+@overload
+def __sub__(self, __s: ReadOnly[AbstractSet[_T | None]]) -> set[_T]: ...
+@overload
+def __sub__(self: ReadOnly[Self], __s: ReadOnly[AbstractSet[_T | None]]) -> ReadOnly[set[_T]]: ...
+'''
+
+# Mark a few of the builtin functions as read-only
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+name = "hasattr"
+content = '''
+def hasattr(__obj: ReadOnly[object], __name: str) -> bool: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+name = "len"
+content = '''
+def len(__obj: ReadOnly[Sized]) -> int: ...
+'''
+
+[["stdlib/builtins.pyi"]]
+action = "replace"
+name = "sorted"
+content = '''
+@overload
+def sorted(
+    __iterable: ReadOnly[Iterable[SupportsRichComparisonT]], *, key: None = None, reverse: bool = False
+) -> list[SupportsRichComparisonT]: ...
+@overload
+def sorted(__iterable: ReadOnly[Iterable[_T]], *, key: Callable[[_T], SupportsRichComparison], reverse: bool = False) -> list[_T]: ...
+'''
+
+# Explicitly define BaseException's __str__ and __repr__ so that Pysa can mark them as sources.
+[["stdlib/builtins.pyi"]]
+action = "add"
+parent = "BaseException"
+position = "bottom"
+content = '''
+# Define `__str__` and `__repr__` explicitly so pysa can mark them as sources
+def __str__(self) -> str: ...  # noqa: Y029
+def __repr__(self) -> str: ...  # noqa: Y029
+'''
+
+# Strip the @abstractmethod dekeyscorator on `Number.__hash__`
 [["stdlib/numbers.pyi"]]
 parent = "Number"
 action = "replace"
