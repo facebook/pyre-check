@@ -36,19 +36,6 @@ def compute_diff_view(
     return "".join(diff_lines)
 
 
-def apply_patches_in_sequence(
-    original_code: str,
-    patches: list[patch_specs.Patch],
-) -> str:
-    code = original_code
-    for patch in patches:
-        code = transforms.apply_patch(
-            code=code,
-            patch=patch,
-        )
-    return code
-
-
 def patch_one_file(
     original_typeshed: typeshed.Typeshed,
     file_patch: patch_specs.FilePatch,
@@ -57,8 +44,8 @@ def patch_one_file(
     if original_code is None:
         raise ValueError(f"Could not find content for {file_patch.path}")
     else:
-        patched_code = apply_patches_in_sequence(
-            original_code=original_code,
+        patched_code = transforms.apply_patches_in_sequence(
+            code=original_code,
             patches=file_patch.patches,
         )
         diff_view = compute_diff_view(

@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Protocol, Sequence
+from typing import Iterable, Protocol, Sequence
 
 import libcst
 import libcst.codemod
@@ -276,15 +276,6 @@ class ReplaceTransform(PatchTransform):
         )
 
 
-def run_transform(
-    code: str,
-    transform: PatchTransform,
-) -> str:
-    original_module = libcst.parse_module(code)
-    transformed_module = transform.transform_module(original_module)
-    return transformed_module.code
-
-
 def patch_to_transform(
     patch: patch_specs.Patch,
 ) -> PatchTransform:
@@ -315,5 +306,18 @@ def apply_patch(
     code: str,
     patch: patch_specs.Patch,
 ) -> str:
+    original_module = libcst.parse_module(code)
     transform = patch_to_transform(patch)
-    return run_transform(code, transform)
+    transformed_module = transform.transform_module(original_module)
+    return transformed_module.code
+
+
+def apply_patches_in_sequence(
+    code: str,
+    patches: Iterable[patch_specs.Patch],
+) -> str:
+    module = libcst.parse_module(code)
+    for patch in patches:
+        transform = patch_to_transform(patch)
+        module = transform.transform_module(module)
+    return module.code
