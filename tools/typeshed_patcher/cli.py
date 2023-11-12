@@ -97,5 +97,52 @@ def patch_one_file(
     )
 
 
+@pyre_typeshed_patcher.command()
+@click.option(
+    "--source",
+    type=str,
+    required=True,
+    help="Directory of the source (original) typeshed",
+)
+@click.option(
+    "--patch-specs",
+    type=str,
+    default=None,
+    help="Path to the patch specs toml file",
+)
+@click.option(
+    "--target",
+    type=str,
+    required=True,
+    help="The directory in which to write the patched typeshed stubs",
+)
+@click.option(
+    "--diffs-directory",
+    type=str,
+    required=True,
+    help="Optional directory to drop diffs of patched stub files.",
+)
+@click.option(
+    "--overwrite/--no-overwrite",
+    type=bool,
+    default=False,
+    help="Overwrite the target if it exists",
+)
+def patch_typeshed_directory(
+    source: str,
+    patch_specs: str,
+    target: str,
+    diffs_directory: str | None,
+    overwrite: bool,
+) -> None:
+    return patching.patch_typeshed_directory(
+        source=pathlib.Path(source),
+        patch_specs_toml=pathlib.Path(patch_specs),
+        target=pathlib.Path(target),
+        diffs_directory=pathlib.Path(diffs_directory) if diffs_directory else None,
+        overwrite=overwrite,
+    )
+
+
 if __name__ == "__main__":
     pyre_typeshed_patcher(sys.argv[1:])

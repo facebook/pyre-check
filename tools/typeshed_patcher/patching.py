@@ -10,9 +10,11 @@ transforms on upstream typeshed stub files.
 
 from __future__ import annotations
 
-import difflib
+import dataclasses
 
+import difflib
 import pathlib
+import shutil
 
 from . import patch_specs, transforms, typeshed
 
@@ -111,3 +113,69 @@ def patch_one_file_entrypoint(
         with open(target, "w") as f:
             f.write(patched_code)
         print(f"Wrote output to {target}")
+
+
+@dataclasses.dataclass
+class PatchResult:
+    patched_typeshed: typeshed.Typeshed
+    # This is an unexpected hack - Typshed isn't really modeling a typeshed
+    # per-se, just a directory of files. It's convenient to use the same code
+    # for storing and dumping the diffs from patching.
+    patch_diffs: typeshed.Typeshed
+
+
+def patch_typeshed(
+    original_typeshed: typeshed.Typeshed,
+    file_patches: list[patch_specs.FilePatch],
+) -> PatchResult:
+    patch_outputs = {
+        file_patch.path: patch_one_file(original_typeshed, file_patch)
+        for file_patch in file_patches
+    }
+    patch_results = {
+        path: patched_code for path, (patched_code, _) in patch_outputs.items()
+    }
+    patch_diff_views = {
+        path: patched_code for path, (patched_code, _) in patch_outputs.items()
+    }
+    return PatchResult(
+        patched_typeshed=typeshed.PatchedTypeshed(
+            base=original_typeshed,
+            patch_results=patch_results,
+        ),
+        patch_diffs=typeshed.MemoryBackedTypeshed(
+            contents=patch_diff_views,
+        ),
+    )
+
+
+def patch_typeshed_directory(
+    source: pathlib.Path,
+    patch_specs_toml: pathlib.Path,
+    target: pathlib.Path,
+    diffs_directory: pathlib.Path | None,
+    overwrite: bool,
+) -> None:
+    def handle_overwrite_directory(directory: pathlib.Path) -> None:
+        if directory.exists():
+            if overwrite:
+                shutil.rmtree(directory)
+            else:
+                raise RuntimeError(
+                    f"Refusing to overwrite existing {directory}. "
+                    "Use --overwrite to overwrite a directory, remove any existing file"
+                )
+
+    file_patches = patch_specs.FilePatch.from_toml_path(patch_specs_toml)
+    original_typeshed = typeshed.DirectoryBackedTypeshed(source)
+    result = patch_typeshed(
+        original_typeshed=original_typeshed,
+        file_patches=file_patches,
+    )
+    handle_overwrite_directory(target)
+    typeshed.write_to_directory(result.patched_typeshed, target)
+    print(f"Wrote patched typeshed to {target}")
+    if diffs_directory is not None:
+        handle_overwrite_directory(diffs_directory)
+        typeshed.write_to_directory(result.patch_diffs, diffs_directory)
+        print(f"Wrote diffs of all patched stubs to {diffs_directory}")
