@@ -171,8 +171,8 @@ class ZipBackedTypeshed(Typeshed):
 
 class PatchedTypeshed(Typeshed):
     """
-    A typeshed backed up by another `Typeshed` object and a set of patches that
-    overwrite file contents in the base `Typeshed` object.
+    A typeshed backed up by another `Typeshed` object and a set of patch results
+    that overwrite file contents in the base `Typeshed` object.
 
     Patches are specified as a dictionary from paths to either a `str` or `None`.
     When the value is a string, it serves as the new content for the corresponding
@@ -185,14 +185,18 @@ class PatchedTypeshed(Typeshed):
     removed_files: Set[pathlib.Path]
 
     def __init__(
-        self, base: Typeshed, patches: Dict[pathlib.Path, Optional[str]]
+        self,
+        base: Typeshed,
+        patch_results: Dict[pathlib.Path, Optional[str]],
     ) -> None:
         self.base = base
         self.updated_files = {
-            path: content for path, content in patches.items() if content is not None
+            path: content
+            for path, content in patch_results.items()
+            if content is not None
         }
         self.removed_files = {
-            path for path, content in patches.items() if content is None
+            path for path, content in patch_results.items() if content is None
         }
 
     def all_files(self) -> Iterable[pathlib.Path]:
