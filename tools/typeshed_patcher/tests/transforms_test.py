@@ -296,6 +296,34 @@ class PatchTransformsTest(testslide.TestCase):
             ),
         )
 
+    def test_delete__if_block(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                y: str
+                if condition0:
+                    def f(x: int) -> int: ...
+                elif condition1:
+                    def f(x: str) -> str: ...
+                else:
+                    def f(x: float) -> float: ...
+                z: float
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.DeleteAction(
+                    name="f",
+                ),
+            ),
+            expected_code=(
+                """
+                y: str
+                z: float
+                """
+            ),
+        )
+
     def test_delete__typealias(self) -> None:
         self.assert_transform(
             original_code=(

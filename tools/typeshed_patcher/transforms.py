@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Iterable, Sequence
+from typing import Callable, Iterable, Sequence
 
 import libcst
 import libcst.codemod
@@ -30,6 +30,62 @@ def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
         raise ValueError(f"Failed to parse content:\n---\n{content}\n---\n{e.message}")
 
 
+def statements_in_indented_block(
+    block: libcst.CSTNode,
+) -> list[libcst.BaseStatement]:
+    if isinstance(block, libcst.IndentedBlock):
+        return [statement for statement in block.body]
+    else:
+        raise ValueError(f"Expected an indented block, got {block}")
+
+
+def statements_in_if_block(
+    block: libcst.If,
+) -> list[libcst.BaseStatement]:
+    statements = statements_in_indented_block(block.body)
+    if block.orelse is None:
+        pass
+    elif isinstance(block.orelse, libcst.If):
+        statements.extend(statements_in_if_block(block.orelse))
+    elif isinstance(block.orelse, libcst.Else):
+        statements.extend(statements_in_indented_block(block.orelse.body))
+    else:
+        raise ValueError(f"Unexpected orelse {block.orelse}")
+    return statements
+
+
+def is_matching_if_block(
+    block: libcst.If,
+    predicate: Callable[[libcst.BaseStatement | libcst.BaseSmallStatement], bool],
+) -> bool:
+    """
+    For the most part stubs do not use control flow. The one common exception
+    is the use of if(/else) conditions to gate logic, typically on the Python
+    version. This helper allows us to extend statement matchers to support
+    if/else blocks in which all the statements in the block match our condition.
+
+    We don't currently handle the case where many different names
+    (e.g.  methods on a class) are defined in a single if block. This does
+    happen occasionally in stub files, but so far we've never needed to patch
+    such a case.
+
+    If we detect that this is likely (the predicate matches on some but not
+    all statements), we raise a NotImplementedError rather than failing silently.
+    """
+    statements = statements_in_if_block(block)
+    predicate_evaluations = [predicate(statement) for statement in statements]
+    if all(predicate_evaluations):
+        return True
+    elif any(predicate_evaluations):
+        raise NotImplementedError(
+            "Typeshed patcher does not yet support complex if statements where "
+            "some inner statements match a condition and others don't.\n"
+            f"Got this if-statement: {block}"
+        )
+    else:
+        return False
+
+
 def statement_matches_name(
     name: str,
     statement: libcst.BaseStatement | libcst.BaseSmallStatement,
@@ -38,7 +94,9 @@ def statement_matches_name(
     Given a statement in the parent scope, determine whether it
     matches the name (used for delete and replace actions).
 
-    We do not
+    We handle if blocks correctly as long as all the conditions
+    are indented blocks consisting statements that themselves
+    match the name.
     """
     if isinstance(statement, libcst.SimpleStatementLine):
         if len(statement.body) != 1:
@@ -72,8 +130,11 @@ def statement_matches_name(
         return statement.name.value == name
     if isinstance(statement, libcst.ClassDef):
         return statement.name.value == name
-    # Note: we currently don't support a number of more complex
-    # cases, such as patching inside an if block.
+    if isinstance(statement, libcst.If):
+        return is_matching_if_block(
+            statement,
+            predicate=lambda s: statement_matches_name(name, s),
+        )
     else:
         return False
 
@@ -101,14 +162,10 @@ def is_import_statement(
     if isinstance(statement, libcst.SimpleStatementLine) and len(statement.body) == 1:
         return is_import_statement(statement.body[0])
     if isinstance(statement, libcst.If):
-        if not is_import_indented_block(statement.body):
-            return False
-        if statement.orelse is None:
-            return True
-        if isinstance(statement.orelse, libcst.Else):
-            return is_import_indented_block(statement.orelse.body)
-        if isinstance(statement.orelse, libcst.If):
-            return is_import_statement(statement.orelse)
+        return is_matching_if_block(
+            statement,
+            predicate=is_import_statement,
+        )
     return False
 
 
