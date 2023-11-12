@@ -144,25 +144,24 @@ class AddTransform(PatchTransform):
     def __init__(
         self,
         parent: patch_specs.QualifiedName,
-        content: str,
-        add_position: patch_specs.AddPosition,
+        action: patch_specs.AddAction,
     ) -> None:
         def patch_parent_body(
             existing_body: Sequence[libcst.BaseStatement],
         ) -> Sequence[libcst.BaseStatement]:
-            statements_to_add = statements_from_content(content)
-            if add_position == patch_specs.AddPosition.TOP_OF_SCOPE:
+            statements_to_add = statements_from_content(action.content)
+            if action.position == patch_specs.AddPosition.TOP_OF_SCOPE:
                 return [
                     *statements_to_add,
                     *existing_body,
                 ]
-            elif add_position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
+            elif action.position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
                 return [
                     *existing_body,
                     *statements_to_add,
                 ]
             else:
-                raise RuntimeError(f"Unexpected add_position value {add_position}")
+                raise RuntimeError(f"Unknown position {action.position}")
 
         super().__init__(
             parent=parent,
@@ -214,7 +213,7 @@ class DeleteTransform(PatchTransform):
     def __init__(
         self,
         parent: patch_specs.QualifiedName,
-        name: str,
+        action: patch_specs.DeleteAction,
     ) -> None:
         def patch_parent_body(
             existing_body: Sequence[libcst.BaseStatement],
@@ -222,13 +221,15 @@ class DeleteTransform(PatchTransform):
             new_body = [
                 statement
                 for statement in existing_body
-                if not matches_name(name, statement)
+                if not matches_name(action.name, statement)
             ]
             # Always make sure we successfully deleted the target. This
             # might fail if the target has disappeared, or if our
             # `matches_name` logic needs to be extended.
             if len(new_body) == len(existing_body):
-                raise ValueError(f"Could not find deletion target {name} in {parent}")
+                raise ValueError(
+                    f"Could not find deletion target {action.name} in {parent}"
+                )
             # There's an edge case where we delete the entire scope body;
             # we can deal with this by inserting a pass.
             if len(new_body) == 0:
@@ -245,17 +246,16 @@ class ReplaceTransform(PatchTransform):
     def __init__(
         self,
         parent: patch_specs.QualifiedName,
-        name: str,
-        content: str,
+        action: patch_specs.ReplaceAction,
     ) -> None:
         def patch_parent_body(
             existing_body: Sequence[libcst.BaseStatement],
         ) -> Sequence[libcst.BaseStatement]:
-            statements_to_add = statements_from_content(content)
+            statements_to_add = statements_from_content(action.content)
             new_body: list[libcst.BaseStatement] = []
             added_replacements = False
             for statement in existing_body:
-                if matches_name(name, statement):
+                if matches_name(action.name, statement):
                     if not added_replacements:
                         added_replacements = True
                         new_body.extend(statements_to_add)
@@ -263,7 +263,7 @@ class ReplaceTransform(PatchTransform):
                     new_body.append(statement)
             if not added_replacements:
                 raise ValueError(
-                    f"Could not find replacement target {name} in {parent}"
+                    f"Could not find replacement target {action.name} in {parent}"
                 )
             return new_body
 
@@ -273,7 +273,44 @@ class ReplaceTransform(PatchTransform):
         )
 
 
-def run_transform(code: str, transform: PatchTransform) -> str:
+def run_transform(
+    code: str,
+    transform: PatchTransform,
+) -> str:
     original_module = libcst.parse_module(code)
     transformed_module = transform.transform_module(original_module)
     return transformed_module.code
+
+
+def patch_to_transform(
+    patch: patch_specs.Patch,
+) -> PatchTransform:
+    parent = patch.parent
+    action = patch.action
+    if isinstance(action, patch_specs.AddAction):
+        return AddTransform(
+            parent=parent,
+            action=action,
+        )
+    elif isinstance(action, patch_specs.DeleteAction):
+        return DeleteTransform(
+            parent=parent,
+            action=action,
+        )
+    elif isinstance(action, patch_specs.ReplaceAction):
+        return ReplaceTransform(
+            parent=parent,
+            action=action,
+        )
+    else:
+        raise NotImplementedError(
+            f"No transform implemented yet for patch {type(action)}"
+        )
+
+
+def apply_patch(
+    code: str,
+    patch: patch_specs.Patch,
+) -> str:
+    transform = patch_to_transform(patch)
+    return run_transform(code, transform)

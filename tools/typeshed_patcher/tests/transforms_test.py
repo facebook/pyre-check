@@ -14,12 +14,12 @@ class PatchTransformsTest(testslide.TestCase):
     def assert_transform(
         self,
         original_code: str,
-        transform: transforms.PatchTransform,
+        patch: patch_specs.Patch,
         expected_code: str,
     ) -> None:
-        actual_output = transforms.run_transform(
+        actual_output = transforms.apply_patch(
             code=textwrap.dedent(original_code),
-            transform=transform,
+            patch=patch,
         )
         try:
             self.assertEqual(
@@ -40,15 +40,17 @@ class PatchTransformsTest(testslide.TestCase):
                 b: str
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                content=textwrap.dedent(
-                    """
-                    from foo import Bar
-                    a: Bar
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        from foo import Bar
+                        a: Bar
+                        """
+                    ),
+                    position=patch_specs.AddPosition.TOP_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.TOP_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -66,15 +68,17 @@ class PatchTransformsTest(testslide.TestCase):
                 b: str
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                content=textwrap.dedent(
-                    """
-                    def f(x: int) -> int: ...
-                    y: float
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        def f(x: int) -> int: ...
+                        y: float
+                        """
+                    ),
+                    position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -93,15 +97,17 @@ class PatchTransformsTest(testslide.TestCase):
                     b: int
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("MyClass"),
-                content=textwrap.dedent(
-                    """
-                    a: float
-                    def f(self, x: int) -> int: ...
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        a: float
+                        def f(self, x: int) -> int: ...
+                        """
+                    ),
+                    position=patch_specs.AddPosition.TOP_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.TOP_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -121,15 +127,17 @@ class PatchTransformsTest(testslide.TestCase):
                     b: int
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("MyClass"),
-                content=textwrap.dedent(
-                    """
-                    a: float
-                    def f(self, x: int) -> int: ...
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        a: float
+                        def f(self, x: int) -> int: ...
+                        """
+                    ),
+                    position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -150,15 +158,17 @@ class PatchTransformsTest(testslide.TestCase):
                 class MyClass: b: int
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("MyClass"),
-                content=textwrap.dedent(
-                    """
-                    a: float
-                    def f(self, x: int) -> int: ...
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        a: float
+                        def f(self, x: int) -> int: ...
+                        """
+                    ),
+                    position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -188,14 +198,16 @@ class PatchTransformsTest(testslide.TestCase):
                         b: int
                 """
             ),
-            transform=transforms.AddTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
-                content=textwrap.dedent(
-                    """
-                    def f(self, x: int) -> int: ...
-                    """
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        def f(self, x: int) -> int: ...
+                        """
+                    ),
+                    position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
                 ),
-                add_position=patch_specs.AddPosition.BOTTOM_OF_SCOPE,
             ),
             expected_code=(
                 """
@@ -222,9 +234,11 @@ class PatchTransformsTest(testslide.TestCase):
                 z: float
                 """
             ),
-            transform=transforms.DeleteTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="y",
+                action=patch_specs.DeleteAction(
+                    name="y",
+                ),
             ),
             expected_code=(
                 """
@@ -244,9 +258,11 @@ class PatchTransformsTest(testslide.TestCase):
                 class C: pass
                 """
             ),
-            transform=transforms.DeleteTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="B",
+                action=patch_specs.DeleteAction(
+                    name="B",
+                ),
             ),
             expected_code=(
                 """
@@ -265,9 +281,11 @@ class PatchTransformsTest(testslide.TestCase):
                 def h(x: int) -> int: ...
                 """
             ),
-            transform=transforms.DeleteTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="g",
+                action=patch_specs.DeleteAction(
+                    name="g",
+                ),
             ),
             expected_code=(
                 """
@@ -290,9 +308,11 @@ class PatchTransformsTest(testslide.TestCase):
                 def h(x: int) -> int: ...
                 """
             ),
-            transform=transforms.DeleteTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="g",
+                action=patch_specs.DeleteAction(
+                    name="g",
+                ),
             ),
             expected_code=(
                 """
@@ -321,9 +341,11 @@ class PatchTransformsTest(testslide.TestCase):
                         x: int
                 """
             ),
-            transform=transforms.DeleteTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
-                name="x",
+                action=patch_specs.DeleteAction(
+                    name="x",
+                ),
             ),
             expected_code=(
                 """
@@ -353,13 +375,15 @@ class PatchTransformsTest(testslide.TestCase):
                 z: float
                 """
             ),
-            transform=transforms.ReplaceTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="y",
-                content=textwrap.dedent(
-                    """
-                    w: str
-                    """
+                action=patch_specs.ReplaceAction(
+                    name="y",
+                    content=textwrap.dedent(
+                        """
+                        w: str
+                        """
+                    ),
                 ),
             ),
             expected_code=(
@@ -383,14 +407,16 @@ class PatchTransformsTest(testslide.TestCase):
                 def h(x: int) -> int: ...
                 """
             ),
-            transform=transforms.ReplaceTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string(""),
-                name="g",
-                content=textwrap.dedent(
-                    """
-                    T = TypeVar('T')
-                    def g(x: T) -> T: ...
-                    """
+                action=patch_specs.ReplaceAction(
+                    name="g",
+                    content=textwrap.dedent(
+                        """
+                        T = TypeVar('T')
+                        def g(x: T) -> T: ...
+                        """
+                    ),
                 ),
             ),
             expected_code=(
@@ -422,10 +448,12 @@ class PatchTransformsTest(testslide.TestCase):
                         x: int
                 """
             ),
-            transform=transforms.ReplaceTransform(
+            patch=patch_specs.Patch(
                 parent=patch_specs.QualifiedName.from_string("OuterClass1.InnerClass1"),
-                name="x",
-                content="y: float",
+                action=patch_specs.ReplaceAction(
+                    name="x",
+                    content="y: float",
+                ),
             ),
             expected_code=(
                 """
