@@ -106,7 +106,7 @@ def fetch_as_directory(
     target: pathlib.Path,
 ) -> None:
     upstream_typeshed = fetch_as_typeshed(url)
-    typeshed.write_to_files(
+    typeshed.write_to_directory(
         typeshed=upstream_typeshed,
         target=target,
     )

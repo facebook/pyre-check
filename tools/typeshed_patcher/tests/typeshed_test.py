@@ -10,10 +10,10 @@ from pathlib import Path
 import testslide
 
 from ..typeshed import (
-    FileBackedTypeshed,
+    DirectoryBackedTypeshed,
     MemoryBackedTypeshed,
     PatchedTypeshed,
-    write_to_files,
+    write_to_directory,
     write_to_zip,
     ZipBackedTypeshed,
 )
@@ -38,7 +38,7 @@ class TypeshedReaderTest(testslide.TestCase):
 
             path0 = Path("foo/bar.pyi")
             path1 = Path("baz.pyi")
-            typeshed = FileBackedTypeshed(root_path)
+            typeshed = DirectoryBackedTypeshed(root_path)
             self.assertCountEqual(typeshed.all_files(), [path0, path1])
             self.assertEqual(typeshed.get_file_content(path0), "doom")
             self.assertEqual(typeshed.get_file_content(path1), "ripandtear")
@@ -83,16 +83,16 @@ class TypeshedReaderTest(testslide.TestCase):
         self.assertEqual(patched_typeshed.get_file_content(path2), "bfg")
         self.assertIsNone(patched_typeshed.get_file_content(Path("doesnotexist")))
 
-    def test_write_to_files(self) -> None:
+    def test_write_to_directory(self) -> None:
         path0 = Path("foo/bar.pyi")
         path1 = Path("baz.pyi")
         with tempfile.TemporaryDirectory() as root:
             target_path = Path(root) / "target"
-            write_to_files(
+            write_to_directory(
                 MemoryBackedTypeshed({path0: "doom", path1: "ripandtear"}), target_path
             )
 
-            typeshed = FileBackedTypeshed(target_path)
+            typeshed = DirectoryBackedTypeshed(target_path)
             self.assertCountEqual(typeshed.all_files(), [path0, path1])
             self.assertEqual(typeshed.get_file_content(path0), "doom")
             self.assertEqual(typeshed.get_file_content(path1), "ripandtear")

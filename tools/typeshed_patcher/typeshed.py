@@ -44,7 +44,7 @@ class Typeshed(abc.ABC):
         raise NotImplementedError()
 
 
-def _write_to_files(typeshed: Typeshed, root: pathlib.Path) -> None:
+def _write_to_directory(typeshed: Typeshed, root: pathlib.Path) -> None:
     for path in typeshed.all_files():
         content = typeshed.get_file_content(path)
         if content is None:
@@ -58,11 +58,11 @@ def _write_to_files(typeshed: Typeshed, root: pathlib.Path) -> None:
 def _create_temporary_typeshed_directory(typeshed: Typeshed) -> Iterator[pathlib.Path]:
     with tempfile.TemporaryDirectory() as temporary_root:
         temporary_root_path = pathlib.Path(temporary_root)
-        _write_to_files(typeshed, temporary_root_path)
+        _write_to_directory(typeshed, temporary_root_path)
         yield temporary_root_path
 
 
-def write_to_files(typeshed: Typeshed, target: pathlib.Path) -> None:
+def write_to_directory(typeshed: Typeshed, target: pathlib.Path) -> None:
     """
     Write the given `Typeshed` into a directory rooted at `target` on the filesystem.
 
@@ -111,13 +111,13 @@ class MemoryBackedTypeshed(Typeshed):
         return self.contents.get(path, None)
 
 
-class FileBackedTypeshed(Typeshed):
+class DirectoryBackedTypeshed(Typeshed):
     """
     A typeshed backed up by a directory that lives on the filesystem.
 
     For simplicity, we assume that files in this directory remain unchanged. If
     the assumption does not hold, e.g. when files are added/removed/changed after
-    the creation of a `FileBackedTypeshed` object, the behaviors of its methods
+    the creation of a `DirectoryBacked` object, the behaviors of its methods
     become undefined.
     """
 
