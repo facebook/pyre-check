@@ -38,11 +38,7 @@ def statement_matches_name(
     Given a statement in the parent scope, determine whether it
     matches the name (used for delete and replace actions).
 
-    Note that we don't match all possible forms - for example
-    currently definitions inside of an if-block will be skipped.
-    As a result it is important that transform classes always
-    verify that they found their target name and raise otherwise,
-    so that we'll be alerted if the code needs to be generalized.
+    We do not
     """
     if isinstance(statement, libcst.SimpleStatementLine):
         if len(statement.body) != 1:
@@ -70,15 +66,70 @@ def statement_matches_name(
         return False
 
 
+def is_import_statement(
+    statement: libcst.BaseStatement | libcst.BaseSmallStatement,
+) -> bool:
+    """
+    Given a statement, determine whether it is only performing
+    imports.
+
+    We handle if blocks correctly as long as all the conditions
+    are indented blocks consisting only of import statements.
+    """
+
+    def is_import_indented_block(
+        block: libcst.CSTNode,
+    ) -> bool:
+        return isinstance(block, libcst.IndentedBlock) and all(
+            is_import_statement(inner_statement) for inner_statement in block.body
+        )
+
+    if isinstance(statement, libcst.ImportFrom) or isinstance(statement, libcst.Import):
+        return True
+    if isinstance(statement, libcst.SimpleStatementLine) and len(statement.body) == 1:
+        return is_import_statement(statement.body[0])
+    if isinstance(statement, libcst.If):
+        if not is_import_indented_block(statement.body):
+            return False
+        if statement.orelse is None:
+            return True
+        if isinstance(statement.orelse, libcst.Else):
+            return is_import_indented_block(statement.orelse.body)
+        if isinstance(statement.orelse, libcst.If):
+            return is_import_statement(statement.orelse)
+    return False
+
+
+def split_import_header(
+    statements: Sequence[libcst.BaseStatement],
+) -> tuple[Sequence[libcst.BaseStatement], Sequence[libcst.BaseStatement]]:
+    """
+    Split a sequence of statements (in our context the existing body of
+    some scope) into the leading imports and then everything else.
+
+    Used to handle add actions with position of "top"; we try to add
+    at the bottom of the existing import header.
+
+    Note that some complex cases, like an import inside of an if block
+    (sometimes used to gate by python version) are not yet supported.
+    """
+    split_index = 0
+    while is_import_statement(statements[split_index]):
+        split_index += 1
+    return statements[:split_index], statements[split_index:]
+
+
 def run_add_action(
     action: patch_specs.AddAction,
     existing_body: Sequence[libcst.BaseStatement],
 ) -> Sequence[libcst.BaseStatement]:
     statements_to_add = statements_from_content(action.content)
     if action.position == patch_specs.AddPosition.TOP_OF_SCOPE:
+        import_header, rest_of_body = split_import_header(existing_body)
         return [
+            *import_header,
             *statements_to_add,
-            *existing_body,
+            *rest_of_body,
         ]
     elif action.position == patch_specs.AddPosition.BOTTOM_OF_SCOPE:
         return [

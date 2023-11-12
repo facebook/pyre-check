@@ -225,6 +225,54 @@ class PatchTransformsTest(testslide.TestCase):
             ),
         )
 
+    def test_add_under_import_header(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                import foo, bar
+                if condition:
+                    from baz import Baz
+                if condition1:
+                    import qux1 as quux
+                elif condition2:
+                    import qux2 as quux
+                else:
+                    import qux3 as quux
+                x: int
+                import this_is_out_of_order
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.AddAction(
+                    content=textwrap.dedent(
+                        """
+                        from typing import TypeVar
+                        T = TypeVar('T')
+                        """
+                    ),
+                    position=patch_specs.AddPosition.TOP_OF_SCOPE,
+                ),
+            ),
+            expected_code=(
+                """
+                import foo, bar
+                if condition:
+                    from baz import Baz
+                if condition1:
+                    import qux1 as quux
+                elif condition2:
+                    import qux2 as quux
+                else:
+                    import qux3 as quux
+                from typing import TypeVar
+                T = TypeVar('T')
+                x: int
+                import this_is_out_of_order
+                """
+            ),
+        )
+
     def test_delete__ann_assign(self) -> None:
         self.assert_transform(
             original_code=(
