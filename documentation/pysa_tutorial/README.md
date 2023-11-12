@@ -38,7 +38,7 @@ project.
 
       python3 -m venv tutorial
       source tutorial/bin/activate
-      pip3 install pyre-check fb-sapp
+      pip3 install pyre-check fb-sapp django-stubs
       ```
 
       *Others* -

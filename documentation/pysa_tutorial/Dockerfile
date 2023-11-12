@@ -14,4 +14,4 @@ WORKDIR /pyre-check
 COPY . .
 
 RUN pip3 install psutil
-RUN pip3 install pyre-check fb-sapp
+RUN pip3 install pyre-check fb-sapp django-stubs
