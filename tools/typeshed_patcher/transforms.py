@@ -23,8 +23,11 @@ def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
     parse statements as a CST so that we can apply them in a
     libcst transform.
     """
-    module = libcst.parse_module(content)
-    return module.body
+    try:
+        module = libcst.parse_module(content)
+        return module.body
+    except libcst.ParserSyntaxError as e:
+        raise ValueError(f"Failed to parse content:\n---\n{content}\n---\n{e.message}")
 
 
 class ParentScopePatcher(Protocol):
