@@ -296,6 +296,29 @@ class PatchTransformsTest(testslide.TestCase):
             ),
         )
 
+    def test_delete__typealias(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                from foo import Foo
+                Baz = Foo
+                x: int
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.DeleteAction(
+                    name="Baz",
+                ),
+            ),
+            expected_code=(
+                """
+                from foo import Foo
+                x: int
+                """
+            ),
+        )
+
     def test_delete__class(self) -> None:
         self.assert_transform(
             original_code=(

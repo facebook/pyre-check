@@ -47,6 +47,18 @@ def statement_matches_name(
                 "in a stub scope we patch."
             )
         return statement_matches_name(name, statement.body[0])
+    if isinstance(statement, libcst.Assign):
+        # Regular assignment is unusual in stubs, but happens in type aliases.
+        if len(statement.targets) != 1:
+            raise ValueError(
+                f"Expect only simple assignments in stubs, got {statement}"
+            )
+        target = statement.targets[0].target
+        if not isinstance(target, libcst.Name):
+            raise ValueError(
+                f"Expect only simple assignments in stubs, got {statement}"
+            )
+        return target.value == name
     if isinstance(statement, libcst.AnnAssign):
         target = statement.target
         if isinstance(target, libcst.Name):
