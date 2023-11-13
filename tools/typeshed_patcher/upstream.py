@@ -67,6 +67,12 @@ def should_include_zipinfo(info: zipfile.ZipInfo) -> bool:
 
     parts = pathlib.Path(info.filename).parts
 
+    # There are quite a few config files and some test directories in
+    # typeshed that we don't need - only pull in the directories that
+    # actually contain stubs.
+    if len(parts) < 2 or parts[1] not in ("stubs", "stdlib"):
+        return False
+
     # Bypass txt and toml files - these files just make our vendored directory
     # bigger for no benefit, and some of them violate lint rules (e.g. no trailing
     # newline).
