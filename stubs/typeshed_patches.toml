@@ -113,7 +113,7 @@ content = '''
 @overload
 def lower(self: LiteralString) -> LiteralString: ...
 @overload
-def lower(self: ReadOnly[Self]) -> str: ...  # type: ignore [misc]
+def lower(self: ReadOnly[Self]) -> str: ...  # type: ignore[misc]
 '''
 
 [["stdlib/builtins.pyi"]]
@@ -475,3 +475,6 @@ def __hash__(self) -> int: ...
 action = "replace"
 parent = "DataclassInstance"
 name = "__dataclass_fields__"
+content = '''
+...
+'''
