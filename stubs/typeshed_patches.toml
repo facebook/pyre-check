@@ -493,3 +493,11 @@ name = "path"
 content = '''
 from . import path
 '''
+
+
+[["stdlib/urllib/parse.pyi"]]
+action = "replace"
+name = "unquote_plus"
+content='''
+def unquote_plus(string: ReadOnly[str], encoding: str = "utf-8", errors: str = "replace") -> str: ...
+'''
