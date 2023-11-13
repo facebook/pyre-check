@@ -104,6 +104,7 @@ def fetch_as_typeshed(
             for info in zipped_bytes.infolist()
             if should_include_zipinfo(info)
         }
+        contents[pathlib.Path("source_url")] = f"{url}\n"
         return typeshed.MemoryBackedTypeshed(contents)
 
 
