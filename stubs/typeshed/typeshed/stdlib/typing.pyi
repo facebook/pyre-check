@@ -18,13 +18,14 @@ from types import (
     TracebackType,
     WrapperDescriptorType,
 )
-from typing_extensions import Never as _Never, ParamSpec as _ParamSpec, final as _final, Self
-from pyre_extensions import ReadOnly
+from typing_extensions import Never as _Never, ParamSpec as _ParamSpec, final as _final
 
 if sys.version_info >= (3, 10):
     from types import UnionType
 if sys.version_info >= (3, 9):
     from types import GenericAlias
+from typing_extensions import Self
+from pyre_extensions import ReadOnly
 
 __all__ = [
     "AbstractSet",
@@ -128,7 +129,6 @@ if sys.version_info >= (3, 11):
     ]
 
 ContextManager = AbstractContextManager
-
 @runtime_checkable
 class AsyncContextManager(Protocol[_T_co]):
     async def __aenter__(self) -> _T_co: ...
@@ -462,7 +462,6 @@ class AsyncGenerator(AsyncIterator[_T_co], Generic[_T_co, _T_contra]):
 
 @runtime_checkable
 class Container(Protocol[_T_co]):
-    # This is generic more on vibes than anything else
     @abstractmethod
     def __contains__(self: ReadOnly[Self], __x: ReadOnly[object]) -> bool: ...
 
@@ -607,15 +606,12 @@ class ValuesView(MappingView, Collection[_VT_co], Generic[_VT_co]):
         def __reversed__(self) -> Iterator[_VT_co]: ...
 
 class Mapping(Collection[_KT], Generic[_KT, _VT_co]):
-    # TODO: We wish the key type could also be covariant, but that doesn't work,
-    # see discussion in https://github.com/python/typing/pull/273.
     @overload
     @abstractmethod
     def __getitem__(self, __key: _KT) -> _VT_co: ...
     @overload
     @abstractmethod
     def __getitem__(self: ReadOnly[Self], __key: ReadOnly[_KT]) -> ReadOnly[_VT_co]: ...
-    # Mixin methods
     @overload
     def get(self, __key: _KT) -> _VT_co | None: ...
     @overload

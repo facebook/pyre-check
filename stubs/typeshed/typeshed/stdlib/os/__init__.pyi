@@ -27,10 +27,9 @@ from subprocess import Popen
 from typing import IO, Any, AnyStr, BinaryIO, Generic, NoReturn, Protocol, TypeVar, overload, runtime_checkable
 from typing_extensions import Final, Literal, Self, TypeAlias, final
 
-from . import path
-
 if sys.version_info >= (3, 9):
     from types import GenericAlias
+from . import path
 
 _T = TypeVar("_T")
 _T1 = TypeVar("_T1")

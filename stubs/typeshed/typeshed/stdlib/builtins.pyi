@@ -55,10 +55,14 @@ from typing import (  # noqa: Y022
     type_check_only,
 )
 from typing_extensions import Literal, LiteralString, Self, SupportsIndex, TypeAlias, TypeGuard, final
-from pyre_extensions import Add, Multiply, Divide, ReadOnly
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
+from pyre_extensions import Add, Multiply, Divide, ReadOnly
+
+from typing import TypeVar
+N1 = TypeVar("N1", bound=int)
+N2 = TypeVar("N2", bound=int)
 
 _T = TypeVar("_T")
 _T_co = TypeVar("_T_co", covariant=True)
@@ -76,8 +80,6 @@ _SupportsNextT = TypeVar("_SupportsNextT", bound=SupportsNext[Any], covariant=Tr
 _SupportsAnextT = TypeVar("_SupportsAnextT", bound=SupportsAnext[Any], covariant=True)
 _AwaitableT = TypeVar("_AwaitableT", bound=Awaitable[Any])
 _AwaitableT_co = TypeVar("_AwaitableT_co", bound=Awaitable[Any], covariant=True)
-N1 = TypeVar("N1", bound=int)
-N2 = TypeVar("N2", bound=int)
 
 class object:
     __doc__: str | None
@@ -244,7 +246,6 @@ class int:
             *,
             signed: bool = False,
         ) -> Self: ...
-
     def __add__(self: N1, __x: N2) -> Add[N1, N2]: ...
     def __sub__(self: N1, __x: N2) -> Add[N1, Multiply[Literal[-1], N2]]: ...
     def __mul__(self: N1, __x: N2) -> Multiply[N1, N2]: ...
@@ -564,7 +565,6 @@ class str(Sequence[str]):
     def __add__(self: LiteralString, __s: LiteralString) -> LiteralString: ...
     @overload
     def __add__(self, __s: str) -> str: ...  # type: ignore[misc]
-    # Incompatible with Sequence.__contains__
     def __contains__(self, __o: str) -> bool: ...  # type: ignore[override]
     def __eq__(self: ReadOnly[Self], __x: Readonly[object]) -> bool: ...
     def __ge__(self, __x: str) -> bool: ...
@@ -1068,7 +1068,6 @@ class dict(MutableMapping[_KT, _VT], Generic[_KT, _VT]):
     @classmethod
     @overload
     def fromkeys(cls, __iterable: Iterable[_T], __value: _S) -> dict[_T, _S]: ...
-    # Positional-only in dict, but not in MutableMapping
     @overload
     def get(self, __key: _KT) -> _VT | None: ...
     @overload
@@ -1896,11 +1895,8 @@ class BaseException:
         # only present after add_note() is called
         __notes__: list[str]
         def add_note(self, __note: str) -> None: ...
-
-    # Define `__str__` and `__repr__` explicitly so pysa can mark them as sources.
     def __str__(self) -> str: ...  # noqa: Y029
     def __repr__(self) -> str: ...  # noqa: Y029
-
 
 class GeneratorExit(BaseException): ...
 class KeyboardInterrupt(BaseException): ...
