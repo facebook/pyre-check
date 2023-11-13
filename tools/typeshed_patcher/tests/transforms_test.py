@@ -465,6 +465,56 @@ class PatchTransformsTest(testslide.TestCase):
             ),
         )
 
+    def test_delete__import(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                import foo
+                if condition0:
+                    import bar
+                else:
+                    from baz import bar
+                from bar import qux
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.DeleteAction(
+                    name="bar",
+                ),
+            ),
+            expected_code=(
+                """
+                import foo
+                from bar import qux
+                """
+            ),
+        )
+
+    def test_delete__import_as(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                import foo
+                import bar_alt as bar
+                from baz import bar_alt as bar
+                from bar import qux
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.DeleteAction(
+                    name="bar",
+                ),
+            ),
+            expected_code=(
+                """
+                import foo
+                from bar import qux
+                """
+            ),
+        )
+
     def test_replace__ann_assign(self) -> None:
         self.assert_transform(
             original_code=(
@@ -569,6 +619,31 @@ class PatchTransformsTest(testslide.TestCase):
                 class OuterClass2:
                     class InnerClass1:
                         x: int
+                """
+            ),
+        )
+
+    def test_replace__import(self) -> None:
+        self.assert_transform(
+            original_code=(
+                """
+                import baz
+                from foo import Bar
+                x: Bar
+                """
+            ),
+            patch=patch_specs.Patch(
+                parent=patch_specs.QualifiedName.from_string(""),
+                action=patch_specs.ReplaceAction(
+                    name="Bar",
+                    content="Bar = baz.Bar",
+                ),
+            ),
+            expected_code=(
+                """
+                import baz
+                Bar = baz.Bar
+                x: Bar
                 """
             ),
         )

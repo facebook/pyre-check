@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Callable, Iterable, Sequence
+from typing import Callable, Iterable, Sequence, TypeVar
 
 import libcst
 import libcst.codemod
@@ -86,6 +86,57 @@ def is_matching_if_block(
         return False
 
 
+def import_names_match_name(
+    names: Sequence[libcst.ImportAlias] | libcst.ImportStar,
+    name: str,
+) -> bool:
+    """
+    Determine whether the given import alias matches the name
+    we want to patch.
+    """
+    if isinstance(names, libcst.ImportStar):
+        # We make no attempt to handle star imports; this is almost certainly
+        # never going to be needed in typeshed patching.
+        return False
+
+    def _alias_matches_name(
+        alias: libcst.ImportAlias,
+    ) -> bool:
+        # First handle the case of an asname (e.g. `import foo as bar`)
+        if alias.asname is not None:
+            if isinstance(alias.asname.name, libcst.Name):
+                return alias.asname.name.value == name
+            else:
+                raise ValueError(
+                    f"Expected Name node for asname, got {alias.asname.name}"
+                )
+        # If there is no asname, fall back to the name of the alias
+        alias_name = alias.name
+        if isinstance(alias_name, libcst.Name):
+            return alias_name.value == name
+        if isinstance(alias_name, libcst.Attribute):
+            if alias_name.attr.value == name:
+                raise ValueError(
+                    f"Found an import of an attribute {alias_name} in an "
+                    f"import statement when looking for name {name}.\n"
+                    "This is fishy - currently typeshed patcher doesn't handle"
+                    "imports of dotted names."
+                )
+        return False
+
+    matching = (_alias_matches_name(alias) for alias in names)
+    if all(matching):
+        return True
+    elif any(matching):
+        raise NotImplementedError(
+            "Typeshed patcher does not yet support complex if statements where "
+            "some inner statements match a condition and others don't.\n"
+            f"Got an import statement matching names {names} when searching for {name}"
+        )
+    else:
+        return False
+
+
 def statement_matches_name(
     name: str,
     statement: libcst.BaseStatement | libcst.BaseSmallStatement,
@@ -135,8 +186,11 @@ def statement_matches_name(
             statement,
             predicate=lambda s: statement_matches_name(name, s),
         )
-    else:
-        return False
+    if isinstance(statement, libcst.Import):
+        return import_names_match_name(statement.names, name)
+    if isinstance(statement, libcst.ImportFrom):
+        return import_names_match_name(statement.names, name)
+    return False
 
 
 def is_import_statement(
