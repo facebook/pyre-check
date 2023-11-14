@@ -34,6 +34,12 @@ module Root : sig
 
   val show_internal : t -> string
 
+  val variable_to_captured_variable : t -> t
+
+  val captured_variable_to_variable : t -> t
+
+  val is_captured_variable : t -> bool
+
   (* Equivalent to pp_internal. Required by @@deriving. *)
   val pp : Format.formatter -> t -> unit
 

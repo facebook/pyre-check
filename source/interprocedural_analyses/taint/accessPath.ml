@@ -68,6 +68,20 @@ module Root = struct
     let pp_internal = pp
 
     let show_internal = Format.asprintf "%a" pp_internal
+
+    let variable_to_captured_variable = function
+      | Variable name -> CapturedVariable name
+      | root -> root
+
+
+    let captured_variable_to_variable = function
+      | CapturedVariable name -> Variable name
+      | root -> root
+
+
+    let is_captured_variable = function
+      | CapturedVariable _ -> true
+      | _ -> false
   end
 
   include T

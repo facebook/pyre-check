@@ -1,7 +1,9 @@
 @generated
 Call dependencies
+$local_closure?nonlocal_closure_conditional_write$conditional_write (fun) -> [closure._test_source2 (fun) closure.nonlocal_closure_conditional_write.obj (object)]
 $local_closure?nonlocal_closure_multiple_writes$conditional_write (fun) -> [_test_source (fun) closure.nonlocal_closure_multiple_writes.x (object)]
 $local_closure?parameter_order_swap_different_variable_names$inner (fun) -> [_test_sink (fun) closure.parameter_order_swap_different_variable_names.a (object) closure.parameter_order_swap_different_variable_names.b (object) closure.parameter_order_swap_different_variable_names.c (object)]
+$local_closure?nonlocal_closure_conditional_write$clear (fun) -> [closure.nonlocal_closure_conditional_write.obj (object)]
 $local_closure?nonlocal_closure_flow$sink (fun) -> [_test_sink (fun) closure.nonlocal_closure_flow.obj (object)]
 $local_closure?nonlocal_closure_flow$source (fun) -> [_test_source (fun) closure.nonlocal_closure_flow.obj (object)]
 $local_closure?nonlocal_closure_inner_flow$flow (fun) -> [_test_sink (fun) _test_source (fun) closure.nonlocal_closure_inner_flow.obj (object)]
@@ -19,6 +21,7 @@ $local_closure?nonlocal_closure_write_reduction$source (fun) -> [_test_source (f
 $local_closure?parameter_order_swap$inner (fun) -> [_test_sink (fun)]
 $local_closure?wrapper_for_taint_propagation$inner (fun) -> [_test_sink (fun)]
 $local_closure?wrapper_for_taint_propagation_hof$inner (fun) -> [_test_sink (fun)]
+closure.nonlocal_closure_conditional_write (fun) -> [$local_closure?nonlocal_closure_conditional_write$clear (fun) $local_closure?nonlocal_closure_conditional_write$conditional_write (fun) _test_sink (fun) _test_source (fun)]
 closure.nonlocal_closure_multiple_writes (fun) -> [$local_closure?nonlocal_closure_multiple_writes$conditional_write (fun) $local_closure?nonlocal_closure_multiple_writes$overwrite (fun) _test_sink (fun)]
 closure.nonlocal_closure_write_reduction (fun) -> [$local_closure?nonlocal_closure_write_reduction$source (fun) _test_sink (fun)]
 closure.parameter_order_swap_different_variable_names (fun) -> [$local_closure?parameter_order_swap_different_variable_names$inner (fun)]

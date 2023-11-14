@@ -728,6 +728,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         ForwardState.Tree.empty
     in
+    (* Deal with side effect of calling a function that sets a variable in this frame *)
+    let state =
+      ForwardState.roots forward.source_taint
+      (* TODO(T169118550): use the captured_variable string to check if captured variable is in this
+         frame *)
+      |> List.filter ~f:AccessPath.Root.is_captured_variable
+      |> List.fold ~init:state ~f:(fun state root ->
+             (* TODO(T169657906): Programatically decide between weak and strong storing of taint *)
+             store_taint
+               ~weak:true
+               ~root:(AccessPath.Root.captured_variable_to_variable root)
+               ~path:[]
+               (ForwardState.read ~root ~path:[] forward.source_taint)
+               state)
+    in
     let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
@@ -769,11 +784,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
     in
-    let returned_taint = ForwardState.Tree.join result_taint tito_taint in
     let returned_taint =
-      ForwardState.Tree.add_local_breadcrumbs
-        (Features.type_breadcrumbs (Option.value_exn return_type))
-        returned_taint
+      result_taint
+      |> ForwardState.Tree.join tito_taint
+      |> ForwardState.Tree.add_local_breadcrumbs
+           (Features.type_breadcrumbs (Option.value_exn return_type))
     in
     let state = apply_tito_side_effects tito_effects state in
     returned_taint, state
@@ -2737,8 +2752,35 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~expression:target
           ~interval:FunctionContext.caller_class_interval
         |> check_flow_to_global ~location ~source_tree;
+        (* Check flows to nonlocals. *)
+        let state =
+          let nonlocal_target_identifier =
+            match Node.value target with
+            | Expression.Name (Name.Identifier identifier) ->
+                FunctionContext.call_graph_of_define
+                |> CallGraph.DefineCallGraph.resolve_identifier
+                     ~location:(Node.location target)
+                     ~identifier
+                >>| (fun { global_targets = _; nonlocal_targets } -> nonlocal_targets)
+                >>| Fn.non List.is_empty
+                >>| (fun has_nonlocal_targets -> Option.some_if has_nonlocal_targets identifier)
+                |> Option.value ~default:None
+            (* TODO(T168869049): Handle class attribute writes *)
+            | _ -> None
+          in
 
-        (* Propagate taint. *)
+          match nonlocal_target_identifier with
+          | None -> state
+          | Some identifier ->
+              (* Propagate taint for nonlocal assignment. *)
+              store_taint
+                ~weak
+                ~root:(AccessPath.Root.CapturedVariable identifier)
+                ~path:fields
+                taint
+                state
+        in
+        (* Propagate taint for assignment. *)
         let access_path = AccessPath.of_expression target >>| AccessPath.extend ~path:fields in
         store_taint_option ~weak access_path taint state
 
@@ -2979,50 +3021,64 @@ let extract_source_model
     >>| GlobalResolution.parse_annotation resolution
     |> Features.type_breadcrumbs_from_annotation ~resolution
   in
-
-  let simplify tree =
-    let tree =
-      match maximum_trace_length with
-      | Some maximum_trace_length ->
-          ForwardState.Tree.prune_maximum_length maximum_trace_length tree
-      | _ -> tree
-    in
-    if apply_broadening then
-      tree
-      |> ForwardState.Tree.shape
-           ~mold_with_return_access_paths:false
-           ~breadcrumbs:(Features.model_source_shaping_set ())
-      |> ForwardState.Tree.limit_to
-           ~breadcrumbs:(Features.model_source_broadening_set ())
-           ~width:maximum_model_source_tree_width
-    else
-      tree
-  in
-  let return_taint =
-    let return_variable =
-      (* Our handling of property setters is counterintuitive.
-       * We treat `a.property = x` as `a = a.property(x)`.
-       *
-       * This is because the property setter callable can arbitrarily mutate self in
-       * its body, meaning that we can't do a naive join of the taint returned by the property
-       * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
-       * self as implicitly returned here allows this handling to work and simulates runtime
-       * behavior accurately. *)
-      if String.equal (Reference.last name) "__init__" || Statement.Define.is_property_setter define
-      then
-        match parameters with
-        | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
-            AccessPath.Root.Variable self_parameter
-        | [] -> AccessPath.Root.LocalResult
+  let local_result_model =
+    let simplify tree =
+      let tree =
+        match maximum_trace_length with
+        | Some maximum_trace_length ->
+            ForwardState.Tree.prune_maximum_length maximum_trace_length tree
+        | _ -> tree
+      in
+      if apply_broadening then
+        tree
+        |> ForwardState.Tree.shape
+             ~mold_with_return_access_paths:false
+             ~breadcrumbs:(Features.model_source_shaping_set ())
+        |> ForwardState.Tree.limit_to
+             ~breadcrumbs:(Features.model_source_broadening_set ())
+             ~width:maximum_model_source_tree_width
       else
-        AccessPath.Root.LocalResult
+        tree
     in
-    ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
-  in
+    let return_taint =
+      let return_variable =
+        (* Our handling of property setters is counterintuitive.
+         * We treat `a.property = x` as `a = a.property(x)`.
+         *
+         * This is because the property setter callable can arbitrarily mutate self in
+         * its body, meaning that we can't do a naive join of the taint returned by the property
+         * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
+         * self as implicitly returned here allows this handling to work and simulates runtime
+         * behavior accurately. *)
+        if
+          String.equal (Reference.last name) "__init__"
+          || Statement.Define.is_property_setter define
+        then
+          match parameters with
+          | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
+              AccessPath.Root.Variable self_parameter
+          | [] -> AccessPath.Root.LocalResult
+        else
+          AccessPath.Root.LocalResult
+      in
+      ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
+    in
 
-  ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
+    ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
+    |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
+  in
+  let captured_variables_model =
+    ForwardState.roots exit_taint
+    |> List.filter ~f:AccessPath.Root.is_captured_variable
+    |> List.fold ~init:ForwardState.bottom ~f:(fun state root ->
+           let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint in
+           let captured_variable_model =
+             ForwardState.assign ~root ~path:[] captured_variable_taint ForwardState.bottom
+           in
+           ForwardState.join state captured_variable_model)
+  in
+  ForwardState.join local_result_model captured_variables_model
   |> ForwardState.add_local_breadcrumbs breadcrumbs_to_attach
-  |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
   |> ForwardState.add_via_features via_features_to_attach
 
 

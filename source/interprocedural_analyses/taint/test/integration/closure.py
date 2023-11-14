@@ -115,7 +115,6 @@ def closure_no_flow():
 
 
 def nonlocal_closure_write_reduction():
-    # TODO(T168868911): FN Nonlocal closure write
     x = ""
     z = ""
 
@@ -130,7 +129,6 @@ def nonlocal_closure_write_reduction():
 
 
 def nonlocal_closure_reduction():
-    # TODO(T168868911): FN Nonlocal closure write
     obj1 = ""
 
     def source():
@@ -158,7 +156,6 @@ def nonlocal_closure_multiple_writes():
             x = 0
     # Note: The truthiness of the conditional isn't actually used
     conditional_write(True)
-    # TODO(T168868911): FN Nonlocal closure write
     _test_sink(x)
 
     def overwrite():
@@ -171,7 +168,6 @@ def nonlocal_closure_multiple_writes():
 
 
 def nonlocal_closure_flow():
-    # TODO(T168868911): FN Nonlocal closure write
     obj = ""
 
     def source():
@@ -235,3 +231,28 @@ def nonlocal_obscure_no_flow():
     source, sink = nonlocal_closure_obscure()
     sink()
     source()
+
+
+def _test_source2(): ...
+
+
+def nonlocal_closure_conditional_write():
+    obj = _test_source()
+
+    def conditional_write(cond):
+        nonlocal obj
+        if cond:
+            obj = _test_source2()
+
+    def clear():
+        nonlocal obj
+        obj = 0
+
+    conditional_write(True)
+    _test_sink(obj)
+
+    obj = 0
+    obj = _test_source()
+    clear()
+    # TODO(T169657906): [FP] Overwrite taint on nonlocal writes
+    _test_sink(obj)
