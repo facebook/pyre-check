@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 239,
+    "callable_line": 273,
     "code": 5003,
-    "line": 252,
+    "line": 286,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -25,7 +25,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 245,
+              "line": 279,
               "start": 18,
               "end": 33
             }
@@ -45,7 +45,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 252,
+              "line": 286,
               "start": 15,
               "end": 18
             }
@@ -67,9 +67,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 239,
+    "callable_line": 273,
     "code": 5002,
-    "line": 258,
+    "line": 292,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -93,7 +93,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 255,
+              "line": 289,
               "start": 10,
               "end": 24
             }
@@ -113,7 +113,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 258,
+              "line": 292,
               "start": 15,
               "end": 18
             }
@@ -140,9 +140,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 239,
+    "callable_line": 273,
     "code": 5002,
-    "line": 252,
+    "line": 286,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -163,7 +163,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 240,
+              "line": 274,
               "start": 10,
               "end": 24
             }
@@ -183,7 +183,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 252,
+              "line": 286,
               "start": 15,
               "end": 18
             }
@@ -1261,7 +1261,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 245,
+              "line": 279,
               "start": 18,
               "end": 33
             }
@@ -1477,6 +1477,131 @@
               "line": 154,
               "start": 16,
               "end": 30
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
+    "sinks": [
+      {
+        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 246,
+              "start": 23,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
+    "callable_line": 241,
+    "code": 5002,
+    "line": 246,
+    "start": 23,
+    "end": 28,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 244,
+              "start": 24,
+              "end": 38
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 246,
+              "start": 23,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure.nonlocal_closure_nested_flow.source1.source2:5002:0:Call|_test_sink|0|formal(arg):36a4a5208864561dc3573bdc7d24bfae"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_nested_flow.source1.source2.source3",
+    "sources": [
+      {
+        "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 244,
+              "start": 24,
+              "end": 38
             }
           }
         ]
@@ -1741,6 +1866,36 @@
               "line": 137,
               "start": 15,
               "end": 29
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_wrapper_flow.source",
+    "sources": [
+      {
+        "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 261,
+              "start": 14,
+              "end": 28
             }
           }
         ]

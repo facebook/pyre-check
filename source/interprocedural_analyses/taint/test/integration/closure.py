@@ -233,6 +233,40 @@ def nonlocal_obscure_no_flow():
     source()
 
 
+def nonlocal_closure_nested_flow():
+    outer = ""
+
+    def source1():
+        inner = ""
+        def source2():
+            def source3():
+                nonlocal inner
+                inner = _test_source()
+            source3()
+            _test_sink(inner)
+        source2()
+        _test_sink(inner) # TODO(T169118550): FN
+        nonlocal outer
+        outer = inner
+
+    source1()
+    _test_sink(outer) # TODO(T169118550): FN
+
+
+def nonlocal_closure_wrapper_flow():
+    obj = ""
+
+    def source():
+        nonlocal obj
+        obj = _test_source()
+
+    def wrapper():
+        source()
+
+    wrapper()
+    _test_sink(obj) # TODO(T169118550): FN
+
+
 def _test_source2(): ...
 
 
