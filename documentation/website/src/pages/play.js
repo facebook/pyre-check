@@ -245,7 +245,7 @@ function Playground() {
               </li>
               <li>
                 {' '}
-                <a href="https://www.internalfb.com/intern/pyre/sandbox/">
+                <a href="https://www.internalfb.com/intern/pyre/sandbox/" target="_blank">
                   {' '}
                   the internal sandbox{' '}
                 </a>
