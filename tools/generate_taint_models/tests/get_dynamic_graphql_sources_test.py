@@ -31,6 +31,10 @@ def function2(foo, *bar) -> bool:
     return True
 
 
+def excluded_function(foo) -> bool:
+    return True
+
+
 class TestClass:
     def method1(self, foo) -> bool:
         return True
@@ -59,6 +63,7 @@ queryType = GraphQLObjectType(
         "resolver3": GraphQLField(GraphQLBoolean, resolve=TestClass.method1),
         "resolver4": GraphQLField(GraphQLBoolean, resolve=TestClass.method2),
         "lambda_resolver": GraphQLField(GraphQLBoolean, resolve=lambda x: x),
+        "res": GraphQLField(GraphQLBoolean, resolve=excluded_function),
     },
 )
 
@@ -68,9 +73,13 @@ SCHEMA = GraphQLSchema(query=queryType)
 class GetDynamicGraphQLSourcesTest(unittest.TestCase):
     def test_gather_functions_to_model(self) -> None:
         functions = DynamicGraphQLSourceGenerator(
-            graphql_schema=SCHEMA, graphql_object_type=GraphQLObjectType
+            graphql_schema=SCHEMA,
+            graphql_object_type=GraphQLObjectType,
+            resolvers_to_exclude=[
+                "tools.pyre.tools.generate_taint_models.tests.get_dynamic_graphql_sources_test.excluded_function"
+            ],
         ).gather_functions_to_model()
-
+        self.assertTrue(excluded_function not in set(functions))
         self.assertTrue(
             {function1, function2, TestClass.method1, TestClass.method2}.issubset(
                 set(functions)
@@ -85,7 +94,9 @@ class GetDynamicGraphQLSourcesTest(unittest.TestCase):
                 *map(
                     str,
                     DynamicGraphQLSourceGenerator(
-                        graphql_schema=SCHEMA, graphql_object_type=GraphQLObjectType
+                        graphql_schema=SCHEMA,
+                        graphql_object_type=GraphQLObjectType,
+                        resolvers_to_exclude=["excluded_function"],
                     ).compute_models(all_functions),
                 )
             ],

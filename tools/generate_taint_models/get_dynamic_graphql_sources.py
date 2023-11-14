@@ -28,6 +28,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
         graphql_schema: GraphQLSchema,
         graphql_object_type: GraphQLObjectType,
         annotations: Optional[AnnotationSpecification] = None,
+        resolvers_to_exclude: Optional[List[str]] = None,
     ) -> None:
         super().__init__()
         self.graphql_schema: GraphQLSchema = graphql_schema
@@ -42,6 +43,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
                 returns="TaintSink[ReturnedToUser]",
             )
         )
+        self.resolvers_to_exclude: List[str] = resolvers_to_exclude or []
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
         type_map = self.graphql_schema.type_map
@@ -64,7 +66,12 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
 
             for field in fields:
                 resolver = fields[field].resolve
-                if resolver is not None and resolver.__name__ != "<lambda>":
+                if (
+                    resolver is not None
+                    and resolver.__name__ != "<lambda>"
+                    and f"{resolver.__module__}.{resolver.__name__}"
+                    not in self.resolvers_to_exclude
+                ):
                     resolvers.append(resolver)
 
         return resolvers
