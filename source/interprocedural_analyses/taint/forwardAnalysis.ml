@@ -728,21 +728,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         ForwardState.Tree.empty
     in
-    (* Deal with side effect of calling a function that sets a variable in this frame *)
-    let state =
-      ForwardState.roots forward.source_taint
-      (* TODO(T169118550): use the captured_variable string to check if captured variable is in this
-         frame *)
-      |> List.filter ~f:AccessPath.Root.is_captured_variable
-      |> List.fold ~init:state ~f:(fun state root ->
-             (* TODO(T169657906): Programatically decide between weak and strong storing of taint *)
-             store_taint
-               ~weak:true
-               ~root:(AccessPath.Root.captured_variable_to_variable root)
-               ~path:[]
-               (ForwardState.read ~root ~path:[] forward.source_taint)
-               state)
-    in
     let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
@@ -784,13 +769,53 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
     in
+    let apply_captured_variable_side_effects state =
+      let propagate_captured_variables state root =
+        match root with
+        | AccessPath.Root.CapturedVariable variable ->
+            let nonlocal_reference = Reference.delocalize (Reference.create variable) in
+            let define_reference =
+              Reference.delocalize FunctionContext.definition.value.signature.name
+            in
+            let is_prefix = Reference.is_prefix ~prefix:define_reference nonlocal_reference in
+            (* Treat any function call, even those that wrap a closure write, as a closure write *)
+            let state =
+              (* TODO(T169657906): Programatically decide between weak and strong storing of
+                 taint *)
+              store_taint
+                ~weak:true
+                ~root:(AccessPath.Root.captured_variable_to_variable root)
+                ~path:[]
+                (ForwardState.read ~root ~path:[] forward.source_taint)
+                state
+            in
+            (* Propagate captured variable taint up until the function where the nonlocal variable
+               is initialized *)
+            if not is_prefix then
+              store_taint
+                ~weak:true
+                ~root
+                ~path:[]
+                (ForwardState.read ~root ~path:[] forward.source_taint)
+                state
+            else
+              state
+        | _ -> state
+      in
+      List.fold
+        ~init:state
+        ~f:propagate_captured_variables
+        (ForwardState.roots forward.source_taint)
+    in
     let returned_taint =
       result_taint
       |> ForwardState.Tree.join tito_taint
       |> ForwardState.Tree.add_local_breadcrumbs
            (Features.type_breadcrumbs (Option.value_exn return_type))
     in
-    let state = apply_tito_side_effects tito_effects state in
+    let state =
+      state |> apply_tito_side_effects tito_effects |> apply_captured_variable_side_effects
+    in
     returned_taint, state
 
 

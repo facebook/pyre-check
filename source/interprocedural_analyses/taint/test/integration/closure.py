@@ -245,12 +245,12 @@ def nonlocal_closure_nested_flow():
             source3()
             _test_sink(inner)
         source2()
-        _test_sink(inner) # TODO(T169118550): FN
+        _test_sink(inner)
         nonlocal outer
         outer = inner
 
     source1()
-    _test_sink(outer) # TODO(T169118550): FN
+    _test_sink(outer)
 
 
 def nonlocal_closure_wrapper_flow():
