@@ -10,7 +10,7 @@
 
 #ifndef NO_SQLITE3
 
-#include <sqlite3.h>
+#include <sqlite3.h> // @manual=("sqlite", None, "sqlite")
 
 #include <stdint.h>
 
