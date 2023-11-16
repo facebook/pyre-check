@@ -300,7 +300,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "RemoteCodeExecution" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "select.return_is_RCE", "port": "leaf:return" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
             "origin": {
               "filename": "select.py",
               "line": 41,

@@ -48,6 +48,8 @@ module type FUNCTION_CONTEXT = sig
 
   val definition : Statement.Define.t Node.t
 
+  val callable : Interprocedural.Target.t
+
   val debug : bool
 
   val profiler : TaintProfiler.t
@@ -411,7 +413,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.apply_call
            ~resolution
            ~location:return_location
-           ~callee:None
+           ~callee:(Some FunctionContext.callable)
+             (* When the source and sink meet at the return statement, we want the leaf callable to
+                be non-empty, to provide more information about the flow. Hence we let the leaf
+                callable to be the current callable. *)
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
            ~is_self_call:false
@@ -2971,7 +2976,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> ForwardState.Tree.apply_call
              ~resolution
              ~location
-             ~callee:(Some (Interprocedural.Target.create FunctionContext.definition))
+             ~callee:(Some FunctionContext.callable)
+               (* Provide leaf callable names when sources originate from parameters. *)
              ~arguments:[]
              ~port:parameter_root
              ~is_self_call:false
@@ -3128,6 +3134,8 @@ let run
     let qualifier = qualifier
 
     let definition = define
+
+    let callable = callable
 
     let debug = Statement.Define.dump define.value
 

@@ -184,6 +184,12 @@
             "kinds": [
               {
                 "features": [ { "always-via": "string_concat_lhs" } ],
+                "leaves": [
+                  {
+                    "name": "attach_features.attach_to_returned_sink",
+                    "port": "leaf:return"
+                  }
+                ],
                 "kind": "Test"
               }
             ],

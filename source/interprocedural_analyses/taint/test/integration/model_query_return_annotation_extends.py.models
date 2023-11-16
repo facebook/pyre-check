@@ -123,7 +123,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.Test2.test2_alarm1",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 75,
@@ -217,7 +227,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.Test2.test2_alarm2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 78,
@@ -371,7 +391,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test1_alarm1",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 32,
@@ -461,7 +491,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test1_alarm2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 36,
@@ -551,7 +591,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test1_alarm3",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 40,
@@ -641,7 +691,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test1_alarm4",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 44,
@@ -761,7 +821,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm1",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 102,
@@ -851,7 +921,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm2",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 106,
@@ -941,7 +1021,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm3",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 110,
@@ -1031,7 +1121,17 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query_return_annotation_extends.test3_alarm4",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query_return_annotation_extends.py",
               "line": 114,

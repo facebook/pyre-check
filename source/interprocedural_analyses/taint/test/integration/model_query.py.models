@@ -1587,7 +1587,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query.alarm_7", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query.py",
               "line": 159,
@@ -1643,7 +1650,14 @@
         "name": "backward",
         "roots": [
           {
-            "kinds": [ { "kind": "Test" } ],
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query.alarm_7", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
             "origin": {
               "filename": "model_query.py",
               "line": 159,
