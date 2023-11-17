@@ -2347,7 +2347,7 @@ class ReferencesTest(ApiTestCase):
                     code=server_setup.DEFAULT_FILE_CONTENTS
                 )
             },
-            querier=querier,
+            querier=server_setup.MockDaemonQuerier(),
             index_querier=querier,
         )
         api = setup.api
