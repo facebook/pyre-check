@@ -44,6 +44,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
         find_local_configuration.return_value = Path(
             "subdirectory/.pyre_configuration.local"
         )
+        arguments.target_prefix = "example_prefix"
 
         # Skip if nested configurations found
         find_files.return_value = ["nested/.pyre_configuration.local"]
@@ -53,7 +54,9 @@ class ExpandTargetCoverageTest(unittest.TestCase):
 
         # Skip if target is already expanded
         find_files.return_value = []
-        configuration_contents = json.dumps({"targets": ["//subdirectory/..."]})
+        configuration_contents = json.dumps(
+            {"targets": ["example_prefix//subdirectory/..."]}
+        )
         get_and_suppress_errors.reset_mock()
         deduplicate_targets.reset_mock()
         open_mock.reset_mock()
@@ -79,7 +82,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             open_mock.side_effect = mocks
             ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
-                "targets": ["//existing:target", "//subdirectory/..."]
+                "targets": ["//existing:target", "example_prefix//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [
@@ -105,7 +108,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             open_mock.side_effect = mocks
             ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
-                "targets": ["//existing:target", "//subdirectory/..."]
+                "targets": ["//existing:target", "example_prefix//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [
@@ -132,7 +135,7 @@ class ExpandTargetCoverageTest(unittest.TestCase):
             open_mock.side_effect = mocks
             ExpandTargetCoverage.from_arguments(arguments, repository).run()
             expected_configuration_contents = {
-                "targets": ["//existing:target", "//subdirectory/..."]
+                "targets": ["//existing:target", "example_prefix//subdirectory/..."]
             }
             open_mock.assert_has_calls(
                 [

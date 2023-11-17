@@ -206,7 +206,7 @@ class Configuration:
             if target.endswith("/...") or target.endswith(":"):
                 try:
                     expanded = (
-                        subprocess.check_output(["buck", "query", target])
+                        subprocess.check_output(["buck2", "query", target])
                         .decode()
                         .strip()
                         .split("\n")

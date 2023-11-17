@@ -34,10 +34,12 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         repository: Repository,
         local_configuration: Optional[str],
         fixme_threshold: bool,
+        target_prefix: str,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._local_configuration: Final[Optional[str]] = local_configuration
         self._fixme_threshold: bool = fixme_threshold
+        self._target_prefix: str = target_prefix
 
     @staticmethod
     def from_arguments(
@@ -49,6 +51,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             repository=repository,
             local_configuration=arguments.local_configuration,
             fixme_threshold=arguments.fixme_threshold,
+            target_prefix=arguments.target_prefix,
         )
 
     @classmethod
@@ -65,6 +68,11 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
             "--fixme-threshold",
             type=int,
             help="Ignore all errors in a file if fixme count exceeds threshold.",
+        )
+        parser.add_argument(
+            "--target-prefix",
+            type=str,
+            help="The prefix to include in the expanded target.",
         )
 
     @override
@@ -91,7 +99,7 @@ class ExpandTargetCoverage(ErrorSuppressingCommand):
         LOG.info("Expanding typecheck targets in `%s`", local_configuration)
         configuration = Configuration(local_configuration)
         existing_targets = configuration.targets
-        glob_target = "//{}/...".format(str(local_root))
+        glob_target = "{}//{}/...".format(self._target_prefix, str(local_root))
         if existing_targets == [glob_target]:
             LOG.info("Configuration is already fully expanded.")
             return
