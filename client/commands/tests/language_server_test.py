@@ -2413,6 +2413,111 @@ class ReferencesTest(ApiTestCase):
         )
 
 
+class CallHierarchyTest(ApiTestCase):
+    @setup.async_test
+    async def test_call_hierarchy__basic(self) -> None:
+        tracked_path = Path("/tracked.py")
+        lsp_line = 3
+        daemon_line = lsp_line + 1
+        range = lsp.LspRange(
+            lsp.LspPosition(line=lsp_line, character=0),
+            lsp.LspPosition(line=lsp_line, character=8),
+        )
+        call_hierarchy_item = lsp.CallHierarchyItem(
+            name="testname",
+            kind=lsp.SymbolKind.METHOD,
+            uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+            range=range,
+            selection_range=range,
+        )
+        expected_response = [call_hierarchy_item]
+        index_querier = server_setup.MockDaemonQuerier(
+            mock_call_hierarchy_response=expected_response,
+        )
+        setup = server_setup.create_pyre_language_server_api_setup(
+            opened_documents={
+                tracked_path: state.OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
+            },
+            querier=server_setup.MockDaemonQuerier(),
+            index_querier=index_querier,
+        )
+        api = setup.api
+        output_writer = setup.output_writer
+        await api.process_call_hierarchy_request(
+            lsp.CallHierarchyParameters(
+                text_document=lsp.TextDocumentIdentifier(
+                    uri=lsp.DocumentUri.from_file_path(tracked_path).unparse(),
+                ),
+                position=lsp.LspPosition(line=lsp_line, character=4),
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        await api.process_call_hierarchy_incoming_call(
+            parameters=lsp.CallHierarchyIncomingCallParameters(
+                item=call_hierarchy_item
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        await api.process_call_hierarchy_outgoing_call(
+            parameters=lsp.CallHierarchyOutgoingCallParameters(
+                item=call_hierarchy_item
+            ),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+        self.assertEqual(
+            index_querier.requests,
+            [
+                {
+                    "path": tracked_path,
+                    "position": lsp.PyrePosition(line=daemon_line, character=4),
+                    "relation_direction": lsp.PyreCallHierarchyRelationDirection.PARENT,
+                },
+                {
+                    "path": tracked_path,
+                    "call_hierarchy_item": call_hierarchy_item,
+                    "relation_direction": lsp.PyreCallHierarchyRelationDirection.PARENT,
+                },
+                {
+                    "path": tracked_path,
+                    "call_hierarchy_item": call_hierarchy_item,
+                    "relation_direction": lsp.PyreCallHierarchyRelationDirection.CHILD,
+                },
+            ],
+        )
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    result=lsp.CallHierarchyItem.cached_schema().dump(
+                        expected_response, many=True
+                    ),
+                ),
+                self._expect_success_message(
+                    result=[
+                        lsp.CallHierarchyIncomingCall.cached_schema().dump(
+                            lsp.CallHierarchyIncomingCall(
+                                from_=call_hierarchy_item,
+                                from_ranges=[call_hierarchy_item.range],
+                            )
+                        )
+                    ],
+                ),
+                self._expect_success_message(
+                    result=[
+                        lsp.CallHierarchyOutgoingCall.cached_schema().dump(
+                            lsp.CallHierarchyOutgoingCall(
+                                to=call_hierarchy_item,
+                                from_ranges=[call_hierarchy_item.range],
+                            )
+                        )
+                    ],
+                ),
+            ],
+        )
+
+
 class DocumentSymbolsTest(ApiTestCase):
     @setup.async_test
     async def test_document_symbols_request(self) -> None:

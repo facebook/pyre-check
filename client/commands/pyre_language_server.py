@@ -1007,7 +1007,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         request_timer = timer.Timer()
 
-        call_hierarchy_response = await self.querier.get_init_call_hierarchy(
+        call_hierarchy_response = await self.index_querier.get_init_call_hierarchy(
             path=document_path,
             position=parameters.position.to_pyre_position(),
             relation_direction=lsp.PyreCallHierarchyRelationDirection.PARENT,
@@ -1098,9 +1098,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
 
         raw_result = [
-            lsp.CallHierarchyIncomingCall(
-                from_=call_hierarchy_item, from_ranges=[call_hierarchy_item.range]
-            ).to_dict()
+            lsp.CallHierarchyIncomingCall.cached_schema().dump(
+                lsp.CallHierarchyIncomingCall(
+                    from_=call_hierarchy_item, from_ranges=[call_hierarchy_item.range]
+                )
+            )
             for call_hierarchy_item in call_hierarchy_items
         ]
         LOG.info(f"Call hierarchy incoming call response: {raw_result}")

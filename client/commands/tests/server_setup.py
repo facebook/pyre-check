@@ -217,6 +217,13 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        self.requests.append(
+            {
+                "path": path,
+                "position": position,
+                "relation_direction": relation_direction,
+            }
+        )
         if self.mock_call_hierarchy_response is None:
             raise ValueError(
                 "You need to set the get call hierarchy response in the mock querier"
@@ -230,6 +237,13 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        self.requests.append(
+            {
+                "path": path,
+                "call_hierarchy_item": call_hierarchy_item,
+                "relation_direction": relation_direction,
+            }
+        )
         if self.mock_call_hierarchy_response is None:
             raise ValueError(
                 "You need to set the get call hierarchy response in the mock querier"
