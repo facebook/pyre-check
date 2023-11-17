@@ -62,14 +62,6 @@ else:
 def ensure_future(coro_or_future: _FT, *, loop: AbstractEventLoop | None = None) -> _FT: ...  # type: ignore[misc]
 @overload
 def ensure_future(coro_or_future: Awaitable[_T], *, loop: AbstractEventLoop | None = None) -> Task[_T]: ...
-
-# `gather()` actually returns a list with length equal to the number
-# of tasks passed; however, Tuple is used similar to the annotation for
-# zip() because typing does not support variadic type variables.  See
-# typing PR #1550 for discussion.
-#
-# The many type: ignores here are because the overloads overlap,
-# but having overlapping overloads is the only way to get acceptable type inference in all edge cases.
 if sys.version_info >= (3, 10):
     @overload
     def gather(__coro_or_future1: _FutureLike[_T1], *, return_exceptions: Literal[False] = False) -> Future[tuple[_T1]]: ...  # type: ignore[misc]
@@ -141,7 +133,6 @@ if sys.version_info >= (3, 10):
     ]: ...
     @overload
     def gather(*coros_or_futures: _FutureLike[Any], return_exceptions: bool = False) -> Future[list[Any]]: ...
-
 else:
     @overload
     def gather(  # type: ignore[misc]
