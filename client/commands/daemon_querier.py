@@ -733,7 +733,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             self.socket_path, type_errors_request
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(response.message)
+            return daemon_query.DaemonQueryFailure(
+                response.message, error_source=response.error_source
+            )
         # TODO(T165048078): determine if this error should be kept for code navigation (are we committing to unsafe mode in codenav?)
         return [error for error in response.to_errors_response() if error.code != 0]
 
@@ -779,7 +781,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             definition_request,
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(response.message)
+            return daemon_query.DaemonQueryFailure(
+                response.message, error_source=response.error_source
+            )
         return GetDefinitionLocationsResponse(
             source=DaemonQuerierSource.PYRE_DAEMON,
             data=[
@@ -802,7 +806,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             self.socket_path, completions_request
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(response.message)
+            return daemon_query.DaemonQueryFailure(
+                response.message, error_source=response.error_source
+            )
         return [
             completion_item.to_lsp_completion_item()
             for completion_item in response.completions
@@ -959,8 +965,11 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
             return await self.get_definition_locations_from_glean(path, position)
         base_results = await self.base_querier.get_definition_locations(path, position)
 
-        # If pyre throws an exception or if the definition locations are empty, fall back to glean
-        if isinstance(base_results, daemon_query.DaemonQueryFailure):
+        # If pyre throws an exception and might not require restarting due to that exception  - then fall back to glean
+        if (
+            isinstance(base_results, daemon_query.DaemonQueryFailure)
+            and base_results.error_source is None
+        ):
             LOG.warn(
                 f"Pyre threw exception: {base_results.error_message} - falling back to glean"
             )
