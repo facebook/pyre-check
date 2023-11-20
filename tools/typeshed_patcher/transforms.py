@@ -27,7 +27,9 @@ def statements_from_content(content: str) -> Sequence[libcst.BaseStatement]:
         module = libcst.parse_module(content)
         return module.body
     except libcst.ParserSyntaxError as e:
-        raise ValueError(f"Failed to parse content:\n---\n{content}\n---\n{e.message}")
+        raise ValueError(
+            f"Failed to parse content:\n---\n{content}\n---\n{e.message}"
+        ) from e
 
 
 def statements_in_indented_block(
