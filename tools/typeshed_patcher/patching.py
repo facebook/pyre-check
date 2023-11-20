@@ -81,6 +81,7 @@ def patch_one_file_entrypoint(
     source_root: pathlib.Path,
     relative_path: pathlib.Path,
     patch_specs_toml: pathlib.Path,
+    show_diff: bool,
 ) -> None:
     """
     Plumbing around `patch_one_file` to make patching a single file, viewing the diff,
@@ -96,7 +97,8 @@ def patch_one_file_entrypoint(
         original_typeshed=original_typeshed,
         file_patch=file_patch,
     )
-    sys.stderr.write(f"Diff of original content vs patch:\n---\n{diff_view}\n---\n")
+    if show_diff:
+        sys.stderr.write(f"Diff of original content vs patch:\n{diff_view}\n")
     sys.stdout.write(patched_code)
 
 

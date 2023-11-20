@@ -69,10 +69,17 @@ def fetch_upstream(
     default=None,
     help="Path to the patch specs toml file",
 )
+@click.option(
+    "--show-diff/--no-show-diff",
+    type=bool,
+    default=True,
+    help="Print diff to stderr?",
+)
 def patch_one_file(
     source_root: str,
     relative_path: str,
     patch_specs: str,
+    show_diff: bool,
 ) -> None:
     """
     Patch a single file in a source typeshed.
@@ -83,6 +90,7 @@ def patch_one_file(
         source_root=pathlib.Path(source_root),
         relative_path=pathlib.Path(relative_path),
         patch_specs_toml=pathlib.Path(patch_specs),
+        show_diff=show_diff,
     )
 
 
