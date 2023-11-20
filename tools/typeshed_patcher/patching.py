@@ -32,8 +32,8 @@ def compute_diff_view(
     diff_lines = difflib.context_diff(
         as_diff_lines(original_code),
         as_diff_lines(patched_code),
-        fromfile="original {path}",
-        tofile="patched {path}",
+        fromfile=f"original {path}",
+        tofile=f"patched {path}",
     )
     return "".join(diff_lines)
 

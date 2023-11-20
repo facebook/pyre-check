@@ -191,4 +191,4 @@ class FilePatch:
         try:
             return FilePatch.from_toml_string(path.read_text())
         except OSError as error:
-            raise ReadPatchException("Cannot read from {path}") from error
+            raise ReadPatchException(f"Cannot read from {path}") from error

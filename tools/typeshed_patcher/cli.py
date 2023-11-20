@@ -28,7 +28,7 @@ def pyre_typeshed_patcher() -> None:
     type=str,
     default=upstream.LATEST,
     help=(
-        "The URL to pull from. If {upstream.LATEST}, "
+        f"The URL to pull from. If {upstream.LATEST}, "
         "we find the most recent upstream version."
     ),
 )
