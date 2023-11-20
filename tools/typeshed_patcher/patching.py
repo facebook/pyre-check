@@ -15,6 +15,7 @@ import dataclasses
 import difflib
 import pathlib
 import shutil
+import sys
 
 from . import patch_specs, transforms, typeshed
 
@@ -77,11 +78,9 @@ def load_file_patch_from_toml(
 
 
 def patch_one_file_entrypoint(
-    source: pathlib.Path,
-    stub_path: pathlib.Path,
+    source_root: pathlib.Path,
+    relative_path: pathlib.Path,
     patch_specs_toml: pathlib.Path,
-    target: pathlib.Path | None,
-    overwrite: bool,
 ) -> None:
     """
     Plumbing around `patch_one_file` to make patching a single file, viewing the diff,
@@ -91,28 +90,14 @@ def patch_one_file_entrypoint(
     we'll just pull a typeshed and apply all patches at once. But this function should
     make it much easier to rapidly iterate on patches for a single stub file.
     """
-    original_typeshed = typeshed.DirectoryBackedTypeshed(source)
-    file_patch = load_file_patch_from_toml(patch_specs_toml, stub_path)
+    original_typeshed = typeshed.DirectoryBackedTypeshed(source_root)
+    file_patch = load_file_patch_from_toml(patch_specs_toml, relative_path)
     patched_code, diff_view = patch_one_file(
         original_typeshed=original_typeshed,
         file_patch=file_patch,
     )
-    print("Successfully applied patch!")
-    print("Diff of original vs patched content:")
-    print(diff_view)
-    if target is not None:
-        if target.exists():
-            if overwrite and not target.is_dir():
-                target.unlink()
-            else:
-                raise RuntimeError(
-                    f"Refusing to overwrite existing file at {target}. "
-                    "Use --overwrite to overwrite a file, remove an existing directory"
-                )
-
-        with open(target, "w") as f:
-            f.write(patched_code)
-        print(f"Wrote output to {target}")
+    sys.stderr.write(f"Diff of original content vs patch:\n---\n{diff_view}\n---\n")
+    sys.stdout.write(patched_code)
 
 
 @dataclasses.dataclass

@@ -52,13 +52,13 @@ def fetch_upstream(
 
 @pyre_typeshed_patcher.command()
 @click.option(
-    "--source",
+    "--source-root",
     type=str,
     required=True,
     help="Directory of the source (original) typeshed",
 )
 @click.option(
-    "--stub-path",
+    "--relative-path",
     type=str,
     required=True,
     help="Relative path of the stub file to patch",
@@ -69,31 +69,20 @@ def fetch_upstream(
     default=None,
     help="Path to the patch specs toml file",
 )
-@click.option(
-    "--target",
-    type=str,
-    default=None,
-    help="Where to write patch result (default of None just prints the diff)",
-)
-@click.option(
-    "--overwrite/--no-overwrite",
-    type=bool,
-    default=False,
-    help="Overwrite the target if it exists",
-)
 def patch_one_file(
-    source: str,
-    stub_path: str,
+    source_root: str,
+    relative_path: str,
     patch_specs: str,
-    target: str | None,
-    overwrite: bool,
 ) -> None:
+    """
+    Patch a single file in a source typeshed.
+
+    Write a diff of the patch result to stderr and the patched file to stdout.
+    """
     patching.patch_one_file_entrypoint(
-        source=pathlib.Path(source),
-        stub_path=pathlib.Path(stub_path),
+        source_root=pathlib.Path(source_root),
+        relative_path=pathlib.Path(relative_path),
         patch_specs_toml=pathlib.Path(patch_specs),
-        target=pathlib.Path(target) if target else None,
-        overwrite=overwrite,
     )
 
 
