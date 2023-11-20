@@ -19,6 +19,37 @@ import tempfile
 from typing import Dict, Iterable, Iterator, Mapping, Optional, Set
 
 
+def _write_content_map_to_directory(
+    content_map: Dict[pathlib.Path, str],
+    root: pathlib.Path,
+) -> None:
+    """
+    Write a map of relative_path: content to a root directly.
+    """
+    for path, content in content_map.items():
+        full_path = root / path
+        full_path.parent.mkdir(parents=True, exist_ok=True)
+        full_path.write_text(content)
+
+
+def write_content_map_to_directory(
+    content_map: Dict[pathlib.Path, str],
+    target: pathlib.Path,
+) -> None:
+    """
+    Write the given `Typeshed` into a directory rooted at `target` on the filesystem.
+
+    The `target` directory is assumed to be nonexistent before this function gets
+    invoked.
+    """
+    if target.exists():
+        raise ValueError(f"Cannot write to file that already exists: `{target}`")
+    with tempfile.TemporaryDirectory() as temporary_root_str:
+        temporary_root = pathlib.Path(temporary_root_str)
+        _write_content_map_to_directory(content_map, temporary_root)
+        temporary_root.rename(target)
+
+
 class Typeshed(abc.ABC):
     """
     Representation of a collection of Python stub files.
@@ -45,35 +76,30 @@ class Typeshed(abc.ABC):
         raise NotImplementedError()
 
 
-def _write_to_directory(typeshed: Typeshed, root: pathlib.Path) -> None:
-    for path in typeshed.all_files():
-        content = typeshed.get_file_content(path)
-        if content is None:
-            continue
-        full_path = root / path
-        full_path.parent.mkdir(parents=True, exist_ok=True)
-        full_path.write_text(content)
+def write_to_directory(
+    typeshed: Typeshed,
+    target: pathlib.Path,
+) -> None:
+    """
+    Return a directory of relative paths to contents of files in the typeshed.
+    Paths are all relative to typeshed root.
+    """
+    return write_content_map_to_directory(
+        {
+            path: content
+            for path in typeshed.all_files()
+            if (content := typeshed.get_file_content(path)) is not None
+        },
+        target=target,
+    )
 
 
 @contextlib.contextmanager
 def _create_temporary_typeshed_directory(typeshed: Typeshed) -> Iterator[pathlib.Path]:
     with tempfile.TemporaryDirectory() as temporary_root:
         temporary_root_path = pathlib.Path(temporary_root)
-        _write_to_directory(typeshed, temporary_root_path)
+        write_to_directory(typeshed, temporary_root_path)
         yield temporary_root_path
-
-
-def write_to_directory(typeshed: Typeshed, target: pathlib.Path) -> None:
-    """
-    Write the given `Typeshed` into a directory rooted at `target` on the filesystem.
-
-    The `target` directory is assumed to be nonexistent before this function gets
-    invoked.
-    """
-    if target.exists():
-        raise ValueError(f"Cannot write to file that already exists: `{target}`")
-    with _create_temporary_typeshed_directory(typeshed) as temporary_root:
-        temporary_root.rename(target)
 
 
 class MemoryBackedTypeshed(Typeshed):

@@ -108,7 +108,7 @@ class PatchResult:
     # This is an unexpected hack - Typshed isn't really modeling a typeshed
     # per-se, just a directory of files. It's convenient to use the same code
     # for storing and dumping the diffs from patching.
-    patch_diffs: typeshed.Typeshed
+    patch_diffs: dict[pathlib.Path, str]
 
 
 def patch_typeshed(
@@ -122,7 +122,7 @@ def patch_typeshed(
     patch_results = {
         path: patched_code for path, (patched_code, _) in patch_outputs.items()
     }
-    patch_diff_views = {
+    patch_diffs = {
         path: patched_code for path, (patched_code, _) in patch_outputs.items()
     }
     return PatchResult(
@@ -130,9 +130,7 @@ def patch_typeshed(
             base=original_typeshed,
             patch_results=patch_results,
         ),
-        patch_diffs=typeshed.MemoryBackedTypeshed(
-            contents=patch_diff_views,
-        ),
+        patch_diffs=patch_diffs,
     )
 
 
@@ -164,5 +162,5 @@ def patch_typeshed_directory(
     print(f"Wrote patched typeshed to {target}")
     if diffs_directory is not None:
         handle_overwrite_directory(diffs_directory)
-        typeshed.write_to_directory(result.patch_diffs, diffs_directory)
+        typeshed.write_content_map_to_directory(result.patch_diffs, diffs_directory)
         print(f"Wrote diffs of all patched stubs to {diffs_directory}")
