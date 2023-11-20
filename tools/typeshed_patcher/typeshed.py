@@ -14,9 +14,7 @@ in most of our patching code.
 import abc
 import contextlib
 import pathlib
-import shutil
 import tempfile
-import zipfile
 
 from typing import Dict, Iterable, Iterator, Mapping, Optional, Set
 
@@ -78,23 +76,6 @@ def write_to_directory(typeshed: Typeshed, target: pathlib.Path) -> None:
         temporary_root.rename(target)
 
 
-def write_to_zip(typeshed: Typeshed, target: pathlib.Path) -> None:
-    """
-    Write the given `Typeshed` into a zip file `target`.
-
-    File at `target` path is assumed to be nonexistent before this function gets
-    invoked. The `target` path is also assumed to have `.zip` as its suffix.
-    """
-    if target.exists():
-        raise ValueError(f"Cannot write to file that already exists: `{target}`")
-    if target.suffix != ".zip":
-        raise ValueError(f"Cannot write to `{target}` as zip file: wrong suffix.")
-    with _create_temporary_typeshed_directory(typeshed) as temporary_root:
-        shutil.make_archive(
-            str(target.with_suffix("")), format="zip", root_dir=temporary_root
-        )
-
-
 class MemoryBackedTypeshed(Typeshed):
     """
     A typeshed backed up by in-memory content. Essentially a wrapper around
@@ -138,35 +119,6 @@ class DirectoryBackedTypeshed(Typeshed):
 
     def get_file_content(self, path: pathlib.Path) -> Optional[str]:
         return (self.root / path).read_text() if path in self.files else None
-
-
-class ZipBackedTypeshed(Typeshed):
-    """
-    A typeshed backed up by a zipball that lives on the filesystem.
-
-    For simplicity, we assume that this zipfile remains unchanged. If the assumption
-    does not hold, e.g. when this file gets added/removed/changed after the creation of
-    the corresponding `ZipBackedTypeshed` object, the behaviors of its methods become
-    undefined.
-    """
-
-    zip_file: zipfile.ZipFile
-
-    def __init__(self, zip_file_path: pathlib.Path) -> None:
-        self.zip_file = zipfile.ZipFile(zip_file_path)
-
-    def all_files(self) -> Iterable[pathlib.Path]:
-        return [
-            pathlib.Path(zip_info.filename)
-            for zip_info in self.zip_file.infolist()
-            if not zip_info.is_dir()
-        ]
-
-    def get_file_content(self, path: pathlib.Path) -> Optional[str]:
-        try:
-            return self.zip_file.read(str(path)).decode("utf-8")
-        except (KeyError, ValueError):
-            return None
 
 
 class PatchedTypeshed(Typeshed):
