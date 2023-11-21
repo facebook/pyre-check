@@ -709,7 +709,7 @@ class FailableDaemonQuerierTest(testslide.TestCase):
         await codenav_querier.get_hover(
             path=Path("bar1.py"), position=lsp.PyrePosition(line=42, character=10)
         )
-        await codenav_querier.get_type_errors(path=Path("bar2.py"))
+        await codenav_querier.get_type_errors(paths=[Path("bar2.py")])
         await codenav_querier.get_definition_locations(
             path=Path("bar3.py"), position=lsp.PyrePosition(line=42, character=10)
         )

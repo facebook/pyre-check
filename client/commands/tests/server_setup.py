@@ -127,7 +127,7 @@ class ExceptionRaisingBytesWriter(connections.AsyncBytesWriter):
 class MockDaemonQuerier(querier.AbstractDaemonQuerier):
     def __init__(
         self,
-        mock_type_errors: Optional[List[error.Error]] = None,
+        mock_type_errors: Optional[Dict[Path, List[error.Error]]] = None,
         mock_type_coverage: Optional[lsp.TypeCoverageResponse] = None,
         mock_hover_response: Optional[querier.GetHoverResponse] = None,
         mock_definition_response: Optional[
@@ -150,9 +150,9 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
-        return self.mock_type_errors or []
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+        return self.mock_type_errors or {}
 
     async def get_type_coverage(
         self,

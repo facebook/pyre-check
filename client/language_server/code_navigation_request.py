@@ -62,14 +62,14 @@ class LocationOfDefinitionRequest:
 
 @dataclasses.dataclass(frozen=True)
 class TypeErrorsRequest:
-    path: str
+    paths: List[str]
     client_id: str
 
     def to_json(self) -> List[object]:
         return [
             "GetTypeErrors",
             {
-                "path": self.path,
+                "paths": self.paths,
                 "client_id": self.client_id,
             },
         ]

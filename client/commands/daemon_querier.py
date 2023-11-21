@@ -19,7 +19,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Dict, List, Optional, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
 
@@ -141,8 +141,8 @@ class AbstractDaemonQuerier(abc.ABC):
     @abc.abstractmethod
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -244,8 +244,8 @@ class AbstractDaemonQuerier(abc.ABC):
 class EmptyQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
     async def get_type_coverage(
@@ -360,19 +360,25 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
-        overlay_id = self._get_overlay_id(path)
-        if overlay_id is None:
-            return daemon_query.DaemonQueryFailure(
-                "Invalid attempt to run a get_type_errors overlay request"
-                "in a language server without unsaved changes support."
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+        errors: Dict[Path, List[error.Error]] = {}
+        for path in paths:
+            overlay_id = self._get_overlay_id(path)
+            if overlay_id is None:
+                return daemon_query.DaemonQueryFailure(
+                    "Invalid attempt to run a get_type_errors overlay request"
+                    "in a language server without unsaved changes support."
+                )
+            result = await daemon_query.attempt_async_overlay_type_errors(
+                socket_path=self.socket_path,
+                source_code_path=path,
+                overlay_id=overlay_id,
             )
-        return await daemon_query.attempt_async_overlay_type_errors(
-            socket_path=self.socket_path,
-            source_code_path=path,
-            overlay_id=overlay_id,
-        )
+            if isinstance(result, daemon_query.DaemonQueryFailure):
+                return result
+            errors[path] = result
+        return errors
 
     async def get_type_coverage(
         self,
@@ -589,14 +595,13 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
-        failure = self.get_query_failure(str(path))
-        return (
-            await self.base_querier.get_type_errors(path)
-            if failure is None
-            else failure
-        )
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+        for path in paths:
+            failure = self.get_query_failure(str(path))
+            if failure is not None:
+                return failure
+        return await self.base_querier.get_type_errors(paths)
 
     async def get_definition_locations(
         self,
@@ -724,10 +729,10 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         type_errors_request = code_navigation_request.TypeErrorsRequest(
-            path=str(path), client_id=self._get_client_id()
+            paths=[str(path) for path in paths], client_id=self._get_client_id()
         )
         response = await code_navigation_request.async_handle_type_errors_request(
             self.socket_path, type_errors_request
@@ -736,8 +741,17 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             return daemon_query.DaemonQueryFailure(
                 response.message, error_source=response.error_source
             )
+        result: Dict[Path, List[error.Error]] = {}
+        for response_error in response.to_errors_response():
+            if response_error.code == 0:
+                continue
+            file_with_error = response_error.path
+            if file_with_error not in result:
+                result[file_with_error] = []
+            result[file_with_error].append(response_error)
+
         # TODO(T165048078): determine if this error should be kept for code navigation (are we committing to unsafe mode in codenav?)
-        return [error for error in response.to_errors_response() if error.code != 0]
+        return result
 
     async def get_type_coverage(
         self,
@@ -916,9 +930,9 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
 
     async def get_type_errors(
         self,
-        path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[error.Error]]:
-        return await self.base_querier.get_type_errors(path)
+        paths: List[Path],
+    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+        return await self.base_querier.get_type_errors(paths)
 
     async def get_type_coverage(
         self,

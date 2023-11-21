@@ -1548,18 +1548,20 @@ class DidChangeTest(ApiTestCase):
             features.TelemetryAvailability.DISABLED,
         ):
             querier = server_setup.MockDaemonQuerier(
-                mock_type_errors=[
-                    error.Error(
-                        line=1,
-                        column=1,
-                        stop_line=2,
-                        stop_column=2,
-                        path=Path("/tracked.py"),
-                        code=42,
-                        name="name",
-                        description="description",
-                    ),
-                ]
+                mock_type_errors={
+                    tracked_path: [
+                        error.Error(
+                            line=1,
+                            column=1,
+                            stop_line=2,
+                            stop_column=2,
+                            path=Path("/tracked.py"),
+                            code=42,
+                            name="name",
+                            description="description",
+                        ),
+                    ]
+                }
             )
             setup = server_setup.create_pyre_language_server_api_setup(
                 opened_documents={
@@ -1634,7 +1636,7 @@ class DidChangeTest(ApiTestCase):
             features.TelemetryAvailability.DISABLED,
         ):
             querier = server_setup.MockDaemonQuerier(
-                mock_type_errors=[],
+                mock_type_errors={},
             )
             setup = server_setup.create_pyre_language_server_api_setup(
                 opened_documents={
@@ -1697,18 +1699,20 @@ class DidChangeTest(ApiTestCase):
         unsaved_file_content_list = [f"# some example code {i}" for i in range(3)]
         tracked_path = Path("/tracked.py")
         querier = server_setup.MockDaemonQuerier(
-            mock_type_errors=[
-                error.Error(
-                    line=1,
-                    column=1,
-                    stop_line=2,
-                    stop_column=2,
-                    path=Path("/tracked.py"),
-                    code=42,
-                    name="name",
-                    description="description",
-                ),
-            ]
+            mock_type_errors={
+                tracked_path: [
+                    error.Error(
+                        line=1,
+                        column=1,
+                        stop_line=2,
+                        stop_column=2,
+                        path=Path("/tracked.py"),
+                        code=42,
+                        name="name",
+                        description="description",
+                    ),
+                ]
+            }
         )
         setup = server_setup.create_pyre_language_server_api_setup(
             opened_documents={

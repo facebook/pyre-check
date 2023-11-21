@@ -87,7 +87,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
 
     def test_serialize_type_errors_request(self) -> None:
         request = code_navigation_request.TypeErrorsRequest(
-            path="/a/b.py",
+            paths=["/a/b.py"],
             client_id="foo",
         )
         self.assertEqual(
@@ -95,7 +95,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             [
                 "GetTypeErrors",
                 {
-                    "path": "/a/b.py",
+                    "paths": ["/a/b.py"],
                     "client_id": "foo",
                 },
             ],
@@ -206,7 +206,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                     "description": "Undefined attribute [16]: `int` has no attribute `format`.",
                     "concise_description": "Undefined attribute [16]: `int` has no attribute `format`.",
                 },
-            ]
+            ],
         }
         parsed_response = code_navigation_request.parse_response(
             response,

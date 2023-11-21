@@ -427,27 +427,25 @@ class PyreLanguageServer(PyreLanguageServerApi):
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
-        result: Dict[str, List[error.Error]] = {}
-        error_messages: Dict[str, str] = {}
-        # TODO: should I only do this for codenav type checking?
-        for opened_document in self.server_state.opened_documents:
-            query_result = await self.querier.get_type_errors(opened_document)
-            if isinstance(query_result, DaemonQueryFailure):
-                error_messages[str(opened_document)] = query_result.error_message
-            else:
+        result = await self.querier.get_type_errors(
+            list(self.server_state.opened_documents.keys())
+        )
+        error_message = None
+        if isinstance(result, DaemonQueryFailure):
+            error_message = result.error_message
+            result = []
+        else:
+            for opened_document in self.server_state.opened_documents:
+                document_errors = result.get(opened_document, [])
                 await self.client_type_error_handler.show_overlay_type_errors(
                     path=opened_document,
-                    type_errors=query_result,
+                    type_errors=document_errors,
                 )
-                result[str(opened_document)] = query_result
 
-        error_message = json.dumps(error_messages) if len(error_messages) > 0 else None
-        result_str = json.dumps(
-            {
-                path: [error.to_json() for error in errors]
+            result = {
+                str(path): [document_error.to_json() for document_error in errors]
                 for path, errors in result.items()
             }
-        )
 
         await self.write_telemetry(
             {
@@ -459,7 +457,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 ),
                 "duration_ms": type_errors_timer.stop_in_millisecond(),
                 "error_message": error_message,
-                "type_errors": result_str,
+                "type_errors": json.dumps(result),
                 **daemon_status_before.as_telemetry_dict(),
             },
             activity_key,
