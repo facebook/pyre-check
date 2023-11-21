@@ -43,7 +43,7 @@ module Make (Config : CONFIG) = struct
   let integer_to_bit =
     let table = IntHashTable.create ~size:(Array.length bit_to_integer) () in
     Array.iteri bit_to_integer ~f:(fun bit integer ->
-        IntHashTable.add table ~key:integer ~data:bit |> ignore);
+        Hashtbl.add table ~key:integer ~data:bit |> ignore);
     table
 
 
@@ -58,7 +58,7 @@ module Make (Config : CONFIG) = struct
 
   let is_empty { bitset; tree } = Int.equal bitset 0 && PatriciaTreeIntSet.is_empty tree
 
-  let get_integer_bit integer = IntHashTable.find integer_to_bit integer
+  let get_integer_bit integer = Hashtbl.find integer_to_bit integer
 
   let add element { bitset; tree } =
     match get_integer_bit element with
