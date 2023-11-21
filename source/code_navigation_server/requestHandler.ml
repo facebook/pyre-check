@@ -342,35 +342,86 @@ let handle_non_critical_file_update ~subscriptions ~environment artifact_path_ev
       with_broadcast_busy_checking ~subscriptions ~client_id:None run_file_update
 
 
+let update_build_system_sources ~build_system ~working_set source_path_events =
+  let open Lwt.Infix in
+  Lwt.catch
+    (fun () ->
+      BuildSystem.update_sources ~working_set build_system source_path_events >>= Lwt.return_ok)
+    (function
+      | _ as exn -> Lwt.return_error exn)
+
+
+let get_buck_error_message ~description ~additional_logs () =
+  let header = Printf.sprintf "Cannot build the project: %s." description in
+  if List.is_empty additional_logs then
+    header
+  else
+    Printf.sprintf
+      "%s Here are the last few lines of Buck log:\n  ...\n  %s"
+      header
+      (String.concat additional_logs ~sep:"\n  ")
+
+
 let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; build_system; client_states }
+    { State.environment; build_system; client_states; build_failure }
   =
   match CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
   | None ->
-      let source_path_events = List.map events ~f:get_source_path_event in
-      let%lwt () =
-        Subscriptions.broadcast
-          subscriptions
-          ~response:(lazy Response.(ServerStatus Status.BusyBuilding))
+      let current_source_path_events = List.map events ~f:get_source_path_event in
+      let current_and_deferred_source_path_events =
+        match Server.ServerState.BuildFailure.get_deferred_events build_failure with
+        | [] -> current_source_path_events
+        | deferred_events ->
+            Log.log
+              ~section:`Server
+              "%d pre-existing deferred update events detected. Processing them now..."
+              (List.length deferred_events);
+            List.append deferred_events current_source_path_events
       in
-      let%lwt changed_artifacts_from_rebuild =
-        let working_set = State.Client.WorkingSet.to_list client_states in
-        BuildSystem.update_sources build_system source_path_events ~working_set
+      let working_set = State.Client.WorkingSet.to_list client_states in
+      let handle_building_file_update () =
+        match%lwt
+          update_build_system_sources
+            ~build_system
+            ~working_set
+            current_and_deferred_source_path_events
+        with
+        | Result.Ok sources ->
+            (* The build has succeeded and deferred events are all processed. *)
+            Server.ServerState.BuildFailure.clear build_failure;
+            let changed_artifacts_from_source =
+              List.concat_map
+                current_and_deferred_source_path_events
+                ~f:(get_artifact_path_event ~build_system)
+            in
+            let artifact_path_events = List.append sources changed_artifacts_from_source in
+            let%lwt () =
+              handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
+            in
+            Lwt.return_ok Response.Ok
+        | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
+            (* On build errors, stash away the current update and defer their processing until next
+               update, hoping that the user could fix the error by then. This prevents the Pyre
+               server from crashing on build failures. *)
+            Log.log
+              ~section:`Server
+              "Build failure detected. Deferring %d events..."
+              (List.length current_source_path_events);
+            let error_message = get_buck_error_message ~description ~additional_logs () in
+            Server.ServerState.BuildFailure.update
+              ~events:current_source_path_events
+              ~error_message
+              build_failure;
+            Lwt.return_ok Response.Ok
+        | Result.Error error ->
+            (* We do not currently know how to recover from these exceptions *)
+            Lwt.fail error
       in
-      let changed_artifacts_from_source =
-        List.concat_map source_path_events ~f:(get_artifact_path_event ~build_system)
-      in
-      let artifact_path_events =
-        List.append changed_artifacts_from_rebuild changed_artifacts_from_source
-      in
-      let%lwt () =
-        handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
-      in
-      Lwt.return_ok Response.Ok
+      with_broadcast_busy_building ~subscriptions handle_building_file_update
 
 
 let handle_working_set_update ~subscriptions { State.environment; build_system; client_states; _ } =

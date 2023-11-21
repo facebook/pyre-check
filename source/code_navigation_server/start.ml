@@ -140,7 +140,8 @@ let initialize_server_state ~build_system_initializer ~environment_controls () =
     Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
   in
   let client_states = State.Client.create () in
-  { State.environment; build_system; client_states }
+  let build_failure = Server.ServerState.BuildFailure.create () in
+  { State.environment; build_system; client_states; build_failure }
 
 
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =

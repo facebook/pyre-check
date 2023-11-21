@@ -7,6 +7,7 @@
 
 open Base
 open OUnit2
+open TestHelper
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 module BuildSystem = CodeNavigationServer.BuildSystem
@@ -629,6 +630,74 @@ let test_build_system_file_open_and_update context =
       ]
 
 
+let test_build_system_failure context =
+  let fail_switch = ref false in
+  let update_sources ~working_set:_ _source_paths =
+    if !fail_switch then
+      raise
+        Buck.Raw.(
+          BuckError
+            {
+              buck_command = "fake_buck";
+              arguments = ArgumentList.empty;
+              description = "fake description";
+              exit_code = None;
+              additional_logs = [];
+            })
+    else
+      Lwt.return []
+  in
+  let build_system_initializer = create_build_system_initializer_for_testing ~update_sources () in
+  let file_path = "test.py" in
+  let sources = [file_path, "x: float = 4.1"] in
+  let project =
+    ScratchProject.setup ~context ~build_system_initializer ~include_typeshed_stubs:false sources
+  in
+  let source_root = ScratchProject.source_root_of project in
+  let path = PyrePath.append source_root ~element:file_path |> PyrePath.absolute in
+  let client_id = "foo" in
+  let inject_error ?(error = true) _ =
+    fail_switch := error;
+    Lwt.return ()
+  in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        register_client ~client_id;
+        open_file ~client_id ~path;
+        assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
+        inject_error;
+        (* File update should succeed with Respnse.Ok even though it errored. *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(Command (Command.FileUpdate [FileUpdateEvent.{ kind = Kind.Deleted; path }]))
+          ~expected:Response.Ok;
+        (* Should rely on old file while build system is broken. *)
+        assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
+        inject_error ~error:false;
+        (* Unrelated file update should process the deferred update. *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileUpdate
+                   [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path = "fake path" }]))
+          ~expected:Response.Ok;
+        (* File should no loger exist until FileUpdateEvent adds it back. *)
+        ScratchProject.ClientConnection.assert_error_response
+          ~request:Request.(Query (Query.Hover { client_id; path; position = position 1 0 }))
+          ~kind:"ModuleNotTracked";
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command (Command.FileUpdate [FileUpdateEvent.{ kind = Kind.CreatedOrChanged; path }]))
+          ~expected:Response.Ok;
+        assert_hover_contents ~client_id ~path ~position:(position 1 0) ~expected:(Some "float");
+      ]
+
+
 let () =
   "build_system_test"
   >::: [
@@ -639,5 +708,6 @@ let () =
          "test_build_system_file_update" >:: OUnitLwt.lwt_wrapper test_build_system_file_update;
          "test_build_system_file_open_and_update"
          >:: OUnitLwt.lwt_wrapper test_build_system_file_open_and_update;
+         "test_build_system_failure" >:: OUnitLwt.lwt_wrapper test_build_system_failure;
        ]
   |> Test.run
