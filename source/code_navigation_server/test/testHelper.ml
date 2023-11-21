@@ -45,6 +45,13 @@ let local_update ~client_id ~path ~content =
     ~expected:Response.Ok
 
 
+let assert_hover_contents ~client_id ~path ~position ~expected client =
+  ScratchProject.ClientConnection.assert_response
+    ~request:Request.(Query (Query.Hover { client_id; path; position }))
+    ~expected:Response.(Hover { contents = HoverContent.[{ value = expected; docstring = None }] })
+    client
+
+
 let assert_type_error_count ~client_id ~path ~expected client =
   let%lwt raw_response =
     ScratchProject.ClientConnection.send_request

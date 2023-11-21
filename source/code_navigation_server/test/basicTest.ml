@@ -367,25 +367,13 @@ let test_hover_request context =
       [
         register_client ~client_id;
         open_file ~client_id ~path:test_path;
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              (* This location point to empty space. *)
-              Query (Query.Hover { client_id; path = test_path; position = position 1 2 }))
-          ~expected:
-            Response.(Hover { contents = HoverContent.[{ value = None; docstring = None }] });
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(Query (Query.Hover { client_id; path = test_path; position = position 1 0 }))
-          ~expected:
-            Response.(
-              Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(Query (Query.Hover { client_id; path = test_path; position = position 1 0 }))
-          ~expected:
-            Response.(
-              Hover { contents = HoverContent.[{ value = Some "float"; docstring = None }] });
+        (* This location points to empty space. *)
+        assert_hover_contents ~client_id ~path:test_path ~position:(position 1 2) ~expected:None;
+        assert_hover_contents
+          ~client_id
+          ~path:test_path
+          ~position:(position 1 0)
+          ~expected:(Some "float");
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
