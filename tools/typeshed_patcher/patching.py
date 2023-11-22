@@ -138,7 +138,7 @@ def patch_typeshed(
 def patch_typeshed_directory(
     source_root: pathlib.Path,
     patch_specs_toml: pathlib.Path,
-    target_root: pathlib.Path,
+    destination_root: pathlib.Path,
     diffs_directory: pathlib.Path | None,
 ) -> None:
     file_patches = patch_specs.FilePatch.from_toml_path(patch_specs_toml)
@@ -147,8 +147,8 @@ def patch_typeshed_directory(
         original_typeshed=original_typeshed,
         file_patches=file_patches,
     )
-    typeshed.write_to_directory(result.patched_typeshed, target_root)
-    logger.info(f"Wrote patched typeshed to {target_root}")
+    typeshed.write_to_directory(result.patched_typeshed, destination_root)
+    logger.info(f"Wrote patched typeshed to {destination_root}")
     if diffs_directory is not None:
         typeshed.write_content_map_to_directory(result.patch_diffs, diffs_directory)
         logger.info(f"Wrote diffs of all patched stubs to {diffs_directory}")

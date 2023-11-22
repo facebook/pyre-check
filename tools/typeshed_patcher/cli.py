@@ -36,21 +36,21 @@ def pyre_typeshed_patcher() -> None:
     ),
 )
 @click.option(
-    "--target",
+    "--destination",
     type=str,
     required=True,
     help="The output directory in which to dump the upsteam typeshed.",
 )
 def fetch_upstream(
     url: str,
-    target: str,
+    destination: str,
 ) -> None:
     """Pulls an upstream typeshed."""
     upstream.fetch_as_directory(
         url=url,
-        target=pathlib.Path(target),
+        destination=pathlib.Path(destination),
     )
-    print(f"Finished writing upstream typeshed to {target}")
+    print(f"Finished writing upstream typeshed to {destination}")
 
 
 @pyre_typeshed_patcher.command()
@@ -111,7 +111,7 @@ def patch_one_file(
     help="Path to the patch specs toml file",
 )
 @click.option(
-    "--target-root",
+    "--destination-root",
     type=str,
     required=True,
     help="The directory in which to write the patched typeshed stubs",
@@ -126,12 +126,12 @@ def patch_one_file(
     "--overwrite/--no-overwrite",
     type=bool,
     default=False,
-    help="Overwrite the target if it exists",
+    help="Overwrite the destination if it exists",
 )
 def patch_typeshed_directory(
     source_root: str,
     patch_specs: str,
-    target_root: str,
+    destination_root: str,
     diffs_directory: str | None,
     overwrite: bool,
 ) -> None:
@@ -151,13 +151,13 @@ def patch_typeshed_directory(
     else:
         diffs_directory_path = None
 
-    target_root_path = pathlib.Path(target_root)
-    handle_overwrite_directory(target_root_path)
+    destination_root_path = pathlib.Path(destination_root)
+    handle_overwrite_directory(destination_root_path)
 
     return patching.patch_typeshed_directory(
         source_root=pathlib.Path(source_root),
         patch_specs_toml=pathlib.Path(patch_specs),
-        target_root=target_root_path,
+        destination_root=destination_root_path,
         diffs_directory=diffs_directory_path,
     )
 

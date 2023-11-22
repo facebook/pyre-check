@@ -34,20 +34,20 @@ def _write_content_map_to_directory(
 
 def write_content_map_to_directory(
     content_map: Dict[pathlib.Path, str],
-    target: pathlib.Path,
+    destination: pathlib.Path,
 ) -> None:
     """
-    Write the given `Typeshed` into a directory rooted at `target` on the filesystem.
+    Write the given `Typeshed` into a directory rooted at `destination` on the filesystem.
 
-    The `target` directory is assumed to be nonexistent before this function gets
+    The `destination` directory is assumed to be nonexistent before this function gets
     invoked.
     """
-    if target.exists():
-        raise ValueError(f"Cannot write to file that already exists: `{target}`")
+    if destination.exists():
+        raise ValueError(f"Cannot write to file that already exists: `{destination}`")
     with tempfile.TemporaryDirectory() as temporary_root_str:
         temporary_root = pathlib.Path(temporary_root_str)
         _write_content_map_to_directory(content_map, temporary_root)
-        temporary_root.rename(target)
+        temporary_root.rename(destination)
 
 
 class Typeshed(abc.ABC):
@@ -78,7 +78,7 @@ class Typeshed(abc.ABC):
 
 def write_to_directory(
     typeshed: Typeshed,
-    target: pathlib.Path,
+    destination: pathlib.Path,
 ) -> None:
     """
     Return a directory of relative paths to contents of files in the typeshed.
@@ -90,7 +90,7 @@ def write_to_directory(
             for path in typeshed.all_files()
             if (content := typeshed.get_file_content(path)) is not None
         },
-        target=target,
+        destination=destination,
     )
 
 

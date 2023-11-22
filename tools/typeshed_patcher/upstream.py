@@ -110,10 +110,10 @@ def fetch_as_typeshed(
 
 def fetch_as_directory(
     url: str,
-    target: pathlib.Path,
+    destination: pathlib.Path,
 ) -> None:
     upstream_typeshed = fetch_as_typeshed(url)
     typeshed.write_to_directory(
         typeshed=upstream_typeshed,
-        target=target,
+        destination=destination,
     )
