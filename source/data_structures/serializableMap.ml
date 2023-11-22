@@ -13,7 +13,7 @@ module Hash = Core.Hash
 module Formatter = Core.Formatter
 
 module type S = sig
-  include Caml.Map.S
+  include Stdlib.Map.S
 
   val set : 'a t -> key:key -> data:'a -> 'a t
 
@@ -39,7 +39,7 @@ module type S = sig
 end
 
 module type OrderedType = sig
-  include Caml.Map.OrderedType
+  include Stdlib.Map.OrderedType
 
   val t_of_sexp : Sexp.t -> t
 
@@ -51,7 +51,7 @@ module type OrderedType = sig
 end
 
 module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
-  include Caml.Map.Make (Ordered)
+  include Stdlib.Map.Make (Ordered)
 
   module Key = struct
     include Ordered
@@ -93,7 +93,7 @@ module Make (Ordered : OrderedType) : S with type key = Ordered.t = struct
 
 
   let t_of_sexp a_of_sexp sexp =
-    Core.List.t_of_sexp (Key.assoc_of_sexp a_of_sexp) sexp |> Caml.List.to_seq |> of_seq
+    Core.List.t_of_sexp (Key.assoc_of_sexp a_of_sexp) sexp |> Stdlib.List.to_seq |> of_seq
 
 
   let sexp_of_t sexp_of_a map = bindings map |> Core.List.sexp_of_t (Key.sexp_of_assoc sexp_of_a)

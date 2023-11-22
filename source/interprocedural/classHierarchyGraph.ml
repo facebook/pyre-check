@@ -15,10 +15,10 @@ open Analysis
 
 type class_name = string
 
-module ClassNameSet = Caml.Set.Make (String)
+module ClassNameSet = Stdlib.Set.Make (String)
 
 module ClassNameMap = struct
-  include Caml.Map.Make (String)
+  include Stdlib.Map.Make (String)
 
   let pp_map pp_value formatter map =
     let pp_pairs pp_value formatter pairs =

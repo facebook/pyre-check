@@ -19,7 +19,7 @@ let expression_print_to_sexp expression = Sexp.to_string_hum (Expression.sexp_of
 let assert_parsed ~context ~expected text =
   match PyreNewParser.parse_expression ~context text with
   | Result.Error { PyreNewParser.Error.message; _ } ->
-      let message = Caml.Format.sprintf "Unexpected parsing failure: %s" message in
+      let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
   | Result.Ok actual ->
       assert_equal
@@ -33,7 +33,7 @@ let assert_not_parsed ~context text =
   match PyreNewParser.parse_expression ~context text with
   | Result.Ok actual ->
       let message =
-        Caml.Format.asprintf
+        Stdlib.Format.asprintf
           "Unexpected parsing success: %a"
           Sexp.pp_hum
           (Expression.sexp_of_t actual)

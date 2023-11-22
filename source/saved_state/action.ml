@@ -25,7 +25,7 @@ let of_yojson json =
   let open Yojson.Safe.Util in
   let parsing_failed () =
     let message =
-      Caml.Format.sprintf "Malformed saved state action JSON: %s" (Yojson.Safe.to_string json)
+      Stdlib.Format.sprintf "Malformed saved state action JSON: %s" (Yojson.Safe.to_string json)
     in
     Result.Error message
   in

@@ -241,14 +241,14 @@ let arguments ~posonlyargs ~args ~vararg ~kwonlyargs ~kw_defaults ~kwarg ~defaul
   let keyword_only_parameters = to_parameters kwonlyargs kw_defaults in
   let vararg_parameter =
     let handle_vararg { SingleParameter.location; identifier; annotation } =
-      let name = Caml.Format.sprintf "*%s" identifier in
+      let name = Stdlib.Format.sprintf "*%s" identifier in
       { Parameter.name; value = None; annotation } |> Node.create ~location
     in
     Option.map vararg ~f:handle_vararg
   in
   let kwarg_parameter =
     let handle_kwarg { SingleParameter.location; identifier; annotation } =
-      let name = Caml.Format.sprintf "**%s" identifier in
+      let name = Stdlib.Format.sprintf "**%s" identifier in
       { Parameter.name; value = None; annotation } |> Node.create ~location
     in
     Option.map kwarg ~f:handle_kwarg
@@ -312,7 +312,7 @@ let expression =
   let bin_op ~location ~left ~op ~right =
     (* TODO(T101299882): Avoid lowering binary operators in parsing phase. *)
     let callee =
-      let dunder_name = Caml.Format.sprintf "__%s__" op in
+      let dunder_name = Stdlib.Format.sprintf "__%s__" op in
       Expression.Name
         (Name.Attribute { base = left; attribute = identifier dunder_name; special = true })
       |> Node.create ~location:(Node.location left)
@@ -711,7 +711,7 @@ let process_function_type_comment
           match List.zip parameters parameter_annotations with
           | List.Or_unequal_lengths.Unequal_lengths ->
               let message =
-                Caml.Format.sprintf
+                Stdlib.Format.sprintf
                   "Function signature type comment has %d parameter types, while the corresponding \
                    function contains %d parameters"
                   (List.length parameter_annotations)
@@ -892,7 +892,7 @@ let statement =
   in
   let aug_assign ~location ~target ~op ~value ~context:_ =
     let callee =
-      let dunder_name = Caml.Format.sprintf "__i%s__" op in
+      let dunder_name = Stdlib.Format.sprintf "__i%s__" op in
       Expression.Name
         (Name.Attribute { base = target; attribute = identifier dunder_name; special = true })
       |> Node.create ~location:(Node.location target)
@@ -1036,7 +1036,7 @@ let statement =
   let import_from ~location ~module_ ~names ~level ~context:_ =
     let dots = List.init level ~f:(fun _ -> ".") |> String.concat ~sep:"" in
     let from_module_name = Option.value module_ ~default:"" in
-    let from_text = Caml.Format.sprintf "%s%s" dots from_module_name in
+    let from_text = Stdlib.Format.sprintf "%s%s" dots from_module_name in
     let from = from_text |> Ast.Reference.create in
     let new_location =
       match location with

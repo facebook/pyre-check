@@ -48,7 +48,7 @@ let get_overlay ~environment overlay_id =
   let overlay_id = State.Client.OverlayId.to_string overlay_id in
   OverlaidEnvironment.overlay environment overlay_id
   |> Option.value_exn
-       ~message:(Caml.Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
+       ~message:(Stdlib.Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
 
 
 let get_modules ~module_tracker ~build_system path =
@@ -237,7 +237,7 @@ let handle_superclasses
   match get_module_by_name module_ with
   | None ->
       Response.ErrorKind.InvalidRequest
-        (Caml.Format.sprintf "Cannot find module with name `%s`" module_)
+        (Stdlib.Format.sprintf "Cannot find module with name `%s`" module_)
       |> Result.fail
   | Some module_name -> (
       let class_reference =
@@ -251,7 +251,7 @@ let handle_superclasses
       in
       let invalid_request =
         Response.ErrorKind.InvalidRequest
-          (Caml.Format.asprintf
+          (Stdlib.Format.asprintf
              "Cannot find class `%s` in module `%a`."
              qualified_name
              Ast.Reference.pp

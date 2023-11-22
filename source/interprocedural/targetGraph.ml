@@ -14,7 +14,7 @@ type t = Target.t list Target.Map.Tree.t
 let to_alist = Target.Map.Tree.to_alist
 
 let dump ~path graph =
-  let module Buffer = Caml.Buffer in
+  let module Buffer = Stdlib.Buffer in
   let buffer = Buffer.create 1024 in
   Buffer.add_string buffer "{\n";
   let remove_trailing_comma () =

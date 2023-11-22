@@ -240,7 +240,7 @@ let rec translate_expression (expression : Errpyast.expr) =
       let as_ast_expression =
         match expression_desc with
         | Errpyast.BinOp binop ->
-            let operator = Caml.Format.sprintf "__%s__" (translate_binary_operator binop.op) in
+            let operator = Stdlib.Format.sprintf "__%s__" (translate_binary_operator binop.op) in
             let base = translate_expression binop.left in
             let callee =
               Expression.Name (Name.Attribute { base; attribute = operator; special = true })
@@ -391,7 +391,7 @@ let rec translate_expression (expression : Errpyast.expr) =
               }
         | _ ->
             let fail_message =
-              Caml.Format.asprintf
+              Stdlib.Format.asprintf
                 "not yet implemented expression: %s"
                 (Errpyast.show_expr_desc expression_desc)
             in
@@ -502,14 +502,14 @@ and translate_arguments (arguments : Errpyast.arguments) =
   let keyword_only_parameters = to_parameters kwonlyargs kw_defaults in
   let vararg_parameter =
     let handle_vararg { SingleParameter.location; identifier; annotation } =
-      let name = Caml.Format.sprintf "*%s" identifier in
+      let name = Stdlib.Format.sprintf "*%s" identifier in
       { Parameter.name; value = None; annotation } |> Node.create ~location
     in
     Option.map vararg ~f:handle_vararg
   in
   let kwarg_parameter =
     let handle_kwarg { SingleParameter.location; identifier; annotation } =
-      let name = Caml.Format.sprintf "**%s" identifier in
+      let name = Stdlib.Format.sprintf "**%s" identifier in
       { Parameter.name; value = None; annotation } |> Node.create ~location
     in
     Option.map kwarg ~f:handle_kwarg
@@ -699,7 +699,7 @@ and translate_statements
             |> String.concat ~sep:""
           in
           let from_module_name = Option.value import_from.module_ ~default:"" in
-          let from_text = Caml.Format.sprintf "%s%s" dots from_module_name in
+          let from_text = Stdlib.Format.sprintf "%s%s" dots from_module_name in
           let from = from_text |> Ast.Reference.create in
           let new_location =
             (* Add 5 characters for 'from ' *)
@@ -801,7 +801,7 @@ and translate_statements
           let target = translate_expression aug_assign.target in
           let callee =
             let dunder_name =
-              Caml.Format.sprintf "__i%s__" (translate_binary_operator aug_assign.op)
+              Stdlib.Format.sprintf "__i%s__" (translate_binary_operator aug_assign.op)
             in
             Expression.Name
               (Name.Attribute { base = target; attribute = dunder_name; special = true })
@@ -955,4 +955,4 @@ let parse_module text =
                  errors = List.map ~f:make_syntax_error recoverable_errors;
                }))
   | Error error_string -> Result.Error (ParserError.Unrecoverable error_string)
-  | exception e -> Result.Error (ParserError.Unrecoverable (Caml.Printexc.to_string e))
+  | exception e -> Result.Error (ParserError.Unrecoverable (Stdlib.Printexc.to_string e))

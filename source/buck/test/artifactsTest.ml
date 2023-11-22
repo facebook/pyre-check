@@ -64,7 +64,7 @@ let assert_update ~context ~build_map ~difference ~expected sources =
               let path = PyrePath.create_relative ~root:artifact_root ~relative in
               match content with
               | None ->
-                  let message = Caml.Format.sprintf "%s is expected to be removed" relative in
+                  let message = Stdlib.Format.sprintf "%s is expected to be removed" relative in
                   assert_bool message (not (PyrePath.file_exists path))
               | Some content -> assert_content path ~context ~expected:content);
           Lwt.return_unit)

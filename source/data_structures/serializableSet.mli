@@ -10,7 +10,7 @@ module Hash = Core.Hash
 module Formatter = Core.Formatter
 
 module type S = sig
-  include Caml.Set.S
+  include Stdlib.Set.S
 
   val t_of_sexp : Sexp.t -> t
 
@@ -24,7 +24,7 @@ module type S = sig
 end
 
 module type OrderedType = sig
-  include Caml.Set.OrderedType
+  include Stdlib.Set.OrderedType
 
   val t_of_sexp : Sexp.t -> t
 

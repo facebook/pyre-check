@@ -5,7 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
 open Ast
 
 type dispatch =
@@ -46,7 +45,7 @@ module SharedMemory :
   Memory.WithCache.S
     with type value = CalleeValue.t
      and type key = caller
-     and module KeySet = Caml.Set.Make(CallerKey)
+     and module KeySet = Stdlib.Set.Make(CallerKey)
      and module KeyMap = Hack_parallel.Std.MyMap.Make(CallerKey)
 
 val set : caller:caller -> callees:callee_with_locations list -> unit

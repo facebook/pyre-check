@@ -249,7 +249,7 @@ module ModulePaths = struct
                find_module_paths_inside_directories_all_search_paths lazy_finder parent_qualifier
                |> (fun map -> Reference.Map.Tree.find map qualifier)
                |> Option.value ~default:[])
-        |> Caml.List.flatten
+        |> Stdlib.List.flatten
       in
       List.sort files ~compare:(ModulePath.same_module_compare ~configuration)
 

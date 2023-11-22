@@ -101,7 +101,7 @@ type dependency =
 module In = struct
   type key = dependency [@@deriving compare, sexp]
 
-  module KeySet = Caml.Set.Make (struct
+  module KeySet = Stdlib.Set.Make (struct
     type t = dependency [@@deriving compare, sexp]
   end)
 
@@ -111,7 +111,7 @@ module In = struct
   }
   [@@deriving compare, sexp]
 
-  module RegisteredSet = Caml.Set.Make (struct
+  module RegisteredSet = Stdlib.Set.Make (struct
     type t = registered [@@deriving compare, sexp]
   end)
 

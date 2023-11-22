@@ -10,8 +10,8 @@
 (* Core shadows/deprecates the stdlib Unix module. *)
 module CamlUnix = Unix
 open Core
-module Gc = Caml.Gc
-module Set = Caml.Set
+module Gc = Stdlib.Gc
+module Set = Stdlib.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module type KeyType = SharedMemory.KeyType
@@ -276,8 +276,8 @@ module Interner (Value : InternerValueType) = struct
       |> Value.to_string
       |> Md5.digest_string
       |> Md5_lib.to_binary
-      |> Caml.Bytes.of_string
-      |> fun md5 -> Caml.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc
+      |> Stdlib.Bytes.of_string
+      |> fun md5 -> Stdlib.Bytes.get_int64_ne md5 0 |> Int64.to_int_trunc
     in
     Table.write_around id value;
     id

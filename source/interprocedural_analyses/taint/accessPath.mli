@@ -43,7 +43,7 @@ module Root : sig
   (* Equivalent to pp_internal. Required by @@deriving. *)
   val pp : Format.formatter -> t -> unit
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 end
 
 module NormalizedParameter : sig

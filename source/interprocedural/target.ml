@@ -221,7 +221,7 @@ let object_name = function
   | _ -> failwith "unexpected"
 
 
-module Set = Caml.Set.Make (T)
+module Set = Stdlib.Set.Make (T)
 module Hashable = Core.Hashable.Make (T)
 module HashMap = Hashable.Table
 module HashSet = Hashable.Hash_set

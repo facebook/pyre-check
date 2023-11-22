@@ -8,8 +8,8 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core
-module Hashtbl = Caml.Hashtbl
-module Set = Caml.Set
+module Hashtbl = Stdlib.Hashtbl
+module Set = Stdlib.Set
 module MyMap = Hack_parallel.Std.MyMap
 
 module EncodedDependency = struct

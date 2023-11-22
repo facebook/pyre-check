@@ -64,12 +64,12 @@ module ClientConnection = struct
           Lwt.return_unit
         else
           let message =
-            Caml.Format.sprintf "Expected error kind `%s` but got: `%s`" kind actual_kind
+            Stdlib.Format.sprintf "Expected error kind `%s` but got: `%s`" kind actual_kind
           in
           assert_failure message
     | json ->
         let message =
-          Caml.Format.sprintf "Expected error response but got: `%s`" (Yojson.Safe.to_string json)
+          Stdlib.Format.sprintf "Expected error response but got: `%s`" (Yojson.Safe.to_string json)
         in
         assert_failure message
 end
@@ -93,7 +93,7 @@ let setup
   (* MacOS tends to use very long directory name as the default `temp_dir`. This unfortunately would
      make the filename of temporary socket files exceed the default Unix limit. Hard-coding temp dir
      to `/tmp` to avoid the issue for now. *)
-  Caml.Filename.set_temp_dir_name "/tmp";
+  Stdlib.Filename.set_temp_dir_name "/tmp";
 
   (* We assume that there's only one checked source directory that acts as the global root as
      well. *)

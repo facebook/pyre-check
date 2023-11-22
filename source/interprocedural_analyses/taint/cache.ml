@@ -45,7 +45,7 @@ module Entry = struct
 end
 
 module EntryStatus = struct
-  module Map = Caml.Map.Make (Entry)
+  module Map = Stdlib.Map.Make (Entry)
 
   type t = Usage.t Map.t
 

@@ -2955,7 +2955,7 @@ let create_model_from_signature
               IncompatibleModelError
                 {
                   name = Reference.show callable_name;
-                  callable_type = Option.value_exn (Caml.Result.get_ok callable_annotation);
+                  callable_type = Option.value_exn (Stdlib.Result.get_ok callable_annotation);
                   errors =
                     [ModelVerificationError.IncompatibleModelError.{ reason; overload = None }];
                 };

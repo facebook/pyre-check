@@ -149,7 +149,7 @@ let log_exception message exception_to_log backtrace =
     "%s\nException: %s\nBacktrace:\n%s"
     message
     (Exn.to_string exception_to_log)
-    (Caml.Printexc.raw_backtrace_to_string backtrace)
+    (Stdlib.Printexc.raw_backtrace_to_string backtrace)
 
 
 module Color = struct

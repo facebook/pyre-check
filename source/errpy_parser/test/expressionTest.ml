@@ -30,7 +30,7 @@ let assert_parsed ~expected text =
               as_first_expression
         | _ ->
             let message =
-              Caml.Format.asprintf
+              Stdlib.Format.asprintf
                 "expected expression to be parsed but got: %a"
                 Sexp.pp_hum
                 (Statement.sexp_of_t first_statement)
@@ -43,7 +43,7 @@ let assert_parsed ~expected text =
       match error with
       | Recoverable recoverable -> check_ast recoverable.recovered_ast
       | Unrecoverable message ->
-          let message = Caml.Format.sprintf "Unexpected parsing failure: %s" message in
+          let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
           assert_failure message)
   | Result.Ok actual_ast -> check_ast actual_ast
 
@@ -51,13 +51,13 @@ let assert_parsed ~expected text =
 let assert_not_parsed text =
   match PyreErrpyParser.parse_module text with
   | Result.Ok _ ->
-      let message = Caml.Format.asprintf "Unexpected parsing success of input: %s" text in
+      let message = Stdlib.Format.asprintf "Unexpected parsing success of input: %s" text in
       assert_failure message
   | Result.Error error -> (
       match error with
       | Recoverable _ -> ()
       | Unrecoverable message ->
-          let message = Caml.Format.sprintf "Unexpected errpy stacktrace thrown: %s" message in
+          let message = Stdlib.Format.sprintf "Unexpected errpy stacktrace thrown: %s" message in
           assert_failure message)
 
 

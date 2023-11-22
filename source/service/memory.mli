@@ -5,8 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-module Set = Caml.Set
+module Set = Stdlib.Set
 module SharedMemory = Hack_parallel.Std.SharedMemory
 
 module type KeyType = SharedMemory.KeyType
@@ -23,7 +22,7 @@ val get_heap_handle : Configuration.Analysis.t -> SharedMemory.handle
 
 val heap_size : unit -> int
 
-val worker_garbage_control : Caml.Gc.control
+val worker_garbage_control : Stdlib.Gc.control
 
 val report_statistics : unit -> unit
 

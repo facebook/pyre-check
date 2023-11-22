@@ -819,7 +819,7 @@ struct
   let on_analyze_define_exception ~iteration ~callable ~exn =
     let message =
       match exn with
-      | Caml.Sys.Break -> "Hit Ctrl+C"
+      | Stdlib.Sys.Break -> "Hit Ctrl+C"
       | _ -> "Analysis failed"
     in
     let message =

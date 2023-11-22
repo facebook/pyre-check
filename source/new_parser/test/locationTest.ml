@@ -21,7 +21,7 @@ let statements_print_to_sexp statements =
 let assert_parsed ~context ~expected text =
   match PyreNewParser.parse_module ~context ~enable_type_comment:true text with
   | Result.Error { PyreNewParser.Error.message; _ } ->
-      let message = Caml.Format.sprintf "Unexpected parsing failure: %s" message in
+      let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
   | Result.Ok actual ->
       assert_equal ~cmp:statements_equal ~printer:statements_print_to_sexp expected actual

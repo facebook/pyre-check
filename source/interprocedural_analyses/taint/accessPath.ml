@@ -85,7 +85,7 @@ module Root = struct
   end
 
   include T
-  module Set = Caml.Set.Make (T)
+  module Set = Stdlib.Set.Make (T)
 end
 
 module NormalizedParameter = struct

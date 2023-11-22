@@ -10,7 +10,7 @@ open OUnit2
 open AbstractDomain
 module MapPoly = Map.Poly
 
-let ( = ) = Caml.( = )
+let ( = ) = Stdlib.( = )
 
 let string_list_printer elements = String.concat ~sep:"," elements
 

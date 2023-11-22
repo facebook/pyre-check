@@ -23,7 +23,7 @@ let run_check_module ~environment source =
             }
           -> name)
   |> List.map ~f:(GlobalLeakCheck.check_qualifier ~type_environment)
-  |> List.map ~f:Caml.Option.get
+  |> List.map ~f:Stdlib.Option.get
   |> List.concat
 
 

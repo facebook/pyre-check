@@ -14,7 +14,7 @@ module Raw : sig
   }
   [@@deriving compare, equal, hash, sexp]
 
-  module Set : Caml.Set.S with type elt = t
+  module Set : Stdlib.Set.S with type elt = t
 
   val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
 

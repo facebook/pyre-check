@@ -129,4 +129,4 @@ end
 
 include T
 module SerializableMap = Data_structures.SerializableMap.Make (T)
-module Set = Caml.Set.Make (T)
+module Set = Stdlib.Set.Make (T)

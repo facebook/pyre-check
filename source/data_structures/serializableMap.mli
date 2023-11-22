@@ -36,7 +36,7 @@ module type S = sig
 end
 
 module type OrderedType = sig
-  include Caml.Map.OrderedType
+  include Stdlib.Map.OrderedType
 
   val t_of_sexp : Sexp.t -> t
 

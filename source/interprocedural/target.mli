@@ -107,7 +107,7 @@ val define_name : t -> Reference.t
 
 val object_name : t -> Reference.t
 
-module Set : Caml.Set.S with type elt = t
+module Set : Stdlib.Set.S with type elt = t
 
 module HashMap : Core.Hashtbl.S with type key := t
 

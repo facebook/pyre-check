@@ -14,7 +14,7 @@ module StringKey = struct
 
   type key = string [@@deriving sexp, compare]
 
-  module KeySet = Caml.Set.Make (struct
+  module KeySet = Stdlib.Set.Make (struct
     type t = key [@@deriving compare, sexp]
   end)
 

@@ -22,7 +22,7 @@ let load_from_string text =
     |> Hashtbl.of_alist (module String)
     |> function
     | `Duplicate_key key ->
-        let message = Caml.Format.sprintf "Duplicate key `%s` in checksum map" key in
+        let message = Stdlib.Format.sprintf "Duplicate key `%s` in checksum map" key in
         Result.Error message
     | `Ok state -> Result.Ok state
   with

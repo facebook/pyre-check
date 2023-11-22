@@ -49,4 +49,4 @@ val name : string
 
 module SerializableMap : Data_structures.SerializableMap.S with type key = t
 
-module Set : Caml.Set.S with type elt = t
+module Set : Stdlib.Set.S with type elt = t

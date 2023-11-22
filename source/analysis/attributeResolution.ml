@@ -219,21 +219,21 @@ let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
 module UninstantiatedAttributeTable = struct
   type element = UninstantiatedAnnotation.t AnnotatedAttribute.t [@@deriving compare]
 
-  type table = (string, element) Caml.Hashtbl.t
+  type table = (string, element) Stdlib.Hashtbl.t
 
   type t = {
     attributes: table;
     names: string list ref;
   }
 
-  let create () = { attributes = Caml.Hashtbl.create 15; names = ref [] }
+  let create () = { attributes = Stdlib.Hashtbl.create 15; names = ref [] }
 
   let add { attributes; names } attribute =
     let name = AnnotatedAttribute.name attribute in
-    if Caml.Hashtbl.mem attributes name then
+    if Stdlib.Hashtbl.mem attributes name then
       ()
     else (
-      Caml.Hashtbl.add attributes name attribute;
+      Stdlib.Hashtbl.add attributes name attribute;
       names := name :: !names)
 
 
@@ -243,16 +243,16 @@ module UninstantiatedAttributeTable = struct
       | NotInitialized -> true
       | _ -> false
     in
-    match Caml.Hashtbl.find_opt attributes name with
+    match Stdlib.Hashtbl.find_opt attributes name with
     | Some attribute when is_uninitialized attribute ->
         AnnotatedAttribute.with_initialized ~initialized:OnlyOnInstance attribute
-        |> Caml.Hashtbl.replace attributes name
+        |> Stdlib.Hashtbl.replace attributes name
     | _ -> ()
 
 
-  let lookup_name { attributes; _ } = Caml.Hashtbl.find_opt attributes
+  let lookup_name { attributes; _ } = Stdlib.Hashtbl.find_opt attributes
 
-  let to_list { attributes; names } = List.rev_map !names ~f:(Caml.Hashtbl.find attributes)
+  let to_list { attributes; names } = List.rev_map !names ~f:(Stdlib.Hashtbl.find attributes)
 
   let names { names; _ } = !names
 

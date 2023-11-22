@@ -33,7 +33,7 @@ module GlobalState = struct
         let uid = CamlUnix.getuid () in
         match CamlUnix.getpwuid uid with
         | { CamlUnix.pw_name; _ } -> pw_name
-        | exception Caml.Not_found -> CamlUnix.getlogin ())
+        | exception Stdlib.Not_found -> CamlUnix.getlogin ())
 
 
   let hostname =

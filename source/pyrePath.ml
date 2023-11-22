@@ -54,13 +54,13 @@ let get_directory path = absolute path |> Filename.dirname |> create_absolute
 
 let create_directory_recursively ?(permission = 0o777) path =
   let rec do_create = function
-    | path when not (Caml.Sys.file_exists path) -> (
+    | path when not (Stdlib.Sys.file_exists path) -> (
         match do_create (Filename.dirname path) with
         | Result.Error _ as error -> error
         | Result.Ok () ->
             CamlUnix.mkdir path permission;
             Result.Ok ())
-    | path when Caml.Sys.is_directory path -> Result.Ok ()
+    | path when Stdlib.Sys.is_directory path -> Result.Ok ()
     | path ->
         let message = Format.sprintf "A non-directory already exists: %s" path in
         Result.Error message
@@ -80,7 +80,7 @@ let get_relative_to_root ~root ~path =
   String.chop_prefix ~prefix:root (absolute path)
 
 
-let current_working_directory () = create_absolute (Caml.Sys.getcwd ())
+let current_working_directory () = create_absolute (Stdlib.Sys.getcwd ())
 
 let append path ~element =
   match path with
@@ -133,7 +133,7 @@ let follow_symbolic_link path =
 
 (* Variant of Sys.readdir where names are sorted in alphabetical order *)
 let read_directory_ordered_raw path =
-  let entries = Caml.Sys.readdir path in
+  let entries = Stdlib.Sys.readdir path in
   Array.sort ~compare:String.compare entries;
   entries
 
@@ -205,7 +205,7 @@ let remove_recursively path =
       let stats = CamlUnix.lstat path in
       match stats.CamlUnix.st_kind with
       | CamlUnix.S_DIR ->
-          let contents = Caml.Sys.readdir path in
+          let contents = Stdlib.Sys.readdir path in
           List.iter (Array.to_list contents) ~f:(fun name ->
               let name = Filename.concat path name in
               do_remove name);
@@ -229,7 +229,7 @@ let remove_recursively path =
 
 let remove_contents_of_directory path =
   try
-    Caml.Sys.readdir (absolute path)
+    Stdlib.Sys.readdir (absolute path)
     |> Array.iter ~f:(fun relative -> remove_recursively (create_relative ~root:path ~relative));
     Result.Ok ()
   with
@@ -254,7 +254,9 @@ let get_matching_files_recursively ~suffix ~paths =
         else
           []
       in
-      Caml.Sys.readdir (absolute path) |> Array.to_list |> List.concat_map ~f:expand_directory_entry
+      Stdlib.Sys.readdir (absolute path)
+      |> Array.to_list
+      |> List.concat_map ~f:expand_directory_entry
     else if String.is_suffix ~suffix (absolute path) then
       [path]
     else
