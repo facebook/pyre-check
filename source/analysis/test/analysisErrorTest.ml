@@ -850,8 +850,8 @@ let test_namespace_insensitive_set _ =
   let error_1 = error (Error.NotCallable (Type.list namespaced_variable_1)) in
   let error_2 = error (Error.NotCallable (Type.list namespaced_variable_2)) in
   assert_true ([%compare.equal: Error.t] error_1 error_2);
-  let set_containing_error_1 = Error.Set.add Error.Set.empty error_1 in
-  assert_true (Error.Set.mem set_containing_error_1 error_2)
+  let set_containing_error_1 = Set.add Error.Set.empty error_1 in
+  assert_true (Set.mem set_containing_error_1 error_2)
 
 
 let test_description _ =

@@ -306,7 +306,7 @@ let test_create_alias _ =
                    [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
               () );
         ]
-      |> (fun table -> Identifier.Table.find table primitive)
+      |> (fun table -> Hashtbl.find table primitive)
       >>| fun alias -> Type.TypeAlias alias
     in
     assert_create ~aliases source resolved

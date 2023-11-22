@@ -34,15 +34,14 @@ module StringKey = struct
     let encode key =
       let add = function
         | None -> String.Set.singleton key
-        | Some existing -> String.Set.add existing key
+        | Some existing -> Set.add existing key
       in
       let encoded = DependencyTrackedMemory.EncodedDependency.make key ~hash:String.hash in
-      DependencyTrackedMemory.EncodedDependency.Table.update table encoded ~f:add;
+      Hashtbl.update table encoded ~f:add;
       encoded
 
 
-    let decode hash =
-      DependencyTrackedMemory.EncodedDependency.Table.find table hash >>| Set.to_list
+    let decode hash = Hashtbl.find table hash >>| Set.to_list
   end
 end
 

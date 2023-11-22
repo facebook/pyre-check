@@ -2266,7 +2266,7 @@ let test_join _ =
         "_T_co", Type.variable "_T_co" ~variance:Covariant;
         "_T_contra", Type.variable "_T_contra" ~variance:Contravariant;
       ]
-    |> Identifier.Table.find
+    |> Hashtbl.find
   in
   (* TODO (T45909999): Revisit these tests and only keep the useful ones *)
   let _obsolete_variance_tests () =

@@ -5063,13 +5063,13 @@ let test_populate_captures _ =
           sofar
           { Node.value = { Define.signature = { Define.Signature.name; _ }; captures; _ }; _ }
         =
-        Reference.Map.set sofar ~key:name ~data:captures
+        Map.set sofar ~key:name ~data:captures
       in
       List.fold defines ~init:Reference.Map.empty ~f:build_capture_map
     in
     let assert_captures name expected =
       let expected = List.map expected ~f:(fun (name, kind) -> { Define.Capture.name; kind }) in
-      let actual = Reference.Map.find capture_map name |> Option.value ~default:[] in
+      let actual = Map.find capture_map name |> Option.value ~default:[] in
       assert_equal
         ~cmp:[%compare.equal: Define.Capture.t list]
         ~printer:(fun captures -> Sexp.to_string_hum [%message (captures : Define.Capture.t list)])
@@ -5855,7 +5855,7 @@ let test_populate_unbound_names _ =
           sofar
           { Node.value = { Define.signature = { Define.Signature.name; _ }; unbound_names; _ }; _ }
         =
-        Reference.Map.set sofar ~key:name ~data:unbound_names
+        Map.set sofar ~key:name ~data:unbound_names
       in
       List.fold defines ~init:Reference.Map.empty ~f:build_unbound_map
     in
@@ -5863,7 +5863,7 @@ let test_populate_unbound_names _ =
       let expected =
         List.map expected ~f:(fun (name, location) -> { Define.NameAccess.name; location })
       in
-      let actual = Reference.Map.find unbound_map name |> Option.value ~default:[] in
+      let actual = Map.find unbound_map name |> Option.value ~default:[] in
       assert_equal
         ~cmp:[%compare.equal: Define.NameAccess.t list]
         ~printer:(fun unbound_names ->

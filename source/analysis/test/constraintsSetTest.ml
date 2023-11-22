@@ -187,7 +187,7 @@ let make_assert_functions context =
         ]
         |> Type.Primitive.Set.of_list
       in
-      if Type.Primitive.Set.mem s a then
+      if Set.mem s a then
         Some (Type.TypeAlias (Type.Primitive ("test." ^ a)))
       else
         GlobalResolution.aliases resolution a
