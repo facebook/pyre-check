@@ -9,6 +9,8 @@ and vendoring them, which includes some logic both for cleaning and patching.
 """
 from __future__ import annotations
 
+import logging
+
 import pathlib
 import sys
 
@@ -142,4 +144,8 @@ def patch_typeshed_directory(
 
 
 if __name__ == "__main__":
+    logging.basicConfig(
+        format="%(levelname)s %(asctime)s %(name)s: %(message)s",
+        level=logging.INFO,
+    )
     pyre_typeshed_patcher(sys.argv[1:])

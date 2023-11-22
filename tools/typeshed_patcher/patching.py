@@ -11,13 +11,15 @@ transforms on upstream typeshed stub files.
 from __future__ import annotations
 
 import dataclasses
-
 import difflib
+import logging
 import pathlib
 import shutil
 import sys
 
 from . import patch_specs, transforms, typeshed
+
+logger: logging.Logger = logging.getLogger(__name__)
 
 
 def compute_diff_view(
@@ -159,8 +161,8 @@ def patch_typeshed_directory(
     )
     handle_overwrite_directory(target)
     typeshed.write_to_directory(result.patched_typeshed, target)
-    print(f"Wrote patched typeshed to {target}")
+    logger.info(f"Wrote patched typeshed to {target}")
     if diffs_directory is not None:
         handle_overwrite_directory(diffs_directory)
         typeshed.write_content_map_to_directory(result.patch_diffs, diffs_directory)
-        print(f"Wrote diffs of all patched stubs to {diffs_directory}")
+        logger.info(f"Wrote diffs of all patched stubs to {diffs_directory}")
