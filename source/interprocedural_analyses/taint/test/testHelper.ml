@@ -126,12 +126,12 @@ let check_expectation
           |> Domains.BackwardTaint.kinds
         in
         let sinks =
-          String.Map.find sink_map name
+          Core.Map.find sink_map name
           |> Option.value ~default:[]
           |> List.rev_append sinks
           |> List.dedup_and_sort ~compare:Sinks.compare
         in
-        String.Map.set sink_map ~key:name ~data:sinks
+        Core.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
   let extract_sources_by_parameter_name (root, source_tree) sink_map =
@@ -142,12 +142,12 @@ let check_expectation
           |> Domains.ForwardTaint.kinds
         in
         let sinks =
-          String.Map.find sink_map name
+          Core.Map.find sink_map name
           |> Option.value ~default:[]
           |> List.rev_append sinks
           |> List.dedup_and_sort ~compare:Sources.compare
         in
-        String.Map.set sink_map ~key:name ~data:sinks
+        Core.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
   let { Model.backward; forward; sanitizers; modes } =
@@ -172,7 +172,7 @@ let check_expectation
   in
   let extract_parameter_sanitize map (root, sanitize) =
     match AccessPath.Root.parameter_name root with
-    | Some name -> String.Map.set map ~key:name ~data:sanitize
+    | Some name -> Core.Map.set map ~key:name ~data:sanitize
     | _ -> map
   in
   let parameter_sanitize_map =
@@ -315,7 +315,7 @@ let check_expectation
     (Map.length sink_taint_map)
     ~printer:Int.to_string
     ~msg:(Format.sprintf "Define %s: List of sink tainted parameters differ in length." define_name);
-  String.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
+  Core.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
 
   (* Check parameter sources. *)
   assert_equal
@@ -324,7 +324,7 @@ let check_expectation
     ~printer:Int.to_string
     ~msg:
       (Format.sprintf "Define %s: List of source tainted parameters differ in length." define_name);
-  String.Map.iter2
+  Core.Map.iter2
     ~f:check_each_source_parameter
     expected_parameter_sources
     parameter_source_taint_map;
@@ -336,7 +336,7 @@ let check_expectation
     (Map.length parameter_taint_in_taint_out_map)
     ~printer:Int.to_string
     ~msg:(Format.sprintf "Define %s: List of tito parameters differ in length." define_name);
-  String.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
+  Core.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
 
   (* Check return sinks. *)
   let expected_return_sinks = List.map ~f:Sinks.show return_sinks |> String.Set.of_list in
@@ -371,7 +371,7 @@ let check_expectation
     (Map.length parameter_sanitize_map)
     ~printer:Int.to_string
     ~msg:(Format.sprintf "Define %s: List of parameter sanitizers differ in length." define_name);
-  String.Map.iter2 ~f:check_each_sanitize expected_parameter_sanitizers parameter_sanitize_map;
+  Core.Map.iter2 ~f:check_each_sanitize expected_parameter_sanitizers parameter_sanitize_map;
 
   (* Check errors *)
   let actual_errors =

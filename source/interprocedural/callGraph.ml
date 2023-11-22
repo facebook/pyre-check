@@ -1021,7 +1021,7 @@ module CallTargetIndexer = struct
   let create () = { indices = Target.HashMap.create (); seen_targets = Target.Set.empty }
 
   let generate_fresh_indices indexer =
-    Target.Set.iter (Target.HashMap.incr indexer.indices) indexer.seen_targets;
+    Target.Set.iter (Hashtbl.incr indexer.indices) indexer.seen_targets;
     indexer.seen_targets <- Target.Set.empty
 
 
@@ -1034,7 +1034,7 @@ module CallTargetIndexer = struct
       original_target
     =
     let target_for_index = Target.override_to_method original_target in
-    let index = Target.HashMap.find indexer.indices target_for_index |> Option.value ~default:0 in
+    let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
     {
       CallTarget.target = original_target;
@@ -1576,7 +1576,7 @@ let resolve_recognized_callees
         ~implementing_class
   | Expression.Name name, _
     when is_all_names (Node.value callee)
-         && Type.Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
+         && Set.mem SpecialCallResolution.recognized_callable_target_types callee_type ->
       Ast.Expression.name_to_reference name
       >>| Reference.show
       >>| fun name ->
@@ -2133,7 +2133,7 @@ struct
           expression
           ExpressionCallees.pp
           callees;
-        Location.Table.update Context.callees_at_location location ~f:(function
+        Hashtbl.update Context.callees_at_location location ~f:(function
             | None -> UnprocessedLocationCallees.singleton ~expression_identifier ~callees
             | Some existing_callees ->
                 UnprocessedLocationCallees.add existing_callees ~expression_identifier ~callees)
@@ -2519,7 +2519,7 @@ let call_graph_of_define
 
   DefineFixpoint.forward ~cfg:(Cfg.create define) ~initial:() |> ignore;
   let call_graph =
-    Location.Table.to_alist callees_at_location
+    Hashtbl.to_alist callees_at_location
     |> List.map ~f:(fun (location, unprocessed_callees) ->
            match SerializableStringMap.to_alist unprocessed_callees with
            | [] -> failwith "unreachable"

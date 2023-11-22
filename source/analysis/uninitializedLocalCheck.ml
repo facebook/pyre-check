@@ -45,7 +45,7 @@ module AccessCollector = struct
         let names_in_body = from_expression NameAccessSet.empty body in
         let unbound_names_in_body =
           Set.filter names_in_body ~f:(fun { Define.NameAccess.name; _ } ->
-              not (Identifier.Set.mem bound_names name))
+              not (Set.mem bound_names name))
         in
         Set.union unbound_names_in_body collected
     | Name (Name.Identifier identifier) ->
@@ -111,7 +111,7 @@ module AccessCollector = struct
     =
    fun ~collected from_element { Comprehension.element; generators } ->
     let remove_bound_names ~bound_names =
-      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Set.mem bound_names name))
     in
     let bound_names, collected =
       let from_generator
@@ -123,8 +123,7 @@ module AccessCollector = struct
         in
         let bound_names =
           let add_bound_name bound_names { Define.NameAccess.name; _ } = Set.add bound_names name in
-          from_expression NameAccessSet.empty target
-          |> NameAccessSet.fold ~init:bound_names ~f:add_bound_name
+          from_expression NameAccessSet.empty target |> Set.fold ~init:bound_names ~f:add_bound_name
         in
         let condition_accesses =
           List.fold conditions ~init:NameAccessSet.empty ~f:from_expression
@@ -138,7 +137,7 @@ module AccessCollector = struct
     let element_accesses =
       from_element NameAccessSet.empty element |> remove_bound_names ~bound_names
     in
-    NameAccessSet.union collected element_accesses
+    Set.union collected element_accesses
 end
 
 let extract_reads_in_expression expression =
@@ -146,7 +145,7 @@ let extract_reads_in_expression expression =
     { Node.value = name; location }
   in
   AccessCollector.from_expression NameAccessSet.empty expression
-  |> NameAccessSet.to_list
+  |> Set.to_list
   |> List.map ~f:name_access_to_identifier_node
 
 
@@ -187,21 +186,17 @@ module StatementKey = Int
 let local_bindings { Scope.Scope.bindings; globals; nonlocals; _ } =
   (* Santitization is needed to remove (some) scope information that is (sometimes, but not
      consistently) added into the identifiers themselves (e.g. $local_test?f$y). *)
-  let locals =
-    Identifier.Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list
-  in
+  let locals = Map.keys bindings |> List.map ~f:Identifier.sanitized |> Identifier.Set.of_list in
   (* This operation needs to be repeated as Scope doesn't know about qualification, and hence
      doesn't remove all globals and nonlocals from bindings *)
   let globals = Identifier.Set.map ~f:Identifier.sanitized globals in
   let nonlocals = Identifier.Set.map ~f:Identifier.sanitized nonlocals in
-  let filtered_locals = Identifier.Set.diff (Identifier.Set.diff locals globals) nonlocals in
+  let filtered_locals = Set.diff (Set.diff locals globals) nonlocals in
   let sanitized_local_bindings =
-    Identifier.Map.fold bindings ~init:Identifier.Map.empty ~f:(fun ~key ~data sanitized ->
+    Map.fold bindings ~init:Identifier.Map.empty ~f:(fun ~key ~data sanitized ->
         Map.set sanitized ~key:(Identifier.sanitized key) ~data)
   in
-  Identifier.Map.filteri
-    ~f:(fun ~key ~data:_ -> Set.mem filtered_locals key)
-    sanitized_local_bindings
+  Map.filteri ~f:(fun ~key ~data:_ -> Set.mem filtered_locals key) sanitized_local_bindings
 
 
 let create_map =
@@ -304,9 +299,7 @@ let defined_locals_at_each_statement define =
   let cfg = Cfg.create (Node.value define) in
   let fixpoint = Fixpoint.forward ~cfg ~initial:(State.initial ~define) in
   let defined_locals =
-    match
-      Context.fixpoint_post_statement |> StatementKey.Table.to_alist |> StatementKey.Map.of_alist
-    with
+    match Context.fixpoint_post_statement |> Hashtbl.to_alist |> StatementKey.Map.of_alist with
     | `Ok map -> map
     | `Duplicate_key _ -> StatementKey.Map.empty
   in
@@ -324,20 +317,18 @@ let errors ~qualifier ~define defined_locals_at_each_statement =
   in
   let bindings = Scope.Scope.of_define_exn define.value in
   let in_local_scope { Node.value = identifier; _ } =
-    let all_local_identifiers =
-      local_bindings bindings |> Identifier.Map.keys |> Identifier.Set.of_list
-    in
-    identifier |> Identifier.sanitized |> Identifier.Set.mem all_local_identifiers
+    let all_local_identifiers = local_bindings bindings |> Map.keys |> Identifier.Set.of_list in
+    identifier |> Identifier.sanitized |> Set.mem all_local_identifiers
   in
   let is_binding { Node.location; _ } =
     let { Scope.Scope.bindings; _ } = bindings in
     let all_binding_locations =
       bindings
-      |> Identifier.Map.data
+      |> Map.data
       |> List.map ~f:(fun { Scope.Binding.location; _ } -> location)
       |> Location.Set.of_list
     in
-    Location.Set.mem all_binding_locations location
+    Set.mem all_binding_locations location
   in
   let uninitialized_usage (statement, initialized) =
     let is_uninitialized { Node.value = identifier; _ } =

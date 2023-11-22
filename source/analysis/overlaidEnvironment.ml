@@ -23,21 +23,21 @@ let create root = { root; overlays = String.Table.create () }
 let root { root; _ } = ErrorsEnvironment.read_only root
 
 let overlay { overlays; _ } identifier =
-  String.Table.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
+  Hashtbl.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
 
 let get_or_create_overlay { root; overlays } identifier =
-  match String.Table.find overlays identifier with
+  match Hashtbl.find overlays identifier with
   | Some overlay -> overlay
   | None ->
       let new_overlay = ErrorsEnvironment.read_only root |> ErrorsEnvironment.Overlay.create in
-      let () = String.Table.add overlays ~key:identifier ~data:new_overlay |> ignore in
+      let () = Hashtbl.add overlays ~key:identifier ~data:new_overlay |> ignore in
       new_overlay
 
 
 let remove_overlay { overlays; _ } identifier =
   (* NOTE(grievejia): This is going to leak some sharedmem *)
-  String.Table.remove overlays identifier
+  Hashtbl.remove overlays identifier
 
 
 let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.controls
@@ -123,7 +123,7 @@ let run_update_root ({ overlays; _ } as overlaid_environment) ~scheduler events 
   Log.info "Repopulating the environment...";
   let updated_paths_count = List.length events in
   let update_result = update_root overlaid_environment ~scheduler events in
-  String.Table.iter overlays ~f:(fun overlay ->
+  Hashtbl.iter overlays ~f:(fun overlay ->
       ErrorsEnvironment.Overlay.propagate_parent_update overlay update_result |> ignore);
   (* Log updates *)
   log_update_stats UpdateType.Root ~timer ~update_result ~updated_paths_count

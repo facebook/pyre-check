@@ -1143,7 +1143,7 @@ module SimplificationMap = struct
 
   let pp fmt map =
     let pp_one ~key ~data = Format.fprintf fmt "\n  %a -> %a" Reference.pp key Reference.pp data in
-    Reference.Map.iteri ~f:pp_one map
+    Map.iteri ~f:pp_one map
 
 
   let show map = Format.asprintf "%a" pp map
@@ -1159,7 +1159,7 @@ module SimplificationMap = struct
         | _, LazyLeaf { to_be_expanded } -> empty_trie |> add to_be_expanded |> add sofar
         | head :: remaining, Node { children } ->
             let updated_children =
-              Identifier.Map.update children head ~f:(fun existing ->
+              Map.update children head ~f:(fun existing ->
                   match existing with
                   | None -> LazyLeaf { to_be_expanded = remaining }
                   | Some child -> add remaining child)
@@ -1179,8 +1179,7 @@ module SimplificationMap = struct
             let dropped = List.rev to_be_expanded |> Reference.create_from_list in
             (Reference.combine dropped shortened, shortened) :: collected
         | Node { children } ->
-            Identifier.Map.fold children ~init:collected ~f:(fun ~key ~data ->
-                extract (key :: suffix) data)
+            Map.fold children ~init:collected ~f:(fun ~key ~data -> extract (key :: suffix) data)
       in
       extract [] trie []
     in
@@ -3634,7 +3633,8 @@ let join ~resolution left right =
         UnsupportedOperand
           (Unary { left with operand = GlobalResolution.join resolution left_operand right_operand })
     | UnusedIgnore left, UnusedIgnore right ->
-        UnusedIgnore (IntSet.to_list (IntSet.union (IntSet.of_list left) (IntSet.of_list right)))
+        UnusedIgnore
+          (Core.Set.to_list (Core.Set.union (IntSet.of_list left) (IntSet.of_list right)))
     | ( Unpack { expected_count = left_count; unpack_problem = UnacceptableType left },
         Unpack { expected_count = right_count; unpack_problem = UnacceptableType right } )
       when left_count = right_count ->
@@ -3788,7 +3788,7 @@ let join_at_define ~resolution errors =
             else
               existing_error
       in
-      String.Table.update error_map key ~f:update_error;
+      Hashtbl.update error_map key ~f:update_error;
       errors
     in
     match error with
@@ -3805,7 +3805,7 @@ let join_at_define ~resolution errors =
     | _ -> error :: errors
   in
   let unjoined_errors = List.fold ~init:[] ~f:add_error errors in
-  let joined_errors = String.Table.data error_map in
+  let joined_errors = Hashtbl.data error_map in
   (* Preserve the order of the errors as much as possible *)
   List.rev_append unjoined_errors joined_errors
 

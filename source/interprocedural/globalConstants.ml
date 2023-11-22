@@ -87,7 +87,7 @@ module Heap = struct
         | `Right value ->
             Some value
       in
-      Reference.Map.merge ~f:merge
+      Map.merge ~f:merge
     in
     qualifiers |> List.map ~f:build_per_qualifier |> Algorithms.fold_balanced ~init:empty ~f:reduce
 end
@@ -107,7 +107,7 @@ module SharedMemory = struct
       end)
 
   let add_heap handle heap =
-    Reference.Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
+    Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
 
 
   let from_qualifiers ~handle ~scheduler ~environment ~qualifiers =

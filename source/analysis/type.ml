@@ -1802,7 +1802,7 @@ module Map = Map.Make (T)
 
 let default_to_bottom map keys =
   let to_bottom solution key =
-    Map.update solution key ~f:(function
+    Core.Map.update solution key ~f:(function
         | None -> Bottom
         | Some value -> value)
   in
@@ -2655,7 +2655,7 @@ let rec create_readonly = function
   | NoneType -> NoneType
   | Union elements -> Union (List.map ~f:create_readonly elements)
   | Primitive class_name as type_
-    when String.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
+    when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
       (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
          reduce noisy errors on classes that are never mutated and reduces the adoption burden on
          users. *)
@@ -4320,7 +4320,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
   (* Substitutions. *)
   match result with
   | Primitive name -> (
-      match Identifier.Table.find primitive_substitution_map name with
+      match Hashtbl.find primitive_substitution_map name with
       | Some substitute -> substitute
       | None -> result)
   | Parametric { name = "typing.Tuple"; parameters }
@@ -4345,7 +4345,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         | "pyre_extensions.ReadOnly", Some [head] -> ReadOnly.create head
         | _ -> result
       in
-      match Identifier.Table.find alternate_name_to_canonical_name_map name with
+      match Hashtbl.find alternate_name_to_canonical_name_map name with
       | Some name -> Parametric { name; parameters }
       | None -> replace_with_special_form ~name parameters)
   | Union elements -> union elements
@@ -4377,9 +4377,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
 
 (* Check if there is a literal Any provided, not including type aliases to Any. *)
 let expression_contains_any expression =
-  let primitives_with_any_map =
-    Identifier.Table.filter ~f:contains_any primitive_substitution_map
-  in
+  let primitives_with_any_map = Hashtbl.filter ~f:contains_any primitive_substitution_map in
   Visit.collect_non_generic_type_names expression
   |> List.exists ~f:(Hashtbl.mem primitives_with_any_map)
 
@@ -4503,7 +4501,7 @@ let elements annotation =
   let name_set = Identifier.Set.of_list recursive_type_names in
   (* The recursive alias name is untracked, which would lead to spurious "Annotation is not defined"
      errors. So, filter out any references to it. consider the name as an "element". *)
-  List.filter elements ~f:(fun element -> not (Identifier.Set.mem name_set element)) |> List.rev
+  List.filter elements ~f:(fun element -> not (Core.Set.mem name_set element)) |> List.rev
 
 
 let is_untyped = function
@@ -4658,10 +4656,8 @@ let assume_any = function
 
 let dequalify_reference map reference =
   let rec fold accumulator reference =
-    if Reference.Map.mem map reference then
-      Reference.combine
-        (Reference.Map.find_exn map reference)
-        (Reference.create_from_list accumulator)
+    if Core.Map.mem map reference then
+      Reference.combine (Core.Map.find_exn map reference) (Reference.create_from_list accumulator)
     else
       match Reference.prefix reference with
       | Some prefix -> fold (Reference.last reference :: accumulator) prefix
@@ -6017,10 +6013,10 @@ let resolve_aliases ~aliases annotation =
           | Parametric { name = alias_name; parameters = given_parameters } ->
               let deduplicate_preserving_order list =
                 List.fold list ~init:([], Variable.Set.empty) ~f:(fun (sofar, seen_set) x ->
-                    if Variable.Set.mem seen_set x then
+                    if Core.Set.mem seen_set x then
                       sofar, seen_set
                     else
-                      x :: sofar, Variable.Set.add seen_set x)
+                      x :: sofar, Core.Set.add seen_set x)
                 |> fst
                 |> List.rev
               in

@@ -35,13 +35,13 @@ module LocalErrorMap = struct
 
   let empty () = Int.Table.create ()
 
-  let set error_map ~statement_key ~errors = Int.Table.set error_map ~key:statement_key ~data:errors
+  let set error_map ~statement_key ~errors = Hashtbl.set error_map ~key:statement_key ~data:errors
 
   let append error_map ~statement_key ~error =
-    Int.Table.add_multi error_map ~key:statement_key ~data:error
+    Hashtbl.add_multi error_map ~key:statement_key ~data:error
 
 
-  let all_errors error_map = Int.Table.data error_map |> List.concat
+  let all_errors error_map = Hashtbl.data error_map |> List.concat
 end
 
 module type Context = sig
@@ -6230,7 +6230,7 @@ module State (Context : Context) = struct
               "__sizeof__";
             ]
         in
-        String.Set.mem allowlist (Define.unqualified_name define)
+        Set.mem allowlist (Define.unqualified_name define)
       in
       try
         if
@@ -6837,7 +6837,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                   |> Annotation.annotation
                 in
                 let name = AnnotatedAttribute.name attribute in
-                match String.Map.add sofar ~key:name ~data:(annotation, name_and_metadata) with
+                match Map.add sofar ~key:name ~data:(annotation, name_and_metadata) with
                 | `Ok map -> map
                 | `Duplicate -> sofar
               in
@@ -6898,7 +6898,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                      ~init:attribute_map
                      ~f:remove_initialized
                      (List.cons name_and_metadata concrete_superclasses))
-              |> String.Map.to_alist
+              |> Map.to_alist
           in
           uninitialized_attributes
           |> List.filter_map

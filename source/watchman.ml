@@ -210,7 +210,7 @@ module Filter = struct
       |> String.Set.of_list
       |> fun set ->
       List.filter_map critical_files ~f:extension_of
-      |> List.fold ~init:set ~f:String.Set.add
+      |> List.fold ~init:set ~f:Set.add
       |> fun set -> Set.add set "py" |> fun set -> Set.add set "pyi" |> Set.to_list
     in
     { base_names; whole_names; suffixes }

@@ -136,22 +136,22 @@ module TypecheckFlags = struct
           in
           kind
           >>= (fun kind -> create_ignore ~line ~kind)
-          >>| (fun data -> Int.Map.add_multi ~key:line_index ~data ignore_lines)
+          >>| (fun data -> Map.add_multi ~key:line_index ~data ignore_lines)
           |> Option.value ~default:ignore_lines
         in
         if String.is_prefix ~prefix:"#" (String.strip line) && Option.is_none current_line_mode then
           (* Increment ignores applied to current line if it is a comment. *)
-          match Int.Map.find ignore_lines line_index with
+          match Map.find ignore_lines line_index with
           | Some ignores -> (
-              let ignore_lines = Int.Map.remove ignore_lines line_index in
-              match Int.Map.find ignore_lines (line_index + 1) with
+              let ignore_lines = Map.remove ignore_lines line_index in
+              match Map.find ignore_lines (line_index + 1) with
               | Some existing_ignores ->
-                  Int.Map.set
+                  Map.set
                     ~key:(line_index + 1)
                     ~data:(List.map ~f:Ignore.increment ignores @ existing_ignores)
                     ignore_lines
               | None ->
-                  Int.Map.set
+                  Map.set
                     ~key:(line_index + 1)
                     ~data:(List.map ~f:Ignore.increment ignores)
                     ignore_lines)
@@ -197,7 +197,7 @@ module TypecheckFlags = struct
       local_mode;
       unused_local_modes = List.rev unused_local_modes;
       ignore_codes;
-      ignore_lines = ignore_lines |> Int.Map.data |> List.concat;
+      ignore_lines = ignore_lines |> Map.data |> List.concat;
     }
 end
 
@@ -276,7 +276,7 @@ let ignored_lines_including_format_strings
   in
   collect_format_strings_with_ignores ~ignore_line_map:start_line_to_ignore_map source
   |> List.fold ~init:start_line_to_ignore_map ~f:make_ignore_span_all_lines
-  |> Int.Map.data
+  |> Map.data
   |> List.concat_map ~f:(List.dedup_and_sort ~compare:Ignore.compare)
 
 

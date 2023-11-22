@@ -538,10 +538,10 @@ module GlobalResult = struct
     let name = DefineAnnotationsByName.Value.identifying_name define in
     (* Duplicate defines can occur, for example with certain decorator-based tools like
        typing.overloads. If we encounter a duplicate we skip that define entirely. *)
-    if SerializableReference.Set.mem define_names name then
+    if Set.mem define_names name then
       define_names, SerializableReference.Map.remove defines name
     else
-      let define_names = SerializableReference.Set.add define_names name in
+      let define_names = Set.add define_names name in
       let defines =
         if DefineAnnotation.is_inferred define then
           DefineAnnotationsByName.add_exn defines define

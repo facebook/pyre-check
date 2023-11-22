@@ -415,7 +415,7 @@ module EnvironmentTable = struct
                   In.filter_upstream_dependency (SharedMemoryKeys.DependencyKey.get_key dependency)
                 with
                 | Some trigger -> (
-                    match TriggerMap.add triggers ~key:trigger ~data:dependency with
+                    match Map.add triggers ~key:trigger ~data:dependency with
                     | `Duplicate -> triggers
                     | `Ok updated -> updated)
                 | None -> triggers)
@@ -585,9 +585,7 @@ module EnvironmentTable = struct
                 with
                 | None -> triggers
                 | Some trigger -> (
-                    match
-                      FromReadOnlyUpstream.TriggerMap.add triggers ~key:trigger ~data:dependency
-                    with
+                    match Map.add triggers ~key:trigger ~data:dependency with
                     | `Ok updated -> updated
                     | `Duplicate -> triggers))
               upstream_dependencies

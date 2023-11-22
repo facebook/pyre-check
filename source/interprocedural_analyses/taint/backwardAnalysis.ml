@@ -1095,11 +1095,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         List.fold
           ~init:Int.Set.empty
           ~f:(fun indices ({ CallGraph.HigherOrderParameter.index; _ }, _, _) ->
-            Int.Set.add indices index)
+            Set.add indices index)
           higher_order_parameters
       in
       List.filteri arguments_and_taints ~f:(fun index _ ->
-          not (Int.Set.mem function_argument_indices index))
+          not (Set.mem function_argument_indices index))
     in
 
     (* Simulate if branch. *)

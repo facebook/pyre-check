@@ -46,7 +46,7 @@ let create ~global_resolution ~annotation_store ~resolve_expression ~resolve_sta
 
 
 let pp format { annotation_store; type_variables; _ } =
-  Type.Variable.Set.to_list type_variables
+  Set.to_list type_variables
   |> List.map ~f:Type.Variable.show
   |> String.concat ~sep:", "
   |> Format.fprintf format "Type variables: [%s]\n";
@@ -225,14 +225,12 @@ let resolve_expression_to_type_with_locals
 
 
 let add_type_variable ({ type_variables; _ } as resolution) ~variable =
-  { resolution with type_variables = Type.Variable.Set.add type_variables variable }
+  { resolution with type_variables = Set.add type_variables variable }
 
 
-let type_variable_exists { type_variables; _ } ~variable =
-  Type.Variable.Set.mem type_variables variable
+let type_variable_exists { type_variables; _ } ~variable = Set.mem type_variables variable
 
-
-let all_type_variables_in_scope { type_variables; _ } = Type.Variable.Set.to_list type_variables
+let all_type_variables_in_scope { type_variables; _ } = Set.to_list type_variables
 
 let annotation_store { annotation_store; _ } = annotation_store
 

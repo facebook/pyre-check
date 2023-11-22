@@ -54,8 +54,8 @@ module DependencyGraph = struct
   let get x =
     hh_assert_allow_dependency_table_reads ();
     let deps = EncodedDependencySet.empty in
-    let deps = List.fold_left ~init:deps ~f:EncodedDependencySet.add (hh_get_dep x) in
-    let deps = List.fold_left ~init:deps ~f:EncodedDependencySet.add (hh_get_dep_sqlite x) in
+    let deps = List.fold_left ~init:deps ~f:Core.Set.add (hh_get_dep x) in
+    let deps = List.fold_left ~init:deps ~f:Core.Set.add (hh_get_dep_sqlite x) in
     deps
 end
 
@@ -123,7 +123,7 @@ module DependencyKey = struct
 
     let query trigger =
       DependencyGraph.get trigger
-      |> EncodedDependencySet.fold ~init:RegisteredSet.empty ~f:(fun sofar hash ->
+      |> Core.Set.fold ~init:RegisteredSet.empty ~f:(fun sofar hash ->
              match In.Registry.decode hash with
              | Some keys ->
                  let add sofar key = RegisteredSet.add key sofar in

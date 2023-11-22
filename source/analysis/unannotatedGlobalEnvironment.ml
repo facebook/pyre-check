@@ -708,7 +708,7 @@ module FromReadOnlyUpstream = struct
         Map.change sofar name ~f:(merge_with_existing defines)
       in
       List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
-      |> Identifier.Map.to_alist
+      |> Map.to_alist
       |> List.map ~f:(fun (name, defines) ->
              {
                UnannotatedGlobal.Collector.Result.name;
@@ -1048,12 +1048,12 @@ module FromReadOnlyUpstream = struct
             KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
             |> Reference.Set.of_list
           in
-          let class_additions = Type.Primitive.Set.diff current_classes previous_classes in
+          let class_additions = Set.diff current_classes previous_classes in
           let define_additions =
-            Reference.Set.of_list previous_defines_list |> Reference.Set.diff current_defines
+            Reference.Set.of_list previous_defines_list |> Set.diff current_defines
           in
           let unannotated_global_additions =
-            Reference.Set.diff current_unannotated_globals previous_unannotated_globals
+            Set.diff current_unannotated_globals previous_unannotated_globals
           in
           let addition_triggers =
             get_all_dependents

@@ -69,7 +69,7 @@ let pp formatter statements =
     iterator map ~f:pp_annotation_map;
     Format.fprintf formatter " }"
   in
-  pp_annotations formatter Int.Table.iteri Int.pp statements
+  pp_annotations formatter Hashtbl.iteri Int.pp statements
 
 
 let show map = Format.asprintf "%a" pp map

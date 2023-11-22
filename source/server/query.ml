@@ -575,7 +575,7 @@ let rec process_request_exn ~type_environment ~build_system request =
           =
           Callgraph.get ~caller:(Callgraph.FunctionCaller caller)
           |> fun callees ->
-          Reference.Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
+          Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
               Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
         in
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
@@ -710,7 +710,7 @@ let rec process_request_exn ~type_environment ~build_system request =
           |> fun callees -> { Base.caller; callees } :: response
         in
         get_program_call_graph ()
-        |> Reference.Map.fold ~f:create_response_with_caller ~init:[]
+        |> Map.fold ~f:create_response_with_caller ~init:[]
         |> fun result -> Single (Base.Callgraph result)
     | TypecheckedPaths ->
         Single

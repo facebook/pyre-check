@@ -1302,14 +1302,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let function_argument_indices =
         List.fold
           ~init:Int.Set.empty
-          ~f:(fun indices ({ CallGraph.HigherOrderParameter.index; _ }, _) ->
-            Int.Set.add indices index)
+          ~f:(fun indices ({ CallGraph.HigherOrderParameter.index; _ }, _) -> Set.add indices index)
           higher_order_parameters
       in
       let non_function_arguments =
         List.filter_mapi
           ~f:(fun index argument ->
-            Option.some_if (not (Int.Set.mem function_argument_indices index)) (index, argument))
+            Option.some_if (not (Set.mem function_argument_indices index)) (index, argument))
           arguments
       in
       let compute_argument_taint (arguments_taint, state) (index, argument) =

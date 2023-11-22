@@ -443,10 +443,10 @@ module ClassAttributes = struct
       let inspect_decorators name =
         let async = Define.is_async define in
         let is_instance_property () =
-          String.Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
+          Set.exists Recognized.property_decorators ~f:(Define.has_decorator define)
         in
         let is_class_property () =
-          String.Set.exists Recognized.classproperty_decorators ~f:(Define.has_decorator define)
+          Set.exists Recognized.classproperty_decorators ~f:(Define.has_decorator define)
         in
         let self_annotation =
           match parameters with

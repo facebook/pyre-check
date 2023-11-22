@@ -585,9 +585,9 @@ module ExplicitModules = struct
 
       let to_api eager =
         let should_skip_update _ = false in
-        let find qualifier = Reference.Table.find eager qualifier in
-        let set qualifier value = Reference.Table.set eager ~key:qualifier ~data:value in
-        let remove qualifier = Reference.Table.remove eager qualifier in
+        let find qualifier = Hashtbl.find eager qualifier in
+        let set qualifier value = Hashtbl.set eager ~key:qualifier ~data:value in
+        let remove qualifier = Hashtbl.remove eager qualifier in
         let data () = Hashtbl.data eager in
         Api.{ should_skip_update; find; set; remove; data }
     end
@@ -691,7 +691,7 @@ module ImplicitModules = struct
                 (* As we fold the updates, track existince before-and-after *)
                 let next_existence =
                   let open Existence in
-                  Reference.Map.update previous_existence qualifier ~f:(function
+                  Map.update previous_existence qualifier ~f:(function
                       | None ->
                           {
                             existed_before =
@@ -707,8 +707,8 @@ module ImplicitModules = struct
                 next_existence
         in
         List.fold module_path_updates ~init:Reference.Map.empty ~f:process_module_path_update
-        |> Reference.Map.filter_mapi ~f:(fun ~key ~data -> Existence.to_update ~qualifier:key data)
-        |> Reference.Map.data
+        |> Map.filter_mapi ~f:(fun ~key ~data -> Existence.to_update ~qualifier:key data)
+        |> Map.data
     end
 
     module Eager = struct
@@ -720,18 +720,18 @@ module ImplicitModules = struct
           match parent_qualifier_and_raw module_path with
           | None -> ()
           | Some (parent_qualifier, raw) ->
-              Reference.Table.update implicit_modules parent_qualifier ~f:(function
+              Hashtbl.update implicit_modules parent_qualifier ~f:(function
                   | None -> ModulePath.Raw.Set.singleton raw
                   | Some paths -> ModulePath.Raw.Set.add raw paths)
         in
-        Reference.Table.iter explicit_modules ~f:(List.iter ~f:process_module_path);
+        Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
         implicit_modules
 
 
       let to_api eager =
         let should_skip_update _ = false in
-        let find qualifier = Reference.Table.find eager qualifier in
-        let set qualifier data = Reference.Table.set eager ~key:qualifier ~data in
+        let find qualifier = Hashtbl.find eager qualifier in
+        let set qualifier data = Hashtbl.set eager ~key:qualifier ~data in
         Api.{ should_skip_update; find; set }
     end
 
@@ -976,13 +976,13 @@ module Base = struct
         let in_memory_sources =
           let table = Reference.Table.create () in
           let add_pair (module_path, code) =
-            Reference.Table.set table ~key:(ModulePath.qualifier module_path) ~data:code
+            Hashtbl.set table ~key:(ModulePath.qualifier module_path) ~data:code
           in
           List.iter in_memory_sources ~f:add_pair;
           table
         in
         let get_raw_code ({ ModulePath.qualifier; _ } as module_path) =
-          match Reference.Table.find in_memory_sources qualifier with
+          match Hashtbl.find in_memory_sources qualifier with
           | Some code -> Ok code
           | None -> load_raw_code ~configuration module_path
         in
@@ -1077,9 +1077,8 @@ module Overlay = struct
       let qualifier = ModulePath.qualifier module_path in
       let () =
         match code_update with
-        | CodeUpdate.NewCode new_code ->
-            ModulePath.Table.set overlaid_code ~key:module_path ~data:new_code
-        | CodeUpdate.ResetCode -> ModulePath.Table.remove overlaid_code module_path
+        | CodeUpdate.NewCode new_code -> Hashtbl.set overlaid_code ~key:module_path ~data:new_code
+        | CodeUpdate.ResetCode -> Hashtbl.remove overlaid_code module_path
       in
       let () = Hash_set.add overlaid_qualifiers qualifier in
       IncrementalUpdate.NewExplicit module_path
@@ -1093,7 +1092,7 @@ module Overlay = struct
 
   let read_only { parent; overlaid_code; _ } =
     let get_raw_code module_path =
-      match ModulePath.Table.find overlaid_code module_path with
+      match Hashtbl.find overlaid_code module_path with
       | Some code -> Result.Ok code
       | _ -> ReadOnly.get_raw_code parent module_path
     in

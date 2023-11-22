@@ -381,14 +381,15 @@ module TriggeredSinkHashMap = struct
 
   let create () = HashMap.create ()
 
-  let is_empty map = HashMap.is_empty map
+  let is_empty map = Core.Hashtbl.is_empty map
 
   let convert_to_key partial_sink = Sinks.show_partial_sink partial_sink
 
-  let mem map partial_sink = HashMap.mem map (convert_to_key partial_sink)
+  let mem map partial_sink = Core.Hashtbl.mem map (convert_to_key partial_sink)
 
   let get_issue_handles map partial_sink =
-    HashMap.find map (convert_to_key partial_sink) |> Option.value ~default:IssueHandleSet.bottom
+    Core.Hashtbl.find map (convert_to_key partial_sink)
+    |> Option.value ~default:IssueHandleSet.bottom
 
 
   let add map ~triggered_sink ~issue_handles =
@@ -396,10 +397,10 @@ module TriggeredSinkHashMap = struct
       | Some existing_issue_handles -> IssueHandleSet.join existing_issue_handles issue_handles
       | None -> issue_handles
     in
-    HashMap.update map (convert_to_key triggered_sink) ~f:update
+    Core.Hashtbl.update map (convert_to_key triggered_sink) ~f:update
 
 
-  let find map partial_sink = HashMap.find map (convert_to_key partial_sink)
+  let find map partial_sink = Core.Hashtbl.find map (convert_to_key partial_sink)
 end
 
 (* A map from locations to a set of triggered sinks.
@@ -513,7 +514,7 @@ module Candidates = struct
 
   let add_candidate candidates ({ Candidate.key; _ } as candidate) =
     if not (Candidate.is_empty candidate) then
-      CandidateKey.Table.update candidates key ~f:(function
+      Core.Hashtbl.update candidates key ~f:(function
           | None -> candidate
           | Some current_candidate -> Candidate.join current_candidate candidate)
 
@@ -565,7 +566,7 @@ module Candidates = struct
       let new_issues = generate_issues ~taint_configuration ~define candidate in
       List.fold new_issues ~init:issues ~f:add_or_merge_issue
     in
-    CandidateKey.Table.fold candidates ~f:accumulate ~init:IssueHandle.SerializableMap.empty
+    Core.Hashtbl.fold candidates ~f:accumulate ~init:IssueHandle.SerializableMap.empty
 end
 
 type features = {

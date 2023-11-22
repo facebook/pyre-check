@@ -707,7 +707,7 @@ let create define =
     | Node.Block statements -> node.kind <- Node.Block (List.rev statements)
     | _ -> ()
   in
-  let () = Int.Table.iter graph ~f:reverse_statements in
+  let () = Hashtbl.iter graph ~f:reverse_statements in
   graph
 
 

@@ -524,10 +524,10 @@ module FromReadOnlyUpstream = struct
        though they don't really require us to update data in the push phase, or else they'll never
        be checked. *)
     let reparse_modules_union_in_project_modules =
-      let fold qualifiers { ModulePath.qualifier; _ } = Reference.Set.add qualifiers qualifier in
+      let fold qualifiers { ModulePath.qualifier; _ } = Set.add qualifiers qualifier in
       List.filter changed_module_paths ~f:ModulePath.is_in_project
       |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
-      |> Reference.Set.to_list
+      |> Set.to_list
     in
     let invalidated_modules_before_preprocessing =
       List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]

@@ -167,14 +167,14 @@ let dump = function
 
       Log.dump "Performance per statement:";
       let add_statement_event map { statement; analysis; seconds } =
-        StatementEventMap.update map { statement; analysis } ~f:(function
+        Map.update map { StatementKey.statement; analysis } ~f:(function
             | None -> [seconds]
             | Some times -> seconds :: times)
       in
       let statement_events =
         statement_events
         |> List.fold ~f:add_statement_event ~init:StatementEventMap.empty
-        |> StatementEventMap.to_alist
+        |> Core.Map.to_alist
         |> List.sort ~compare:(fun (_, left_times) (_, right_times) ->
                let left_seconds = List.fold ~init:0.0 ~f:( +. ) left_times in
                let right_seconds = List.fold ~init:0.0 ~f:( +. ) right_times in
@@ -207,14 +207,14 @@ let dump = function
 
       Log.dump "Performance per callee model:";
       let add_fetch_model_event map ({ target; analysis; _ } as event) =
-        FetchModelEventMap.update map { target; analysis } ~f:(function
+        Map.update map { TargetKey.target; analysis } ~f:(function
             | None -> [event]
             | Some events -> event :: events)
       in
       let fetch_model_events =
         fetch_model_events
         |> List.fold ~f:add_fetch_model_event ~init:FetchModelEventMap.empty
-        |> FetchModelEventMap.to_alist
+        |> Core.Map.to_alist
         |> List.sort ~compare:(fun (_, left_events) (_, right_events) ->
                let left_seconds =
                  left_events

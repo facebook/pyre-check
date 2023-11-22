@@ -137,11 +137,9 @@ let exists_in_bounds { unaries; callable_parameters; tuple_variadics; _ } ~varia
     | SingletonTuple ordered_type -> Type.Tuple ordered_type |> contains_variable
     | _ -> false
   in
-  UnaryVariable.Map.exists unaries ~f:exists_in_interval_bounds
-  || ParameterVariable.Map.exists
-       callable_parameters
-       ~f:exists_in_callable_parameter_interval_bounds
-  || TupleVariable.Map.exists tuple_variadics ~f:exists_in_tuple_interval_bound
+  Map.exists unaries ~f:exists_in_interval_bounds
+  || Map.exists callable_parameters ~f:exists_in_callable_parameter_interval_bounds
+  || Map.exists tuple_variadics ~f:exists_in_tuple_interval_bound
 
 
 module Solution = struct
@@ -197,36 +195,36 @@ module Solution = struct
 
   let instantiate { unaries; callable_parameters; tuple_variadics } annotation =
     let annotation =
-      if UnaryVariable.Map.is_empty unaries then
+      if Map.is_empty unaries then
         annotation
       else
         Type.Variable.GlobalTransforms.Unary.replace_all
-          (fun variable -> UnaryVariable.Map.find unaries variable)
+          (fun variable -> Map.find unaries variable)
           annotation
     in
     let annotation =
-      if ParameterVariable.Map.is_empty callable_parameters then
+      if Map.is_empty callable_parameters then
         annotation
       else
         Type.Variable.GlobalTransforms.ParameterVariadic.replace_all
-          (fun variable -> ParameterVariable.Map.find callable_parameters variable)
+          (fun variable -> Map.find callable_parameters variable)
           annotation
     in
     let annotation =
-      if TupleVariable.Map.is_empty tuple_variadics then
+      if Map.is_empty tuple_variadics then
         annotation
       else
         Type.Variable.GlobalTransforms.TupleVariadic.replace_all
-          (fun variable -> TupleVariable.Map.find tuple_variadics variable)
+          (fun variable -> Map.find tuple_variadics variable)
           annotation
     in
     annotation
 
 
-  let instantiate_single_variable { unaries; _ } = UnaryVariable.Map.find unaries
+  let instantiate_single_variable { unaries; _ } = Map.find unaries
 
   let instantiate_single_parameter_variadic { callable_parameters; _ } =
-    ParameterVariable.Map.find callable_parameters
+    Map.find callable_parameters
 
 
   let instantiate_ordered_types solution ordered_type =
@@ -242,15 +240,11 @@ module Solution = struct
 
 
   let set ({ unaries; callable_parameters; tuple_variadics } as solution) = function
-    | Type.Variable.UnaryPair (key, data) ->
-        { solution with unaries = UnaryVariable.Map.set unaries ~key ~data }
+    | Type.Variable.UnaryPair (key, data) -> { solution with unaries = Map.set unaries ~key ~data }
     | Type.Variable.ParameterVariadicPair (key, data) ->
-        {
-          solution with
-          callable_parameters = ParameterVariable.Map.set callable_parameters ~key ~data;
-        }
+        { solution with callable_parameters = Map.set callable_parameters ~key ~data }
     | Type.Variable.TupleVariadicPair (key, data) ->
-        { solution with tuple_variadics = TupleVariable.Map.set tuple_variadics ~key ~data }
+        { solution with tuple_variadics = Map.set tuple_variadics ~key ~data }
 
 
   let create = List.fold ~f:set ~init:empty
@@ -713,9 +707,9 @@ module OrderedConstraints (Order : OrderType) = struct
       in
       let handle_dependent_constraints partial_solution =
         let is_empty { unaries; callable_parameters; tuple_variadics; have_fallbacks } =
-          UnaryVariable.Map.is_empty unaries
-          && ParameterVariable.Map.is_empty callable_parameters
-          && TupleVariable.Map.is_empty tuple_variadics
+          Map.is_empty unaries
+          && Map.is_empty callable_parameters
+          && Map.is_empty tuple_variadics
           && Set.is_empty have_fallbacks
         in
         if is_empty dependent_constraints then
@@ -752,14 +746,12 @@ module OrderedConstraints (Order : OrderType) = struct
       let tuple_variadic_matches ~key ~data:_ =
         List.exists variables ~f:(Type.Variable.equal (Type.Variable.TupleVariadic key))
       in
-      let extracted_unaries, remaining_unaries =
-        UnaryVariable.Map.partitioni_tf unaries ~f:unary_matches
-      in
+      let extracted_unaries, remaining_unaries = Map.partitioni_tf unaries ~f:unary_matches in
       let extracted_variadics, remaining_variadics =
-        ParameterVariable.Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
+        Map.partitioni_tf callable_parameters ~f:callable_parameters_matches
       in
       let extracted_tuple_variadics, remaining_tuple_variadics =
-        TupleVariable.Map.partitioni_tf tuple_variadics ~f:tuple_variadic_matches
+        Map.partitioni_tf tuple_variadics ~f:tuple_variadic_matches
       in
       let extracted_fallbacks, remaining_fallbacks =
         let matches = function

@@ -79,12 +79,12 @@ let attribute_symbolic_parameter =
   AccessPath.Root.PositionalParameter { name = "$global"; position = 0; positional_only = false }
 
 
-let decorators = String.Set.union Recognized.property_decorators Recognized.classproperty_decorators
+let decorators = Set.union Recognized.property_decorators Recognized.classproperty_decorators
 
-let is_property define = String.Set.exists decorators ~f:(Define.has_decorator define)
+let is_property define = Set.exists decorators ~f:(Define.has_decorator define)
 
 let signature_is_property signature =
-  String.Set.exists decorators ~f:(Define.Signature.has_decorator signature)
+  Set.exists decorators ~f:(Define.Signature.has_decorator signature)
 
 
 (* Return `X` if the expression is of the form `X[Y]`, otherwise `None`. *)
@@ -3149,16 +3149,16 @@ module ModelQueryArguments = struct
       | { Call.Argument.name = None; value = argument } ->
           Error (model_verification_error ~path ~location (ModelQueryUnnamedParameter argument))
       | { Call.Argument.name = Some { Node.value = name; _ }; value = argument } ->
-          if Option.is_some (String.Map.find arguments name) then
+          if Option.is_some (Map.find arguments name) then
             Error (model_verification_error ~path ~location (ModelQueryDuplicateParameter name))
           else if not (List.mem ~equal:String.equal valid_arguments name) then
             Error
               (model_verification_error ~path ~location (ModelQueryUnsupportedNamedParameter name))
           else
-            Ok (String.Map.set ~key:name ~data:argument arguments)
+            Ok (Map.set ~key:name ~data:argument arguments)
     in
     let check_required_argument arguments required_argument =
-      if Option.is_some (String.Map.find arguments required_argument) then
+      if Option.is_some (Map.find arguments required_argument) then
         Ok arguments
       else
         Error
@@ -3178,9 +3178,9 @@ module ModelQueryArguments = struct
     >>= fun arguments ->
     List.fold_result ~f:check_required_argument ~init:arguments required_arguments
     >>= fun arguments ->
-    parse_name_argument (String.Map.find_exn arguments "name")
+    parse_name_argument (Map.find_exn arguments "name")
     >>= fun name ->
-    String.Map.find arguments "logging_group_name"
+    Map.find arguments "logging_group_name"
     |> Option.map ~f:parse_name_argument
     |> (function
          | None -> Ok None
@@ -3190,11 +3190,11 @@ module ModelQueryArguments = struct
     {
       name;
       logging_group_name;
-      find_clause = String.Map.find_exn arguments "find";
-      where_clause = String.Map.find_exn arguments "where";
-      model_clause = String.Map.find_exn arguments "model";
-      expected_models_clause = String.Map.find arguments "expected_models";
-      unexpected_models_clause = String.Map.find arguments "unexpected_models";
+      find_clause = Map.find_exn arguments "find";
+      where_clause = Map.find_exn arguments "where";
+      model_clause = Map.find_exn arguments "model";
+      expected_models_clause = Map.find arguments "expected_models";
+      unexpected_models_clause = Map.find arguments "unexpected_models";
     }
 end
 

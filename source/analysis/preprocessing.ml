@@ -2032,8 +2032,7 @@ let is_lazy_import { Node.value; _ } =
   match value with
   | Expression.Name name -> (
       match name_to_reference name with
-      | Some reference
-        when String.Set.mem Recognized.lazy_import_functions (Reference.show reference) ->
+      | Some reference when Set.mem Recognized.lazy_import_functions (Reference.show reference) ->
           true
       | _ -> false)
   | _ -> false
@@ -3074,7 +3073,7 @@ module AccessCollector = struct
         let names_in_body = from_expression NameAccessSet.empty body in
         let unbound_names_in_body =
           Set.filter names_in_body ~f:(fun { Define.NameAccess.name; _ } ->
-              not (Identifier.Set.mem bound_names name))
+              not (Set.mem bound_names name))
         in
         Set.union unbound_names_in_body collected
     | Name (Name.Identifier identifier) ->
@@ -3136,7 +3135,7 @@ module AccessCollector = struct
     =
    fun from_element collected { Comprehension.element; generators } ->
     let remove_bound_names ~bound_names =
-      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Identifier.Set.mem bound_names name))
+      Set.filter ~f:(fun { Define.NameAccess.name; _ } -> not (Set.mem bound_names name))
     in
     let bound_names, collected =
       let from_generator
@@ -3148,8 +3147,7 @@ module AccessCollector = struct
         in
         let bound_names =
           let add_bound_name bound_names { Define.NameAccess.name; _ } = Set.add bound_names name in
-          from_expression NameAccessSet.empty target
-          |> NameAccessSet.fold ~init:bound_names ~f:add_bound_name
+          from_expression NameAccessSet.empty target |> Set.fold ~init:bound_names ~f:add_bound_name
         in
         let condition_accesses =
           List.fold conditions ~init:NameAccessSet.empty ~f:from_expression
@@ -3163,7 +3161,7 @@ module AccessCollector = struct
     let element_accesses =
       from_element NameAccessSet.empty element |> remove_bound_names ~bound_names
     in
-    NameAccessSet.union collected element_accesses
+    Set.union collected element_accesses
 
 
   and from_statement collected { Node.value; _ } =
@@ -3523,10 +3521,10 @@ let populate_captures ({ Source.statements; _ } as source) =
           let to_capture ~is_decorator ~scopes sofar name =
             match to_capture ~is_decorator ~scopes name with
             | None -> sofar
-            | Some capture -> CaptureSet.add sofar capture
+            | Some capture -> Set.add sofar capture
           in
           Set.fold ~init:CaptureSet.empty accesses ~f:(to_capture ~is_decorator:false ~scopes)
-          |> CaptureSet.to_list
+          |> Set.to_list
         in
         let body = transform_statements ~scopes body in
         { Node.location; value = Statement.Define { define with body; captures } }
@@ -3588,18 +3586,18 @@ let populate_unbound_names source =
         | `Ok sofar -> sofar
         | `Duplicate -> sofar
       in
-      NameAccessSet.fold access_set ~init:Identifier.Map.empty ~f:accumulate_names
-      |> Identifier.Map.data
+      Set.fold access_set ~init:Identifier.Map.empty ~f:accumulate_names
+      |> Map.data
       |> NameAccessSet.of_list
     in
     let to_unbound_name ~scopes sofar name =
       match to_unbound_name ~scopes name with
       | None -> sofar
-      | Some name -> NameAccessSet.add sofar name
+      | Some name -> Set.add sofar name
     in
     deduplicate_access accesses
     |> Set.fold ~init:NameAccessSet.empty ~f:(to_unbound_name ~scopes)
-    |> NameAccessSet.to_list
+    |> Set.to_list
   in
   let rec transform_statement ~scopes statement =
     match statement with

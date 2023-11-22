@@ -1906,7 +1906,7 @@ module SignatureSelection = struct
         List.find parameters ~f:(function
             | RecordParameter.Keywords _ -> true
             | _ -> false)
-        >>= Type.Callable.Parameter.Map.find parameter_argument_mapping
+        >>= Map.find parameter_argument_mapping
         >>| List.is_empty
         >>| not
         |> Option.value ~default:false
@@ -2291,9 +2291,7 @@ module SignatureSelection = struct
       in
       List.fold ~init:(Int.Set.empty, 0) ~f:count_unique annotation
     in
-    let position_rank =
-      Int.Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value
-    in
+    let position_rank = Set.min_elt positions >>| Int.neg |> Option.value ~default:Int.min_value in
     {
       signature_match with
       ranks = { arity = arity_rank; annotation = annotation_rank; position = position_rank };
@@ -2819,7 +2817,7 @@ class base class_metadata_environment dependency =
           |> List.filter_map ~f:name_annotation_pair
           (* Pick the overriding attribute. *)
           |> Identifier.Map.of_alist_reduce ~f:(fun first _ -> first)
-          |> Identifier.Map.to_alist
+          |> Map.to_alist
         in
         let parameters =
           let keyword_only_parameter (name, annotation) =

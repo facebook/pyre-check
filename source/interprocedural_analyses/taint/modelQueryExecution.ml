@@ -27,31 +27,29 @@ module ModelQueryRegistryMap = struct
 
   let add model_query_map ~model_query_identifier ~registry =
     if not (Registry.is_empty registry) then
-      String.Map.update model_query_map model_query_identifier ~f:(function
+      Map.update model_query_map model_query_identifier ~f:(function
           | None -> registry
           | Some existing -> Registry.merge ~join:Model.join_user_models existing registry)
     else
       model_query_map
 
 
-  let get = String.Map.find
+  let get = Map.find
 
   let merge ~model_join left right =
-    String.Map.merge_skewed left right ~combine:(fun ~key:_ left_models right_models ->
+    Map.merge_skewed left right ~combine:(fun ~key:_ left_models right_models ->
         Registry.merge ~join:model_join left_models right_models)
 
 
-  let to_alist = String.Map.to_alist ~key_order:`Increasing
+  let to_alist = Map.to_alist ~key_order:`Increasing
 
   let mapi model_query_map ~f =
-    String.Map.mapi
-      ~f:(fun ~key ~data -> f ~model_query_identifier:key ~models:data)
-      model_query_map
+    Map.mapi ~f:(fun ~key ~data -> f ~model_query_identifier:key ~models:data) model_query_map
 
 
-  let get_model_query_identifiers = String.Map.keys
+  let get_model_query_identifiers = Map.keys
 
-  let get_models = String.Map.data
+  let get_models = Map.data
 
   let merge_all_registries ~model_join registries =
     Algorithms.fold_balanced registries ~init:Registry.empty ~f:(Registry.merge ~join:model_join)
@@ -190,9 +188,7 @@ module ModelQueryRegistryMap = struct
             | None -> { LoggingGroup.models_count; location; path }
             | Some existing -> LoggingGroup.add existing models_count
           in
-          let logging_group_map =
-            String.Map.update ~f:update logging_group_map logging_group_name
-          in
+          let logging_group_map = Map.update ~f:update logging_group_map logging_group_name in
           logging_group_map, errors
     in
     let check_logging_group
@@ -227,7 +223,7 @@ module ModelQueryRegistryMap = struct
     let logging_group_map, errors =
       List.fold ~f:count_models ~init:(String.Map.empty, []) queries
     in
-    let errors = String.Map.fold logging_group_map ~f:check_logging_group ~init:errors in
+    let errors = Map.fold logging_group_map ~f:check_logging_group ~init:errors in
     Statistics.flush ();
     errors
 end
@@ -251,8 +247,7 @@ module DumpModelQueryResults = struct
       |> fun models ->
       `List models |> fun models_json -> `Assoc [model_query_identifier, models_json]
     in
-    `List (String.Map.data (String.Map.mapi model_query_results ~f:to_json))
-    |> Yojson.Safe.pretty_to_string
+    `List (Map.data (Map.mapi model_query_results ~f:to_json)) |> Yojson.Safe.pretty_to_string
 
 
   let dump_to_file ~model_query_results ~path =
@@ -428,7 +423,7 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
                (List.take
                   decorator_positional_arguments
                   (List.length constraint_positional_arguments))
-          && SanitizedCallArgumentSet.is_subset
+          && Set.is_subset
                (SanitizedCallArgumentSet.of_list constraint_keyword_arguments)
                ~of_:(SanitizedCallArgumentSet.of_list decorator_keyword_arguments)
       | ModelQuery.ArgumentsConstraint.Equals constraint_arguments, None ->

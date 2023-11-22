@@ -416,7 +416,7 @@ module Scope = struct
 
   let create_map ~globals ~nonlocals =
     List.fold ~init:Identifier.Map.empty ~f:(fun sofar ({ Binding.name; _ } as binding) ->
-        match Identifier.Set.mem globals name || Identifier.Set.mem nonlocals name with
+        match Set.mem globals name || Set.mem nonlocals name with
         | true ->
             (* Global and nonlocal declarations take priority. *)
             sofar

@@ -111,7 +111,7 @@ let gather_raw_definitions
   |> (fun environment ->
        Analysis.UnannotatedGlobalEnvironment.ReadOnly.get_define_names environment qualifier)
   |> Reference.Set.of_list
-  |> Reference.Set.elements
+  |> Set.elements
   |> List.filter ~f:filter_parameters
   |> List.filter_map ~f:fetch_callables
   |> List.fold ~init:Target.Map.empty ~f:merge_callables

@@ -132,7 +132,7 @@ module In = struct
               dependency :: existing
         | None -> [dependency]
       in
-      Table.update table hash ~f:(append key)
+      Hashtbl.update table hash ~f:(append key)
 
 
     type t =
@@ -150,7 +150,7 @@ module In = struct
 
       type t = table
 
-      let serialize table = Table.data table |> List.concat_no_order
+      let serialize table = Hashtbl.data table |> List.concat_no_order
 
       let deserialize keys =
         let table = Table.create ~size:(List.length keys) () in
@@ -192,7 +192,7 @@ module In = struct
 
     let decode hash =
       match !global with
-      | Master table -> Table.find table hash >>| List.map ~f:(fun key -> { hash; key })
+      | Master table -> Hashtbl.find table hash >>| List.map ~f:(fun key -> { hash; key })
       | Worker _ -> failwith "Can only decode from master"
 
 

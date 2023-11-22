@@ -62,7 +62,7 @@ module ErrorMap = struct
 
   let add ~errors ({ Error.location = { Location.WithModule.start; stop; _ }; _ } as error) =
     let location = { Location.start; stop } in
-    Map.set errors ~key:{ location; kind = Error.code error } ~data:error
+    Core.Map.set errors ~key:{ location; kind = Error.code error } ~data:error
 end
 
 module type Context = sig

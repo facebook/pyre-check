@@ -30,7 +30,7 @@ module Map = struct
   end)
 
   let pp pp_value formatter map =
-    match to_alist map with
+    match Map.to_alist map with
     | [] -> Format.fprintf formatter "{}"
     | [(key, value)] -> Format.fprintf formatter "{%a -> %a}" T.pp key pp_value value
     | pairs ->

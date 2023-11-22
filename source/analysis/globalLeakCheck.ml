@@ -20,10 +20,10 @@ module LocalErrorMap = struct
   let empty () = Int.Table.create ()
 
   let append error_map ~statement_key ~error =
-    Int.Table.add_multi error_map ~key:statement_key ~data:error
+    Hashtbl.add_multi error_map ~key:statement_key ~data:error
 
 
-  let all_errors error_map = Int.Table.data error_map |> List.concat
+  let all_errors error_map = Hashtbl.data error_map |> List.concat
 end
 
 module type Context = sig
@@ -154,19 +154,19 @@ module State (Context : Context) = struct
       ]
 
 
-  let mutation_methods = String.Map.data mutation_methods_and_types |> String.Set.union_list
+  let mutation_methods = Map.data mutation_methods_and_types |> String.Set.union_list
 
   let is_known_mutation_method ~resolution expression identifier =
     let is_blocklisted_method () =
       let expression_type = Resolution.resolve_expression_to_type resolution expression in
       match expression_type with
       | Type.Parametric { name; _ } ->
-          String.Map.find mutation_methods_and_types name
-          >>| (fun methods -> String.Set.mem methods identifier)
+          Map.find mutation_methods_and_types name
+          >>| (fun methods -> Set.mem methods identifier)
           |> Option.value ~default:false
       | Type.Top
       | Type.Any ->
-          String.Set.mem mutation_methods identifier
+          Set.mem mutation_methods identifier
       | _ -> false
     in
     String.equal identifier "__setitem__"
@@ -644,7 +644,7 @@ let global_leak_errors ~type_environment ~qualifier define =
         scope
         >>| (fun { Scope.Scope.globals; _ } ->
               let sanitized_identifier = Identifier.sanitized (Reference.last reference) in
-              Identifier.Set.mem globals sanitized_identifier)
+              Set.mem globals sanitized_identifier)
         |> Option.value ~default:false
       in
       (* We're using `Resolution.is_global` to detect global reads on references, even if the

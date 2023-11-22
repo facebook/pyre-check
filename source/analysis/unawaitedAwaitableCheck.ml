@@ -235,7 +235,7 @@ module State (Context : Context) = struct
                 Map.set errors ~key:awaitable ~data:{ references = name :: references; expression }
             | None -> errors
           in
-          Awaitable.Set.fold awaitables ~init:errors ~f:add_reference
+          Set.fold awaitables ~init:errors ~f:add_reference
       | CallWithNestedAliases _ -> errors
     in
     let error (awaitable, unawaited_awaitable) =

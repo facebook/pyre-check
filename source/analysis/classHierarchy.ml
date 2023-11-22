@@ -77,7 +77,21 @@ module Target = struct
 
     type record = t
 
-    let to_string ~f set = to_list set |> List.to_string ~f
+    let to_string ~f set = Core.Set.to_list set |> List.to_string ~f
+
+    let filter = Set.filter
+
+    let is_empty = Set.is_empty
+
+    let exists = Set.exists
+
+    let iter = Set.iter
+
+    let mem = Set.mem
+
+    let fold = Set.fold
+
+    let add = Set.add
   end
 
   let target { target; _ } = target
@@ -213,12 +227,10 @@ let method_resolution_order_linearize_exn ~get_successors class_name =
      The implementation here simply translates the two points above into a list of constraints, and
      invoke `merge` to "solve" those constraints and get a satisfying MRO. *)
   let rec linearize ~visited class_name =
-    if String.Set.mem visited class_name then (
-      Log.error
-        "Order is cyclic:\nTrace: {%s}"
-        (String.Set.to_list visited |> String.concat ~sep:", ");
+    if Set.mem visited class_name then (
+      Log.error "Order is cyclic:\nTrace: {%s}" (Set.to_list visited |> String.concat ~sep:", ");
       raise (Cyclic class_name));
-    let visited = String.Set.add visited class_name in
+    let visited = Set.add visited class_name in
     let successors =
       let create_annotation { Target.target = index; _ } = index in
       class_name |> get_successors |> Option.value ~default:[] |> List.map ~f:create_annotation

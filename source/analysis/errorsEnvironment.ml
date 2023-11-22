@@ -180,7 +180,7 @@ module UpdateStatistics = struct
         UpdateResult.all_triggered_dependencies update_result
         |> List.fold ~init:(Reference.Set.empty, Reference.Set.empty) ~f:filter_union
       in
-      Reference.Set.length rechecked_functions, Reference.Set.length rechecked_modules
+      Set.length rechecked_functions, Set.length rechecked_modules
     in
     let module_updates_count, invalidated_modules_count =
       let unannotated_global_environment_update_result =
