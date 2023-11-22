@@ -12,6 +12,7 @@ from __future__ import annotations
 import logging
 
 import pathlib
+import shutil
 import sys
 
 import click
@@ -98,7 +99,7 @@ def patch_one_file(
 
 @pyre_typeshed_patcher.command()
 @click.option(
-    "--source",
+    "--source-root",
     type=str,
     required=True,
     help="Directory of the source (original) typeshed",
@@ -110,7 +111,7 @@ def patch_one_file(
     help="Path to the patch specs toml file",
 )
 @click.option(
-    "--target",
+    "--target-root",
     type=str,
     required=True,
     help="The directory in which to write the patched typeshed stubs",
@@ -128,18 +129,36 @@ def patch_one_file(
     help="Overwrite the target if it exists",
 )
 def patch_typeshed_directory(
-    source: str,
+    source_root: str,
     patch_specs: str,
-    target: str,
+    target_root: str,
     diffs_directory: str | None,
     overwrite: bool,
 ) -> None:
+    def handle_overwrite_directory(directory: pathlib.Path) -> None:
+        if directory.exists():
+            if overwrite:
+                shutil.rmtree(directory)
+            else:
+                raise RuntimeError(
+                    f"Refusing to overwrite existing {directory}. "
+                    "Use --overwrite to overwrite a directory, remove any existing file"
+                )
+
+    if diffs_directory is not None:
+        diffs_directory_path = pathlib.Path(diffs_directory)
+        handle_overwrite_directory(diffs_directory_path)
+    else:
+        diffs_directory_path = None
+
+    target_root_path = pathlib.Path(target_root)
+    handle_overwrite_directory(target_root_path)
+
     return patching.patch_typeshed_directory(
-        source=pathlib.Path(source),
+        source_root=pathlib.Path(source_root),
         patch_specs_toml=pathlib.Path(patch_specs),
-        target=pathlib.Path(target),
-        diffs_directory=pathlib.Path(diffs_directory) if diffs_directory else None,
-        overwrite=overwrite,
+        target_root=target_root_path,
+        diffs_directory=diffs_directory_path,
     )
 
 
