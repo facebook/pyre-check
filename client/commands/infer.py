@@ -575,7 +575,9 @@ class ModuleAnnotations:
         classes: Dict[str, List[Union[AttributeAnnotation, MethodAnnotation]]] = {}
         nested_classes = set()
         for annotation in [*self.attributes, *self.methods]:
-            relative_parent_class = annotation.parent.removeprefix(self.qualifier + ".")
+            relative_parent_class = _remove_prefix(
+                text=annotation.parent, prefix=self.qualifier + "."
+            )
             if "." in relative_parent_class:
                 nested_classes.add(relative_parent_class)
             else:
@@ -692,6 +694,13 @@ class AnnotateModuleInPlace:
     def run_task(task: "AnnotateModuleInPlace") -> None:
         "Wrap `run` in a static method to use with multiprocessing"
         return task.run()
+
+
+# For Python<3.9 compatibility
+def _remove_prefix(text: str, prefix: str) -> str:
+    if text.startswith(prefix):
+        return text[len(prefix) :]
+    return text
 
 
 def create_infer_arguments(
