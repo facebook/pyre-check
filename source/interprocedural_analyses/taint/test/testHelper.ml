@@ -54,6 +54,14 @@ type expectation = {
   analysis_modes: Model.ModeSet.t;
 }
 
+let print_parameter_taint ~print_taint map =
+  map
+  |> Map.to_alist
+  |> List.map ~f:(fun (key, value) ->
+         Format.asprintf "%s -> %s" key (value |> List.map ~f:print_taint |> String.concat ~sep:", "))
+  |> String.concat ~sep:"; "
+
+
 let outcome
     ~kind
     ?(source_parameters = [])
@@ -186,49 +194,6 @@ let check_expectation
       ~f:extract_sinks_by_parameter_name
       ~init:String.Map.empty
   in
-  let print_list ~show list =
-    list |> List.map ~f:show |> String.concat ~sep:", " |> Format.asprintf "[%s]"
-  in
-  let check_each_sink ~key:name ~data =
-    match data with
-    | `Both (expected, actual) ->
-        assert_equal
-          ~cmp:(List.equal Sinks.equal)
-          ~printer:(print_list ~show:Sinks.show)
-          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
-          expected
-          actual
-    | `Left expected ->
-        assert_equal
-          ~cmp:(List.equal Sinks.equal)
-          ~printer:(print_list ~show:Sinks.show)
-          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
-          expected
-          []
-    | `Right _ ->
-        (* Okay, we may have outcomes we don't care about *)
-        ()
-  in
-  let check_each_source_parameter ~key:name ~data =
-    match data with
-    | `Both (expected, actual) ->
-        assert_equal
-          ~cmp:(List.equal Sources.equal)
-          ~printer:(print_list ~show:Sources.show)
-          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
-          expected
-          actual
-    | `Left expected ->
-        assert_equal
-          ~cmp:(List.equal Sources.equal)
-          ~printer:(print_list ~show:Sources.show)
-          ~msg:(Format.sprintf "Define %s Parameter %s" define_name name)
-          expected
-          []
-    | `Right _ ->
-        (* Okay, we may have outcomes we don't care about *)
-        ()
-  in
   let check_each_sanitize ~key:name ~data =
     match data with
     | `Both (expected, actual) ->
@@ -311,32 +276,26 @@ let check_expectation
 
   (* Check sinks. *)
   assert_equal
-    (Map.length expected_sinks)
-    (Map.length sink_taint_map)
-    ~printer:Int.to_string
-    ~msg:(Format.sprintf "Define %s: List of sink tainted parameters differ in length." define_name);
-  Core.Map.iter2 ~f:check_each_sink expected_sinks sink_taint_map;
+    expected_sinks
+    sink_taint_map
+    ~cmp:(Map.equal (List.equal Sinks.equal))
+    ~printer:(print_parameter_taint ~print_taint:Sinks.show);
 
   (* Check parameter sources. *)
   assert_equal
-    (Map.length expected_parameter_sources)
-    (Map.length parameter_source_taint_map)
-    ~printer:Int.to_string
-    ~msg:
-      (Format.sprintf "Define %s: List of source tainted parameters differ in length." define_name);
-  Core.Map.iter2
-    ~f:check_each_source_parameter
     expected_parameter_sources
-    parameter_source_taint_map;
+    parameter_source_taint_map
+    ~cmp:(Map.equal (List.equal Sources.equal))
+    ~printer:(print_parameter_taint ~print_taint:Sources.show);
+
   let expected_tito =
     List.map ~f:(fun { name; sinks } -> name, sinks) tito_parameters |> String.Map.of_alist_exn
   in
   assert_equal
-    (Map.length expected_tito)
-    (Map.length parameter_taint_in_taint_out_map)
-    ~printer:Int.to_string
-    ~msg:(Format.sprintf "Define %s: List of tito parameters differ in length." define_name);
-  Core.Map.iter2 ~f:check_each_sink expected_tito parameter_taint_in_taint_out_map;
+    expected_tito
+    parameter_taint_in_taint_out_map
+    ~cmp:(Map.equal (List.equal Sinks.equal))
+    ~printer:(print_parameter_taint ~print_taint:Sinks.show);
 
   (* Check return sinks. *)
   let expected_return_sinks = List.map ~f:Sinks.show return_sinks |> String.Set.of_list in

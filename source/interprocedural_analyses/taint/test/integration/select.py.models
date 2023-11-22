@@ -230,6 +230,31 @@
     ],
     "sinks": [
       {
+        "port": "formal(request)[GET][payload]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "select.return_is_RCE", "port": "leaf:return" }
+                ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "local_features": [
+              { "has": "first-index" }, { "first-index": "payload" }
+            ],
+            "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
+            "origin": {
+              "filename": "select.py",
+              "line": 41,
+              "start": 4,
+              "end": 48
+            }
+          }
+        ]
+      },
+      {
         "port": "result",
         "taint": [
           {

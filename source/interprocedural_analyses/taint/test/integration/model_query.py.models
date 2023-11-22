@@ -1530,6 +1530,27 @@
     ],
     "sinks": [
       {
+        "port": "formal(x)[attribute]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query.alarm_7", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query.py",
+              "line": 159,
+              "start": 4,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
         "port": "result",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }

@@ -404,36 +404,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None -> ()
   end
 
-  let return_sink ~resolution ~return_location =
-    let taint =
-      BackwardState.read
-        ~root:AccessPath.Root.LocalResult
-        ~path:[]
-        FunctionContext.existing_model.Model.backward.sink_taint
-      |> BackwardState.Tree.apply_call
-           ~resolution
-           ~location:return_location
-           ~callee:(Some FunctionContext.callable)
-             (* When the source and sink meet at the return statement, we want the leaf callable to
-                be non-empty, to provide more information about the flow. Hence we let the leaf
-                callable to be the current callable. *)
-           ~arguments:[]
-           ~port:AccessPath.Root.LocalResult
-           ~is_self_call:false
-           ~caller_class_interval:Interprocedural.ClassIntervalSet.top
-           ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
-    in
-    let breadcrumbs_to_attach, via_features_to_attach =
-      BackwardState.extract_features_to_attach
-        ~root:AccessPath.Root.LocalResult
-        ~attach_to_kind:Sinks.Attach
-        FunctionContext.existing_model.Model.backward.sink_taint
-    in
-    taint
-    |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
-    |> BackwardState.Tree.add_via_features via_features_to_attach
-
-
   let store_taint ?(weak = false) ~root ~path taint { taint = state_taint } =
     { taint = ForwardState.assign ~weak ~root ~path taint state_taint }
 
@@ -2943,7 +2913,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~location
           ~sink_handle:IssueHandle.Sink.Return
           ~source_tree:taint
-          ~sink_tree:(return_sink ~resolution ~return_location:location);
+          ~sink_tree:
+            (CallModel.return_sink
+               ~resolution
+               ~location
+               ~callee:FunctionContext.callable
+               ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint);
         store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     | Return { expression = None; _ }
     | Try _

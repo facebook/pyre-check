@@ -114,3 +114,11 @@ val string_combine_partial_sink_tree : TaintConfiguration.Heap.t -> BackwardStat
 val arguments_for_string_format
   :  Expression.expression Node.t list ->
   string * Expression.expression Node.t list
+
+(* At a call site, extract the returned sink from `sink_model` of `callee` *)
+val return_sink
+  :  resolution:Analysis.Resolution.t ->
+  location:Location.WithModule.t ->
+  callee:Target.t ->
+  sink_model:BackwardState.t ->
+  BackwardState.Tree.t

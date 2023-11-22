@@ -21,10 +21,14 @@ def sink_on_return_not_propagated_to_return():
     return sink_on_return()
 
 
-def sink_on_return_and_tito(arg):
+def sink_on_return_and_tito(arg, arg2):
     return arg
 
 
 def propagate_returned_sink_to_arg(arg):
     # Sink is first generated and then propagated to arg
     sink_on_return_and_tito(arg)
+
+
+def not_propagate_returned_sink_to_arg(arg):
+    sink_on_return_and_tito(0, arg)

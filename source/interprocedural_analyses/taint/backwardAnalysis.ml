@@ -41,6 +41,8 @@ module type FUNCTION_CONTEXT = sig
 
   val definition : Statement.Define.t Node.t
 
+  val callable : Interprocedural.Target.t
+
   val debug : bool
 
   val profiler : TaintProfiler.t
@@ -56,6 +58,8 @@ module type FUNCTION_CONTEXT = sig
   val call_graph_of_define : CallGraph.DefineCallGraph.t
 
   val get_callee_model : Interprocedural.Target.t -> Model.t option
+
+  val existing_model : Model.t
 
   val triggered_sinks : Issue.TriggeredSinkLocationMap.t
 
@@ -2320,7 +2324,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     analyze_expression ~resolution ~taint ~state ~expression:value
 
 
-  let analyze_statement ~resolution state { Node.value = statement; _ } =
+  let analyze_statement ~resolution state { Node.value = statement; location } =
     match statement with
     | Statement.Statement.Assign
         { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
@@ -2400,7 +2404,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Return { expression = Some expression; _ } ->
         let access_path = { AccessPath.root = AccessPath.Root.LocalResult; path = [] } in
         let return_taint = get_taint (Some access_path) state in
-        analyze_expression ~resolution ~taint:return_taint ~state ~expression
+        let return_sink =
+          CallModel.return_sink
+            ~resolution
+            ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
+            ~callee:FunctionContext.callable
+            ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
+        in
+        analyze_expression
+          ~resolution
+          ~taint:(BackwardState.Tree.join return_taint return_sink)
+          ~state
+          ~expression
     | Return { expression = None; _ }
     | Try _
     | With _
@@ -2622,6 +2637,8 @@ let run
 
     let definition = define
 
+    let callable = callable
+
     let debug = Statement.Define.dump define.value
 
     let profiler = profiler
@@ -2637,6 +2654,8 @@ let run
     let call_graph_of_define = call_graph_of_define
 
     let get_callee_model = get_callee_model
+
+    let existing_model = existing_model
 
     let triggered_sinks = triggered_sinks
 

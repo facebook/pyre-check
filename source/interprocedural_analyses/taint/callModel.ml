@@ -414,3 +414,30 @@ let arguments_for_string_format arguments =
   in
   let string_literal = String.concat ~sep:"" string_literals in
   string_literal, non_literal_arguments
+
+
+(* At a call site, extract the returned sink from `sink_model` of `callee` *)
+let return_sink ~resolution ~location ~callee ~sink_model =
+  let taint =
+    BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
+    |> BackwardState.Tree.apply_call
+         ~resolution
+         ~location
+         ~callee:(Some callee)
+           (* When the source and sink meet at the return statement, we want the leaf callable to be
+              non-empty, to provide more information about the flow. *)
+         ~arguments:[]
+         ~port:AccessPath.Root.LocalResult
+         ~is_self_call:false
+         ~caller_class_interval:Interprocedural.ClassIntervalSet.top
+         ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
+  in
+  let breadcrumbs_to_attach, via_features_to_attach =
+    BackwardState.extract_features_to_attach
+      ~root:AccessPath.Root.LocalResult
+      ~attach_to_kind:Sinks.Attach
+      sink_model
+  in
+  taint
+  |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
+  |> BackwardState.Tree.add_via_features via_features_to_attach
