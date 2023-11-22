@@ -31,7 +31,13 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "kinds": [ { "length": 1, "kind": "Test" } ],
+            "kinds": [
+              {
+                "features": [ { "always-via": "propagated-return-sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
             "call": {
               "position": {
                 "filename": "return_sinks.py",
@@ -80,6 +86,7 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "propagated-return-sink" } ],
             "origin": {
               "filename": "return_sinks.py",
               "line": 25,

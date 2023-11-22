@@ -274,6 +274,8 @@ module Breadcrumb = struct
     | IssueBroadening (* Taint tree was collapsed when matching sources and sinks *)
     | Crtex (* Taint comes from the Cross Repository Taint EXchange *)
     | TransformTitoDepth of int
+    | PropagatedReturnSink
+      (* Sink taint that originate from the return statements AND is propagated up *)
   [@@deriving equal]
 
   let pp formatter breadcrumb =
@@ -307,6 +309,7 @@ module Breadcrumb = struct
     | IssueBroadening -> Format.fprintf formatter "IssueBroadening"
     | Crtex -> Format.fprintf formatter "Crtex"
     | TransformTitoDepth depth -> Format.fprintf formatter "TransformTitoDepth(%d)" depth
+    | PropagatedReturnSink -> Format.fprintf formatter "PropagatedReturnSink"
 
 
   let show = Format.asprintf "%a" pp
@@ -344,6 +347,7 @@ module Breadcrumb = struct
     | Crtex -> `Assoc [prefix ^ "via", `String "crtex"]
     | TransformTitoDepth depth ->
         `Assoc [prefix ^ "via", `String (Format.sprintf "transform-tito-depth:%d" depth)]
+    | PropagatedReturnSink -> `Assoc [prefix ^ "via", `String "propagated-return-sink"]
 
 
   let simple_via ~allowed name =
@@ -610,6 +614,8 @@ let broadening = memoize_breadcrumb_interned Breadcrumb.Broadening
 let widen_broadening = memoize_breadcrumb_interned Breadcrumb.WidenBroadening
 
 let issue_broadening = memoize_breadcrumb_interned Breadcrumb.IssueBroadening
+
+let propagated_return_sink = memoize_breadcrumb_interned Breadcrumb.PropagatedReturnSink
 
 let string_concat_left_hand_side =
   memoize_breadcrumb_interned (Breadcrumb.SimpleVia "string_concat_lhs")

@@ -2410,6 +2410,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
             ~callee:FunctionContext.callable
             ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint
+          |> BackwardState.Tree.add_local_breadcrumb (Features.propagated_return_sink ())
         in
         analyze_expression
           ~resolution

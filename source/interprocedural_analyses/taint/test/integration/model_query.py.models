@@ -1541,6 +1541,7 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "propagated-return-sink" } ],
             "origin": {
               "filename": "model_query.py",
               "line": 159,

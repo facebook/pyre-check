@@ -242,7 +242,9 @@
               }
             ],
             "local_features": [
-              { "has": "first-index" }, { "first-index": "payload" }
+              { "has": "first-index" },
+              { "first-index": "payload" },
+              { "always-via": "propagated-return-sink" }
             ],
             "tito_positions": [ { "line": 41, "start": 11, "end": 22 } ],
             "origin": {
