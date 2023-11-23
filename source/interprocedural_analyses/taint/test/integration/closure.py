@@ -290,3 +290,13 @@ def nonlocal_closure_conditional_write():
     clear()
     # TODO(T169657906): [FP] Overwrite taint on nonlocal writes
     _test_sink(obj)
+
+
+def nonlocal_closure_tito():
+    x = _test_source()
+
+    def inner():
+        return x
+
+    result = inner() # TODO(T168648186): Missing TITO propagation in inner function captured variables
+    _test_sink(result)

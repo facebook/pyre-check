@@ -2131,6 +2131,23 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure.nonlocal_closure_tito.inner",
+    "tito": [
+      {
+        "port": "captured_variable($local_closure?nonlocal_closure_tito$x)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.source",
     "sources": [
       {
