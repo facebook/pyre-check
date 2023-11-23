@@ -64,20 +64,33 @@ let match_captures ~model ~captures_taint ~location =
             ForwardState.read ~root:(AccessPath.Root.Variable name) ~path:[] captures_taint )
     | _ -> None
   in
-  let captures, captures_taint =
+  let sink_captures, sink_captures_taint =
     model.Model.backward.sink_taint
     |> BackwardState.roots
     |> List.filter_map ~f:collect_capture
     |> List.unzip
   in
-  ( captures_taint,
-    List.map captures ~f:(fun (expression, access_path) ->
+  let tito_captures, tito_captures_taint =
+    model.Model.backward.taint_in_taint_out
+    |> BackwardState.roots
+    |> List.filter_map ~f:collect_capture
+    |> List.unzip
+  in
+  ( sink_captures_taint @ tito_captures_taint,
+    List.map sink_captures ~f:(fun (expression, access_path) ->
         {
           ArgumentMatches.argument = expression;
           sink_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
           tito_matches = [];
           sanitize_matches = [];
-        }) )
+        })
+    @ List.map tito_captures ~f:(fun (expression, access_path) ->
+          {
+            ArgumentMatches.argument = expression;
+            sink_matches = [];
+            tito_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
+            sanitize_matches = [];
+          }) )
 
 
 let captures_as_arguments =

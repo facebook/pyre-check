@@ -298,5 +298,5 @@ def nonlocal_closure_tito():
     def inner():
         return x
 
-    result = inner() # TODO(T168648186): Missing TITO propagation in inner function captured variables
+    result = inner()
     _test_sink(result)

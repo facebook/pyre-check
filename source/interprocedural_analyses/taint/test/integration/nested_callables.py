@@ -90,7 +90,6 @@ def access_variables_in_outer_scope_source():
 
 
 def test_access_variables_in_outer_scope_source():
-    # TODO(T123114236): We should find an issue here
     _test_sink(access_variables_in_outer_scope_source())
 
 
@@ -102,7 +101,6 @@ def access_parameter_in_inner_scope_sink(x):
 
 
 def test_access_parameter_in_inner_scope_sink():
-    # TODO(T123114236): We should find an issue here
     access_parameter_in_inner_scope_sink(_test_source())
 
 
@@ -114,7 +112,6 @@ def access_parameter_in_inner_scope_tito(x):
 
 
 def test_access_parameter_in_inner_scope_tito():
-    # TODO(T123114236): We should find an issue here
     _test_sink(access_parameter_in_inner_scope_tito(_test_source()))
 
 
