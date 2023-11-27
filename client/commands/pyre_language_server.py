@@ -1246,13 +1246,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 # @lint-ignore FIXIT1
                 with open(destination_filepath, "r") as f:
                     code_text = f.read()
-                    self.server_state.opened_documents[
-                        destination_filepath
-                    ] = OpenedDocumentState(
-                        code=code_text,
-                        is_dirty=False,
-                        pyre_code_updated=True,
-                    )
             text_to_replace = SourceCodeContext.text_at_range(
                 code_text, reference.range
             )
