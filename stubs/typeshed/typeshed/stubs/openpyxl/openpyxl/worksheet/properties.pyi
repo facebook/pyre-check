@@ -1,54 +1,57 @@
-from _typeshed import Incomplete
+from typing import ClassVar
+from typing_extensions import Literal
 
+from openpyxl.descriptors.base import Bool, String, Typed, _ConvertibleToBool
 from openpyxl.descriptors.serialisable import Serialisable
+from openpyxl.styles.colors import Color, ColorDescriptor
 
 class Outline(Serialisable):
-    tagname: str
-    applyStyles: Incomplete
-    summaryBelow: Incomplete
-    summaryRight: Incomplete
-    showOutlineSymbols: Incomplete
+    tagname: ClassVar[str]
+    applyStyles: Bool[Literal[True]]
+    summaryBelow: Bool[Literal[True]]
+    summaryRight: Bool[Literal[True]]
+    showOutlineSymbols: Bool[Literal[True]]
     def __init__(
         self,
-        applyStyles: Incomplete | None = ...,
-        summaryBelow: Incomplete | None = ...,
-        summaryRight: Incomplete | None = ...,
-        showOutlineSymbols: Incomplete | None = ...,
+        applyStyles: _ConvertibleToBool | None = None,
+        summaryBelow: _ConvertibleToBool | None = None,
+        summaryRight: _ConvertibleToBool | None = None,
+        showOutlineSymbols: _ConvertibleToBool | None = None,
     ) -> None: ...
 
 class PageSetupProperties(Serialisable):
-    tagname: str
-    autoPageBreaks: Incomplete
-    fitToPage: Incomplete
-    def __init__(self, autoPageBreaks: Incomplete | None = ..., fitToPage: Incomplete | None = ...) -> None: ...
+    tagname: ClassVar[str]
+    autoPageBreaks: Bool[Literal[True]]
+    fitToPage: Bool[Literal[True]]
+    def __init__(self, autoPageBreaks: _ConvertibleToBool | None = None, fitToPage: _ConvertibleToBool | None = None) -> None: ...
 
 class WorksheetProperties(Serialisable):
-    tagname: str
-    codeName: Incomplete
-    enableFormatConditionsCalculation: Incomplete
-    filterMode: Incomplete
-    published: Incomplete
-    syncHorizontal: Incomplete
-    syncRef: Incomplete
-    syncVertical: Incomplete
-    transitionEvaluation: Incomplete
-    transitionEntry: Incomplete
-    tabColor: Incomplete
-    outlinePr: Incomplete
-    pageSetUpPr: Incomplete
-    __elements__: Incomplete
+    tagname: ClassVar[str]
+    codeName: String[Literal[True]]
+    enableFormatConditionsCalculation: Bool[Literal[True]]
+    filterMode: Bool[Literal[True]]
+    published: Bool[Literal[True]]
+    syncHorizontal: Bool[Literal[True]]
+    syncRef: String[Literal[True]]
+    syncVertical: Bool[Literal[True]]
+    transitionEvaluation: Bool[Literal[True]]
+    transitionEntry: Bool[Literal[True]]
+    tabColor: ColorDescriptor[Literal[True]]
+    outlinePr: Typed[Outline, Literal[True]]
+    pageSetUpPr: Typed[PageSetupProperties, Literal[True]]
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
         self,
-        codeName: Incomplete | None = ...,
-        enableFormatConditionsCalculation: Incomplete | None = ...,
-        filterMode: Incomplete | None = ...,
-        published: Incomplete | None = ...,
-        syncHorizontal: Incomplete | None = ...,
-        syncRef: Incomplete | None = ...,
-        syncVertical: Incomplete | None = ...,
-        transitionEvaluation: Incomplete | None = ...,
-        transitionEntry: Incomplete | None = ...,
-        tabColor: Incomplete | None = ...,
-        outlinePr: Incomplete | None = ...,
-        pageSetUpPr: Incomplete | None = ...,
+        codeName: str | None = None,
+        enableFormatConditionsCalculation: _ConvertibleToBool | None = None,
+        filterMode: _ConvertibleToBool | None = None,
+        published: _ConvertibleToBool | None = None,
+        syncHorizontal: _ConvertibleToBool | None = None,
+        syncRef: str | None = None,
+        syncVertical: _ConvertibleToBool | None = None,
+        transitionEvaluation: _ConvertibleToBool | None = None,
+        transitionEntry: _ConvertibleToBool | None = None,
+        tabColor: str | Color | None = None,
+        outlinePr: Outline | None = None,
+        pageSetUpPr: PageSetupProperties | None = None,
     ) -> None: ...

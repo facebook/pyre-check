@@ -6,18 +6,20 @@ class Replication:
     discriminator: Incomplete
     def __init__(
         self,
-        id: Incomplete | None = ...,
-        name: Incomplete | None = ...,
-        description: Incomplete | None = ...,
-        org_id: Incomplete | None = ...,
-        remote_id: Incomplete | None = ...,
-        local_bucket_id: Incomplete | None = ...,
-        remote_bucket_id: Incomplete | None = ...,
-        max_queue_size_bytes: Incomplete | None = ...,
-        current_queue_size_bytes: Incomplete | None = ...,
-        latest_response_code: Incomplete | None = ...,
-        latest_error_message: Incomplete | None = ...,
-        drop_non_retryable_data: Incomplete | None = ...,
+        id: Incomplete | None = None,
+        name: Incomplete | None = None,
+        description: Incomplete | None = None,
+        org_id: Incomplete | None = None,
+        remote_id: Incomplete | None = None,
+        local_bucket_id: Incomplete | None = None,
+        remote_bucket_id: Incomplete | None = None,
+        remote_bucket_name: str | None = None,
+        max_queue_size_bytes: Incomplete | None = None,
+        current_queue_size_bytes: Incomplete | None = None,
+        remaining_bytes_to_be_synced: int | None = None,
+        latest_response_code: Incomplete | None = None,
+        latest_error_message: Incomplete | None = None,
+        drop_non_retryable_data: Incomplete | None = None,
     ) -> None: ...
     @property
     def id(self): ...
@@ -47,6 +49,7 @@ class Replication:
     def remote_bucket_id(self): ...
     @remote_bucket_id.setter
     def remote_bucket_id(self, remote_bucket_id) -> None: ...
+    remote_bucket_name: str | None
     @property
     def max_queue_size_bytes(self): ...
     @max_queue_size_bytes.setter
@@ -55,6 +58,7 @@ class Replication:
     def current_queue_size_bytes(self): ...
     @current_queue_size_bytes.setter
     def current_queue_size_bytes(self, current_queue_size_bytes) -> None: ...
+    remaining_bytes_to_be_synced: int | None
     @property
     def latest_response_code(self): ...
     @latest_response_code.setter

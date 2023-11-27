@@ -33,14 +33,15 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 """
 import builtins
 import collections.abc
+import sys
+import typing
+
 import google.protobuf.any_pb2
 import google.protobuf.descriptor
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
 import google.protobuf.source_context_pb2
-import sys
-import typing
 
 if sys.version_info >= (3, 10):
     import typing as typing_extensions
@@ -122,7 +123,7 @@ class Field(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Field._Kind.ValueType], builtins.type):  # noqa: F821
+    class _KindEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Field._Kind.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         TYPE_UNKNOWN: Field._Kind.ValueType  # 0
         """Field type unknown."""
@@ -209,7 +210,7 @@ class Field(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _CardinalityEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Field._Cardinality.ValueType], builtins.type):  # noqa: F821
+    class _CardinalityEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[Field._Cardinality.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         CARDINALITY_UNKNOWN: Field._Cardinality.ValueType  # 0
         """For fields with unknown cardinality."""

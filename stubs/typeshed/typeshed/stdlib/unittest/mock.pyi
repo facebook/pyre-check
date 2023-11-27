@@ -3,13 +3,14 @@ from collections.abc import Awaitable, Callable, Coroutine, Iterable, Mapping, S
 from contextlib import _GeneratorContextManager
 from types import TracebackType
 from typing import Any, Generic, TypeVar, overload
-from typing_extensions import Final, Literal, Self, TypeAlias
+from typing_extensions import Final, Literal, ParamSpec, Self, TypeAlias
 
 _T = TypeVar("_T")
 _TT = TypeVar("_TT", bound=type[Any])
 _R = TypeVar("_R")
 _F = TypeVar("_F", bound=Callable[..., Any])
 _AF = TypeVar("_AF", bound=Callable[..., Coroutine[Any, Any, Any]])
+_P = ParamSpec("_P")
 
 if sys.version_info >= (3, 8):
     __all__ = (
@@ -47,7 +48,8 @@ else:
         "seal",
     )
 
-__version__: Final[str]
+if sys.version_info < (3, 9):
+    __version__: Final[str]
 
 FILTER_DIR: Any
 
@@ -67,21 +69,21 @@ _CallValue: TypeAlias = str | tuple[Any, ...] | Mapping[str, Any] | _ArgsKwargs 
 
 class _Call(tuple[Any, ...]):
     def __new__(
-        cls, value: _CallValue = ..., name: str | None = "", parent: Any | None = None, two: bool = False, from_kall: bool = True
+        cls, value: _CallValue = (), name: str | None = "", parent: Any | None = None, two: bool = False, from_kall: bool = True
     ) -> Self: ...
     name: Any
     parent: Any
     from_kall: Any
     def __init__(
         self,
-        value: _CallValue = ...,
+        value: _CallValue = (),
         name: str | None = None,
         parent: Any | None = None,
         two: bool = False,
         from_kall: bool = True,
     ) -> None: ...
     def __eq__(self, other: object) -> bool: ...
-    def __ne__(self, __other: object) -> bool: ...
+    def __ne__(self, __value: object) -> bool: ...
     def __call__(self, *args: Any, **kwargs: Any) -> _Call: ...
     def __getattr__(self, attr: str) -> Any: ...
     def __getattribute__(self, attr: str) -> Any: ...
@@ -104,7 +106,25 @@ class Base:
 # We subclass with "Any" because mocks are explicitly designed to stand in for other types,
 # something that can't be expressed with our static type system.
 class NonCallableMock(Base, Any):
-    def __new__(__cls, *args: Any, **kw: Any) -> Self: ...
+    if sys.version_info >= (3, 12):
+        def __new__(
+            cls,
+            spec: list[str] | object | type[object] | None = None,
+            wraps: Any | None = None,
+            name: str | None = None,
+            spec_set: list[str] | object | type[object] | None = None,
+            parent: NonCallableMock | None = None,
+            _spec_state: Any | None = None,
+            _new_name: str = "",
+            _new_parent: NonCallableMock | None = None,
+            _spec_as_instance: bool = False,
+            _eat_self: bool | None = None,
+            unsafe: bool = False,
+            **kwargs: Any,
+        ) -> Self: ...
+    else:
+        def __new__(__cls, *args: Any, **kw: Any) -> Self: ...
+
     def __init__(
         self,
         spec: list[str] | object | type[object] | None = None,
@@ -232,8 +252,10 @@ class _patch(Generic[_T]):
     def copy(self) -> _patch[_T]: ...
     @overload
     def __call__(self, func: _TT) -> _TT: ...
+    # If new==DEFAULT, this should add a MagicMock parameter to the function
+    # arguments. See the _patch_default_new class below for this functionality.
     @overload
-    def __call__(self, func: Callable[..., _R]) -> Callable[..., _R]: ...
+    def __call__(self, func: Callable[_P, _R]) -> Callable[_P, _R]: ...
     if sys.version_info >= (3, 8):
         def decoration_helper(
             self, patched: _patch[Any], args: Sequence[Any], keywargs: Any
@@ -255,11 +277,27 @@ class _patch(Generic[_T]):
     def start(self) -> _T: ...
     def stop(self) -> None: ...
 
+if sys.version_info >= (3, 8):
+    _Mock: TypeAlias = MagicMock | AsyncMock
+else:
+    _Mock: TypeAlias = MagicMock
+
+# This class does not exist at runtime, it's a hack to make this work:
+#     @patch("foo")
+#     def bar(..., mock: MagicMock) -> None: ...
+class _patch_default_new(_patch[_Mock]):
+    @overload
+    def __call__(self, func: _TT) -> _TT: ...
+    # Can't use the following as ParamSpec is only allowed as last parameter:
+    #   def __call__(self, func: Callable[_P, _R]) -> Callable[Concatenate[_P, MagicMock], _R]: ...
+    @overload
+    def __call__(self, func: Callable[..., _R]) -> Callable[..., _R]: ...
+
 class _patch_dict:
     in_dict: Any
     values: Any
     clear: Any
-    def __init__(self, in_dict: Any, values: Any = ..., clear: Any = False, **kwargs: Any) -> None: ...
+    def __init__(self, in_dict: Any, values: Any = (), clear: Any = False, **kwargs: Any) -> None: ...
     def __call__(self, f: Any) -> Any: ...
     if sys.version_info >= (3, 10):
         def decorate_callable(self, f: _F) -> _F: ...
@@ -271,11 +309,8 @@ class _patch_dict:
     start: Any
     stop: Any
 
-if sys.version_info >= (3, 8):
-    _Mock: TypeAlias = MagicMock | AsyncMock
-else:
-    _Mock: TypeAlias = MagicMock
-
+# This class does not exist at runtime, it's a hack to add methods to the
+# patch() function.
 class _patcher:
     TEST_PREFIX: str
     dict: type[_patch_dict]
@@ -305,7 +340,7 @@ class _patcher:
         autospec: Any | None = ...,
         new_callable: Any | None = ...,
         **kwargs: Any,
-    ) -> _patch[_Mock]: ...
+    ) -> _patch_default_new: ...
     @overload
     @staticmethod
     def object(  # type: ignore[misc]
@@ -372,7 +407,11 @@ if sys.version_info >= (3, 8):
     class AsyncMagicMixin(MagicMixin):
         def __init__(self, *args: Any, **kw: Any) -> None: ...
 
-    class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock): ...
+    class AsyncMock(AsyncMockMixin, AsyncMagicMixin, Mock):
+        # Improving the `reset_mock` signature.
+        # It is defined on `AsyncMockMixin` with `*args, **kwargs`, which is not ideal.
+        # But, `NonCallableMock` super-class has the better version.
+        def reset_mock(self, visited: Any = None, *, return_value: bool = False, side_effect: bool = False) -> None: ...
 
 class MagicProxy:
     name: str
@@ -437,6 +476,6 @@ class PropertyMock(Mock):
     else:
         def __get__(self, obj: _T, obj_type: type[_T] | None) -> Self: ...
 
-    def __set__(self, obj: Any, value: Any) -> None: ...
+    def __set__(self, obj: Any, val: Any) -> None: ...
 
 def seal(mock: Any) -> None: ...

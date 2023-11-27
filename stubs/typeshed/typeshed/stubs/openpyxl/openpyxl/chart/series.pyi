@@ -1,86 +1,104 @@
-from _typeshed import Incomplete
+from _typeshed import Incomplete, Unused
+from typing import ClassVar
+from typing_extensions import Literal, TypeAlias
 
+from openpyxl.chart.data_source import AxDataSource, NumDataSource, StrRef
+from openpyxl.chart.error_bar import ErrorBars
+from openpyxl.chart.label import DataLabelList
+from openpyxl.chart.marker import Marker
+from openpyxl.chart.picture import PictureOptions
+from openpyxl.chart.shapes import GraphicalProperties
+from openpyxl.chart.trendline import Trendline
+from openpyxl.descriptors.base import Alias, Typed, _ConvertibleToBool, _ConvertibleToInt
+from openpyxl.descriptors.excel import ExtensionList
+from openpyxl.descriptors.nested import NestedBool, NestedInteger, NestedNoneSet, NestedText, _NestedNoneSetParam
 from openpyxl.descriptors.serialisable import Serialisable
+
+from ..xml._functions_overloads import _HasTagAndGet
+
+_SeriesShape: TypeAlias = Literal["cone", "coneToMax", "box", "cylinder", "pyramid", "pyramidToMax"]
 
 attribute_mapping: Incomplete
 
 class SeriesLabel(Serialisable):
-    tagname: str
-    strRef: Incomplete
-    v: Incomplete
-    value: Incomplete
-    __elements__: Incomplete
-    def __init__(self, strRef: Incomplete | None = ..., v: Incomplete | None = ...) -> None: ...
+    tagname: ClassVar[str]
+    strRef: Typed[StrRef, Literal[True]]
+    v: NestedText[str, Literal[True]]
+    value: Alias
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, strRef: StrRef | None = None, v: object = None) -> None: ...
 
 class Series(Serialisable):
-    tagname: str
-    idx: Incomplete
-    order: Incomplete
-    tx: Incomplete
-    title: Incomplete
-    spPr: Incomplete
+    tagname: ClassVar[str]
+    idx: NestedInteger[Literal[False]]
+    order: NestedInteger[Literal[False]]
+    tx: Typed[SeriesLabel, Literal[True]]
+    title: Alias
+    spPr: Typed[GraphicalProperties, Literal[True]]
     graphicalProperties: Incomplete
-    pictureOptions: Incomplete
+    pictureOptions: Typed[PictureOptions, Literal[True]]
     dPt: Incomplete
-    data_points: Incomplete
-    dLbls: Incomplete
-    labels: Incomplete
-    trendline: Incomplete
-    errBars: Incomplete
-    cat: Incomplete
-    identifiers: Incomplete
-    val: Incomplete
-    extLst: Incomplete
-    invertIfNegative: Incomplete
-    shape: Incomplete
-    xVal: Incomplete
-    yVal: Incomplete
-    bubbleSize: Incomplete
-    zVal: Incomplete
-    bubble3D: Incomplete
-    marker: Incomplete
-    smooth: Incomplete
-    explosion: Incomplete
-    __elements__: Incomplete
+    data_points: Alias
+    dLbls: Typed[DataLabelList, Literal[True]]
+    labels: Alias
+    trendline: Typed[Trendline, Literal[True]]
+    errBars: Typed[ErrorBars, Literal[True]]
+    cat: Typed[AxDataSource, Literal[True]]
+    identifiers: Alias
+    val: Typed[NumDataSource, Literal[True]]
+    extLst: Typed[ExtensionList, Literal[True]]
+    invertIfNegative: NestedBool[Literal[True]]
+    shape: NestedNoneSet[_SeriesShape]
+    xVal: Typed[AxDataSource, Literal[True]]
+    yVal: Typed[NumDataSource, Literal[True]]
+    bubbleSize: Typed[NumDataSource, Literal[True]]
+    zVal: Alias
+    bubble3D: NestedBool[Literal[True]]
+    marker: Typed[Marker, Literal[True]]
+    smooth: NestedBool[Literal[True]]
+    explosion: NestedInteger[Literal[True]]
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
         self,
-        idx: int = ...,
-        order: int = ...,
-        tx: Incomplete | None = ...,
-        spPr: Incomplete | None = ...,
-        pictureOptions: Incomplete | None = ...,
-        dPt=...,
-        dLbls: Incomplete | None = ...,
-        trendline: Incomplete | None = ...,
-        errBars: Incomplete | None = ...,
-        cat: Incomplete | None = ...,
-        val: Incomplete | None = ...,
-        invertIfNegative: Incomplete | None = ...,
-        shape: Incomplete | None = ...,
-        xVal: Incomplete | None = ...,
-        yVal: Incomplete | None = ...,
-        bubbleSize: Incomplete | None = ...,
-        bubble3D: Incomplete | None = ...,
-        marker: Incomplete | None = ...,
-        smooth: Incomplete | None = ...,
-        explosion: Incomplete | None = ...,
-        extLst: Incomplete | None = ...,
+        idx: _HasTagAndGet[_ConvertibleToInt] | _ConvertibleToInt = 0,
+        order: _HasTagAndGet[_ConvertibleToInt] | _ConvertibleToInt = 0,
+        tx: SeriesLabel | None = None,
+        spPr: GraphicalProperties | None = None,
+        pictureOptions: PictureOptions | None = None,
+        dPt=(),
+        dLbls: DataLabelList | None = None,
+        trendline: Trendline | None = None,
+        errBars: ErrorBars | None = None,
+        cat: AxDataSource | None = None,
+        val: NumDataSource | None = None,
+        invertIfNegative: _HasTagAndGet[_ConvertibleToBool | None] | _ConvertibleToBool | None = None,
+        shape: _NestedNoneSetParam[_SeriesShape] = None,
+        xVal: AxDataSource | None = None,
+        yVal: NumDataSource | None = None,
+        bubbleSize: NumDataSource | None = None,
+        bubble3D: _HasTagAndGet[_ConvertibleToBool | None] | _ConvertibleToBool | None = None,
+        marker: Marker | None = None,
+        smooth: _HasTagAndGet[_ConvertibleToBool | None] | _ConvertibleToBool | None = None,
+        explosion: _HasTagAndGet[_ConvertibleToInt | None] | _ConvertibleToInt | None = None,
+        extLst: Unused = None,
     ) -> None: ...
-    def to_tree(self, tagname: Incomplete | None = ..., idx: Incomplete | None = ...): ...  # type: ignore[override]
+    def to_tree(self, tagname: str | None = None, idx: Incomplete | None = None): ...  # type: ignore[override]
 
 class XYSeries(Series):
-    idx: Incomplete
-    order: Incomplete
-    tx: Incomplete
-    spPr: Incomplete
-    dPt: Incomplete
-    dLbls: Incomplete
-    trendline: Incomplete
-    errBars: Incomplete
-    xVal: Incomplete
-    yVal: Incomplete
-    invertIfNegative: Incomplete
-    bubbleSize: Incomplete
-    bubble3D: Incomplete
-    marker: Incomplete
-    smooth: Incomplete
+    # Same as parent
+    # idx = Series.idx
+    # order = Series.order
+    # tx = Series.tx
+    # spPr = Series.spPr
+    # dPt = Series.dPt
+    # dLbls = Series.dLbls
+    # trendline = Series.trendline
+    # errBars = Series.errBars
+    # xVal = Series.xVal
+    # yVal = Series.yVal
+    # invertIfNegative = Series.invertIfNegative
+    # bubbleSize = Series.bubbleSize
+    # bubble3D = Series.bubble3D
+    # marker = Series.marker
+    # smooth = Series.smooth
+    ...

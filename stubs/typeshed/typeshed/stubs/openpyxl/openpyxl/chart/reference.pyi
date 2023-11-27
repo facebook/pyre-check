@@ -1,34 +1,49 @@
-from _typeshed import Incomplete
+from _typeshed import Incomplete, Unused
 from collections.abc import Generator
+from typing import overload
+from typing_extensions import Literal
 
 from openpyxl.descriptors import Strict
+from openpyxl.descriptors.base import MinMax, String, _ConvertibleToInt
 
 class DummyWorksheet:
-    title: Incomplete
-    def __init__(self, title) -> None: ...
+    title: str
+    def __init__(self, title: str) -> None: ...
 
 class Reference(Strict):
-    min_row: Incomplete
-    max_row: Incomplete
-    min_col: Incomplete
-    max_col: Incomplete
-    range_string: Incomplete
-    worksheet: Incomplete
+    min_row: MinMax[int, Literal[False]]
+    max_row: MinMax[int, Literal[False]]
+    min_col: MinMax[int, Literal[False]]
+    max_col: MinMax[int, Literal[False]]
+    range_string: String[Literal[True]]
+    worksheet: Incomplete | None
+    @overload
     def __init__(
         self,
-        worksheet: Incomplete | None = ...,
-        min_col: Incomplete | None = ...,
-        min_row: Incomplete | None = ...,
-        max_col: Incomplete | None = ...,
-        max_row: Incomplete | None = ...,
-        range_string: Incomplete | None = ...,
+        *,
+        worksheet: Unused = None,
+        min_col: Unused = None,
+        min_row: Unused = None,
+        max_col: Unused = None,
+        max_row: Unused = None,
+        range_string: str,
+    ) -> None: ...
+    @overload
+    def __init__(
+        self,
+        worksheet: Incomplete | None,
+        min_col: _ConvertibleToInt,
+        min_row: _ConvertibleToInt,
+        max_col: _ConvertibleToInt | None = None,
+        max_row: _ConvertibleToInt | None = None,
+        range_string: str | None = None,
     ) -> None: ...
     def __len__(self) -> int: ...
-    def __eq__(self, other): ...
+    def __eq__(self, other: object) -> bool: ...
     @property
-    def rows(self) -> Generator[Incomplete, None, None]: ...
+    def rows(self) -> Generator[Reference, None, None]: ...
     @property
-    def cols(self) -> Generator[Incomplete, None, None]: ...
+    def cols(self) -> Generator[Reference, None, None]: ...
     def pop(self): ...
     @property
-    def sheetname(self): ...
+    def sheetname(self) -> str: ...

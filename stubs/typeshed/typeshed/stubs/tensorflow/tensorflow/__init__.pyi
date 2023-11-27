@@ -1,18 +1,32 @@
 from _typeshed import Incomplete, Unused
-from abc import ABCMeta
+from abc import ABC, ABCMeta, abstractmethod
 from builtins import bool as _bool
-from collections.abc import Callable, Iterable, Iterator, Sequence
+from collections.abc import Callable, Generator, Iterable, Iterator, Mapping, Sequence
 from contextlib import contextmanager
 from enum import Enum
-from typing import Any, NoReturn, overload
-from typing_extensions import Self, TypeAlias
+from types import TracebackType
+from typing import Any, Generic, NoReturn, TypeVar, overload
+from typing_extensions import ParamSpec, Self, TypeAlias
 
 import numpy
+from google.protobuf.message import Message
+from tensorflow import (
+    data as data,
+    experimental as experimental,
+    feature_column as feature_column,
+    initializers as initializers,
+    io as io,
+    keras as keras,
+    math as math,
+)
+from tensorflow._aliases import ContainerGradients, ContainerTensors, ContainerTensorsLike, Gradients, TensorLike
+from tensorflow.core.protobuf import struct_pb2
 
 # Explicit import of DType is covered by the wildcard, but
 # is necessary to avoid a crash in pytype.
 from tensorflow.dtypes import *
 from tensorflow.dtypes import DType as DType
+from tensorflow.keras import losses as losses
 
 # Most tf.math functions are exported as tf, but sadly not all are.
 from tensorflow.math import (
@@ -51,7 +65,8 @@ from tensorflow.math import (
     subtract as subtract,
     tanh as tanh,
 )
-from tensorflow.sparse import SparseTensor
+from tensorflow.python.trackable.autotrackable import AutoTrackable
+from tensorflow.sparse import SparseTensor as SparseTensor
 
 # Tensors ideally should be a generic type, but properly typing data type/shape
 # will be a lot of work. Until we have good non-generic tensorflow stubs,
@@ -252,5 +267,142 @@ class IndexedSlices(metaclass=ABCMeta):
     def device(self) -> str: ...
     def __neg__(self) -> IndexedSlices: ...
     def consumers(self) -> list[Operation]: ...
+
+class name_scope:
+    def __init__(self, name: str) -> None: ...
+    def __enter__(self) -> str: ...
+    def __exit__(self, typ: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None) -> None: ...
+
+_P = ParamSpec("_P")
+_R = TypeVar("_R")
+
+class Module(AutoTrackable):
+    def __init__(self, name: str | None = None) -> None: ...
+    @property
+    def name(self) -> str: ...
+    @property
+    def name_scope(self) -> name_scope: ...
+    # Documentation only specifies these as returning Sequence. Actual
+    # implementation does tuple.
+    @property
+    def variables(self) -> Sequence[Variable]: ...
+    @property
+    def trainable_variables(self) -> Sequence[Variable]: ...
+    @property
+    def non_trainable_variables(self) -> Sequence[Variable]: ...
+    @property
+    def submodules(self) -> Sequence[Module]: ...
+    @classmethod
+    def with_name_scope(cls, method: Callable[_P, _R]) -> Callable[_P, _R]: ...
+
+class UnconnectedGradients(Enum):
+    NONE = "none"
+    ZERO = "zero"
+
+class GradientTape:
+    def __init__(self, persistent: _bool = False, watch_accessed_variables: _bool = True) -> None: ...
+    def __enter__(self) -> Self: ...
+    def __exit__(self, typ: type[BaseException] | None, value: BaseException | None, traceback: TracebackType | None) -> None: ...
+    # Higher kinded types would be nice here and these overloads are a way to simulate some of them.
+    @overload
+    def gradient(
+        self,
+        target: ContainerTensors,
+        sources: TensorLike,
+        output_gradients: list[Tensor] | None = None,
+        unconnected_gradients: UnconnectedGradients = ...,
+    ) -> Gradients: ...
+    @overload
+    def gradient(
+        self,
+        target: ContainerTensors,
+        sources: Sequence[Tensor],
+        output_gradients: list[Tensor] | None = None,
+        unconnected_gradients: UnconnectedGradients = ...,
+    ) -> list[Gradients]: ...
+    @overload
+    def gradient(
+        self,
+        target: ContainerTensors,
+        sources: Mapping[str, Tensor],
+        output_gradients: list[Tensor] | None = None,
+        unconnected_gradients: UnconnectedGradients = ...,
+    ) -> dict[str, Gradients]: ...
+    @overload
+    def gradient(
+        self,
+        target: ContainerTensors,
+        sources: ContainerTensors,
+        output_gradients: list[Tensor] | None = None,
+        unconnected_gradients: UnconnectedGradients = ...,
+    ) -> ContainerGradients: ...
+    @contextmanager
+    def stop_recording(self) -> Generator[None, None, None]: ...
+    def reset(self) -> None: ...
+    def watch(self, tensor: ContainerTensorsLike) -> None: ...
+    def watched_variables(self) -> tuple[Variable, ...]: ...
+    def __getattr__(self, name: str) -> Incomplete: ...
+
+_SpecProto = TypeVar("_SpecProto", bound=Message)
+
+class TypeSpec(ABC, Generic[_SpecProto]):
+    @property
+    @abstractmethod
+    def value_type(self) -> Any: ...
+    def experimental_as_proto(self) -> _SpecProto: ...
+    @classmethod
+    def experimental_from_proto(cls, proto: _SpecProto) -> Self: ...
+    @classmethod
+    def experimental_type_proto(cls) -> type[_SpecProto]: ...
+    def is_compatible_with(self, spec_or_value: Self | _TensorCompatible | SparseTensor | RaggedTensor) -> _bool: ...
+    # Incomplete as tf.types is not yet covered.
+    def is_subtype_of(self, other: Incomplete) -> _bool: ...
+    def most_specific_common_supertype(self, others: Sequence[Incomplete]) -> Self | None: ...
+    def most_specific_compatible_type(self, other: Self) -> Self: ...
+
+class TensorSpec(TypeSpec[struct_pb2.TensorSpecProto]):
+    def __init__(self, shape: _ShapeLike, dtype: _DTypeLike = ..., name: str | None = None) -> None: ...
+    @property
+    def value_type(self) -> Tensor: ...
+    @property
+    def shape(self) -> TensorShape: ...
+    @property
+    def dtype(self) -> DType: ...
+    @property
+    def name(self) -> str | None: ...
+    @classmethod
+    def from_spec(cls, spec: TypeSpec[Any], name: str | None = None) -> Self: ...
+    @classmethod
+    def from_tensor(cls, tensor: Tensor, name: str | None = None) -> Self: ...
+    def is_compatible_with(self, spec_or_tensor: Self | _TensorCompatible) -> _bool: ...  # type: ignore[override]
+
+class SparseTensorSpec(TypeSpec[struct_pb2.TypeSpecProto]):
+    def __init__(self, shape: _ShapeLike | None = None, dtype: _DTypeLike = ...) -> None: ...
+    @property
+    def value_type(self) -> SparseTensor: ...
+    @property
+    def shape(self) -> TensorShape: ...
+    @property
+    def dtype(self) -> DType: ...
+    @classmethod
+    def from_value(cls, value: SparseTensor) -> Self: ...
+
+class RaggedTensorSpec(TypeSpec[struct_pb2.TypeSpecProto]):
+    def __init__(
+        self,
+        shape: _ShapeLike | None = None,
+        dtype: _DTypeLike = ...,
+        ragged_rank: int | None = None,
+        row_splits_dtype: _DTypeLike = ...,
+        flat_values_spec: TypeSpec[Any] | None = None,
+    ) -> None: ...
+    @property
+    def value_type(self) -> RaggedTensor: ...
+    @property
+    def shape(self) -> TensorShape: ...
+    @property
+    def dtype(self) -> DType: ...
+    @classmethod
+    def from_value(cls, value: RaggedTensor) -> Self: ...
 
 def __getattr__(name: str) -> Incomplete: ...

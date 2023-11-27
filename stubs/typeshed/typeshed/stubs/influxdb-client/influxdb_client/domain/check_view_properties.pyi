@@ -8,17 +8,19 @@ class CheckViewProperties(ViewProperties):
     discriminator: Incomplete
     def __init__(
         self,
-        type: Incomplete | None = ...,
-        shape: Incomplete | None = ...,
-        check_id: Incomplete | None = ...,
-        check: Incomplete | None = ...,
-        queries: Incomplete | None = ...,
-        colors: Incomplete | None = ...,
-        legend_colorize_rows: Incomplete | None = ...,
-        legend_hide: Incomplete | None = ...,
-        legend_opacity: Incomplete | None = ...,
-        legend_orientation_threshold: Incomplete | None = ...,
+        adaptive_zoom_hide: bool | None = None,
+        type: Incomplete | None = None,
+        shape: Incomplete | None = None,
+        check_id: Incomplete | None = None,
+        check: Incomplete | None = None,
+        queries: Incomplete | None = None,
+        colors: Incomplete | None = None,
+        legend_colorize_rows: Incomplete | None = None,
+        legend_hide: Incomplete | None = None,
+        legend_opacity: Incomplete | None = None,
+        legend_orientation_threshold: Incomplete | None = None,
     ) -> None: ...
+    adaptive_zoom_hide: bool | None
     @property
     def type(self): ...
     @type.setter

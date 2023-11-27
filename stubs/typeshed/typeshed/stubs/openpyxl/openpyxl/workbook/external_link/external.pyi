@@ -1,78 +1,80 @@
-from _typeshed import Incomplete
+from _typeshed import Incomplete, Unused
+from typing import ClassVar
+from typing_extensions import Literal, TypeAlias
+from zipfile import ZipFile
 
+from openpyxl.descriptors.base import Bool, Integer, NoneSet, String, Typed, _ConvertibleToBool, _ConvertibleToInt
+from openpyxl.descriptors.nested import NestedText
 from openpyxl.descriptors.serialisable import Serialisable
+from openpyxl.packaging.relationship import Relationship
 
-class ExternalCell(Serialisable):  # type: ignore[misc]
-    r: Incomplete
-    t: Incomplete
-    vm: Incomplete
-    v: Incomplete
+_ExternalCellType: TypeAlias = Literal["b", "d", "n", "e", "s", "str", "inlineStr"]
+
+class ExternalCell(Serialisable):
+    r: String[Literal[False]]
+    t: NoneSet[_ExternalCellType]
+    vm: Integer[Literal[True]]
+    v: NestedText[str, Literal[True]]
     def __init__(
-        self, r: Incomplete | None = ..., t: Incomplete | None = ..., vm: Incomplete | None = ..., v: Incomplete | None = ...
+        self, r: str, t: _ExternalCellType | Literal["none"] | None = None, vm: _ConvertibleToInt | None = None, v: object = None
     ) -> None: ...
 
-class ExternalRow(Serialisable):  # type: ignore[misc]
-    r: Incomplete
+class ExternalRow(Serialisable):
+    r: Integer[Literal[False]]
     cell: Incomplete
-    __elements__: Incomplete
-    def __init__(self, r=..., cell: Incomplete | None = ...) -> None: ...
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, r: _ConvertibleToInt, cell: Incomplete | None = None) -> None: ...
 
-class ExternalSheetData(Serialisable):  # type: ignore[misc]
-    sheetId: Incomplete
-    refreshError: Incomplete
+class ExternalSheetData(Serialisable):
+    sheetId: Integer[Literal[False]]
+    refreshError: Bool[Literal[True]]
     row: Incomplete
-    __elements__: Incomplete
-    def __init__(self, sheetId: Incomplete | None = ..., refreshError: Incomplete | None = ..., row=...) -> None: ...
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, sheetId: _ConvertibleToInt, refreshError: _ConvertibleToBool | None = None, row=()) -> None: ...
 
-class ExternalSheetDataSet(Serialisable):  # type: ignore[misc]
+class ExternalSheetDataSet(Serialisable):
     sheetData: Incomplete
-    __elements__: Incomplete
-    def __init__(self, sheetData: Incomplete | None = ...) -> None: ...
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, sheetData: Incomplete | None = None) -> None: ...
 
-class ExternalSheetNames(Serialisable):  # type: ignore[misc]
+class ExternalSheetNames(Serialisable):
     sheetName: Incomplete
-    __elements__: Incomplete
-    def __init__(self, sheetName=...) -> None: ...
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, sheetName=()) -> None: ...
 
 class ExternalDefinedName(Serialisable):
-    tagname: str
-    name: Incomplete
-    refersTo: Incomplete
-    sheetId: Incomplete
-    def __init__(
-        self, name: Incomplete | None = ..., refersTo: Incomplete | None = ..., sheetId: Incomplete | None = ...
-    ) -> None: ...
+    tagname: ClassVar[str]
+    name: String[Literal[False]]
+    refersTo: String[Literal[True]]
+    sheetId: Integer[Literal[True]]
+    def __init__(self, name: str, refersTo: str | None = None, sheetId: _ConvertibleToInt | None = None) -> None: ...
 
 class ExternalBook(Serialisable):
-    tagname: str
-    sheetNames: Incomplete
+    tagname: ClassVar[str]
+    sheetNames: Typed[ExternalSheetNames, Literal[True]]
     definedNames: Incomplete
-    sheetDataSet: Incomplete
+    sheetDataSet: Typed[ExternalSheetDataSet, Literal[True]]
     id: Incomplete
-    __elements__: Incomplete
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
         self,
-        sheetNames: Incomplete | None = ...,
-        definedNames=...,
-        sheetDataSet: Incomplete | None = ...,
-        id: Incomplete | None = ...,
+        sheetNames: ExternalSheetNames | None = None,
+        definedNames=(),
+        sheetDataSet: ExternalSheetDataSet | None = None,
+        id: Incomplete | None = None,
     ) -> None: ...
 
 class ExternalLink(Serialisable):
-    tagname: str
+    tagname: ClassVar[str]
     mime_type: str
-    externalBook: Incomplete
-    file_link: Incomplete
-    __elements__: Incomplete
+    externalBook: Typed[ExternalBook, Literal[True]]
+    file_link: Typed[Relationship, Literal[True]]
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
-        self,
-        externalBook: Incomplete | None = ...,
-        ddeLink: Incomplete | None = ...,
-        oleLink: Incomplete | None = ...,
-        extLst: Incomplete | None = ...,
+        self, externalBook: ExternalBook | None = None, ddeLink: Unused = None, oleLink: Unused = None, extLst: Unused = None
     ) -> None: ...
     def to_tree(self): ...
     @property
-    def path(self): ...
+    def path(self) -> str: ...
 
-def read_external_link(archive, book_path): ...
+def read_external_link(archive: ZipFile, book_path: str) -> ExternalLink: ...

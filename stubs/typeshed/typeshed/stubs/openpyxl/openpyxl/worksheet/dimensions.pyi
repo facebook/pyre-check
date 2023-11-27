@@ -1,123 +1,151 @@
-from _typeshed import Incomplete
+from _typeshed import Incomplete, Unused
+from collections.abc import Callable, Iterator
+from typing import ClassVar, Generic, TypeVar
+from typing_extensions import Literal, Self
 
 from openpyxl.descriptors import Strict
+from openpyxl.descriptors.base import (
+    Alias,
+    Bool,
+    Float,
+    Integer,
+    String,
+    _ConvertibleToBool,
+    _ConvertibleToFloat,
+    _ConvertibleToInt,
+)
 from openpyxl.descriptors.serialisable import Serialisable
 from openpyxl.styles.styleable import StyleableObject
 from openpyxl.utils.bound_dictionary import BoundDictionary
+from openpyxl.worksheet.worksheet import Worksheet
+from openpyxl.xml.functions import Element
+
+_DimT = TypeVar("_DimT", bound=Dimension)
 
 class Dimension(Strict, StyleableObject):
-    __fields__: Incomplete
-    index: Incomplete
-    hidden: Incomplete
-    outlineLevel: Incomplete
-    outline_level: Incomplete
-    collapsed: Incomplete
-    style: Incomplete
+    __fields__: ClassVar[tuple[str, ...]]
+
+    index: Integer[Literal[False]]
+    hidden: Bool[Literal[False]]
+    outlineLevel: Integer[Literal[True]]
+    outline_level: Alias
+    collapsed: Bool[Literal[False]]
+    style: Alias
+
     def __init__(
-        self, index, hidden, outlineLevel, collapsed, worksheet, visible: bool = ..., style: Incomplete | None = ...
+        self,
+        index: _ConvertibleToInt,
+        hidden: _ConvertibleToBool,
+        outlineLevel: _ConvertibleToInt | None,
+        collapsed: _ConvertibleToBool,
+        worksheet: Worksheet,
+        visible: Unused = True,
+        style: Incomplete | None = None,
     ) -> None: ...
-    def __iter__(self): ...
-    def __copy__(self): ...
+    def __iter__(self) -> Iterator[tuple[str, str]]: ...
+    def __copy__(self) -> Self: ...
 
 class RowDimension(Dimension):
-    __fields__: Incomplete
-    r: Incomplete
-    s: Incomplete
-    ht: Incomplete
-    height: Incomplete
-    thickBot: Incomplete
-    thickTop: Incomplete
+    r: Alias
+    s: Alias
+    ht: Float[Literal[True]]
+    height: Alias
+    thickBot: Bool[Literal[False]]
+    thickTop: Bool[Literal[False]]
     def __init__(
         self,
-        worksheet,
-        index: int = ...,
-        ht: Incomplete | None = ...,
-        customHeight: Incomplete | None = ...,
-        s: Incomplete | None = ...,
-        customFormat: Incomplete | None = ...,
-        hidden: bool = ...,
-        outlineLevel: int = ...,
-        outline_level: Incomplete | None = ...,
-        collapsed: bool = ...,
-        visible: Incomplete | None = ...,
-        height: Incomplete | None = ...,
-        r: Incomplete | None = ...,
-        spans: Incomplete | None = ...,
-        thickBot: Incomplete | None = ...,
-        thickTop: Incomplete | None = ...,
-        **kw,
+        worksheet: Worksheet,
+        index: int = 0,
+        ht: _ConvertibleToFloat | None = None,
+        customHeight: Unused = None,
+        s: Incomplete | None = None,
+        customFormat: Unused = None,
+        hidden: _ConvertibleToBool = None,
+        outlineLevel: _ConvertibleToInt | None = 0,
+        outline_level: _ConvertibleToInt | None = None,
+        collapsed: _ConvertibleToBool = None,
+        visible: Incomplete | None = None,
+        height: Incomplete | None = None,
+        r: Incomplete | None = None,
+        spans: Unused = None,
+        thickBot: _ConvertibleToBool = None,
+        thickTop: _ConvertibleToBool = None,
+        **kw: Unused,
     ) -> None: ...
     @property
-    def customFormat(self): ...
+    def customFormat(self) -> bool: ...
     @property
-    def customHeight(self): ...
+    def customHeight(self) -> bool: ...
 
 class ColumnDimension(Dimension):
-    width: Incomplete
-    bestFit: Incomplete
-    auto_size: Incomplete
-    index: Incomplete
-    min: Incomplete
-    max: Incomplete
-    collapsed: Incomplete
-    __fields__: Incomplete
+    width: Float[Literal[False]]
+    bestFit: Bool[Literal[False]]
+    auto_size: Alias
+    index: String[Literal[False]]  # type:ignore[assignment]
+    min: Integer[Literal[True]]
+    max: Integer[Literal[True]]
+    collapsed: Bool[Literal[False]]
+
     def __init__(
         self,
-        worksheet,
-        index: str = ...,
-        width=...,
-        bestFit: bool = ...,
-        hidden: bool = ...,
-        outlineLevel: int = ...,
-        outline_level: Incomplete | None = ...,
-        collapsed: bool = ...,
-        style: Incomplete | None = ...,
-        min: Incomplete | None = ...,
-        max: Incomplete | None = ...,
-        customWidth: bool = ...,
-        visible: Incomplete | None = ...,
-        auto_size: Incomplete | None = ...,
+        worksheet: Worksheet,
+        index: str = "A",
+        width: _ConvertibleToFloat = 13,
+        bestFit: _ConvertibleToBool = False,
+        hidden: _ConvertibleToBool = False,
+        outlineLevel: _ConvertibleToInt | None = 0,
+        outline_level: _ConvertibleToInt | None = None,
+        collapsed: _ConvertibleToBool = False,
+        style: Incomplete | None = None,
+        min: _ConvertibleToInt | None = None,
+        max: _ConvertibleToInt | None = None,
+        customWidth: Unused = False,
+        visible: bool | None = None,
+        auto_size: _ConvertibleToBool | None = None,
     ) -> None: ...
     @property
-    def customWidth(self): ...
+    def customWidth(self) -> bool: ...
     def reindex(self) -> None: ...
-    def to_tree(self): ...
+    def to_tree(self) -> Element | None: ...
 
-class DimensionHolder(BoundDictionary):
-    worksheet: Incomplete
-    max_outline: Incomplete
-    default_factory: Incomplete
-    def __init__(self, worksheet, reference: str = ..., default_factory: Incomplete | None = ...) -> None: ...
-    def group(self, start, end: Incomplete | None = ..., outline_level: int = ..., hidden: bool = ...) -> None: ...
-    def to_tree(self): ...
+class DimensionHolder(BoundDictionary[str, _DimT], Generic[_DimT]):
+    worksheet: Worksheet
+    max_outline: int | None
+    default_factory: Callable[[], _DimT] | None
+
+    def __init__(
+        self, worksheet: Worksheet, reference: str = "index", default_factory: Callable[[], _DimT] | None = None
+    ) -> None: ...
+    def group(self, start: str, end: str | None = None, outline_level: int = 1, hidden: bool = False) -> None: ...
+    def to_tree(self) -> Element | None: ...
 
 class SheetFormatProperties(Serialisable):
-    tagname: str
-    baseColWidth: Incomplete
-    defaultColWidth: Incomplete
-    defaultRowHeight: Incomplete
-    customHeight: Incomplete
-    zeroHeight: Incomplete
-    thickTop: Incomplete
-    thickBottom: Incomplete
-    outlineLevelRow: Incomplete
-    outlineLevelCol: Incomplete
+    tagname: ClassVar[str]
+    baseColWidth: Integer[Literal[True]]
+    defaultColWidth: Float[Literal[True]]
+    defaultRowHeight: Float[Literal[False]]
+    customHeight: Bool[Literal[True]]
+    zeroHeight: Bool[Literal[True]]
+    thickTop: Bool[Literal[True]]
+    thickBottom: Bool[Literal[True]]
+    outlineLevelRow: Integer[Literal[True]]
+    outlineLevelCol: Integer[Literal[True]]
     def __init__(
         self,
-        baseColWidth: int = ...,
-        defaultColWidth: Incomplete | None = ...,
-        defaultRowHeight: int = ...,
-        customHeight: Incomplete | None = ...,
-        zeroHeight: Incomplete | None = ...,
-        thickTop: Incomplete | None = ...,
-        thickBottom: Incomplete | None = ...,
-        outlineLevelRow: Incomplete | None = ...,
-        outlineLevelCol: Incomplete | None = ...,
+        baseColWidth: _ConvertibleToInt | None = 8,
+        defaultColWidth: _ConvertibleToFloat | None = None,
+        defaultRowHeight: _ConvertibleToFloat = 15,
+        customHeight: _ConvertibleToBool | None = None,
+        zeroHeight: _ConvertibleToBool | None = None,
+        thickTop: _ConvertibleToBool | None = None,
+        thickBottom: _ConvertibleToBool | None = None,
+        outlineLevelRow: _ConvertibleToInt | None = None,
+        outlineLevelCol: _ConvertibleToInt | None = None,
     ) -> None: ...
 
 class SheetDimension(Serialisable):
-    tagname: str
-    ref: Incomplete
-    def __init__(self, ref: Incomplete | None = ...) -> None: ...
+    tagname: ClassVar[str]
+    ref: String[Literal[False]]
+    def __init__(self, ref: str) -> None: ...
     @property
-    def boundaries(self): ...
+    def boundaries(self) -> tuple[int, int, int, int]: ...

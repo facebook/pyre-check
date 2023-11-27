@@ -29,9 +29,12 @@ __all__ = [
     "opmap",
     "HAVE_ARGUMENT",
     "EXTENDED_ARG",
-    "hasnargs",
     "stack_effect",
 ]
+if sys.version_info >= (3, 12):
+    __all__ += ["hasarg", "hasexc"]
+else:
+    __all__ += ["hasnargs"]
 
 # Strictly this should not have to include Callable, but mypy doesn't use FunctionType
 # for functions (python/mypy#3171)
@@ -39,10 +42,10 @@ _HaveCodeType: TypeAlias = types.MethodType | types.FunctionType | types.CodeTyp
 
 if sys.version_info >= (3, 11):
     class Positions(NamedTuple):
-        lineno: int | None = ...
-        end_lineno: int | None = ...
-        col_offset: int | None = ...
-        end_col_offset: int | None = ...
+        lineno: int | None = None
+        end_lineno: int | None = None
+        col_offset: int | None = None
+        end_col_offset: int | None = None
 
 if sys.version_info >= (3, 11):
     class Instruction(NamedTuple):
@@ -54,7 +57,7 @@ if sys.version_info >= (3, 11):
         offset: int
         starts_line: int | None
         is_jump_target: bool
-        positions: Positions | None = ...
+        positions: Positions | None = None
 
 else:
     class Instruction(NamedTuple):

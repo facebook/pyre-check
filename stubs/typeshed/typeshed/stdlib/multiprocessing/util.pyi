@@ -1,9 +1,8 @@
 import threading
-from _typeshed import Incomplete, ReadableBuffer, SupportsTrunc, Unused
+from _typeshed import ConvertibleToInt, Incomplete, Unused
 from collections.abc import Callable, Iterable, Mapping, MutableMapping, Sequence
 from logging import Logger, _Level as _LoggingLevel
-from typing import Any, SupportsInt
-from typing_extensions import SupportsIndex
+from typing import Any
 
 __all__ = [
     "sub_debug",
@@ -50,14 +49,14 @@ class Finalize:
         self,
         obj: Incomplete | None,
         callback: Callable[..., Incomplete],
-        args: Sequence[Any] = ...,
+        args: Sequence[Any] = (),
         kwargs: Mapping[str, Any] | None = None,
         exitpriority: int | None = None,
     ) -> None: ...
     def __call__(
         self,
         wr: Unused = None,
-        _finalizer_registry: MutableMapping[Incomplete, Incomplete] = ...,
+        _finalizer_registry: MutableMapping[Incomplete, Incomplete] = {},
         sub_debug: Callable[..., object] = ...,
         getpid: Callable[[], int] = ...,
     ) -> Incomplete: ...
@@ -77,9 +76,4 @@ class ForkAwareLocal(threading.local): ...
 MAXFD: int
 
 def close_all_fds_except(fds: Iterable[int]) -> None: ...
-def spawnv_passfds(
-    path: bytes,
-    # args is anything that can be passed to the int constructor
-    args: Sequence[str | ReadableBuffer | SupportsInt | SupportsIndex | SupportsTrunc],
-    passfds: Sequence[int],
-) -> int: ...
+def spawnv_passfds(path: bytes, args: Sequence[ConvertibleToInt], passfds: Sequence[int]) -> int: ...

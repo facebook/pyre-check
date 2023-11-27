@@ -1,6 +1,6 @@
 from _typeshed import Incomplete, Unused
 from collections import defaultdict
-from collections.abc import Generator, Iterable
+from collections.abc import Iterable, Iterator
 
 from .encryption import StandardSecurityHandler
 from .syntax import PDFArray, PDFObject, PDFString
@@ -29,9 +29,9 @@ class StructElem(PDFObject):
         struct_type: str,
         parent: PDFObject,
         kids: Iterable[int] | Iterable[StructElem],
-        page_number: int | None = ...,
-        title: str | None = ...,
-        alt: str | None = ...,
+        page_number: int | None = None,
+        title: str | None = None,
+        alt: str | None = None,
     ) -> None: ...
     def page_number(self) -> int | None: ...
 
@@ -41,8 +41,8 @@ class StructureTreeBuilder:
     struct_elem_per_mc: Incomplete
     def __init__(self) -> None: ...
     def add_marked_content(
-        self, page_number: int, struct_type: str, mcid: int | None = ..., title: str | None = ..., alt_text: str | None = ...
+        self, page_number: int, struct_type: str, mcid: int | None = None, title: str | None = None, alt_text: str | None = None
     ) -> tuple[Incomplete, Incomplete]: ...
     def next_mcid_for_page(self, page_number: int) -> int: ...
     def empty(self) -> bool: ...
-    def __iter__(self) -> Generator[Incomplete, None, None]: ...
+    def __iter__(self) -> Iterator[Incomplete]: ...

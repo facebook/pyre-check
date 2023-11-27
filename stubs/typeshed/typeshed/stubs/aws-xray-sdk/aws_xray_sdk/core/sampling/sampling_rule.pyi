@@ -1,8 +1,5 @@
 from _typeshed import Incomplete
 
-from ..utils.search_pattern import wildcard_match as wildcard_match
-from .reservoir import Reservoir as Reservoir
-
 class SamplingRule:
     def __init__(
         self,
@@ -10,11 +7,11 @@ class SamplingRule:
         priority,
         rate,
         reservoir_size,
-        host: Incomplete | None = ...,
-        method: Incomplete | None = ...,
-        path: Incomplete | None = ...,
-        service: Incomplete | None = ...,
-        service_type: Incomplete | None = ...,
+        host: Incomplete | None = None,
+        method: Incomplete | None = None,
+        path: Incomplete | None = None,
+        service: Incomplete | None = None,
+        service_type: Incomplete | None = None,
     ) -> None: ...
     def match(self, sampling_req): ...
     def is_default(self): ...

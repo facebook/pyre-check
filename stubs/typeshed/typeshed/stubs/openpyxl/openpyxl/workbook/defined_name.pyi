@@ -1,73 +1,72 @@
 from _typeshed import Incomplete
-from collections.abc import Generator
+from collections import defaultdict
+from collections.abc import Generator, Iterator
+from re import Pattern
+from typing import ClassVar
+from typing_extensions import Final, Literal
 
+from openpyxl.descriptors import Sequence
+from openpyxl.descriptors.base import Alias, Bool, Integer, String, _ConvertibleToBool, _ConvertibleToInt
 from openpyxl.descriptors.serialisable import Serialisable
+from openpyxl.formula.tokenizer import _TokenOperandSubtypes, _TokenTypesNotOperand
 
-RESERVED: Incomplete
-RESERVED_REGEX: Incomplete
-COL_RANGE: str
-COL_RANGE_RE: Incomplete
-ROW_RANGE: str
-ROW_RANGE_RE: Incomplete
-TITLES_REGEX: Incomplete
+RESERVED: Final[frozenset[str]]
+RESERVED_REGEX: Final[Pattern[str]]
 
 class DefinedName(Serialisable):
-    tagname: str
-    name: Incomplete
-    comment: Incomplete
-    customMenu: Incomplete
-    description: Incomplete
-    help: Incomplete
-    statusBar: Incomplete
-    localSheetId: Incomplete
-    hidden: Incomplete
-    function: Incomplete
-    vbProcedure: Incomplete
-    xlm: Incomplete
-    functionGroupId: Incomplete
-    shortcutKey: Incomplete
-    publishToServer: Incomplete
-    workbookParameter: Incomplete
+    tagname: ClassVar[str]
+    name: String[Literal[False]]
+    comment: String[Literal[True]]
+    customMenu: String[Literal[True]]
+    description: String[Literal[True]]
+    help: String[Literal[True]]
+    statusBar: String[Literal[True]]
+    localSheetId: Integer[Literal[True]]
+    hidden: Bool[Literal[True]]
+    function: Bool[Literal[True]]
+    vbProcedure: Bool[Literal[True]]
+    xlm: Bool[Literal[True]]
+    functionGroupId: Integer[Literal[True]]
+    shortcutKey: String[Literal[True]]
+    publishToServer: Bool[Literal[True]]
+    workbookParameter: Bool[Literal[True]]
     attr_text: Incomplete
-    value: Incomplete
+    value: Alias
     def __init__(
         self,
-        name: Incomplete | None = ...,
-        comment: Incomplete | None = ...,
-        customMenu: Incomplete | None = ...,
-        description: Incomplete | None = ...,
-        help: Incomplete | None = ...,
-        statusBar: Incomplete | None = ...,
-        localSheetId: Incomplete | None = ...,
-        hidden: Incomplete | None = ...,
-        function: Incomplete | None = ...,
-        vbProcedure: Incomplete | None = ...,
-        xlm: Incomplete | None = ...,
-        functionGroupId: Incomplete | None = ...,
-        shortcutKey: Incomplete | None = ...,
-        publishToServer: Incomplete | None = ...,
-        workbookParameter: Incomplete | None = ...,
-        attr_text: Incomplete | None = ...,
+        name: str,
+        comment: str | None = None,
+        customMenu: str | None = None,
+        description: str | None = None,
+        help: str | None = None,
+        statusBar: str | None = None,
+        localSheetId: _ConvertibleToInt | None = None,
+        hidden: _ConvertibleToBool | None = None,
+        function: _ConvertibleToBool | None = None,
+        vbProcedure: _ConvertibleToBool | None = None,
+        xlm: _ConvertibleToBool | None = None,
+        functionGroupId: _ConvertibleToInt | None = None,
+        shortcutKey: str | None = None,
+        publishToServer: _ConvertibleToBool | None = None,
+        workbookParameter: _ConvertibleToBool | None = None,
+        attr_text: Incomplete | None = None,
     ) -> None: ...
     @property
-    def type(self): ...
+    def type(self) -> _TokenTypesNotOperand | _TokenOperandSubtypes: ...
     @property
-    def destinations(self) -> Generator[Incomplete, None, None]: ...
+    def destinations(self) -> Generator[tuple[str, str], None, None]: ...
     @property
-    def is_reserved(self): ...
+    def is_reserved(self) -> str | None: ...
     @property
-    def is_external(self): ...
-    def __iter__(self): ...
+    def is_external(self) -> bool: ...
+    def __iter__(self) -> Iterator[tuple[str, str]]: ...
+
+class DefinedNameDict(dict[str, DefinedName]):
+    def add(self, value: DefinedName) -> None: ...
 
 class DefinedNameList(Serialisable):
-    tagname: str
-    definedName: Incomplete
-    def __init__(self, definedName=...) -> None: ...
-    def append(self, defn) -> None: ...
+    tagname: ClassVar[str]
+    definedName: Sequence
+    def __init__(self, definedName=()) -> None: ...
+    def by_sheet(self) -> defaultdict[int, DefinedNameDict]: ...
     def __len__(self) -> int: ...
-    def __contains__(self, name): ...
-    def __getitem__(self, name): ...
-    def get(self, name, scope: Incomplete | None = ...): ...
-    def __delitem__(self, name) -> None: ...
-    def delete(self, name, scope: Incomplete | None = ...): ...
-    def localnames(self, scope): ...

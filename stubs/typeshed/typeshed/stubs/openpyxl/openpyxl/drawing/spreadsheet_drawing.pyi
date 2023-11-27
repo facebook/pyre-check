@@ -1,98 +1,121 @@
 from _typeshed import Incomplete
+from typing import ClassVar
+from typing_extensions import Literal, TypeAlias
 
+from openpyxl.descriptors.base import Alias, Bool, NoneSet, Typed, _ConvertibleToBool, _ConvertibleToInt
+from openpyxl.descriptors.nested import NestedText
 from openpyxl.descriptors.serialisable import Serialisable
+from openpyxl.drawing.connector import Shape
+from openpyxl.drawing.graphic import GraphicFrame, GroupShape
+from openpyxl.drawing.picture import PictureFrame
+from openpyxl.drawing.xdr import XDRPoint2D, XDRPositiveSize2D
+
+_TwoCellAnchorEditAs: TypeAlias = Literal["twoCell", "oneCell", "absolute"]
 
 class AnchorClientData(Serialisable):
-    fLocksWithSheet: Incomplete
-    fPrintsWithSheet: Incomplete
-    def __init__(self, fLocksWithSheet: Incomplete | None = ..., fPrintsWithSheet: Incomplete | None = ...) -> None: ...
+    fLocksWithSheet: Bool[Literal[True]]
+    fPrintsWithSheet: Bool[Literal[True]]
+    def __init__(
+        self, fLocksWithSheet: _ConvertibleToBool | None = None, fPrintsWithSheet: _ConvertibleToBool | None = None
+    ) -> None: ...
 
 class AnchorMarker(Serialisable):
-    tagname: str
-    col: Incomplete
-    colOff: Incomplete
-    row: Incomplete
-    rowOff: Incomplete
-    def __init__(self, col: int = ..., colOff: int = ..., row: int = ..., rowOff: int = ...) -> None: ...
+    tagname: ClassVar[str]
+    col: NestedText[int, Literal[False]]
+    colOff: NestedText[int, Literal[False]]
+    row: NestedText[int, Literal[False]]
+    rowOff: NestedText[int, Literal[False]]
+    def __init__(
+        self, col: _ConvertibleToInt = 0, colOff: _ConvertibleToInt = 0, row: _ConvertibleToInt = 0, rowOff: _ConvertibleToInt = 0
+    ) -> None: ...
 
 class _AnchorBase(Serialisable):
-    sp: Incomplete
-    shape: Incomplete
-    grpSp: Incomplete
-    groupShape: Incomplete
-    graphicFrame: Incomplete
-    cxnSp: Incomplete
-    connectionShape: Incomplete
-    pic: Incomplete
+    sp: Typed[Shape, Literal[True]]
+    shape: Alias
+    grpSp: Typed[GroupShape, Literal[True]]
+    groupShape: Alias
+    graphicFrame: Typed[GraphicFrame, Literal[True]]
+    cxnSp: Typed[Shape, Literal[True]]
+    connectionShape: Alias
+    pic: Typed[PictureFrame, Literal[True]]
     contentPart: Incomplete
-    clientData: Incomplete
-    __elements__: Incomplete
+    clientData: Typed[AnchorClientData, Literal[False]]
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
         self,
-        clientData: Incomplete | None = ...,
-        sp: Incomplete | None = ...,
-        grpSp: Incomplete | None = ...,
-        graphicFrame: Incomplete | None = ...,
-        cxnSp: Incomplete | None = ...,
-        pic: Incomplete | None = ...,
-        contentPart: Incomplete | None = ...,
+        clientData: AnchorClientData | None = None,
+        sp: Shape | None = None,
+        grpSp: GroupShape | None = None,
+        graphicFrame: GraphicFrame | None = None,
+        cxnSp: Shape | None = None,
+        pic: PictureFrame | None = None,
+        contentPart: Incomplete | None = None,
     ) -> None: ...
 
 class AbsoluteAnchor(_AnchorBase):
-    tagname: str
-    pos: Incomplete
-    ext: Incomplete
-    sp: Incomplete
-    grpSp: Incomplete
-    graphicFrame: Incomplete
-    cxnSp: Incomplete
-    pic: Incomplete
-    contentPart: Incomplete
-    clientData: Incomplete
-    __elements__: Incomplete
-    def __init__(self, pos: Incomplete | None = ..., ext: Incomplete | None = ..., **kw) -> None: ...
+    tagname: ClassVar[str]
+    pos: Typed[XDRPoint2D, Literal[False]]
+    ext: Typed[XDRPositiveSize2D, Literal[False]]
+    # Same as parent
+    # sp = _AnchorBase.sp
+    # grpSp = _AnchorBase.grpSp
+    # graphicFrame = _AnchorBase.graphicFrame
+    # cxnSp = _AnchorBase.cxnSp
+    # pic = _AnchorBase.pic
+    # contentPart = _AnchorBase.contentPart
+    # clientData = _AnchorBase.clientData
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, pos: XDRPoint2D | None = None, ext: XDRPositiveSize2D | None = None, **kw) -> None: ...
 
 class OneCellAnchor(_AnchorBase):
-    tagname: str
-    ext: Incomplete
-    sp: Incomplete
-    grpSp: Incomplete
-    graphicFrame: Incomplete
-    cxnSp: Incomplete
-    pic: Incomplete
-    contentPart: Incomplete
-    clientData: Incomplete
-    __elements__: Incomplete
-    def __init__(self, _from: Incomplete | None = ..., ext: Incomplete | None = ..., **kw) -> None: ...
+    tagname: ClassVar[str]
+    _from: Typed[AnchorMarker, Literal[False]]  # Not private. Avoids name clash
+    ext: Typed[XDRPositiveSize2D, Literal[False]]
+    # Same as parent
+    # sp = _AnchorBase.sp
+    # grpSp = _AnchorBase.grpSp
+    # graphicFrame = _AnchorBase.graphicFrame
+    # cxnSp = _AnchorBase.cxnSp
+    # pic = _AnchorBase.pic
+    # contentPart = _AnchorBase.contentPart
+    # clientData = _AnchorBase.clientData
+    __elements__: ClassVar[tuple[str, ...]]
+    def __init__(self, _from: AnchorMarker | None = None, ext: XDRPositiveSize2D | None = None, **kw) -> None: ...
 
 class TwoCellAnchor(_AnchorBase):
-    tagname: str
-    editAs: Incomplete
-    to: Incomplete
-    sp: Incomplete
-    grpSp: Incomplete
-    graphicFrame: Incomplete
-    cxnSp: Incomplete
-    pic: Incomplete
-    contentPart: Incomplete
-    clientData: Incomplete
-    __elements__: Incomplete
+    tagname: ClassVar[str]
+    editAs: NoneSet[_TwoCellAnchorEditAs]
+    _from: Typed[AnchorMarker, Literal[False]]  # Not private. Avoids name clash
+    to: Typed[AnchorMarker, Literal[False]]
+    # Same as parent
+    # sp = _AnchorBase.sp
+    # grpSp = _AnchorBase.grpSp
+    # graphicFrame = _AnchorBase.graphicFrame
+    # cxnSp = _AnchorBase.cxnSp
+    # pic = _AnchorBase.pic
+    # contentPart = _AnchorBase.contentPart
+    # clientData = _AnchorBase.clientData
+    __elements__: ClassVar[tuple[str, ...]]
     def __init__(
-        self, editAs: Incomplete | None = ..., _from: Incomplete | None = ..., to: Incomplete | None = ..., **kw
+        self,
+        editAs: _TwoCellAnchorEditAs | Literal["none"] | None = None,
+        _from: AnchorMarker | None = None,
+        to: AnchorMarker | None = None,
+        **kw,
     ) -> None: ...
 
 class SpreadsheetDrawing(Serialisable):
-    tagname: str
+    tagname: ClassVar[str]
     mime_type: str
     PartName: str
     twoCellAnchor: Incomplete
     oneCellAnchor: Incomplete
     absoluteAnchor: Incomplete
-    __elements__: Incomplete
+    __elements__: ClassVar[tuple[str, ...]]
     charts: Incomplete
     images: Incomplete
-    def __init__(self, twoCellAnchor=..., oneCellAnchor=..., absoluteAnchor=...) -> None: ...
+    def __init__(self, twoCellAnchor=(), oneCellAnchor=(), absoluteAnchor=()) -> None: ...
     def __hash__(self) -> int: ...
     def __bool__(self) -> bool: ...
     @property
-    def path(self): ...
+    def path(self) -> str: ...

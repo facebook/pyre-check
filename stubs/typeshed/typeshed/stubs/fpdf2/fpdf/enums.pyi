@@ -15,6 +15,14 @@ class CoerciveIntEnum(IntEnum):
     @classmethod
     def coerce(cls, value: Self | str | int) -> Self: ...
 
+class CoerciveIntFlag(IntFlag):
+    @classmethod
+    def coerce(cls, value: Self | str | int) -> Self: ...
+
+class WrapMode(CoerciveEnum):
+    WORD: str
+    CHAR: str
+
 class CharVPos(CoerciveEnum):
     SUP: str
     SUB: str
@@ -28,6 +36,39 @@ class Align(CoerciveEnum):
     L: str
     R: str
     J: str
+
+class VAlign(CoerciveEnum):
+    M: str
+    T: str
+    B: str
+
+class TextEmphasis(CoerciveIntFlag):
+    B: int
+    I: int
+    U: int
+
+    @property
+    def style(self) -> str: ...
+
+class MethodReturnValue(CoerciveIntFlag):
+    PAGE_BREAK: int
+    LINES: int
+    HEIGHT: int
+
+class TableBordersLayout(CoerciveEnum):
+    ALL: str
+    NONE: str
+    INTERNAL: str
+    MINIMAL: str
+    HORIZONTAL_LINES: str
+    NO_HORIZONTAL_LINES: str
+    SINGLE_TOP_LINE: str
+
+class TableCellFillMode(CoerciveEnum):
+    NONE: str
+    ALL: str
+    ROWS: str
+    COLUMNS: str
 
 class RenderStyle(CoerciveEnum):
     D: str
@@ -66,6 +107,16 @@ class YPos(CoerciveEnum):
     NEXT: str
     TMARGIN: str
     BMARGIN: str
+
+class Angle(CoerciveIntEnum):
+    NORTH: int
+    EAST: int
+    SOUTH: int
+    WEST: int
+    NORTHEAST: int
+    SOUTHEAST: int
+    SOUTHWEST: int
+    NORTHWEST: int
 
 class PageLayout(CoerciveEnum):
     SINGLE_PAGE: Name
@@ -200,5 +251,4 @@ class EncryptionMethod(Enum):
     NO_ENCRYPTION: int
     RC4: int
     AES_128: int
-
-__pdoc__: dict[str, bool]
+    AES_256: int

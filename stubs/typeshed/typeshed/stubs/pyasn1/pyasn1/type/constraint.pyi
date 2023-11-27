@@ -1,6 +1,18 @@
+__all__ = [
+    "SingleValueConstraint",
+    "ContainedSubtypeConstraint",
+    "ValueRangeConstraint",
+    "ValueSizeConstraint",
+    "PermittedAlphabetConstraint",
+    "InnerTypeConstraint",
+    "ConstraintsExclusion",
+    "ConstraintsIntersection",
+    "ConstraintsUnion",
+]
+
 class AbstractConstraint:
     def __init__(self, *values) -> None: ...
-    def __call__(self, value, idx: int | None = ...) -> None: ...
+    def __call__(self, value, idx: int | None = None) -> None: ...
     def __eq__(self, other): ...
     def __ne__(self, other): ...
     def __lt__(self, other): ...

@@ -6,12 +6,12 @@ class PostBucketRequest:
     discriminator: Incomplete
     def __init__(
         self,
-        org_id: Incomplete | None = ...,
-        name: Incomplete | None = ...,
-        description: Incomplete | None = ...,
-        rp: Incomplete | None = ...,
-        retention_rules: Incomplete | None = ...,
-        schema_type: Incomplete | None = ...,
+        org_id: Incomplete | None = None,
+        name: Incomplete | None = None,
+        description: Incomplete | None = None,
+        rp: str = "0",
+        retention_rules: Incomplete | None = None,
+        schema_type: Incomplete | None = None,
     ) -> None: ...
     @property
     def org_id(self): ...
@@ -25,10 +25,7 @@ class PostBucketRequest:
     def description(self): ...
     @description.setter
     def description(self, description) -> None: ...
-    @property
-    def rp(self): ...
-    @rp.setter
-    def rp(self, rp) -> None: ...
+    rp: str
     @property
     def retention_rules(self): ...
     @retention_rules.setter

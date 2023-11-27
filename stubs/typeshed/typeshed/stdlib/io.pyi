@@ -6,7 +6,7 @@ from _typeshed import FileDescriptorOrPath, ReadableBuffer, WriteableBuffer
 from collections.abc import Callable, Iterable, Iterator
 from os import _Opener
 from types import TracebackType
-from typing import IO, Any, BinaryIO, TextIO
+from typing import IO, Any, BinaryIO, TextIO, TypeVar, overload
 from typing_extensions import Literal, Self
 
 __all__ = [
@@ -32,6 +32,8 @@ __all__ = [
 
 if sys.version_info >= (3, 8):
     __all__ += ["open_code"]
+
+_T = TypeVar("_T")
 
 DEFAULT_BUFFER_SIZE: Literal[8192]
 
@@ -90,7 +92,7 @@ class BufferedIOBase(IOBase):
     def read(self, __size: int | None = ...) -> bytes: ...
     def read1(self, __size: int = ...) -> bytes: ...
 
-class FileIO(RawIOBase, BinaryIO):
+class FileIO(RawIOBase, BinaryIO):  # type: ignore[misc]  # incompatible definitions of writelines in the base classes
     mode: str
     name: FileDescriptorOrPath  # type: ignore[assignment]
     def __init__(
@@ -102,7 +104,7 @@ class FileIO(RawIOBase, BinaryIO):
     def read(self, __size: int = -1) -> bytes: ...
     def __enter__(self) -> Self: ...
 
-class BytesIO(BufferedIOBase, BinaryIO):
+class BytesIO(BufferedIOBase, BinaryIO):  # type: ignore[misc]  # incompatible definitions of methods in the base classes
     def __init__(self, initial_bytes: ReadableBuffer = ...) -> None: ...
     # BytesIO does not contain a "name" field. This workaround is necessary
     # to allow BytesIO sub-classes to add this field, as it is defined
@@ -113,17 +115,17 @@ class BytesIO(BufferedIOBase, BinaryIO):
     def getbuffer(self) -> memoryview: ...
     def read1(self, __size: int | None = -1) -> bytes: ...
 
-class BufferedReader(BufferedIOBase, BinaryIO):
+class BufferedReader(BufferedIOBase, BinaryIO):  # type: ignore[misc]  # incompatible definitions of methods in the base classes
     def __enter__(self) -> Self: ...
     def __init__(self, raw: RawIOBase, buffer_size: int = ...) -> None: ...
     def peek(self, __size: int = 0) -> bytes: ...
 
-class BufferedWriter(BufferedIOBase, BinaryIO):
+class BufferedWriter(BufferedIOBase, BinaryIO):  # type: ignore[misc]  # incompatible definitions of writelines in the base classes
     def __enter__(self) -> Self: ...
     def __init__(self, raw: RawIOBase, buffer_size: int = ...) -> None: ...
     def write(self, __buffer: ReadableBuffer) -> int: ...
 
-class BufferedRandom(BufferedReader, BufferedWriter):
+class BufferedRandom(BufferedReader, BufferedWriter):  # type: ignore[misc]  # incompatible definitions of methods in the base classes
     def __enter__(self) -> Self: ...
     def seek(self, __target: int, __whence: int = 0) -> int: ...  # stubtest needs this
 
@@ -144,7 +146,7 @@ class TextIOBase(IOBase):
     def readlines(self, __hint: int = -1) -> list[str]: ...  # type: ignore[override]
     def read(self, __size: int | None = ...) -> str: ...
 
-class TextIOWrapper(TextIOBase, TextIO):
+class TextIOWrapper(TextIOBase, TextIO):  # type: ignore[misc]  # incompatible definitions of write in the base classes
     def __init__(
         self,
         buffer: IO[bytes],
@@ -194,3 +196,9 @@ class IncrementalNewlineDecoder(codecs.IncrementalDecoder):
     @property
     def newlines(self) -> str | tuple[str, ...] | None: ...
     def setstate(self, __state: tuple[bytes, int]) -> None: ...
+
+if sys.version_info >= (3, 10):
+    @overload
+    def text_encoding(__encoding: None, __stacklevel: int = 2) -> Literal["locale", "utf-8"]: ...
+    @overload
+    def text_encoding(__encoding: _T, __stacklevel: int = 2) -> _T: ...

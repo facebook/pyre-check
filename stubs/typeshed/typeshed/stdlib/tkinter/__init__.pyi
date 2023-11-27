@@ -6,8 +6,8 @@ from enum import Enum
 from tkinter.constants import *
 from tkinter.font import _FontDescription
 from types import TracebackType
-from typing import Any, Generic, NamedTuple, Protocol, TypeVar, overload, type_check_only
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing import Any, Generic, NamedTuple, TypeVar, overload, type_check_only
+from typing_extensions import Literal, TypeAlias, TypedDict, deprecated
 
 if sys.version_info >= (3, 9):
     __all__ = [
@@ -173,10 +173,7 @@ EXCEPTION = _tkinter.EXCEPTION
 # Some widgets have an option named -compound that accepts different values
 # than the _Compound defined here. Many other options have similar things.
 _Anchor: TypeAlias = Literal["nw", "n", "ne", "w", "center", "e", "sw", "s", "se"]  # manual page: Tk_GetAnchor
-_Bitmap: TypeAlias = str  # manual page: Tk_GetBitmap
 _ButtonCommand: TypeAlias = str | Callable[[], Any]  # accepts string of tcl code, return value is returned from Button.invoke()
-_CanvasItemId: TypeAlias = int
-_Color: TypeAlias = str  # typically '#rrggbb', '#rgb' or color names.
 _Compound: TypeAlias = Literal["top", "left", "center", "right", "bottom", "none"]  # -compound in manual page named 'options'
 # manual page: Tk_GetCursor
 _Cursor: TypeAlias = str | tuple[str] | tuple[str, str] | tuple[str, str, str] | tuple[str, str, str, str]
@@ -276,10 +273,14 @@ class Variable:
     def trace_add(self, mode: _TraceMode, callback: Callable[[str, str, str], object]) -> str: ...
     def trace_remove(self, mode: _TraceMode, cbname: str) -> None: ...
     def trace_info(self) -> list[tuple[tuple[_TraceMode, ...], str]]: ...
-    def trace_variable(self, mode, callback): ...  # deprecated
-    def trace_vdelete(self, mode, cbname) -> None: ...  # deprecated
-    def trace_vinfo(self): ...  # deprecated
-    trace = trace_variable  # deprecated
+    @deprecated("use trace_add() instead of trace()")
+    def trace(self, mode, callback): ...
+    @deprecated("use trace_add() instead of trace_variable()")
+    def trace_variable(self, mode, callback): ...
+    @deprecated("use trace_remove() instead of trace_vdelete()")
+    def trace_vdelete(self, mode, cbname) -> None: ...
+    @deprecated("use trace_info() instead of trace_vinfo()")
+    def trace_vinfo(self): ...
     def __eq__(self, other: object) -> bool: ...
 
 class StringVar(Variable):
@@ -346,9 +347,8 @@ class Misc:
     def tk_focusFollowsMouse(self) -> None: ...
     def tk_focusNext(self) -> Misc | None: ...
     def tk_focusPrev(self) -> Misc | None: ...
-    @overload
-    def after(self, ms: int, func: None = None) -> None: ...
-    @overload
+    # .after() can be called without the "func" argument, but it is basically never what you want.
+    # It behaves like time.sleep() and freezes the GUI app.
     def after(self, ms: int | Literal["idle"], func: Callable[..., object], *args: Any) -> str: ...
     # after_idle is essentially partialmethod(after, "idle")
     def after_idle(self, func: Callable[..., object], *args: Any) -> str: ...
@@ -405,7 +405,7 @@ class Misc:
     def winfo_pointery(self) -> int: ...
     def winfo_reqheight(self) -> int: ...
     def winfo_reqwidth(self) -> int: ...
-    def winfo_rgb(self, color: _Color) -> tuple[int, int, int]: ...
+    def winfo_rgb(self, color: str) -> tuple[int, int, int]: ...
     def winfo_rootx(self) -> int: ...
     def winfo_rooty(self) -> int: ...
     def winfo_screen(self) -> str: ...
@@ -503,8 +503,8 @@ class Misc:
     bbox = grid_bbox
     def grid_columnconfigure(
         self,
-        index: _GridIndex,
-        cnf: _GridIndexInfo = ...,
+        index: _GridIndex | list[int] | tuple[int, ...],
+        cnf: _GridIndexInfo = {},
         *,
         minsize: _ScreenUnits = ...,
         pad: _ScreenUnits = ...,
@@ -513,8 +513,8 @@ class Misc:
     ) -> _GridIndexInfo | Any: ...  # can be None but annoying to check
     def grid_rowconfigure(
         self,
-        index: _GridIndex,
-        cnf: _GridIndexInfo = ...,
+        index: _GridIndex | list[int] | tuple[int, ...],
+        cnf: _GridIndexInfo = {},
         *,
         minsize: _ScreenUnits = ...,
         pad: _ScreenUnits = ...,
@@ -723,9 +723,6 @@ class Wm:
     def wm_withdraw(self) -> None: ...
     withdraw = wm_withdraw
 
-class _ExceptionReportingCallback(Protocol):
-    def __call__(self, __exc: type[BaseException], __val: BaseException, __tb: TracebackType | None) -> object: ...
-
 class Tk(Misc, Wm):
     master: None
     def __init__(
@@ -745,15 +742,15 @@ class Tk(Misc, Wm):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         menu: Menu = ...,
         padx: _ScreenUnits = ...,
@@ -767,7 +764,7 @@ class Tk(Misc, Wm):
     config = configure
     def destroy(self) -> None: ...
     def readprofile(self, baseName: str, className: str) -> None: ...
-    report_callback_exception: _ExceptionReportingCallback
+    report_callback_exception: Callable[[type[BaseException], BaseException, TracebackType | None], object]
     # Tk has __getattr__ so that tk_instance.foo falls back to tk_instance.tk.foo
     # Please keep in sync with _tkinter.TkappType.
     # Some methods are intentionally missing because they are inherited from Misc instead.
@@ -825,7 +822,7 @@ class Pack:
     # replaced by **kwargs.
     def pack_configure(
         self,
-        cnf: Mapping[str, Any] | None = ...,
+        cnf: Mapping[str, Any] | None = {},
         *,
         after: Misc = ...,
         anchor: _Anchor = ...,
@@ -861,7 +858,7 @@ class _PlaceInfo(_InMiscNonTotal):  # empty dict if widget hasn't been placed
 class Place:
     def place_configure(
         self,
-        cnf: Mapping[str, Any] | None = ...,
+        cnf: Mapping[str, Any] | None = {},
         *,
         anchor: _Anchor = ...,
         bordermode: Literal["inside", "outside", "ignore"] = ...,
@@ -896,7 +893,7 @@ class _GridInfo(_InMiscNonTotal):  # empty dict if widget hasn't been gridded
 class Grid:
     def grid_configure(
         self,
-        cnf: Mapping[str, Any] | None = ...,
+        cnf: Mapping[str, Any] | None = {},
         *,
         column: int = ...,
         columnspan: int = ...,
@@ -920,7 +917,7 @@ class Grid:
 class BaseWidget(Misc):
     master: Misc
     widgetName: Incomplete
-    def __init__(self, master, widgetName, cnf=..., kw=..., extra=...) -> None: ...
+    def __init__(self, master, widgetName, cnf={}, kw={}, extra=()) -> None: ...
     def destroy(self) -> None: ...
 
 # This class represents any widget except Toplevel or Tk.
@@ -947,11 +944,11 @@ class Toplevel(BaseWidget, Wm):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         class_: str = ...,
@@ -959,8 +956,8 @@ class Toplevel(BaseWidget, Wm):
         container: bool = ...,
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         menu: Menu = ...,
         name: str = ...,
@@ -978,15 +975,15 @@ class Toplevel(BaseWidget, Wm):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         menu: Menu = ...,
         padx: _ScreenUnits = ...,
@@ -1003,30 +1000,30 @@ class Button(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,  # same as borderwidth
-        bg: _Color = ...,  # same as background
-        bitmap: _Bitmap = ...,
+        bg: str = ...,  # same as background
+        bitmap: str = ...,
         border: _ScreenUnits = ...,  # same as borderwidth
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
         default: Literal["normal", "active", "disabled"] = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,  # same as foreground
+        disabledforeground: str = ...,
+        fg: str = ...,  # same as foreground
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         # width and height must be int for buttons containing just text, but
         # ints are also valid _ScreenUnits
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         justify: Literal["left", "center", "right"] = ...,
@@ -1053,26 +1050,26 @@ class Button(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
         default: Literal["normal", "active", "disabled"] = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         justify: Literal["left", "center", "right"] = ...,
@@ -1100,11 +1097,11 @@ class Canvas(Widget, XView, YView):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         closeenough: float = ...,
@@ -1113,10 +1110,10 @@ class Canvas(Widget, XView, YView):
         # canvas manual page has a section named COORDINATES, and the first
         # part of it describes _ScreenUnits.
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -1127,9 +1124,9 @@ class Canvas(Widget, XView, YView):
         # Setting scrollregion to None doesn't reset it back to empty,
         # but setting it to () does.
         scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()] = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         # man page says that state can be 'hidden', but it can't
         state: Literal["normal", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -1144,19 +1141,19 @@ class Canvas(Widget, XView, YView):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         closeenough: float = ...,
         confine: bool = ...,
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -1164,9 +1161,9 @@ class Canvas(Widget, XView, YView):
         offset=...,  # undocumented
         relief: _Relief = ...,
         scrollregion: tuple[_ScreenUnits, _ScreenUnits, _ScreenUnits, _ScreenUnits] | tuple[()] = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         state: Literal["normal", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
         width: _ScreenUnits = ...,
@@ -1179,38 +1176,31 @@ class Canvas(Widget, XView, YView):
     def configure(self, cnf: str) -> tuple[str, str, str, Any, Any]: ...
     config = configure
     def addtag(self, *args): ...  # internal method
-    def addtag_above(self, newtag: str, tagOrId: str | _CanvasItemId) -> None: ...
+    def addtag_above(self, newtag: str, tagOrId: str | int) -> None: ...
     def addtag_all(self, newtag: str) -> None: ...
-    def addtag_below(self, newtag: str, tagOrId: str | _CanvasItemId) -> None: ...
+    def addtag_below(self, newtag: str, tagOrId: str | int) -> None: ...
     def addtag_closest(
-        self,
-        newtag: str,
-        x: _ScreenUnits,
-        y: _ScreenUnits,
-        halo: _ScreenUnits | None = None,
-        start: str | _CanvasItemId | None = None,
+        self, newtag: str, x: _ScreenUnits, y: _ScreenUnits, halo: _ScreenUnits | None = None, start: str | int | None = None
     ) -> None: ...
     def addtag_enclosed(self, newtag: str, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: _ScreenUnits) -> None: ...
     def addtag_overlapping(self, newtag: str, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: _ScreenUnits) -> None: ...
-    def addtag_withtag(self, newtag: str, tagOrId: str | _CanvasItemId) -> None: ...
+    def addtag_withtag(self, newtag: str, tagOrId: str | int) -> None: ...
     def find(self, *args): ...  # internal method
-    def find_above(self, tagOrId: str | _CanvasItemId) -> tuple[_CanvasItemId, ...]: ...
-    def find_all(self) -> tuple[_CanvasItemId, ...]: ...
-    def find_below(self, tagOrId: str | _CanvasItemId) -> tuple[_CanvasItemId, ...]: ...
+    def find_above(self, tagOrId: str | int) -> tuple[int, ...]: ...
+    def find_all(self) -> tuple[int, ...]: ...
+    def find_below(self, tagOrId: str | int) -> tuple[int, ...]: ...
     def find_closest(
-        self, x: _ScreenUnits, y: _ScreenUnits, halo: _ScreenUnits | None = None, start: str | _CanvasItemId | None = None
-    ) -> tuple[_CanvasItemId, ...]: ...
-    def find_enclosed(
-        self, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: _ScreenUnits
-    ) -> tuple[_CanvasItemId, ...]: ...
-    def find_overlapping(self, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: float) -> tuple[_CanvasItemId, ...]: ...
-    def find_withtag(self, tagOrId: str | _CanvasItemId) -> tuple[_CanvasItemId, ...]: ...
+        self, x: _ScreenUnits, y: _ScreenUnits, halo: _ScreenUnits | None = None, start: str | int | None = None
+    ) -> tuple[int, ...]: ...
+    def find_enclosed(self, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: _ScreenUnits) -> tuple[int, ...]: ...
+    def find_overlapping(self, x1: _ScreenUnits, y1: _ScreenUnits, x2: _ScreenUnits, y2: float) -> tuple[int, ...]: ...
+    def find_withtag(self, tagOrId: str | int) -> tuple[int, ...]: ...
     # Incompatible with Misc.bbox(), tkinter violates LSP
-    def bbox(self, *args: str | _CanvasItemId) -> tuple[int, int, int, int]: ...  # type: ignore[override]
+    def bbox(self, *args: str | int) -> tuple[int, int, int, int]: ...  # type: ignore[override]
     @overload
     def tag_bind(
         self,
-        tagOrId: str | _CanvasItemId,
+        tagOrId: str | int,
         sequence: str | None = None,
         func: Callable[[Event[Canvas]], object] | None = None,
         add: Literal["", "+"] | bool | None = None,
@@ -1220,22 +1210,22 @@ class Canvas(Widget, XView, YView):
         self, tagOrId: str | int, sequence: str | None, func: str, add: Literal["", "+"] | bool | None = None
     ) -> None: ...
     @overload
-    def tag_bind(self, tagOrId: str | _CanvasItemId, *, func: str, add: Literal["", "+"] | bool | None = None) -> None: ...
-    def tag_unbind(self, tagOrId: str | _CanvasItemId, sequence: str, funcid: str | None = None) -> None: ...
+    def tag_bind(self, tagOrId: str | int, *, func: str, add: Literal["", "+"] | bool | None = None) -> None: ...
+    def tag_unbind(self, tagOrId: str | int, sequence: str, funcid: str | None = None) -> None: ...
     def canvasx(self, screenx, gridspacing: Incomplete | None = None): ...
     def canvasy(self, screeny, gridspacing: Incomplete | None = None): ...
     @overload
-    def coords(self, __tagOrId: str | _CanvasItemId) -> list[float]: ...
+    def coords(self, __tagOrId: str | int) -> list[float]: ...
     @overload
-    def coords(self, __tagOrId: str | _CanvasItemId, __args: list[int] | list[float] | tuple[float, ...]) -> None: ...
+    def coords(self, __tagOrId: str | int, __args: list[int] | list[float] | tuple[float, ...]) -> None: ...
     @overload
-    def coords(self, __tagOrId: str | _CanvasItemId, __x1: float, __y1: float, *args: float) -> None: ...
+    def coords(self, __tagOrId: str | int, __x1: float, __y1: float, *args: float) -> None: ...
     # create_foo() methods accept coords as a list or tuple, or as separate arguments.
     # Lists and tuples can be flat as in [1, 2, 3, 4], or nested as in [(1, 2), (3, 4)].
     # Keyword arguments should be the same in all overloads of each method.
-    def create_arc(self, *args, **kw) -> _CanvasItemId: ...
-    def create_bitmap(self, *args, **kw) -> _CanvasItemId: ...
-    def create_image(self, *args, **kw) -> _CanvasItemId: ...
+    def create_arc(self, *args, **kw) -> int: ...
+    def create_bitmap(self, *args, **kw) -> int: ...
+    def create_image(self, *args, **kw) -> int: ...
     @overload
     def create_line(
         self,
@@ -1244,58 +1234,58 @@ class Canvas(Widget, XView, YView):
         __x1: float,
         __y1: float,
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
         arrow: Literal["first", "last", "both"] = ...,
         arrowshape: tuple[float, float, float] = ...,
         capstyle: Literal["round", "projecting", "butt"] = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_line(
         self,
         __xy_pair_0: tuple[float, float],
         __xy_pair_1: tuple[float, float],
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
         arrow: Literal["first", "last", "both"] = ...,
         arrowshape: tuple[float, float, float] = ...,
         capstyle: Literal["round", "projecting", "butt"] = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_line(
         self,
@@ -1308,29 +1298,29 @@ class Canvas(Widget, XView, YView):
             | list[tuple[float, float]]
         ),
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
         arrow: Literal["first", "last", "both"] = ...,
         arrowshape: tuple[float, float, float] = ...,
         capstyle: Literal["round", "projecting", "butt"] = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_oval(
         self,
@@ -1339,60 +1329,60 @@ class Canvas(Widget, XView, YView):
         __x1: float,
         __y1: float,
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_oval(
         self,
         __xy_pair_0: tuple[float, float],
         __xy_pair_1: tuple[float, float],
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_oval(
         self,
@@ -1405,30 +1395,30 @@ class Canvas(Widget, XView, YView):
             | list[tuple[float, float]]
         ),
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_polygon(
         self,
@@ -1437,66 +1427,66 @@ class Canvas(Widget, XView, YView):
         __x1: float,
         __y1: float,
         *xy_pairs: float,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_polygon(
         self,
         __xy_pair_0: tuple[float, float],
         __xy_pair_1: tuple[float, float],
         *xy_pairs: tuple[float, float],
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_polygon(
         self,
@@ -1509,33 +1499,33 @@ class Canvas(Widget, XView, YView):
             | list[tuple[float, float]]
         ),
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         joinstyle: Literal["round", "bevel", "miter"] = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         smooth: bool = ...,
         splinesteps: float = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_rectangle(
         self,
@@ -1544,60 +1534,60 @@ class Canvas(Widget, XView, YView):
         __x1: float,
         __y1: float,
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_rectangle(
         self,
         __xy_pair_0: tuple[float, float],
         __xy_pair_1: tuple[float, float],
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_rectangle(
         self,
@@ -1610,71 +1600,73 @@ class Canvas(Widget, XView, YView):
             | list[tuple[float, float]]
         ),
         *,
-        activedash: str | list[int] | tuple[int, ...] = ...,
-        activefill: _Color = ...,
-        activeoutline: _Color = ...,
-        activeoutlinestipple: _Color = ...,
+        activedash: str | int | list[int] | tuple[int, ...] = ...,
+        activefill: str = ...,
+        activeoutline: str = ...,
+        activeoutlinestipple: str = ...,
         activestipple: str = ...,
         activewidth: _ScreenUnits = ...,
-        dash: str | list[int] | tuple[int, ...] = ...,
+        dash: str | int | list[int] | tuple[int, ...] = ...,
         dashoffset: _ScreenUnits = ...,
-        disableddash: str | list[int] | tuple[int, ...] = ...,
-        disabledfill: _Color = ...,
-        disabledoutline: _Color = ...,
-        disabledoutlinestipple: _Color = ...,
-        disabledstipple: _Bitmap = ...,
+        disableddash: str | int | list[int] | tuple[int, ...] = ...,
+        disabledfill: str = ...,
+        disabledoutline: str = ...,
+        disabledoutlinestipple: str = ...,
+        disabledstipple: str = ...,
         disabledwidth: _ScreenUnits = ...,
-        fill: _Color = ...,
+        fill: str = ...,
         offset: _ScreenUnits = ...,
-        outline: _Color = ...,
+        outline: str = ...,
         outlineoffset: _ScreenUnits = ...,
-        outlinestipple: _Bitmap = ...,
+        outlinestipple: str = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_text(
         self,
         __x: float,
         __y: float,
         *,
-        activefill: _Color = ...,
+        activefill: str = ...,
         activestipple: str = ...,
         anchor: _Anchor = ...,
-        disabledfill: _Color = ...,
-        disabledstipple: _Bitmap = ...,
-        fill: _Color = ...,
+        angle: float | str = ...,
+        disabledfill: str = ...,
+        disabledstipple: str = ...,
+        fill: str = ...,
         font: _FontDescription = ...,
         justify: Literal["left", "center", "right"] = ...,
         offset: _ScreenUnits = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         text: float | str = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_text(
         self,
         __coords: tuple[float, float] | list[int] | list[float],
         *,
-        activefill: _Color = ...,
+        activefill: str = ...,
         activestipple: str = ...,
         anchor: _Anchor = ...,
-        disabledfill: _Color = ...,
-        disabledstipple: _Bitmap = ...,
-        fill: _Color = ...,
+        angle: float | str = ...,
+        disabledfill: str = ...,
+        disabledstipple: str = ...,
+        fill: str = ...,
         font: _FontDescription = ...,
         justify: Literal["left", "center", "right"] = ...,
         offset: _ScreenUnits = ...,
         state: Literal["normal", "active", "disabled"] = ...,
-        stipple: _Bitmap = ...,
+        stipple: str = ...,
         tags: str | list[str] | tuple[str, ...] = ...,
         text: float | str = ...,
         width: _ScreenUnits = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_window(
         self,
@@ -1687,7 +1679,7 @@ class Canvas(Widget, XView, YView):
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
         window: Widget = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     @overload
     def create_window(
         self,
@@ -1699,39 +1691,39 @@ class Canvas(Widget, XView, YView):
         tags: str | list[str] | tuple[str, ...] = ...,
         width: _ScreenUnits = ...,
         window: Widget = ...,
-    ) -> _CanvasItemId: ...
+    ) -> int: ...
     def dchars(self, *args) -> None: ...
-    def delete(self, *tagsOrCanvasIds: str | _CanvasItemId) -> None: ...
+    def delete(self, *tagsOrCanvasIds: str | int) -> None: ...
     @overload
     def dtag(self, __tag: str, __tag_to_delete: str | None = ...) -> None: ...
     @overload
-    def dtag(self, __id: _CanvasItemId, __tag_to_delete: str) -> None: ...
+    def dtag(self, __id: int, __tag_to_delete: str) -> None: ...
     def focus(self, *args): ...
-    def gettags(self, __tagOrId: str | _CanvasItemId) -> tuple[str, ...]: ...
+    def gettags(self, __tagOrId: str | int) -> tuple[str, ...]: ...
     def icursor(self, *args) -> None: ...
     def index(self, *args): ...
     def insert(self, *args) -> None: ...
     def itemcget(self, tagOrId, option): ...
     # itemconfigure kwargs depend on item type, which is not known when type checking
     def itemconfigure(
-        self, tagOrId: str | _CanvasItemId, cnf: dict[str, Any] | None = None, **kw: Any
+        self, tagOrId: str | int, cnf: dict[str, Any] | None = None, **kw: Any
     ) -> dict[str, tuple[str, str, str, str, str]] | None: ...
     itemconfig = itemconfigure
     def move(self, *args) -> None: ...
     if sys.version_info >= (3, 8):
-        def moveto(self, tagOrId: str | _CanvasItemId, x: Literal[""] | float = "", y: Literal[""] | float = "") -> None: ...
+        def moveto(self, tagOrId: str | int, x: Literal[""] | float = "", y: Literal[""] | float = "") -> None: ...
 
-    def postscript(self, cnf=..., **kw): ...
+    def postscript(self, cnf={}, **kw): ...
     # tkinter does:
     #    lower = tag_lower
     #    lift = tkraise = tag_raise
     #
     # But mypy doesn't like aliasing here (maybe because Misc defines the same names)
-    def tag_lower(self, __first: str | _CanvasItemId, __second: str | _CanvasItemId | None = ...) -> None: ...
-    def lower(self, __first: str | _CanvasItemId, __second: str | _CanvasItemId | None = ...) -> None: ...  # type: ignore[override]
-    def tag_raise(self, __first: str | _CanvasItemId, __second: str | _CanvasItemId | None = ...) -> None: ...
-    def tkraise(self, __first: str | _CanvasItemId, __second: str | _CanvasItemId | None = ...) -> None: ...  # type: ignore[override]
-    def lift(self, __first: str | _CanvasItemId, __second: str | _CanvasItemId | None = ...) -> None: ...  # type: ignore[override]
+    def tag_lower(self, __first: str | int, __second: str | int | None = ...) -> None: ...
+    def lower(self, __first: str | int, __second: str | int | None = ...) -> None: ...  # type: ignore[override]
+    def tag_raise(self, __first: str | int, __second: str | int | None = ...) -> None: ...
+    def tkraise(self, __first: str | int, __second: str | int | None = ...) -> None: ...  # type: ignore[override]
+    def lift(self, __first: str | int, __second: str | int | None = ...) -> None: ...  # type: ignore[override]
     def scale(self, *args) -> None: ...
     def scan_mark(self, x, y) -> None: ...
     def scan_dragto(self, x, y, gain: int = 10) -> None: ...
@@ -1746,27 +1738,27 @@ class Checkbutton(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -1789,7 +1781,7 @@ class Checkbutton(Widget):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -1807,25 +1799,25 @@ class Checkbutton(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -1837,7 +1829,7 @@ class Checkbutton(Widget):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -1865,24 +1857,24 @@ class Entry(Widget, XView):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledbackground: _Color = ...,
-        disabledforeground: _Color = ...,
+        disabledbackground: str = ...,
+        disabledforeground: str = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        foreground: str = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -1891,11 +1883,11 @@ class Entry(Widget, XView):
         invcmd: _EntryValidateCommand = ...,  # same as invalidcommand
         justify: Literal["left", "center", "right"] = ...,
         name: str = ...,
-        readonlybackground: _Color = ...,
+        readonlybackground: str = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         show: str = ...,
         state: Literal["normal", "disabled", "readonly"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -1911,22 +1903,22 @@ class Entry(Widget, XView):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledbackground: _Color = ...,
-        disabledforeground: _Color = ...,
+        disabledbackground: str = ...,
+        disabledforeground: str = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        foreground: str = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -1934,11 +1926,11 @@ class Entry(Widget, XView):
         invalidcommand: _EntryValidateCommand = ...,
         invcmd: _EntryValidateCommand = ...,
         justify: Literal["left", "center", "right"] = ...,
-        readonlybackground: _Color = ...,
+        readonlybackground: str = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         show: str = ...,
         state: Literal["normal", "disabled", "readonly"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -1976,11 +1968,11 @@ class Frame(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         class_: str = ...,  # can't be changed with configure()
@@ -1988,8 +1980,8 @@ class Frame(Widget):
         container: bool = ...,  # can't be changed with configure()
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         name: str = ...,
         padx: _ScreenUnits = ...,
@@ -2004,15 +1996,15 @@ class Frame(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
@@ -2028,26 +2020,26 @@ class Label(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         justify: Literal["left", "center", "right"] = ...,
@@ -2068,24 +2060,24 @@ class Label(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         justify: Literal["left", "center", "right"] = ...,
@@ -2108,23 +2100,23 @@ class Listbox(Widget, XView, YView):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         activestyle: Literal["dotbox", "none", "underline"] = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
+        disabledforeground: str = ...,
         exportselection: int = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: int = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         justify: Literal["left", "center", "right"] = ...,
         # There's no tkinter.ListVar, but seems like bare tkinter.Variable
@@ -2139,9 +2131,9 @@ class Listbox(Widget, XView, YView):
         listvariable: Variable = ...,
         name: str = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         # from listbox man page: "The value of the [selectmode] option may be
         # arbitrary, but the default bindings expect it to be ..."
         #
@@ -2161,27 +2153,27 @@ class Listbox(Widget, XView, YView):
         cnf: dict[str, Any] | None = None,
         *,
         activestyle: Literal["dotbox", "none", "underline"] = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
+        disabledforeground: str = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: int = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         justify: Literal["left", "center", "right"] = ...,
         listvariable: Variable = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         selectmode: str = ...,
         setgrid: bool = ...,
         state: Literal["normal", "disabled"] = ...,
@@ -2221,25 +2213,25 @@ class Menu(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
+        activebackground: str = ...,
         activeborderwidth: _ScreenUnits = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
+        activeforeground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         name: str = ...,
         postcommand: Callable[[], object] | str = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         takefocus: _TakeFocusValue = ...,
         tearoff: int = ...,
         # I guess tearoffcommand arguments are supposed to be widget objects,
@@ -2254,22 +2246,22 @@ class Menu(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
+        activebackground: str = ...,
         activeborderwidth: _ScreenUnits = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
+        activeforeground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         postcommand: Callable[[], object] | str = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         takefocus: _TakeFocusValue = ...,
         tearoff: bool = ...,
         tearoffcommand: Callable[[str, str], object] | str = ...,
@@ -2281,22 +2273,22 @@ class Menu(Widget):
     config = configure
     def tk_popup(self, x: int, y: int, entry: str | int = "") -> None: ...
     def activate(self, index: str | int) -> None: ...
-    def add(self, itemType, cnf=..., **kw): ...  # docstring says "Internal function."
-    def insert(self, index, itemType, cnf=..., **kw): ...  # docstring says "Internal function."
+    def add(self, itemType, cnf={}, **kw): ...  # docstring says "Internal function."
+    def insert(self, index, itemType, cnf={}, **kw): ...  # docstring says "Internal function."
     def add_cascade(
         self,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         label: str = ...,
@@ -2306,25 +2298,25 @@ class Menu(Widget):
     ) -> None: ...
     def add_checkbutton(
         self,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
         label: str = ...,
         offvalue: Any = ...,
         onvalue: Any = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         underline: int = ...,
@@ -2332,18 +2324,18 @@ class Menu(Widget):
     ) -> None: ...
     def add_command(
         self,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         label: str = ...,
@@ -2352,45 +2344,45 @@ class Menu(Widget):
     ) -> None: ...
     def add_radiobutton(
         self,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
         label: str = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         underline: int = ...,
         value: Any = ...,
         variable: Variable = ...,
     ) -> None: ...
-    def add_separator(self, cnf: dict[str, Any] | None = ..., *, background: _Color = ...) -> None: ...
+    def add_separator(self, cnf: dict[str, Any] | None = {}, *, background: str = ...) -> None: ...
     def insert_cascade(
         self,
         index: str | int,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         label: str = ...,
@@ -2401,25 +2393,25 @@ class Menu(Widget):
     def insert_checkbutton(
         self,
         index: str | int,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
         label: str = ...,
         offvalue: Any = ...,
         onvalue: Any = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         underline: int = ...,
@@ -2428,18 +2420,18 @@ class Menu(Widget):
     def insert_command(
         self,
         index: str | int,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         label: str = ...,
@@ -2449,30 +2441,30 @@ class Menu(Widget):
     def insert_radiobutton(
         self,
         index: str | int,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         accelerator: str = ...,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
-        background: _Color = ...,
-        bitmap: _Bitmap = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
+        background: str = ...,
+        bitmap: str = ...,
         columnbreak: int = ...,
         command: Callable[[], object] | str = ...,
         compound: _Compound = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         hidemargin: bool = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
         label: str = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         underline: int = ...,
         value: Any = ...,
         variable: Variable = ...,
     ) -> None: ...
-    def insert_separator(self, index: str | int, cnf: dict[str, Any] | None = ..., *, background: _Color = ...) -> None: ...
+    def insert_separator(self, index: str | int, cnf: dict[str, Any] | None = {}, *, background: str = ...) -> None: ...
     def delete(self, index1: str | int, index2: str | int | None = None) -> None: ...
     def entrycget(self, index: str | int, option: str) -> Any: ...
     def entryconfigure(
@@ -2491,27 +2483,27 @@ class Menubutton(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
         direction: Literal["above", "below", "left", "right", "flush"] = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -2534,25 +2526,25 @@ class Menubutton(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
         direction: Literal["above", "below", "left", "right", "flush"] = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -2577,21 +2569,21 @@ class Message(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         anchor: _Anchor = ...,
         aspect: int = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        foreground: str = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         justify: Literal["left", "center", "right"] = ...,
         name: str = ...,
@@ -2611,17 +2603,17 @@ class Message(Widget):
         *,
         anchor: _Anchor = ...,
         aspect: int = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        foreground: str = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         justify: Literal["left", "center", "right"] = ...,
         padx: _ScreenUnits = ...,
@@ -2640,27 +2632,27 @@ class Radiobutton(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -2671,7 +2663,7 @@ class Radiobutton(Widget):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -2690,25 +2682,25 @@ class Radiobutton(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        activeforeground: _Color = ...,
+        activebackground: str = ...,
+        activeforeground: str = ...,
         anchor: _Anchor = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
-        bitmap: _Bitmap = ...,
+        bg: str = ...,
+        bitmap: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: _ButtonCommand = ...,
         compound: _Compound = ...,
         cursor: _Cursor = ...,
-        disabledforeground: _Color = ...,
-        fg: _Color = ...,
+        disabledforeground: str = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         image: _ImageSpec = ...,
         indicatoron: bool = ...,
@@ -2718,7 +2710,7 @@ class Radiobutton(Widget):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectcolor: _Color = ...,
+        selectcolor: str = ...,
         selectimage: _ImageSpec = ...,
         state: Literal["normal", "active", "disabled"] = ...,
         takefocus: _TakeFocusValue = ...,
@@ -2744,12 +2736,12 @@ class Scale(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        background: _Color = ...,
+        activebackground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         bigincrement: float = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
@@ -2757,12 +2749,12 @@ class Scale(Widget):
         command: str | Callable[[str], object] = ...,
         cursor: _Cursor = ...,
         digits: int = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         from_: float = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         label: str = ...,
         length: _ScreenUnits = ...,
@@ -2779,7 +2771,7 @@ class Scale(Widget):
         takefocus: _TakeFocusValue = ...,
         tickinterval: float = ...,
         to: float = ...,
-        troughcolor: _Color = ...,
+        troughcolor: str = ...,
         variable: IntVar | DoubleVar = ...,
         width: _ScreenUnits = ...,
     ) -> None: ...
@@ -2788,22 +2780,22 @@ class Scale(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        background: _Color = ...,
+        activebackground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         bigincrement: float = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: str | Callable[[str], object] = ...,
         cursor: _Cursor = ...,
         digits: int = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         from_: float = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         label: str = ...,
         length: _ScreenUnits = ...,
@@ -2819,7 +2811,7 @@ class Scale(Widget):
         takefocus: _TakeFocusValue = ...,
         tickinterval: float = ...,
         to: float = ...,
-        troughcolor: _Color = ...,
+        troughcolor: str = ...,
         variable: IntVar | DoubleVar = ...,
         width: _ScreenUnits = ...,
     ) -> dict[str, tuple[str, str, str, Any, Any]] | None: ...
@@ -2835,13 +2827,13 @@ class Scrollbar(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
+        activebackground: str = ...,
         activerelief: _Relief = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         # There are many ways how the command may get called. Search for
@@ -2851,8 +2843,8 @@ class Scrollbar(Widget):
         command: Callable[..., tuple[float, float] | None] | str = ...,
         cursor: _Cursor = ...,
         elementborderwidth: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         jump: bool = ...,
         name: str = ...,
@@ -2861,7 +2853,7 @@ class Scrollbar(Widget):
         repeatdelay: int = ...,
         repeatinterval: int = ...,
         takefocus: _TakeFocusValue = ...,
-        troughcolor: _Color = ...,
+        troughcolor: str = ...,
         width: _ScreenUnits = ...,
     ) -> None: ...
     @overload
@@ -2869,18 +2861,18 @@ class Scrollbar(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
+        activebackground: str = ...,
         activerelief: _Relief = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         command: Callable[..., tuple[float, float] | None] | str = ...,
         cursor: _Cursor = ...,
         elementborderwidth: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         jump: bool = ...,
         orient: Literal["horizontal", "vertical"] = ...,
@@ -2888,7 +2880,7 @@ class Scrollbar(Widget):
         repeatdelay: int = ...,
         repeatinterval: int = ...,
         takefocus: _TakeFocusValue = ...,
-        troughcolor: _Color = ...,
+        troughcolor: str = ...,
         width: _ScreenUnits = ...,
     ) -> dict[str, tuple[str, str, str, Any, Any]] | None: ...
     @overload
@@ -2899,7 +2891,7 @@ class Scrollbar(Widget):
     def fraction(self, x: int, y: int) -> float: ...
     def identify(self, x: int, y: int) -> Literal["arrow1", "arrow2", "slider", "trough1", "trough2", ""]: ...
     def get(self) -> tuple[float, float, float, float] | tuple[float, float]: ...
-    def set(self, first: float, last: float) -> None: ...
+    def set(self, first: float | str, last: float | str) -> None: ...
 
 _TextIndex: TypeAlias = _tkinter.Tcl_Obj | str | float | Misc
 
@@ -2907,30 +2899,30 @@ class Text(Widget, XView, YView):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
         autoseparators: bool = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         blockcursor: bool = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
         endline: int | Literal[""] = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         # width is always int, but height is allowed to be ScreenUnits.
         # This doesn't make any sense to me, and this isn't documented.
         # The docs seem to say that both should be integers.
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        inactiveselectbackground: _Color = ...,
-        insertbackground: _Color = ...,
+        inactiveselectbackground: str = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -2941,9 +2933,9 @@ class Text(Widget, XView, YView):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         setgrid: bool = ...,
         spacing1: _ScreenUnits = ...,
         spacing2: _ScreenUnits = ...,
@@ -2966,24 +2958,24 @@ class Text(Widget, XView, YView):
         cnf: dict[str, Any] | None = None,
         *,
         autoseparators: bool = ...,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         blockcursor: bool = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
         endline: int | Literal[""] = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
-        inactiveselectbackground: _Color = ...,
-        insertbackground: _Color = ...,
+        inactiveselectbackground: str = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -2993,9 +2985,9 @@ class Text(Widget, XView, YView):
         padx: _ScreenUnits = ...,
         pady: _ScreenUnits = ...,
         relief: _Relief = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         setgrid: bool = ...,
         spacing1: _ScreenUnits = ...,
         spacing2: _ScreenUnits = ...,
@@ -3075,11 +3067,40 @@ class Text(Widget, XView, YView):
     def edit_separator(self) -> None: ...  # actually returns empty string
     def edit_undo(self) -> None: ...  # actually returns empty string
     def get(self, index1: _TextIndex, index2: _TextIndex | None = None) -> str: ...
-    # TODO: image_* methods
-    def image_cget(self, index, option): ...
-    def image_configure(self, index, cnf: Incomplete | None = None, **kw): ...
-    def image_create(self, index, cnf=..., **kw): ...
-    def image_names(self): ...
+    @overload
+    def image_cget(self, index: _TextIndex, option: Literal["image", "name"]) -> str: ...
+    @overload
+    def image_cget(self, index: _TextIndex, option: Literal["padx", "pady"]) -> int: ...
+    @overload
+    def image_cget(self, index: _TextIndex, option: Literal["align"]) -> Literal["baseline", "bottom", "center", "top"]: ...
+    @overload
+    def image_cget(self, index: _TextIndex, option: str) -> Any: ...
+    @overload
+    def image_configure(self, index: _TextIndex, cnf: str) -> tuple[str, str, str, str, str | int]: ...
+    @overload
+    def image_configure(
+        self,
+        index: _TextIndex,
+        cnf: dict[str, Any] | None = {},
+        *,
+        align: Literal["baseline", "bottom", "center", "top"] = ...,
+        image: _ImageSpec = ...,
+        name: str = ...,
+        padx: _ScreenUnits = ...,
+        pady: _ScreenUnits = ...,
+    ) -> dict[str, tuple[str, str, str, str, str | int]] | None: ...
+    def image_create(
+        self,
+        index: _TextIndex,
+        cnf: dict[str, Any] | None = {},
+        *,
+        align: Literal["baseline", "bottom", "center", "top"] = ...,
+        image: _ImageSpec = ...,
+        name: str = ...,
+        padx: _ScreenUnits = ...,
+        pady: _ScreenUnits = ...,
+    ) -> str: ...
+    def image_names(self) -> tuple[str, ...]: ...
     def index(self, index: _TextIndex) -> str: ...
     def insert(self, index: _TextIndex, chars: str, *args: str | list[str] | tuple[str, ...]) -> None: ...
     @overload
@@ -3092,7 +3113,7 @@ class Text(Widget, XView, YView):
     def mark_next(self, index: _TextIndex) -> str | None: ...
     def mark_previous(self, index: _TextIndex) -> str | None: ...
     # **kw of peer_create is same as the kwargs of Text.__init__
-    def peer_create(self, newPathName: str | Text, cnf: dict[str, Any] = ..., **kw) -> None: ...
+    def peer_create(self, newPathName: str | Text, cnf: dict[str, Any] = {}, **kw) -> None: ...
     def peer_names(self) -> tuple[_tkinter.Tcl_Obj, ...]: ...
     def replace(self, index1: _TextIndex, index2: _TextIndex, chars: str, *args: str | list[str] | tuple[str, ...]) -> None: ...
     def scan_mark(self, x: int, y: int) -> None: ...
@@ -3132,33 +3153,33 @@ class Text(Widget, XView, YView):
         tagName: str,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
-        bgstipple: _Bitmap = ...,
+        background: str = ...,
+        bgstipple: str = ...,
         borderwidth: _ScreenUnits = ...,
         border: _ScreenUnits = ...,  # alias for borderwidth
         elide: bool = ...,
-        fgstipple: _Bitmap = ...,
+        fgstipple: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         justify: Literal["left", "right", "center"] = ...,
         lmargin1: _ScreenUnits = ...,
         lmargin2: _ScreenUnits = ...,
-        lmargincolor: _Color = ...,
+        lmargincolor: str = ...,
         offset: _ScreenUnits = ...,
         overstrike: bool = ...,
-        overstrikefg: _Color = ...,
+        overstrikefg: str = ...,
         relief: _Relief = ...,
         rmargin: _ScreenUnits = ...,
-        rmargincolor: _Color = ...,
-        selectbackground: _Color = ...,
-        selectforeground: _Color = ...,
+        rmargincolor: str = ...,
+        selectbackground: str = ...,
+        selectforeground: str = ...,
         spacing1: _ScreenUnits = ...,
         spacing2: _ScreenUnits = ...,
         spacing3: _ScreenUnits = ...,
         tabs: Any = ...,  # the exact type is kind of complicated, see manual page
         tabstyle: Literal["tabular", "wordprocessor"] = ...,
         underline: bool = ...,
-        underlinefg: _Color = ...,
+        underlinefg: str = ...,
         wrap: Literal["none", "char", "word"] = ...,  # be careful with "none" vs None
     ) -> dict[str, tuple[str, str, str, Any, Any]] | None: ...
     @overload
@@ -3177,12 +3198,45 @@ class Text(Widget, XView, YView):
     def tag_ranges(self, tagName: str) -> tuple[_tkinter.Tcl_Obj, ...]: ...
     # tag_remove and tag_delete are different
     def tag_remove(self, tagName: str, index1: _TextIndex, index2: _TextIndex | None = None) -> None: ...
-    # TODO: window_* methods
-    def window_cget(self, index, option): ...
-    def window_configure(self, index, cnf: Incomplete | None = None, **kw): ...
+    @overload
+    def window_cget(self, index: _TextIndex, option: Literal["padx", "pady"]) -> int: ...
+    @overload
+    def window_cget(self, index: _TextIndex, option: Literal["stretch"]) -> bool: ...  # actually returns Literal[0, 1]
+    @overload
+    def window_cget(self, index: _TextIndex, option: Literal["align"]) -> Literal["baseline", "bottom", "center", "top"]: ...
+    @overload  # window is set to a widget, but read as the string name.
+    def window_cget(self, index: _TextIndex, option: Literal["create", "window"]) -> str: ...
+    @overload
+    def window_cget(self, index: _TextIndex, option: str) -> Any: ...
+    @overload
+    def window_configure(self, index: _TextIndex, cnf: str) -> tuple[str, str, str, str, str | int]: ...
+    @overload
+    def window_configure(
+        self,
+        index: _TextIndex,
+        cnf: dict[str, Any] | None = None,
+        *,
+        align: Literal["baseline", "bottom", "center", "top"] = ...,
+        create: str = ...,
+        padx: _ScreenUnits = ...,
+        pady: _ScreenUnits = ...,
+        stretch: bool | Literal[0, 1] = ...,
+        window: Misc | str = ...,
+    ) -> dict[str, tuple[str, str, str, str, str | int]] | None: ...
     window_config = window_configure
-    def window_create(self, index, cnf=..., **kw) -> None: ...
-    def window_names(self): ...
+    def window_create(
+        self,
+        index: _TextIndex,
+        cnf: dict[str, Any] | None = {},
+        *,
+        align: Literal["baseline", "bottom", "center", "top"] = ...,
+        create: str = ...,
+        padx: _ScreenUnits = ...,
+        pady: _ScreenUnits = ...,
+        stretch: bool | Literal[0, 1] = ...,
+        window: Misc | str = ...,
+    ) -> None: ...
+    def window_names(self) -> tuple[str, ...]: ...
     def yview_pickplace(self, *what): ...  # deprecated
 
 class _setit:
@@ -3222,7 +3276,7 @@ class Image(_Image):
     name: Incomplete
     tk: _tkinter.TkappType
     def __init__(
-        self, imgtype, name: Incomplete | None = None, cnf=..., master: Misc | _tkinter.TkappType | None = None, **kw
+        self, imgtype, name: Incomplete | None = None, cnf={}, master: Misc | _tkinter.TkappType | None = None, **kw
     ) -> None: ...
     def __del__(self) -> None: ...
     def __setitem__(self, key, value) -> None: ...
@@ -3238,7 +3292,7 @@ class PhotoImage(Image, _PhotoImageLike):
     def __init__(
         self,
         name: str | None = None,
-        cnf: dict[str, Any] = ...,
+        cnf: dict[str, Any] = {},
         master: Misc | _tkinter.TkappType | None = None,
         *,
         data: str | bytes = ...,  # not same as data argument of put()
@@ -3273,11 +3327,11 @@ class PhotoImage(Image, _PhotoImageLike):
         data: (
             str
             | list[str]
-            | list[list[_Color]]
-            | list[tuple[_Color, ...]]
+            | list[list[str]]
+            | list[tuple[str, ...]]
             | tuple[str, ...]
-            | tuple[list[_Color], ...]
-            | tuple[tuple[_Color, ...], ...]
+            | tuple[list[str], ...]
+            | tuple[tuple[str, ...], ...]
         ),
         to: tuple[int, int] | None = None,
     ) -> None: ...
@@ -3291,13 +3345,13 @@ class BitmapImage(Image, _BitmapImageLike):
     def __init__(
         self,
         name: Incomplete | None = None,
-        cnf: dict[str, Any] = ...,
+        cnf: dict[str, Any] = {},
         master: Misc | _tkinter.TkappType | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         data: str | bytes = ...,
         file: StrOrBytesPath = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         maskdata: str = ...,
         maskfile: StrOrBytesPath = ...,
     ) -> None: ...
@@ -3309,34 +3363,34 @@ class Spinbox(Widget, XView):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        activebackground: _Color = ...,
-        background: _Color = ...,
+        activebackground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
-        buttonbackground: _Color = ...,
+        buttonbackground: str = ...,
         buttoncursor: _Cursor = ...,
         buttondownrelief: _Relief = ...,
         buttonuprelief: _Relief = ...,
         # percent substitutions don't seem to be supported, it's similar to Entry's validation stuff
         command: Callable[[], object] | str | list[str] | tuple[str, ...] = ...,
         cursor: _Cursor = ...,
-        disabledbackground: _Color = ...,
-        disabledforeground: _Color = ...,
+        disabledbackground: str = ...,
+        disabledforeground: str = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         format: str = ...,
         from_: float = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         increment: float = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -3345,13 +3399,13 @@ class Spinbox(Widget, XView):
         invcmd: _EntryValidateCommand = ...,
         justify: Literal["left", "center", "right"] = ...,
         name: str = ...,
-        readonlybackground: _Color = ...,
+        readonlybackground: str = ...,
         relief: _Relief = ...,
         repeatdelay: int = ...,
         repeatinterval: int = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         state: Literal["normal", "disabled", "readonly"] = ...,
         takefocus: _TakeFocusValue = ...,
         textvariable: Variable = ...,
@@ -3369,31 +3423,31 @@ class Spinbox(Widget, XView):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        activebackground: _Color = ...,
-        background: _Color = ...,
+        activebackground: str = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
-        buttonbackground: _Color = ...,
+        buttonbackground: str = ...,
         buttoncursor: _Cursor = ...,
         buttondownrelief: _Relief = ...,
         buttonuprelief: _Relief = ...,
         command: Callable[[], object] | str | list[str] | tuple[str, ...] = ...,
         cursor: _Cursor = ...,
-        disabledbackground: _Color = ...,
-        disabledforeground: _Color = ...,
+        disabledbackground: str = ...,
+        disabledforeground: str = ...,
         exportselection: bool = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         format: str = ...,
         from_: float = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         increment: float = ...,
-        insertbackground: _Color = ...,
+        insertbackground: str = ...,
         insertborderwidth: _ScreenUnits = ...,
         insertofftime: int = ...,
         insertontime: int = ...,
@@ -3401,13 +3455,13 @@ class Spinbox(Widget, XView):
         invalidcommand: _EntryValidateCommand = ...,
         invcmd: _EntryValidateCommand = ...,
         justify: Literal["left", "center", "right"] = ...,
-        readonlybackground: _Color = ...,
+        readonlybackground: str = ...,
         relief: _Relief = ...,
         repeatdelay: int = ...,
         repeatinterval: int = ...,
-        selectbackground: _Color = ...,
+        selectbackground: str = ...,
         selectborderwidth: _ScreenUnits = ...,
-        selectforeground: _Color = ...,
+        selectforeground: str = ...,
         state: Literal["normal", "disabled", "readonly"] = ...,
         takefocus: _TakeFocusValue = ...,
         textvariable: Variable = ...,
@@ -3449,23 +3503,23 @@ class LabelFrame(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         class_: str = ...,  # can't be changed with configure()
         colormap: Literal["new", ""] | Misc = ...,  # can't be changed with configure()
         container: bool = ...,  # undocumented, can't be changed with configure()
         cursor: _Cursor = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         # 'ne' and 'en' are valid labelanchors, but only 'ne' is a valid _Anchor.
         labelanchor: Literal["nw", "n", "ne", "en", "e", "es", "se", "s", "sw", "ws", "w", "wn"] = ...,
@@ -3484,18 +3538,18 @@ class LabelFrame(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
-        fg: _Color = ...,
+        fg: str = ...,
         font: _FontDescription = ...,
-        foreground: _Color = ...,
+        foreground: str = ...,
         height: _ScreenUnits = ...,
-        highlightbackground: _Color = ...,
-        highlightcolor: _Color = ...,
+        highlightbackground: str = ...,
+        highlightcolor: str = ...,
         highlightthickness: _ScreenUnits = ...,
         labelanchor: Literal["nw", "n", "ne", "en", "e", "es", "se", "s", "sw", "ws", "w", "wn"] = ...,
         labelwidget: Misc = ...,
@@ -3514,11 +3568,11 @@ class PanedWindow(Widget):
     def __init__(
         self,
         master: Misc | None = None,
-        cnf: dict[str, Any] | None = ...,
+        cnf: dict[str, Any] | None = {},
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
@@ -3528,7 +3582,7 @@ class PanedWindow(Widget):
         name: str = ...,
         opaqueresize: bool = ...,
         orient: Literal["horizontal", "vertical"] = ...,
-        proxybackground: _Color = ...,
+        proxybackground: str = ...,
         proxyborderwidth: _ScreenUnits = ...,
         proxyrelief: _Relief = ...,
         relief: _Relief = ...,
@@ -3544,9 +3598,9 @@ class PanedWindow(Widget):
         self,
         cnf: dict[str, Any] | None = None,
         *,
-        background: _Color = ...,
+        background: str = ...,
         bd: _ScreenUnits = ...,
-        bg: _Color = ...,
+        bg: str = ...,
         border: _ScreenUnits = ...,
         borderwidth: _ScreenUnits = ...,
         cursor: _Cursor = ...,
@@ -3555,7 +3609,7 @@ class PanedWindow(Widget):
         height: _ScreenUnits = ...,
         opaqueresize: bool = ...,
         orient: Literal["horizontal", "vertical"] = ...,
-        proxybackground: _Color = ...,
+        proxybackground: str = ...,
         proxyborderwidth: _ScreenUnits = ...,
         proxyrelief: _Relief = ...,
         relief: _Relief = ...,

@@ -5,7 +5,7 @@ from typing_extensions import Final
 
 from .annotations import AnnotationDict
 from .encryption import StandardSecurityHandler
-from .syntax import Name, PDFArray, PDFContentStream, PDFObject
+from .syntax import Name, PDFArray, PDFContentStream, PDFObject, PDFString
 
 LOGGER: Logger
 ZOOM_CONFIGS: Final[dict[str, tuple[str, ...]]]
@@ -31,27 +31,18 @@ class PDFFont(PDFObject):
     font_descriptor: Incomplete | None
     c_i_d_to_g_i_d_map: Incomplete | None
     def __init__(
-        self, subtype: str, base_font: str, encoding: str | None = ..., d_w: Incomplete | None = ..., w: Incomplete | None = ...
+        self,
+        subtype: str,
+        base_font: str,
+        encoding: str | None = None,
+        d_w: Incomplete | None = None,
+        w: Incomplete | None = None,
     ) -> None: ...
 
-class PDFFontDescriptor(PDFObject):
-    type: Name
-    ascent: Incomplete
-    descent: Incomplete
-    cap_height: Incomplete
-    flags: Incomplete
-    font_b_box: Incomplete
-    italic_angle: Incomplete
-    stem_v: Incomplete
-    missing_width: Incomplete
-    font_name: Incomplete | None
-    def __init__(self, ascent, descent, cap_height, flags, font_b_box, italic_angle, stem_v, missing_width) -> None: ...
-
 class CIDSystemInfo(PDFObject):
-    registry: str
-    ordering: str
-    supplement: Incomplete
-    def __init__(self, registry: str | None, ordering: str | None, supplement) -> None: ...
+    registry: PDFString
+    ordering: PDFString
+    supplement: int
 
 class PDFInfo(PDFObject):
     title: str | None
@@ -94,10 +85,10 @@ class PDFCatalog(PDFObject):
     struct_tree_root: Incomplete | None
     def __init__(
         self,
-        lang: str | None = ...,
-        page_layout: Incomplete | None = ...,
-        page_mode: Incomplete | None = ...,
-        viewer_preferences: Incomplete | None = ...,
+        lang: str | None = None,
+        page_layout: Incomplete | None = None,
+        page_mode: Incomplete | None = None,
+        viewer_preferences: Incomplete | None = None,
     ) -> None: ...
 
 class PDFResources(PDFObject):
@@ -135,10 +126,15 @@ class PDFXObject(PDFContentStream):
         height,
         color_space,
         bits_per_component,
-        img_filter: str | None = ...,
-        decode: Incomplete | None = ...,
-        decode_parms: Incomplete | None = ...,
+        img_filter: str | None = None,
+        decode: Incomplete | None = None,
+        decode_parms: Incomplete | None = None,
     ) -> None: ...
+
+class PDFICCPObject(PDFContentStream):
+    n: Incomplete
+    alternate: Name
+    def __init__(self, contents: bytes, n, alternate: str) -> None: ...
 
 class PDFPage(PDFObject):
     type: Name

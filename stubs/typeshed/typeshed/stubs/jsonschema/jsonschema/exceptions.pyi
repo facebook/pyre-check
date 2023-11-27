@@ -1,7 +1,6 @@
 from _typeshed import Incomplete, SupportsRichComparison
 from collections import deque
 from collections.abc import Callable, Container, Iterable, Sequence
-from typing import Any
 from typing_extensions import Self, TypeAlias
 
 from jsonschema import _utils, protocols
@@ -21,22 +20,22 @@ class _Error(Exception):
     context: list[ValidationError] | None
     cause: Exception | None
     validator: protocols.Validator | None
-    validator_value: Any
-    instance: Any
-    schema: Any
+    validator_value: Incomplete
+    instance: Incomplete
+    schema: Incomplete
     parent: _Error | None
     def __init__(
         self,
         message: str,
         validator: _utils.Unset | None | protocols.Validator = ...,
-        path: Sequence[str | int] = ...,
-        cause: Incomplete | None = ...,
-        context: Sequence[ValidationError] = ...,
+        path: Sequence[str | int] = (),
+        cause: Incomplete | None = None,
+        context: Sequence[ValidationError] = (),
         validator_value=...,
-        instance: Any = ...,
-        schema: Any = ...,
-        schema_path: Sequence[str | int] = ...,
-        parent: _Error | None = ...,
+        instance: Incomplete = ...,
+        schema: Incomplete = ...,
+        schema_path: Sequence[str | int] = (),
+        parent: _Error | None = None,
         type_checker: _utils.Unset | TypeChecker = ...,
     ) -> None: ...
     @classmethod
@@ -49,7 +48,7 @@ class _Error(Exception):
     def json_path(self) -> str: ...
     # TODO: this type could be made more precise using TypedDict to
     # enumerate the types of the members
-    def _contents(self) -> dict[str, Any]: ...
+    def _contents(self) -> dict[str, Incomplete]: ...
 
 class ValidationError(_Error): ...
 class SchemaError(_Error): ...
@@ -58,23 +57,23 @@ class RefResolutionError(Exception):
     def __init__(self, cause: str) -> None: ...
 
 class UndefinedTypeCheck(Exception):
-    type: Any
+    type: Incomplete
     def __init__(self, type) -> None: ...
 
 class UnknownType(Exception):
-    type: Any
-    instance: Any
-    schema: Any
+    type: Incomplete
+    instance: Incomplete
+    schema: Incomplete
     def __init__(self, type, instance, schema) -> None: ...
 
 class FormatError(Exception):
-    message: Any
-    cause: Any
-    def __init__(self, message, cause: Incomplete | None = ...) -> None: ...
+    message: Incomplete
+    cause: Incomplete
+    def __init__(self, message, cause: Incomplete | None = None) -> None: ...
 
 class ErrorTree:
-    errors: Any
-    def __init__(self, errors=...) -> None: ...
+    errors: Incomplete
+    def __init__(self, errors=()) -> None: ...
     def __contains__(self, index): ...
     def __getitem__(self, index): ...
     def __setitem__(self, index, value) -> None: ...

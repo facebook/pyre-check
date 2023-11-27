@@ -6,14 +6,16 @@ class ReplicationCreationRequest:
     discriminator: Incomplete
     def __init__(
         self,
-        name: Incomplete | None = ...,
-        description: Incomplete | None = ...,
-        org_id: Incomplete | None = ...,
-        remote_id: Incomplete | None = ...,
-        local_bucket_id: Incomplete | None = ...,
-        remote_bucket_id: Incomplete | None = ...,
-        max_queue_size_bytes: int = ...,
-        drop_non_retryable_data: bool = ...,
+        name: Incomplete | None = None,
+        description: Incomplete | None = None,
+        org_id: Incomplete | None = None,
+        remote_id: Incomplete | None = None,
+        local_bucket_id: Incomplete | None = None,
+        remote_bucket_id: Incomplete | None = None,
+        remote_bucket_name: str | None = None,
+        max_queue_size_bytes: int = 67108860,
+        drop_non_retryable_data: bool = False,
+        max_age_seconds: int = 604800,
     ) -> None: ...
     @property
     def name(self): ...
@@ -39,6 +41,7 @@ class ReplicationCreationRequest:
     def remote_bucket_id(self): ...
     @remote_bucket_id.setter
     def remote_bucket_id(self, remote_bucket_id) -> None: ...
+    remote_bucket_name: str | None
     @property
     def max_queue_size_bytes(self): ...
     @max_queue_size_bytes.setter
@@ -47,6 +50,7 @@ class ReplicationCreationRequest:
     def drop_non_retryable_data(self): ...
     @drop_non_retryable_data.setter
     def drop_non_retryable_data(self, drop_non_retryable_data) -> None: ...
+    max_age_seconds: int
     def to_dict(self): ...
     def to_str(self): ...
     def __eq__(self, other): ...

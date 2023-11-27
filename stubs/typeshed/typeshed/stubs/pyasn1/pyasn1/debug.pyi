@@ -1,16 +1,16 @@
 import logging
 from typing import TextIO
 
+__all__ = ["Debug", "setLogger", "hexdump"]
+
 class Printer:
     def __init__(
         self,
-        logger: logging.Logger | None = ...,
-        handler: logging.StreamHandler[TextIO] | None = ...,
-        formatter: logging.Formatter | None = ...,
+        logger: logging.Logger | None = None,
+        handler: logging.StreamHandler[TextIO] | None = None,
+        formatter: logging.Formatter | None = None,
     ) -> None: ...
     def __call__(self, msg) -> None: ...
-
-NullHandler = logging.NullHandler
 
 class Debug:
     defaultPrinter: Printer

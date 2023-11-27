@@ -3,7 +3,7 @@ import types
 from _typeshed import SupportsAllComparisons, SupportsItems
 from collections.abc import Callable, Hashable, Iterable, Sequence, Sized
 from typing import Any, Generic, NamedTuple, TypeVar, overload
-from typing_extensions import Literal, ParamSpec, Self, TypeAlias, final
+from typing_extensions import Literal, ParamSpec, Self, TypeAlias, TypedDict, final
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -33,7 +33,7 @@ _S = TypeVar("_S")
 _PWrapped = ParamSpec("_PWrapped")
 _RWrapped = TypeVar("_RWrapped")
 _PWrapper = ParamSpec("_PWrapper")
-_RWapper = TypeVar("_RWapper")
+_RWrapper = TypeVar("_RWrapper")
 
 @overload
 def reduce(function: Callable[[_T, _S], _T], sequence: Iterable[_S], initial: _T) -> _T: ...
@@ -46,12 +46,20 @@ class _CacheInfo(NamedTuple):
     maxsize: int | None
     currsize: int
 
+if sys.version_info >= (3, 9):
+    class _CacheParameters(TypedDict):
+        maxsize: int
+        typed: bool
+
 @final
 class _lru_cache_wrapper(Generic[_T]):
     __wrapped__: Callable[..., _T]
     def __call__(self, *args: Hashable, **kwargs: Hashable) -> _T: ...
     def cache_info(self) -> _CacheInfo: ...
     def cache_clear(self) -> None: ...
+    if sys.version_info >= (3, 9):
+        def cache_parameters(self) -> _CacheParameters: ...
+
     def __copy__(self) -> _lru_cache_wrapper[_T]: ...
     def __deepcopy__(self, __memo: Any) -> _lru_cache_wrapper[_T]: ...
 
@@ -64,27 +72,57 @@ if sys.version_info >= (3, 8):
 else:
     def lru_cache(maxsize: int | None = 128, typed: bool = False) -> Callable[[Callable[..., _T]], _lru_cache_wrapper[_T]]: ...
 
-WRAPPER_ASSIGNMENTS: tuple[
-    Literal["__module__"], Literal["__name__"], Literal["__qualname__"], Literal["__doc__"], Literal["__annotations__"]
-]
+if sys.version_info >= (3, 12):
+    WRAPPER_ASSIGNMENTS: tuple[
+        Literal["__module__"],
+        Literal["__name__"],
+        Literal["__qualname__"],
+        Literal["__doc__"],
+        Literal["__annotations__"],
+        Literal["__type_params__"],
+    ]
+else:
+    WRAPPER_ASSIGNMENTS: tuple[
+        Literal["__module__"], Literal["__name__"], Literal["__qualname__"], Literal["__doc__"], Literal["__annotations__"]
+    ]
 WRAPPER_UPDATES: tuple[Literal["__dict__"]]
 
-class _Wrapped(Generic[_PWrapped, _RWrapped, _PWrapper, _RWapper]):
+class _Wrapped(Generic[_PWrapped, _RWrapped, _PWrapper, _RWrapper]):
     __wrapped__: Callable[_PWrapped, _RWrapped]
-    def __call__(self, *args: _PWrapper.args, **kwargs: _PWrapper.kwargs) -> _RWapper: ...
+    def __call__(self, *args: _PWrapper.args, **kwargs: _PWrapper.kwargs) -> _RWrapper: ...
+    # as with ``Callable``, we'll assume that these attributes exist
+    __name__: str
+    __qualname__: str
 
 class _Wrapper(Generic[_PWrapped, _RWrapped]):
-    def __call__(self, f: Callable[_PWrapper, _RWapper]) -> _Wrapped[_PWrapped, _RWrapped, _PWrapper, _RWapper]: ...
+    def __call__(self, f: Callable[_PWrapper, _RWrapper]) -> _Wrapped[_PWrapped, _RWrapped, _PWrapper, _RWrapper]: ...
 
-def update_wrapper(
-    wrapper: Callable[_PWrapper, _RWapper],
-    wrapped: Callable[_PWrapped, _RWrapped],
-    assigned: Sequence[str] = ...,
-    updated: Sequence[str] = ...,
-) -> _Wrapped[_PWrapped, _RWrapped, _PWrapper, _RWapper]: ...
-def wraps(
-    wrapped: Callable[_PWrapped, _RWrapped], assigned: Sequence[str] = ..., updated: Sequence[str] = ...
-) -> _Wrapper[_PWrapped, _RWrapped]: ...
+if sys.version_info >= (3, 12):
+    def update_wrapper(
+        wrapper: Callable[_PWrapper, _RWrapper],
+        wrapped: Callable[_PWrapped, _RWrapped],
+        assigned: Sequence[str] = ("__module__", "__name__", "__qualname__", "__doc__", "__annotations__", "__type_params__"),
+        updated: Sequence[str] = ("__dict__",),
+    ) -> _Wrapped[_PWrapped, _RWrapped, _PWrapper, _RWrapper]: ...
+    def wraps(
+        wrapped: Callable[_PWrapped, _RWrapped],
+        assigned: Sequence[str] = ("__module__", "__name__", "__qualname__", "__doc__", "__annotations__", "__type_params__"),
+        updated: Sequence[str] = ("__dict__",),
+    ) -> _Wrapper[_PWrapped, _RWrapped]: ...
+
+else:
+    def update_wrapper(
+        wrapper: Callable[_PWrapper, _RWrapper],
+        wrapped: Callable[_PWrapped, _RWrapped],
+        assigned: Sequence[str] = ("__module__", "__name__", "__qualname__", "__doc__", "__annotations__"),
+        updated: Sequence[str] = ("__dict__",),
+    ) -> _Wrapped[_PWrapped, _RWrapped, _PWrapper, _RWrapper]: ...
+    def wraps(
+        wrapped: Callable[_PWrapped, _RWrapped],
+        assigned: Sequence[str] = ("__module__", "__name__", "__qualname__", "__doc__", "__annotations__"),
+        updated: Sequence[str] = ("__dict__",),
+    ) -> _Wrapper[_PWrapped, _RWrapped]: ...
+
 def total_ordering(cls: type[_T]) -> type[_T]: ...
 def cmp_to_key(mycmp: Callable[[_T, _T], int]) -> Callable[[_T], SupportsAllComparisons]: ...
 
@@ -160,7 +198,7 @@ if sys.version_info >= (3, 8):
         attrname: str | None
         def __init__(self, func: Callable[[Any], _T]) -> None: ...
         @overload
-        def __get__(self, instance: None, owner: type[Any] | None = None) -> cached_property[_T]: ...
+        def __get__(self, instance: None, owner: type[Any] | None = None) -> Self: ...
         @overload
         def __get__(self, instance: object, owner: type[Any] | None = None) -> _T: ...
         def __set_name__(self, owner: type[Any], name: str) -> None: ...

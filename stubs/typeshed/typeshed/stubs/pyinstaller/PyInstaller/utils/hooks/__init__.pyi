@@ -1,20 +1,16 @@
 # https://pyinstaller.org/en/stable/hooks.html
 
-import logging
 from _typeshed import StrOrBytesPath, StrPath
 from collections.abc import Callable, Iterable
 from typing import Any
 from typing_extensions import Final, Literal
 
-import pkg_resources
 from PyInstaller import HOMEPATH as HOMEPATH
 from PyInstaller.depend.imphookapi import PostGraphAPI
 from PyInstaller.utils.hooks import conda
-from PyInstaller.utils.hooks.win32 import get_pywin32_module_file_attribute as get_pywin32_module_file_attribute
 
 conda_support = conda
 
-logger: logging.Logger
 PY_IGNORE_EXTENSIONS: Final[set[str]]
 hook_variables: dict[str, str]
 
@@ -29,11 +25,9 @@ def remove_file_extension(filename: str) -> str: ...
 def can_import_module(module_name: str) -> bool: ...
 def get_module_attribute(module_name: str, attr_name: str) -> Any: ...
 def get_module_file_attribute(package: str) -> str | None: ...
-def is_module_satisfies(
-    requirements: Iterable[str] | pkg_resources.Requirement,
-    version: str | pkg_resources.Distribution | None = None,
-    version_attr: str = "__version__",
-) -> bool: ...
+def get_pywin32_module_file_attribute(module_name: str) -> str | None: ...
+def check_requirement(requirement: str) -> bool: ...
+def is_module_satisfies(requirements: str, version: None = None, version_attr: None = None) -> bool: ...
 def is_package(module_name: str) -> bool: ...
 def get_all_package_paths(package: str) -> list[str]: ...
 def package_base_path(package_path: str, package: str) -> str: ...
@@ -45,7 +39,9 @@ def is_module_or_submodule(name: str, mod_or_submod: str) -> bool: ...
 
 PY_DYLIB_PATTERNS: Final[list[str]]
 
-def collect_dynamic_libs(package: str, destdir: object = None, search_patterns: Iterable[str] = ...) -> list[tuple[str, str]]: ...
+def collect_dynamic_libs(
+    package: str, destdir: object = None, search_patterns: Iterable[str] = ["*.dll", "*.dylib", "lib*.so"]
+) -> list[tuple[str, str]]: ...
 def collect_data_files(
     package: str,
     include_py_files: bool = False,
@@ -58,11 +54,10 @@ def collect_system_data_files(
 ) -> list[tuple[str, str]]: ...
 def copy_metadata(package_name: str, recursive: bool = False) -> list[tuple[str, str]]: ...
 def get_installer(module: str) -> str | None: ...
-def requirements_for_package(package_name: str) -> list[str]: ...
 def collect_all(
     package_name: str,
     include_py_files: bool = True,
-    filter_submodules: Callable[[str], bool] | None = None,
+    filter_submodules: Callable[[str], bool] = ...,
     exclude_datas: Iterable[str] | None = None,
     include_datas: Iterable[str] | None = None,
     on_error: Literal["ignore", "warn once", "warn", "raise"] = "warn once",

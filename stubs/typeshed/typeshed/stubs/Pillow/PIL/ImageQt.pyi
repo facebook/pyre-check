@@ -1,3 +1,4 @@
+from _typeshed import Incomplete
 from typing import Any
 from typing_extensions import Literal, TypeAlias
 
@@ -9,11 +10,11 @@ from .Image import Image
 _QImage: TypeAlias = Any
 _QPixmap: TypeAlias = Any
 
-qt_versions: Any
+qt_versions: Incomplete
 qt_is_installed: bool
-qt_version: Any
+qt_version: Incomplete
 
-def rgb(r: int, g: int, b: int, a: int = ...) -> int: ...
+def rgb(r: int, g: int, b: int, a: int = 255) -> int: ...
 def fromqimage(im: ImageQt | _QImage) -> Image: ...
 def fromqpixmap(im: ImageQt | _QImage) -> Image: ...
 def align8to32(bytes: bytes, width: int, mode: Literal["1", "L", "P"]) -> bytes: ...

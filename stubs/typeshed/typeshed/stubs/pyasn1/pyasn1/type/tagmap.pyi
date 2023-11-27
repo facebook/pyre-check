@@ -2,12 +2,14 @@ from collections.abc import Container, Mapping
 
 from pyasn1.type.base import Asn1Type
 
+__all__ = ["TagMap"]
+
 class TagMap:
     def __init__(
         self,
-        presentTypes: Mapping[TagMap, Asn1Type] | None = ...,
-        skipTypes: Container[TagMap] | None = ...,
-        defaultType: Asn1Type | None = ...,
+        presentTypes: Mapping[TagMap, Asn1Type] | None = None,
+        skipTypes: Container[TagMap] | None = None,
+        defaultType: Asn1Type | None = None,
     ) -> None: ...
     def __contains__(self, tagSet) -> bool: ...
     def __getitem__(self, tagSet): ...

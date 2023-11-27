@@ -1,3 +1,16 @@
+__all__ = [
+    "tagClassUniversal",
+    "tagClassApplication",
+    "tagClassContext",
+    "tagClassPrivate",
+    "tagFormatSimple",
+    "tagFormatConstructed",
+    "tagCategoryImplicit",
+    "tagCategoryExplicit",
+    "tagCategoryUntagged",
+    "Tag",
+    "TagSet",
+]
 tagClassUniversal: int
 tagClassApplication: int
 tagClassContext: int
@@ -29,7 +42,7 @@ class Tag:
     def tagId(self): ...
 
 class TagSet:
-    def __init__(self, baseTag=..., *superTags) -> None: ...
+    def __init__(self, baseTag=(), *superTags) -> None: ...
     def __add__(self, superTag): ...
     def __radd__(self, superTag): ...
     def __getitem__(self, i): ...

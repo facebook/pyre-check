@@ -19,13 +19,14 @@ flag "--${NAME}_out" is passed to protoc.
 """
 import builtins
 import collections.abc
+import sys
+import typing
+
 import google.protobuf.descriptor
 import google.protobuf.descriptor_pb2
 import google.protobuf.internal.containers
 import google.protobuf.internal.enum_type_wrapper
 import google.protobuf.message
-import sys
-import typing
 
 if sys.version_info >= (3, 10):
     import typing as typing_extensions
@@ -125,7 +126,7 @@ class CodeGeneratorResponse(google.protobuf.message.Message):
         ValueType = typing.NewType("ValueType", builtins.int)
         V: typing_extensions.TypeAlias = ValueType
 
-    class _FeatureEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[CodeGeneratorResponse._Feature.ValueType], builtins.type):  # noqa: F821
+    class _FeatureEnumTypeWrapper(google.protobuf.internal.enum_type_wrapper._EnumTypeWrapper[CodeGeneratorResponse._Feature.ValueType], builtins.type):
         DESCRIPTOR: google.protobuf.descriptor.EnumDescriptor
         FEATURE_NONE: CodeGeneratorResponse._Feature.ValueType  # 0
         FEATURE_PROTO3_OPTIONAL: CodeGeneratorResponse._Feature.ValueType  # 1

@@ -72,16 +72,16 @@ class Pool:
         self,
         processes: int | None = None,
         initializer: Callable[..., object] | None = None,
-        initargs: Iterable[Any] = ...,
+        initargs: Iterable[Any] = (),
         maxtasksperchild: int | None = None,
         context: Any | None = None,
     ) -> None: ...
-    def apply(self, func: Callable[..., _T], args: Iterable[Any] = ..., kwds: Mapping[str, Any] = ...) -> _T: ...
+    def apply(self, func: Callable[..., _T], args: Iterable[Any] = (), kwds: Mapping[str, Any] = {}) -> _T: ...
     def apply_async(
         self,
         func: Callable[..., _T],
-        args: Iterable[Any] = ...,
-        kwds: Mapping[str, Any] = ...,
+        args: Iterable[Any] = (),
+        kwds: Mapping[str, Any] = {},
         callback: Callable[[_T], object] | None = None,
         error_callback: Callable[[BaseException], object] | None = None,
     ) -> AsyncResult[_T]: ...
@@ -91,7 +91,7 @@ class Pool:
         func: Callable[[_S], _T],
         iterable: Iterable[_S],
         chunksize: int | None = None,
-        callback: Callable[[_T], object] | None = None,
+        callback: Callable[[list[_T]], object] | None = None,
         error_callback: Callable[[BaseException], object] | None = None,
     ) -> MapResult[_T]: ...
     def imap(self, func: Callable[[_S], _T], iterable: Iterable[_S], chunksize: int | None = 1) -> IMapIterator[_T]: ...
@@ -102,7 +102,7 @@ class Pool:
         func: Callable[..., _T],
         iterable: Iterable[Iterable[Any]],
         chunksize: int | None = None,
-        callback: Callable[[_T], object] | None = None,
+        callback: Callable[[list[_T]], object] | None = None,
         error_callback: Callable[[BaseException], object] | None = None,
     ) -> AsyncResult[list[_T]]: ...
     def close(self) -> None: ...
@@ -115,7 +115,7 @@ class Pool:
 
 class ThreadPool(Pool):
     def __init__(
-        self, processes: int | None = None, initializer: Callable[..., object] | None = None, initargs: Iterable[Any] = ...
+        self, processes: int | None = None, initializer: Callable[..., object] | None = None, initargs: Iterable[Any] = ()
     ) -> None: ...
 
 # undocumented

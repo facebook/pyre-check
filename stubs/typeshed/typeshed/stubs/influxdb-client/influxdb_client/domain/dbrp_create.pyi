@@ -6,21 +6,15 @@ class DBRPCreate:
     discriminator: Incomplete
     def __init__(
         self,
-        org_id: Incomplete | None = ...,
-        org: Incomplete | None = ...,
-        bucket_id: Incomplete | None = ...,
-        database: Incomplete | None = ...,
-        retention_policy: Incomplete | None = ...,
-        default: Incomplete | None = ...,
+        org: str | None = None,
+        org_id: str | None = None,
+        bucket_id: Incomplete | None = None,
+        database: Incomplete | None = None,
+        retention_policy: Incomplete | None = None,
+        default: Incomplete | None = None,
     ) -> None: ...
-    @property
-    def org_id(self): ...
-    @org_id.setter
-    def org_id(self, org_id) -> None: ...
-    @property
-    def org(self): ...
-    @org.setter
-    def org(self, org) -> None: ...
+    org: str | None
+    org_id: str | None
     @property
     def bucket_id(self): ...
     @bucket_id.setter

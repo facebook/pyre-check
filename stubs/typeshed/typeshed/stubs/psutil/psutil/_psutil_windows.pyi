@@ -35,6 +35,7 @@ class TimeoutExpired(Exception): ...
 
 def QueryDosDevice(*args, **kwargs): ...  # incomplete
 def boot_time(*args, **kwargs): ...  # incomplete
+def check_pid_range(__pid: int) -> None: ...
 def cpu_count_cores(*args, **kwargs): ...  # incomplete
 def cpu_count_logical(*args, **kwargs): ...  # incomplete
 def cpu_freq(*args, **kwargs): ...  # incomplete
@@ -80,6 +81,7 @@ def proc_username(*args, **kwargs): ...  # incomplete
 def proc_wait(*args, **kwargs): ...  # incomplete
 def sensors_battery(*args, **kwargs): ...  # incomplete
 def set_debug(*args, **kwargs): ...  # incomplete
+def swap_percent(*args, **kwargs): ...  # incomplete
 def users(*args, **kwargs): ...  # incomplete
 def virtual_mem(*args, **kwargs): ...  # incomplete
 def winservice_enumerate(*args, **kwargs): ...  # incomplete
