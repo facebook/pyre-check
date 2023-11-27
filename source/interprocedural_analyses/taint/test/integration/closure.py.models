@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 273,
+    "callable_line": 288,
     "code": 5003,
-    "line": 286,
+    "line": 301,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -25,7 +25,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 279,
+              "line": 294,
               "start": 18,
               "end": 33
             }
@@ -45,7 +45,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 286,
+              "line": 301,
               "start": 15,
               "end": 18
             }
@@ -67,9 +67,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 273,
+    "callable_line": 288,
     "code": 5002,
-    "line": 292,
+    "line": 307,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -93,7 +93,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 289,
+              "line": 304,
               "start": 10,
               "end": 24
             }
@@ -113,7 +113,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 292,
+              "line": 307,
               "start": 15,
               "end": 18
             }
@@ -140,9 +140,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write",
-    "callable_line": 273,
+    "callable_line": 288,
     "code": 5002,
-    "line": 286,
+    "line": 301,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -163,7 +163,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 274,
+              "line": 289,
               "start": 10,
               "end": 24
             }
@@ -183,7 +183,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 286,
+              "line": 301,
               "start": 15,
               "end": 18
             }
@@ -207,9 +207,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_flow",
-    "callable_line": 170,
+    "callable_line": 185,
     "code": 5002,
-    "line": 181,
+    "line": 196,
     "start": 4,
     "end": 10,
     "filename": "closure.py",
@@ -230,7 +230,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 175,
+              "line": 190,
               "start": 14,
               "end": 28
             }
@@ -252,7 +252,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 181,
+                "line": 196,
                 "start": 4,
                 "end": 10
               },
@@ -353,9 +353,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_multiple_writes",
-    "callable_line": 148,
+    "callable_line": 163,
     "code": 5002,
-    "line": 159,
+    "line": 174,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -379,7 +379,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 154,
+              "line": 169,
               "start": 16,
               "end": 30
             }
@@ -399,7 +399,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 159,
+              "line": 174,
               "start": 15,
               "end": 16
             }
@@ -426,9 +426,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow",
-    "callable_line": 236,
+    "callable_line": 251,
     "code": 5002,
-    "line": 253,
+    "line": 268,
     "start": 15,
     "end": 20,
     "filename": "closure.py",
@@ -449,7 +449,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -469,7 +469,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 253,
+              "line": 268,
               "start": 15,
               "end": 20
             }
@@ -641,9 +641,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 131,
+    "callable_line": 139,
     "code": 5002,
-    "line": 145,
+    "line": 160,
     "start": 4,
     "end": 14,
     "filename": "closure.py",
@@ -662,9 +662,11 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 152, "start": 17, "end": 27 } ],
             "origin": {
               "filename": "closure.py",
-              "line": 136,
+              "line": 144,
               "start": 15,
               "end": 29
             }
@@ -686,7 +688,81 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 145,
+                "line": 160,
+                "start": 4,
+                "end": 14
+              },
+              "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
+              "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure.nonlocal_closure_reduction.sink",
+      "index": 0,
+      "parameter": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)"
+    },
+    "master_handle": "closure.nonlocal_closure_reduction:5002:0:Call|closure.nonlocal_closure_reduction.sink|0|captured_variable($local_closure?nonlocal_closure_reduction$obj3):1b63fb3d67cc89fcdf52eb8a46fbf1e4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.nonlocal_closure_reduction",
+    "callable_line": 139,
+    "code": 5002,
+    "line": 160,
+    "start": 4,
+    "end": 14,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 144,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "closure.py",
+                "line": 160,
                 "start": 4,
                 "end": 14
               },
@@ -713,9 +789,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_reduction",
-    "callable_line": 131,
+    "callable_line": 139,
     "code": 5002,
-    "line": 145,
+    "line": 160,
     "start": 9,
     "end": 13,
     "filename": "closure.py",
@@ -735,10 +811,12 @@
                 "kind": "Test"
               }
             ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [ { "line": 152, "start": 22, "end": 26 } ],
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 144,
+                "line": 151,
                 "start": 11,
                 "end": 19
               },
@@ -763,7 +841,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 145,
+                "line": 160,
                 "start": 9,
                 "end": 13
               },
@@ -775,7 +853,9 @@
       }
     ],
     "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -790,9 +870,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_tito",
-    "callable_line": 295,
+    "callable_line": 310,
     "code": 5002,
-    "line": 302,
+    "line": 317,
     "start": 15,
     "end": 21,
     "filename": "closure.py",
@@ -812,10 +892,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 301, "start": 13, "end": 20 } ],
+            "tito_positions": [ { "line": 316, "start": 13, "end": 20 } ],
             "origin": {
               "filename": "closure.py",
-              "line": 296,
+              "line": 311,
               "start": 8,
               "end": 22
             }
@@ -835,7 +915,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 302,
+              "line": 317,
               "start": 15,
               "end": 21
             }
@@ -861,9 +941,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow",
-    "callable_line": 256,
+    "callable_line": 271,
     "code": 5002,
-    "line": 267,
+    "line": 282,
     "start": 15,
     "end": 18,
     "filename": "closure.py",
@@ -884,7 +964,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 261,
+              "line": 276,
               "start": 14,
               "end": 28
             }
@@ -904,7 +984,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 267,
+              "line": 282,
               "start": 15,
               "end": 18
             }
@@ -928,9 +1008,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction",
-    "callable_line": 117,
+    "callable_line": 125,
     "code": 5002,
-    "line": 128,
+    "line": 136,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -953,7 +1033,7 @@
             "call": {
               "position": {
                 "filename": "closure.py",
-                "line": 126,
+                "line": 134,
                 "start": 8,
                 "end": 16
               },
@@ -978,7 +1058,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 128,
+              "line": 136,
               "start": 15,
               "end": 16
             }
@@ -1002,9 +1082,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction",
-    "callable_line": 117,
+    "callable_line": 125,
     "code": 5002,
-    "line": 127,
+    "line": 135,
     "start": 15,
     "end": 16,
     "filename": "closure.py",
@@ -1025,7 +1105,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 123,
+              "line": 131,
               "start": 12,
               "end": 26
             }
@@ -1045,7 +1125,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 127,
+              "line": 135,
               "start": 15,
               "end": 16
             }
@@ -1437,7 +1517,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 99,
+              "line": 107,
               "start": 19,
               "end": 24
             }
@@ -1466,7 +1546,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 279,
+              "line": 294,
               "start": 18,
               "end": 33
             }
@@ -1494,7 +1574,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 178,
+              "line": 193,
               "start": 19,
               "end": 22
             }
@@ -1524,7 +1604,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 175,
+              "line": 190,
               "start": 14,
               "end": 28
             }
@@ -1554,7 +1634,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 203,
+              "line": 218,
               "start": 14,
               "end": 28
             }
@@ -1568,9 +1648,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_inner_flow.flow",
-    "callable_line": 201,
+    "callable_line": 216,
     "code": 5002,
-    "line": 204,
+    "line": 219,
     "start": 19,
     "end": 22,
     "filename": "closure.py",
@@ -1591,7 +1671,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 203,
+              "line": 218,
               "start": 14,
               "end": 28
             }
@@ -1611,7 +1691,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 204,
+              "line": 219,
               "start": 19,
               "end": 22
             }
@@ -1679,7 +1759,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 154,
+              "line": 169,
               "start": 16,
               "end": 30
             }
@@ -1709,7 +1789,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -1723,9 +1803,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow.source1",
-    "callable_line": 239,
+    "callable_line": 254,
     "code": 5002,
-    "line": 248,
+    "line": 263,
     "start": 19,
     "end": 24,
     "filename": "closure.py",
@@ -1746,7 +1826,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -1766,7 +1846,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 248,
+              "line": 263,
               "start": 19,
               "end": 24
             }
@@ -1806,7 +1886,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -1828,7 +1908,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 246,
+              "line": 261,
               "start": 23,
               "end": 28
             }
@@ -1842,9 +1922,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
-    "callable_line": 241,
+    "callable_line": 256,
     "code": 5002,
-    "line": 246,
+    "line": 261,
     "start": 23,
     "end": 28,
     "filename": "closure.py",
@@ -1865,7 +1945,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -1885,7 +1965,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 246,
+              "line": 261,
               "start": 23,
               "end": 28
             }
@@ -1925,7 +2005,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 244,
+              "line": 259,
               "start": 24,
               "end": 38
             }
@@ -1953,7 +2033,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 192,
+              "line": 207,
               "start": 19,
               "end": 22
             }
@@ -1983,7 +2063,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 189,
+              "line": 204,
               "start": 14,
               "end": 28
             }
@@ -2011,7 +2091,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 217,
+              "line": 232,
               "start": 19,
               "end": 22
             }
@@ -2041,7 +2121,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 214,
+              "line": 229,
               "start": 14,
               "end": 28
             }
@@ -2105,6 +2185,26 @@
     "callable": "closure.nonlocal_closure_reduction.sink",
     "sinks": [
       {
+        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 158,
+              "start": 19,
+              "end": 23
+            }
+          }
+        ]
+      },
+      {
         "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
         "taint": [
           {
@@ -2117,7 +2217,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 141,
+              "line": 156,
               "start": 19,
               "end": 23
             }
@@ -2137,7 +2237,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 142,
+              "line": 157,
               "start": 19,
               "end": 23
             }
@@ -2167,7 +2267,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 136,
+              "line": 144,
               "start": 15,
               "end": 29
             }
@@ -2189,10 +2289,40 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 137,
+              "line": 145,
               "start": 15,
               "end": 29
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.nonlocal_closure_reduction.tito",
+    "tito": [
+      {
+        "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(obj2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
           }
         ]
       }
@@ -2236,7 +2366,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 261,
+              "line": 276,
               "start": 14,
               "end": 28
             }
@@ -2266,7 +2396,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 261,
+              "line": 276,
               "start": 14,
               "end": 28
             }
@@ -2296,7 +2426,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 123,
+              "line": 131,
               "start": 12,
               "end": 26
             }
@@ -2318,7 +2448,7 @@
             ],
             "origin": {
               "filename": "closure.py",
-              "line": 124,
+              "line": 132,
               "start": 15,
               "end": 29
             }

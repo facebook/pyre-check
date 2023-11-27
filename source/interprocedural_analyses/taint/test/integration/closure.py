@@ -85,6 +85,14 @@ def nonlocal_closure_multiple_reads():
     conditional_read()
 
 
+def nonlocal_closure_define_before_variable_initialization():
+    def read(): # TODO(T170813777): Missing sink for define before variable initialization
+        _test_sink(x)
+
+    x = _test_source()
+    read()
+
+
 class Object:
     pass
 
@@ -137,11 +145,18 @@ def nonlocal_closure_reduction():
         obj2 = _test_source()
         return obj2
 
+    def tito(obj2):
+        return obj2, obj1
+
+    obj2 = source()
+    obj2, obj3 = tito(obj2)
+    # TODO(T170813777): Wrong model for define before variable initialization
+    # So in this case, moved the sink after obj3 declaration
     def sink(obj2):
         _test_sink(obj1)
         _test_sink(obj2)
+        _test_sink(obj3)
 
-    obj2 = source()
     sink(obj2)
 
 
