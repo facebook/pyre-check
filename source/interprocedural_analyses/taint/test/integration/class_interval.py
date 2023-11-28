@@ -496,3 +496,68 @@ class D16(B16, C16):
 
 def multi_inheritance_issue(b: B16):
     _test_sink(b.m0())  # b may have type D16
+
+
+def sink_b(arg):
+    pass
+
+
+def sink_c(arg):
+    pass
+
+
+class A17:
+    @classmethod
+    def m0(cls, arg):
+        cls.m1(arg)
+
+    @classmethod
+    def m1(cls, arg):
+        pass
+
+
+class B17(A17):
+    @classmethod
+    def m1(cls, arg):
+        pass
+
+
+class C17(A17):
+    @classmethod
+    def m1(cls, arg):
+        sink_c(arg)
+
+
+def test_class_methods():
+    # Expect no issue
+    B17.m0(_test_source())
+
+    # Expect no issue as well
+    b = B17()
+    b.m0(_test_source())
+
+
+class A18:
+    pass
+
+
+class B18(A18):
+    @staticmethod
+    def m(arg):
+        sink_b(arg)
+
+
+class C18(A18):
+    @staticmethod
+    def m(arg):
+        # Expect an issue
+        B18.m(arg)
+
+
+def test_static_methods():
+    # Expect an issue
+    C18.m0(_test_source())
+
+    # Expect an issue
+    c = C18()
+    c.m0(_test_source())
