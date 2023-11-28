@@ -1703,7 +1703,14 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       |> Tree.transform Taint.kind Filter ~f:(Taint.equal_kind attach_to_kind)
       |> Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     in
-    Taint.joined_breadcrumbs taint, Taint.via_features taint
+    let breadcrumbs = Taint.joined_breadcrumbs taint in
+    let breadcrumbs =
+      if AccessPath.Root.is_captured_variable root then
+        Features.BreadcrumbSet.add (Features.captured_variable ()) breadcrumbs
+      else
+        breadcrumbs
+    in
+    breadcrumbs, Taint.via_features taint
 
 
   let sanitize_taint_kinds sanitized_kinds taint =

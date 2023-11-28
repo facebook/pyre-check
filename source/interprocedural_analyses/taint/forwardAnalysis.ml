@@ -2776,7 +2776,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~weak
                 ~root:(AccessPath.Root.CapturedVariable identifier)
                 ~path:fields
-                taint
+                (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
         in
         (* Propagate taint for assignment. *)

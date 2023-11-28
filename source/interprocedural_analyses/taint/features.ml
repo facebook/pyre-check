@@ -242,6 +242,7 @@ module Breadcrumb = struct
     | ObscureModel
     | ObscureUnknownCallee
     | Lambda
+    | CapturedVariable
     | SimpleVia of string (* Declared breadcrumbs *)
     | ViaValue of {
         tag: string option;
@@ -289,6 +290,7 @@ module Breadcrumb = struct
     | ObscureModel -> Format.fprintf formatter "ObscureModel"
     | ObscureUnknownCallee -> Format.fprintf formatter "ObscureUnknownCallee"
     | Lambda -> Format.fprintf formatter "Lambda"
+    | CapturedVariable -> Format.fprintf formatter "CapturedVariable"
     | SimpleVia name -> Format.fprintf formatter "SimpleVia[%s]" name
     | ViaValue { tag; value } -> pp_via "ViaValue" tag value
     | ViaType { tag; value } -> pp_via "ViaType" tag value
@@ -326,6 +328,7 @@ module Breadcrumb = struct
     | ObscureModel -> `Assoc [prefix ^ "via", `String "obscure:model"]
     | ObscureUnknownCallee -> `Assoc [prefix ^ "via", `String "obscure:unknown-callee"]
     | Lambda -> `Assoc [prefix ^ "via", `String "lambda"]
+    | CapturedVariable -> `Assoc [prefix ^ "via", `String "captured-variable"]
     | SimpleVia name -> `Assoc [prefix ^ "via", `String name]
     | ViaValue { tag; value } -> via_to_json ~via_kind:"value" ~tag ~value
     | ViaType { tag; value } -> via_to_json ~via_kind:"type" ~tag ~value
@@ -596,6 +599,8 @@ let obscure_model = memoize_breadcrumb_interned Breadcrumb.ObscureModel
 let obscure_unknown_callee = memoize_breadcrumb_interned Breadcrumb.ObscureUnknownCallee
 
 let lambda = memoize_breadcrumb_interned Breadcrumb.Lambda
+
+let captured_variable = memoize_breadcrumb_interned Breadcrumb.CapturedVariable
 
 let tito = memoize_breadcrumb_interned Breadcrumb.Tito
 
