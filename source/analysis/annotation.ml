@@ -125,11 +125,6 @@ let transform_types ~f { annotation; mutability } =
   { annotation = f annotation; mutability = Mutability.transform_types ~f mutability }
 
 
-let instantiate annotation ~constraints =
-  let instantiate = Type.apply_type_map ~type_map:constraints in
-  transform_types ~f:instantiate annotation
-
-
 let dequalify dequalify_map annotation =
   let dequalify = Type.dequalify dequalify_map in
   transform_types ~f:dequalify annotation

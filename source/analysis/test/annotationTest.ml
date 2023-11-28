@@ -11,13 +11,6 @@ open Analysis
 open Annotation
 open Test
 
-let test_instantiate _ =
-  assert_equal
-    (instantiate (create_immutable ~final:true Type.integer) ~constraints:(fun _ -> None))
-    (create_immutable ~final:true Type.integer);
-  ()
-
-
 let test_dequalify _ =
   assert_equal
     (dequalify Ast.Reference.Map.empty (create_immutable ~final:true Type.integer))
@@ -179,7 +172,6 @@ let test_meet context =
 let () =
   "annotation"
   >::: [
-         "instantiate" >:: test_instantiate;
          "dequalify" >:: test_dequalify;
          "less_or_equal" >:: test_less_or_equal;
          "join" >:: test_join;
