@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Annotation.t is a wrapper around Type.t that adds to the core type system a notion of mutability
+   so that we can model final attributes. *)
 
 open Core
 
