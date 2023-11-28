@@ -768,11 +768,11 @@ val type_parameters_for_bounded_tuple_union : t -> t list option
 
 val single_parameter : t -> t
 
-val instantiate
+val apply_type_map
   :  ?widen:bool ->
   ?visit_children_before:bool ->
   t ->
-  constraints:(t -> t option) ->
+  type_map:(t -> t option) ->
   t
 
 val weaken_literals : t -> t

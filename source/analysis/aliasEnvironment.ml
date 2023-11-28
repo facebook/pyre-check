@@ -408,7 +408,7 @@ module ReadOnly = struct
       Type.create ~aliases expression
     in
     let annotation =
-      let constraints = function
+      let type_map = function
         | Type.Primitive name ->
             let originates_from_empty_stub =
               let reference = Reference.create name in
@@ -423,7 +423,7 @@ module ReadOnly = struct
               None
         | _ -> None
       in
-      Type.instantiate parsed ~constraints
+      Type.apply_type_map parsed ~type_map
     in
     let contains_untracked =
       UnannotatedGlobalEnvironment.ReadOnly.contains_untracked

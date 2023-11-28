@@ -126,7 +126,7 @@ let transform_types ~f { annotation; mutability } =
 
 
 let instantiate annotation ~constraints =
-  let instantiate = Type.instantiate ~constraints in
+  let instantiate = Type.apply_type_map ~type_map:constraints in
   transform_types ~f:instantiate annotation
 
 

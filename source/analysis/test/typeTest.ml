@@ -1513,27 +1513,27 @@ let test_resolve_aliases _ =
   ()
 
 
-let test_instantiate _ =
-  let assert_instantiate mappings ~generic ~expected =
-    let map = Type.Map.of_alist_exn mappings in
+let test_apply_type_map _ =
+  let assert_apply_type_map type_maps ~generic ~expected =
+    let map = Type.Map.of_alist_exn type_maps in
     assert_equal
       ~printer:Type.show
       ~cmp:Type.equal
       expected
-      (Type.instantiate ~constraints:(Map.find map) generic)
+      (Type.apply_type_map ~type_map:(Map.find map) generic)
   in
-  assert_instantiate [] ~generic:(Type.Primitive "foo") ~expected:(Type.Primitive "foo");
+  assert_apply_type_map [] ~generic:(Type.Primitive "foo") ~expected:(Type.Primitive "foo");
 
   (* Union[_T, _VT] + (_T = int, _VT = None) -> Optional[int] *)
-  assert_instantiate
+  assert_apply_type_map
     [Type.variable "_T", Type.integer; Type.variable "_VT", Type.NoneType]
     ~generic:(Type.Union [Type.variable "_T"; Type.variable "_VT"])
     ~expected:(Type.optional Type.integer);
-  assert_instantiate
+  assert_apply_type_map
     [Type.variable "_T", Type.integer]
     ~generic:(Type.ReadOnly.create (Type.variable "_T"))
     ~expected:Type.integer;
-  assert_instantiate
+  assert_apply_type_map
     [Type.variable "_T", Type.Primitive "Foo"]
     ~generic:(Type.ReadOnly.create (Type.variable "_T"))
     ~expected:(Type.ReadOnly.create (Type.Primitive "Foo"));
@@ -6659,7 +6659,7 @@ let () =
          "create_variadic_tuple" >:: test_create_variadic_tuple;
          "create_readonly" >:: test_create_readonly;
          "resolve_aliases" >:: test_resolve_aliases;
-         "instantiate" >:: test_instantiate;
+         "apply_type_map" >:: test_apply_type_map;
          "expression" >:: test_expression;
          "concise" >:: test_concise;
          "weaken_literals" >:: test_weaken_literals;

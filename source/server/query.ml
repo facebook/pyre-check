@@ -470,11 +470,11 @@ let rec process_request_exn ~type_environment ~build_system request =
       in
       let annotation =
         if unknown_is_top then
-          let constraints = function
+          let type_map = function
             | Type.Primitive "unknown" -> Some Type.Top
             | _ -> None
           in
-          Type.instantiate annotation ~constraints
+          Type.apply_type_map annotation ~type_map
         else
           annotation
       in
