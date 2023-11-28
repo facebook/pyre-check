@@ -17,7 +17,7 @@ def xml.dom.pulldom.parseString(string: TaintSink[XMLParser]): ...
 @SkipObscure
 def getattr(
     __o: TaintInTaintOut[Via[getattr]],
-    name: TaintSink[GetAttr],
+    __name: TaintSink[GetAttr],
     __default: TaintInTaintOut[LocalReturn],
 ): ...
 
