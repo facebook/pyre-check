@@ -1657,6 +1657,204 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure.async_nonlocal_closure_tito_ignore_decorator",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 394, "start": 30, "end": 35 } ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 395,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      },
+      {
+        "port": "formal(x)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito" },
+              { "always-via": "obscure:unknown-callee" }
+            ],
+            "tito_positions": [ { "line": 394, "start": 30, "end": 35 } ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 395,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure.async_nonlocal_closure_tito_ignore_decorator",
+    "callable_line": 388,
+    "code": 5002,
+    "line": 395,
+    "start": 15,
+    "end": 21,
+    "filename": "closure.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "tito-broadening" },
+              { "always-via": "tito" },
+              { "always-via": "broadening" },
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "lambda" }
+            ],
+            "tito_positions": [ { "line": 394, "start": 30, "end": 35 } ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 389,
+              "start": 8,
+              "end": 22
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure.py",
+              "line": 395,
+              "start": 15,
+              "end": 21
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via": "special_sink" },
+      { "always-via": "tito-broadening" },
+      { "always-via": "tito" },
+      { "always-via": "broadening" },
+      { "always-via": "obscure:unknown-callee" },
+      { "always-via": "lambda" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure.async_nonlocal_closure_tito_ignore_decorator:5002:0:Call|_test_sink|0|formal(arg):bb42f22a3e190f0e3ddcbef2349100cb"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
+    "tito": [
+      {
+        "port": "captured_variable($parameter$y)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[1]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($parameter$x)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[0]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "captured_variable($local_closure?async_nonlocal_closure_tito_ignore_decorator$z)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[2]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.async_tito",
+    "tito": [
+      {
+        "port": "formal(function)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure.closure.sink",
     "sinks": [
       {
@@ -1676,6 +1874,86 @@
               "start": 19,
               "end": 24
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.decorator.wrapper",
+    "tito": [
+      {
+        "port": "captured_variable($parameter$function)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(**kw)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 363, "start": 37, "end": 45 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 363, "start": 30, "end": 35 } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure.ignored_decorator.wrapper",
+    "tito": [
+      {
+        "port": "captured_variable($parameter$function)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(**kw)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 369, "start": 37, "end": 45 } ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest0)[*]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito_positions": [ { "line": 369, "start": 30, "end": 35 } ],
+            "tito": null
           }
         ]
       }

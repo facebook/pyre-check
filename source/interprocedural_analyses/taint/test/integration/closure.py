@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-
+from typing import Awaitable, Callable, Generic, ParamSpec, TypeVar, List
 
 def nonlocal_closure_read_reduction():
     x = _test_source()
@@ -347,3 +347,49 @@ def parameter_order_swap_tito(x, y, z):
     def inner():
         return y, z, x
     _test_sink(inner()[1])
+
+
+T = TypeVar('T')
+
+class GenericClass(Generic[T]):
+    ...
+
+
+V = List[GenericClass[str]]
+P = ParamSpec('P')
+
+def decorator(function: Callable[P, Awaitable[V]]) -> Callable[P, Awaitable[V]]:
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> V:
+        return await function(*args, **kwargs)
+    return wrapper
+
+
+def ignored_decorator(function: Callable[P, Awaitable[V]]) -> Callable[P, Awaitable[V]]:
+    async def wrapper(*args: P.args, **kwargs: P.kwargs) -> V:
+        return await function(*args, **kwargs)
+    return wrapper
+
+
+async def async_tito(function: Callable[[], Awaitable[T]]) -> T:
+    return await function()
+
+
+async def async_nonlocal_closure_tito_with_decorator(x: GenericClass[str], y: GenericClass[str]):
+    z = _test_source()
+    # TODO(T171117938): Decorator support for tito closure
+    @decorator
+    async def inner() -> List[GenericClass[str]]:
+        return [x, y, z]
+
+    result = await async_tito(inner)
+    _test_sink(result)
+
+
+async def async_nonlocal_closure_tito_ignore_decorator(x: GenericClass[str], y: GenericClass[str]):
+    z = _test_source()
+    @ignored_decorator
+    async def inner() -> List[GenericClass[str]]:
+        return [x, y, z]
+
+    result = await async_tito(inner)
+    _test_sink(result)
