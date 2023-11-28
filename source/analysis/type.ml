@@ -2839,7 +2839,7 @@ let exists annotation ~predicate =
    empty stubs with `Any`. The `visit_children_before` flag controls whether we apply the mapping to
    inner types before attempting to map a complex type. If it is false, we'll try both before and
    after mapping inner types (preferring the before case if both produce results). *)
-let apply_type_map ?(widen = false) ?(visit_children_before = false) annotation ~type_map =
+let apply_type_map ?(visit_children_before = false) annotation ~type_map =
   let module ApplyTypeMapTransform = Transform.Make (struct
     type state = unit
 
@@ -2852,7 +2852,6 @@ let apply_type_map ?(widen = false) ?(visit_children_before = false) annotation 
     let visit _ annotation =
       let transformed_annotation =
         match type_map annotation with
-        | Some Bottom when widen -> Top
         | Some replacement -> replacement
         | None -> annotation
       in
@@ -5550,10 +5549,7 @@ end = struct
       include Variable
 
       let replace_all operation =
-        apply_type_map
-          ~visit_children_before:true
-          ~type_map:(Variable.local_replace operation)
-          ~widen:false
+        apply_type_map ~visit_children_before:true ~type_map:(Variable.local_replace operation)
 
 
       let map operation =
