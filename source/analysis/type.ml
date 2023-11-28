@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Type.t is the core representation of the Python static type system for Pyre. It includes Pyre's
+   representation of basic types, parametric types and type parameters, literals, and a number of
+   other types. *)
 
 open Core
 open Ast
