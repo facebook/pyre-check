@@ -315,3 +315,35 @@ def nonlocal_closure_tito():
 
     result = inner()
     _test_sink(result)
+
+
+def tito_propagation():
+    wrapper_for_tito_propagation(_test_source())
+
+
+def wrapper_for_tito_propagation(x):
+    def inner():
+        return x
+
+    _test_sink(inner())
+
+
+def tito_propagation_hof():
+    wrapper_for_tito_propagation_hof(_test_source())
+
+
+def wrapper_for_tito_propagation_hof(x):
+    def inner():
+        return x
+
+    tito_hof(inner)
+
+
+def tito_hof(f):
+    _test_sink(f())
+
+
+def parameter_order_swap_tito(x, y, z):
+    def inner():
+        return y, z, x
+    _test_sink(inner()[1])
