@@ -5836,6 +5836,15 @@ let test_populate_captures _ =
           ] );
         !&"baz", [];
       ];
+  (* TODO(T170814146): Missing capture for variable initialized after define *)
+  assert_captures
+    {|
+     def foo(x: int) -> None:
+       def bar() -> int:
+         return y
+       y = 1
+    |}
+    ~expected:[];
 
   ()
 
