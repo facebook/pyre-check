@@ -17,7 +17,7 @@ type class_hierarchy = {
 
 type order = {
   class_hierarchy: class_hierarchy;
-  all_attributes:
+  instantiated_attributes:
     Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   attribute:
     Type.t ->

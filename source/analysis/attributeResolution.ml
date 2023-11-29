@@ -2442,7 +2442,7 @@ class base class_metadata_environment dependency =
           ~instantiated
           class_name
       in
-      let all_attributes class_type ~assumptions =
+      let instantiated_attributes class_type ~assumptions =
         resolve class_type
         >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
         self#all_attributes
@@ -2495,7 +2495,7 @@ class base class_metadata_environment dependency =
                 ?dependency;
           };
         attribute;
-        all_attributes;
+        instantiated_attributes;
         is_protocol;
         assumptions;
         get_typed_dictionary = self#get_typed_dictionary ~assumptions;

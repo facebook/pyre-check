@@ -220,7 +220,7 @@ let make_assert_functions context =
       let order =
         {
           ConstraintsSet.class_hierarchy = hierarchy global_resolution;
-          all_attributes = attributes;
+          instantiated_attributes = attributes;
           attribute = attribute_from_attributes attributes;
           is_protocol;
           assumptions =
@@ -254,7 +254,11 @@ let make_assert_functions context =
                            ~accessed_through_readonly)
             | _ -> None)
       in
-      { order with all_attributes = attributes; attribute = attribute_from_attributes attributes }
+      {
+        order with
+        instantiated_attributes = attributes;
+        attribute = attribute_from_attributes attributes;
+      }
     in
     let parse_annotation = parse_annotation ~do_prep in
     let expected =
@@ -1540,7 +1544,7 @@ let test_instantiate_protocol_parameters context =
       in
       {
         ConstraintsSet.class_hierarchy = hierarchy resolution;
-        all_attributes = attributes;
+        instantiated_attributes = attributes;
         attribute = attribute_from_attributes attributes;
         is_protocol;
         assumptions =
@@ -1714,7 +1718,7 @@ let test_mark_escaped_as_escaped context =
     let order =
       {
         ConstraintsSet.class_hierarchy = hierarchy global_resolution;
-        all_attributes = (fun _ ~assumptions:_ -> None);
+        instantiated_attributes = (fun _ ~assumptions:_ -> None);
         attribute = (fun _ ~assumptions:_ ~name:_ -> None);
         is_protocol = (fun _ ~protocol_assumptions:_ -> false);
         assumptions =

@@ -136,7 +136,7 @@ let less_or_equal
   always_less_or_equal
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
-      all_attributes = attributes;
+      instantiated_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol;
       assumptions =
@@ -154,7 +154,7 @@ let is_compatible_with handler =
   is_compatible_with
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
-      all_attributes = (fun _ ~assumptions:_ -> None);
+      instantiated_attributes = (fun _ ~assumptions:_ -> None);
       attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =
@@ -172,7 +172,7 @@ let join ?(attributes = fun _ ~assumptions:_ -> None) handler =
   join
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
-      all_attributes = attributes;
+      instantiated_attributes = attributes;
       attribute = attribute_from_attributes attributes;
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =
@@ -190,7 +190,7 @@ let meet handler =
   meet
     {
       ConstraintsSet.class_hierarchy = hierarchy handler;
-      all_attributes = (fun _ ~assumptions:_ -> None);
+      instantiated_attributes = (fun _ ~assumptions:_ -> None);
       attribute = (fun _ ~assumptions:_ ~name:_ -> None);
       is_protocol = (fun _ ~protocol_assumptions:_ -> false);
       assumptions =

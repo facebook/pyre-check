@@ -48,7 +48,7 @@ type class_hierarchy = {
 
 type order = {
   class_hierarchy: class_hierarchy;
-  all_attributes:
+  instantiated_attributes:
     Type.t -> assumptions:Assumptions.t -> AnnotatedAttribute.instantiated list option;
   attribute:
     Type.t ->
@@ -1102,7 +1102,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
     (* A candidate is less-or-equal to a protocol if candidate.x <: protocol.x for each attribute
        `x` in the protocol. *)
     let solve_all_protocol_attributes_less_or_equal
-        ({ attribute; all_attributes; assumptions; _ } as order)
+        ({ attribute; instantiated_attributes; assumptions; _ } as order)
         ~candidate
         ~protocol_annotation
       =
@@ -1148,7 +1148,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
           (not (Type.is_object (Primitive parent)))
           && not (Type.is_generic_primitive (Primitive parent))
         in
-        all_attributes ~assumptions protocol_annotation
+        instantiated_attributes ~assumptions protocol_annotation
         >>| List.filter ~f:is_not_object_or_generic_method
       in
       protocol_attributes
