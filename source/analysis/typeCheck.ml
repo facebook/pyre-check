@@ -1574,7 +1574,7 @@ module State (Context : Context) = struct
             >>| (function
                   | class_name ->
                       let abstract_methods =
-                        GlobalResolution.attributes
+                        GlobalResolution.uninstantiated_attributes
                           ~transitive:true
                           class_name
                           ~resolution:global_resolution
@@ -6778,7 +6778,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     let check_protocol_properties definition errors =
       if ClassSummary.is_protocol definition then
         let private_protocol_property_errors =
-          GlobalResolution.attributes
+          GlobalResolution.uninstantiated_attributes
             ~transitive:false
             ~include_generated_attributes:true
             ~resolution:global_resolution
@@ -6814,7 +6814,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           let uninitialized_attributes =
             let add_uninitialized ({ class_name; _ } as name_and_metadata) attribute_map =
               let attributes =
-                GlobalResolution.attributes
+                GlobalResolution.uninstantiated_attributes
                   ~include_generated_attributes:true
                   ~resolution:global_resolution
                   class_name
@@ -6846,7 +6846,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             in
             let remove_initialized { class_name; _ } attribute_map =
               let attributes =
-                GlobalResolution.attributes
+                GlobalResolution.uninstantiated_attributes
                   ~transitive:true
                   ~include_generated_attributes:true
                   ~resolution:global_resolution
@@ -7057,7 +7057,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           then
             override_errors_for_typed_dictionary class_name
           else
-            GlobalResolution.attributes
+            GlobalResolution.uninstantiated_attributes
               ~include_generated_attributes:false
               ~resolution:global_resolution
               class_name

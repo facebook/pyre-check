@@ -414,14 +414,14 @@ let successors ~resolution:({ dependency; _ } as resolution) =
 
 let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
-let attributes
+let uninstantiated_attributes
     ~resolution:({ dependency; _ } as resolution)
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
     name
   =
-  AttributeResolution.ReadOnly.all_attributes
+  AttributeResolution.ReadOnly.uninstantiated_attributes
     (attribute_resolution resolution)
     ~transitive
     ~accessed_through_class

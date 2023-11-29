@@ -255,7 +255,7 @@ module AttributeReadOnly : sig
     string ->
     AttributeDetail.t list option
 
-  val all_attributes
+  val uninstantiated_attributes
     :  t ->
     ?dependency:DependencyKey.registered ->
     transitive:bool ->

@@ -627,7 +627,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         |> Type.split
         |> fst
         |> Type.primitive_name
-        >>= GlobalResolution.attributes ~resolution:global_resolution
+        >>= GlobalResolution.uninstantiated_attributes ~resolution:global_resolution
         >>| List.map ~f:to_attribute
         >>| (fun attributes -> Single (Base.FoundAttributes attributes))
         |> Option.value

@@ -564,7 +564,7 @@ let test_all_attributes context =
       ~cmp:attribute_list_equal
       ~printer:print_attributes
       ~pp_diff:(diff ~print)
-      (GlobalResolution.attributes ~resolution definition
+      (GlobalResolution.uninstantiated_attributes ~resolution definition
       |> (fun a -> Option.value_exn a)
       |> List.map
            ~f:
@@ -1304,7 +1304,7 @@ let test_typed_dictionary_attributes context =
     let resolution = ScratchProject.build_resolution project in
     let resolution = Resolution.global_resolution resolution in
     let attributes =
-      GlobalResolution.attributes
+      GlobalResolution.uninstantiated_attributes
         ~resolution
         ~accessed_through_class:true
         ~transitive:true

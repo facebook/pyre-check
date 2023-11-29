@@ -184,7 +184,7 @@ val is_transitive_successor
   successor:string ->
   bool
 
-val attributes
+val uninstantiated_attributes
   :  resolution:t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->

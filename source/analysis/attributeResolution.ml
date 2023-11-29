@@ -2445,7 +2445,7 @@ class base class_metadata_environment dependency =
       let instantiated_attributes class_type ~assumptions =
         resolve class_type
         >>= fun { instantiated; accessed_through_class; class_name; accessed_through_readonly } ->
-        self#all_attributes
+        self#uninstantiated_attributes
           ~assumptions
           ~transitive:true
           ~accessed_through_class
@@ -3281,7 +3281,7 @@ class base class_metadata_environment dependency =
                 ?instantiated
                 ?apply_descriptors
 
-    method all_attributes
+    method uninstantiated_attributes
         ~assumptions
         ~transitive
         ~accessed_through_class
@@ -3343,7 +3343,7 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ?(special_method = false)
         class_name =
-      self#all_attributes
+      self#uninstantiated_attributes
         ~assumptions
         ~transitive
         ~accessed_through_class
@@ -5332,7 +5332,9 @@ module ReadOnly = struct
     add_all_caches_and_empty_assumptions (fun o -> o#attribute ?apply_descriptors:None)
 
 
-  let all_attributes = add_all_caches_and_empty_assumptions (fun o -> o#all_attributes)
+  let uninstantiated_attributes =
+    add_all_caches_and_empty_assumptions (fun o -> o#uninstantiated_attributes)
+
 
   let attribute_names = add_all_caches_and_empty_assumptions (fun o -> o#attribute_names)
 

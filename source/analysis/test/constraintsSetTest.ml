@@ -240,7 +240,7 @@ let make_assert_functions context =
             match Type.class_data_for_attribute_lookup annotation with
             | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }]
               ->
-                GlobalResolution.attributes
+                GlobalResolution.uninstantiated_attributes
                   ~transitive:true
                   ~resolution
                   ~accessed_through_class

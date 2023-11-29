@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* ClassSummary.t represents the information we can know about a class just by analyzing the AST:
+   directly defined attributes and parent classes, decorators, etc. Many other things we might wish
+   to know about a class require resolving all ancestors, and are instead defined in
+   ClassMetadata.t *)
 
 open Core
 open Pyre
