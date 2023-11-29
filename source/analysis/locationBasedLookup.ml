@@ -733,7 +733,7 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
             (Reference.create ~prefix:from name)
             (Reference.create_from_list remaining)
         in
-        GlobalResolution.global_location global_resolution resolved_reference
+        GlobalResolution.location_of_global global_resolution resolved_reference
     | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub { stub_module; _ } ->
         Location.with_module ~module_reference:stub_module Location.any |> Option.some
   in
@@ -746,7 +746,7 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
           if Reference.is_local reference then Reference.delocalize reference else reference
         in
         let global_resolution = Resolution.global_resolution resolution in
-        match GlobalResolution.global_location global_resolution reference with
+        match GlobalResolution.location_of_global global_resolution reference with
         | Some definition -> Some definition
         | None ->
             GlobalResolution.resolve_exports global_resolution reference

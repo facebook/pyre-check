@@ -45,7 +45,7 @@ module Common = struct
   let show_key = Reference.show
 end
 
-let produce_global_location attribute_resolution name ~dependency =
+let produce_location_of_global attribute_resolution name ~dependency =
   let unannotated_global_environment =
     AttributeResolution.ReadOnly.unannotated_global_environment attribute_resolution
   in
@@ -90,7 +90,7 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let lazy_incremental = false
 
-  let produce_value = produce_global_location
+  let produce_value = produce_location_of_global
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AnnotateGlobalLocation name -> Some name
@@ -110,7 +110,7 @@ include GlobalLocationTable
 module ReadOnly = struct
   include GlobalLocationTable.ReadOnly
 
-  let get_global_location = get
+  let location_of_global = get
 
   let attribute_resolution read_only = upstream_environment read_only
 

@@ -214,7 +214,7 @@ module Analysis = struct
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
       DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
-      >>= AnnotatedGlobalEnvironment.ReadOnly.get_global_location annotated_global_environment
+      >>= AnnotatedGlobalEnvironment.ReadOnly.location_of_global annotated_global_environment
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in

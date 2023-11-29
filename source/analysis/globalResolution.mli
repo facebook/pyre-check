@@ -257,7 +257,7 @@ val attribute_details
   Type.Primitive.t ->
   AttributeResolution.AttributeDetail.t list option
 
-val global_location : t -> Reference.t -> Location.WithModule.t option
+val location_of_global : t -> Reference.t -> Location.WithModule.t option
 
 val class_exists : t -> Type.Primitive.t -> bool
 

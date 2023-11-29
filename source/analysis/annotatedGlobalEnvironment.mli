@@ -11,7 +11,7 @@ open SharedMemoryKeys
 module AnnotatedReadOnly : sig
   include Environment.ReadOnly
 
-  val get_global_location
+  val location_of_global
     :  t ->
     ?dependency:DependencyKey.registered ->
     Reference.t ->

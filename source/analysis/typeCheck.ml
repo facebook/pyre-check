@@ -4647,15 +4647,15 @@ module State (Context : Context) = struct
                   | Name.Identifier identifier, _ ->
                       let reference = Reference.create identifier in
                       if Resolution.is_global ~reference resolution && insufficiently_annotated then
-                        let global_location =
+                        let location_of_global =
                           Reference.delocalize reference
-                          |> GlobalResolution.global_location global_resolution
+                          |> GlobalResolution.location_of_global global_resolution
                           >>| Location.strip_module
                           |> Option.value ~default:location
                         in
                         ( emit_error
                             ~errors
-                            ~location:global_location
+                            ~location:location_of_global
                             ~kind:
                               (Error.MissingGlobalAnnotation
                                  {

@@ -633,8 +633,8 @@ let attribute_names
     ?dependency
 
 
-let global_location ({ dependency; _ } as resolution) =
-  AnnotatedGlobalEnvironment.ReadOnly.get_global_location
+let location_of_global ({ dependency; _ } as resolution) =
+  AnnotatedGlobalEnvironment.ReadOnly.location_of_global
     (annotated_global_environment resolution)
     ?dependency
 
