@@ -63,7 +63,7 @@ module.exports = {
         },
         enableEditor: true,
         staticDocsProject: 'pyre',
-        trackingFile: 'xplat/staticdocs/WATCHED_FILES',
+        trackingFile: 'fbcode/staticdocs/WATCHED_FILES',
         'remark-code-snippets': {
           baseDir: '../..',
         },
