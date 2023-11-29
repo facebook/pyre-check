@@ -154,8 +154,6 @@ val annotation_parser
   t ->
   AnnotatedCallable.annotation_parser
 
-val resolved_type : WeakenMutableLiterals.weakened_type -> Type.t
-
 val resolve_mutable_literals
   :  t ->
   resolve:(Expression.expression Node.t -> Type.t) ->
