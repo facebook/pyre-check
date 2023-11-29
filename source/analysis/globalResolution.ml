@@ -212,8 +212,6 @@ let is_invariance_mismatch resolution ~left ~right =
 
 
 let global ({ dependency; _ } as resolution) reference =
-  (* TODO (T41143153): We might want to properly support this by unifying attribute lookup logic for
-     module and for class *)
   match Reference.last reference with
   | "__doc__"
   | "__file__"
