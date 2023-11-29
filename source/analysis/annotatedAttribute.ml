@@ -5,11 +5,22 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* An AnnotatedAttribute.t represents an attribute for static analysis. This includes:
+ * - the type of the attribute (in payload, either a plain type or an
+ *   instantiated type)
+ * - various flags indicating things like initialization, whether this is a
+ *   classvar, etc
+ * - any problems arising from us resolving the attribute, which need to be
+ *   exposed in type checking
+ *
+ * Here attribute can refer to a "plain" attribute or a method, they are handled the same way.
+ *)
 
 open Core
 open Ast
 
+(* Note: the read_only and visibility flags here are related to `Final` attributes, they are not
+   directly related to `ReadOnly` types (although the two do interact) *)
 type read_only =
   | Refinable of { overridable: bool }
   | Unrefinable
