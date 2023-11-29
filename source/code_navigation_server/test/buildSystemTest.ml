@@ -283,8 +283,7 @@ let test_build_system_path_lookup context =
         register_client ~client_id;
         (* Server should not be aware of `a.py` on type error query *)
         ScratchProject.ClientConnection.assert_error_response
-          ~request:
-            Request.(Query (Query.GetTypeErrors { path = None; paths = [path_a]; client_id }))
+          ~request:Request.(Query (Query.GetTypeErrors { paths = [path_a]; client_id }))
           ~kind:"FileNotOpened";
         (* Server should be aware of `a.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
@@ -311,8 +310,7 @@ let test_build_system_path_lookup context =
           ~kind:"ModuleNotTracked";
         (* Server should be aware of `b.py` on type error query *)
         ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(Query (Query.GetTypeErrors { path = None; paths = [path_b]; client_id }))
+          ~request:Request.(Query (Query.GetTypeErrors { paths = [path_b]; client_id }))
           ~expected:(Response.TypeErrors { errors = [expected_error] });
         (* Server should be aware of `b.py` on gotodef query *)
         ScratchProject.ClientConnection.assert_response
@@ -330,9 +328,7 @@ let test_build_system_path_lookup context =
 
 let assert_file_not_opened ~client_id path =
   ScratchProject.ClientConnection.assert_error_response
-    ~request:
-      Request.(
-        Query (Query.GetTypeErrors { path = None; paths = [PyrePath.absolute path]; client_id }))
+    ~request:Request.(Query (Query.GetTypeErrors { paths = [PyrePath.absolute path]; client_id }))
     ~kind:"FileNotOpened"
 
 

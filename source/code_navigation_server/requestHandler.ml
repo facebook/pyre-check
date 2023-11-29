@@ -564,9 +564,8 @@ let handle_query
         _;
       }
   = function
-  | Request.Query.GetTypeErrors { path; paths; client_id } ->
+  | Request.Query.GetTypeErrors { paths; client_id } ->
       let f state =
-        let paths = Option.value_map ~default:paths ~f:(fun path -> [path]) path in
         let response = handle_get_type_errors ~paths ~client_id state |> response_from_result in
         Lwt.return response
       in

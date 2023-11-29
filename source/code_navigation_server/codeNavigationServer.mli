@@ -331,7 +331,6 @@ module Testing : sig
       type t =
         | GetTypeErrors of {
             paths: string list;
-            path: string option;
             client_id: string;
           }
             (** A query that asks the server to type check a given module. The server will send back
