@@ -470,19 +470,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ({
          CallGraph.CallTarget.target;
-         implicit_self;
+         implicit_receiver;
          implicit_dunder_call;
          index = _;
          return_type;
          receiver_class;
+         is_class_method = _;
+         is_static_method = _;
        } as call_target)
     =
     (* Add implicit self. *)
     let arguments, arguments_taint =
-      if implicit_self && not implicit_dunder_call then
+      if implicit_receiver && not implicit_dunder_call then
         ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
           Option.value_exn self_taint :: arguments_taint )
-      else if implicit_self && implicit_dunder_call then
+      else if implicit_receiver && implicit_dunder_call then
         ( { Call.Argument.name = None; value = callee } :: arguments,
           Option.value_exn callee_taint :: arguments_taint )
       else
@@ -1092,14 +1094,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_callee ~resolution ~is_property_call ~state ~callee
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
-             ~f:(fun { CallGraph.CallTarget.implicit_self; implicit_dunder_call; _ } ->
-               implicit_self && implicit_dunder_call)
+             ~f:(fun { CallGraph.CallTarget.implicit_receiver; implicit_dunder_call; _ } ->
+               implicit_receiver && implicit_dunder_call)
              call_targets ->
         (* We need the taint on the whole callee. *)
         analyze_callee ~resolution ~is_property_call ~state ~callee
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
-             ~f:(fun { CallGraph.CallTarget.implicit_self; _ } -> implicit_self)
+             ~f:(fun { CallGraph.CallTarget.implicit_receiver; _ } -> implicit_receiver)
              call_targets ->
         (* We only need the taint of the receiver. *)
         let taint, state =

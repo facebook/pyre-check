@@ -39,7 +39,7 @@ module CallTarget : sig
     target: Target.t;
     (* True if the call has an implicit receiver.
      * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
-    implicit_self: bool;
+    implicit_receiver: bool;
     (* True if this is an implicit call to the `__call__` method. *)
     implicit_dunder_call: bool;
     (* The textual order index of the call in the function. *)
@@ -47,18 +47,23 @@ module CallTarget : sig
     (* The return type of the call expression, or `None` for object targets. *)
     return_type: ReturnType.t option;
     (* The class of the receiver object at this call site, if any. *)
-    receiver_class: string option;
+    receiver_class: string option; (* True if calling a class method. *)
+    is_class_method: bool;
+    (* True if calling a static method. *)
+    is_static_method: bool;
   }
   [@@deriving eq, show, compare]
 
   val target : t -> Target.t
 
   val create
-    :  ?implicit_self:bool ->
+    :  ?implicit_receiver:bool ->
     ?implicit_dunder_call:bool ->
     ?index:int ->
     ?return_type:ReturnType.t option ->
     ?receiver_class:string ->
+    ?is_class_method:bool ->
+    ?is_static_method:bool ->
     Target.t ->
     t
 

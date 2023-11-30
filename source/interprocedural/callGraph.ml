@@ -158,9 +158,10 @@ end
 module CallTarget = struct
   type t = {
     target: Target.t;
-    (* True if the call has an implicit receiver.
-     * For instance, `x.foo()` should be treated as `C.foo(x)`. *)
-    implicit_self: bool;
+    (* True if the call has an implicit receiver, such as calling an instance or a class method. For
+       instance, `x.foo(0)` should be treated as `C.foo(x, 0)`. As another example, `C.foo(0)`
+       should be treated as `C.foo(C, 0)`. *)
+    implicit_receiver: bool;
     (* True if this is an implicit call to the `__call__` method. *)
     implicit_dunder_call: bool;
     (* The textual order index of the call in the function. *)
@@ -169,6 +170,10 @@ module CallTarget = struct
     return_type: ReturnType.t option;
     (* The class of the receiver object at this call site, if any. *)
     receiver_class: string option;
+    (* True if calling a class method. *)
+    is_class_method: bool;
+    (* True if calling a static method. *)
+    is_static_method: bool;
   }
   [@@deriving compare, eq, show { with_path = false }]
 
@@ -197,46 +202,76 @@ module CallTarget = struct
 
 
   let create
-      ?(implicit_self = false)
+      ?(implicit_receiver = false)
       ?(implicit_dunder_call = false)
       ?(index = 0)
       ?(return_type = Some ReturnType.any)
       ?receiver_class
+      ?(is_class_method = false)
+      ?(is_static_method = false)
       target
     =
-    { target; implicit_self; implicit_dunder_call; index; return_type; receiver_class }
+    {
+      target;
+      implicit_receiver;
+      implicit_dunder_call;
+      index;
+      return_type;
+      receiver_class;
+      is_class_method;
+      is_static_method;
+    }
 
 
   let equal_ignoring_types
       {
         target = target_left;
-        implicit_self = implicit_self_left;
+        implicit_receiver = implicit_receiver_left;
         implicit_dunder_call = implicit_dunder_call_left;
         index = index_left;
         return_type = _;
         receiver_class = _;
+        is_class_method = is_class_method_left;
+        is_static_method = is_static_method_left;
       }
       {
         target = target_right;
-        implicit_self = implicit_self_right;
+        implicit_receiver = implicit_receiver_right;
         implicit_dunder_call = implicit_dunder_call_right;
         index = index_right;
         return_type = _;
         receiver_class = _;
+        is_class_method = is_class_method_right;
+        is_static_method = is_static_method_right;
       }
     =
     Target.equal target_left target_right
-    && Bool.equal implicit_self_left implicit_self_right
+    && Bool.equal implicit_receiver_left implicit_receiver_right
     && Bool.equal implicit_dunder_call_left implicit_dunder_call_right
     && Int.equal index_left index_right
+    && Bool.equal is_class_method_left is_class_method_right
+    && Bool.equal is_static_method_left is_static_method_right
 
 
-  let to_json { target; implicit_self; implicit_dunder_call; index; return_type; receiver_class } =
+  let to_json
+      {
+        target;
+        implicit_receiver;
+        implicit_dunder_call;
+        index;
+        return_type;
+        receiver_class;
+        is_class_method;
+        is_static_method;
+      }
+    =
     ["index", `Int index; "target", `String (Target.external_name target)]
-    |> JsonHelper.add_flag_if "implicit_self" implicit_self
+    |> JsonHelper.add_flag_if "implicit_receiver" implicit_receiver
     |> JsonHelper.add_flag_if "implicit_dunder_call" implicit_dunder_call
     |> JsonHelper.add_optional "return_type" return_type ReturnType.to_json
     |> JsonHelper.add_optional "receiver_class" receiver_class (fun name -> `String name)
+    |> JsonHelper.add_flag_if "is_class_method" is_class_method
+    |> JsonHelper.add_flag_if "is_static_method" is_static_method
     |> fun bindings -> `Assoc (List.rev bindings)
 end
 
@@ -1027,10 +1062,12 @@ module CallTargetIndexer = struct
 
   let create_target
       indexer
-      ~implicit_self
+      ~implicit_receiver
       ~implicit_dunder_call
       ~return_type
       ?receiver_type
+      ?(is_class_method = false)
+      ?(is_static_method = false)
       original_target
     =
     let target_for_index = Target.override_to_method original_target in
@@ -1038,17 +1075,15 @@ module CallTargetIndexer = struct
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
     {
       CallTarget.target = original_target;
-      implicit_self;
+      implicit_receiver;
       implicit_dunder_call;
       index;
       return_type;
       receiver_class = receiver_type >>= CallTarget.receiver_class_from_type;
+      is_class_method;
+      is_static_method;
     }
 end
-
-type callee_kind =
-  | Method of { is_direct_call: bool }
-  | Function
 
 let is_local identifier = String.is_prefix ~prefix:"$" identifier
 
@@ -1059,43 +1094,90 @@ let rec is_all_names = function
   | _ -> false
 
 
-let rec callee_kind ~resolution callee callee_type =
-  let is_super_call =
-    let rec is_super callee =
-      match Node.value callee with
-      | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
-      | Call { callee; _ } -> is_super callee
-      | Name (Name.Attribute { base; _ }) -> is_super base
-      | _ -> false
-    in
-    is_super callee
-  in
-  match callee_type with
-  | _ when is_super_call -> Method { is_direct_call = true }
-  | Type.Parametric { name = "BoundMethod"; _ } ->
-      Method { is_direct_call = is_all_names (Node.value callee) }
-  | Type.Callable _ -> (
-      match Node.value callee with
-      | Expression.Name (Name.Attribute { base; _ }) ->
-          let parent_type = CallResolution.resolve_ignoring_errors ~resolution base in
-          let is_class () =
-            let primitive, _ = Type.split parent_type in
-            Type.primitive_name primitive
-            >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
-            |> Option.is_some
-          in
-          if Type.is_meta parent_type then
-            Method { is_direct_call = true }
-          else if is_class () then
-            Method { is_direct_call = false }
-          else
-            Function
-      | _ -> Function)
-  | Type.Union (callee_type :: _) -> callee_kind ~resolution callee callee_type
-  | _ ->
-      (* We must be dealing with a callable class. *)
-      Method { is_direct_call = false }
+module CalleeKind = struct
+  type t =
+    | Method of {
+        is_direct_call: bool;
+        is_class_method: bool;
+        is_static_method: bool;
+      }
+    | Function
 
+  let get_define ~resolution reference =
+    GlobalResolution.define (Resolution.global_resolution resolution) reference
+
+
+  let rec from_callee ~resolution callee callee_type =
+    let is_super_call =
+      let rec is_super callee =
+        match Node.value callee with
+        | Expression.Call { callee = { Node.value = Name (Name.Identifier "super"); _ }; _ } -> true
+        | Call { callee; _ } -> is_super callee
+        | Name (Name.Attribute { base; _ }) -> is_super base
+        | _ -> false
+      in
+      is_super callee
+    in
+    let is_static_method, is_class_method =
+      (* TODO(T171340051): A better implementation that uses `Annotation`. *)
+      match get_define ~resolution (callee |> Expression.show |> Reference.create) with
+      | Some define ->
+          ( Ast.Statement.Define.has_decorator define "staticmethod",
+            Ast.Statement.Define.has_decorator define "classmethod" )
+      | None -> false, false
+    in
+    match callee_type with
+    | _ when is_super_call -> Method { is_direct_call = true; is_static_method; is_class_method }
+    | Type.Parametric { name = "BoundMethod"; parameters = [Single _; Single receiver_type] } ->
+        let is_class_method =
+          (* Sometimes the define body of the callee is unavailable, in which case we identify calls
+             to class methods via the receiver type. The callee is a class method, if the callee
+             type is `BoundMethod` and the receiver type is the type of a class type.
+
+             TODO(T171340051): We can delete this pattern matching case if using a better
+             implementation. *)
+          let type_, parameters = Type.split receiver_type in
+          match Type.primitive_name type_, parameters with
+          | Some "type", [Type.Record.Parameter.Single (Type.Primitive _)] -> true
+          | _ -> false
+        in
+        Method
+          { is_direct_call = is_all_names (Node.value callee); is_static_method; is_class_method }
+    | Type.Parametric { name = "BoundMethod"; _ } ->
+        Method
+          { is_direct_call = is_all_names (Node.value callee); is_static_method; is_class_method }
+    | Type.Callable _ -> (
+        match Node.value callee with
+        | Expression.Name (Name.Attribute { base; _ }) ->
+            let parent_type = CallResolution.resolve_ignoring_errors ~resolution base in
+            let is_class () =
+              let primitive, _ = Type.split parent_type in
+              Type.primitive_name primitive
+              >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+              |> Option.is_some
+            in
+            if Type.is_meta parent_type then
+              Method { is_direct_call = true; is_static_method; is_class_method }
+            else if is_class () then
+              Method { is_direct_call = false; is_static_method; is_class_method }
+            else
+              Function
+        | _ -> Function)
+    | Type.Union (callee_type :: _) -> from_callee ~resolution callee callee_type
+    | _ ->
+        (* We must be dealing with a callable class. *)
+        Method { is_direct_call = false; is_static_method; is_class_method }
+
+
+  let is_class_method = function
+    | Method { is_class_method; _ } -> is_class_method
+    | _ -> false
+
+
+  let is_static_method = function
+    | Method { is_static_method; _ } -> is_static_method
+    | _ -> false
+end
 
 let strip_optional annotation = Type.optional_value annotation |> Option.value ~default:annotation
 
@@ -1204,7 +1286,7 @@ let rec resolve_callees_from_type
       | Some receiver_type ->
           let targets =
             match callee_kind with
-            | Method { is_direct_call = true } -> [Target.create_method name]
+            | CalleeKind.Method { is_direct_call = true; _ } -> [Target.create_method name]
             | _ ->
                 compute_indirect_targets
                   ~resolution
@@ -1217,10 +1299,12 @@ let rec resolve_callees_from_type
               ~f:(fun target ->
                 CallTargetIndexer.create_target
                   call_indexer
-                  ~implicit_self:true
+                  ~implicit_receiver:true
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
                   ~receiver_type
+                  ~is_class_method:(CalleeKind.is_class_method callee_kind)
+                  ~is_static_method:(CalleeKind.is_static_method callee_kind)
                   target)
               targets
           in
@@ -1236,9 +1320,11 @@ let rec resolve_callees_from_type
               [
                 CallTargetIndexer.create_target
                   call_indexer
-                  ~implicit_self:false
+                  ~implicit_receiver:false
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
+                  ~is_class_method:(CalleeKind.is_class_method callee_kind)
+                  ~is_static_method:(CalleeKind.is_static_method callee_kind)
                   ?receiver_type
                   target;
               ]
@@ -1313,9 +1399,11 @@ let rec resolve_callees_from_type
                     [
                       CallTargetIndexer.create_target
                         call_indexer
-                        ~implicit_self:true
+                        ~implicit_receiver:true
                         ~implicit_dunder_call:true
                         ~return_type:(Some return_type)
+                        ~is_class_method:(CalleeKind.is_class_method callee_kind)
+                        ~is_static_method:(CalleeKind.is_static_method callee_kind)
                         ?receiver_type
                         target;
                     ]
@@ -1360,7 +1448,10 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy class_type)
-          ~callee_kind:(Method { is_direct_call = true })
+          ~callee_kind:
+            (Method { is_direct_call = true; is_static_method = true; is_class_method = false })
+            (* __new__() is a static method. See
+               https://docs.python.org/3/reference/datamodel.html#object.__new__ *)
           new_callable_type
       in
       let init_callees =
@@ -1370,7 +1461,8 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
           ~call_indexer
           ~receiver_type:meta_type
           ~return_type:(lazy Type.none)
-          ~callee_kind:(Method { is_direct_call = true })
+          ~callee_kind:
+            (Method { is_direct_call = true; is_static_method = false; is_class_method = false })
           init_callable_type
       in
       (* Technically, `object.__new__` returns `object` and `C.__init__` returns None.
@@ -1471,7 +1563,9 @@ let resolve_callee_from_defining_expression
                ~call_indexer
                ~return_type
                ~receiver_type:implementing_class
-               ~callee_kind:(Method { is_direct_call = false })
+               ~callee_kind:
+                 (Method
+                    { is_direct_call = false; is_class_method = false; is_static_method = false })
                callable_type)
       | _ -> None)
 
@@ -1590,7 +1684,7 @@ let resolve_recognized_callees
           [
             CallTargetIndexer.create_target
               call_indexer
-              ~implicit_self:false
+              ~implicit_receiver:false
               ~implicit_dunder_call:false
               ~return_type:(Some return_type)
               (Target.Function { name; kind = Normal });
@@ -1607,6 +1701,10 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
       ~resolution:(Resolution.global_resolution resolution)
       (Lazy.force return_type)
   in
+  let contain_class_method signatures =
+    signatures
+    |> List.exists ~f:(fun signature -> Define.Signature.has_decorator signature "classmethod")
+  in
   match Node.value callee with
   | Expression.Name name when is_all_names (Node.value callee) -> (
       (* Resolving expressions that do not reference local variables or parameters. *)
@@ -1619,7 +1717,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
           Some
             (CallTargetIndexer.create_target
                call_indexer
-               ~implicit_self:false
+               ~implicit_receiver:false
                ~implicit_dunder_call:false
                ~return_type:(Some (return_type ()))
                (Target.Function { name = Reference.show name; kind = Normal }))
@@ -1639,13 +1737,16 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
           >>= Identifier.SerializableMap.find_opt attribute
           >>| Node.value
           >>= function
-          | { kind = Method { static; _ }; _ } ->
+          | { kind = Method { static; signatures; _ }; _ } ->
+              let is_class_method = contain_class_method signatures in
               Some
                 (CallTargetIndexer.create_target
                    call_indexer
-                   ~implicit_self:(not static)
+                   ~implicit_receiver:(not static)
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
+                   ~is_class_method
+                   ~is_static_method:static
                    (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
           | _ -> None)
       | _ -> None)
@@ -1663,20 +1764,23 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
               >>= Identifier.SerializableMap.find_opt attribute
               >>| Node.value
             with
-            | Some { ClassSummary.Attribute.kind = Method _; _ } -> Some element
+            | Some { ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ } ->
+                Some (element, contain_class_method signatures, static)
             | _ -> None
           in
           let parent_classes_in_mro =
             GlobalResolution.successors ~resolution:global_resolution class_name
           in
           match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
-          | Some base_class ->
+          | Some (base_class, is_class_method, is_static_method) ->
               Some
                 (CallTargetIndexer.create_target
                    call_indexer
-                   ~implicit_self:true
+                   ~implicit_receiver:true
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
+                   ~is_class_method
+                   ~is_static_method
                    (Target.Method
                       { Target.class_name = base_class; method_name = attribute; kind = Normal }))
           | None -> None)
@@ -1730,7 +1834,7 @@ let resolve_attribute_access_properties
       ~f:
         (CallTargetIndexer.create_target
            call_indexer
-           ~implicit_self:true
+           ~implicit_receiver:true
            ~implicit_dunder_call:false
            ~return_type:(Some return_type))
       property_targets
@@ -1855,7 +1959,7 @@ let resolve_identifier ~define ~resolution ~call_indexer ~identifier =
           [
             CallTargetIndexer.create_target
               call_indexer
-              ~implicit_self:false
+              ~implicit_receiver:false
               ~implicit_dunder_call:false
               ~return_type:None
               (Target.create_object global);
@@ -1868,7 +1972,7 @@ let resolve_identifier ~define ~resolution ~call_indexer ~identifier =
           [
             CallTargetIndexer.create_target
               call_indexer
-              ~implicit_self:false
+              ~implicit_receiver:false
               ~implicit_dunder_call:false
               ~return_type:None
               (Target.create_object nonlocal);
@@ -1947,7 +2051,7 @@ struct
       let () = log "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
       recognized_callees
     else
-      let callee_kind = callee_kind ~resolution callee callee_type in
+      let callee_kind = CalleeKind.from_callee ~resolution callee callee_type in
       let callees_from_type =
         resolve_callees_from_type
           ~resolution
@@ -2072,7 +2176,7 @@ struct
            ~f:
              (CallTargetIndexer.create_target
                 call_indexer
-                ~implicit_self:false
+                ~implicit_receiver:false
                 ~implicit_dunder_call:false
                 ~return_type:None)
     in
@@ -2106,11 +2210,13 @@ struct
       let call_target =
         {
           CallTarget.target = Target.Object target;
-          implicit_self = false;
+          implicit_receiver = false;
           implicit_dunder_call = false;
           index = 0;
           return_type = Some ReturnType.any;
           receiver_class = None;
+          is_class_method = false;
+          is_static_method = false;
         }
       in
       { callees with call_targets = call_target :: call_targets }
@@ -2182,7 +2288,7 @@ struct
             let artificial_target =
               CallTargetIndexer.create_target
                 call_indexer
-                ~implicit_self:false
+                ~implicit_receiver:false
                 ~implicit_dunder_call:false
                 ~return_type:None
                 Target.StringCombineArtificialTargets.format_string

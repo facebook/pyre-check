@@ -350,17 +350,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_taint
       ({
          CallGraph.CallTarget.target;
-         implicit_self;
+         implicit_receiver;
          implicit_dunder_call;
          index = _;
          return_type;
          receiver_class;
+         is_class_method = _;
+         is_static_method = _;
        } as call_target)
     =
     let arguments =
-      if implicit_self && not implicit_dunder_call then
+      if implicit_receiver && not implicit_dunder_call then
         { Call.Argument.name = None; value = Option.value_exn self } :: arguments
-      else if implicit_self && implicit_dunder_call then
+      else if implicit_receiver && implicit_dunder_call then
         { Call.Argument.name = None; value = callee } :: arguments
       else
         arguments
@@ -598,11 +600,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     (* Extract the taint for self. *)
     let self_taint, callee_taint, arguments_taint =
-      if implicit_self && not implicit_dunder_call then
+      if implicit_receiver && not implicit_dunder_call then
         match arguments_taint with
         | self_taint :: arguments_taint -> Some self_taint, None, arguments_taint
         | _ -> failwith "missing taint for self argument"
-      else if implicit_self && implicit_dunder_call then
+      else if implicit_receiver && implicit_dunder_call then
         match arguments_taint with
         | callee_taint :: arguments_taint -> None, Some callee_taint, arguments_taint
         | _ -> failwith "missing taint for callee argument"
