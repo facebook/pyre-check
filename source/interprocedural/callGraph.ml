@@ -1111,7 +1111,7 @@ module CalleeKind = struct
     | Function
 
   let get_define ~resolution reference =
-    GlobalResolution.define (Resolution.global_resolution resolution) reference
+    reference |> GlobalResolution.define_body (Resolution.global_resolution resolution)
 
 
   let rec from_callee ~resolution callee callee_type =
@@ -1128,7 +1128,8 @@ module CalleeKind = struct
     let is_static_method, is_class_method =
       (* TODO(T171340051): A better implementation that uses `Annotation`. *)
       match get_define ~resolution (callee |> Expression.show |> Reference.create) with
-      | Some define ->
+      | Some define_body ->
+          let define = Node.value define_body in
           ( Ast.Statement.Define.has_decorator define "staticmethod",
             Ast.Statement.Define.has_decorator define "classmethod" )
       | None -> false, false
