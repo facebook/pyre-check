@@ -16,8 +16,8 @@ from ... import (
     configuration,
     error,
     frontend_configuration,
-    tests,
 )
+from ...tests import setup
 from .. import check
 
 
@@ -61,10 +61,10 @@ class CheckTest(testslide.TestCase):
     def test_create_check_arguments(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            tests.setup.ensure_directories_exists(
+            setup.ensure_directories_exists(
                 root_path, [".pyre", "allows", "blocks", "search", "local/src"]
             )
-            tests.setup.write_configuration_file(
+            setup.write_configuration_file(
                 root_path,
                 {
                     "only_check_paths": ["allows", "nonexistent"],
@@ -77,7 +77,7 @@ class CheckTest(testslide.TestCase):
                     "strict": True,
                 },
             )
-            tests.setup.write_configuration_file(
+            setup.write_configuration_file(
                 root_path, {"source_directories": ["src"]}, relative="local"
             )
 
@@ -140,9 +140,9 @@ class CheckTest(testslide.TestCase):
     def test_create_check_arguments_artifact_root_no_conflict(self) -> None:
         with tempfile.TemporaryDirectory() as root:
             root_path = Path(root).resolve()
-            tests.setup.ensure_directories_exists(root_path, [".pyre", "project"])
-            tests.setup.ensure_files_exist(root_path, ["project/.buckconfig"])
-            tests.setup.write_configuration_file(
+            setup.ensure_directories_exists(root_path, [".pyre", "project"])
+            setup.ensure_files_exist(root_path, ["project/.buckconfig"])
+            setup.write_configuration_file(
                 root_path / "project",
                 {
                     "targets": ["//foo:bar"],
@@ -172,9 +172,9 @@ class CheckTest(testslide.TestCase):
             log_path = root_path / ".pyre"
             logger_path = root_path / "logger"
 
-            tests.setup.ensure_directories_exists(root_path, [".pyre", "src"])
-            tests.setup.ensure_files_exist(root_path, ["logger"])
-            tests.setup.write_configuration_file(
+            setup.ensure_directories_exists(root_path, [".pyre", "src"])
+            setup.ensure_files_exist(root_path, ["logger"])
+            setup.write_configuration_file(
                 root_path,
                 {"source_directories": ["src"], "logger": str(logger_path)},
             )
