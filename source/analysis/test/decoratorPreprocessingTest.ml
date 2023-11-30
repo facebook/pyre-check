@@ -1223,8 +1223,6 @@ let test_inline_decorators context =
 
         return _inlined_with_logging(cls, x)
   |};
-  (* TODO(T69755379): Correctly inline decorator used on a staticmethod. Right now, we're missing
-     the @staticmethod decorator. *)
   assert_inlined
     {|
     from typing import Callable
@@ -1263,6 +1261,7 @@ let test_inline_decorators context =
       def some_method(self, x: int) -> None:
         print(self, x)
 
+      @staticmethod
       def foo(x: int) -> None:
 
         def _original_function(x: int) -> None:

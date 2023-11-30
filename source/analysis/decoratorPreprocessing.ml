@@ -159,7 +159,6 @@ let sanitize_define
     ?(strip_parent = false)
     ({ Define.signature = { decorators; parent; _ } as signature; _ } as define)
   =
-  strip_parent |> ignore;
   {
     define with
     signature =
@@ -805,6 +804,13 @@ let postprocess
         signature with
         decorators =
           Node.create_with_default_location (Expression.Name (Name.Identifier "classmethod"))
+          :: decorators;
+      }
+    else if Define.is_static_method define then
+      {
+        signature with
+        decorators =
+          Node.create_with_default_location (Expression.Name (Name.Identifier "staticmethod"))
           :: decorators;
       }
     else
