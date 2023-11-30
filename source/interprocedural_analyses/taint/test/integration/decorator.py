@@ -253,4 +253,14 @@ def no_op_decorator(f: Callable[P, None]) -> Callable[P, None]:
 
 @no_op_decorator
 def second_parameter_source_inlineable_decorator(arg1: int, arg2: str) -> None:
-    _test_sink(arg2)
+    _test_sink(arg2)  # Issue here
+
+
+@no_op_decorator
+def second_parameter_source_inlineable_decorator_with_inner(
+    arg1: int, arg2: str
+) -> None:
+    def inner():
+        _test_sink(arg2)
+
+    inner()  # TODO(T169938511): Should be an issue, currently a false negative.
