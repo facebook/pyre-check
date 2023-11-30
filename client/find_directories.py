@@ -205,7 +205,7 @@ def find_typeshed() -> Optional[Path]:
 
     LOG.debug("Could not find bundled typeshed. Try importing typeshed directly...")
     try:
-        import typeshed  # pyre-fixme: Can't find module import typeshed
+        import typeshed  # @manual  # pyre-fixme: Can't find module import typeshed
 
         return Path(typeshed.typeshed)
     except ImportError:
