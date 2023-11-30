@@ -2451,7 +2451,183 @@
 {
   "kind": "model",
   "data": {
-    "callable": "decorator.function_two_args",
+    "callable": "decorator.second_parameter_source_inlineable_decorator",
+    "sources": [
+      {
+        "port": "formal(arg2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "formal(arg2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 254,
+                "start": 1,
+                "end": 16
+              },
+              "resolves_to": [
+                "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator"
+              ],
+              "port": "formal(arg2)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "decorator.second_parameter_source_inlineable_decorator",
+    "callable_line": 255,
+    "code": 5002,
+    "line": 254,
+    "start": 1,
+    "end": 16,
+    "filename": "decorator.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "decorator.second_parameter_source_inlineable_decorator",
+                    "port": "leaf:arg2"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "decorator.py",
+              "line": 255,
+              "start": 60,
+              "end": 69
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 254,
+                "start": 1,
+                "end": 16
+              },
+              "resolves_to": [
+                "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator"
+              ],
+              "port": "formal(arg2)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator",
+      "index": 0,
+      "parameter": "formal(arg2)"
+    },
+    "master_handle": "decorator.second_parameter_source_inlineable_decorator:5002:0:Call|decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator|0|formal(arg2):6c4bbb2a502de6f629b0b10285282890"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.second_parameter_source_inlineable_decorator._inlined_no_op_decorator",
+    "sinks": [
+      {
+        "port": "formal(arg2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "decorator.py",
+                "line": 249,
+                "start": 8,
+                "end": 9
+              },
+              "resolves_to": [
+                "decorator.second_parameter_source_inlineable_decorator._original_function"
+              ],
+              "port": "formal(arg2)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.second_parameter_source_inlineable_decorator._original_function",
+    "sinks": [
+      {
+        "port": "formal(arg2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "decorator.py",
+              "line": 256,
+              "start": 15,
+              "end": 19
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
     "sources": [
       {
         "port": "formal(arg2)",
@@ -2463,7 +2639,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "decorator.function_two_args",
+    "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
     "callable_line": 243,
     "code": 5002,
     "line": 244,
@@ -2480,7 +2656,7 @@
               {
                 "leaves": [
                   {
-                    "name": "decorator.function_two_args",
+                    "name": "decorator.second_parameter_source_with_non_inlineable_decorator",
                     "port": "leaf:arg2"
                   }
                 ],
@@ -2490,8 +2666,8 @@
             "origin": {
               "filename": "decorator.py",
               "line": 243,
-              "start": 33,
-              "end": 42
+              "start": 69,
+              "end": 78
             }
           }
         ]
@@ -2524,7 +2700,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "decorator.function_two_args:5002:0:Call|_test_sink|0|formal(arg):5a12196c4f715f1c211ff11f995d5ae0"
+    "master_handle": "decorator.second_parameter_source_with_non_inlineable_decorator:5002:0:Call|_test_sink|0|formal(arg):32cdb2dd58d9a4613dd9140c87be6951"
   }
 }
 {

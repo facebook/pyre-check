@@ -232,13 +232,25 @@ def discard_second_parameter_inner(first_parameter: int) -> None:
     return
 
 
-def discard_second_parameter(
+def discard_second_parameter_non_inlineable(
     f: Callable[[int, str], None]
 ) -> Callable[[int], None]:
     # Return a function not defined here, to prevent from inlining decorators
     return discard_second_parameter_inner
 
 
-@discard_second_parameter
-def function_two_args(arg1: int, arg2: str) -> None:
+@discard_second_parameter_non_inlineable
+def second_parameter_source_with_non_inlineable_decorator(arg1: int, arg2: str) -> None:
     _test_sink(arg2)  # Issue here
+
+
+def no_op_decorator(f: Callable[P, None]) -> Callable[P, None]:
+    def inner(*args: P.args, **kwargs: P.kwargs) -> None:
+        f(*args, **kwargs)
+
+    return inner
+
+
+@no_op_decorator
+def second_parameter_source_inlineable_decorator(arg1: int, arg2: str) -> None:
+    _test_sink(arg2)
