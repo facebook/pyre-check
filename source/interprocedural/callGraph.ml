@@ -187,16 +187,23 @@ module CallTarget = struct
     |> List.remove_consecutive_duplicates ~which_to_keep:`First ~equal:equal_ignoring_indices
 
 
-  let receiver_class_from_type annotation =
-    annotation
-    |> CallResolution.strip_optional
-    |> CallResolution.strip_readonly
-    |> CallResolution.unbind_type_variable
-    |> Type.split
-    |> fst
-    |> Type.primitive_name
-    |> function
-    | Some "type" -> None
+  let receiver_class_from_type ~is_class_method annotation =
+    let type_, parameters =
+      annotation
+      |> CallResolution.strip_optional
+      |> CallResolution.strip_readonly
+      |> CallResolution.unbind_type_variable
+      |> Type.split
+    in
+    match Type.primitive_name type_ with
+    | Some "type" -> (
+        match parameters with
+        | [Type.Record.Parameter.Single parameter] when is_class_method ->
+            (* The receiver is the class itself. Technically, the receiver class type should be
+               `Type[int]`. However, we strip away the `type` part since it is implied by the
+               `is_class_method` flag. *)
+            Type.primitive_name parameter
+        | _ -> None)
     | Some "super" -> None
     | name -> name
 
@@ -1079,7 +1086,7 @@ module CallTargetIndexer = struct
       implicit_dunder_call;
       index;
       return_type;
-      receiver_class = receiver_type >>= CallTarget.receiver_class_from_type;
+      receiver_class = receiver_type >>= CallTarget.receiver_class_from_type ~is_class_method;
       is_class_method;
       is_static_method;
     }

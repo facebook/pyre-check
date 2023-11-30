@@ -766,6 +766,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -780,6 +781,7 @@ let test_call_graph_of_define context =
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
                         ~index:1
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1058,6 +1060,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1071,6 +1074,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
+                        ~receiver_class:"test.D"
                         (Target.Method { class_name = "test.D"; method_name = "f"; kind = Normal });
                     ]
                   ())) );
@@ -1083,6 +1087,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_receiver:true
                         ~is_class_method:true
+                        ~receiver_class:"test.D"
                         (Target.Method { class_name = "test.C"; method_name = "g"; kind = Normal });
                     ]
                   ())) );
@@ -1835,6 +1840,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                         ~implicit_receiver:true
                         ~is_class_method:true
+                        ~receiver_class:"test.C"
                         (Target.Method { class_name = "test.C"; method_name = "foo"; kind = Normal });
                     ]
                   ())) );
@@ -2550,6 +2556,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
+                        ~receiver_class:"test.Foo"
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                     ]
@@ -2638,6 +2645,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_class_method:true
+                        ~receiver_class:"test.Foo"
                         (Target.Method
                            { class_name = "test.Foo"; method_name = "bar"; kind = Normal });
                     ]

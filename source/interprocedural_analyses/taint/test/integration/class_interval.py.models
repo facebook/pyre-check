@@ -335,6 +335,8 @@
         "name": "backward",
         "roots": [
           {
+            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -406,6 +408,8 @@
         "name": "backward",
         "roots": [
           {
+            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1699,6 +1703,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "receiver_interval": [ { "lower": 54, "upper": 59 } ],
+            "is_self_call": false,
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
               "position": {
