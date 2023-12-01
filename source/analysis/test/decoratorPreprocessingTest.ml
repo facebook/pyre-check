@@ -1608,6 +1608,117 @@ let test_inline_decorators context =
 
       return _inlined_decorator_not_using_wraps(x)
   |};
+  (* Decorated function with a nested function. *)
+  assert_inlined
+    {|
+    from builtins import _test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        _test_sink(y)
+        callable(y)
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+
+      def inner() -> None:
+        a = 0
+        _test_sink(z)
+
+      inner()
+  |}
+    {|
+    from builtins import _test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        _test_sink(y)
+        callable(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def _original_function(z: str) -> None:
+
+        def inner() -> None:
+          a = 0
+          _test_sink(z)
+
+        inner()
+
+      def _inlined_with_logging(y: str) -> None:
+        _test_sink(y)
+        _original_function(y)
+
+      return _inlined_with_logging(y)
+  |};
+  assert_inlined
+    {|
+    from builtins import _test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        _test_sink(y)
+        callable(y)
+
+      return inner
+
+    @with_logging
+    def foo(z: str) -> None:
+
+      def inner() -> None:
+
+        def nested_inner() -> None:
+          b = 1
+          _test_sink(z)
+
+        a = 0
+        _test_sink(z)
+        nested_inner()
+
+      inner()
+  |}
+    {|
+    from builtins import _test_sink
+    from typing import Callable
+
+    def with_logging(callable: Callable[[str], None]) -> Callable[[str], None]:
+
+      def inner(y: str) -> None:
+        _test_sink(y)
+        callable(y)
+
+      return inner
+
+    def foo(y: str) -> None:
+      def _original_function(z: str) -> None:
+
+        def inner() -> None:
+
+          def nested_inner() -> None:
+            b = 1
+            _test_sink(z)
+
+          a = 0
+          _test_sink(z)
+          nested_inner()
+
+        inner()
+
+      def _inlined_with_logging(y: str) -> None:
+        _test_sink(y)
+        _original_function(y)
+
+      return _inlined_with_logging(y)
+  |};
   ()
 
 

@@ -226,32 +226,84 @@ let rename_local_variables ~pairs define =
 
 let rename_local_variable ~from ~to_ define = rename_local_variables ~pairs:[from, to_] define
 
+let rename_define ~new_name ({ Define.signature; _ } as define) =
+  { define with Define.signature = { signature with name = new_name } }
+
+
+let requalify_identifier ~old_qualifier ~new_qualifier identifier =
+  let reference = Reference.create identifier in
+  if Reference.is_local reference then
+    match
+      Reference.delocalize reference
+      |> Reference.drop_prefix ~prefix:old_qualifier
+      |> Reference.as_list
+    with
+    | [name] -> Some (Preprocessing.qualify_local_identifier ~qualifier:new_qualifier name)
+    | _ -> None
+  else
+    None
+
+
+let requalify_reference ~old_qualifier ~new_qualifier reference =
+  reference
+  |> Reference.show
+  |> requalify_identifier ~old_qualifier ~new_qualifier
+  >>| Reference.create
+
+
 let requalify_name ~old_qualifier ~new_qualifier = function
   (* TODO(T69755379): Handle Name.Attribute too. *)
-  | Name.Identifier identifier as name ->
-      let reference = Reference.create identifier in
-      if Reference.is_local reference then
-        match
-          Reference.delocalize reference
-          |> Reference.drop_prefix ~prefix:old_qualifier
-          |> Reference.as_list
-        with
-        | [name] ->
-            Name.Identifier (Preprocessing.qualify_local_identifier ~qualifier:new_qualifier name)
-        | _ -> name
-      else
-        name
+  | Name.Identifier identifier as name -> (
+      match requalify_identifier ~old_qualifier ~new_qualifier identifier with
+      | Some new_identifier -> Name.Identifier new_identifier
+      | None -> name)
   | name -> name
 
 
-let requalify_define ~old_qualifier ~new_qualifier define =
-  let transform = function
+let rec requalify_define ~old_qualifier ~new_qualifier define =
+  let transform_expression = function
     | Expression.Name name -> Expression.Name (requalify_name ~old_qualifier ~new_qualifier name)
     | expression -> expression
   in
-  match Transform.transform_in_statement ~transform (Statement.Define define) with
-  | Statement.Define define -> define
-  | _ -> failwith "expected define"
+  let transform_statement = function
+    | {
+        Node.value =
+          Statement.Define ({ Define.signature = { name = define_name; _ }; _ } as define);
+        location;
+      } as statement -> (
+        (* This define has a nested define, it also needs to be requalified recursively. *)
+        match requalify_reference ~old_qualifier ~new_qualifier define_name with
+        | Some new_name ->
+            rename_define ~new_name define
+            |> requalify_define
+                 ~old_qualifier:(Reference.delocalize define_name)
+                 ~new_qualifier:(Reference.delocalize new_name)
+            |> fun define -> Statement.Define define |> Node.create ~location
+        | None -> statement)
+    | statement -> statement
+  in
+  let module RequalifyTransform = Transform.Make (struct
+    type t = unit
+
+    let transform_expression_children _ _ = true
+
+    let expression _ { Node.value; location } =
+      { Node.value = transform_expression value; location }
+
+
+    let transform_children _ _ = (), true
+
+    let statement _ statement = (), [transform_statement statement]
+  end)
+  in
+  RequalifyTransform.transform
+    ()
+    (Source.create [Node.create_with_default_location (Statement.Define define)])
+  |> (fun { RequalifyTransform.source; _ } -> source)
+  |> Source.statements
+  |> function
+  | [{ Node.value = Statement.Define define; _ }] -> define
+  | _ -> failwith "expected single define"
 
 
 let convert_parameter_to_argument ~location { Node.value = { Parameter.name; _ }; _ } =
@@ -287,10 +339,6 @@ let create_function_call ~should_await ~location ~callee_name arguments =
 let create_function_call_to ~location ~callee_name { Define.Signature.parameters; async; _ } =
   List.map parameters ~f:(convert_parameter_to_argument ~location)
   |> create_function_call ~location ~callee_name ~should_await:async
-
-
-let rename_define ~new_name ({ Define.signature; _ } as define) =
-  { define with Define.signature = { signature with name = new_name } }
 
 
 let set_first_parameter_type

@@ -263,4 +263,4 @@ def second_parameter_source_inlineable_decorator_with_inner(
     def inner():
         _test_sink(arg2)
 
-    inner()  # TODO(T169938511): Should be an issue, currently a false negative.
+    inner()  # Issue here
