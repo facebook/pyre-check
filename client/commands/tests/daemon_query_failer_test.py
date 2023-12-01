@@ -8,9 +8,11 @@ import testslide
 
 from ...language_server import daemon_connection
 
-from ..daemon_query import DaemonQueryFailure
-
-from ..daemon_query_failer import DaemonQueryNoOpFailer, RegexDaemonQueryFailer
+from ..daemon_query_failer import (
+    DaemonFailerFailure,
+    DaemonQueryNoOpFailer,
+    RegexDaemonQueryFailer,
+)
 
 
 class DaemonQueryAutoFailerTest(testslide.TestCase):
@@ -48,14 +50,14 @@ class DaemonQueryAutoFailerPatternTest(testslide.TestCase):
 
         self.assertEqual(
             daemonQueryAutoFailerPattern.query_failure("/a/b/c/something.py"),
-            DaemonQueryFailure(
+            DaemonFailerFailure(
                 "Not querying daemon for path: /a/b/c/something.py as matches regex: /a/b/c/*"
             ),
         )
 
         self.assertEqual(
             daemonQueryAutoFailerPattern.query_failure("/a/b/c/something/something.py"),
-            DaemonQueryFailure(
+            DaemonFailerFailure(
                 "Not querying daemon for path: /a/b/c/something/something.py as matches regex: /a/b/c/*"
             ),
         )

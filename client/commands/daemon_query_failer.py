@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import abc
+import dataclasses
 import re
 
 from re import Pattern
@@ -11,7 +12,10 @@ from typing import Optional
 
 from ..language_server import daemon_connection
 
-from .daemon_query import DaemonQueryFailure
+
+@dataclasses.dataclass
+class DaemonFailerFailure:
+    message: str
 
 
 class AbstractDaemonQueryFailer(abc.ABC):
@@ -19,7 +23,7 @@ class AbstractDaemonQueryFailer(abc.ABC):
     def query_failure(
         self,
         path: str,
-    ) -> Optional[DaemonQueryFailure]:
+    ) -> Optional[DaemonFailerFailure]:
         """A result of None indicates that failure should not take place"""
         raise NotImplementedError()
 
@@ -31,7 +35,7 @@ class AbstractDaemonQueryFailer(abc.ABC):
 
 
 class DaemonQueryNoOpFailer(AbstractDaemonQueryFailer):
-    def query_failure(self, path: str) -> Optional[DaemonQueryFailure]:
+    def query_failure(self, path: str) -> Optional[DaemonFailerFailure]:
         return None
 
     def query_connection_failure(
@@ -51,9 +55,9 @@ class RegexDaemonQueryFailer(AbstractDaemonQueryFailer):
         if self.compiled_reject_regex.match(path):
             return f"Not querying daemon for path: {path} as matches regex: {self.reject_regex}"
 
-    def query_failure(self, path: str) -> Optional[DaemonQueryFailure]:
+    def query_failure(self, path: str) -> Optional[DaemonFailerFailure]:
         if (fail_message := self._matches_regex(path)) is not None:
-            return DaemonQueryFailure(fail_message)
+            return DaemonFailerFailure(fail_message)
 
     def query_connection_failure(
         self, path: str

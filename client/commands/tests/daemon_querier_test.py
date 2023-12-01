@@ -33,7 +33,7 @@ from ...language_server.features import (
     TypeCoverageAvailability,
 )
 from ...tests import setup
-from .. import server_state as state, start
+from .. import server_state as state
 from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
@@ -44,7 +44,7 @@ from ..daemon_querier import (
     RemoteIndexBackedQuerier,
 )
 from ..daemon_query import DaemonQueryFailure
-from ..daemon_query_failer import AbstractDaemonQueryFailer
+from ..daemon_query_failer import AbstractDaemonQueryFailer, DaemonFailerFailure
 
 from ..server_state import ConnectionStatus
 
@@ -681,7 +681,7 @@ class MockDaemonQueryFailer(AbstractDaemonQueryFailer):
         self.query_failures = []
         self.query_connection_failures = []
 
-    def query_failure(self, path: str) -> Optional[DaemonQueryFailure]:
+    def query_failure(self, path: str) -> Optional[DaemonFailerFailure]:
         self.query_failures.append(path)
         return None
 
