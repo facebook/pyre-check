@@ -41,7 +41,7 @@ val defining_attribute
   :  resolution:Resolution.t ->
   Type.t ->
   string ->
-  AnnotatedAttribute.instantiated_annotation AnnotatedAttribute.t option
+  AnnotatedAttribute.instantiated option
 
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)

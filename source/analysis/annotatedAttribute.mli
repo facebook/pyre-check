@@ -7,6 +7,10 @@
 
 open Ast
 
+module InstantiatedAnnotation : sig
+  type t
+end
+
 type read_only =
   | Refinable of { overridable: bool }
   | Unrefinable
@@ -48,9 +52,7 @@ type problem =
 
 type 'a t [@@deriving eq, show, compare, sexp]
 
-type instantiated_annotation
-
-type instantiated = instantiated_annotation t [@@deriving eq, show, compare, sexp]
+type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
 
 val create
   :  abstract:bool ->
