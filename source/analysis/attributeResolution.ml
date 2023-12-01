@@ -55,32 +55,6 @@ module Global = struct
   [@@deriving show, compare, sexp]
 end
 
-module UninstantiatedAnnotation = struct
-  type property_annotation = {
-    self: Type.t option;
-    value: Type.t option;
-  }
-  [@@deriving compare, show]
-
-  type kind =
-    | Attribute of Type.t
-    | Property of {
-        getter: property_annotation;
-        setter: property_annotation option;
-      }
-  [@@deriving compare, show]
-
-  type t = {
-    accessed_via_metaclass: bool;
-    kind: kind;
-  }
-  [@@deriving compare, show]
-end
-
-type uninstantiated = UninstantiatedAnnotation.t [@@deriving show]
-
-type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving show]
-
 type resolved_define = {
   undecorated_signature: Type.Callable.t;
   decorated: (Type.t, AnnotatedAttribute.problem) Result.t;
@@ -213,11 +187,15 @@ let pp_signature_match
 let show_signature_match = Format.asprintf "%a" pp_signature_match
 
 let create_uninstantiated_method ?(accessed_via_metaclass = false) callable =
-  { UninstantiatedAnnotation.accessed_via_metaclass; kind = Attribute (Callable callable) }
+  {
+    AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass;
+    kind = Attribute (Callable callable);
+  }
 
 
 module UninstantiatedAttributeTable = struct
-  type element = UninstantiatedAnnotation.t AnnotatedAttribute.t [@@deriving compare]
+  type element = AnnotatedAttribute.UninstantiatedAnnotation.t AnnotatedAttribute.t
+  [@@deriving compare]
 
   type table = (string, element) Stdlib.Hashtbl.t
 
@@ -667,7 +645,10 @@ module ClassDecorators = struct
       let make_attribute ~annotation ~attribute_name =
         AnnotatedAttribute.create_uninstantiated
           ~uninstantiated_annotation:
-            { UninstantiatedAnnotation.accessed_via_metaclass = false; kind = Attribute annotation }
+            {
+              AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
+              kind = Attribute annotation;
+            }
           ~abstract:false
           ~async_property:false
           ~class_variable:false
@@ -701,7 +682,7 @@ module ClassDecorators = struct
         AnnotatedAttribute.create_uninstantiated
           ~uninstantiated_annotation:
             {
-              UninstantiatedAnnotation.accessed_via_metaclass = false;
+              AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
               kind = Attribute (Callable callable);
             }
           ~abstract:false
@@ -782,7 +763,7 @@ module ClassDecorators = struct
           in
 
           let get_table_from_classsummary ({ Node.value = class_summary; _ } as parent) =
-            let create attribute : uninstantiated_attribute * Expression.t =
+            let create attribute : AnnotatedAttribute.uninstantiated * Expression.t =
               let value =
                 match attribute with
                 | {
@@ -2858,8 +2839,8 @@ class base class_metadata_environment dependency =
           ~abstract:false
           ~uninstantiated_annotation:
             {
-              UninstantiatedAnnotation.accessed_via_metaclass = false;
-              kind = UninstantiatedAnnotation.Attribute annotation;
+              AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass = false;
+              kind = AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation;
             }
           ~async_property:false
           ~class_variable:false
@@ -2952,7 +2933,7 @@ class base class_metadata_environment dependency =
             (attribute, has_non_total_typed_dictionary_base_class)
           =
           match AnnotatedAttribute.uninstantiated_annotation attribute with
-          | { UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
+          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute annotation; _ } ->
               Some
                 (Type.TypedDictionary.create_field
                    ~annotation
@@ -2977,8 +2958,8 @@ class base class_metadata_environment dependency =
         in
         let overload_method (attribute, _) =
           match AnnotatedAttribute.uninstantiated_annotation attribute with
-          | { UninstantiatedAnnotation.kind = Attribute (Callable callable); _ } as
-            uninstantiated_annotation ->
+          | { AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute (Callable callable); _ }
+            as uninstantiated_annotation ->
               let overloaded_callable overloads =
                 {
                   callable with
@@ -2996,7 +2977,7 @@ class base class_metadata_environment dependency =
                 ~uninstantiated_annotation:
                   {
                     uninstantiated_annotation with
-                    UninstantiatedAnnotation.kind = Attribute (Callable callable);
+                    AnnotatedAttribute.UninstantiatedAnnotation.kind = Attribute (Callable callable);
                   }
                 attribute
               |> AnnotatedAttribute.with_undecorated_signature
@@ -3068,7 +3049,7 @@ class base class_metadata_environment dependency =
                 (AnnotatedAttribute.create_uninstantiated
                    ~uninstantiated_annotation:
                      {
-                       UninstantiatedAnnotation.accessed_via_metaclass;
+                       AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass;
                        kind = Attribute (Callable callable);
                      }
                    ~abstract:false
@@ -3360,12 +3341,14 @@ class base class_metadata_environment dependency =
         ?(apply_descriptors = true)
         attribute =
       let make_annotation_readonly = function
-        | UninstantiatedAnnotation.Attribute annotation ->
-            UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
+        | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
+            AnnotatedAttribute.UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
         | Property { getter; setter } ->
-            let make_property_annotation_readonly { UninstantiatedAnnotation.self; value } =
+            let make_property_annotation_readonly
+                { AnnotatedAttribute.UninstantiatedAnnotation.self; value }
+              =
               {
-                UninstantiatedAnnotation.self = self >>| Type.ReadOnly.create;
+                AnnotatedAttribute.UninstantiatedAnnotation.self = self >>| Type.ReadOnly.create;
                 value = value >>| Type.ReadOnly.create;
               }
             in
@@ -3378,7 +3361,7 @@ class base class_metadata_environment dependency =
       let get_attribute = self#attribute in
       let class_name = AnnotatedAttribute.parent attribute in
       let attribute_name = AnnotatedAttribute.name attribute in
-      let { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
+      let { AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation } =
         AnnotatedAttribute.uninstantiated_annotation attribute
       in
       let accessed_through_class = accessed_through_class && not accessed_via_metaclass in
@@ -3397,11 +3380,14 @@ class base class_metadata_environment dependency =
             let solution = self#constraints ~target:class_name ~instantiated ~assumptions () in
             let instantiate annotation = ConstraintsSet.Solution.instantiate solution annotation in
             match annotation with
-            | Attribute annotation -> UninstantiatedAnnotation.Attribute (instantiate annotation)
+            | Attribute annotation ->
+                AnnotatedAttribute.UninstantiatedAnnotation.Attribute (instantiate annotation)
             | Property { getter; setter } ->
-                let instantiate_property_annotation { UninstantiatedAnnotation.self; value } =
+                let instantiate_property_annotation
+                    { AnnotatedAttribute.UninstantiatedAnnotation.self; value }
+                  =
                   {
-                    UninstantiatedAnnotation.self = self >>| instantiate;
+                    AnnotatedAttribute.UninstantiatedAnnotation.self = self >>| instantiate;
                     value = value >>| instantiate;
                   }
                 in
@@ -3558,7 +3544,10 @@ class base class_metadata_environment dependency =
         | Property { getter = getter_annotation; setter = setter_annotation } -> (
             (* Special case properties with type variables. *)
             let solve_property
-                { UninstantiatedAnnotation.self = self_annotation; value = value_annotation }
+                {
+                  AnnotatedAttribute.UninstantiatedAnnotation.self = self_annotation;
+                  value = value_annotation;
+                }
               =
               match value_annotation with
               | None -> Type.Top
@@ -3896,7 +3885,11 @@ class base class_metadata_environment dependency =
                     Type.Top
               | _ -> Type.Top
             in
-            UninstantiatedAnnotation.Attribute annotation, class_variable, visibility, None, None
+            ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
+              class_variable,
+              visibility,
+              None,
+              None )
         | Method { signatures; final; _ } ->
             (* Handle Callables *)
             let visibility =
@@ -3939,7 +3932,7 @@ class base class_metadata_environment dependency =
                     | _ -> resolved)
                 | Error _ -> Any
               in
-              ( UninstantiatedAnnotation.Attribute annotation,
+              ( AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation,
                 undecorated_signature,
                 Result.error decorated )
             in
@@ -3956,7 +3949,7 @@ class base class_metadata_environment dependency =
                 } ->
                 let getter_annotation = parse_annotation_option getter_annotation in
                 let setter_annotation = parse_annotation_option setter_annotation in
-                ( UninstantiatedAnnotation.Property
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
                     {
                       getter =
                         {
@@ -3976,7 +3969,7 @@ class base class_metadata_environment dependency =
                   None )
             | ReadOnly { getter = { self = self_annotation; return = getter_annotation; _ } } ->
                 let annotation = parse_annotation_option getter_annotation in
-                ( UninstantiatedAnnotation.Property
+                ( AnnotatedAttribute.UninstantiatedAnnotation.Property
                     {
                       getter =
                         { self = parse_annotation_option self_annotation; value = annotation };
@@ -4009,7 +4002,7 @@ class base class_metadata_environment dependency =
       in
       AnnotatedAttribute.create_uninstantiated
         ~uninstantiated_annotation:
-          { UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
+          { AnnotatedAttribute.UninstantiatedAnnotation.accessed_via_metaclass; kind = annotation }
         ~visibility
         ~abstract:
           (match kind with

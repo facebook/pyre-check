@@ -176,10 +176,6 @@ module SignatureSelection : sig
     signature_match option
 end
 
-type uninstantiated [@@deriving show]
-
-type uninstantiated_attribute = uninstantiated AnnotatedAttribute.t [@@deriving show]
-
 module AttributeDetail : sig
   type kind =
     | Simple
@@ -263,7 +259,7 @@ module AttributeReadOnly : sig
     include_generated_attributes:bool ->
     ?special_method:bool ->
     string ->
-    uninstantiated_attribute list option
+    AnnotatedAttribute.uninstantiated list option
 
   val metaclass : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> Type.t option
 
@@ -322,7 +318,7 @@ module AttributeReadOnly : sig
     accessed_through_class:bool ->
     accessed_through_readonly:bool ->
     ?instantiated:Type.t ->
-    uninstantiated_attribute ->
+    AnnotatedAttribute.uninstantiated ->
     AnnotatedAttribute.instantiated
 
   val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option

@@ -190,14 +190,14 @@ val uninstantiated_attributes
   ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
   Type.Primitive.t ->
-  AttributeResolution.uninstantiated_attribute list option
+  AnnotatedAttribute.uninstantiated list option
 
 val instantiate_attribute
   :  resolution:t ->
   ?instantiated:Type.t ->
   accessed_through_class:bool ->
   accessed_through_readonly:bool ->
-  AttributeResolution.uninstantiated_attribute ->
+  AnnotatedAttribute.uninstantiated ->
   AnnotatedAttribute.instantiated
 
 val metaclass : resolution:t -> Type.Primitive.t -> Type.t option

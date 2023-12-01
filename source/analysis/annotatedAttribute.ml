@@ -19,6 +19,28 @@
 open Core
 open Ast
 
+module UninstantiatedAnnotation = struct
+  type property_annotation = {
+    self: Type.t option;
+    value: Type.t option;
+  }
+  [@@deriving compare, show, sexp]
+
+  type kind =
+    | Attribute of Type.t
+    | Property of {
+        getter: property_annotation;
+        setter: property_annotation option;
+      }
+  [@@deriving compare, show, sexp]
+
+  type t = {
+    accessed_via_metaclass: bool;
+    kind: kind;
+  }
+  [@@deriving compare, show, sexp]
+end
+
 module InstantiatedAnnotation = struct
   type t = {
     annotation: Type.t;
@@ -84,6 +106,8 @@ type 'a t = {
   problem: problem option;
 }
 [@@deriving eq, show, compare, sexp]
+
+type uninstantiated = UninstantiatedAnnotation.t t [@@deriving show, compare, sexp]
 
 type instantiated = InstantiatedAnnotation.t t [@@deriving eq, show, compare, sexp]
 
