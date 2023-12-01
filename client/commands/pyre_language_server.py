@@ -24,7 +24,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import DefaultDict, Dict, Generic, List, Optional, Set, TypeVar, Union
 
-from .. import background_tasks, error, identifiers, json_rpc, log, timer
+from .. import background_tasks, identifiers, json_rpc, log, timer
 
 from ..language_server import connections, daemon_connection, features, protocol as lsp
 from . import (
@@ -36,9 +36,7 @@ from . import (
     type_error_handler,
 )
 
-from .daemon_querier import DaemonQuerierSource
-
-from .daemon_query import DaemonQueryFailure
+from .daemon_querier import DaemonQuerierSource, DaemonQueryFailure
 
 from .server_state import OpenedDocumentState
 

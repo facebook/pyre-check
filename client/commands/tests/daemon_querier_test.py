@@ -11,8 +11,6 @@ from unittest.mock import CallableMixin, patch
 
 import testslide
 
-from ... import backend_arguments
-
 from ...language_server import (
     connections,
     daemon_connection,
@@ -37,13 +35,13 @@ from .. import server_state as state
 from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
+    DaemonQueryFailure,
     FailableDaemonQuerier,
     GetDefinitionLocationsResponse,
     GetHoverResponse,
     PersistentDaemonQuerier,
     RemoteIndexBackedQuerier,
 )
-from ..daemon_query import DaemonQueryFailure
 from ..daemon_query_failer import AbstractDaemonQueryFailer, DaemonFailerFailure
 
 from ..server_state import ConnectionStatus

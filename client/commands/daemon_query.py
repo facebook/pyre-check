@@ -30,7 +30,7 @@ import dataclasses_json
 from .. import dataclasses_json_extensions as json_mixins, error
 
 from ..language_server import daemon_connection
-from . import incremental
+from . import daemon_querier, incremental
 from .query_response import InvalidQueryResponse, Response
 
 
@@ -39,12 +39,6 @@ QueryResponseType = TypeVar(
 )
 
 LOG: logging.Logger = logging.getLogger(__name__)
-
-
-@dataclasses.dataclass(frozen=True)
-class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
-    error_message: str
-    error_source: Optional[Exception] = None
 
 
 def execute_query(socket_path: Path, query_text: str) -> Response:
@@ -57,7 +51,7 @@ async def attempt_async_query(
     socket_path: Path,
     query_text: str,
     overlay_id: Optional[str] = None,
-) -> Union[Response, DaemonQueryFailure]:
+) -> Union[Response, daemon_querier.DaemonQueryFailure]:
     response_text = await daemon_connection.attempt_send_async_raw_request(
         socket_path=socket_path,
         request=json.dumps(
@@ -69,14 +63,14 @@ async def attempt_async_query(
         ),
     )
     if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
-        return DaemonQueryFailure(
+        return daemon_querier.DaemonQueryFailure(
             error_message=f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})",
             error_source=response_text.error_source,
         )
     try:
         return Response.parse(response_text)
     except InvalidQueryResponse as exception:
-        return DaemonQueryFailure(
+        return daemon_querier.DaemonQueryFailure(
             f"In attempt async query with response_text, got InvalidQueryResponse exception: ({exception})"
         )
 
@@ -86,14 +80,14 @@ async def attempt_typed_async_query(
     socket_path: Path,
     query_text: str,
     overlay_id: Optional[str] = None,
-) -> Union[QueryResponseType | DaemonQueryFailure]:
+) -> Union[QueryResponseType | daemon_querier.DaemonQueryFailure]:
     try:
         response = await attempt_async_query(
             socket_path,
             query_text,
             overlay_id,
         )
-        if isinstance(response, DaemonQueryFailure):
+        if isinstance(response, daemon_querier.DaemonQueryFailure):
             return response
         else:
             if not isinstance(response.payload, dict):
@@ -101,7 +95,7 @@ async def attempt_typed_async_query(
                     f"Expected a dict, got {response.payload!r} as response"
                 )
             if "error" in response.payload:
-                return DaemonQueryFailure(
+                return daemon_querier.DaemonQueryFailure(
                     f"Daemon query returned error: {response.payload} for query: {query_text}"
                 )
             return response_type.from_dict(response.payload)
@@ -110,7 +104,7 @@ async def attempt_typed_async_query(
         ValueError,
         dataclasses_json.mm.ValidationError,
     ) as exception:
-        return DaemonQueryFailure(
+        return daemon_querier.DaemonQueryFailure(
             f"When interpretting response type: {response_type.__name__} got: {type(exception).__name__}({exception})"
         )
 
@@ -119,7 +113,7 @@ async def attempt_async_overlay_type_errors(
     socket_path: Path,
     source_code_path: Path,
     overlay_id: str,
-) -> Union[List[error.Error], DaemonQueryFailure]:
+) -> Union[List[error.Error], daemon_querier.DaemonQueryFailure]:
     """
     In order to type check unsaved changes, we need to get type errors for one
     specific module in an overlay.
@@ -137,13 +131,13 @@ async def attempt_async_overlay_type_errors(
         ),
     )
     if isinstance(response_text, daemon_connection.DaemonConnectionFailure):
-        return DaemonQueryFailure(
+        return daemon_querier.DaemonQueryFailure(
             error_message=f"In attempt async query with response_text, got DaemonConnectionFailure exception: ({response_text.error_message})",
             error_source=response_text.error_source,
         )
     try:
         return incremental.parse_type_error_response(response_text).errors
     except incremental.InvalidServerResponse as exception:
-        return DaemonQueryFailure(
+        return daemon_querier.DaemonQueryFailure(
             f"In attempt async query with response_text, parsing led to uncaught error: ({exception})"
         )

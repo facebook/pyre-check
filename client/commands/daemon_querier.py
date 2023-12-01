@@ -80,6 +80,13 @@ class GetHoverResponse:
     data: Optional[lsp.LspHoverResponse]
 
 
+@dataclasses.dataclass(frozen=True)
+class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
+    error_message: str
+    error_source: Optional[Exception] = None
+    fallback_result: Optional[GetDefinitionLocationsResponse] = None
+
+
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
     return lsp.TypeCoverageResponse(
         covered_percent=0.0,
@@ -142,14 +149,14 @@ class AbstractDaemonQuerier(abc.ABC):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -157,7 +164,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -165,7 +172,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -173,7 +180,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -181,7 +188,7 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -190,7 +197,7 @@ class AbstractDaemonQuerier(abc.ABC):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -199,7 +206,7 @@ class AbstractDaemonQuerier(abc.ABC):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -245,41 +252,41 @@ class EmptyQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         raise NotImplementedError()
 
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         raise NotImplementedError()
 
     async def get_hover(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         raise NotImplementedError()
 
     async def get_definition_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         raise NotImplementedError()
 
     async def get_completions(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         raise NotImplementedError()
 
     async def get_reference_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         raise NotImplementedError()
 
     async def get_init_call_hierarchy(
@@ -287,7 +294,7 @@ class EmptyQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         raise NotImplementedError()
 
     async def get_call_hierarchy_from_item(
@@ -295,7 +302,7 @@ class EmptyQuerier(AbstractDaemonQuerier):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         raise NotImplementedError()
 
     async def handle_file_opened(
@@ -333,7 +340,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def _query_modules_of_path(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, QueryModulesOfPathResponse]:
+    ) -> Union[DaemonQueryFailure, QueryModulesOfPathResponse]:
         overlay_id = (
             str(path)
             if self.get_language_server_features().unsaved_changes.is_enabled()
@@ -353,7 +360,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         response = await self._query_modules_of_path(
             path,
         )
-        if isinstance(response, daemon_query.DaemonQueryFailure):
+        if isinstance(response, DaemonQueryFailure):
             return None
         else:
             return len(response.response) > 0
@@ -361,12 +368,12 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         errors: Dict[Path, List[error.Error]] = {}
         for path in paths:
             overlay_id = self._get_overlay_id(path)
             if overlay_id is None:
-                return daemon_query.DaemonQueryFailure(
+                return DaemonQueryFailure(
                     "Invalid attempt to run a get_type_errors overlay request"
                     "in a language server without unsaved changes support."
                 )
@@ -375,7 +382,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
                 source_code_path=path,
                 overlay_id=overlay_id,
             )
-            if isinstance(result, daemon_query.DaemonQueryFailure):
+            if isinstance(result, DaemonQueryFailure):
                 return result
             errors[path] = result
         return errors
@@ -383,7 +390,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         is_typechecked = await self._query_is_typechecked(path)
         if is_typechecked is None:
             return None
@@ -394,7 +401,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             socket_path=self.socket_path,
             query_text=f"expression_level_coverage('{path}')",
         )
-        if isinstance(response, daemon_query.DaemonQueryFailure):
+        if isinstance(response, DaemonQueryFailure):
             return response
         else:
             return path_to_expression_coverage_response(
@@ -408,7 +415,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         path_string = f"'{path}'"
         query_text = (
             f"hover_info_for_position(path={path_string},"
@@ -420,7 +427,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             query_text=query_text,
             overlay_id=self._get_overlay_id(path),
         )
-        if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
+        if isinstance(daemon_response, DaemonQueryFailure):
             return daemon_response
         else:
             return GetHoverResponse(
@@ -432,7 +439,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         path_string = f"'{path}'"
         query_text = (
             f"location_of_definition(path={path_string},"
@@ -444,7 +451,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             query_text=query_text,
             overlay_id=self._get_overlay_id(path),
         )
-        if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
+        if isinstance(daemon_response, DaemonQueryFailure):
             return daemon_response
         else:
             return GetDefinitionLocationsResponse(
@@ -459,8 +466,8 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
-        return daemon_query.DaemonQueryFailure(
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
+        return DaemonQueryFailure(
             "Completions is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
@@ -468,7 +475,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         path_string = f"'{path}'"
         query_text = (
             f"find_references(path={path_string},"
@@ -480,7 +487,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
             query_text=query_text,
             overlay_id=self._get_overlay_id(path),
         )
-        if isinstance(daemon_response, daemon_query.DaemonQueryFailure):
+        if isinstance(daemon_response, DaemonQueryFailure):
             return daemon_response
         else:
             result = [
@@ -494,8 +501,8 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        return daemon_query.DaemonQueryFailure(
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        return DaemonQueryFailure(
             "Call hierarchy is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
@@ -504,8 +511,8 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        return daemon_query.DaemonQueryFailure(
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+        return DaemonQueryFailure(
             "Call hierarchy (from item) is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
@@ -585,93 +592,93 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_hover(path, position)
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         for path in paths:
             failure = self.get_query_failure(str(path))
             if failure is not None:
-                return daemon_query.DaemonQueryFailure(failure.message)
+                return DaemonQueryFailure(failure.message)
         return await self.base_querier.get_type_errors(paths)
 
     async def get_definition_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_definition_locations(path, position)
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_completions(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_completions(path, position)
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_reference_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_reference_locations(path, position)
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_init_call_hierarchy(
         self,
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_init_call_hierarchy(
                 path, position, relation_direction
             )
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_call_hierarchy_from_item(
         self,
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_call_hierarchy_from_item(
                 path, call_hierarchy_item, relation_direction
             )
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         failure = self.get_query_failure(str(path))
         if failure is None:
             return await self.base_querier.get_type_coverage(path)
         else:
-            return daemon_query.DaemonQueryFailure(failure.message)
+            return DaemonQueryFailure(failure.message)
 
     async def handle_file_opened(
         self,
@@ -723,7 +730,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         type_errors_request = code_navigation_request.TypeErrorsRequest(
             paths=[str(path) for path in paths], client_id=self._get_client_id()
         )
@@ -731,7 +738,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             self.socket_path, type_errors_request
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(
+            return DaemonQueryFailure(
                 response.message, error_source=response.error_source
             )
         result: Dict[Path, List[error.Error]] = {}
@@ -756,7 +763,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         hover_request = code_navigation_request.HoverRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -771,13 +778,13 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
                 source=DaemonQuerierSource.PYRE_DAEMON,
                 data=lsp.LspHoverResponse.from_pyre_hover_responses(response.contents),
             )
-        return daemon_query.DaemonQueryFailure(response.message)
+        return DaemonQueryFailure(response.message)
 
     async def get_definition_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         definition_request = code_navigation_request.LocationOfDefinitionRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -788,7 +795,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             definition_request,
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(
+            return DaemonQueryFailure(
                 response.message, error_source=response.error_source
             )
         return GetDefinitionLocationsResponse(
@@ -803,7 +810,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         completions_request = lsp.CompletionRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -813,7 +820,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             self.socket_path, completions_request
         )
         if isinstance(response, code_navigation_request.ErrorResponse):
-            return daemon_query.DaemonQueryFailure(
+            return DaemonQueryFailure(
                 response.message, error_source=response.error_source
             )
         return [
@@ -825,7 +832,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         if path not in self.server_state.opened_documents.keys():
             return []
         code = self.server_state.opened_documents[path].code
@@ -854,7 +861,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return []
 
     async def get_call_hierarchy_from_item(
@@ -862,7 +869,7 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return []
 
     async def handle_file_opened(
@@ -924,20 +931,20 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         return await self.base_querier.get_type_errors(paths)
 
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         return await self.base_querier.get_type_coverage(path)
 
     async def get_hover(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetHoverResponse]:
+    ) -> Union[DaemonQueryFailure, GetHoverResponse]:
         if is_server_unavailable(self.base_querier.server_state):
             index_result = await self.index.hover(path, position)
             return GetHoverResponse(
@@ -950,7 +957,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         original_error_message: Optional[str] = None,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         indexed_result = await self.index.definition(path, position)
 
         return GetDefinitionLocationsResponse(
@@ -967,14 +974,14 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         if is_server_unavailable(self.base_querier.server_state):
             return await self.get_definition_locations_from_glean(path, position)
         base_results = await self.base_querier.get_definition_locations(path, position)
 
         # If pyre throws an exception and might not require restarting due to that exception  - then fall back to glean
         if (
-            isinstance(base_results, daemon_query.DaemonQueryFailure)
+            isinstance(base_results, DaemonQueryFailure)
             and base_results.error_source is None
         ):
             LOG.warn(
@@ -992,14 +999,14 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
         return await self.base_querier.get_completions(path, position)
 
     async def get_reference_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
         return await self.index.references(path, position)
 
     async def get_init_call_hierarchy(
@@ -1007,7 +1014,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return await self.index.prepare_call_hierarchy(
             path, position, relation_direction
         )
@@ -1017,7 +1024,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         return await self.index.call_hierarchy_from_item(
             path, call_hierarchy_item, relation_direction
         )

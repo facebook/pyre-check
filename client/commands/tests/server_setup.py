@@ -13,7 +13,6 @@ from ... import backend_arguments, background_tasks, error, identifiers, json_rp
 from ...language_server import connections, daemon_connection, features, protocol as lsp
 from .. import (
     daemon_querier as querier,
-    daemon_query,
     pyre_language_server as ls,
     pyre_server_options as options,
     server_state as state,
@@ -151,13 +150,13 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
     async def get_type_errors(
         self,
         paths: List[Path],
-    ) -> Union[daemon_query.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+    ) -> Union[querier.DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         return self.mock_type_errors or {}
 
     async def get_type_coverage(
         self,
         path: Path,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+    ) -> Union[querier.DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
         self.requests.append({"path": path})
         return self.mock_type_coverage
 
@@ -165,7 +164,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, querier.GetHoverResponse]:
+    ) -> Union[querier.DaemonQueryFailure, querier.GetHoverResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_hover_response is None:
             raise ValueError("You need to set the hover response in the mock querier")
@@ -176,7 +175,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, querier.GetDefinitionLocationsResponse]:
+    ) -> Union[querier.DaemonQueryFailure, querier.GetDefinitionLocationsResponse]:
         self.requests.append({"path": path, "position": position})
         if self.mock_definition_response is None:
             raise ValueError(
@@ -189,7 +188,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CompletionItem]]:
+    ) -> Union[querier.DaemonQueryFailure, List[lsp.CompletionItem]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_completion_response is None:
             raise ValueError(
@@ -202,7 +201,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.LspLocation]]:
+    ) -> Union[querier.DaemonQueryFailure, List[lsp.LspLocation]]:
         self.requests.append({"path": path, "position": position})
         if self.mock_references_response is None:
             raise ValueError(
@@ -216,7 +215,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[querier.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         self.requests.append(
             {
                 "path": path,
@@ -236,7 +235,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         path: Path,
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
-    ) -> Union[daemon_query.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
+    ) -> Union[querier.DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
         self.requests.append(
             {
                 "path": path,
@@ -256,7 +255,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
         new_text: str,
-    ) -> Union[daemon_query.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
+    ) -> Union[querier.DaemonQueryFailure, Optional[lsp.WorkspaceEdit]]:
         if self.mock_rename_response is None:
             raise ValueError(
                 "You need to set the get rename response in the mock querier"
