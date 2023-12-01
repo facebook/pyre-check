@@ -44,7 +44,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class DaemonQuerierSource(str, enum.Enum):
     PYRE_DAEMON: str = "PYRE_DAEMON"
     GLEAN_INDEXER: str = "GLEAN_INDEXER"
-    PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER: str = "PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER"
 
 
 @dataclasses.dataclass(frozen=True)
@@ -71,7 +70,6 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 class GetDefinitionLocationsResponse:
     source: DaemonQuerierSource
     data: List[lsp.LspLocation]
-    original_error_message: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -956,18 +954,12 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
         position: lsp.PyrePosition,
-        original_error_message: Optional[str] = None,
-    ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
+    ) -> GetDefinitionLocationsResponse:
         indexed_result = await self.index.definition(path, position)
 
         return GetDefinitionLocationsResponse(
-            source=(
-                DaemonQuerierSource.PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER
-                if original_error_message is not None
-                else DaemonQuerierSource.GLEAN_INDEXER
-            ),
+            source=(DaemonQuerierSource.GLEAN_INDEXER),
             data=indexed_result,
-            original_error_message=original_error_message,
         )
 
     async def get_definition_locations(
@@ -987,11 +979,12 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
             LOG.warn(
                 f"Pyre threw exception: {base_results.error_message} - falling back to glean"
             )
-            fallback_response = await self.get_definition_locations_from_glean(
-                path, position, original_error_message=base_results.error_message
+            fallback_result = await self.get_definition_locations_from_glean(
+                path, position
             )
-            LOG.warn(f"Got the following response from glean: {fallback_response}")
-            return fallback_response
+            return DaemonQueryFailure(
+                base_results.error_message, base_results.error_source, fallback_result
+            )
 
         return base_results
 

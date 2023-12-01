@@ -643,10 +643,12 @@ class DaemonQuerierTest(testslide.TestCase):
         )
         self.assertEqual(
             response,
-            GetDefinitionLocationsResponse(
-                source=DaemonQuerierSource.PYRE_EXCEPTION_FALLBACK_GLEAN_INDEXER,
-                data=[],
-                original_error_message=_DaemonQuerier_Failure_Message,
+            DaemonQueryFailure(
+                fallback_result=GetDefinitionLocationsResponse(
+                    source=DaemonQuerierSource.GLEAN_INDEXER, data=[]
+                ),
+                error_message=_DaemonQuerier_Failure_Message,
+                error_source=None,
             ),
         )
 

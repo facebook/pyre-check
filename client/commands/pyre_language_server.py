@@ -102,7 +102,6 @@ class QueryResultWithDurations(Generic[QueryResultType]):
     overlay_update_duration: float
     query_duration: float
     overall_duration: float
-    original_error_message: Optional[str]
 
 
 class PyreLanguageServerApi(abc.ABC):
@@ -719,21 +718,18 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
             source = None
             result = raw_result
-            original_error_message = None
         else:
             source = raw_result.source
             result = lsp.LspLocation.cached_schema().dump(
                 raw_result.data,
                 many=True,
             )
-            original_error_message = raw_result.original_error_message
         return QueryResultWithDurations(
             source=source,
             result=result,
             overlay_update_duration=overlay_update_duration,
             query_duration=query_duration,
             overall_duration=overall_timer.stop_in_millisecond(),
-            original_error_message=original_error_message,
         )
 
     async def process_definition_request(
@@ -780,7 +776,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
         result = result_with_durations.result
         if isinstance(result, DaemonQueryFailure):
             error_message = result.error_message
-            output_result = []
+            output_result = (
+                result.fallback_result.data
+                if result.fallback_result is not None
+                else []
+            )
             error_source = result.error_source
         else:
             error_message = None
@@ -817,7 +817,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "response": output_result,
                 "duration_ms": result_with_durations.overall_duration,
                 "query_source": result_with_durations.source,
-                "original_error_message": result_with_durations.original_error_message,
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "server_state_open_documents_count": len(
