@@ -470,25 +470,24 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ({
          CallGraph.CallTarget.target;
-         implicit_receiver;
-         implicit_dunder_call;
          index = _;
          return_type;
          receiver_class;
          is_class_method = _;
          is_static_method = _;
+         _;
        } as call_target)
     =
-    (* Add implicit self. *)
+    (* Add implicit argument. *)
     let arguments, arguments_taint =
-      if implicit_receiver && not implicit_dunder_call then
-        ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
-          Option.value_exn self_taint :: arguments_taint )
-      else if implicit_receiver && implicit_dunder_call then
-        ( { Call.Argument.name = None; value = callee } :: arguments,
-          Option.value_exn callee_taint :: arguments_taint )
-      else
-        arguments, arguments_taint
+      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      | CalleeBase ->
+          ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
+            Option.value_exn self_taint :: arguments_taint )
+      | Callee ->
+          ( { Call.Argument.name = None; value = callee } :: arguments,
+            Option.value_exn callee_taint :: arguments_taint )
+      | None -> arguments, arguments_taint
     in
     let ({ Model.forward; backward; _ } as taint_model) =
       TaintProfiler.track_model_fetch

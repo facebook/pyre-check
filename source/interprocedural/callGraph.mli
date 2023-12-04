@@ -70,6 +70,16 @@ module CallTarget : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+module ImplicitArgument : sig
+  type t =
+    | CalleeBase
+    | Callee
+    | None
+  [@@deriving show]
+
+  val implicit_argument : CallTarget.t -> t
+end
+
 (** Information about an argument being a callable. *)
 module HigherOrderParameter : sig
   type t = {

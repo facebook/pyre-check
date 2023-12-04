@@ -282,6 +282,31 @@ module CallTarget = struct
     |> fun bindings -> `Assoc (List.rev bindings)
 end
 
+module ImplicitArgument = struct
+  (* At some call sites, there exist "implicit" arguments. That is, they do not appear inside the
+     parentheses like normal arguments. But for analysis purposes, we need to make them explicit. *)
+  type t =
+    | CalleeBase
+      (* The implicit argument is the base expression inside the callee expression, such as `self`
+         at call site `self.m(1)`. *)
+    | Callee
+      (* The implicit argument is the entire callee expression, such as `c` in at call site `c(1)`
+         where `c` is an object instance of a callable class. A more complicated case is when
+         creating an object `SomeClass(1)`. Here `SomeClass` is an implicit argument to the
+         (implicit) call `object.__new__`. *)
+    | None (* No implicit argument. *)
+  [@@deriving show]
+
+  let implicit_argument { CallTarget.implicit_receiver; implicit_dunder_call; _ } =
+    if implicit_receiver then
+      if implicit_dunder_call then
+        Callee
+      else
+        CalleeBase
+    else
+      None
+end
+
 (** Information about an argument being a callable. *)
 module HigherOrderParameter = struct
   type t = {

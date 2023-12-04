@@ -350,22 +350,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_taint
       ({
          CallGraph.CallTarget.target;
-         implicit_receiver;
-         implicit_dunder_call;
          index = _;
          return_type;
          receiver_class;
          is_class_method = _;
          is_static_method = _;
+         _;
        } as call_target)
     =
     let arguments =
-      if implicit_receiver && not implicit_dunder_call then
-        { Call.Argument.name = None; value = Option.value_exn self } :: arguments
-      else if implicit_receiver && implicit_dunder_call then
-        { Call.Argument.name = None; value = callee } :: arguments
-      else
-        arguments
+      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      | CalleeBase -> { Call.Argument.name = None; value = Option.value_exn self } :: arguments
+      | Callee -> { Call.Argument.name = None; value = callee } :: arguments
+      | None -> arguments
     in
     let triggered_taint =
       Issue.TriggeredSinkLocationMap.get FunctionContext.triggered_sinks ~location:call_location
@@ -598,18 +595,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (CallModel.match_actuals_to_formals ~model:taint_model ~arguments)
         initial_state
     in
-    (* Extract the taint for self. *)
+    (* Extract the taint for implicit arguments. *)
     let self_taint, callee_taint, arguments_taint =
-      if implicit_receiver && not implicit_dunder_call then
-        match arguments_taint with
-        | self_taint :: arguments_taint -> Some self_taint, None, arguments_taint
-        | _ -> failwith "missing taint for self argument"
-      else if implicit_receiver && implicit_dunder_call then
-        match arguments_taint with
-        | callee_taint :: arguments_taint -> None, Some callee_taint, arguments_taint
-        | _ -> failwith "missing taint for callee argument"
-      else
-        None, None, arguments_taint
+      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      | CalleeBase -> (
+          match arguments_taint with
+          | self_taint :: arguments_taint -> Some self_taint, None, arguments_taint
+          | _ -> failwith "missing taint for self argument")
+      | Callee -> (
+          match arguments_taint with
+          | callee_taint :: arguments_taint -> None, Some callee_taint, arguments_taint
+          | _ -> failwith "missing taint for callee argument")
+      | None -> None, None, arguments_taint
     in
     { arguments_taint; self_taint; callee_taint; captures_taint; captures; state }
 
