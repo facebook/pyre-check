@@ -309,7 +309,7 @@ module ReadOnly = struct
     end : ClassHierarchy.Handler)
 
 
-  let variables ?(default = None) read_only ?dependency class_name =
+  let variables read_only ?dependency ?(default = None) class_name =
     ClassHierarchy.variables ~default (class_hierarchy ?dependency read_only) class_name
 end
 
