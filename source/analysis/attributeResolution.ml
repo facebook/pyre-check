@@ -292,7 +292,7 @@ let unannotated_global_environment class_metadata_environment =
   |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let class_summary class_metadata_environment annotation ~dependency =
+let class_summary_for_outer_type class_metadata_environment annotation ~dependency =
   Type.split annotation
   |> fst
   |> Type.primitive_name
@@ -4044,7 +4044,8 @@ class base class_metadata_environment dependency =
               in
               base_classes
               |> List.map ~f:base_to_class
-              |> List.filter_map ~f:(class_summary class_metadata_environment ~dependency)
+              |> List.filter_map
+                   ~f:(class_summary_for_outer_type class_metadata_environment ~dependency)
               |> List.filter ~f:(fun base_class ->
                      not ([%compare.equal: ClassSummary.t Node.t] base_class original))
             in
@@ -4129,7 +4130,7 @@ class base class_metadata_environment dependency =
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
-        |> class_summary class_metadata_environment ~dependency
+        |> class_summary_for_outer_type class_metadata_environment ~dependency
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
         >>= ClassHierarchyEnvironment.ReadOnly.variables
               (class_hierarchy_environment class_metadata_environment)
