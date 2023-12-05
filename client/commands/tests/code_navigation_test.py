@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 
+import asyncio
 from pathlib import Path
 from typing import Set, Union
 
@@ -61,6 +62,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
 
         client_output_channel = connections.AsyncTextWriter(bytes_writer)
 
+        client_register_event = asyncio.Event()
         server_handler = PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             server_options_reader=fake_server_options_reader,
             server_state=server_state,
@@ -71,7 +73,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 client_output_channel, server_state
             ),
             queriers=[server_setup.MockDaemonQuerier()],
+            client_register_event=client_register_event,
         )
+        client_register_event.set()
         await server_handler.handle_status_update_event(
             subscription.StatusUpdate(kind="BusyBuilding")
         )
@@ -105,6 +109,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
             connections.MemoryBytesWriter()
         )
         querier = TestSetupQuerier()
+        client_register_event = asyncio.Event()
         server_handler = PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             server_options_reader=server_setup.mock_server_options_reader,
             server_state=server_state,
@@ -115,8 +120,10 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandlerTest(testslide.TestCase):
                 client_output_channel, server_state
             ),
             queriers=[querier],
+            client_register_event=client_register_event,
         )
         await server_handler.client_setup()
+        client_register_event.set()
 
         self.assertTrue(querier.is_registered)
         self.assertSetEqual(querier.file_opened, {test_path, test2_path})

@@ -60,6 +60,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
     client_status_message_handler: status_message_handler.ClientStatusMessageHandler
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
     subscription_response_parser: PyreSubscriptionResponseParser
+    client_register_event: Optional[asyncio.Event]
 
     def __init__(
         self,
@@ -69,6 +70,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         client_type_error_handler: type_error_handler.ClientTypeErrorHandler,
         subscription_response_parser: PyreSubscriptionResponseParser,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
+        client_register_event: Optional[asyncio.Event] = None,
     ) -> None:
         self.server_options_reader = server_options_reader
         self.remote_logging = remote_logging
@@ -76,6 +78,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         self.client_status_message_handler = client_status_message_handler
         self.client_type_error_handler = client_type_error_handler
         self.subscription_response_parser = subscription_response_parser
+        self.client_register_event = client_register_event
 
     @abc.abstractmethod
     async def handle_type_error_event(
@@ -247,6 +250,8 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         connection_timer = timer.Timer()
         try:
             await self.client_setup()
+            if self.client_register_event is not None:
+                self.client_register_event.set()
             await self.connect_and_subscribe(
                 server_options,
                 socket_path,

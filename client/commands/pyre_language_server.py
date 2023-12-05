@@ -1403,6 +1403,7 @@ class PyreLanguageServerDispatcher:
         server_state: state.ServerState,
         daemon_manager: background_tasks.TaskManager,
         api: PyreLanguageServerApi,
+        client_register_event: Optional[asyncio.Event] = None,
     ) -> None:
         self.input_channel = input_channel
         self.output_channel = output_channel
@@ -1410,6 +1411,7 @@ class PyreLanguageServerDispatcher:
         self.daemon_manager = daemon_manager
         self.api = api
         self.outstanding_tasks = set()
+        self.client_register_event = client_register_event
 
     async def wait_for_exit(self) -> commands.ExitCode:
         await _wait_for_exit(self.input_channel, self.output_channel)
@@ -1585,6 +1587,8 @@ class PyreLanguageServerDispatcher:
             await self.api.process_shutdown_request(request.id)
             return await self.wait_for_exit()
         else:
+            if self.client_register_event is not None:
+                await self.client_register_event.wait()
             request_task = asyncio.create_task(
                 self.dispatch_nonblocking_request(request)
             )
