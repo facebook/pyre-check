@@ -569,9 +569,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "captured-variable" },
               { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" }
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 76, "start": 19, "end": 23 } ],
             "tito": null
@@ -590,9 +590,9 @@
               }
             ],
             "local_features": [
-              { "always-via": "captured-variable" },
               { "always-via": "tito" },
-              { "always-via": "obscure:unknown-callee" }
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 76, "start": 40, "end": 48 } ],
             "tito": null

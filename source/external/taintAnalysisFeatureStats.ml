@@ -30,6 +30,7 @@ let common_breadcrumbs =
     (* WidenBroadening *) -293447484878671831;
     (* FormatString *) 3490955977576959699;
     (* Lambda *) -2825441026312067324;
+    (* CapturedVariable *) -3180226491408539531;
     (* Type[enumeration] *) 4137955276530861606;
     (* SimpleVia[string_concat_rhs] *) 3884789361536239432;
     (* SimpleVia[string_concat_lhs] *) 3278089053981308067;
@@ -44,7 +45,6 @@ let common_breadcrumbs =
     (* SimpleVia[escape_html] *) 910370951359474268;
     (* SimpleVia[obfuscated_data] *) -4208192405276300888;
     (* SimpleVia[hmac_key] *) -3982698479217660749;
-    (* SimpleVia[filesystem_operation] *) -2972470572941736736;
   |]
 
 

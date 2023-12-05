@@ -40,8 +40,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "length": 1,
@@ -65,9 +65,9 @@
       }
     ],
     "features": [
-      { "always-via": "captured-variable" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -265,8 +265,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "length": 2,
@@ -290,9 +290,9 @@
       }
     ],
     "features": [
-      { "always-via": "captured-variable" },
       { "always-via": "special_source" },
-      { "always-via": "special_sink" }
+      { "always-via": "special_sink" },
+      { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -329,7 +329,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "captured-variable" }, { "always-via": "tito" }
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 115, "start": 52, "end": 66 } ],
             "origin": {
@@ -363,10 +363,10 @@
       }
     ],
     "features": [
-      { "always-via": "captured-variable" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -396,9 +396,9 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
                   { "always-via": "special_source" },
-                  { "always-via": "tito" }
+                  { "always-via": "tito" },
+                  { "always-via": "captured-variable" }
                 ],
                 "leaves": [
                   { "name": "_test_source", "port": "leaf:return" }
@@ -444,10 +444,10 @@
       }
     ],
     "features": [
-      { "always-via": "captured-variable" },
       { "always-via": "special_source" },
       { "always-via": "special_sink" },
-      { "always-via": "tito" }
+      { "always-via": "tito" },
+      { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -717,8 +717,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "length": 1,
                 "kind": "Test"
@@ -788,7 +788,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "captured-variable" }, { "always-via": "tito" }
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 111, "start": 11, "end": 18 } ],
             "tito": null
@@ -864,7 +864,7 @@
               }
             ],
             "local_features": [
-              { "always-via": "captured-variable" }, { "always-via": "tito" }
+              { "always-via": "tito" }, { "always-via": "captured-variable" }
             ],
             "tito_positions": [ { "line": 89, "start": 11, "end": 18 } ],
             "origin": {

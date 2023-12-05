@@ -2642,8 +2642,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "length": 3,
                 "kind": "Test"
@@ -2710,8 +2710,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
                 "length": 3,
@@ -2735,7 +2735,7 @@
       }
     ],
     "features": [
-      { "always-via": "captured-variable" }, { "always-via": "special_sink" }
+      { "always-via": "special_sink" }, { "always-via": "captured-variable" }
     ],
     "sink_handle": {
       "kind": "Call",
@@ -2758,8 +2758,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "length": 2,
                 "kind": "Test"
@@ -2795,8 +2795,8 @@
             "kinds": [
               {
                 "features": [
-                  { "always-via": "captured-variable" },
-                  { "always-via": "special_sink" }
+                  { "always-via": "special_sink" },
+                  { "always-via": "captured-variable" }
                 ],
                 "length": 1,
                 "kind": "Test"

@@ -1489,8 +1489,8 @@
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "local_features": [
-              { "always-via": "captured-variable" },
-              { "always-via": "obscure:unknown-callee" }
+              { "always-via": "obscure:unknown-callee" },
+              { "always-via": "captured-variable" }
             ],
             "tito": null
           }
