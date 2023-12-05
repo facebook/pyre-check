@@ -57,6 +57,7 @@ class AnnotationInfo:
     node: libcst.CSTNode
     is_annotated: bool
     location: Location
+    contains_explicit_any: bool
 
 
 @dataclasses.dataclass(frozen=True)
@@ -70,12 +71,14 @@ class ParameterAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     name: str
     is_annotated: bool
     location: Location
+    contains_explicit_any: bool
 
 
 @dataclasses.dataclass(frozen=True)
 class ReturnAnnotationInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     is_annotated: bool
     location: Location
+    contains_explicit_any: bool
 
 
 class ModuleMode(str, Enum):
@@ -223,8 +226,30 @@ class AnnotationContext:
         return len(self.class_name_stack) > 0 and not self.static_define_depth > 0
 
 
+class ExplicitAnyChecker(libcst.CSTVisitor):
+    """
+    Checks for explicit Any usage in code.
+    """
+
+    def __init__(self) -> None:
+        self.has_explicit_any: bool = False
+
+    def visit_Name(self, node: libcst.Name) -> None:
+        if node.value == "Any":
+            self.has_explicit_any = True
+
+    def contains_explicit_any(self) -> bool:
+        return self.has_explicit_any
+
+
 class AnnotationCollector(VisitorWithPositionData):
     path: str = ""
+
+    def contains_explicit_any(self, node: Optional[libcst.CSTNode]) -> bool:
+        visitor = ExplicitAnyChecker()
+        if node is not None:
+            node.visit(visitor)
+        return visitor.contains_explicit_any()
 
     def __init__(self) -> None:
         self.context: AnnotationContext = AnnotationContext()
@@ -250,6 +275,7 @@ class AnnotationCollector(VisitorWithPositionData):
                 name=node.name.value,
                 is_annotated=node.annotation is not None,
                 location=self.location(node),
+                contains_explicit_any=self.contains_explicit_any(node),
             )
             for node in params
         ]
@@ -267,6 +293,7 @@ class AnnotationCollector(VisitorWithPositionData):
         returns = ReturnAnnotationInfo(
             is_annotated=node.returns is not None,
             location=self.location(node.name),
+            contains_explicit_any=self.contains_explicit_any(node.returns),
         )
 
         parameters = self.get_parameter_annotation_info(
@@ -309,10 +336,24 @@ class AnnotationCollector(VisitorWithPositionData):
         location = self.location(node)
         if self.context.assignments_are_class_level():
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.attributes.append(AnnotationInfo(node, is_annotated, location))
+            self.attributes.append(
+                AnnotationInfo(
+                    node,
+                    is_annotated,
+                    location,
+                    contains_explicit_any=self.contains_explicit_any(node),
+                )
+            )
         else:
             is_annotated = implicitly_annotated_literal or implicitly_annotated_value
-            self.globals.append(AnnotationInfo(node, is_annotated, location))
+            self.globals.append(
+                AnnotationInfo(
+                    node,
+                    is_annotated,
+                    location,
+                    contains_explicit_any=self.contains_explicit_any(node),
+                )
+            )
 
     def visit_AnnAssign(self, node: libcst.AnnAssign) -> None:
         node.annotation
@@ -320,9 +361,23 @@ class AnnotationCollector(VisitorWithPositionData):
             return
         location = self.location(node)
         if self.context.assignments_are_class_level():
-            self.attributes.append(AnnotationInfo(node, True, location))
+            self.attributes.append(
+                AnnotationInfo(
+                    node,
+                    True,
+                    location,
+                    contains_explicit_any=self.contains_explicit_any(node.annotation),
+                )
+            )
         else:
-            self.globals.append(AnnotationInfo(node, True, location))
+            self.globals.append(
+                AnnotationInfo(
+                    node,
+                    True,
+                    location,
+                    contains_explicit_any=self.contains_explicit_any(node.annotation),
+                )
+            )
 
     def leave_Module(self, original_node: libcst.Module) -> None:
         file_range = self.get_metadata(PositionProvider, original_node)

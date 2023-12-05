@@ -135,6 +135,7 @@ class ModuleAnnotationData:
     annotated_globals: List[CodeRange]
     total_attributes: List[CodeRange]
     annotated_attributes: List[CodeRange]
+    explicit_any_annotations: List[CodeRange]
 
     def to_count_dict(self) -> Dict[str, int]:
         return {
@@ -152,6 +153,7 @@ class ModuleAnnotationData:
             ),
             "fully_annotated_function_count": len(self.fully_annotated_functions),
             "line_count": self.line_count,
+            "explicit_any_annotations": len(self.explicit_any_annotations),
         }
 
 
@@ -203,6 +205,21 @@ class AnnotationCountCollector(coverage_data.AnnotationCollector):
                 location_to_code_range(a.location)
                 for a in self.attributes
                 if a.is_annotated
+            ],
+            explicit_any_annotations=[
+                location_to_code_range(a.location)
+                for a in self.parameters()
+                if a.contains_explicit_any
+            ]
+            + [
+                location_to_code_range(a.location)
+                for a in self.returns()
+                if a.contains_explicit_any
+            ]
+            + [
+                location_to_code_range(a.location)
+                for a in self.attributes
+                if a.contains_explicit_any
             ],
         )
 

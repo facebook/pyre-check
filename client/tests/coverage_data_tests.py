@@ -149,6 +149,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=2,
                             end_column=5,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -160,6 +161,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=2,
                                 end_column=7,
                             ),
+                            contains_explicit_any=False,
                         )
                     ],
                     is_method_or_classmethod=False,
@@ -197,6 +199,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=2,
                             end_column=5,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -208,6 +211,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=2,
                                 end_column=7,
                             ),
+                            contains_explicit_any=False,
                         )
                     ],
                     is_method_or_classmethod=False,
@@ -232,6 +236,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=5,
                             end_column=5,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -243,6 +248,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=5,
                                 end_column=7,
                             ),
+                            contains_explicit_any=False,
                         )
                     ],
                     is_method_or_classmethod=False,
@@ -277,6 +283,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=2,
                             end_column=5,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -288,6 +295,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=2,
                                 end_column=7,
                             ),
+                            contains_explicit_any=False,
                         )
                     ],
                     is_method_or_classmethod=False,
@@ -323,6 +331,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=3,
                             end_column=9,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -334,6 +343,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=3,
                                 end_column=14,
                             ),
+                            contains_explicit_any=False,
                         ),
                         ParameterAnnotationInfo(
                             name="x",
@@ -344,6 +354,243 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=3,
                                 end_column=17,
                             ),
+                            contains_explicit_any=False,
+                        ),
+                    ],
+                    is_method_or_classmethod=True,
+                )
+            ],
+        )
+
+    def test_function_annotations__annotated_with_any_method(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+                def f(self, x: Any) -> None:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    identifier=FunctionIdentifier(
+                        parent="A",
+                        name="f",
+                    ),
+                    location=Location(
+                        start_line=3,
+                        start_column=4,
+                        end_line=4,
+                        end_column=12,
+                    ),
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        is_annotated=True,
+                        location=Location(
+                            start_line=3,
+                            start_column=8,
+                            end_line=3,
+                            end_column=9,
+                        ),
+                        contains_explicit_any=False,
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            name="self",
+                            is_annotated=False,
+                            location=Location(
+                                start_line=3,
+                                start_column=10,
+                                end_line=3,
+                                end_column=14,
+                            ),
+                            contains_explicit_any=False,
+                        ),
+                        ParameterAnnotationInfo(
+                            name="x",
+                            is_annotated=True,
+                            location=Location(
+                                start_line=3,
+                                start_column=16,
+                                end_line=3,
+                                end_column=17,
+                            ),
+                            contains_explicit_any=True,
+                        ),
+                    ],
+                    is_method_or_classmethod=True,
+                )
+            ],
+        )
+
+    def test_function_annotations__annotated_with_nested_any_method(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+                def f(self, x: List[Any | int]) -> None:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    identifier=FunctionIdentifier(
+                        parent="A",
+                        name="f",
+                    ),
+                    location=Location(
+                        start_line=3,
+                        start_column=4,
+                        end_line=4,
+                        end_column=12,
+                    ),
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        is_annotated=True,
+                        location=Location(
+                            start_line=3,
+                            start_column=8,
+                            end_line=3,
+                            end_column=9,
+                        ),
+                        contains_explicit_any=False,
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            name="self",
+                            is_annotated=False,
+                            location=Location(
+                                start_line=3,
+                                start_column=10,
+                                end_line=3,
+                                end_column=14,
+                            ),
+                            contains_explicit_any=False,
+                        ),
+                        ParameterAnnotationInfo(
+                            name="x",
+                            is_annotated=True,
+                            location=Location(
+                                start_line=3,
+                                start_column=16,
+                                end_line=3,
+                                end_column=17,
+                            ),
+                            contains_explicit_any=True,
+                        ),
+                    ],
+                    is_method_or_classmethod=True,
+                )
+            ],
+        )
+
+    def test_function_annotations__annotated_with_more_nested_any_method(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+                def f(self, x: Union[List[Any | int], Dict[str, int]]) -> None:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    identifier=FunctionIdentifier(
+                        parent="A",
+                        name="f",
+                    ),
+                    location=Location(
+                        start_line=3,
+                        start_column=4,
+                        end_line=4,
+                        end_column=12,
+                    ),
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        is_annotated=True,
+                        location=Location(
+                            start_line=3,
+                            start_column=8,
+                            end_line=3,
+                            end_column=9,
+                        ),
+                        contains_explicit_any=False,
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            name="self",
+                            is_annotated=False,
+                            location=Location(
+                                start_line=3,
+                                start_column=10,
+                                end_line=3,
+                                end_column=14,
+                            ),
+                            contains_explicit_any=False,
+                        ),
+                        ParameterAnnotationInfo(
+                            name="x",
+                            is_annotated=True,
+                            location=Location(
+                                start_line=3,
+                                start_column=16,
+                                end_line=3,
+                                end_column=17,
+                            ),
+                            contains_explicit_any=True,
+                        ),
+                    ],
+                    is_method_or_classmethod=True,
+                )
+            ],
+        )
+
+    def test_function_annotations__annotated_any_return(self) -> None:
+        self._assert_function_annotations(
+            """
+            class A:
+                def f(self, x: int) -> Any:
+                    pass
+            """,
+            [
+                FunctionAnnotationInfo(
+                    identifier=FunctionIdentifier(
+                        parent="A",
+                        name="f",
+                    ),
+                    location=Location(
+                        start_line=3,
+                        start_column=4,
+                        end_line=4,
+                        end_column=12,
+                    ),
+                    annotation_status=FunctionAnnotationStatus.FULLY_ANNOTATED,
+                    returns=ReturnAnnotationInfo(
+                        is_annotated=True,
+                        location=Location(
+                            start_line=3,
+                            start_column=8,
+                            end_line=3,
+                            end_column=9,
+                        ),
+                        contains_explicit_any=True,
+                    ),
+                    parameters=[
+                        ParameterAnnotationInfo(
+                            name="self",
+                            is_annotated=False,
+                            location=Location(
+                                start_line=3,
+                                start_column=10,
+                                end_line=3,
+                                end_column=14,
+                            ),
+                            contains_explicit_any=False,
+                        ),
+                        ParameterAnnotationInfo(
+                            name="x",
+                            is_annotated=True,
+                            location=Location(
+                                start_line=3,
+                                start_column=16,
+                                end_line=3,
+                                end_column=17,
+                            ),
+                            contains_explicit_any=False,
                         ),
                     ],
                     is_method_or_classmethod=True,
@@ -381,6 +628,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                             end_line=5,
                             end_column=13,
                         ),
+                        contains_explicit_any=False,
                     ),
                     parameters=[
                         ParameterAnnotationInfo(
@@ -392,6 +640,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=5,
                                 end_column=18,
                             ),
+                            contains_explicit_any=False,
                         ),
                         ParameterAnnotationInfo(
                             name="x",
@@ -402,6 +651,7 @@ class AnnotationCollectorTest(testslide.TestCase):
                                 end_line=5,
                                 end_column=21,
                             ),
+                            contains_explicit_any=False,
                         ),
                     ],
                     is_method_or_classmethod=False,
