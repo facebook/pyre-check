@@ -55,8 +55,15 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
-module IncomingDataComputation = struct
-  let class_summaries ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
+module ModuleComponents = struct
+  type t = {
+    module_metadata: Ast.Module.t;
+    class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
+    unannotated_globals: UnannotatedGlobal.Collector.Result.t list;
+    function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
+  }
+
+  let class_summaries_of_source ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
     (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
     let module ClassCollector = Visit.MakeStatementVisitor (struct
       type t = Class.t Node.t list
@@ -94,7 +101,7 @@ module IncomingDataComputation = struct
     List.map classes ~f:definition_to_summary
 
 
-  let function_definitions ({ Source.module_path = { is_external; _ }; _ } as source) =
+  let function_definitions_of_source ({ Source.module_path = { is_external; _ }; _ } as source) =
     match is_external with
     | true ->
         (* Do not collect function bodies for external sources as they won't get type checked *)
@@ -102,7 +109,9 @@ module IncomingDataComputation = struct
     | false -> FunctionDefinition.collect_defines source
 
 
-  let unannotated_globals ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
+  let unannotated_globals_of_source
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+    =
     let merge_defines unannotated_globals_alist =
       let not_defines, defines =
         List.partition_map unannotated_globals_alist ~f:(function
@@ -140,6 +149,15 @@ module IncomingDataComputation = struct
       | _ -> globals
     in
     globals
+
+
+  let of_source source =
+    {
+      module_metadata = Ast.Module.create source;
+      class_summaries = class_summaries_of_source source;
+      unannotated_globals = unannotated_globals_of_source source;
+      function_definitions = function_definitions_of_source source;
+    }
 end
 
 let get_processed_source ast_environment qualifier =
@@ -660,62 +678,58 @@ module FromReadOnlyUpstream = struct
 
   include ReadWrite
 
-  let set_module { module_table; _ } ~qualifier module_ =
-    ModuleTable.add module_table qualifier module_
-
-
-  let set_class_summaries
-      { key_tracker; class_summary_table; _ }
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-    =
-    let register new_classes (class_name, class_summary_node) =
-      ClassSummaryTable.write_around class_summary_table class_name class_summary_node;
-      Set.add new_classes class_name
-    in
-    IncomingDataComputation.class_summaries source
-    |> List.fold ~init:Type.Primitive.Set.empty ~f:register
-    |> Set.to_list
-    |> KeyTracker.add_class_keys key_tracker qualifier
-
-
-  let set_function_definitions
-      { define_names; function_definition_table; _ }
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-    =
-    let register (name, function_definition) =
-      FunctionDefinitionTable.write_around function_definition_table name function_definition;
-      name
-    in
-    IncomingDataComputation.function_definitions source
-    |> List.map ~f:register
-    |> List.sort ~compare:Reference.compare
-    |> DefineNames.add define_names qualifier
-
-
-  let set_unannotated_globals
-      { key_tracker; unannotated_global_table; _ }
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-    =
-    let register { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
-      let name = Reference.create name |> Reference.combine qualifier in
-      UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
-      name
-    in
-    IncomingDataComputation.unannotated_globals source
-    |> List.map ~f:register
-    |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
-
-
   let set_module_data
-      environment
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+      ~environment:
+        {
+          key_tracker;
+          define_names;
+          module_table;
+          class_summary_table;
+          unannotated_global_table;
+          function_definition_table;
+          _;
+        }
+      ~qualifier
+      ModuleComponents.
+        { module_metadata; class_summaries; unannotated_globals; function_definitions }
     =
-    set_class_summaries environment source;
-    set_function_definitions environment source;
-    set_unannotated_globals environment source;
+    let set_module () = ModuleTable.add module_table qualifier module_metadata in
+    let set_class_summaries () =
+      let register new_classes (class_name, class_summary_node) =
+        ClassSummaryTable.write_around class_summary_table class_name class_summary_node;
+        Set.add new_classes class_name
+      in
+      class_summaries
+      |> List.fold ~init:Type.Primitive.Set.empty ~f:register
+      |> Set.to_list
+      |> KeyTracker.add_class_keys key_tracker qualifier
+    in
+    let set_function_definitions () =
+      let register (name, function_definition) =
+        FunctionDefinitionTable.write_around function_definition_table name function_definition;
+        name
+      in
+      function_definitions
+      |> List.map ~f:register
+      |> List.sort ~compare:Reference.compare
+      |> DefineNames.add define_names qualifier
+    in
+    let set_unannotated_globals () =
+      let register { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+        let name = Reference.create name |> Reference.combine qualifier in
+        UnannotatedGlobalTable.add unannotated_global_table name unannotated_global;
+        name
+      in
+      unannotated_globals
+      |> List.map ~f:register
+      |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
+    in
+    set_class_summaries ();
+    set_function_definitions ();
+    set_unannotated_globals ();
     (* We must set this last, because lazy-loading uses Module.mem to determine whether the source
        has already been processed. So setting it earlier can lead to data races *)
-    set_module environment ~qualifier (Module.create source)
+    set_module ()
 
 
   let add_to_transaction
@@ -771,7 +785,8 @@ module FromReadOnlyUpstream = struct
     let try_load_module { environment; ast_environment } qualifier =
       if not (ModuleTable.mem environment.module_table qualifier) then
         match get_processed_source ast_environment qualifier with
-        | Some source -> set_module_data environment source
+        | Some source ->
+            ModuleComponents.of_source source |> set_module_data ~environment ~qualifier
         | None ->
             if
               ModuleTracker.ReadOnly.is_module_tracked
@@ -894,9 +909,11 @@ module FromReadOnlyUpstream = struct
   end
 
   let cold_start ({ ast_environment; _ } as environment) =
+    let qualifier = Reference.empty in
     (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-    get_processed_source ast_environment Reference.empty
-    >>| set_module_data environment
+    get_processed_source ast_environment qualifier
+    >>| ModuleComponents.of_source
+    >>| set_module_data ~environment ~qualifier
     |> Option.value ~default:()
 
 
