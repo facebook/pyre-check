@@ -341,6 +341,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~arguments
       ~state:initial_state
       ~call_taint
+      ~is_implicit_new
       ({
          CallGraph.CallTarget.target;
          index = _;
@@ -352,7 +353,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        } as call_target)
     =
     let arguments =
-      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
       | CalleeBase -> { Call.Argument.name = None; value = Option.value_exn self } :: arguments
       | Callee -> { Call.Argument.name = None; value = callee } :: arguments
       | None -> arguments
@@ -590,7 +591,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     (* Extract the taint for implicit arguments. *)
     let implicit_argument_taint, arguments_taint =
-      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
       | CalleeBase -> (
           match arguments_taint with
           | self_taint :: arguments_taint ->
@@ -700,6 +701,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~arguments
               ~state:initial_state
               ~call_taint
+              ~is_implicit_new:false
               target)
         |> List.fold
              ~f:join_call_target_results
@@ -751,6 +753,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~arguments
                 ~state
                 ~call_taint:base_taint
+                ~is_implicit_new:true
                 target)
           |> List.fold
                ~f:join_call_target_results
@@ -872,7 +875,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~callee
              ~arguments
              ~state:initial_state
-             ~call_taint)
+             ~call_taint
+             ~is_implicit_new:false)
       |> List.fold
            ~f:join_call_target_results
            ~init:

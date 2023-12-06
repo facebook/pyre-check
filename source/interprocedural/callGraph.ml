@@ -295,12 +295,24 @@ module ImplicitArgument = struct
     | None (* No implicit argument. *)
   [@@deriving show]
 
-  let implicit_argument { CallTarget.implicit_receiver; implicit_dunder_call; _ } =
+  let implicit_argument
+      ?(is_implicit_new = false)
+      { CallTarget.implicit_receiver; implicit_dunder_call; _ }
+    =
     if implicit_receiver then
       if implicit_dunder_call then
         Callee
       else
         CalleeBase
+    else if is_implicit_new then
+      (* Since `__new__` are static methods, `implicit_receiver` is false. However, there exists an
+         implicit argument because `__new__()` "takes the class of which an instance was requested
+         as its first argument".
+
+         Note that this implicit argument is added only when `__new__` is "implicitly" called. For
+         example, `SomeClass(a)` implicitly calls `SomeClass.__new__(SomeClass, a)`. By contrast,
+         directly calling `object.__new__(SomeClass)` does not add an implicit argument. *)
+      CalleeBase
     else
       None
 end
@@ -1103,6 +1115,17 @@ module CallTargetIndexer = struct
     let target_for_index = Target.override_to_method original_target in
     let index = Hashtbl.find indexer.indices target_for_index |> Option.value ~default:0 in
     indexer.seen_targets <- Target.Set.add target_for_index indexer.seen_targets;
+    if is_static_method && implicit_receiver then
+      Format.asprintf
+        "Expect `implicit_receiver=false` for static method target %s"
+        (Target.show_pretty original_target)
+      |> failwith;
+    if is_class_method && not implicit_receiver then
+      failwith
+        (Format.asprintf
+           "Expect `implicit_receiver=true` for class method target %s"
+           (Target.show_pretty original_target))
+      |> failwith;
     {
       CallTarget.target = original_target;
       implicit_receiver;
@@ -1330,7 +1353,8 @@ let rec resolve_callees_from_type
               ~f:(fun target ->
                 CallTargetIndexer.create_target
                   call_indexer
-                  ~implicit_receiver:true
+                  ~implicit_receiver:(not (CalleeKind.is_static_method callee_kind))
+                    (* True only if not calling a static method. *)
                   ~implicit_dunder_call:dunder_call
                   ~return_type:(Some return_type)
                   ~receiver_type
@@ -1430,7 +1454,7 @@ let rec resolve_callees_from_type
                     [
                       CallTargetIndexer.create_target
                         call_indexer
-                        ~implicit_receiver:true
+                        ~implicit_receiver:(not (CalleeKind.is_static_method callee_kind))
                         ~implicit_dunder_call:true
                         ~return_type:(Some return_type)
                         ~is_class_method:(CalleeKind.is_class_method callee_kind)
@@ -1806,7 +1830,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
               Some
                 (CallTargetIndexer.create_target
                    call_indexer
-                   ~implicit_receiver:true
+                   ~implicit_receiver:(not is_static_method)
                    ~implicit_dunder_call:false
                    ~return_type:(Some (return_type ()))
                    ~is_class_method

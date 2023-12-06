@@ -485,7 +485,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.any)
                         ~is_static_method:true
                         (Target.Method
@@ -517,7 +516,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~is_static_method:true
                         (Target.Method
@@ -552,7 +550,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.any)
                         ~is_static_method:true
                         (Target.Method
@@ -588,7 +585,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.any)
                         ~is_static_method:true
                         (Target.Method
@@ -624,7 +620,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.any)
                         ~is_static_method:true
                         (Target.Method
@@ -663,7 +658,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~return_type:(Some ReturnType.any)
                         ~is_static_method:true
                         (Target.Method
@@ -968,7 +962,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -1257,7 +1250,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -1305,7 +1297,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -1465,7 +1456,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -2160,7 +2150,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -3001,7 +2990,6 @@ let test_call_graph_of_define context =
                     ~new_targets:
                       [
                         CallTarget.create
-                          ~implicit_receiver:true
                           ~is_static_method:true
                           (Target.Method
                              { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -3022,7 +3010,6 @@ let test_call_graph_of_define context =
                     ~new_targets:
                       [
                         CallTarget.create
-                          ~implicit_receiver:true
                           ~index:1
                           ~is_static_method:true
                           (Target.Method
@@ -3044,7 +3031,6 @@ let test_call_graph_of_define context =
                     ~new_targets:
                       [
                         CallTarget.create
-                          ~implicit_receiver:true
                           ~index:2
                           ~is_static_method:true
                           (Target.Method
@@ -3066,7 +3052,6 @@ let test_call_graph_of_define context =
                     ~new_targets:
                       [
                         CallTarget.create
-                          ~implicit_receiver:true
                           ~index:3
                           ~is_static_method:true
                           (Target.Method
@@ -3412,7 +3397,6 @@ let test_call_graph_of_define context =
                   ~new_targets:
                     [
                       CallTarget.create
-                        ~implicit_receiver:true
                         ~is_static_method:true
                         (Target.Method
                            { class_name = "object"; method_name = "__new__"; kind = Normal });
@@ -3497,7 +3481,6 @@ let test_call_graph_of_define context =
                         ~new_targets:
                           [
                             CallTarget.create
-                              ~implicit_receiver:true
                               ~is_static_method:true
                               (Target.Method
                                  { class_name = "type"; method_name = "__new__"; kind = Normal });

@@ -467,6 +467,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~callee_taint
       ~arguments
       ~arguments_taint
+      ~is_implicit_new
       ~state:initial_state
       ({
          CallGraph.CallTarget.target;
@@ -480,7 +481,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     (* Add implicit argument. *)
     let arguments, arguments_taint =
-      match CallGraph.ImplicitArgument.implicit_argument call_target with
+      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
       | CalleeBase ->
           ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
             Option.value_exn self_taint :: arguments_taint )
@@ -875,6 +876,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~callee_taint:(Some ForwardState.Tree.bottom)
               ~arguments
               ~arguments_taint
+              ~is_implicit_new:true (* True because the constructor implicitly calls `__new__` *)
               ~state:initial_state
               target)
         |> List.fold
@@ -903,6 +905,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~callee_taint:(Some ForwardState.Tree.bottom)
               ~arguments
               ~arguments_taint
+              ~is_implicit_new:false
               ~state
               target)
         |> List.fold
@@ -965,6 +968,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~callee_taint
              ~arguments
              ~arguments_taint
+             ~is_implicit_new:false
              ~state:initial_state)
       |> List.fold
            ~init:(ForwardState.Tree.empty, bottom)

@@ -77,7 +77,7 @@ module ImplicitArgument : sig
     | None
   [@@deriving show]
 
-  val implicit_argument : CallTarget.t -> t
+  val implicit_argument : ?is_implicit_new:bool -> CallTarget.t -> t
 end
 
 (** Information about an argument being a callable. *)
