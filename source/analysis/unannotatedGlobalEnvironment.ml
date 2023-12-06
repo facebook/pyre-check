@@ -295,20 +295,20 @@ module ReadOnly = struct
     resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
 
 
-  module ResolveExportItem = struct
-    module T = struct
-      type t = {
-        current_module: Reference.t;
-        name: Identifier.t;
-      }
-      [@@deriving sexp, compare, hash]
-    end
-
-    include T
-    include Hashable.Make (T)
-  end
-
   let resolve_exports read_only ?dependency ?(from = Reference.empty) reference =
+    let module ResolveExportItem = struct
+      module T = struct
+        type t = {
+          current_module: Reference.t;
+          name: Identifier.t;
+        }
+        [@@deriving sexp, compare, hash]
+      end
+
+      include T
+      include Hashable.Make (T)
+    end
+    in
     let visited_set = ResolveExportItem.Hash_set.create () in
     let rec resolve_module_alias ~current_module ~names_to_resolve () =
       match get_module_metadata ?dependency read_only current_module with
