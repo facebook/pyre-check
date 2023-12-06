@@ -55,6 +55,93 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
+module IncomingDataComputation = struct
+  let class_summaries ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
+    (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
+    let module ClassCollector = Visit.MakeStatementVisitor (struct
+      type t = Class.t Node.t list
+
+      let visit_children _ = true
+
+      let statement _ sofar = function
+        | { Node.location; value = Statement.Class definition } ->
+            { Node.location; value = definition } :: sofar
+        | _ -> sofar
+    end)
+    in
+    let classes = ClassCollector.visit [] source in
+    let classes =
+      match Reference.as_list qualifier with
+      | [] -> classes @ MissingFromStubs.missing_builtin_classes
+      | ["typing"] -> classes @ MissingFromStubs.missing_typing_classes
+      | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
+      | _ -> classes
+    in
+    let definition_to_summary { Node.location; value = { Class.name; _ } as definition } =
+      let primitive = Reference.show name in
+      let definition =
+        match primitive with
+        | "type" ->
+            let value =
+              Type.expression
+                (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
+            in
+            { definition with Class.base_arguments = [{ name = None; value }] }
+        | _ -> definition
+      in
+      primitive, { Node.location; value = ClassSummary.create ~qualifier definition }
+    in
+    List.map classes ~f:definition_to_summary
+
+
+  let function_definitions ({ Source.module_path = { is_external; _ }; _ } as source) =
+    match is_external with
+    | true ->
+        (* Do not collect function bodies for external sources as they won't get type checked *)
+        []
+    | false -> FunctionDefinition.collect_defines source
+
+
+  let unannotated_globals ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) =
+    let merge_defines unannotated_globals_alist =
+      let not_defines, defines =
+        List.partition_map unannotated_globals_alist ~f:(function
+            | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
+                Either.Second (name, defines)
+            | x -> Either.First x)
+      in
+      let add_to_map sofar (name, defines) =
+        let merge_with_existing to_merge = function
+          | None -> Some to_merge
+          | Some existing -> Some (to_merge @ existing)
+        in
+        Map.change sofar name ~f:(merge_with_existing defines)
+      in
+      List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
+      |> Map.to_alist
+      |> List.map ~f:(fun (name, defines) ->
+             {
+               UnannotatedGlobal.Collector.Result.name;
+               unannotated_global = Define (List.rev defines);
+             })
+      |> fun defines -> List.append defines not_defines
+    in
+    let drop_classes unannotated_globals =
+      let is_not_class = function
+        | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
+        | _ -> true
+      in
+      List.filter unannotated_globals ~f:is_not_class
+    in
+    let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
+    let globals =
+      match Reference.as_list qualifier with
+      | [] -> globals @ MissingFromStubs.missing_builtin_globals
+      | _ -> globals
+    in
+    globals
+end
+
 let get_processed_source ast_environment qualifier =
   let dependency = SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier) in
   AstEnvironment.ReadOnly.get_processed_source ast_environment ~dependency qualifier
@@ -591,114 +678,42 @@ module FromReadOnlyUpstream = struct
       ({ key_tracker; _ } as environment)
       ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
-    (* TODO (T57944324): Support checking classes that are nested inside function bodies *)
-    let module ClassCollector = Visit.MakeStatementVisitor (struct
-      type t = Class.t Node.t list
-
-      let visit_children _ = true
-
-      let statement _ sofar = function
-        | { Node.location; value = Statement.Class definition } ->
-            { Node.location; value = definition } :: sofar
-        | _ -> sofar
-    end)
-    in
-    let classes = ClassCollector.visit [] source in
-    let classes =
-      match Reference.as_list qualifier with
-      | [] -> classes @ MissingFromStubs.missing_builtin_classes
-      | ["typing"] -> classes @ MissingFromStubs.missing_typing_classes
-      | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
-      | _ -> classes
-    in
-    let register new_classes { Node.location; value = { Class.name; _ } as definition } =
-      let class_name = Reference.show name in
-      let definition =
-        match class_name with
-        | "type" ->
-            let value =
-              Type.expression
-                (Type.parametric "typing.Generic" [Single (Type.variable "typing._T")])
-            in
-            { definition with Class.base_arguments = [{ name = None; value }] }
-        | _ -> definition
-      in
-      set_class_summary
-        environment
-        ~name:class_name
-        { Node.location; value = ClassSummary.create ~qualifier definition };
+    let register new_classes (class_name, class_summary_node) =
+      set_class_summary environment ~name:class_name class_summary_node;
       Set.add new_classes class_name
     in
-    List.fold classes ~init:Type.Primitive.Set.empty ~f:register
+    IncomingDataComputation.class_summaries source
+    |> List.fold ~init:Type.Primitive.Set.empty ~f:register
     |> Set.to_list
     |> KeyTracker.add_class_keys key_tracker qualifier
 
 
   let set_function_definitions
       ({ define_names; _ } as environment)
-      ({ Source.module_path = { ModulePath.qualifier; is_external; _ }; _ } as source)
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
-    match is_external with
-    | true ->
-        (* Do not collect function bodies for external sources as they won't get type checked *)
-        ()
-    | false ->
-        let function_definitions = FunctionDefinition.collect_defines source in
-        let register (name, function_definition) =
-          set_function_definition environment ~name function_definition;
-          name
-        in
-        List.map function_definitions ~f:register
-        |> List.sort ~compare:Reference.compare
-        |> DefineNames.add define_names qualifier
+    let register (name, function_definition) =
+      set_function_definition environment ~name function_definition;
+      name
+    in
+    IncomingDataComputation.function_definitions source
+    |> List.map ~f:register
+    |> List.sort ~compare:Reference.compare
+    |> DefineNames.add define_names qualifier
 
 
   let set_unannotated_globals
       ({ key_tracker; _ } as environment)
       ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
-    let write { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
+    let register { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
       let name = Reference.create name |> Reference.combine qualifier in
       set_unannotated_global environment ~name unannotated_global;
       name
     in
-    let merge_defines unannotated_globals_alist =
-      let not_defines, defines =
-        List.partition_map unannotated_globals_alist ~f:(function
-            | { UnannotatedGlobal.Collector.Result.name; unannotated_global = Define defines } ->
-                Either.Second (name, defines)
-            | x -> Either.First x)
-      in
-      let add_to_map sofar (name, defines) =
-        let merge_with_existing to_merge = function
-          | None -> Some to_merge
-          | Some existing -> Some (to_merge @ existing)
-        in
-        Map.change sofar name ~f:(merge_with_existing defines)
-      in
-      List.fold defines ~f:add_to_map ~init:Identifier.Map.empty
-      |> Map.to_alist
-      |> List.map ~f:(fun (name, defines) ->
-             {
-               UnannotatedGlobal.Collector.Result.name;
-               unannotated_global = Define (List.rev defines);
-             })
-      |> fun defines -> List.append defines not_defines
-    in
-    let drop_classes unannotated_globals =
-      let is_not_class = function
-        | { UnannotatedGlobal.Collector.Result.unannotated_global = Class; _ } -> false
-        | _ -> true
-      in
-      List.filter unannotated_globals ~f:is_not_class
-    in
-    let globals = UnannotatedGlobal.Collector.from_source source |> merge_defines |> drop_classes in
-    let globals =
-      match Reference.as_list qualifier with
-      | [] -> globals @ MissingFromStubs.missing_builtin_globals
-      | _ -> globals
-    in
-    globals |> List.map ~f:write |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
+    IncomingDataComputation.unannotated_globals source
+    |> List.map ~f:register
+    |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
 
 
   let add_to_transaction
