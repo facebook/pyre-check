@@ -79,6 +79,7 @@ class TypeErrorsRequest:
 class ErrorResponse:
     message: str
     error_source: Optional[Exception] = None
+    originating_request: Optional[str] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -267,9 +268,10 @@ class SuperclassesResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     superclasses: List[ClassExpression]
 
 
-def invalid_response(response: str) -> ErrorResponse:
+def invalid_response(response: str, raw_request: str) -> ErrorResponse:
     return ErrorResponse(
-        message=f"Invalid response {response} to pyre code_navigation request."
+        message=f"Invalid response {response} to pyre code_navigation request.",
+        originating_request=raw_request,
     )
 
 
@@ -277,18 +279,22 @@ ResponseKind = TypeVar("ResponseKind", bound=json_mixins.CamlCaseAndExcludeJsonM
 
 
 def parse_response(
-    response: Dict[str, Any], response_type: Type[ResponseKind]
+    response: Dict[str, Any], response_type: Type[ResponseKind], raw_request: str
 ) -> Union[ResponseKind, ErrorResponse]:
     try:
         return response_type.cached_schema().load(response)
     except AssertionError as error:
         return ErrorResponse(
-            message=f"Assertion error when parsing JSON into the response schema: {error}"
+            message=f"Assertion error when parsing JSON into the response schema: {error}",
+            originating_request=raw_request,
         )
 
 
 def parse_raw_response(
-    raw_response: str, expected_response_kind: str, response_type: Type[ResponseKind]
+    raw_response: str,
+    expected_response_kind: str,
+    response_type: Type[ResponseKind],
+    raw_request: str,
 ) -> Union[ResponseKind, ErrorResponse]:
     try:
         response = json.loads(raw_response)
@@ -297,10 +303,10 @@ def parse_raw_response(
             or len(response) != 2
             or response[0] != expected_response_kind
         ):
-            return invalid_response(raw_response)
+            return invalid_response(raw_response, raw_request)
     except Exception as error:
         return ErrorResponse(message=f"Exception while parsing response: {error}")
-    return parse_response(response[1], response_type)
+    return parse_response(response[1], response_type, raw_request)
 
 
 async def async_handle_hover_request(
@@ -316,7 +322,10 @@ async def async_handle_hover_request(
             message=response.error_message, error_source=response.error_source
         )
     response = parse_raw_response(
-        response, expected_response_kind="Hover", response_type=HoverResponse
+        response,
+        expected_response_kind="Hover",
+        response_type=HoverResponse,
+        raw_request=raw_request,
     )
     if isinstance(response, ErrorResponse):
         return response
@@ -339,6 +348,7 @@ async def async_handle_definition_request(
         response,
         expected_response_kind="LocationOfDefinition",
         response_type=LocationOfDefinitionResponse,
+        raw_request=raw_request,
     )
 
 
@@ -355,7 +365,10 @@ async def async_handle_type_errors_request(
             message=response.error_message, error_source=response.error_source
         )
     return parse_raw_response(
-        response, expected_response_kind="TypeErrors", response_type=TypeErrorsResponse
+        response,
+        expected_response_kind="TypeErrors",
+        response_type=TypeErrorsResponse,
+        raw_request=raw_request,
     )
 
 
@@ -375,6 +388,7 @@ async def async_handle_completion_request(
         response,
         expected_response_kind="Completion",
         response_type=PyreCompletionsResponse,
+        raw_request=raw_request,
     )
 
 

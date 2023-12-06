@@ -113,9 +113,11 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 raw_response,
                 expected_response_kind="Hover",
                 response_type=code_navigation_request.HoverResponse,
+                raw_request="RAW_REQUEST",
             ),
             code_navigation_request.ErrorResponse(
-                f"Invalid response {raw_response} to pyre code_navigation request."
+                f"Invalid response {raw_response} to pyre code_navigation request.",
+                originating_request="RAW_REQUEST",
             ),
         )
 
@@ -132,9 +134,11 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                 raw_response,
                 expected_response_kind="Hover",
                 response_type=code_navigation_request.HoverResponse,
+                raw_request="RAW_REQUEST",
             ),
             code_navigation_request.ErrorResponse(
-                f"Invalid response {raw_response} to pyre code_navigation request."
+                f"Invalid response {raw_response} to pyre code_navigation request.",
+                originating_request="RAW_REQUEST",
             ),
         )
 
@@ -142,7 +146,9 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         response = {"contents": [{"value": "int", "docstring": "test docstring"}]}
         self.assertEqual(
             code_navigation_request.parse_response(
-                response, response_type=code_navigation_request.HoverResponse
+                response,
+                response_type=code_navigation_request.HoverResponse,
+                raw_request="RAW_REQUEST",
             ),
             code_navigation_request.HoverResponse(
                 contents=[
@@ -155,7 +161,9 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         response = {"contents": [{"value": 32, "docstring": None}]}
         with self.assertRaises(ValidationError):
             code_navigation_request.parse_response(
-                response, response_type=code_navigation_request.HoverResponse
+                response,
+                response_type=code_navigation_request.HoverResponse,
+                raw_request="RAW_REQUEST",
             ),
 
     def test_definition_response(self) -> None:
@@ -174,6 +182,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             code_navigation_request.parse_response(
                 response,
                 response_type=code_navigation_request.LocationOfDefinitionResponse,
+                raw_request="RAW_REQUEST",
             ),
             code_navigation_request.LocationOfDefinitionResponse(
                 definitions=[
@@ -211,6 +220,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
         parsed_response = code_navigation_request.parse_response(
             response,
             response_type=code_navigation_request.TypeErrorsResponse,
+            raw_request="RAW_REQUEST",
         )
         if isinstance(parsed_response, code_navigation_request.ErrorResponse):
             self.fail()
@@ -245,6 +255,7 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             code_navigation_request.parse_response(
                 response,
                 response_type=code_navigation_request.PyreCompletionsResponse,
+                raw_request="RAW_REQUEST",
             ),
             code_navigation_request.PyreCompletionsResponse(
                 completions=[

@@ -11,6 +11,7 @@ start and stop such daemons.
 
 from __future__ import annotations
 
+import json
 from pathlib import Path
 from typing import Optional, Set
 
@@ -49,7 +50,10 @@ class CodeNavConnection:
                 message="Failed to connect to Pyre server."
             )
         return code_navigation_request.parse_raw_response(
-            response, "Superclasses", code_navigation_request.SuperclassesResponse
+            response,
+            "Superclasses",
+            code_navigation_request.SuperclassesResponse,
+            raw_request=json.dumps(superclasses_request.to_json()),
         )
 
     async def open_file(
