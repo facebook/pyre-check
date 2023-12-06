@@ -278,28 +278,18 @@ module TypeParameterValidationTypes = struct
   [@@deriving compare, sexp, show, hash]
 end
 
-let class_hierarchy_environment class_metadata_environment =
-  ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+module Queries = struct
+  type t = {
+    get_function_definition: Ast.Reference.t -> FunctionDefinition.t option;
+    get_class_summary: string -> ClassSummary.t Ast.Node.t option;
+    first_matching_class_decorator:
+      names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
+    successors: Type.Primitive.t -> string list;
+  }
 
-
-let alias_environment class_metadata_environment =
-  ClassHierarchyEnvironment.ReadOnly.alias_environment
-    (class_hierarchy_environment class_metadata_environment)
-
-
-let unannotated_global_environment class_metadata_environment =
-  alias_environment class_metadata_environment
-  |> AliasEnvironment.ReadOnly.unannotated_global_environment
-
-
-let class_summary_for_outer_type class_metadata_environment annotation ~dependency =
-  Type.split annotation
-  |> fst
-  |> Type.primitive_name
-  >>= UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-        (unannotated_global_environment class_metadata_environment)
-        ?dependency
-
+  let class_summary_for_outer_type { get_class_summary; _ } annotation =
+    Type.split annotation |> fst |> Type.primitive_name >>= get_class_summary
+end
 
 let class_name { Node.value = { ClassSummary.name; _ }; _ } = name
 
@@ -344,14 +334,6 @@ module ClassDecorators = struct
     default: bool;
     keyword_only: bool;
   }
-
-  let find_decorator ~class_metadata_environment ~names ?dependency class_summary =
-    UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
-      (unannotated_global_environment class_metadata_environment)
-      ?dependency
-      ~names
-      class_summary
-
 
   let extract_options ~default ~init ~repr ~eq ~order ~keyword_only ~has_slots decorator =
     let open Expression in
@@ -428,15 +410,11 @@ module ClassDecorators = struct
     | _ -> default
 
 
-  let dataclass_options ~class_metadata_environment ?dependency class_summary =
+  let dataclass_options ~queries:Queries.{ first_matching_class_decorator; _ } class_summary =
     let field_descriptors =
       [Reference.create "dataclasses.field" |> Ast.Expression.from_reference ~location:Location.any]
     in
-    find_decorator
-      ~names:["dataclasses.dataclass"; "dataclass"]
-      ~class_metadata_environment
-      ?dependency
-      class_summary
+    first_matching_class_decorator ~names:["dataclasses.dataclass"; "dataclass"] class_summary
     >>| extract_options
           ~default:
             {
@@ -457,12 +435,8 @@ module ClassDecorators = struct
           ~has_slots:"slots"
 
 
-  let attrs_attributes ~class_metadata_environment ?dependency class_summary =
-    find_decorator
-      ~names:["attr.s"; "attr.attrs"]
-      ~class_metadata_environment
-      ?dependency
-      class_summary
+  let attrs_attributes ~queries:Queries.{ first_matching_class_decorator; _ } class_summary =
+    first_matching_class_decorator ~names:["attr.s"; "attr.attrs"] class_summary
     >>| extract_options
           ~default:
             {
@@ -507,17 +481,13 @@ module ClassDecorators = struct
 
   (* TODO(T129464224) Support `keyword_only_default` in Data Class Transforms *)
   let find_dataclass_transform_decorator_with_default
-      ~class_metadata_environment
-      ?dependency
+      ~queries:Queries.{ get_function_definition; _ }
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
     let get_dataclass_transform_decorator_with_default decorator =
       let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
       let lookup_function reference =
-        UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
-          (unannotated_global_environment class_metadata_environment)
-          ?dependency
-          reference
+        get_function_definition reference
         >>= fun { FunctionDefinition.body; _ } -> body >>| Node.value
       in
       let function_decorators { Define.signature = { Define.Signature.decorators; _ }; _ } =
@@ -543,11 +513,8 @@ module ClassDecorators = struct
     |> List.find_map ~f:get_dataclass_transform_decorator_with_default
 
 
-  let dataclass_transform_options ~class_metadata_environment ?dependency class_summary =
-    find_dataclass_transform_decorator_with_default
-      ~class_metadata_environment
-      ?dependency
-      class_summary
+  let dataclass_transform_options ~queries class_summary =
+    find_dataclass_transform_decorator_with_default ~queries class_summary
     >>| fun (decorator, default) ->
     extract_options
       ~default
@@ -561,17 +528,12 @@ module ClassDecorators = struct
 
 
   let find_dataclass_transform_class_as_decorator_with_default
-      ~class_metadata_environment
-      ?dependency
+      ~queries:Queries.{ get_class_summary; successors; _ }
       { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
     =
     let get_dataclass_transform_default name =
       let class_decorators { ClassSummary.decorators; _ } = decorators in
-      name
-      |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-           (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-              class_metadata_environment)
-           ?dependency
+      get_class_summary name
       >>| Node.value
       >>| class_decorators
       >>= List.find ~f:is_dataclass_transform
@@ -585,10 +547,8 @@ module ClassDecorators = struct
             ~keyword_only:"kw_only_default"
             ~has_slots:"slots"
     in
-    ClassSuccessorMetadataEnvironment.ReadOnly.successors
-      class_metadata_environment
-      ?dependency
-      (Reference.show name)
+    Reference.show name
+    |> successors
     |> List.find_map ~f:get_dataclass_transform_default
     >>| fun default ->
     ( {
@@ -598,11 +558,8 @@ module ClassDecorators = struct
       default )
 
 
-  let dataclass_transform_class_options ~class_metadata_environment ?dependency class_summary =
-    find_dataclass_transform_class_as_decorator_with_default
-      ~class_metadata_environment
-      ?dependency
-      class_summary
+  let dataclass_transform_class_options ~queries class_summary =
+    find_dataclass_transform_class_as_decorator_with_default ~queries class_summary
     >>| fun (decorator, default) ->
     extract_options
       ~default
@@ -616,27 +573,16 @@ module ClassDecorators = struct
 
 
   let apply
+      ~queries:(Queries.{ get_class_summary; successors; _ } as queries)
       ~definition
-      ~class_metadata_environment
       ~create_attribute
       ~instantiate_attribute
-      ?dependency
       table
     =
     let open Expression in
     let { Node.value = { ClassSummary.name; _ }; _ } = definition in
     let parent_dataclasses =
-      let class_summary =
-        UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-          (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-             class_metadata_environment)
-          ?dependency
-      in
-      ClassSuccessorMetadataEnvironment.ReadOnly.successors
-        class_metadata_environment
-        ?dependency
-        (Reference.show name)
-      |> List.filter_map ~f:class_summary
+      Reference.show name |> successors |> List.filter_map ~f:get_class_summary
     in
     let generate_attributes ~options =
       let already_in_table name =
@@ -1030,20 +976,18 @@ module ClassDecorators = struct
     let dataclass_attributes () =
       (* TODO (T43210531): Warn about inconsistent annotations
        * TODO (T131540506): Decouple dataclass options from other options *)
-      generate_attributes ~options:(dataclass_options ~class_metadata_environment ?dependency)
+      generate_attributes ~options:(dataclass_options ~queries)
     in
     let attrs_attributes () =
       (* TODO (T41039225): Add support for other methods
        * TODO (T129741558): support type annotations in attr *)
-      generate_attributes ~options:(attrs_attributes ~class_metadata_environment ?dependency)
+      generate_attributes ~options:(attrs_attributes ~queries)
     in
     let dataclass_transform_attributes () =
-      generate_attributes
-        ~options:(dataclass_transform_options ~class_metadata_environment ?dependency)
+      generate_attributes ~options:(dataclass_transform_options ~queries)
     in
     let dataclass_transform_class_attributes () =
-      generate_attributes
-        ~options:(dataclass_transform_class_options ~class_metadata_environment ?dependency)
+      generate_attributes ~options:(dataclass_transform_class_options ~queries)
     in
     dataclass_attributes ()
     @ attrs_attributes ()
@@ -2367,7 +2311,40 @@ module AttributeDetail = struct
     | _ -> { kind = Variable; name; detail }
 end
 
+let class_hierarchy_environment class_metadata_environment =
+  ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+
+
+let alias_environment class_metadata_environment =
+  ClassHierarchyEnvironment.ReadOnly.alias_environment
+    (class_hierarchy_environment class_metadata_environment)
+
+
+let unannotated_global_environment class_metadata_environment =
+  alias_environment class_metadata_environment
+  |> AliasEnvironment.ReadOnly.unannotated_global_environment
+
+
+let create_queries ~class_metadata_environment ~dependency =
+  Queries.
+    {
+      get_function_definition =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.get_function_definition ?dependency;
+      get_class_summary =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary ?dependency;
+      first_matching_class_decorator =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator ?dependency;
+      successors =
+        ClassSuccessorMetadataEnvironment.ReadOnly.successors ?dependency class_metadata_environment;
+    }
+
+
 class base class_metadata_environment dependency =
+  let queries = create_queries ~class_metadata_environment ~dependency in
+
   object (self)
     method get_typed_dictionary ~assumptions annotation =
       match annotation with
@@ -3084,8 +3061,8 @@ class base class_metadata_environment dependency =
         let () =
           if include_generated_attributes then
             ClassDecorators.apply
+              ~queries
               ~definition:parent
-              ~class_metadata_environment
               ~create_attribute:(self#create_attribute ~assumptions)
               ~instantiate_attribute:
                 (self#instantiate_attribute
@@ -3098,7 +3075,6 @@ class base class_metadata_environment dependency =
                         otherwise result or to somehow separate these results from the main set of
                         attributes *)
                    ~apply_descriptors:false)
-              ?dependency
               table
         in
         table
@@ -4044,8 +4020,7 @@ class base class_metadata_environment dependency =
               in
               base_classes
               |> List.map ~f:base_to_class
-              |> List.filter_map
-                   ~f:(class_summary_for_outer_type class_metadata_environment ~dependency)
+              |> List.filter_map ~f:(Queries.class_summary_for_outer_type queries)
               |> List.filter ~f:(fun base_class ->
                      not ([%compare.equal: ClassSummary.t Node.t] base_class original))
             in
@@ -4130,7 +4105,7 @@ class base class_metadata_environment dependency =
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
-        |> class_summary_for_outer_type class_metadata_environment ~dependency
+        |> Queries.class_summary_for_outer_type queries
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
         >>= ClassHierarchyEnvironment.ReadOnly.variables
               (class_hierarchy_environment class_metadata_environment)
