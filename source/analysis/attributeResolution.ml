@@ -280,11 +280,38 @@ end
 
 module Queries = struct
   type t = {
+    controls: EnvironmentControls.t;
+    resolve_exports:
+      ?from:Ast.Reference.t ->
+      Ast.Reference.t ->
+      UnannotatedGlobalEnvironment.ResolvedReference.t option;
+    is_protocol: Type.t -> bool;
+    get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
     get_function_definition: Ast.Reference.t -> FunctionDefinition.t option;
     get_class_summary: string -> ClassSummary.t Ast.Node.t option;
     first_matching_class_decorator:
       names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
+    exists_matching_class_decorator: names:string list -> ClassSummary.t Ast.Node.t -> bool;
+    class_exists: string -> bool;
+    parse_annotation_without_validating_type_parameters:
+      ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
+      ?allow_untracked:bool ->
+      Ast.Expression.t ->
+      Type.t;
+    parse_as_parameter_specification_instance_annotation:
+      variable_parameter_annotation:Ast.Expression.t ->
+      keywords_parameter_annotation:Ast.Expression.t ->
+      unit ->
+      Type.Variable.Variadic.Parameters.t option;
+    class_hierarchy: unit -> (module ClassHierarchy.Handler);
+    variables:
+      ?default:Type.Variable.t list option -> Type.Primitive.t -> Type.Variable.t list option;
     successors: Type.Primitive.t -> string list;
+    get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
+    is_typed_dictionary: Type.Primitive.t -> bool;
+    is_transitive_successor:
+      placeholder_subclass_extends_all:bool -> target:Type.Primitive.t -> Type.Primitive.t -> bool;
+    least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
   }
 
   let class_summary_for_outer_type { get_class_summary; _ } annotation =
@@ -2311,48 +2338,12 @@ module AttributeDetail = struct
     | _ -> { kind = Variable; name; detail }
 end
 
-let class_hierarchy_environment class_metadata_environment =
-  ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
-
-
-let alias_environment class_metadata_environment =
-  ClassHierarchyEnvironment.ReadOnly.alias_environment
-    (class_hierarchy_environment class_metadata_environment)
-
-
-let unannotated_global_environment class_metadata_environment =
-  alias_environment class_metadata_environment
-  |> AliasEnvironment.ReadOnly.unannotated_global_environment
-
-
-let create_queries ~class_metadata_environment ~dependency =
-  Queries.
-    {
-      get_function_definition =
-        unannotated_global_environment class_metadata_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.get_function_definition ?dependency;
-      get_class_summary =
-        unannotated_global_environment class_metadata_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary ?dependency;
-      first_matching_class_decorator =
-        unannotated_global_environment class_metadata_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator ?dependency;
-      successors =
-        ClassSuccessorMetadataEnvironment.ReadOnly.successors ?dependency class_metadata_environment;
-    }
-
-
-class base class_metadata_environment dependency =
-  let queries = create_queries ~class_metadata_environment ~dependency in
-
+class base ~queries:(Queries.{ controls; _ } as queries) =
   object (self)
     method get_typed_dictionary ~assumptions annotation =
+      let Queries.{ is_typed_dictionary; _ } = queries in
       match annotation with
-      | Type.Primitive class_name
-        when ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
-               class_metadata_environment
-               ?dependency
-               class_name ->
+      | Type.Primitive class_name when is_typed_dictionary class_name ->
           let fields =
             self#attribute
               ~assumptions
@@ -2374,6 +2365,9 @@ class base class_metadata_environment dependency =
       | _ -> None
 
     method full_order ~assumptions =
+      let Queries.{ is_protocol; class_hierarchy; is_transitive_successor; least_upper_bound; _ } =
+        queries
+      in
       let resolve class_type =
         match Type.class_data_for_attribute_lookup class_type with
         | None -> None
@@ -2420,25 +2414,11 @@ class base class_metadata_environment dependency =
                    ?apply_descriptors:None)
       in
 
-      let is_protocol annotation ~protocol_assumptions:_ =
-        UnannotatedGlobalEnvironment.ReadOnly.is_protocol
-          (unannotated_global_environment class_metadata_environment)
-          ?dependency
-          annotation
-      in
-      let class_hierarchy_handler =
-        ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-          ?dependency
-          (class_hierarchy_environment class_metadata_environment)
-      in
+      let is_protocol annotation ~protocol_assumptions:_ = is_protocol annotation in
+      let class_hierarchy_handler = class_hierarchy () in
       let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
       let is_transitive_successor ~source ~target =
-        ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
-          class_metadata_environment
-          ~placeholder_subclass_extends_all:true
-          ?dependency
-          ~target
-          source
+        is_transitive_successor ~placeholder_subclass_extends_all:true ~target source
       in
       {
         ConstraintsSet.class_hierarchy =
@@ -2447,10 +2427,7 @@ class base class_metadata_environment dependency =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
             is_transitive_successor;
             variables = ClassHierarchy.variables class_hierarchy_handler;
-            least_upper_bound =
-              ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound
-                class_metadata_environment
-                ?dependency;
+            least_upper_bound;
           };
         attribute;
         instantiated_attributes;
@@ -2464,6 +2441,7 @@ class base class_metadata_environment dependency =
         ?(replace_unbound_parameters_with_any = true)
         ~assumptions
         annotation =
+      let Queries.{ variables; _ } = queries in
       let open TypeParameterValidationTypes in
       let module InvalidTypeParametersTransform = Type.Transform.Make (struct
         type state = type_parameters_mismatch list
@@ -2490,12 +2468,7 @@ class base class_metadata_environment dependency =
                     Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "Ps");
                     Type.Variable.Unary (Type.Variable.Unary.create "R");
                   ]
-              | _ ->
-                  ClassHierarchyEnvironment.ReadOnly.variables
-                    (class_hierarchy_environment class_metadata_environment)
-                    ?dependency
-                    name
-                  |> Option.value ~default:[]
+              | _ -> variables name |> Option.value ~default:[]
             in
             let invalid_type_parameters ~name ~given =
               let generics = generics_for_name name in
@@ -2670,10 +2643,9 @@ class base class_metadata_environment dependency =
 
     method parse_annotation
         ~assumptions
-        ?(validation =
-          ClassSuccessorMetadataEnvironment.MetadataReadOnly.controls class_metadata_environment
-          |> ParsingValidation.parse_annotation_validation_kind)
+        ?(validation = ParsingValidation.parse_annotation_validation_kind controls)
         expression =
+      let { Queries.parse_annotation_without_validating_type_parameters; _ } = queries in
       let modify_aliases ?replace_unbound_parameters_with_any = function
         | Type.TypeAlias alias ->
             self#check_invalid_type_parameters
@@ -2692,10 +2664,8 @@ class base class_metadata_environment dependency =
             false
       in
       let annotation =
-        AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-          (alias_environment class_metadata_environment)
+        parse_annotation_without_validating_type_parameters
           ~modify_aliases
-          ?dependency
           ~allow_untracked
           expression
       in
@@ -2715,6 +2685,7 @@ class base class_metadata_environment dependency =
         ~in_test
         ~accessed_via_metaclass
         ({ Node.value = { ClassSummary.name = parent_name; _ }; _ } as parent) =
+      let { Queries.get_class_summary; successors; _ } = queries in
       let class_name = Reference.show parent_name in
       let unannotated_attributes
           ~include_generated_attributes
@@ -2737,19 +2708,7 @@ class base class_metadata_environment dependency =
         List.map attributes ~f:unannotated_attribute
       in
       let add_constructor table =
-        let successor_definitions =
-          let class_summary =
-            UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-              (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-                 class_metadata_environment)
-              ?dependency
-          in
-          ClassSuccessorMetadataEnvironment.ReadOnly.successors
-            class_metadata_environment
-            ?dependency
-            class_name
-          |> List.filter_map ~f:class_summary
-        in
+        let successor_definitions = successors class_name |> List.filter_map ~f:get_class_summary in
         let name_annotation_pairs =
           let name_annotation_pair attribute =
             let name = AnnotatedAttribute.name attribute in
@@ -2851,28 +2810,17 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~in_test
         ~accessed_via_metaclass
-        ?dependency
-        ~class_metadata_environment
         ~class_name
         ({ Node.value = { ClassSummary.name; _ }; _ } as parent_definition) =
+      let Queries.{ is_typed_dictionary; get_class_summary; successors; _ } = queries in
       let table = UninstantiatedAttributeTable.create () in
       let add_special_methods () =
-        let class_summary =
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-            (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-               class_metadata_environment)
-            ?dependency
-        in
         let successor_definitions =
-          ClassSuccessorMetadataEnvironment.ReadOnly.successors
-            class_metadata_environment
-            ?dependency
-            (Reference.show name)
-          |> List.filter_map ~f:class_summary
+          Reference.show name |> successors |> List.filter_map ~f:get_class_summary
         in
         let base_typed_dictionary_definition fields =
           let total = Type.TypedDictionary.are_fields_total fields in
-          match class_summary (Type.TypedDictionary.class_name ~total) with
+          match get_class_summary (Type.TypedDictionary.class_name ~total) with
           | Some definition -> definition
           | None -> failwith "Expected to find TypedDictionary"
         in
@@ -2880,10 +2828,7 @@ class base class_metadata_environment dependency =
           List.filter
             (parent_definition :: successor_definitions)
             ~f:(fun { Node.value = { ClassSummary.name; _ }; _ } ->
-              ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
-                class_metadata_environment
-                ?dependency
-                (Reference.show name))
+              is_typed_dictionary (Reference.show name))
         in
         let get_field_attributes
             ~include_generated_attributes
@@ -2996,6 +2941,7 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~accessed_via_metaclass
         class_name =
+      let Queries.{ get_class_summary; get_class_metadata; class_hierarchy; _ } = queries in
       let handle ({ Node.value = class_summary; _ } as parent) ~in_test =
         let table = UninstantiatedAttributeTable.create () in
         let add_actual () =
@@ -3048,13 +2994,7 @@ class base class_metadata_environment dependency =
         in
         add_actual ();
         let extends_placeholder_stubs class_name =
-          let class_hierarchy =
-            ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-              (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-                 class_metadata_environment)
-              ?dependency
-          in
-          ClassHierarchy.extends_placeholder_stub class_hierarchy class_name
+          ClassHierarchy.extends_placeholder_stub (class_hierarchy ()) class_name
         in
         if include_generated_attributes && extends_placeholder_stubs class_name then
           add_placeholder_stub_inheritances ();
@@ -3079,17 +3019,7 @@ class base class_metadata_environment dependency =
         in
         table
       in
-      match
-        ( UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-            (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-               class_metadata_environment)
-            ?dependency
-            class_name,
-          ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
-            class_metadata_environment
-            ?dependency
-            class_name )
-      with
+      match get_class_summary class_name, get_class_metadata class_name with
       | Some definition, Some { is_typed_dictionary; is_test = in_test; successors = Some _; _ } ->
           let is_declarative_sqlalchemy_class () =
             Option.equal
@@ -3104,8 +3034,6 @@ class base class_metadata_environment dependency =
                 ~include_generated_attributes
                 ~in_test
                 ~accessed_via_metaclass
-                ~class_metadata_environment
-                ?dependency
                 ~class_name
                 definition
             else if is_declarative_sqlalchemy_class () then
@@ -3128,7 +3056,8 @@ class base class_metadata_environment dependency =
         ~include_generated_attributes
         ~special_method
         class_name =
-      let handle { ClassSuccessorMetadataEnvironment.successors; _ } =
+      let Queries.{ successors; get_class_metadata; _ } = queries in
+      let handle { ClassSuccessorMetadataEnvironment.successors = the_successors; _ } =
         let get_table ~accessed_via_metaclass =
           self#single_uninstantiated_attribute_table
             ~assumptions
@@ -3141,7 +3070,7 @@ class base class_metadata_environment dependency =
             if accessed_through_class && special_method then
               []
             else if transitive then
-              class_name :: Option.value successors ~default:[]
+              class_name :: Option.value the_successors ~default:[]
             else
               [class_name]
           in
@@ -3156,17 +3085,11 @@ class base class_metadata_environment dependency =
               let metaclass_hierarchy =
                 (* Class over meta hierarchy if necessary. *)
                 if accessed_through_class then
-                  let successors_of class_name =
-                    ClassSuccessorMetadataEnvironment.ReadOnly.successors
-                      class_metadata_environment
-                      ?dependency
-                      class_name
-                  in
                   self#metaclass ~assumptions class_name
                   >>| Type.split
                   >>| fst
                   >>= Type.primitive_name
-                  >>| (fun metaclass -> metaclass :: successors_of metaclass)
+                  >>| (fun metaclass -> metaclass :: successors metaclass)
                   |> Option.value ~default:[]
                 else
                   []
@@ -3178,11 +3101,7 @@ class base class_metadata_environment dependency =
         in
         Sequence.append normal_tables (Sequence.of_lazy metaclass_tables)
       in
-      ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
-        class_metadata_environment
-        ?dependency
-        class_name
-      >>| handle
+      get_class_metadata class_name >>| handle
 
     method attribute
         ~assumptions
@@ -3316,6 +3235,7 @@ class base class_metadata_environment dependency =
         ?instantiated
         ?(apply_descriptors = true)
         attribute =
+      let Queries.{ variables; _ } = queries in
       let make_annotation_readonly = function
         | AnnotatedAttribute.UninstantiatedAnnotation.Attribute annotation ->
             AnnotatedAttribute.UninstantiatedAnnotation.Attribute (Type.ReadOnly.create annotation)
@@ -3416,14 +3336,7 @@ class base class_metadata_environment dependency =
               "__getitem__",
               "typing.GenericMeta" ) ->
               let implementation, overloads =
-                let generics =
-                  ClassHierarchyEnvironment.ReadOnly.variables
-                    (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-                       class_metadata_environment)
-                    ?dependency
-                    name
-                  |> Option.value ~default:[]
-                in
+                let generics = variables name |> Option.value ~default:[] in
                 let create_parameter annotation =
                   Type.Callable.Parameter.PositionalOnly { index = 0; annotation; default = false }
                 in
@@ -3762,6 +3675,7 @@ class base class_metadata_environment dependency =
         ?(defined = true)
         ~accessed_via_metaclass
         { Attribute.name = attribute_name; kind } =
+      let Queries.{ exists_matching_class_decorator; successors; _ } = queries in
       let { Node.value = { ClassSummary.name = parent_name; _ }; _ } = parent in
       let parent_name = Reference.show parent_name in
       let class_annotation = Type.Primitive parent_name in
@@ -3791,13 +3705,7 @@ class base class_metadata_environment dependency =
             in
             (* Handle enumeration attributes. *)
             let annotation, visibility =
-              let superclasses =
-                ClassSuccessorMetadataEnvironment.ReadOnly.successors
-                  class_metadata_environment
-                  ?dependency
-                  parent_name
-                |> String.Set.of_list
-              in
+              let superclasses = successors parent_name |> String.Set.of_list in
               if
                 (not (Set.mem Recognized.enumeration_classes (Type.show class_annotation)))
                 && (not (Set.is_empty (Set.inter Recognized.enumeration_classes superclasses)))
@@ -3845,9 +3753,7 @@ class base class_metadata_environment dependency =
               | None, Some value ->
                   let literal_value_annotation = self#resolve_literal ~assumptions value in
                   let is_dataclass_attribute =
-                    UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
-                      (unannotated_global_environment class_metadata_environment)
-                      ?dependency
+                    exists_matching_class_decorator
                       ~names:["dataclasses.dataclass"; "dataclass"]
                       parent
                   in
@@ -4002,6 +3908,7 @@ class base class_metadata_environment dependency =
         ~problem
 
     method metaclass ~assumptions target =
+      let Queries.{ get_class_summary; _ } = queries in
       (* See
          https://docs.python.org/3/reference/datamodel.html#determining-the-appropriate-metaclass
          for why we need to consider all metaclasses. *)
@@ -4058,24 +3965,14 @@ class base class_metadata_environment dependency =
                 first
             | _ -> candidate)
       in
-      UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-        (ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
-           class_metadata_environment)
-        ?dependency
-        target
-      >>| handle
+      get_class_summary target >>| handle
 
     method constraints ~assumptions ~target ?parameters ~instantiated () =
+      let Queries.{ variables; _ } = queries in
       let parameters =
         match parameters with
         | None ->
-            ClassHierarchyEnvironment.ReadOnly.variables
-              (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-                 class_metadata_environment)
-              ?dependency
-              target
-            >>| List.map ~f:Type.Variable.to_parameter
-            |> Option.value ~default:[]
+            variables target >>| List.map ~f:Type.Variable.to_parameter |> Option.value ~default:[]
         | Some parameters -> parameters
       in
       if List.is_empty parameters then
@@ -4102,15 +3999,13 @@ class base class_metadata_environment dependency =
     (* In general, python expressions can be self-referential. This resolution only checks literals
        and annotations found in the resolution map, without resolving expressions. *)
     method resolve_literal ~assumptions expression =
+      let Queries.{ variables; get_unannotated_global; _ } = queries in
       let open Ast.Expression in
       let is_concrete_class class_type =
         class_type
         |> Queries.class_summary_for_outer_type queries
         >>| (fun { Node.value = { name; _ }; _ } -> Reference.show name)
-        >>= ClassHierarchyEnvironment.ReadOnly.variables
-              (class_hierarchy_environment class_metadata_environment)
-              ?dependency
-              ~default:(Some [])
+        >>= variables ~default:(Some [])
         >>| List.is_empty
       in
       let fully_specified_type = function
@@ -4198,15 +4093,7 @@ class base class_metadata_environment dependency =
       | FormatString _ -> Type.string
       | Name name when is_simple_name name -> (
           let reference = name_to_reference_exn name in
-          let unannotated_global_environment =
-            unannotated_global_environment class_metadata_environment
-          in
-          match
-            UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-              ?dependency
-              unannotated_global_environment
-              reference
-          with
+          match get_unannotated_global reference with
           | Some (UnannotatedGlobal.Define defines) ->
               let { decorated; _ } =
                 List.map defines ~f:(fun { define; _ } -> define)
@@ -4261,6 +4148,11 @@ class base class_metadata_environment dependency =
       | _ -> Type.Any
 
     method resolve_define ~assumptions ~implementation ~overloads =
+      let Queries.
+            { resolve_exports; parse_as_parameter_specification_instance_annotation; variables; _ }
+        =
+        queries
+      in
       let apply_decorator argument (index, decorator) =
         let make_error reason =
           Result.Error (AnnotatedAttribute.InvalidDecorator { index; reason })
@@ -4269,12 +4161,7 @@ class base class_metadata_environment dependency =
         | None -> make_error CouldNotResolve
         | Some { Decorator.name; arguments } -> (
             let name = Node.value name |> Reference.delocalize in
-            let decorator =
-              UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
-                (unannotated_global_environment class_metadata_environment)
-                ?dependency
-                name
-            in
+            let decorator = resolve_exports name in
             let simple_decorator_name =
               match decorator with
               | Some (ModuleAttribute { from; name; remaining; _ }) ->
@@ -4490,9 +4377,7 @@ class base class_metadata_environment dependency =
                         | { Node.value = Expression.Expression.Name name; _ } ->
                             Expression.name_to_reference name
                             >>| Reference.delocalize
-                            >>= UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
-                                  (unannotated_global_environment class_metadata_environment)
-                                  ?dependency
+                            >>= resolve_exports
                             >>= resolver
                             >>| make_matched_argument
                             |> Result.of_option
@@ -4565,17 +4450,8 @@ class base class_metadata_environment dependency =
           {
             AnnotatedCallable.parse_annotation = self#parse_annotation ~assumptions;
             parse_as_parameter_specification_instance_annotation =
-              AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-                (alias_environment class_metadata_environment)
-                ?dependency
-                ();
+              parse_as_parameter_specification_instance_annotation ();
           }
-        in
-        let variables =
-          ClassHierarchyEnvironment.ReadOnly.variables
-            (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-               class_metadata_environment)
-            ?dependency
         in
         AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables
       in
@@ -4723,13 +4599,10 @@ class base class_metadata_environment dependency =
       |> Option.is_some
 
     method constructor ~assumptions class_name ~instantiated =
+      let Queries.{ variables; successors; _ } = queries in
       let return_annotation =
         let generics =
-          ClassHierarchyEnvironment.ReadOnly.variables
-            (ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-               class_metadata_environment)
-            ?dependency
-            class_name
+          variables class_name
           >>| List.map ~f:Type.Variable.to_parameter
           |> Option.value ~default:[]
         in
@@ -4751,13 +4624,7 @@ class base class_metadata_environment dependency =
               backup
           | _ -> instantiated
       in
-      let definitions =
-        class_name
-        :: ClassSuccessorMetadataEnvironment.ReadOnly.successors
-             class_metadata_environment
-             ?dependency
-             class_name
-      in
+      let definitions = class_name :: successors class_name in
       let definition_index parent =
         parent
         |> (fun class_annotation ->
@@ -4836,6 +4703,7 @@ class base class_metadata_environment dependency =
       | _ -> signature
 
     method global_annotation ~assumptions name =
+      let Queries.{ class_exists; get_unannotated_global; _ } = queries in
       let process_unannotated_global global =
         let produce_assignment_global ~is_explicit ~is_final annotation =
           let original =
@@ -4940,22 +4808,14 @@ class base class_metadata_environment dependency =
             Some { Global.annotation; undecorated_signature = None; problem = None }
         | _ -> None
       in
-      let class_lookup =
-        Reference.show name
-        |> UnannotatedGlobalEnvironment.ReadOnly.class_exists
-             (unannotated_global_environment class_metadata_environment)
-             ?dependency
-      in
+      let class_lookup = Reference.show name |> class_exists in
       if class_lookup then
         let primitive = Type.Primitive (Reference.show name) in
         Annotation.create_immutable (Type.meta primitive)
         |> fun annotation ->
         Some { Global.annotation; undecorated_signature = None; problem = None }
       else
-        UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-          (unannotated_global_environment class_metadata_environment)
-          ?dependency
-          name
+        get_unannotated_global name
         >>= fun global ->
         let timer = Timer.start () in
         let result = process_unannotated_global global in
@@ -4977,6 +4837,84 @@ let empty_assumptions =
     callable_assumptions = CallableAssumptions.empty;
     decorator_assumptions = DecoratorAssumptions.empty;
   }
+
+
+let class_hierarchy_environment class_metadata_environment =
+  ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
+
+
+let alias_environment class_metadata_environment =
+  ClassHierarchyEnvironment.ReadOnly.alias_environment
+    (class_hierarchy_environment class_metadata_environment)
+
+
+let unannotated_global_environment class_metadata_environment =
+  alias_environment class_metadata_environment
+  |> AliasEnvironment.ReadOnly.unannotated_global_environment
+
+
+let create_queries ~class_metadata_environment ~dependency =
+  Queries.
+    {
+      controls =
+        ClassSuccessorMetadataEnvironment.MetadataReadOnly.controls class_metadata_environment;
+      resolve_exports =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.resolve_exports ?dependency;
+      is_protocol =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.is_protocol ?dependency;
+      get_unannotated_global =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global ?dependency;
+      get_function_definition =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.get_function_definition ?dependency;
+      get_class_summary =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary ?dependency;
+      first_matching_class_decorator =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator ?dependency;
+      exists_matching_class_decorator =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator ?dependency;
+      class_exists =
+        unannotated_global_environment class_metadata_environment
+        |> UnannotatedGlobalEnvironment.ReadOnly.class_exists ?dependency;
+      parse_annotation_without_validating_type_parameters =
+        alias_environment class_metadata_environment
+        |> AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters ?dependency;
+      parse_as_parameter_specification_instance_annotation =
+        alias_environment class_metadata_environment
+        |> AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+             ?dependency;
+      variables =
+        class_hierarchy_environment class_metadata_environment
+        |> ClassHierarchyEnvironment.ReadOnly.variables ?dependency;
+      class_hierarchy =
+        (fun () ->
+          class_hierarchy_environment class_metadata_environment
+          |> ClassHierarchyEnvironment.ReadOnly.class_hierarchy ?dependency);
+      successors =
+        ClassSuccessorMetadataEnvironment.ReadOnly.successors ?dependency class_metadata_environment;
+      least_upper_bound =
+        ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound
+          ?dependency
+          class_metadata_environment;
+      is_typed_dictionary =
+        ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
+          ?dependency
+          class_metadata_environment;
+      is_transitive_successor =
+        ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
+          ?dependency
+          class_metadata_environment;
+      get_class_metadata =
+        ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
+          ?dependency
+          class_metadata_environment;
+    }
 
 
 module ParseAnnotationCache = struct
@@ -5002,7 +4940,9 @@ module ParseAnnotationCache = struct
         { SharedMemoryKeys.ParseAnnotationKey.validation; expression }
         ~dependency
       =
-      let implementation = new base class_metadata_environment dependency in
+      let implementation =
+        new base ~queries:(create_queries ~class_metadata_environment ~dependency)
+      in
       implementation#parse_annotation ~assumptions:empty_assumptions ~validation expression
 
 
@@ -5026,7 +4966,12 @@ module ParseAnnotationCache = struct
 
     class with_cached_parse_annotation dependency read_only =
       object
-        inherit base (upstream_environment read_only) dependency
+        inherit
+          base
+            ~queries:
+              (create_queries
+                 ~class_metadata_environment:(upstream_environment read_only)
+                 ~dependency)
 
         method! parse_annotation
             ~assumptions:_
@@ -5279,7 +5224,12 @@ module ReadOnly = struct
 
   class with_uninstantiated_attributes_cache dependency read_only =
     object
-      inherit base (class_metadata_environment read_only) dependency
+      inherit
+        base
+          ~queries:
+            (create_queries
+               ~class_metadata_environment:(class_metadata_environment read_only)
+               ~dependency)
 
       method! single_uninstantiated_attribute_table ~assumptions:_ =
         AttributeCache.ReadOnly.cached_single_uninstantiated_attribute_table
