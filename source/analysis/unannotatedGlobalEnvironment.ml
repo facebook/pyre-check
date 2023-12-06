@@ -611,10 +611,10 @@ module FromReadOnlyUpstream = struct
       | ["typing_extensions"] -> classes @ MissingFromStubs.missing_typing_extensions_classes
       | _ -> classes
     in
-    let register new_annotations { Node.location; value = { Class.name; _ } as definition } =
-      let primitive = Reference.show name in
+    let register new_classes { Node.location; value = { Class.name; _ } as definition } =
+      let class_name = Reference.show name in
       let definition =
-        match primitive with
+        match class_name with
         | "type" ->
             let value =
               Type.expression
@@ -625,9 +625,9 @@ module FromReadOnlyUpstream = struct
       in
       set_class_summary
         environment
-        ~name:primitive
+        ~name:class_name
         { Node.location; value = ClassSummary.create ~qualifier definition };
-      Set.add new_annotations primitive
+      Set.add new_classes class_name
     in
     List.fold classes ~init:Type.Primitive.Set.empty ~f:register
     |> Set.to_list
