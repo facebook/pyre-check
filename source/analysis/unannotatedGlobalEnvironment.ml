@@ -158,12 +158,34 @@ module ModuleComponents = struct
       unannotated_globals = unannotated_globals_of_source source;
       function_definitions = function_definitions_of_source source;
     }
+
+
+  let implicit_module () =
+    {
+      module_metadata = Ast.Module.create_implicit ();
+      class_summaries = [];
+      unannotated_globals = [];
+      function_definitions = [];
+    }
 end
 
-let get_processed_source ast_environment qualifier =
-  let dependency = SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier) in
-  AstEnvironment.ReadOnly.get_processed_source ast_environment ~dependency qualifier
+module IncomingDataComputation = struct
+  module Queries = struct
+    type t = {
+      is_module_tracked: Ast.Reference.t -> bool;
+      get_processed_source: Ast.Reference.t -> Ast.Source.t option;
+    }
+  end
 
+  let module_components Queries.{ is_module_tracked; get_processed_source } qualifier =
+    match get_processed_source qualifier with
+    | Some source -> Some (ModuleComponents.of_source source)
+    | None ->
+        if is_module_tracked qualifier then
+          Some (ModuleComponents.implicit_module ())
+        else
+          None
+end
 
 module ReadOnly = struct
   type t = {
@@ -779,21 +801,14 @@ module FromReadOnlyUpstream = struct
   module LazyLoader = struct
     type t = {
       environment: ReadWrite.t;
-      ast_environment: AstEnvironment.ReadOnly.t;
+      queries: IncomingDataComputation.Queries.t;
     }
 
-    let try_load_module { environment; ast_environment } qualifier =
+    let try_load_module { environment; queries } qualifier =
       if not (ModuleTable.mem environment.module_table qualifier) then
-        match get_processed_source ast_environment qualifier with
-        | Some source ->
-            ModuleComponents.of_source source |> set_module_data ~environment ~qualifier
-        | None ->
-            if
-              ModuleTracker.ReadOnly.is_module_tracked
-                (AstEnvironment.ReadOnly.module_tracker ast_environment)
-                qualifier
-            then
-              ModuleTable.add environment.module_table qualifier (Module.create_implicit ())
+        IncomingDataComputation.module_components queries qualifier
+        >>| set_module_data ~environment ~qualifier
+        |> ignore
 
 
     (* Try to load a module, with dependency tracking of our attempt and caching of successful
@@ -908,13 +923,26 @@ module FromReadOnlyUpstream = struct
     end
   end
 
-  let cold_start ({ ast_environment; _ } as environment) =
-    let qualifier = Reference.empty in
+  let queries { ast_environment; _ } =
+    let is_module_tracked =
+      AstEnvironment.ReadOnly.module_tracker ast_environment
+      |> ModuleTracker.ReadOnly.is_module_tracked
+    in
+    let get_processed_source qualifier =
+      let dependency =
+        SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
+      in
+      AstEnvironment.ReadOnly.get_processed_source ast_environment ~dependency qualifier
+    in
+    IncomingDataComputation.Queries.{ is_module_tracked; get_processed_source }
+
+
+  let cold_start environment =
     (* Eagerly load `builtins.pyi` + the project sources but nothing else *)
-    get_processed_source ast_environment qualifier
-    >>| ModuleComponents.of_source
+    let qualifier = Reference.empty in
+    IncomingDataComputation.module_components (queries environment) qualifier
     >>| set_module_data ~environment ~qualifier
-    |> Option.value ~default:()
+    |> ignore
 
 
   let read_only
@@ -928,7 +956,7 @@ module FromReadOnlyUpstream = struct
          unannotated_global_table;
        } as environment)
     =
-    let loader = LazyLoader.{ environment; ast_environment } in
+    let loader = LazyLoader.{ environment; queries = queries environment } in
     (* Mask the raw DependencyTrackedTables with lazy read-only views of each one *)
     let module ModuleTable = ReadOnlyTable.Make (ModuleTable) in
     let module DefineNames = ReadOnlyTable.Make (DefineNames) in
@@ -996,10 +1024,10 @@ module FromReadOnlyUpstream = struct
     }
 
 
-  let update ({ ast_environment; key_tracker; define_names; _ } as environment) ~scheduler upstream =
+  let update ({ key_tracker; define_names; _ } as environment) ~scheduler upstream =
     let invalidated_modules = AstEnvironment.UpdateResult.invalidated_modules upstream in
     let map sources =
-      let loader = LazyLoader.{ environment; ast_environment } in
+      let loader = LazyLoader.{ environment; queries = queries environment } in
       let register qualifier = LazyLoader.try_load_module loader qualifier in
       List.iter sources ~f:register
     in
