@@ -462,12 +462,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~triggered_sinks_for_call
       ~call_location
       ~self
-      ~self_taint
       ~callee
-      ~callee_taint
+      ~implicit_argument_taint
       ~arguments
       ~arguments_taint
-      ~is_implicit_new
       ~state:initial_state
       ({
          CallGraph.CallTarget.target;
@@ -481,14 +479,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     (* Add implicit argument. *)
     let arguments, arguments_taint =
-      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
-      | CalleeBase ->
+      match implicit_argument_taint with
+      | CallModel.ImplicitArgument.Forward.CalleeBase taint ->
           ( { Call.Argument.name = None; value = Option.value_exn self } :: arguments,
-            Option.value_exn self_taint :: arguments_taint )
-      | Callee ->
-          ( { Call.Argument.name = None; value = callee } :: arguments,
-            Option.value_exn callee_taint :: arguments_taint )
-      | None -> arguments, arguments_taint
+            taint :: arguments_taint )
+      | CallModel.ImplicitArgument.Forward.Callee taint ->
+          { Call.Argument.name = None; value = callee } :: arguments, taint :: arguments_taint
+      | CallModel.ImplicitArgument.Forward.None -> arguments, arguments_taint
     in
     let ({ Model.forward; backward; _ } as taint_model) =
       TaintProfiler.track_model_fetch
@@ -871,12 +868,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~triggered_sinks_for_call
               ~call_location
               ~self:(Some callee)
-              ~self_taint:callee_taint
+              ~implicit_argument_taint:
+                (CallModel.ImplicitArgument.Forward.from_call_target
+                   ~is_implicit_new:true
+                   ~callee_base_taint:callee_taint
+                   target)
               ~callee
-              ~callee_taint:(Some ForwardState.Tree.bottom)
               ~arguments
               ~arguments_taint
-              ~is_implicit_new:true (* True because the constructor implicitly calls `__new__` *)
               ~state:initial_state
               target)
         |> List.fold
@@ -900,12 +899,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~triggered_sinks_for_call
               ~call_location
               ~self:(Some call_expression)
-              ~self_taint:(Some new_return_taint)
               ~callee
-              ~callee_taint:(Some ForwardState.Tree.bottom)
+              ~implicit_argument_taint:
+                (CallModel.ImplicitArgument.Forward.from_call_target
+                   ~is_implicit_new:false
+                   ~callee_base_taint:(Some new_return_taint)
+                   target)
               ~arguments
               ~arguments_taint
-              ~is_implicit_new:false
               ~state
               target)
         |> List.fold
@@ -953,23 +954,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     (* Apply regular call targets. *)
     let taint, state =
-      List.map
-        call_targets
-        ~f:
-          (apply_call_target
-             ~apply_tito
-             ~resolution
-             ~is_result_used
-             ~triggered_sinks_for_call
-             ~call_location
-             ~self
-             ~self_taint
-             ~callee
-             ~callee_taint
-             ~arguments
-             ~arguments_taint
-             ~is_implicit_new:false
-             ~state:initial_state)
+      List.map call_targets ~f:(function call_target ->
+          apply_call_target
+            ~apply_tito
+            ~resolution
+            ~is_result_used
+            ~triggered_sinks_for_call
+            ~call_location
+            ~self
+            ~callee
+            ~implicit_argument_taint:
+              (CallModel.ImplicitArgument.Forward.from_call_target
+                 ~is_implicit_new:false
+                 ~callee_base_taint:self_taint
+                 ~callee_taint
+                 call_target)
+            ~arguments
+            ~arguments_taint
+            ~state:initial_state
+            call_target)
       |> List.fold
            ~init:(ForwardState.Tree.empty, bottom)
            ~f:(fun (taint, state) (new_taint, new_state) ->
@@ -1029,6 +1032,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   type analyze_attribute_access_result = {
     base_taint: ForwardState.Tree.t;
+    (* Taint of the entire attribute access expression. *)
     attribute_taint: ForwardState.Tree.t;
     state: t;
   }

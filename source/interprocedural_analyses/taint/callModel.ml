@@ -457,6 +457,26 @@ let return_sink ~resolution ~location ~callee ~sink_model =
 
 
 module ImplicitArgument = struct
+  module Forward = struct
+    type t =
+      | CalleeBase of ForwardState.Tree.t
+      | Callee of ForwardState.Tree.t
+      | None
+
+    let from_call_target
+        ~is_implicit_new
+        ?(callee_base_taint = Base.Option.None)
+        ?(callee_taint = Base.Option.None)
+        call_target
+      =
+      match CallGraph.ImplicitArgument.implicit_argument ~is_implicit_new call_target with
+      | CallGraph.ImplicitArgument.Callee ->
+          Callee (Option.value ~default:ForwardState.Tree.bottom callee_taint)
+      | CallGraph.ImplicitArgument.CalleeBase ->
+          CalleeBase (Option.value ~default:ForwardState.Tree.bottom callee_base_taint)
+      | CallGraph.ImplicitArgument.None -> None
+  end
+
   module Backward = struct
     type t =
       (* Only the base of the callee (such as `obj` in `obj.method`) is considered as the implicit

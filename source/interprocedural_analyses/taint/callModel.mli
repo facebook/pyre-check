@@ -124,6 +124,20 @@ val return_sink
   BackwardState.Tree.t
 
 module ImplicitArgument : sig
+  module Forward : sig
+    type t =
+      | CalleeBase of ForwardState.Tree.t
+      | Callee of ForwardState.Tree.t
+      | None
+
+    val from_call_target
+      :  is_implicit_new:bool ->
+      ?callee_base_taint:ForwardState.Tree.t option ->
+      ?callee_taint:ForwardState.Tree.t option ->
+      CallGraph.CallTarget.t ->
+      t
+  end
+
   module Backward : sig
     type t =
       | CalleeBase of BackwardState.Tree.t
