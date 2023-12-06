@@ -786,7 +786,7 @@ module State (Context : Context) = struct
   let is_toplevel_module_reference ~global_resolution name =
     name
     |> GlobalResolution.resolve_exports global_resolution
-    >>= UnannotatedGlobalEnvironment.ResolvedReference.as_module_toplevel_reference
+    >>= ResolvedReference.as_module_toplevel_reference
     |> Option.is_some
 
 
@@ -888,14 +888,10 @@ module State (Context : Context) = struct
     | head :: tail ->
         let base, attribute_list =
           match GlobalResolution.resolve_exports global_resolution reference with
-          | Some (UnannotatedGlobalEnvironment.ResolvedReference.Module _) -> reference, []
-          | Some
-              (UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub
-                { stub_module; remaining }) ->
+          | Some (ResolvedReference.Module _) -> reference, []
+          | Some (ResolvedReference.PlaceholderStub { stub_module; remaining }) ->
               stub_module, remaining
-          | Some
-              (UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-                { from; name; remaining; _ }) ->
+          | Some (ResolvedReference.ModuleAttribute { from; name; remaining; _ }) ->
               Reference.create ~prefix:from name, remaining
           | None -> Reference.create head, tail
         in

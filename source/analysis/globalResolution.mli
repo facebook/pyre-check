@@ -66,11 +66,7 @@ val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
 
 val legacy_resolve_exports : t -> Reference.t -> Reference.t
 
-val resolve_exports
-  :  t ->
-  ?from:Reference.t ->
-  Reference.t ->
-  UnannotatedGlobalEnvironment.ResolvedReference.t option
+val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
 val ast_environment : t -> AstEnvironment.ReadOnly.t
 

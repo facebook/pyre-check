@@ -281,10 +281,7 @@ end
 module Queries = struct
   type t = {
     controls: EnvironmentControls.t;
-    resolve_exports:
-      ?from:Ast.Reference.t ->
-      Ast.Reference.t ->
-      UnannotatedGlobalEnvironment.ResolvedReference.t option;
+    resolve_exports: ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option;
     is_protocol: Type.t -> bool;
     get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
     get_function_definition: Ast.Reference.t -> FunctionDefinition.t option;
@@ -4319,7 +4316,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                     >>= join_all
                   in
                   let resolver = function
-                    | UnannotatedGlobalEnvironment.ResolvedReference.Module _ -> None
+                    | ResolvedReference.Module _ -> None
                     | PlaceholderStub _ -> Some Type.Any
                     | ModuleAttribute { from; name; remaining; _ } ->
                         let rec resolve_remaining base ~remaining =

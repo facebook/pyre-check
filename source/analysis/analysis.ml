@@ -46,6 +46,7 @@ module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module Refinement = Refinement
 module Resolution = Resolution
+module ResolvedReference = ResolvedReference
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
 module SignatureSelectionTypes = SignatureSelectionTypes

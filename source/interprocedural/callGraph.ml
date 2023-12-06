@@ -1726,7 +1726,6 @@ let resolve_recognized_callees
 
 let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee =
   let global_resolution = Resolution.global_resolution resolution in
-  let open UnannotatedGlobalEnvironment in
   let return_type () =
     ReturnType.from_annotation
       ~resolution:(Resolution.global_resolution resolution)
@@ -1898,8 +1897,7 @@ let as_identifier_reference ~define ~resolution expression =
       >>= fun reference ->
       GlobalResolution.resolve_exports (Resolution.global_resolution resolution) reference
       >>= function
-      | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute
-          { from; name; remaining = []; _ } ->
+      | ResolvedReference.ModuleAttribute { from; name; remaining = []; _ } ->
           Some (IdentifierCallees.Global (Reference.combine from (Reference.create name)))
       | _ -> None)
   | _ -> None

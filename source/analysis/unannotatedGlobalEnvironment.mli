@@ -9,29 +9,6 @@ open Ast
 open Statement
 open SharedMemoryKeys
 
-module ResolvedReference : sig
-  type export =
-    | FromModuleGetattr
-    | Exported of Module.Export.Name.t
-  [@@deriving sexp, compare, hash]
-
-  type t =
-    | Module of Reference.t
-    | ModuleAttribute of {
-        from: Reference.t;
-        name: Identifier.t;
-        export: export;
-        remaining: Identifier.t list;
-      }
-    | PlaceholderStub of {
-        stub_module: Reference.t;
-        remaining: Identifier.t list;
-      }
-  [@@deriving sexp, compare, hash]
-
-  val as_module_toplevel_reference : t -> Reference.t option
-end
-
 module ReadOnly : sig
   type t
 

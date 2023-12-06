@@ -227,9 +227,8 @@ let handle_superclasses
     | None -> None
   in
   let as_exported_class_reference resolved =
-    let open UnannotatedGlobalEnvironment.ResolvedReference in
     match resolved with
-    | ModuleAttribute
+    | ResolvedReference.ModuleAttribute
         { from; name; remaining = []; export = Exported Ast.Module.Export.Name.Class; _ } ->
         Some (Ast.Reference.create ~prefix:from name)
     | _ -> None

@@ -725,16 +725,16 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
         location |> Location.with_module ~module_reference |> Option.some
   in
   let definition_from_resolved_reference ~global_resolution = function
-    | UnannotatedGlobalEnvironment.ResolvedReference.Module resolved_reference ->
+    | ResolvedReference.Module resolved_reference ->
         Location.with_module ~module_reference:resolved_reference Location.any |> Option.some
-    | UnannotatedGlobalEnvironment.ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
+    | ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
         let resolved_reference =
           Reference.combine
             (Reference.create ~prefix:from name)
             (Reference.create_from_list remaining)
         in
         GlobalResolution.location_of_global global_resolution resolved_reference
-    | UnannotatedGlobalEnvironment.ResolvedReference.PlaceholderStub { stub_module; _ } ->
+    | ResolvedReference.PlaceholderStub { stub_module; _ } ->
         Location.with_module ~module_reference:stub_module Location.any |> Option.some
   in
   let definition_location =
