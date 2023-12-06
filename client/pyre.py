@@ -1613,5 +1613,9 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
     return return_code
 
 
-if __name__ == "__main__":
+def invoke_main() -> None:
     sys.exit(main(sys.argv[1:]))
+
+
+if __name__ == "__main__":
+    invoke_main()  # pragma: no cover

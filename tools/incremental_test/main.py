@@ -116,7 +116,7 @@ def main(arguments: argparse.Namespace) -> int:
     return ExitCode.SUCCESS if all_passed else ExitCode.FOUND_ERRORS
 
 
-if __name__ == "__main__":
+def invoke_main() -> None:
     parser = argparse.ArgumentParser(
         description=(
             "Run incremental test for Pyre according to a list of test specifications"
@@ -161,3 +161,7 @@ if __name__ == "__main__":
     _setup_logging(arguments.verbose)
 
     sys.exit(main(arguments))
+
+
+if __name__ == "__main__":
+    invoke_main()  # pragma: no cover

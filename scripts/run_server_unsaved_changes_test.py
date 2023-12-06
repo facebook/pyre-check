@@ -321,7 +321,7 @@ def run(repository_location: str, typeshed_path: pathlib.Path, debug: bool) -> i
     return run_unsaved_changes_test(typeshed_path, repository_location, debug)
 
 
-if __name__ == "__main__":
+def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument(
         "repository_location", help="Path to directory with fake commit list"
@@ -339,3 +339,7 @@ if __name__ == "__main__":
             arguments.debug,
         )
     )
+
+
+if __name__ == "__main__":
+    main()  # pragma: no cover

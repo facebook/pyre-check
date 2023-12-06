@@ -292,5 +292,9 @@ def main(filenames: Iterable[str]) -> None:
         LOG.error(f"Pyre server raised an exception: {exception}")
 
 
-if __name__ == "__main__":
+def invoke_main() -> None:
     main(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    invoke_main()  # pragma: no cover

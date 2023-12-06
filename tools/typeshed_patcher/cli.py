@@ -162,9 +162,13 @@ def patch_typeshed_directory(
     )
 
 
-if __name__ == "__main__":
+def main() -> None:
     logging.basicConfig(
         format="%(levelname)s %(asctime)s %(name)s: %(message)s",
         level=logging.INFO,
     )
     pyre_typeshed_patcher(sys.argv[1:])
+
+
+if __name__ == "__main__":
+    main()  # pragma: no cover
