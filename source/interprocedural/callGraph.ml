@@ -188,24 +188,22 @@ module CallTarget = struct
 
 
   let receiver_class_from_type ~is_class_method annotation =
-    let type_, parameters =
-      annotation
-      |> CallResolution.strip_optional
-      |> CallResolution.strip_readonly
-      |> CallResolution.unbind_type_variable
-      |> Type.split
-    in
-    match Type.primitive_name type_ with
-    | Some "type" -> (
-        match parameters with
-        | [Type.Record.Parameter.Single parameter] when is_class_method ->
-            (* The receiver is the class itself. Technically, the receiver class type should be
-               `Type[int]`. However, we strip away the `type` part since it is implied by the
-               `is_class_method` flag. *)
-            Type.primitive_name parameter
-        | _ -> None)
-    | Some "super" -> None
-    | name -> name
+    annotation
+    |> CallResolution.strip_optional
+    |> CallResolution.strip_readonly
+    |> CallResolution.unbind_type_variable
+    |> Type.split
+    |> fun (annotation, parameters) ->
+    (Type.primitive_name annotation, parameters)
+    |> function
+    | Some "type", [Type.Record.Parameter.Single parameter] when is_class_method ->
+        (* The receiver is the class itself. Technically, the receiver class type should be
+           `Type[int]`. However, we strip away the `type` part since it is implied by the
+           `is_class_method` flag. *)
+        Type.primitive_name parameter
+    | Some "type", _ -> None
+    | Some "super", _ -> None
+    | name, _ -> name
 
 
   let create
