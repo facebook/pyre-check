@@ -662,24 +662,12 @@ module FromReadOnlyUpstream = struct
 
   let set_module { modules; _ } ~qualifier module_ = Modules.add modules qualifier module_
 
-  let set_class_summary { class_summaries; _ } ~name class_summary =
-    ClassSummaries.write_around class_summaries name class_summary
-
-
-  let set_function_definition { function_definitions; _ } ~name function_definition =
-    FunctionDefinitions.write_around function_definitions name function_definition
-
-
-  let set_unannotated_global { unannotated_globals; _ } ~name unannotated_global =
-    UnannotatedGlobals.add unannotated_globals name unannotated_global
-
-
   let set_class_summaries
-      ({ key_tracker; _ } as environment)
+      { key_tracker; class_summaries; _ }
       ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     let register new_classes (class_name, class_summary_node) =
-      set_class_summary environment ~name:class_name class_summary_node;
+      ClassSummaries.write_around class_summaries class_name class_summary_node;
       Set.add new_classes class_name
     in
     IncomingDataComputation.class_summaries source
@@ -689,11 +677,11 @@ module FromReadOnlyUpstream = struct
 
 
   let set_function_definitions
-      ({ define_names; _ } as environment)
+      { define_names; function_definitions; _ }
       ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     let register (name, function_definition) =
-      set_function_definition environment ~name function_definition;
+      FunctionDefinitions.write_around function_definitions name function_definition;
       name
     in
     IncomingDataComputation.function_definitions source
@@ -703,12 +691,12 @@ module FromReadOnlyUpstream = struct
 
 
   let set_unannotated_globals
-      ({ key_tracker; _ } as environment)
+      { key_tracker; unannotated_globals; _ }
       ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
     =
     let register { UnannotatedGlobal.Collector.Result.name; unannotated_global } =
       let name = Reference.create name |> Reference.combine qualifier in
-      set_unannotated_global environment ~name unannotated_global;
+      UnannotatedGlobals.add unannotated_globals name unannotated_global;
       name
     in
     IncomingDataComputation.unannotated_globals source
