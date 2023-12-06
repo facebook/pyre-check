@@ -706,6 +706,18 @@ module FromReadOnlyUpstream = struct
     |> KeyTracker.add_unannotated_global_keys key_tracker qualifier
 
 
+  let set_module_data
+      environment
+      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
+    =
+    set_class_summaries environment source;
+    set_function_definitions environment source;
+    set_unannotated_globals environment source;
+    (* We must set this last, because lazy-loading uses Module.mem to determine whether the source
+       has already been processed. So setting it earlier can lead to data races *)
+    set_module environment ~qualifier (Module.create source)
+
+
   let add_to_transaction
       {
         module_table;
@@ -748,18 +760,6 @@ module FromReadOnlyUpstream = struct
       function_and_class_dependents
       (UnannotatedGlobalTable.KeySet.of_list unannotated_global_additions
       |> UnannotatedGlobalTable.get_all_dependents)
-
-
-  let set_module_data
-      environment
-      ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source)
-    =
-    set_class_summaries environment source;
-    set_function_definitions environment source;
-    set_unannotated_globals environment source;
-    (* We must set this last, because lazy-loading uses Module.mem to determine whether the source
-       has already been processed. So setting it earlier can lead to data races *)
-    set_module environment ~qualifier (Module.create source)
 
 
   module LazyLoader = struct
