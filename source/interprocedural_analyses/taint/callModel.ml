@@ -454,3 +454,27 @@ let return_sink ~resolution ~location ~callee ~sink_model =
   taint
   |> BackwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
   |> BackwardState.Tree.add_via_features via_features_to_attach
+
+
+module ImplicitArgument = struct
+  module Backward = struct
+    type t =
+      (* Only the base of the callee (such as `obj` in `obj.method`) is considered as the implicit
+         argument. *)
+      | CalleeBase of BackwardState.Tree.t
+      (* The entire of the callee is considered as the implicit argument. *)
+      | Callee of BackwardState.Tree.t
+      (* There is no implicit argument. *)
+      | None
+
+    let join left right =
+      match left, right with
+      | CalleeBase left, CalleeBase right -> CalleeBase (BackwardState.Tree.join left right)
+      | Callee left, Callee right -> Callee (BackwardState.Tree.join left right)
+      | CalleeBase left, Callee right
+      | Callee left, CalleeBase right ->
+          Callee (BackwardState.Tree.join left right)
+      | None, _ -> right
+      | _, None -> left
+  end
+end

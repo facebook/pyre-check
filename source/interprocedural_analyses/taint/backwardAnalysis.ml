@@ -265,8 +265,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   type call_target_result = {
     arguments_taint: BackwardState.Tree.t list;
-    self_taint: BackwardState.Tree.t option;
-    callee_taint: BackwardState.Tree.t option;
+    implicit_argument_taint: CallModel.ImplicitArgument.Backward.t;
     captures_taint: BackwardState.Tree.t list;
     captures: CallModel.ArgumentMatches.t list;
     state: t;
@@ -275,16 +274,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let join_call_target_results
       {
         arguments_taint = left_arguments_taint;
-        self_taint = left_self_taint;
-        callee_taint = left_callee_taint;
+        implicit_argument_taint = left_implicit_argument_taint;
         captures_taint = left_captures_taint;
         captures = left_captures;
         state = left_state;
       }
       {
         arguments_taint = right_arguments_taint;
-        self_taint = right_self_taint;
-        callee_taint = right_callee_taint;
+        implicit_argument_taint = right_implicit_argument_taint;
         captures_taint = right_captures_taint;
         captures = right_captures;
         state = right_state;
@@ -299,15 +296,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         right_captures_taint
     in
-    let join_option left right =
-      match left, right with
-      | Some left, Some right -> Some (BackwardState.Tree.join left right)
-      | Some left, None -> Some left
-      | None, Some right -> Some right
-      | None, None -> None
+    let implicit_argument_taint =
+      CallModel.ImplicitArgument.Backward.join
+        left_implicit_argument_taint
+        right_implicit_argument_taint
     in
-    let self_taint = join_option left_self_taint right_self_taint in
-    let callee_taint = join_option left_callee_taint right_callee_taint in
     let state = join left_state right_state in
     let captures =
       if List.length left_captures > List.length right_captures then
@@ -315,7 +308,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         right_captures
     in
-    { arguments_taint; self_taint; callee_taint; captures_taint; captures; state }
+    { arguments_taint; implicit_argument_taint; captures_taint; captures; state }
 
 
   let add_extra_traces_for_transforms
@@ -596,19 +589,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         initial_state
     in
     (* Extract the taint for implicit arguments. *)
-    let self_taint, callee_taint, arguments_taint =
+    let implicit_argument_taint, arguments_taint =
       match CallGraph.ImplicitArgument.implicit_argument call_target with
       | CalleeBase -> (
           match arguments_taint with
-          | self_taint :: arguments_taint -> Some self_taint, None, arguments_taint
+          | self_taint :: arguments_taint ->
+              CallModel.ImplicitArgument.Backward.CalleeBase self_taint, arguments_taint
           | _ -> failwith "missing taint for self argument")
       | Callee -> (
           match arguments_taint with
-          | callee_taint :: arguments_taint -> None, Some callee_taint, arguments_taint
+          | callee_taint :: arguments_taint ->
+              CallModel.ImplicitArgument.Backward.Callee callee_taint, arguments_taint
           | _ -> failwith "missing taint for callee argument")
-      | None -> None, None, arguments_taint
+      | None -> CallModel.ImplicitArgument.Backward.None, arguments_taint
     in
-    { arguments_taint; self_taint; callee_taint; captures_taint; captures; state }
+    { arguments_taint; implicit_argument_taint; captures_taint; captures; state }
 
 
   let apply_obscure_call ~apply_tito ~callee ~arguments ~state:initial_state ~call_taint =
@@ -652,8 +647,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let arguments_taint = List.map ~f:compute_argument_taint arguments in
     {
       arguments_taint;
-      self_taint = None;
-      callee_taint = Some obscure_taint;
+      implicit_argument_taint = CallModel.ImplicitArgument.Backward.Callee obscure_taint;
       captures_taint = [];
       captures = [];
       state = initial_state;
@@ -679,8 +673,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     (* Call `__init__`. Add the `self` implicit argument. *)
     let {
       arguments_taint = init_arguments_taint;
-      self_taint;
-      callee_taint = _;
+      implicit_argument_taint;
       captures_taint = _;
       captures = _;
       state;
@@ -689,8 +682,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if is_object_init && not is_object_new then
         {
           arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-          self_taint = Some call_taint;
-          callee_taint = None;
+          implicit_argument_taint = CallModel.ImplicitArgument.Backward.CalleeBase call_taint;
           captures_taint = [];
           captures = [];
           state = initial_state;
@@ -714,22 +706,29 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~init:
                {
                  arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-                 self_taint = None;
-                 callee_taint = None;
+                 implicit_argument_taint = CallModel.ImplicitArgument.Backward.None;
                  captures_taint = [];
                  captures = [];
                  state = bottom;
                }
     in
-    let self_taint = Option.value self_taint ~default:BackwardState.Tree.bottom in
+    let base_taint =
+      match implicit_argument_taint with
+      | CalleeBase taint -> taint
+      | None -> BackwardState.Tree.bottom
+      | Callee _ ->
+          (* T122799408: This is a rare case, which is handled with a simple workaround. See
+             function `dunder_call_partial_constructor` in
+             `source/interprocedural_analyses/taint/test/integration/partial.py`. *)
+          BackwardState.Tree.bottom
+    in
 
     (* Call `__new__`. *)
     let call_target_result =
       if is_object_new then
         {
           arguments_taint = init_arguments_taint;
-          self_taint = None;
-          callee_taint = None;
+          implicit_argument_taint = CallModel.ImplicitArgument.Backward.None;
           captures_taint = [];
           captures = [];
           state;
@@ -737,8 +736,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else (* Add the `cls` implicit argument. *)
         let {
           arguments_taint = new_arguments_taint;
-          self_taint = callee_taint;
-          callee_taint = _;
+          implicit_argument_taint;
           captures_taint = _;
           captures = _;
           state;
@@ -752,25 +750,30 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~callee
                 ~arguments
                 ~state
-                ~call_taint:self_taint
+                ~call_taint:base_taint
                 target)
           |> List.fold
                ~f:join_call_target_results
                ~init:
                  {
                    arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-                   self_taint = None;
-                   callee_taint = None;
+                   implicit_argument_taint = CallModel.ImplicitArgument.Backward.None;
                    captures_taint = [];
                    captures = [];
                    state = bottom;
                  }
         in
+        let callee_taint =
+          match implicit_argument_taint with
+          | CallModel.ImplicitArgument.Backward.CalleeBase taint -> taint
+          | Callee _
+          | None ->
+              failwith "Expect implicit argument `CalleeBase` from calling `__new__`"
+        in
         {
           arguments_taint =
             List.map2_exn init_arguments_taint new_arguments_taint ~f:BackwardState.Tree.join;
-          self_taint = None;
-          callee_taint;
+          implicit_argument_taint = CallModel.ImplicitArgument.Backward.Callee callee_taint;
           captures_taint = [];
           captures = [];
           state;
@@ -875,8 +878,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            ~init:
              {
                arguments_taint = List.map arguments ~f:(fun _ -> BackwardState.Tree.bottom);
-               self_taint = None;
-               callee_taint = None;
+               implicit_argument_taint = CallModel.ImplicitArgument.Backward.None;
                captures_taint = [];
                captures = [];
                state = bottom;
@@ -922,44 +924,50 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
            analyze_unstarred_expression ~resolution argument_taint argument state)
 
 
-  and analyze_callee ~resolution ~is_property_call ~callee ~self_taint ~callee_taint ~state =
+  and analyze_callee ~resolution ~is_property_call ~callee ~implicit_argument_taint ~state =
     (* Special case: `x.foo()` where foo is a property returning a callable. *)
+    let analyze ~base_taint ~callee_taint =
+      match callee.Node.value with
+      | Expression.Name (Name.Attribute { base; attribute; special }) ->
+          (* If we are already analyzing a call of a property, then ignore properties
+           * to avoid infinite recursion. *)
+          let resolve_properties = not is_property_call in
+          analyze_attribute_access
+            ~resolution
+            ~location:callee.Node.location
+            ~resolve_properties
+            ~base
+            ~attribute
+            ~special
+            ~base_taint
+            ~attribute_taint:callee_taint
+            ~state
+      | _ -> analyze_expression ~resolution ~taint:callee_taint ~state ~expression:callee
+    in
     let callee_is_property =
       match is_property_call, callee.Node.value with
       | false, Expression.Name (Name.Attribute { attribute; _ }) ->
           get_attribute_access_callees ~location:callee.Node.location ~attribute |> Option.is_some
       | _ -> false
     in
-    match self_taint, callee_taint, callee_is_property with
-    | _, _, true
-    | _, Some _, _ -> (
-        match callee.Node.value with
-        | Expression.Name (Name.Attribute { base; attribute; special }) ->
-            (* If we are already analyzing a call of a property, then ignore properties
-             * to avoid infinite recursion. *)
-            let resolve_properties = not is_property_call in
-            analyze_attribute_access
-              ~resolution
-              ~location:callee.Node.location
-              ~resolve_properties
-              ~base
-              ~attribute
-              ~special
-              ~base_taint:(Option.value self_taint ~default:BackwardState.Tree.bottom)
-              ~attribute_taint:(Option.value callee_taint ~default:BackwardState.Tree.bottom)
-              ~state
-        | _ ->
-            analyze_expression
-              ~resolution
-              ~taint:(Option.value callee_taint ~default:BackwardState.Tree.bottom)
-              ~state
-              ~expression:callee)
-    | Some self_taint, None, _ -> (
-        match callee.Node.value with
-        | Expression.Name (Name.Attribute { base; _ }) ->
-            analyze_expression ~resolution ~taint:self_taint ~state ~expression:base
-        | _ -> state)
-    | None, None, _ -> state
+    if callee_is_property then
+      let base_taint, callee_taint =
+        match implicit_argument_taint with
+        | CallModel.ImplicitArgument.Backward.Callee taint -> BackwardState.Tree.bottom, taint
+        | CalleeBase taint -> taint, BackwardState.Tree.bottom
+        | None -> BackwardState.Tree.bottom, BackwardState.Tree.bottom
+      in
+      analyze ~base_taint ~callee_taint
+    else
+      match implicit_argument_taint with
+      | CallModel.ImplicitArgument.Backward.Callee callee_taint ->
+          analyze ~base_taint:BackwardState.Tree.bottom ~callee_taint
+      | CalleeBase taint -> (
+          match callee.Node.value with
+          | Expression.Name (Name.Attribute { base; _ }) ->
+              analyze_expression ~resolution ~taint ~state ~expression:base
+          | _ -> state)
+      | None -> state
 
 
   and analyze_attribute_access
@@ -985,8 +993,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Some { property_targets = _ :: _ as property_targets; _ } ->
           let {
             arguments_taint = _;
-            self_taint;
-            callee_taint = _;
+            implicit_argument_taint;
             captures_taint = _;
             captures = _;
             state;
@@ -1001,7 +1008,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~call_taint:attribute_taint
               (CallGraph.CallCallees.create ~call_targets:property_targets ())
           in
-          let base_taint = Option.value_exn self_taint in
+          let base_taint =
+            match implicit_argument_taint with
+            | CallModel.ImplicitArgument.Backward.CalleeBase taint -> taint
+            | _ -> failwith "Expect `CalleeBase` for attribute access"
+          in
           base_taint, state
       | _ -> BackwardState.Tree.bottom, bottom
     in
@@ -1133,7 +1144,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             };
           ]
         in
-        let { arguments_taint; self_taint; callee_taint; captures_taint; captures; state } =
+        let { arguments_taint; implicit_argument_taint; captures_taint; captures; state } =
           apply_callees_and_return_arguments_taint
             ~resolution
             ~callee:argument
@@ -1148,8 +1159,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~resolution
             ~is_property_call:false
             ~callee:argument
-            ~self_taint
-            ~callee_taint
+            ~implicit_argument_taint
             ~state
         in
         let state =
@@ -1205,7 +1215,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~call_taint
       callees
     =
-    let { arguments_taint; self_taint; callee_taint; captures_taint; captures; state } =
+    let { arguments_taint; implicit_argument_taint; captures_taint; captures; state } =
       apply_callees_and_return_arguments_taint
         ~apply_tito
         ~resolution
@@ -1237,8 +1247,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~resolution
         ~is_property_call:is_property
         ~callee
-        ~self_taint
-        ~callee_taint
+        ~implicit_argument_taint
         ~state
     in
     state
@@ -2027,8 +2036,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       let {
         arguments_taint = _;
-        self_taint;
-        callee_taint;
+        implicit_argument_taint;
         captures_taint = _;
         captures = _;
         state = new_state;
@@ -2060,12 +2068,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           callees
       in
       let new_taint =
-        match callee_taint, self_taint with
-        | None, Some self_taint -> BackwardState.Tree.join taint_to_join self_taint
-        | None, None -> taint_to_join
-        | Some _, None ->
-            failwith "Probably a rare case: callee_taint is Some and self_taint is None"
-        | Some _, Some _ -> failwith "callee_taint and self_taint should not co-exist"
+        match implicit_argument_taint with
+        | CallModel.ImplicitArgument.Backward.CalleeBase self_taint ->
+            BackwardState.Tree.join taint_to_join self_taint
+        | None -> taint_to_join
+        | _ -> failwith "Expect `CalleeBase` or `None` for stringify callee"
       in
       new_taint, join state_to_join new_state
     in

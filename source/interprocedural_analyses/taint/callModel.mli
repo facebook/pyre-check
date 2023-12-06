@@ -122,3 +122,14 @@ val return_sink
   callee:Target.t ->
   sink_model:BackwardState.t ->
   BackwardState.Tree.t
+
+module ImplicitArgument : sig
+  module Backward : sig
+    type t =
+      | CalleeBase of BackwardState.Tree.t
+      | Callee of BackwardState.Tree.t
+      | None
+
+    val join : t -> t -> t
+  end
+end
