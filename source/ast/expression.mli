@@ -533,6 +533,8 @@ val delocalize_qualified : t -> t
 
 val is_self_call : callee:t -> bool
 
+val is_cls_call : callee:t -> bool
+
 val exists_in_list : ?match_prefix:bool -> expression_list:t list -> string -> bool
 
 val arguments_location : Call.t -> Location.t

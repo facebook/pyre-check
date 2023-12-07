@@ -126,7 +126,7 @@
         "roots": [
           {
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
-            "is_self_call": false,
+            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -288,7 +288,7 @@
         "roots": [
           {
             "receiver_interval": [ { "lower": 10, "upper": 21 } ],
-            "is_self_call": false,
+            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],

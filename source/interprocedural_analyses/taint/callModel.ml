@@ -291,6 +291,7 @@ let sink_trees_of_argument
     ~arguments
     ~sink_matches
     ~is_self_call
+    ~is_cls_call
     ~caller_class_interval
     ~receiver_class_interval
   =
@@ -304,6 +305,7 @@ let sink_trees_of_argument
            ~arguments
            ~port:root
            ~is_self_call
+           ~is_cls_call
            ~caller_class_interval
            ~receiver_class_interval
       |> BackwardState.Tree.read ~transform_non_leaves formal_path
@@ -442,6 +444,7 @@ let return_sink ~resolution ~location ~callee ~sink_model =
          ~arguments:[]
          ~port:AccessPath.Root.LocalResult
          ~is_self_call:false
+         ~is_cls_call:false
          ~caller_class_interval:Interprocedural.ClassIntervalSet.top
          ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
   in

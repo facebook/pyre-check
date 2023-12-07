@@ -77,6 +77,7 @@ let get_source { models; resolution; location; interval } =
          ~arguments:[]
          ~port:AccessPath.Root.LocalResult
          ~is_self_call:false
+         ~is_cls_call:false
          ~caller_class_interval:interval
          ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
     |> ForwardState.Tree.join existing
@@ -101,6 +102,7 @@ let get_sinks { models; resolution; location; interval } =
            ~arguments:[]
            ~port:AccessPath.Root.LocalResult
            ~is_self_call:false
+           ~is_cls_call:false
            ~caller_class_interval:interval
            ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
     in

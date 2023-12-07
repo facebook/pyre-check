@@ -639,7 +639,7 @@
         "taint": [
           {
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
+            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],

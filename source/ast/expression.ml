@@ -2411,13 +2411,23 @@ let delocalize_qualified = function
   | expression -> expression
 
 
-(* TODO(T114580705): Better precision when deciding if an expression is self *)
+(* TODO(T114580705): Better precision when deciding if an expression is `self` *)
 let is_self_call ~callee:{ Node.value; _ } =
   match value with
   | Expression.Name
       (Name.Attribute
         { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
       String.equal (Identifier.sanitized identifier) "self"
+  | _ -> false
+
+
+(* TODO(T114580705): Better precision when deciding if an expression is `cls` *)
+let is_cls_call ~callee:{ Node.value; _ } =
+  match value with
+  | Expression.Name
+      (Name.Attribute
+        { Name.Attribute.base = { Node.value = Name (Name.Identifier identifier); _ }; _ }) ->
+      String.equal (Identifier.sanitized identifier) "cls"
   | _ -> false
 
 

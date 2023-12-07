@@ -80,6 +80,7 @@ val sink_trees_of_argument
   arguments:Expression.Call.Argument.t list ->
   sink_matches:AccessPath.argument_match list ->
   is_self_call:bool ->
+  is_cls_call:bool ->
   caller_class_interval:ClassIntervalSet.t ->
   receiver_class_interval:ClassIntervalSet.t ->
   Domains.SinkTreeWithHandle.t list

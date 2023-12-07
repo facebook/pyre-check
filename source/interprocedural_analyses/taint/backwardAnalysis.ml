@@ -512,6 +512,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.join taint_tree
     in
     let is_self_call = Ast.Expression.is_self_call ~callee in
+    let is_cls_call = Ast.Expression.is_cls_call ~callee in
     let receiver_class_interval =
       receiver_class
       >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
@@ -534,6 +535,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments
           ~sink_matches
           ~is_self_call
+          ~is_cls_call
           ~caller_class_interval:FunctionContext.caller_class_interval
           ~receiver_class_interval
       in

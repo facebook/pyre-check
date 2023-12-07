@@ -40,6 +40,7 @@ let test_partition_call_map context =
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~element:taint
       ~is_self_call:false
+      ~is_cls_call:false
       ~caller_class_interval:Interprocedural.ClassIntervalSet.top
       ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
   in
@@ -53,6 +54,7 @@ let test_partition_call_map context =
       ~path:[Abstract.TreeDomain.Label.create_name_index "a"]
       ~element:taint
       ~is_self_call:false
+      ~is_cls_call:false
       ~caller_class_interval:Interprocedural.ClassIntervalSet.top
       ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
   in

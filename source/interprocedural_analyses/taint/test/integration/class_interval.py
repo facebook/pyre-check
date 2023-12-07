@@ -515,6 +515,10 @@ class A17:
     def m1(cls, arg):
         pass
 
+    @classmethod
+    def m2(cls, arg):
+        D17.m1(arg)  # Change the receiver object from `cls` to `D17`
+
 
 class B17(A17):
     @classmethod
@@ -528,6 +532,11 @@ class C17(A17):
         sink_c(arg)
 
 
+class D17(A17):
+    @classmethod
+    def m1(cls, arg):
+        sink_c(arg)
+
 def test_class_methods():
     # Expect no issue
     B17.m0(_test_source())
@@ -535,6 +544,11 @@ def test_class_methods():
     # Expect no issue as well
     b = B17()
     b.m0(_test_source())
+
+    # Expect an issue, which is not pruned away by class intervals (unlike the
+    # above call to B17.m0), because the receiver objects on the sink trace
+    # change from B17 to D17 (instead of remaining the same B17)
+    B17.m2(_test_source())
 
 
 class A18:
@@ -561,3 +575,24 @@ def test_static_methods():
     # Expect an issue
     c = C18()
     c.m0(_test_source())
+
+
+
+class A19:
+    @classmethod
+    def m0(c, arg):
+        # TODO(T114580705): Currently we consider `c` not as a call to the class itself,
+        # because we match syntactically only against `cls`
+        c.m1(arg)
+
+    @classmethod
+    def m1(c, arg):
+        _test_sink(arg)
+
+    def m2(s, arg):
+        # TODO(T114580705): Currently we consider `s` not as a call to `self`,
+        # because we match syntactically only against `self`
+        s.m3(arg)
+
+    def m3(s, arg):
+        _test_sink(arg)

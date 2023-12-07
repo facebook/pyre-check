@@ -508,6 +508,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Model.pp
       taint_model;
     let is_self_call = Ast.Expression.is_self_call ~callee in
+    let is_cls_call = Ast.Expression.is_cls_call ~callee in
     let receiver_class_interval =
       receiver_class
       >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
@@ -614,6 +615,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~arguments
           ~sink_matches
           ~is_self_call
+          ~is_cls_call
           ~caller_class_interval:FunctionContext.caller_class_interval
           ~receiver_class_interval
       in
@@ -697,6 +699,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~arguments
              ~port:AccessPath.Root.LocalResult
              ~is_self_call
+             ~is_cls_call
              ~caller_class_interval:FunctionContext.caller_class_interval
              ~receiver_class_interval
       else
@@ -2383,6 +2386,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~arguments:[]
         ~port:AccessPath.Root.LocalResult
         ~is_self_call:false
+        ~is_cls_call:false
         ~caller_class_interval:Interprocedural.ClassIntervalSet.top
         ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
         FunctionContext.string_combine_partial_sink_tree
@@ -2964,6 +2968,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~arguments:[]
              ~port:parameter_root
              ~is_self_call:false
+             ~is_cls_call:false
              ~caller_class_interval:FunctionContext.caller_class_interval
              ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
       in
