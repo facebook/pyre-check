@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
 
@@ -428,7 +429,8 @@ module Analysis = struct
       ?(python_minor_version = default_python_minor_version)
       ?(python_micro_version = default_python_micro_version)
       ?(shared_memory_heap_size = default_shared_memory_heap_size)
-      ?(shared_memory_dependency_table_power = default_shared_memory_dependency_table_power)
+      ?(shared_memory_dependency_table_power_from_configuration =
+        default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
       ?(constraint_solving_style = default_constraint_solving_style)
@@ -439,6 +441,16 @@ module Analysis = struct
       ~source_paths
       ()
     =
+    (* The shared memory dependency table power varies by project, so it lives in the
+       .pyre_configuration. But the decision of whether or not to track dependencies at all is a
+       case-by-case choice in Ocaml-side entrypoints. As a result, we override the value coming from
+       configuration *)
+    let shared_memory_dependency_table_power =
+      if track_dependencies then
+        shared_memory_dependency_table_power_from_configuration
+      else
+        1
+    in
     {
       parallel;
       analyze_external_sources;

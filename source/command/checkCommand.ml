@@ -108,7 +108,7 @@ module CheckConfiguration = struct
       ~python_minor_version:minor
       ~python_micro_version:micro
       ~shared_memory_heap_size:heap_size
-      ~shared_memory_dependency_table_power:dependency_table_power
+      ~shared_memory_dependency_table_power_from_configuration:dependency_table_power
       ~shared_memory_hash_table_power:hash_table_power
       ~enable_type_comments
       ~source_paths:(Configuration.SourcePaths.to_search_paths source_paths)

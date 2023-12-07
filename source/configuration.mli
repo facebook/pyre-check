@@ -181,7 +181,7 @@ module Analysis : sig
     ?python_minor_version:int ->
     ?python_micro_version:int ->
     ?shared_memory_heap_size:int ->
-    ?shared_memory_dependency_table_power:int ->
+    ?shared_memory_dependency_table_power_from_configuration:int ->
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
     ?constraint_solving_style:constraint_solving_style ->
