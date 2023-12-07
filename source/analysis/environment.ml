@@ -376,19 +376,32 @@ module EnvironmentTable = struct
       type t = {
         table: Table.t;
         upstream_environment: In.PreviousEnvironment.ReadOnly.t;
+        track_dependencies: bool;
       }
 
-      let create upstream_environment = { table = Table.create (); upstream_environment }
+      let create upstream_environment =
+        let track_dependencies =
+          In.PreviousEnvironment.ReadOnly.controls upstream_environment
+          |> EnvironmentControls.track_dependencies
+        in
+        { table = Table.create (); upstream_environment; track_dependencies }
+
+
+      let dependency_for_trigger { track_dependencies; _ } trigger =
+        if track_dependencies then
+          Some (In.trigger_to_dependency trigger |> SharedMemoryKeys.DependencyKey.Registry.register)
+        else
+          None
+
 
       (* Defines how to perform a lazy read: first see if there is a cache hit, otherwise convert
          key -> trigger -> dependency and call produce_value to populate the cache. *)
-      let get { table; upstream_environment } ?dependency key =
+      let get ({ table; upstream_environment; _ } as environment) ?dependency key =
         match Table.get table ?dependency key with
         | Some hit -> hit
         | None ->
             let trigger = In.key_to_trigger key in
-            let dependency = In.trigger_to_dependency trigger in
-            let dependency = Some (SharedMemoryKeys.DependencyKey.Registry.register dependency) in
+            let dependency = dependency_for_trigger environment trigger in
             let value = In.produce_value upstream_environment trigger ~dependency in
             Table.add table key value;
             value
@@ -425,7 +438,7 @@ module EnvironmentTable = struct
 
       (* Given an update result for the layer below this, update this layer and return the update
          result. *)
-      let update_only_this_environment ~scheduler { table; upstream_environment } trigger_map =
+      let update_only_this_environment ~scheduler { table; upstream_environment; _ } trigger_map =
         Log.log ~section:`Environment "Updating %s Environment" In.Value.description;
         let update ~names_to_update () =
           let register (name, dependency) =
