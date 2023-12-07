@@ -2130,41 +2130,44 @@ and pp_concise format annotation =
   let strip_qualification identifier =
     String.split ~on:'.' identifier |> List.last |> Option.value ~default:identifier
   in
+  let signature_to_string { annotation; parameters; _ } =
+    let parameters =
+      match parameters with
+      | Undefined -> "..."
+      | ParameterVariadicTypeVariable variable ->
+          parameter_variable_type_representation variable |> Format.asprintf "%a" pp_concise
+      | Defined parameters ->
+          let parameter = function
+            | CallableParameter.PositionalOnly { annotation; default; _ } ->
+                if default then
+                  Format.asprintf "%a=..." pp_concise annotation
+                else
+                  Format.asprintf "%a" pp_concise annotation
+            | KeywordOnly { name; annotation; default }
+            | Named { name; annotation; default } ->
+                let name = Identifier.sanitized name in
+                if default then
+                  Format.asprintf "%s: %a = ..." name pp_concise annotation
+                else
+                  Format.asprintf "%s: %a" name pp_concise annotation
+            | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
+            | Variable (Concatenation concatenation) ->
+                Format.asprintf
+                  "*(%a)"
+                  (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
+                  concatenation
+            | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
+          in
+          List.map parameters ~f:parameter |> String.concat ~sep:", "
+    in
+    Format.asprintf "(%s) -> %a" parameters pp_concise annotation
+  in
   match annotation with
   | Bottom -> Format.fprintf format "?"
   | Callable { implementation; _ } ->
-      let signature_to_string { annotation; parameters; _ } =
-        let parameters =
-          match parameters with
-          | Undefined -> "..."
-          | ParameterVariadicTypeVariable variable ->
-              parameter_variable_type_representation variable |> Format.asprintf "%a" pp_concise
-          | Defined parameters ->
-              let parameter = function
-                | CallableParameter.PositionalOnly { annotation; default; _ } ->
-                    if default then
-                      Format.asprintf "%a=..." pp_concise annotation
-                    else
-                      Format.asprintf "%a" pp_concise annotation
-                | KeywordOnly { name; annotation; default }
-                | Named { name; annotation; default } ->
-                    let name = Identifier.sanitized name in
-                    if default then
-                      Format.asprintf "%s: %a = ..." name pp_concise annotation
-                    else
-                      Format.asprintf "%s: %a" name pp_concise annotation
-                | Variable (Concrete annotation) -> Format.asprintf "*(%a)" pp_concise annotation
-                | Variable (Concatenation concatenation) ->
-                    Format.asprintf
-                      "*(%a)"
-                      (Record.OrderedTypes.Concatenation.pp_concatenation ~pp_type:pp_concise)
-                      concatenation
-                | Keywords annotation -> Format.asprintf "**(%a)" pp_concise annotation
-              in
-              List.map parameters ~f:parameter |> String.concat ~sep:", "
-        in
-        Format.asprintf "(%s) -> %a" parameters pp_concise annotation
-      in
+      Format.fprintf format "%s" (signature_to_string implementation)
+  | Parametric
+      { name = "BoundMethod"; parameters = [Single (Callable { implementation; _ }); Single _] } ->
       Format.fprintf format "%s" (signature_to_string implementation)
   | Any -> Format.fprintf format "Any"
   | Literal (Boolean literal) ->

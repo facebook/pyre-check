@@ -3962,6 +3962,15 @@ let test_hover_info_for_position context =
       value = Some "() -> None";
       docstring = Some "docstring 'using single-quotes' rest of docstring";
     };
+  assert_hover_info_for_position
+    {|
+      class Foo:
+        def foo() -> None: ...
+        def bar(self) -> None:
+          self.foo()
+              # ^- cursor
+  |}
+    { value = Some "() -> None"; docstring = None };
   ()
 
 
