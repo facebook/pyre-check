@@ -39,21 +39,8 @@ class CodeNavConnection:
         superclasses_request = code_navigation_request.SuperclassesRequest(
             class_=class_expression,
         )
-        response = await code_navigation_request.async_handle_superclasses(
+        return await code_navigation_request.async_handle_superclasses(
             self.server_info.socket_path, superclasses_request
-        )
-        if isinstance(response, daemon_connection.DaemonConnectionFailure):
-            # For now, we don't try to initialize a server when unable to connect. In the future,
-            # after we have a programmatic way of starting a Pyre server, we should be able to
-            # change behavior here to initialize a server.
-            return code_navigation_request.ErrorResponse(
-                message="Failed to connect to Pyre server."
-            )
-        return code_navigation_request.parse_raw_response(
-            response,
-            "Superclasses",
-            code_navigation_request.SuperclassesResponse,
-            raw_request=json.dumps(superclasses_request.to_json()),
         )
 
     async def open_file(

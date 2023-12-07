@@ -445,9 +445,23 @@ async def async_handle_file_closed(
 async def async_handle_superclasses(
     socket_path: Path,
     superclasses: SuperclassesRequest,
-) -> Union[str, daemon_connection.DaemonConnectionFailure]:
+) -> Union[SuperclassesResponse, ErrorResponse]:
     raw_command = json.dumps(["Query", superclasses.to_json()])
     response = await daemon_connection.attempt_send_async_raw_request(
         socket_path, raw_command
+    )
+    if isinstance(response, daemon_connection.DaemonConnectionFailure):
+        # For now, we don't try to initialize a server when unable to connect. In the future,
+        # after we have a programmatic way of starting a Pyre server, we should be able to
+        # change behavior here to initialize a server.
+        return ErrorResponse(
+            message="Failed to connect to Pyre server.",
+            error_source=response.error_source,
+        )
+    return parse_raw_response(
+        response,
+        expected_response_kind="Superclasses",
+        response_type=SuperclassesResponse,
+        raw_request=raw_command,
     )
     return response
