@@ -41,6 +41,8 @@ let test_partition_call_map context =
       ~element:taint
       ~is_self_call:false
       ~is_cls_call:false
+      ~is_class_method:false
+      ~is_static_method:false
       ~caller_class_interval:Interprocedural.ClassIntervalSet.top
       ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
   in
@@ -55,6 +57,8 @@ let test_partition_call_map context =
       ~element:taint
       ~is_self_call:false
       ~is_cls_call:false
+      ~is_class_method:false
+      ~is_static_method:false
       ~caller_class_interval:Interprocedural.ClassIntervalSet.top
       ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
   in

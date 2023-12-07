@@ -371,152 +371,6 @@
   }
 }
 {
-  "kind": "issue",
-  "data": {
-    "callable": "class_interval.test_class_methods",
-    "callable_line": 540,
-    "code": 123,
-    "line": 546,
-    "start": 9,
-    "end": 23,
-    "filename": "class_interval.py",
-    "message": "Data from [Test] source(s) may reach [SinkC] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 546,
-              "start": 9,
-              "end": 23
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
-                ],
-                "length": 2,
-                "kind": "SinkC"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 546,
-                "start": 9,
-                "end": 23
-              },
-              "resolves_to": [ "class_interval.A17.m0" ],
-              "port": "formal(arg)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "class_interval.A17.m0",
-      "index": 1,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "class_interval.test_class_methods:123:0:Call|class_interval.A17.m0|1|formal(arg):aee52502fec1273ac230f9a2893c7f44"
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "class_interval.test_class_methods",
-    "callable_line": 540,
-    "code": 123,
-    "line": 542,
-    "start": 11,
-    "end": 25,
-    "filename": "class_interval.py",
-    "message": "Data from [Test] source(s) may reach [SinkC] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "class_interval.py",
-              "line": 542,
-              "start": 11,
-              "end": 25
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
-            "is_self_call": false,
-            "kinds": [
-              {
-                "leaves": [
-                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
-                ],
-                "length": 2,
-                "kind": "SinkC"
-              }
-            ],
-            "call": {
-              "position": {
-                "filename": "class_interval.py",
-                "line": 542,
-                "start": 11,
-                "end": 25
-              },
-              "resolves_to": [ "class_interval.A17.m0" ],
-              "port": "formal(arg)"
-            }
-          }
-        ]
-      }
-    ],
-    "features": [ { "always-via": "special_source" } ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "class_interval.A17.m0",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "class_interval.test_class_methods:123:0:Call|class_interval.A17.m0|0|formal(arg):e8557020d85dd22acb1ba189115469e8"
-  }
-}
-{
   "kind": "model",
   "data": {
     "callable": "Obj{class_interval.A10.f}",
@@ -734,6 +588,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 57, "upper": 60 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1184,6 +1040,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1370,6 +1228,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1805,6 +1665,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 57, "upper": 60 } ],
             "receiver_interval": [ { "lower": 54, "upper": 61 } ],
             "is_self_call": true,
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
@@ -1835,6 +1696,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 54, "upper": 61 } ],
             "receiver_interval": [ { "lower": 59, "upper": 60 } ],
             "is_self_call": false,
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
@@ -1863,6 +1725,7 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
             "receiver_interval": [ { "lower": 68, "upper": 69 } ],
             "is_self_call": false,
             "kinds": [
@@ -1897,6 +1760,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2816,6 +2681,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2998,6 +2865,8 @@
         "port": "formal(arg)",
         "taint": [
           {
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [

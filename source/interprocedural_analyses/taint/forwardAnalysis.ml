@@ -472,8 +472,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          index = _;
          return_type;
          receiver_class;
-         is_class_method = _;
-         is_static_method = _;
+         is_class_method;
+         is_static_method;
          _;
        } as call_target)
     =
@@ -616,6 +616,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~sink_matches
           ~is_self_call
           ~is_cls_call
+          ~is_class_method
+          ~is_static_method
           ~caller_class_interval:FunctionContext.caller_class_interval
           ~receiver_class_interval
       in
@@ -700,6 +702,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~port:AccessPath.Root.LocalResult
              ~is_self_call
              ~is_cls_call
+             ~is_class_method
+             ~is_static_method
              ~caller_class_interval:FunctionContext.caller_class_interval
              ~receiver_class_interval
       else
@@ -2387,6 +2391,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~port:AccessPath.Root.LocalResult
         ~is_self_call:false
         ~is_cls_call:false
+        ~is_class_method:false
+        ~is_static_method:false
         ~caller_class_interval:Interprocedural.ClassIntervalSet.top
         ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
         FunctionContext.string_combine_partial_sink_tree
@@ -2969,6 +2975,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~port:parameter_root
              ~is_self_call:false
              ~is_cls_call:false
+             ~is_class_method:false
+             ~is_static_method:false
              ~caller_class_interval:FunctionContext.caller_class_interval
              ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
       in

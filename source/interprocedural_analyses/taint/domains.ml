@@ -573,6 +573,8 @@ module type TAINT_DOMAIN = sig
     element:t ->
     is_self_call:bool ->
     is_cls_call:bool ->
+    is_class_method:bool ->
+    is_static_method:bool ->
     caller_class_interval:ClassIntervalSet.t ->
     receiver_class_interval:ClassIntervalSet.t ->
     t
@@ -1127,6 +1129,81 @@ end = struct
         taint
 
 
+  let apply_class_interval
+      ~is_static_method
+      ~is_class_method
+      ~caller_class_interval
+      ~receiver_class_interval
+      ~is_self_call
+      ~is_cls_call
+      local_taint
+    =
+    let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
+      LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
+    in
+    let intersect left right =
+      let new_interval = ClassIntervalSet.meet left right in
+      let should_propagate =
+        (* Propagate if the intersection is not empty, and there exists a descendant relation
+           between left and right. The latter is useful under multi-inheritance. For example, see
+           function `multi_inheritance_no_issue_one_hop` under
+           `source/interprocedural_analyses/taint/test/integration/class_interval.py`. *)
+        (not (ClassIntervalSet.is_empty new_interval))
+        && (ClassIntervalSet.equal left new_interval || ClassIntervalSet.equal right new_interval)
+      in
+      new_interval, should_propagate
+    in
+    if is_static_method then
+      (* Case A: Call static methods. The taint is unconditionally propagated from the call, which
+         is the same treatment as a function call. *)
+      LocalTaintDomain.update
+        LocalTaintDomain.Slots.CallInfoIntervals
+        {
+          CallInfoIntervals.caller_interval = caller_class_interval;
+          receiver_interval = receiver_class_interval;
+          is_self_call;
+          is_cls_call;
+        }
+        local_taint
+    else (* Case B: Call non-static methods. *)
+      let new_interval, should_propagate =
+        (* Decide if the taint can be propagated from the call. *)
+        intersect callee_class_interval receiver_class_interval
+      in
+      if not should_propagate then
+        LocalTaintDomain.bottom
+      else if is_self_call || (is_cls_call && is_class_method) then
+        (* Case B.1: Call instance methods via `self`, or class methods via `cls`. *)
+        let new_interval, should_propagate =
+          (* Then impose the caller's interval, because the call chain so far is still on the same
+             object (i.e., `self` or `cls`). *)
+          intersect new_interval caller_class_interval
+        in
+        if not should_propagate then
+          LocalTaintDomain.bottom
+        else
+          LocalTaintDomain.update
+            LocalTaintDomain.Slots.CallInfoIntervals
+            {
+              CallInfoIntervals.caller_interval = new_interval;
+              receiver_interval = receiver_class_interval;
+              is_self_call;
+              is_cls_call;
+            }
+            local_taint
+      else (* Case B.2: Call instance methods on any other objects. *)
+        LocalTaintDomain.update
+          LocalTaintDomain.Slots.CallInfoIntervals
+          {
+            (* Reset the interval to be the caller's interval. *)
+            CallInfoIntervals.caller_interval = caller_class_interval;
+            receiver_interval = receiver_class_interval;
+            is_self_call;
+            is_cls_call;
+          }
+          local_taint
+
+
   let apply_call
       ~resolution
       ~location
@@ -1137,6 +1214,8 @@ end = struct
       ~element:taint
       ~is_self_call
       ~is_cls_call
+      ~is_class_method
+      ~is_static_method
       ~caller_class_interval
       ~receiver_class_interval
     =
@@ -1220,50 +1299,14 @@ end = struct
               local_taint
         | Some (Target.Method _)
         | Some (Target.Override _) ->
-            let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
-              LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
-            in
-            let intersect left right =
-              let new_interval = ClassIntervalSet.meet left right in
-              let should_propagate =
-                (* Propagate if the intersection is not empty, and there exists a descendant
-                   relation between left and right *)
-                (not (ClassIntervalSet.is_empty new_interval))
-                && (ClassIntervalSet.equal left new_interval
-                   || ClassIntervalSet.equal right new_interval)
-              in
-              new_interval, should_propagate
-            in
-            if is_self_call then
-              let new_interval, should_propagate =
-                intersect callee_class_interval caller_class_interval
-              in
-              if not should_propagate then
-                LocalTaintDomain.bottom
-              else
-                LocalTaintDomain.update
-                  LocalTaintDomain.Slots.CallInfoIntervals
-                  {
-                    CallInfoIntervals.caller_interval = new_interval;
-                    receiver_interval = receiver_class_interval;
-                    is_self_call;
-                    is_cls_call;
-                  }
-                  local_taint
-            else
-              let _, should_propagate = intersect callee_class_interval receiver_class_interval in
-              if not should_propagate then
-                LocalTaintDomain.bottom
-              else
-                LocalTaintDomain.update
-                  LocalTaintDomain.Slots.CallInfoIntervals
-                  {
-                    CallInfoIntervals.caller_interval = caller_class_interval;
-                    receiver_interval = receiver_class_interval;
-                    is_self_call;
-                    is_cls_call;
-                  }
-                  local_taint
+            apply_class_interval
+              ~is_static_method
+              ~is_class_method
+              ~caller_class_interval
+              ~receiver_class_interval
+              ~is_self_call
+              ~is_cls_call
+              local_taint
       in
       match call_info with
       | CallInfo.Origin _
@@ -1413,6 +1456,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ~port
       ~is_self_call
       ~is_cls_call
+      ~is_class_method
+      ~is_static_method
       ~caller_class_interval
       ~receiver_class_interval
       taint_tree
@@ -1429,6 +1474,8 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
           ~element:tip
           ~is_self_call
           ~is_cls_call
+          ~is_class_method
+          ~is_static_method
           ~caller_class_interval
           ~receiver_class_interval )
     in
