@@ -290,12 +290,9 @@ let sink_trees_of_argument
     ~call_target:({ CallGraph.CallTarget.target; _ } as call_target)
     ~arguments
     ~sink_matches
-    ~is_self_call
-    ~is_cls_call
     ~is_class_method
     ~is_static_method
-    ~caller_class_interval
-    ~receiver_class_interval
+    ~call_info_intervals
   =
   let to_sink_tree_with_identifier { AccessPath.root; actual_path; formal_path } =
     let sink_tree =
@@ -306,12 +303,9 @@ let sink_trees_of_argument
            ~callee:(Some target)
            ~arguments
            ~port:root
-           ~is_self_call
-           ~is_cls_call
            ~is_class_method
            ~is_static_method
-           ~caller_class_interval
-           ~receiver_class_interval
+           ~call_info_intervals
       |> BackwardState.Tree.read ~transform_non_leaves formal_path
       |> BackwardState.Tree.prepend actual_path
     in
@@ -447,12 +441,9 @@ let return_sink ~resolution ~location ~callee ~sink_model =
               non-empty, to provide more information about the flow. *)
          ~arguments:[]
          ~port:AccessPath.Root.LocalResult
-         ~is_self_call:false
-         ~is_cls_call:false
          ~is_class_method:false
          ~is_static_method:false
-         ~caller_class_interval:Interprocedural.ClassIntervalSet.top
-         ~receiver_class_interval:Interprocedural.ClassIntervalSet.top
+         ~call_info_intervals:Domains.CallInfoIntervals.top
   in
   let breadcrumbs_to_attach, via_features_to_attach =
     BackwardState.extract_features_to_attach

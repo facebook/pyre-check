@@ -571,12 +571,9 @@ module type TAINT_DOMAIN = sig
     port:AccessPath.Root.t ->
     path:AccessPath.Path.t ->
     element:t ->
-    is_self_call:bool ->
-    is_cls_call:bool ->
     is_class_method:bool ->
     is_static_method:bool ->
-    caller_class_interval:ClassIntervalSet.t ->
-    receiver_class_interval:ClassIntervalSet.t ->
+    call_info_intervals:CallInfoIntervals.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -1132,10 +1129,9 @@ end = struct
   let apply_class_interval
       ~is_static_method
       ~is_class_method
-      ~caller_class_interval
-      ~receiver_class_interval
-      ~is_self_call
-      ~is_cls_call
+      ~call_info_intervals:
+        ({ CallInfoIntervals.is_self_call; is_cls_call; caller_interval; receiver_interval } as
+        call_info_intervals)
       local_taint
     =
     let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
@@ -1158,17 +1154,12 @@ end = struct
          is the same treatment as a function call. *)
       LocalTaintDomain.update
         LocalTaintDomain.Slots.CallInfoIntervals
-        {
-          CallInfoIntervals.caller_interval = caller_class_interval;
-          receiver_interval = receiver_class_interval;
-          is_self_call;
-          is_cls_call;
-        }
+        call_info_intervals
         local_taint
     else (* Case B: Call non-static methods. *)
       let new_interval, should_propagate =
         (* Decide if the taint can be propagated from the call. *)
-        intersect callee_class_interval receiver_class_interval
+        intersect callee_class_interval receiver_interval
       in
       if not should_propagate then
         LocalTaintDomain.bottom
@@ -1177,30 +1168,20 @@ end = struct
         let new_interval, should_propagate =
           (* Then impose the caller's interval, because the call chain so far is still on the same
              object (i.e., `self` or `cls`). *)
-          intersect new_interval caller_class_interval
+          intersect new_interval caller_interval
         in
         if not should_propagate then
           LocalTaintDomain.bottom
         else
           LocalTaintDomain.update
             LocalTaintDomain.Slots.CallInfoIntervals
-            {
-              CallInfoIntervals.caller_interval = new_interval;
-              receiver_interval = receiver_class_interval;
-              is_self_call;
-              is_cls_call;
-            }
+            { call_info_intervals with caller_interval = new_interval }
             local_taint
       else (* Case B.2: Call instance methods on any other objects. *)
         LocalTaintDomain.update
           LocalTaintDomain.Slots.CallInfoIntervals
-          {
-            (* Reset the interval to be the caller's interval. *)
-            CallInfoIntervals.caller_interval = caller_class_interval;
-            receiver_interval = receiver_class_interval;
-            is_self_call;
-            is_cls_call;
-          }
+          (* Reset the interval to be the caller's interval. *)
+          call_info_intervals
           local_taint
 
 
@@ -1212,12 +1193,9 @@ end = struct
       ~port
       ~path
       ~element:taint
-      ~is_self_call
-      ~is_cls_call
       ~is_class_method
       ~is_static_method
-      ~caller_class_interval
-      ~receiver_class_interval
+      ~call_info_intervals
     =
     let callees =
       match callee with
@@ -1290,23 +1268,11 @@ end = struct
         | Some (Target.Function _) ->
             LocalTaintDomain.update
               LocalTaintDomain.Slots.CallInfoIntervals
-              {
-                CallInfoIntervals.caller_interval = caller_class_interval;
-                receiver_interval = receiver_class_interval;
-                is_self_call;
-                is_cls_call;
-              }
+              call_info_intervals
               local_taint
         | Some (Target.Method _)
         | Some (Target.Override _) ->
-            apply_class_interval
-              ~is_static_method
-              ~is_class_method
-              ~caller_class_interval
-              ~receiver_class_interval
-              ~is_self_call
-              ~is_cls_call
-              local_taint
+            apply_class_interval ~is_static_method ~is_class_method ~call_info_intervals local_taint
       in
       match call_info with
       | CallInfo.Origin _
@@ -1454,12 +1420,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       ~callee
       ~arguments
       ~port
-      ~is_self_call
-      ~is_cls_call
       ~is_class_method
       ~is_static_method
-      ~caller_class_interval
-      ~receiver_class_interval
+      ~call_info_intervals
       taint_tree
     =
     let transform_path (path, tip) =
@@ -1472,12 +1435,9 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
           ~port
           ~path
           ~element:tip
-          ~is_self_call
-          ~is_cls_call
           ~is_class_method
           ~is_static_method
-          ~caller_class_interval
-          ~receiver_class_interval )
+          ~call_info_intervals )
     in
     transform Path Map ~f:transform_path taint_tree
 

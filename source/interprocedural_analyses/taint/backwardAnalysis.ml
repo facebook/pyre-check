@@ -511,12 +511,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> BackwardState.Tree.add_local_breadcrumb (Features.tito ())
       |> BackwardState.Tree.join taint_tree
     in
-    let is_self_call = Ast.Expression.is_self_call ~callee in
-    let is_cls_call = Ast.Expression.is_cls_call ~callee in
-    let receiver_class_interval =
-      receiver_class
-      >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
-      |> Option.value ~default:Interprocedural.ClassIntervalSet.top
+    let call_info_intervals =
+      {
+        Domains.CallInfoIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
+        is_cls_call = Ast.Expression.is_cls_call ~callee;
+        caller_interval = FunctionContext.caller_class_interval;
+        receiver_interval =
+          receiver_class
+          >>| Interprocedural.ClassIntervalSetGraph.SharedMemory.of_class class_interval_graph
+          |> Option.value ~default:Interprocedural.ClassIntervalSet.top;
+      }
     in
     let analyze_argument
         (arguments_taint, state)
@@ -534,12 +538,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~call_target
           ~arguments
           ~sink_matches
-          ~is_self_call
-          ~is_cls_call
           ~is_class_method
           ~is_static_method
-          ~caller_class_interval:FunctionContext.caller_class_interval
-          ~receiver_class_interval
+          ~call_info_intervals
       in
       let taint_in_taint_out =
         if apply_tito then
