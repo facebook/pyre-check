@@ -113,6 +113,7 @@
 #include <sys/time.h>
 #include <time.h>
 #include <zstd.h>
+#include "dictionary_compression_data.h"
 
 #ifndef NO_SQLITE3
 #include <sqlite3.h>
@@ -917,14 +918,17 @@ static void init_zstd_compression() {
   zstd_compression_context = ZSTD_createCCtx();
   zstd_decompression_context = ZSTD_createDCtx();
   {
-    ZSTD_CDict* zstd_compressed_dictionary =
-        ZSTD_createCDict(NULL, 0, zstd_compression_level);
+    ZSTD_CDict* zstd_compressed_dictionary = ZSTD_createCDict(
+        dictionary_compression_data,
+        dictionary_compression_data_length,
+        zstd_compression_level);
     const size_t result = ZSTD_CCtx_refCDict(
         zstd_compression_context, zstd_compressed_dictionary);
     assert(!ZSTD_isError(result));
   }
   {
-    ZSTD_DDict* zstd_digested_dictionary = ZSTD_createDDict(NULL, 0);
+    ZSTD_DDict* zstd_digested_dictionary = ZSTD_createDDict(
+        dictionary_compression_data, dictionary_compression_data_length);
     const size_t result = ZSTD_DCtx_refDDict(
         zstd_decompression_context, zstd_digested_dictionary);
     assert(!ZSTD_isError(result));

@@ -1,7 +1,7 @@
 (library
  (foreign_stubs
   (language c)
-  (names hh_assert hh_shared hh_shared_sqlite))
+  (names hh_assert hh_shared hh_shared_sqlite dictionary_compression_data))
  (name hack_heap)
  (package hack_parallel)
  (libraries hack_collections zstd lz4 sqlite3 hack_utils))
