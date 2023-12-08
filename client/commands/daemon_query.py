@@ -17,8 +17,6 @@ nor incremental updates), it only handles queries.
 
 from __future__ import annotations
 
-import dataclasses
-
 import json
 import logging
 from pathlib import Path

@@ -9,7 +9,7 @@ stub patches to open-source typeshed stubs.
 """
 from __future__ import annotations
 
-from typing import Callable, Iterable, Sequence, TypeVar
+from typing import Callable, Iterable, Sequence
 
 import libcst
 import libcst.codemod
