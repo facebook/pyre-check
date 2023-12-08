@@ -2423,7 +2423,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             instantiate_successors_parameters =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
             is_transitive_successor;
-            variables = ClassHierarchy.variables class_hierarchy_handler;
+            variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
             least_upper_bound;
           };
         attribute;
@@ -4888,7 +4888,7 @@ let create_queries ~class_metadata_environment ~dependency =
              ?dependency;
       variables =
         class_hierarchy_environment class_metadata_environment
-        |> ClassHierarchyEnvironment.ReadOnly.variables ?dependency;
+        |> ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables ?dependency;
       class_hierarchy =
         (fun () ->
           class_hierarchy_environment class_metadata_environment

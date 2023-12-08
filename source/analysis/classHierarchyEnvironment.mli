@@ -20,7 +20,7 @@ module HierarchyReadOnly : sig
 
   val class_hierarchy : ?dependency:DependencyKey.registered -> t -> (module ClassHierarchy.Handler)
 
-  val variables
+  val type_parameters_as_variables
     :  t ->
     ?dependency:DependencyKey.registered ->
     ?default:Type.Variable.t list option ->

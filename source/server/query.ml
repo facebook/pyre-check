@@ -493,7 +493,9 @@ let rec process_request_exn ~type_environment ~build_system request =
       let annotation =
         match fill_missing_type_parameters_with_any, annotation with
         | true, Type.Primitive annotation -> (
-            let generics = GlobalResolution.variables global_resolution annotation in
+            let generics =
+              GlobalResolution.type_parameters_as_variables global_resolution annotation
+            in
             match generics with
             | Some generics
               when (not (List.is_empty generics))

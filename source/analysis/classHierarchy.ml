@@ -264,7 +264,7 @@ let parameters_to_variables parameters =
   List.map parameters ~f:Type.Parameter.to_variable |> Option.all
 
 
-let variables ?(default = None) (module Handler : Handler) = function
+let type_parameters_as_variables ?(default = None) (module Handler : Handler) = function
   | "type" ->
       (* Despite what typeshed says, typing.Type is covariant:
          https://www.python.org/dev/peps/pep-0484/#the-type-of-class-objects *)

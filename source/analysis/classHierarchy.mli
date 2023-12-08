@@ -100,7 +100,7 @@ val immediate_parents : (module Handler) -> Type.Primitive.t -> Type.Primitive.t
 
 val extends_placeholder_stub : (module Handler) -> Type.Primitive.t -> bool
 
-val variables
+val type_parameters_as_variables
   :  ?default:Type.Variable.t list option ->
   (module Handler) ->
   Type.Primitive.t ->

@@ -742,7 +742,7 @@ module State (Context : Context) = struct
   let type_of_parent ~global_resolution parent =
     let parent_name = Reference.show parent in
     let parent_type = Type.Primitive parent_name in
-    let variables = GlobalResolution.variables global_resolution parent_name in
+    let variables = GlobalResolution.type_parameters_as_variables global_resolution parent_name in
     match variables with
     | None
     | Some [] ->
@@ -5367,7 +5367,7 @@ module State (Context : Context) = struct
               Type.Parameter.all_singles extended_parameters
               >>| (fun extended_parameters ->
                     let actual_parameters =
-                      GlobalResolution.variables global_resolution name
+                      GlobalResolution.type_parameters_as_variables global_resolution name
                       >>= Type.Variable.all_unary
                       >>| List.map ~f:(fun unary -> Type.Variable unary)
                       |> Option.value ~default:[]
@@ -6590,7 +6590,7 @@ module State (Context : Context) = struct
           | TupleVariadic variable -> TupleVariadic variable
         in
         Reference.show class_name
-        |> GlobalResolution.variables global_resolution
+        |> GlobalResolution.type_parameters_as_variables global_resolution
         >>| List.map ~f:extract
         |> Option.value ~default:[]
       in
@@ -6598,7 +6598,7 @@ module State (Context : Context) = struct
         let parser =
           GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
         in
-        let variables = GlobalResolution.variables global_resolution in
+        let variables = GlobalResolution.type_parameters_as_variables global_resolution in
         let define_variables =
           AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
           |> (fun { parameters; _ } -> Type.Callable.create ~parameters ~annotation:Type.Top ())
@@ -7173,7 +7173,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
     let parser =
       GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
     in
-    let variables = GlobalResolution.variables global_resolution in
+    let variables = GlobalResolution.type_parameters_as_variables global_resolution in
     let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
       AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
     in

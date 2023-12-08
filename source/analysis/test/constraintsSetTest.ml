@@ -66,7 +66,7 @@ let hierarchy global_resolution =
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
     is_transitive_successor;
-    variables = ClassHierarchy.variables class_hierarchy_handler;
+    variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
     least_upper_bound =
       ClassSuccessorMetadataEnvironment.ReadOnly.least_upper_bound class_metadata_environment;
   }

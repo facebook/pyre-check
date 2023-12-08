@@ -184,7 +184,7 @@ let is_invariance_mismatch resolution ~left ~right =
     when Identifier.equal left_name right_name ->
       let zipped =
         let variances =
-          ClassHierarchy.variables (class_hierarchy resolution) left_name
+          ClassHierarchy.type_parameters_as_variables (class_hierarchy resolution) left_name
           (* TODO(T47346673): Do this check when list variadics have variance *)
           >>= Type.Variable.all_unary
           >>| List.map ~f:(fun { Type.Variable.Unary.variance; _ } -> variance)
@@ -492,8 +492,8 @@ let check_invalid_type_parameters ({ dependency; _ } as resolution) =
     ?dependency
 
 
-let variables ?default ({ dependency; _ } as resolution) =
-  ClassHierarchyEnvironment.ReadOnly.variables
+let type_parameters_as_variables ?default ({ dependency; _ } as resolution) =
+  ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables
     ?default
     ?dependency
     (class_hierarchy_environment resolution)
@@ -533,7 +533,7 @@ let extract_type_parameters resolution ~source ~target =
       (* TODO (T63159626): These special cases may not make sense. *)
       None
   | _ ->
-      ClassHierarchy.variables (class_hierarchy resolution) target
+      ClassHierarchy.type_parameters_as_variables (class_hierarchy resolution) target
       >>= fun variables ->
       let namespace = Type.Variable.Namespace.create_fresh () in
       List.map variables ~f:(Type.Variable.namespace ~namespace)

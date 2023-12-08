@@ -309,8 +309,11 @@ module ReadOnly = struct
     end : ClassHierarchy.Handler)
 
 
-  let variables read_only ?dependency ?(default = None) class_name =
-    ClassHierarchy.variables ~default (class_hierarchy ?dependency read_only) class_name
+  let type_parameters_as_variables read_only ?dependency ?(default = None) class_name =
+    ClassHierarchy.type_parameters_as_variables
+      ~default
+      (class_hierarchy ?dependency read_only)
+      class_name
 end
 
 type t = { edges: Edges.t }

@@ -51,7 +51,7 @@ end
 
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
-val variables
+val type_parameters_as_variables
   :  ?default:Type.Variable.t list option ->
   t ->
   Type.Primitive.t ->

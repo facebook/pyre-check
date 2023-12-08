@@ -87,7 +87,7 @@ let test_create_overload context =
     in
     let resolution = Resolution.global_resolution resolution in
     let parser = GlobalResolution.annotation_parser resolution in
-    let variables = GlobalResolution.variables resolution in
+    let variables = GlobalResolution.type_parameters_as_variables resolution in
     let last_statement_define { Source.statements; _ } =
       match List.last_exn statements with
       | { Node.value = Statement.Define define; _ } -> define
