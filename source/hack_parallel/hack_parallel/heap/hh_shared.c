@@ -112,6 +112,7 @@
 #include <lz4.h>
 #include <sys/time.h>
 #include <time.h>
+#include <zstd.h>
 
 #ifndef NO_SQLITE3
 #include <sqlite3.h>
@@ -480,6 +481,12 @@ static size_t used_heap_size(void) {
 }
 
 static long removed_count = 0;
+
+static ZSTD_CCtx* zstd_compression_context = NULL;
+static ZSTD_DCtx* zstd_decompression_context = NULL;
+
+/* The lower the level, the faster the speed (at the cost of compression) */
+static const size_t zstd_compression_level = 5;
 
 /* Expose so we can display diagnostics */
 CAMLprim value hh_used_heap_size(void) {
@@ -901,6 +908,29 @@ static size_t get_shared_mem_size(void) {
       heap_size + 3 * page_size);
 }
 
+// Must be called AFTER init_shared_globals / define_globals
+// once per process, during hh_shared_init / hh_connect
+static void init_zstd_compression() {
+  /* The resources below (dictionaries, contexts) technically leak.
+   * We do not free them as there is no proper API from workers.
+   * However, they are in use until the end of the process life. */
+  zstd_compression_context = ZSTD_createCCtx();
+  zstd_decompression_context = ZSTD_createDCtx();
+  {
+    ZSTD_CDict* zstd_compressed_dictionary =
+        ZSTD_createCDict(NULL, 0, zstd_compression_level);
+    const size_t result = ZSTD_CCtx_refCDict(
+        zstd_compression_context, zstd_compressed_dictionary);
+    assert(!ZSTD_isError(result));
+  }
+  {
+    ZSTD_DDict* zstd_digested_dictionary = ZSTD_createDDict(NULL, 0);
+    const size_t result = ZSTD_DCtx_refDDict(
+        zstd_decompression_context, zstd_digested_dictionary);
+    assert(!ZSTD_isError(result));
+  }
+}
+
 static void init_shared_globals(size_t config_log_level) {
   // Initial size is zero for global storage is zero
   global_storage[0] = 0;
@@ -998,6 +1028,8 @@ CAMLprim value hh_shared_init(value config_val, value shm_dir_val) {
   sigaction(SIGSEGV, &sigact, NULL);
 #endif
 
+  init_zstd_compression();
+
   connector = caml_alloc_tuple(5);
   Field(connector, 0) = Val_handle(memfd);
   Field(connector, 1) = config_global_size_val;
@@ -1024,6 +1056,7 @@ value hh_connect(value connector) {
 #endif
   char* shared_mem_init = memfd_map(shared_mem_size);
   define_globals(shared_mem_init);
+  init_zstd_compression();
 
   CAMLreturn(Val_unit);
 }
@@ -1654,10 +1687,14 @@ static heap_entry_t* hh_store_ocaml(
   assert(size < 0x80000000);
   *orig_size = size;
 
-  size_t max_compression_size = LZ4_compressBound(size);
+  size_t max_compression_size = ZSTD_compressBound(size);
   char* compressed_data = malloc(max_compression_size);
-  size_t compressed_size =
-      LZ4_compress_default(value, compressed_data, size, max_compression_size);
+  size_t compressed_size = ZSTD_compress2(
+      zstd_compression_context,
+      compressed_data,
+      max_compression_size,
+      value,
+      size);
 
   if (compressed_size != 0 && compressed_size < size) {
     uncompressed_size = size;
@@ -1898,8 +1935,9 @@ CAMLprim value hh_deserialize(heap_entry_t* elt) {
   char* data = elt->data;
   if (uncompressed_size_exp) {
     data = malloc(uncompressed_size_exp);
-    size_t uncompressed_size =
-        LZ4_decompress_safe(src, data, size, uncompressed_size_exp);
+    size_t uncompressed_size = ZSTD_decompressDCtx(
+        zstd_decompression_context, data, uncompressed_size_exp, src, size);
+
     assert(uncompressed_size == uncompressed_size_exp);
     size = uncompressed_size;
   }
