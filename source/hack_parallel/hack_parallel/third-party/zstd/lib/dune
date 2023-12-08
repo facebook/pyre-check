@@ -1,0 +1,33 @@
+(include_subdirs unqualified)
+
+(library
+ (foreign_stubs
+  (language c)
+  (names
+   debug
+   entropy_common
+   error_private
+   fse_decompress
+   pool
+   threading
+   xxhash
+   zstd_common
+   fse_compress
+   zstd_compress
+   zstd_compress_superblock
+   zstd_lazy
+   zstd_opt
+   hist
+   zstd_compress_literals
+   zstd_double_fast
+   zstd_ldm
+   huf_compress
+   zstd_compress_sequences
+   zstd_fast
+   zstdmt_compress
+   huf_decompress
+   zstd_ddict
+   zstd_decompress_block
+   zstd_decompress))
+ (name zstd)
+ (package hack_parallel))
