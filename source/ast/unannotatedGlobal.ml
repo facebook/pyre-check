@@ -79,7 +79,7 @@ module Collector = struct
       match value with
       | Statement.Assign
           {
-            Assign.target = { Node.value = Name (Name.Identifier identifier); location };
+            Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); location };
             annotation;
             value;
             _;
@@ -95,7 +95,8 @@ module Collector = struct
                 };
           }
           :: globals
-      | Statement.Assign { Assign.target = { Node.value = Tuple elements; _ }; value; _ } ->
+      | Statement.Assign { Assign.target = { Node.value = Expression.Tuple elements; _ }; value; _ }
+        ->
           let valid =
             let total_length = List.length elements in
             let is_simple_name index = function
@@ -118,7 +119,7 @@ module Collector = struct
             List.mapi elements ~f:is_simple_name
           in
           List.rev_append (Option.all valid |> Option.value ~default:[]) globals
-      | Import { Import.from = None; imports } ->
+      | Statement.Import { Import.from = None; imports } ->
           let collect_module_import sofar { Node.value = { Import.name = target; alias }; _ } =
             let implicit_alias, name =
               match alias with
@@ -134,7 +135,7 @@ module Collector = struct
             :: sofar
           in
           List.fold imports ~init:globals ~f:collect_module_import
-      | Import { Import.from = Some { Node.value = from; _ }; imports } ->
+      | Statement.Import { Import.from = Some { Node.value = from; _ }; imports } ->
           let collect_name_import sofar { Node.value = { Import.name = target; alias }; _ } =
             (* `target` must be an unqualified identifier *)
             match Reference.show target with
@@ -154,9 +155,9 @@ module Collector = struct
                 :: sofar
           in
           List.fold imports ~init:globals ~f:collect_name_import
-      | Class { Class.name; _ } ->
+      | Statement.Class { Class.name; _ } ->
           { Result.name = name |> Reference.last; unannotated_global = Class } :: globals
-      | Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
+      | Statement.Define { Define.signature = { Define.Signature.name; _ } as signature; _ } ->
           {
             Result.name = name |> Reference.last;
             unannotated_global =
@@ -169,10 +170,10 @@ module Collector = struct
                 ];
           }
           :: globals
-      | If { If.body; orelse; _ } ->
+      | Statement.If { If.body; orelse; _ } ->
           (* TODO(T28732125): Properly take an intersection here. *)
           List.fold ~init:globals ~f:(visit_statement ~qualifier) (body @ orelse)
-      | Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
+      | Statement.Try { Try.body; handlers; orelse; finally; handles_exception_group = _ } ->
           let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) body in
           let globals =
             let handlers_statements =
@@ -182,7 +183,8 @@ module Collector = struct
           in
           let globals = List.fold ~init:globals ~f:(visit_statement ~qualifier) orelse in
           List.fold ~init:globals ~f:(visit_statement ~qualifier) finally
-      | With { With.body; _ } -> List.fold ~init:globals ~f:(visit_statement ~qualifier) body
+      | Statement.With { With.body; _ } ->
+          List.fold ~init:globals ~f:(visit_statement ~qualifier) body
       | _ -> globals
     in
     List.fold ~init:[] ~f:(visit_statement ~qualifier) statements |> List.rev

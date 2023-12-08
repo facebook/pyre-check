@@ -79,8 +79,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       visit_expression value
     in
     let visit_children value =
+      let open Expression in
       match value with
-      | Expression.Await expression -> visit_expression expression
+      | Await expression -> visit_expression expression
       | BooleanOperator { BooleanOperator.left; right; _ }
       | ComparisonOperator { ComparisonOperator.left; right; _ } ->
           visit_expression left;
@@ -89,7 +90,8 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression callee;
           let visit_argument { Call.Argument.value; name } =
             name
-            >>| (fun name -> visit_node ~state ~visitor (Argument { argument = name; callee }))
+            >>| (fun name ->
+                  visit_node ~state ~visitor (Argument { Argument.argument = name; callee }))
             |> ignore;
             visit_expression value
           in
@@ -111,7 +113,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           List.iter generators ~f:(visit_generator ~visit_expression);
           visit_expression element
       | Name (Name.Identifier _) -> ()
-      | Name (Name.Attribute { base; _ }) -> visit_expression base
+      | Name (Name.Attribute { Name.Attribute.base; _ }) -> visit_expression base
       | Set elements -> List.iter elements ~f:visit_expression
       | SetComprehension { Comprehension.element; generators } ->
           List.iter generators ~f:(visit_generator ~visit_expression);
@@ -137,7 +139,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           visit_expression alternative
       | Tuple elements -> List.iter elements ~f:visit_expression
       | UnaryOperator { UnaryOperator.operand; _ } -> visit_expression operand
-      | WalrusOperator { target; value } ->
+      | WalrusOperator { WalrusOperator.target; value } ->
           visit_expression target;
           visit_expression value
       | Expression.Yield expression -> Option.iter ~f:visit_expression expression
@@ -155,8 +157,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
     let visit_expression = visit_expression ~state in
     let visit_statement = visit_statement ~state in
     let visit_children value =
+      let open Statement in
       match value with
-      | Statement.Assign { Assign.target; annotation; value; _ } ->
+      | Assign { Assign.target; annotation; value; _ } ->
           visit_expression target;
           Option.iter ~f:visit_expression annotation;
           visit_expression value
@@ -207,8 +210,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
           List.iter orelse ~f:visit_statement
       | Match { Match.subject; cases } ->
           let rec visit_pattern { Node.value; location } =
+            let open Match.Pattern in
             match value with
-            | Match.Pattern.MatchAs { pattern; _ } -> Option.iter pattern ~f:visit_pattern
+            | MatchAs { pattern; _ } -> Option.iter pattern ~f:visit_pattern
             | MatchClass { patterns; keyword_patterns; _ } ->
                 List.iter patterns ~f:visit_pattern;
                 List.iter keyword_patterns ~f:visit_pattern
@@ -476,7 +480,7 @@ let collect_locations source =
         let predicate = function
           | Expression node -> Some (Node.location node)
           | Statement node -> Some (Node.location node)
-          | Argument { argument; _ } -> Some (Node.location argument)
+          | Argument { Argument.argument; _ } -> Some (Node.location argument)
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
           | Substring (Substring.Format node) -> Some (Node.location node)
@@ -565,10 +569,10 @@ let rec collect_non_generic_type_names { Node.value; _ } =
       List.concat_map
         ~f:(fun { Call.Argument.value; _ } -> collect_non_generic_type_names value)
         arguments
-  | Tuple elements
-  | List elements ->
+  | Expression.Tuple elements
+  | Expression.List elements ->
       List.concat_map ~f:collect_non_generic_type_names elements
-  | Name name -> name_to_reference name >>| Reference.show |> Option.to_list
+  | Expression.Name name -> name_to_reference name >>| Reference.show |> Option.to_list
   | _ -> []
 
 

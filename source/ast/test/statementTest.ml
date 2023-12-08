@@ -19,7 +19,7 @@ let test_is_method _ =
     {
       Define.signature =
         {
-          name = !&name;
+          Define.Signature.name = !&name;
           parameters = [];
           decorators = [];
           return_annotation = None;
@@ -44,7 +44,7 @@ let test_is_classmethod _ =
     {
       Define.signature =
         {
-          name = !&name;
+          Define.Signature.name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -71,7 +71,7 @@ let test_is_class_property _ =
     {
       Define.signature =
         {
-          name = !&name;
+          Define.Signature.name = !&name;
           parameters = [];
           decorators;
           return_annotation = None;
@@ -96,7 +96,7 @@ let test_decorator _ =
     {
       Define.signature =
         {
-          name = !&"foo";
+          Define.Signature.name = !&"foo";
           parameters = [];
           decorators = List.map decorators ~f:Decorator.to_expression;
           return_annotation = None;
@@ -136,7 +136,7 @@ let test_is_constructor _ =
       {
         Define.signature =
           {
-            name = !&name;
+            Define.Signature.name = !&name;
             parameters = [];
             decorators = [];
             return_annotation = None;
@@ -191,7 +191,7 @@ let test_constructor _ =
   let assert_constructor source ~exists =
     let definition =
       match parse_single_statement source with
-      | { Node.value = Class definition; _ } -> definition
+      | { Node.value = Statement.Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
     let constructors = Class.constructors definition in
@@ -217,7 +217,7 @@ let test_defines _ =
   let assert_define source ~method_name ~exists ~total =
     let definition =
       match parse_single_statement source with
-      | { Node.value = Class definition; _ } -> definition
+      | { Node.value = Statement.Class definition; _ } -> definition
       | _ -> failwith "Could not parse class"
     in
     assert_equal
@@ -227,10 +227,10 @@ let test_defines _ =
       ~printer:Int.to_string;
     let method_id = method_name in
     match Class.find_define definition ~method_name:method_id with
-    | Some define when exists ->
-        assert_equal define.Node.value.Define.signature.name !&method_id ~printer:Reference.show
+    | Some { Node.value = { Define.signature = { Define.Signature.name; _ }; _ }; _ } when exists ->
+        assert_equal name !&method_id ~printer:Reference.show
     | None when not exists -> ()
-    | Some { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
+    | Some { Node.value = { Define.signature = { Define.Signature.name; _ }; _ }; _ } ->
         Format.asprintf
           "method %a found when not expected (looking for %s)"
           Reference.pp
@@ -272,7 +272,7 @@ let test_with_block_preamble _ =
   let assert_preamble block preamble =
     let block =
       match parse_single_statement block with
-      | { Node.value = With block; _ } -> block
+      | { Node.value = Statement.With block; _ } -> block
       | _ -> failwith "Could not parse `with` statement."
     in
     let { Source.statements = preamble; _ } = parse ~coerce_special_methods:true preamble in
@@ -293,7 +293,7 @@ let test_try_block_preamble _ =
   let assert_preamble block preambles =
     let handlers =
       match parse_single_statement block with
-      | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
+      | { Node.value = Statement.Try { Try.handlers; _ }; _ } -> handlers
       | _ -> failwith "Could not parse `try` statement."
     in
     let preambles =
@@ -356,7 +356,7 @@ let test_try_block_preamble _ =
   let assert_preamble_with_locations ~block expected_preambles =
     let handlers =
       match parse_single_statement block with
-      | { Node.value = Try { Try.handlers; _ }; _ } -> handlers
+      | { Node.value = Statement.Try { Try.handlers; _ }; _ } -> handlers
       | _ -> failwith "Could not parse `try-except` statement."
     in
     assert_equal
@@ -380,7 +380,7 @@ let test_try_block_preamble _ =
           Statement.Assign
             {
               Assign.target =
-                { Node.location = ~@"4:18-5:2"; value = Name (Name.Identifier "error") };
+                { Node.location = ~@"4:18-5:2"; value = Expression.Name (Name.Identifier "error") };
               annotation = None;
               value = Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis);
             };
@@ -388,18 +388,18 @@ let test_try_block_preamble _ =
       {
         Node.location = ~@"4:7-4:14";
         value =
-          Assert
+          Statement.Assert
             {
               Assert.test =
                 {
                   Node.location = ~@"4:7-4:14";
                   value =
-                    Call
+                    Expression.Call
                       {
-                        callee =
+                        Call.callee =
                           {
                             Node.location = ~@"4:7-4:14";
-                            value = Name (Name.Identifier "isinstance");
+                            value = Expression.Name (Name.Identifier "isinstance");
                           };
                         arguments =
                           [
@@ -408,7 +408,7 @@ let test_try_block_preamble _ =
                               value =
                                 {
                                   Node.location = ~@"4:18-5:2";
-                                  value = Name (Name.Identifier "error");
+                                  value = Expression.Name (Name.Identifier "error");
                                 };
                             };
                             {
@@ -416,7 +416,7 @@ let test_try_block_preamble _ =
                               value =
                                 {
                                   Node.location = ~@"4:7-4:14";
-                                  value = Name (Name.Identifier "IOError");
+                                  value = Expression.Name (Name.Identifier "IOError");
                                 };
                             };
                           ];
@@ -434,7 +434,7 @@ let test_for_loop_preamble _ =
   let assert_preamble ~block expected_preamble =
     let block =
       match parse_single_statement block with
-      | { Node.value = For block; _ } -> block
+      | { Node.value = Statement.For block; _ } -> block
       | _ -> failwith "Could not parse `for` statement."
     in
     let expected_preamble =
@@ -456,7 +456,7 @@ let test_for_loop_preamble _ =
   let assert_preamble_with_locations ~block expected_preamble =
     let block =
       match parse_single_statement block with
-      | { Node.value = For block; _ } -> block
+      | { Node.value = Statement.For block; _ } -> block
       | _ -> failwith "Could not parse `for` statement."
     in
     assert_equal
@@ -472,37 +472,39 @@ let test_for_loop_preamble _ =
       Node.value =
         Statement.Assign
           {
-            target = { Node.value = Name (Name.Identifier "a"); location = ~@"1:4-1:5" };
+            Assign.target =
+              { Node.value = Expression.Name (Name.Identifier "a"); location = ~@"1:4-1:5" };
             annotation = None;
             value =
               {
                 Node.value =
                   Expression.Call
                     {
-                      callee =
+                      Call.callee =
                         {
                           Node.location = ~@"1:9-1:10";
                           value =
-                            Name
+                            Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      {
                                        Node.location = ~@"1:9-1:10";
                                        value =
-                                         Call
+                                         Expression.Call
                                            {
-                                             callee =
+                                             Call.callee =
                                                {
                                                  Node.location = ~@"1:9-1:10";
                                                  value =
-                                                   Name
+                                                   Expression.Name
                                                      (Name.Attribute
                                                         {
-                                                          base =
+                                                          Name.Attribute.base =
                                                             {
                                                               Node.value =
-                                                                Name (Name.Identifier "b");
+                                                                Expression.Name
+                                                                  (Name.Identifier "b");
                                                               location = ~@"1:9-1:10";
                                                             };
                                                           attribute = "__iter__";
@@ -532,7 +534,8 @@ let test_for_loop_preamble _ =
       Node.value =
         Statement.Assign
           {
-            target = { Node.value = Name (Name.Identifier "a"); location = ~@"2:10-2:11" };
+            Assign.target =
+              { Node.value = Expression.Name (Name.Identifier "a"); location = ~@"2:10-2:11" };
             annotation = None;
             value =
               {
@@ -542,30 +545,31 @@ let test_for_loop_preamble _ =
                       Node.value =
                         Expression.Call
                           {
-                            callee =
+                            Call.callee =
                               {
                                 Node.location = ~@"3:2-3:4";
                                 value =
-                                  Name
+                                  Expression.Name
                                     (Name.Attribute
                                        {
-                                         base =
+                                         Name.Attribute.base =
                                            {
                                              Node.location = ~@"3:2-3:4";
                                              value =
-                                               Call
+                                               Expression.Call
                                                  {
-                                                   callee =
+                                                   Call.callee =
                                                      {
                                                        Node.location = ~@"3:2-3:4";
                                                        value =
-                                                         Name
+                                                         Expression.Name
                                                            (Name.Attribute
                                                               {
-                                                                base =
+                                                                Name.Attribute.base =
                                                                   {
                                                                     Node.value =
-                                                                      Name (Name.Identifier "xs");
+                                                                      Expression.Name
+                                                                        (Name.Identifier "xs");
                                                                     location = ~@"3:2-3:4";
                                                                   };
                                                                 attribute = "__aiter__";
@@ -907,13 +911,14 @@ let test_decorator_from_expression context =
   assert_decorator !"a" ~expected:(Some (decorator "a"));
   assert_decorator !"a.b" ~expected:(Some (decorator "a.b"));
   assert_decorator
-    (+Expression.Call { callee = !"a"; arguments = [] })
+    (+Expression.Call { Call.callee = !"a"; arguments = [] })
     ~expected:(Some (decorator "a" ~arguments:[]));
   assert_decorator
-    (+Expression.Call { callee = !"a.b"; arguments = [] })
+    (+Expression.Call { Call.callee = !"a.b"; arguments = [] })
     ~expected:(Some (decorator "a.b" ~arguments:[]));
   assert_decorator
-    (+Expression.Call { callee = !"a"; arguments = [{ Call.Argument.name = None; value = !"b" }] })
+    (+Expression.Call
+        { Call.callee = !"a"; arguments = [{ Call.Argument.name = None; value = !"b" }] })
     ~expected:(Some (decorator "a" ~arguments:[{ Call.Argument.name = None; value = !"b" }]));
 
   assert_decorator (+Expression.Tuple []) ~expected:None;
@@ -930,7 +935,7 @@ let test_decorator_from_expression context =
            { Name.Attribute.base = +Expression.List []; attribute = "b"; special = false }))
     ~expected:None;
   assert_decorator
-    (+Expression.Call { callee = +Expression.List [!"a"]; arguments = [] })
+    (+Expression.Call { Call.callee = +Expression.List [!"a"]; arguments = [] })
     ~expected:None;
   ()
 

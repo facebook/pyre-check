@@ -104,8 +104,9 @@ module Make (Transformer : Transformer) = struct
     in
     let rec transform_expression expression =
       let transform_children value =
+        let open Expression in
         match value with
-        | Expression.Await expression -> Expression.Await (transform_expression expression)
+        | Await expression -> Expression.Await (transform_expression expression)
         | BooleanOperator { BooleanOperator.left; operator; right } ->
             BooleanOperator
               {
@@ -113,8 +114,12 @@ module Make (Transformer : Transformer) = struct
                 operator;
                 right = transform_expression right;
               }
-        | Call { callee; arguments } ->
-            Call { callee = transform_expression callee; arguments = transform_arguments arguments }
+        | Call { Call.callee; arguments } ->
+            Call
+              {
+                Call.callee = transform_expression callee;
+                arguments = transform_arguments arguments;
+              }
         | ComparisonOperator { ComparisonOperator.left; operator; right } ->
             ComparisonOperator
               {
@@ -162,8 +167,8 @@ module Make (Transformer : Transformer) = struct
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }
         | Name (Name.Identifier _) -> value
-        | Name (Name.Attribute ({ base; _ } as name)) ->
-            Name (Name.Attribute { name with base = transform_expression base })
+        | Name (Name.Attribute ({ Name.Attribute.base; _ } as name)) ->
+            Name (Name.Attribute { name with Name.Attribute.base = transform_expression base })
         | Set elements -> Set (transform_list elements ~f:transform_expression)
         | SetComprehension { Comprehension.element; generators } ->
             SetComprehension
@@ -189,9 +194,12 @@ module Make (Transformer : Transformer) = struct
         | Tuple elements -> Tuple (transform_list elements ~f:transform_expression)
         | UnaryOperator { UnaryOperator.operator; operand } ->
             UnaryOperator { UnaryOperator.operator; operand = transform_expression operand }
-        | WalrusOperator { target; value } ->
+        | WalrusOperator { WalrusOperator.target; value } ->
             WalrusOperator
-              { target = transform_expression target; value = transform_expression value }
+              {
+                WalrusOperator.target = transform_expression target;
+                value = transform_expression value;
+              }
         | Expression.Yield expression -> Expression.Yield (expression >>| transform_expression)
         | Expression.YieldFrom expression ->
             Expression.YieldFrom (expression |> transform_expression)
@@ -214,8 +222,9 @@ module Make (Transformer : Transformer) = struct
     in
     let rec transform_statement statement =
       let transform_children value =
+        let open Statement in
         match value with
-        | Statement.Assign { Assign.target; annotation; value } ->
+        | Assign { Assign.target; annotation; value } ->
             Statement.Assign
               {
                 Assign.target = transform_expression target;
@@ -241,7 +250,7 @@ module Make (Transformer : Transformer) = struct
                 top_level_unbound_names;
               }
         | Continue -> value
-        | Define { signature; captures; unbound_names; body } ->
+        | Define { Define.signature; captures; unbound_names; body } ->
             let transform_signature
                 {
                   Define.Signature.name;
@@ -280,7 +289,7 @@ module Make (Transformer : Transformer) = struct
             in
             Define
               {
-                signature = transform_signature signature;
+                Define.signature = transform_signature signature;
                 captures = List.map captures ~f:transform_capture;
                 unbound_names;
                 body = transform_list body ~f:transform_statement |> List.concat;
@@ -308,8 +317,9 @@ module Make (Transformer : Transformer) = struct
         | Match { Match.subject; cases } ->
             let rec transform_pattern { Node.value; location } =
               let value =
+                let open Match.Pattern in
                 match value with
-                | Match.Pattern.MatchAs { pattern; name } ->
+                | MatchAs { pattern; name } ->
                     Match.Pattern.MatchAs { pattern = pattern >>| transform_pattern; name }
                 | MatchClass { class_name; patterns; keyword_attributes; keyword_patterns } ->
                     MatchClass
@@ -330,10 +340,10 @@ module Make (Transformer : Transformer) = struct
                 | MatchSequence patterns ->
                     MatchSequence (transform_list patterns ~f:transform_pattern)
                 | MatchSingleton constant -> (
-                    let expression =
+                    let ({ Node.value; _ } as expression) =
                       transform_expression { Node.value = Expression.Constant constant; location }
                     in
-                    match expression.value with
+                    match value with
                     | Expression.Constant constant -> MatchSingleton constant
                     | _ -> MatchValue expression)
                 | MatchStar maybe_identifier -> MatchStar maybe_identifier
@@ -516,9 +526,14 @@ let sanitize_expression =
   transform_in_expression ~transform:(function
       | Expression.Name (Name.Identifier identifier) ->
           Expression.Name (Name.Identifier (Identifier.sanitized identifier))
-      | Name (Name.Attribute ({ attribute; _ } as attribute_expression)) ->
-          Name
-            (Name.Attribute { attribute_expression with attribute = Identifier.sanitized attribute })
+      | Expression.Name (Name.Attribute ({ Name.Attribute.attribute; _ } as attribute_expression))
+        ->
+          Expression.Name
+            (Name.Attribute
+               {
+                 attribute_expression with
+                 Name.Attribute.attribute = Identifier.sanitized attribute;
+               })
       | expression -> expression)
 
 
@@ -540,21 +555,24 @@ let sanitize_statement statement =
           let transform_parameter
               ({ Node.value = { Parameter.name; _ } as parameter; _ } as parameter_node)
             =
-            { parameter_node with value = { parameter with name = Identifier.sanitized name } }
+            {
+              parameter_node with
+              Node.value = { parameter with Parameter.name = Identifier.sanitized name };
+            }
           in
 
           ( state,
             [
               {
                 statement with
-                value =
+                Node.value =
                   Statement.Define
                     {
                       define with
-                      signature =
+                      Define.signature =
                         {
                           signature with
-                          name = Reference.sanitized name;
+                          Define.Signature.name = Reference.sanitized name;
                           parameters = List.map parameters ~f:transform_parameter;
                         };
                     };
