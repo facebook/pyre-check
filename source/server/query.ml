@@ -519,9 +519,6 @@ let rec process_request_exn ~type_environment ~build_system request =
       else
         raise (ClassHierarchy.Untracked (Type.show annotation))
     in
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment global_resolution
-    in
     let get_error_paths errors =
       List.fold
         ~init:""
@@ -988,11 +985,7 @@ let rec process_request_exn ~type_environment ~build_system request =
               let load_all_modules scheduler =
                 let load_modules qualifiers =
                   let _ =
-                    List.map
-                      qualifiers
-                      ~f:
-                        (UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
-                           unannotated_global_environment)
+                    List.map qualifiers ~f:(GlobalResolution.get_module_metadata global_resolution)
                   in
                   ()
                 in
@@ -1011,7 +1004,8 @@ let rec process_request_exn ~type_environment ~build_system request =
                 ~configuration
                 ~should_log_exception:(fun _ -> true)
                 ~f:load_all_modules;
-              UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+              UnannotatedGlobalEnvironment.ReadOnly.all_classes
+                (GlobalResolution.unannotated_global_environment global_resolution)
               |> List.map ~f:Reference.create
           | _ ->
               List.filter class_names ~f:(fun class_name ->
