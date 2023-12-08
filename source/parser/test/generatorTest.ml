@@ -104,7 +104,8 @@ let test_lexer _ =
              {
                ComparisonOperator.left =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "print"; special = false });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "print"; special = false });
                operator = ComparisonOperator.Equals;
                right = +Expression.Constant (Constant.Integer 1);
              });
@@ -115,7 +116,7 @@ let test_lexer _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"print";
+               Call.callee = !"print";
                arguments =
                  [
                    { Call.Argument.name = None; value = !"a" };
@@ -129,9 +130,9 @@ let test_lexer _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -151,11 +152,11 @@ let test_lexer _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__add__";
                          special = true;
                        });
@@ -169,11 +170,11 @@ let test_lexer _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__add__";
                          special = true;
                        });
@@ -187,11 +188,11 @@ let test_lexer _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__add__";
                          special = true;
                        });
@@ -205,11 +206,11 @@ let test_lexer _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__add__";
                          special = true;
                        });
@@ -277,12 +278,13 @@ let test_await _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base =
-                           +Expression.Await (+Expression.Call { callee = !"foo"; arguments = [] });
+                         Name.Attribute.base =
+                           +Expression.Await
+                              (+Expression.Call { Call.callee = !"foo"; arguments = [] });
                          attribute = "__add__";
                          special = true;
                        });
@@ -296,12 +298,13 @@ let test_await _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base =
-                           +Expression.Await (+Expression.Call { callee = !"foo"; arguments = [] });
+                         Name.Attribute.base =
+                           +Expression.Await
+                              (+Expression.Call { Call.callee = !"foo"; arguments = [] });
                          attribute = "__mul__";
                          special = true;
                        });
@@ -320,13 +323,15 @@ let test_name _ =
     "a.b"
     [
       +Statement.Expression
-         (+Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false }));
+         (+Expression.Name
+             (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false }));
     ];
   assert_parsed_equal
     "a.async"
     [
       +Statement.Expression
-         (+Expression.Name (Name.Attribute { base = !"a"; attribute = "async"; special = false }));
+         (+Expression.Name
+             (Name.Attribute { Name.Attribute.base = !"a"; attribute = "async"; special = false }));
     ];
   assert_parsed_equal
     "1.0.b"
@@ -335,7 +340,7 @@ let test_name _ =
          (+Expression.Name
              (Name.Attribute
                 {
-                  base = +Expression.Constant (Constant.Float 1.0);
+                  Name.Attribute.base = +Expression.Constant (Constant.Float 1.0);
                   attribute = "b";
                   special = false;
                 }));
@@ -347,9 +352,10 @@ let test_name _ =
          (+Expression.Name
              (Name.Attribute
                 {
-                  base =
+                  Name.Attribute.base =
                     +Expression.Name
-                       (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                       (Name.Attribute
+                          { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                   attribute = "c";
                   special = false;
                 }));
@@ -360,9 +366,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
              });
@@ -373,9 +380,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = false });
                arguments =
                  [{ Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) }];
              });
@@ -386,9 +394,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -411,13 +420,17 @@ let test_name _ =
          (+Expression.Name
              (Name.Attribute
                 {
-                  base =
+                  Name.Attribute.base =
                     +Expression.Call
                        {
-                         callee =
+                         Call.callee =
                            +Expression.Name
                               (Name.Attribute
-                                 { base = !"a"; attribute = "__getitem__"; special = true });
+                                 {
+                                   Name.Attribute.base = !"a";
+                                   attribute = "__getitem__";
+                                   special = true;
+                                 });
                          arguments =
                            [
                              {
@@ -436,9 +449,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments = [{ Call.Argument.name = None; value = !"b" }];
              });
     ];
@@ -448,9 +462,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -458,7 +473,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -485,9 +500,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -495,7 +511,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -522,9 +538,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -532,7 +549,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -559,9 +576,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -569,7 +587,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -596,9 +614,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -606,7 +625,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -639,9 +658,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -649,7 +669,7 @@ let test_name _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 {
@@ -676,9 +696,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -699,9 +720,10 @@ let test_name _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
                arguments =
                  [
                    {
@@ -711,7 +733,7 @@ let test_name _ =
                           [
                             +Expression.Call
                                {
-                                 callee = !"slice";
+                                 Call.callee = !"slice";
                                  arguments =
                                    [
                                      {
@@ -775,9 +797,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -796,9 +818,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "*"; value = None; annotation = None };
@@ -821,9 +843,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = None };
@@ -847,9 +869,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -868,9 +890,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -889,9 +911,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -910,9 +932,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [decorator "foo"];
                return_annotation = None;
@@ -931,9 +953,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [decorator "decorator"];
                return_annotation = None;
@@ -952,9 +974,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators =
                  [
@@ -982,9 +1004,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [decorator "foo"; decorator "bar"];
                return_annotation = None;
@@ -1003,9 +1025,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators =
                  [
@@ -1051,9 +1073,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators =
                  [
@@ -1080,7 +1102,7 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
                Define.Signature.name = !&"foo";
                parameters =
@@ -1105,9 +1127,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1134,9 +1156,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [+{ Parameter.name = "a"; value = Some (+Expression.Tuple []); annotation = None }];
                decorators = [];
@@ -1156,9 +1178,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -1181,9 +1203,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -1207,9 +1229,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = None;
@@ -1224,9 +1246,9 @@ let test_define _ =
              [
                +Statement.Define
                   {
-                    signature =
+                    Define.signature =
                       {
-                        name = !&"bar";
+                        Define.Signature.name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -1252,9 +1274,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
                decorators = [];
                return_annotation = None;
@@ -1273,9 +1295,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1301,9 +1323,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = Some !"int" };
@@ -1326,9 +1348,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1338,11 +1360,11 @@ let test_define _ =
                         Some
                           (+Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   +Expression.Name
                                      (Name.Attribute
                                         {
-                                          base = !"Tuple";
+                                          Name.Attribute.base = !"Tuple";
                                           attribute = "__getitem__";
                                           special = true;
                                         });
@@ -1373,9 +1395,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "a"; value = None; annotation = None };
@@ -1398,9 +1420,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation = Some !"str";
@@ -1428,9 +1450,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1462,9 +1484,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1496,9 +1518,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1529,9 +1551,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1561,9 +1583,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1593,9 +1615,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -1626,9 +1648,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1667,9 +1689,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1708,9 +1730,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1756,9 +1778,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1796,9 +1818,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1838,9 +1860,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation =
@@ -1871,9 +1893,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1921,9 +1943,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -1973,9 +1995,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -2026,9 +2048,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -2065,9 +2087,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [];
                decorators = [];
                return_annotation =
@@ -2102,9 +2124,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{ Parameter.name = "self"; value = None; annotation = None };
@@ -2146,9 +2168,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -2188,9 +2210,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -2222,9 +2244,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -2263,9 +2285,9 @@ let test_define _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -2349,11 +2371,11 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__add__";
                          special = true;
                        });
@@ -2367,11 +2389,11 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__xor__";
                          special = true;
                        });
@@ -2385,11 +2407,11 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__floordiv__";
                          special = true;
                        });
@@ -2403,18 +2425,19 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base =
+                         Name.Attribute.base =
                            +Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   +Expression.Name
                                      (Name.Attribute
                                         {
-                                          base = +Expression.Constant (Constant.Integer 1);
+                                          Name.Attribute.base =
+                                            +Expression.Constant (Constant.Integer 1);
                                           attribute = "__rshift__";
                                           special = true;
                                         });
@@ -2439,11 +2462,11 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.Integer 1);
+                         Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                          attribute = "__rshift__";
                          special = true;
                        });
@@ -2453,7 +2476,8 @@ let test_binary_operator _ =
                      Call.Argument.name = None;
                      value =
                        +Expression.Name
-                          (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                          (Name.Attribute
+                             { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                    };
                  ];
              });
@@ -2464,18 +2488,19 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base =
+                         Name.Attribute.base =
                            +Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   +Expression.Name
                                      (Name.Attribute
                                         {
-                                          base = +Expression.Constant (Constant.Integer 1);
+                                          Name.Attribute.base =
+                                            +Expression.Constant (Constant.Integer 1);
                                           attribute = "__sub__";
                                           special = true;
                                         });
@@ -2500,16 +2525,18 @@ let test_binary_operator _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "__add__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "__add__"; special = true });
                arguments =
                  [
                    {
                      Call.Argument.name = None;
                      value =
                        +Expression.Name
-                          (Name.Attribute { base = !"b"; attribute = "c"; special = false });
+                          (Name.Attribute
+                             { Name.Attribute.base = !"b"; attribute = "c"; special = false });
                    };
                  ];
              });
@@ -2611,11 +2638,11 @@ let test_lambda _ =
                body =
                  +Expression.Call
                     {
-                      callee =
+                      Call.callee =
                         +Expression.Name
                            (Name.Attribute
                               {
-                                base = +Expression.Name (Name.Identifier "x");
+                                Name.Attribute.base = +Expression.Name (Name.Identifier "x");
                                 attribute = "__add__";
                                 special = true;
                               });
@@ -2927,7 +2954,8 @@ let test_dictionary _ =
                         {
                           BooleanOperator.left =
                             +Expression.Name
-                               (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                               (Name.Attribute
+                                  { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                           operator = BooleanOperator.Or;
                           right = !"c";
                         };
@@ -3408,9 +3436,10 @@ let test_yield _ =
            value =
              +Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     +Expression.Name
-                       (Name.Attribute { base = !"x"; attribute = "__iadd__"; special = true });
+                       (Name.Attribute
+                          { Name.Attribute.base = !"x"; attribute = "__iadd__"; special = true });
                   arguments =
                     [
                       {
@@ -3431,7 +3460,8 @@ let test_comparison _ =
          (+Expression.ComparisonOperator
              {
                ComparisonOperator.left =
-                 +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                 +Expression.Name
+                    (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                operator = ComparisonOperator.LessThan;
                right = +Expression.Constant (Constant.Integer 2);
              });
@@ -3542,14 +3572,14 @@ let test_comparison _ =
 let test_call _ =
   assert_parsed_equal
     "foo()"
-    [+Statement.Expression (+Expression.Call { callee = !"foo"; arguments = [] })];
+    [+Statement.Expression (+Expression.Call { Call.callee = !"foo"; arguments = [] })];
   assert_parsed_equal
     "foo(a for a in [])"
     [
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    {
@@ -3578,7 +3608,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    {
@@ -3607,7 +3637,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -3621,7 +3651,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    {
@@ -3642,7 +3672,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    { Call.Argument.name = None; value = !"x" };
@@ -3657,9 +3687,10 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"a"; attribute = "foo"; special = false });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"a"; attribute = "foo"; special = false });
                arguments = [{ Call.Argument.name = None; value = !"x" }];
              });
     ];
@@ -3669,7 +3700,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -3690,7 +3721,7 @@ let test_call _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee = !"foo";
+               Call.callee = !"foo";
                arguments =
                  [
                    { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -3805,11 +3836,12 @@ let test_string _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                         Name.Attribute.base =
+                           +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3828,11 +3860,12 @@ let test_string _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                         Name.Attribute.base =
+                           +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3851,11 +3884,12 @@ let test_string _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                         Name.Attribute.base =
+                           +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3874,11 +3908,12 @@ let test_string _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base = +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                         Name.Attribute.base =
+                           +Expression.Constant (Constant.String (StringLiteral.create "a"));
                          attribute = "__add__";
                          special = true;
                        });
@@ -3929,9 +3964,9 @@ let test_class _ =
              [
                +Statement.Define
                   {
-                    signature =
+                    Define.signature =
                       {
-                        name = !&"bar";
+                        Define.Signature.name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3960,9 +3995,9 @@ let test_class _ =
              [
                +Statement.Define
                   {
-                    signature =
+                    Define.signature =
                       {
-                        name = !&"bar";
+                        Define.Signature.name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -3977,9 +4012,9 @@ let test_class _ =
                       [
                         +Statement.Define
                            {
-                             signature =
+                             Define.signature =
                                {
-                                 name = !&"baz";
+                                 Define.Signature.name = !&"baz";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4134,9 +4169,9 @@ let test_class _ =
              [
                +Statement.Define
                   {
-                    signature =
+                    Define.signature =
                       {
-                        name = !&"bar";
+                        Define.Signature.name = !&"bar";
                         parameters = [];
                         decorators = [];
                         return_annotation = None;
@@ -4165,9 +4200,9 @@ let test_class _ =
              [
                +Statement.Define
                   {
-                    signature =
+                    Define.signature =
                       {
-                        name = !&"__init__";
+                        Define.Signature.name = !&"__init__";
                         parameters = [+{ Parameter.name = "self"; value = None; annotation = None }];
                         decorators = [];
                         return_annotation = None;
@@ -4185,7 +4220,11 @@ let test_class _ =
                              Assign.target =
                                +Expression.Name
                                   (Name.Attribute
-                                     { base = !"self"; attribute = "bar"; special = false });
+                                     {
+                                       Name.Attribute.base = !"self";
+                                       attribute = "bar";
+                                       special = false;
+                                     });
                              annotation = None;
                              value = +Expression.Constant (Constant.Integer 0);
                            };
@@ -4220,9 +4259,9 @@ let test_class _ =
                       [
                         +Statement.Define
                            {
-                             signature =
+                             Define.signature =
                                {
-                                 name = !&"bar";
+                                 Define.Signature.name = !&"bar";
                                  parameters = [];
                                  decorators = [];
                                  return_annotation = None;
@@ -4358,11 +4397,12 @@ let test_assign _ =
            value =
              +Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     +Expression.Name
                        (Name.Attribute
                           {
-                            base = +Expression.Call { callee = !"a"; arguments = [] };
+                            Name.Attribute.base =
+                              +Expression.Call { Call.callee = !"a"; arguments = [] };
                             attribute = "foo";
                             special = false;
                           });
@@ -4402,9 +4442,10 @@ let test_assign _ =
            value =
              +Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     +Expression.Name
-                       (Name.Attribute { base = !"a"; attribute = "__iadd__"; special = true });
+                       (Name.Attribute
+                          { Name.Attribute.base = !"a"; attribute = "__iadd__"; special = true });
                   arguments =
                     [
                       {
@@ -4421,18 +4462,20 @@ let test_assign _ =
       +Statement.Assign
          {
            Assign.target =
-             +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+             +Expression.Name
+                (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
            annotation = None;
            value =
              +Expression.Call
                 {
-                  callee =
+                  Call.callee =
                     +Expression.Name
                        (Name.Attribute
                           {
-                            base =
+                            Name.Attribute.base =
                               +Expression.Name
-                                 (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                                 (Name.Attribute
+                                    { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                             attribute = "__iadd__";
                             special = true;
                           });
@@ -4664,7 +4707,7 @@ let test_if _ =
                   BooleanOperator.left =
                     +Expression.Call
                        {
-                         callee = !"isinstance";
+                         Call.callee = !"isinstance";
                          arguments =
                            [
                              { Call.Argument.name = None; value = !"x" };
@@ -4700,7 +4743,7 @@ let test_if _ =
                          ComparisonOperator.left =
                            +Expression.Call
                               {
-                                callee = !"foo";
+                                Call.callee = !"foo";
                                 arguments = [{ Call.Argument.name = None; value = !"x" }];
                               };
                          operator = ComparisonOperator.GreaterThan;
@@ -5308,11 +5351,11 @@ let test_tuple _ =
                +Expression.Constant (Constant.Integer 1);
                +Expression.Call
                   {
-                    callee =
+                    Call.callee =
                       +Expression.Name
                          (Name.Attribute
                             {
-                              base = +Expression.Constant (Constant.Integer 1);
+                              Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                               attribute = "__add__";
                               special = true;
                             });
@@ -5349,11 +5392,11 @@ let test_tuple _ =
              [
                +Expression.Call
                   {
-                    callee =
+                    Call.callee =
                       +Expression.Name
                          (Name.Attribute
                             {
-                              base = +Expression.Constant (Constant.Integer 1);
+                              Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                               attribute = "__add__";
                               special = true;
                             });
@@ -5440,10 +5483,14 @@ let test_stubs _ =
              Some
                (+Expression.Call
                    {
-                     callee =
+                     Call.callee =
                        +Expression.Name
                           (Name.Attribute
-                             { base = !"Optional"; attribute = "__getitem__"; special = true });
+                             {
+                               Name.Attribute.base = !"Optional";
+                               attribute = "__getitem__";
+                               special = true;
+                             });
                      arguments = [{ Call.Argument.name = None; value = !"int" }];
                    });
            value = +Expression.Constant Constant.Ellipsis;
@@ -5475,9 +5522,9 @@ let test_stubs _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -5496,9 +5543,9 @@ let test_stubs _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -5517,9 +5564,9 @@ let test_stubs _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                decorators = [];
                return_annotation = None;
@@ -5538,9 +5585,9 @@ let test_stubs _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"foo";
+               Define.Signature.name = !&"foo";
                parameters =
                  [
                    +{
@@ -5610,9 +5657,9 @@ let test_ellipsis _ =
     [
       +Statement.Define
          {
-           signature =
+           Define.signature =
              {
-               name = !&"__init__";
+               Define.Signature.name = !&"__init__";
                parameters =
                  [
                    +{
@@ -5658,9 +5705,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5674,9 +5722,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5685,18 +5734,18 @@ let test_setitem _ =
                      value =
                        +Expression.Call
                           {
-                            callee =
+                            Call.callee =
                               +Expression.Name
                                  (Name.Attribute
                                     {
-                                      base =
+                                      Name.Attribute.base =
                                         +Expression.Call
                                            {
-                                             callee =
+                                             Call.callee =
                                                +Expression.Name
                                                   (Name.Attribute
                                                      {
-                                                       base = !"i";
+                                                       Name.Attribute.base = !"i";
                                                        attribute = "__getitem__";
                                                        special = true;
                                                      });
@@ -5724,17 +5773,21 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
                     (Name.Attribute
                        {
-                         base =
+                         Name.Attribute.base =
                            +Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   +Expression.Name
                                      (Name.Attribute
-                                        { base = !"i"; attribute = "__getitem__"; special = true });
+                                        {
+                                          Name.Attribute.base = !"i";
+                                          attribute = "__getitem__";
+                                          special = true;
+                                        });
                                 arguments = [{ Call.Argument.name = None; value = !"j" }];
                               };
                          attribute = "__setitem__";
@@ -5753,9 +5806,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    {
@@ -5763,7 +5817,7 @@ let test_setitem _ =
                      value =
                        +Expression.Call
                           {
-                            callee = !"slice";
+                            Call.callee = !"slice";
                             arguments =
                               [
                                 { Call.Argument.name = None; value = !"j" };
@@ -5783,10 +5837,14 @@ let test_setitem _ =
                      value =
                        +Expression.Call
                           {
-                            callee =
+                            Call.callee =
                               +Expression.Name
                                  (Name.Attribute
-                                    { base = !"i"; attribute = "__getitem__"; special = true });
+                                    {
+                                      Name.Attribute.base = !"i";
+                                      attribute = "__getitem__";
+                                      special = true;
+                                    });
                             arguments =
                               [
                                 {
@@ -5794,7 +5852,7 @@ let test_setitem _ =
                                   value =
                                     +Expression.Call
                                        {
-                                         callee = !"slice";
+                                         Call.callee = !"slice";
                                          arguments =
                                            [
                                              {
@@ -5821,9 +5879,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5832,7 +5891,7 @@ let test_setitem _ =
                      value =
                        +Expression.Ternary
                           {
-                            target = +Expression.Constant (Constant.Integer 5);
+                            Ternary.target = +Expression.Constant (Constant.Integer 5);
                             test = +Expression.Constant (Constant.Integer 1);
                             alternative = +Expression.Constant (Constant.Integer 1);
                           };
@@ -5843,13 +5902,14 @@ let test_setitem _ =
   assert_parsed_equal
     "x = i[j] = y"
     [
-      +Statement.Assign { target = !"x"; annotation = None; value = !"y" };
+      +Statement.Assign { Assign.target = !"x"; annotation = None; value = !"y" };
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5863,22 +5923,24 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"j"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"j"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"i" };
                    { Call.Argument.name = None; value = !"y" };
                  ];
              });
-      +Statement.Assign { target = !"x"; annotation = None; value = !"y" };
+      +Statement.Assign { Assign.target = !"x"; annotation = None; value = !"y" };
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5891,16 +5953,20 @@ let test_setitem _ =
     [
       +Statement.Assign
          {
-           target =
+           Assign.target =
              +Expression.Tuple
                 [
                   !"x";
                   +Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          +Expression.Name
                             (Name.Attribute
-                               { base = !"i"; attribute = "__getitem__"; special = true });
+                               {
+                                 Name.Attribute.base = !"i";
+                                 attribute = "__getitem__";
+                                 special = true;
+                               });
                        arguments = [{ Call.Argument.name = None; value = !"j" }];
                      };
                 ];
@@ -5914,9 +5980,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5925,7 +5992,7 @@ let test_setitem _ =
              });
       +Statement.Assign
          {
-           target = !"x";
+           Assign.target = !"x";
            annotation =
              Some (+Expression.Constant (Constant.String (StringLiteral.create "Something")));
            value = +Expression.Constant Constant.Ellipsis;
@@ -5937,9 +6004,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5948,18 +6016,18 @@ let test_setitem _ =
                      value =
                        +Expression.Call
                           {
-                            callee =
+                            Call.callee =
                               +Expression.Name
                                  (Name.Attribute
                                     {
-                                      base =
+                                      Name.Attribute.base =
                                         +Expression.Call
                                            {
-                                             callee =
+                                             Call.callee =
                                                +Expression.Name
                                                   (Name.Attribute
                                                      {
-                                                       base = !"i";
+                                                       Name.Attribute.base = !"i";
                                                        attribute = "__getitem__";
                                                        special = true;
                                                      });
@@ -5988,9 +6056,10 @@ let test_setitem _ =
       +Statement.Expression
          (+Expression.Call
              {
-               callee =
+               Call.callee =
                  +Expression.Name
-                    (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                    (Name.Attribute
+                       { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                arguments =
                  [
                    { Call.Argument.name = None; value = !"j" };
@@ -5999,18 +6068,18 @@ let test_setitem _ =
                      value =
                        +Expression.Call
                           {
-                            callee =
+                            Call.callee =
                               +Expression.Name
                                  (Name.Attribute
                                     {
-                                      base =
+                                      Name.Attribute.base =
                                         +Expression.Call
                                            {
-                                             callee =
+                                             Call.callee =
                                                +Expression.Name
                                                   (Name.Attribute
                                                      {
-                                                       base = !"i";
+                                                       Name.Attribute.base = !"i";
                                                        attribute = "__getitem__";
                                                        special = true;
                                                      });
@@ -6046,7 +6115,10 @@ let test_byte_order_mark _ =
     (PyreParser.Parser.Error
        {
          PyreParser.Parser.Error.location =
-           { start = { line = 2; column = 0 }; stop = { line = 2; column = 0 } };
+           {
+             Location.start = { Location.line = 2; column = 0 };
+             stop = { Location.line = 2; column = 0 };
+           };
          file_name = "$invalid_path";
          content = Some (byte_order_mark ^ "2");
        })
@@ -6059,7 +6131,7 @@ let test_walrus_operator _ =
     [
       +Statement.Expression
          (+Expression.WalrusOperator
-             { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+             { WalrusOperator.target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     ];
   assert_parsed_equal
     (* Binds more tightly than a comma. *)
@@ -6069,7 +6141,10 @@ let test_walrus_operator _ =
          (+Expression.Tuple
              [
                +Expression.WalrusOperator
-                  { target = !"a"; value = +Expression.Constant (Constant.Integer 1) };
+                  {
+                    WalrusOperator.target = !"a";
+                    value = +Expression.Constant (Constant.Integer 1);
+                  };
                +Expression.Constant (Constant.Integer 2);
              ]);
     ];
@@ -6080,15 +6155,15 @@ let test_walrus_operator _ =
       +Statement.Expression
          (+Expression.WalrusOperator
              {
-               target = !"a";
+               WalrusOperator.target = !"a";
                value =
                  +Expression.Call
                     {
-                      callee =
+                      Call.callee =
                         +Expression.Name
                            (Name.Attribute
                               {
-                                base = +Expression.Constant (Constant.Integer 1);
+                                Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                                 attribute = "__add__";
                                 special = true;
                               });
@@ -6109,7 +6184,7 @@ let test_walrus_operator _ =
       +Statement.Expression
          (+Expression.WalrusOperator
              {
-               target = !"a";
+               WalrusOperator.target = !"a";
                value =
                  +Expression.BooleanOperator
                     {
@@ -6126,7 +6201,7 @@ let test_walrus_operator _ =
       +Statement.Expression
          (+Expression.WalrusOperator
              {
-               target = !"a";
+               WalrusOperator.target = !"a";
                value =
                  +Expression.Ternary
                     {
@@ -6142,10 +6217,13 @@ let test_walrus_operator _ =
       +Statement.Expression
          (+Expression.WalrusOperator
              {
-               target = !"a";
+               WalrusOperator.target = !"a";
                value =
                  +Expression.WalrusOperator
-                    { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
+                    {
+                      WalrusOperator.target = !"b";
+                      value = +Expression.Constant (Constant.Integer 1);
+                    };
              });
     ];
   assert_not_parsed "(a := 1) := 2"
@@ -6243,11 +6321,11 @@ let test_format_string _ =
       Substring.Format
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
                    (Name.Attribute
                       {
-                        base = +Expression.Constant (Constant.Integer 1);
+                        Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
                         attribute = "__add__";
                         special = true;
                       });

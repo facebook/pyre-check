@@ -24,12 +24,12 @@
     | { Node.location; value = Statement.Class value } ->
         let decorated = { value with Class.decorators; } in
         { Node.location; value = Statement.Class decorated }
-    | { Node.location; value = Define value } ->
+    | { Node.location; value = Statement.Define ({ Define.signature; _} as value) } ->
         let signature =
-          { value.signature with Define.Signature.decorators }
+          { signature with Define.Signature.decorators }
         in
-        let decorated = { value with signature } in
-        { Node.location; value = Define decorated }
+        let decorated = { value with Define.signature } in
+        { Node.location; value = Statement.Define decorated }
     | _ -> raise (Failure "Cannot decorate statement")
 
   type entry =
@@ -102,11 +102,11 @@
       Format.asprintf "__%s%s__" (if compound then "i" else "") name
     in
     let callee =
-      Expression.Name (Name.Attribute { base = left; attribute = name; special = true })
+      Expression.Name (Name.Attribute { Name.Attribute.base = left; attribute = name; special = true })
       |> Node.create ~location
     in
-    Expression.Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
-    |> Node.create ~location:{ location with stop }
+    Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value = right }] }
+    |> Node.create ~location:{ location with Location.stop }
 
   let slice ~lower ~upper ~step ~bound_colon ~step_colon =
     let increment { Location.start; stop; _ } =
@@ -135,8 +135,8 @@
             | None ->
                 begin
                   match upper with
-                  | Some { Node.location = ({ stop; _ } as location); _ } ->
-                      { location with start = stop }
+                  | Some { Node.location = ({ Location.stop; _ } as location); _ } ->
+                      { location with Location.start = stop }
                   | None -> Location.create ~start:bound_colon ~stop:bound_colon |> increment
                 end
           end
@@ -161,7 +161,7 @@
       Expression.Name (Name.Identifier "slice")
       |> Node.create ~location:slice_location
     in
-    Expression.Call { callee; arguments }
+    Expression.Call { Call.callee; arguments }
     |> Node.create ~location:slice_location
 
 
@@ -172,7 +172,7 @@
   let create_ellipsis_after { Node.location; _ } =
     Node.create
       (Expression.Constant AstExpression.Constant.Ellipsis)
-      ~location:{ location with start = location.stop }
+      ~location:{ location with Location.start = location.Location.stop }
 
   let subscript_argument subscripts =
     let value =
@@ -190,11 +190,11 @@
     let head, subscripts, subscript_location = subscript in
     let location = Node.location head in
     let callee =
-      Expression.Name (Name.Attribute { base = head; attribute = "__getitem__"; special = true })
+      Expression.Name (Name.Attribute { Name.Attribute.base = head; attribute = "__getitem__"; special = true })
       |> Node.create ~location:(Node.location head)
     in
-    Expression.Call { callee; arguments = [subscript_argument subscripts] }
-    |> Node.create ~location:{ subscript_location with start = location.start }
+    Expression.Call { Call.callee; arguments = [subscript_argument subscripts] }
+    |> Node.create ~location:{ subscript_location with Location.start = location.Location.start }
 
   let subscript_mutation ~subscript ~value ~annotation:_ =
     let head, subscripts, subscript_location = subscript in
@@ -202,14 +202,14 @@
       let location =
         { head.Node.location with Location.stop = subscript_location.Location.stop }
       in
-      Expression.Name (Name.Attribute { base = head; attribute = "__setitem__"; special = true })
+      Expression.Name (Name.Attribute { Name.Attribute.base = head; attribute = "__setitem__"; special = true })
       |> Node.create ~location
     in
     let location =
       { head.Node.location with Location.stop = value.Node.location.Location.stop }
     in
     Expression.Call {
-      callee;
+      Call.callee;
       arguments = [subscript_argument subscripts; { Call.Argument.name = None; value }];
     }
     |> Node.create ~location
@@ -248,13 +248,13 @@
     | [] -> Expression.Constant
               (AstExpression.Constant.String {
                    AstExpression.StringLiteral.value = "";
-                   kind = String
+                   kind = AstExpression.StringLiteral.String
               })
     | [ { Substring.kind = Substring.Kind.Literal; value; _ } ] ->
        Expression.Constant
          (AstExpression.Constant.String {
               AstExpression.StringLiteral.value;
-              kind = String
+              kind = AstExpression.StringLiteral.String
          })
     | _ as pieces ->
        let is_all_literal = List.for_all ~f:(fun { Substring.kind; _ } ->
@@ -271,7 +271,7 @@
           Expression.Constant
             (AstExpression.Constant.String {
                  AstExpression.StringLiteral.value;
-                 kind = String
+                 kind = AstExpression.StringLiteral.String
             })
         else
           Expression.FormatString pieces
@@ -765,15 +765,15 @@ compound_statement:
       let _, name = name in
       let body =
         let rec transform_toplevel_statements = function
-          | { Node.location; value = Statement.Define define } ->
-              let signature = { define.signature with Define.Signature.parent = Some name } in
+          | { Node.location; value = Statement.Define ({ Define.signature; _ } as define) } ->
+              let signature = { signature with Define.Signature.parent = Some name } in
               {
                 Node.location;
-                value = Statement.Define { define with signature };
+                value = Statement.Define { define with Define.signature };
               }
           | {
               Node.location;
-              value = If {
+              value = Statement.If {
                 If.test;
                 body;
                 orelse;
@@ -781,7 +781,7 @@ compound_statement:
             } ->
               {
                 Node.location;
-                value = If {
+                value = Statement.If {
                   If.test;
                   body = List.map ~f:transform_toplevel_statements body;
                   orelse = List.map ~f:transform_toplevel_statements orelse;
@@ -880,8 +880,8 @@ compound_statement:
       {
         Node.location;
         value = Statement.Define {
-          signature = {
-            name = name;
+          Define.signature = {
+            Define.Signature.name = name;
             parameters = parameters;
             decorators = [];
             return_annotation = annotation;
@@ -984,24 +984,24 @@ async_statement:
   | position = ASYNC; statement = compound_statement {
       let location = location_create_with_stop ~start:(fst position) ~stop:(Node.stop statement) in
       match statement with
-      | { Node.value = Statement.Define value; _ } ->
-          let signature = { value.signature with Define.Signature.async = true } in
-          let decorated = { value with signature } in
+      | { Node.value = Statement.Define ({ Define.signature; _ } as value); _ } ->
+          let signature = { signature with Define.Signature.async = true } in
+          let decorated = { value with Define.signature } in
           {
             Node.location;
             value = Statement.Define decorated;
           }
-      | { Node.value = For value; _ } ->
+      | { Node.value = Statement.For value; _ } ->
           let with_async = { value with For.async = true } in
           {
             Node.location;
-            value = For with_async;
+            value = Statement.For with_async;
           }
-      | { Node.value = With value; _ } ->
+      | { Node.value = Statement.With value; _ } ->
           let with_async = { value with With.async = true } in
           {
             Node.location;
-            value = With with_async;
+            value = Statement.With with_async;
           }
       | _ -> raise (Failure "Async not supported on statement.")
     }
@@ -1142,7 +1142,7 @@ define_parameters:
         let name_location = fst name in
         match annotation with
         | None -> name_location
-        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with stop }
+        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with Location.stop }
       in
       {
         Node.location;
@@ -1154,7 +1154,7 @@ define_parameters:
         let name_location = fst name in
         match annotation with
         | None -> name_location
-        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with stop }
+        | Some { Node.location = { Location.stop; _ }; _ } -> { name_location with Location.stop }
       in
       {
         Node.location;
@@ -1195,12 +1195,12 @@ define_parameters:
         match expression with
         | { Node.location; value = Expression.Name (Name.Identifier identifier) } ->
             (location, identifier)
-        | { Node.location; value = Starred (Starred.Once expression) } ->
+        | { Node.location; value = Expression.Starred (Starred.Once expression) } ->
             location,
             identifier expression
             |> snd
             |> fun identifier -> "*" ^ identifier
-        | { Node.location; value = Starred (Starred.Twice expression) } ->
+        | { Node.location; value = Expression.Starred (Starred.Twice expression) } ->
             location,
             identifier expression
             |> snd
@@ -1430,7 +1430,7 @@ atom:
     arguments = arguments;
     stop = RIGHTPARENS {
       let call_location = Location.create ~start ~stop in
-      Expression.Call { callee = name; arguments }
+      Expression.Call { Call.callee = name; arguments }
       |> Node.create
         ~location:({ name.Node.location with Location.stop = call_location.Location.stop })
     }
@@ -1589,7 +1589,7 @@ expression:
       {
         Node.location;
         value = Expression.Name (
-          Name.Attribute { base = expression; attribute = snd identifier; special = false }
+          Name.Attribute { Name.Attribute.base = expression; attribute = snd identifier; special = false }
         )
       }
     }
@@ -1722,7 +1722,7 @@ test:
       {
         Node.location = { (fst target) with Location.stop = Node.stop value };
         value = Expression.WalrusOperator {
-          target =
+          WalrusOperator.target =
             Expression.Name (Name.Identifier (snd target))
             |> Node.create ~location:(fst target);
           value = value;

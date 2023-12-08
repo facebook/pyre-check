@@ -63,20 +63,23 @@ let test_attribute _ =
     assert_parsed
       "a.b"
       ~expected:
-        (+Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false }));
+        (+Expression.Name
+            (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false }));
     assert_parsed
       "a  .  b"
       ~expected:
-        (+Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false }));
+        (+Expression.Name
+            (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false }));
     assert_parsed
       "a.b.c"
       ~expected:
         (+Expression.Name
             (Name.Attribute
                {
-                 base =
+                 Name.Attribute.base =
                    +Expression.Name
-                      (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"a"; attribute = "b"; special = false });
                  attribute = "c";
                  special = false;
                }));
@@ -86,7 +89,7 @@ let test_attribute _ =
         (+Expression.Name
             (Name.Attribute
                {
-                 base = +Expression.Constant (Constant.Float 1.0);
+                 Name.Attribute.base = +Expression.Constant (Constant.Float 1.0);
                  attribute = "b";
                  special = false;
                }));
@@ -331,16 +334,19 @@ let test_ternary_walrus _ =
       "(a := 1)"
       ~expected:
         (+Expression.WalrusOperator
-            { target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
+            { WalrusOperator.target = !"a"; value = +Expression.Constant (Constant.Integer 1) });
     assert_parsed
       "(a := (b := 1))"
       ~expected:
         (+Expression.WalrusOperator
             {
-              target = !"a";
+              WalrusOperator.target = !"a";
               value =
                 +Expression.WalrusOperator
-                   { target = !"b"; value = +Expression.Constant (Constant.Integer 1) };
+                   {
+                     WalrusOperator.target = !"b";
+                     value = +Expression.Constant (Constant.Integer 1);
+                   };
             });
 
     (* Standalone assignment expressions are required to be protected with parenthesis. *)
@@ -1155,9 +1161,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1165,9 +1172,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__sub__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__sub__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1175,9 +1183,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__mul__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__mul__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1185,9 +1194,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__matmul__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__matmul__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1195,9 +1205,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__truediv__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__truediv__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1205,9 +1216,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__mod__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__mod__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1215,9 +1227,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__pow__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__pow__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1225,9 +1238,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__rshift__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__rshift__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1235,9 +1249,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__lshift__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__lshift__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1245,9 +1260,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__or__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__or__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1255,9 +1271,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__xor__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__xor__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1265,9 +1282,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__and__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__and__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1275,9 +1293,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__floordiv__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__floordiv__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"y" }];
             });
     assert_parsed
@@ -1285,17 +1304,21 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
                    (Name.Attribute
                       {
-                        base =
+                        Name.Attribute.base =
                           +Expression.Call
                              {
-                               callee =
+                               Call.callee =
                                  +Expression.Name
                                     (Name.Attribute
-                                       { base = !"x"; attribute = "__add__"; special = true });
+                                       {
+                                         Name.Attribute.base = !"x";
+                                         attribute = "__add__";
+                                         special = true;
+                                       });
                                arguments = [{ Call.Argument.name = None; value = !"y" }];
                              };
                         attribute = "__add__";
@@ -1308,9 +1331,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
               arguments =
                 [
                   {
@@ -1318,10 +1342,14 @@ let test_binary_operators _ =
                     value =
                       +Expression.Call
                          {
-                           callee =
+                           Call.callee =
                              +Expression.Name
                                 (Name.Attribute
-                                   { base = !"y"; attribute = "__add__"; special = true });
+                                   {
+                                     Name.Attribute.base = !"y";
+                                     attribute = "__add__";
+                                     special = true;
+                                   });
                            arguments = [{ Call.Argument.name = None; value = !"z" }];
                          };
                   };
@@ -1332,9 +1360,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
               arguments =
                 [
                   {
@@ -1342,10 +1371,14 @@ let test_binary_operators _ =
                     value =
                       +Expression.Call
                          {
-                           callee =
+                           Call.callee =
                              +Expression.Name
                                 (Name.Attribute
-                                   { base = !"y"; attribute = "__mul__"; special = true });
+                                   {
+                                     Name.Attribute.base = !"y";
+                                     attribute = "__mul__";
+                                     special = true;
+                                   });
                            arguments = [{ Call.Argument.name = None; value = !"z" }];
                          };
                   };
@@ -1356,9 +1389,10 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__mul__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__mul__"; special = true });
               arguments =
                 [
                   {
@@ -1374,16 +1408,18 @@ let test_binary_operators _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"x"; attribute = "__add__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"x"; attribute = "__add__"; special = true });
               arguments =
                 [
                   {
                     Call.Argument.name = None;
                     value =
                       +Expression.Name
-                         (Name.Attribute { base = !"y"; attribute = "z"; special = false });
+                         (Name.Attribute
+                            { Name.Attribute.base = !"y"; attribute = "z"; special = false });
                   };
                 ];
             });
@@ -1397,9 +1433,10 @@ let test_binary_operators _ =
               right =
                 +Expression.Call
                    {
-                     callee =
+                     Call.callee =
                        +Expression.Name
-                          (Name.Attribute { base = !"y"; attribute = "__add__"; special = true });
+                          (Name.Attribute
+                             { Name.Attribute.base = !"y"; attribute = "__add__"; special = true });
                      arguments = [{ Call.Argument.name = None; value = !"z" }];
                    };
             });
@@ -1411,33 +1448,39 @@ let test_binary_operators _ =
 let test_call _ =
   let do_test context =
     let assert_parsed = assert_parsed ~context in
-    assert_parsed "foo()" ~expected:(+Expression.Call { callee = !"foo"; arguments = [] });
+    assert_parsed "foo()" ~expected:(+Expression.Call { Call.callee = !"foo"; arguments = [] });
     assert_parsed
       "foo(x)"
       ~expected:
         (+Expression.Call
-            { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+            { Call.callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
     assert_parsed
       "foo(x,)"
       ~expected:
         (+Expression.Call
-            { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+            { Call.callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
     assert_parsed
       "foo(x=y)"
       ~expected:
         (+Expression.Call
-            { callee = !"foo"; arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }] });
+            {
+              Call.callee = !"foo";
+              arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }];
+            });
     assert_parsed
       "foo(x=y,)"
       ~expected:
         (+Expression.Call
-            { callee = !"foo"; arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }] });
+            {
+              Call.callee = !"foo";
+              arguments = [{ Call.Argument.name = Some (+"x"); value = !"y" }];
+            });
     assert_parsed
       "foo(x, y)"
       ~expected:
         (+Expression.Call
             {
-              callee = !"foo";
+              Call.callee = !"foo";
               arguments =
                 [
                   { Call.Argument.name = None; value = !"x" };
@@ -1449,7 +1492,7 @@ let test_call _ =
       ~expected:
         (+Expression.Call
             {
-              callee = !"foo";
+              Call.callee = !"foo";
               arguments = [{ Call.Argument.name = None; value = +Expression.Tuple [!"x"; !"y"] }];
             });
     assert_parsed
@@ -1457,7 +1500,7 @@ let test_call _ =
       ~expected:
         (+Expression.Call
             {
-              callee = !"foo";
+              Call.callee = !"foo";
               arguments =
                 [
                   { Call.Argument.name = None; value = !"x" };
@@ -1469,9 +1512,10 @@ let test_call _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "foo"; special = false });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "foo"; special = false });
               arguments = [{ Call.Argument.name = None; value = !"x" }];
             });
     assert_parsed
@@ -1479,7 +1523,7 @@ let test_call _ =
       ~expected:
         (+Expression.Call
             {
-              callee = !"foo";
+              Call.callee = !"foo";
               arguments =
                 [
                   { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 1) };
@@ -1499,14 +1543,14 @@ let test_call _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
                    (Name.Attribute
                       {
-                        base =
+                        Name.Attribute.base =
                           +Expression.Call
                              {
-                               callee = !"foo";
+                               Call.callee = !"foo";
                                arguments = [{ Call.Argument.name = None; value = !"x" }];
                              };
                         attribute = "__add__";
@@ -1521,7 +1565,10 @@ let test_call _ =
             {
               ComparisonOperator.left =
                 +Expression.Call
-                   { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] };
+                   {
+                     Call.callee = !"foo";
+                     arguments = [{ Call.Argument.name = None; value = !"x" }];
+                   };
               operator = ComparisonOperator.GreaterThan;
               right = !"y";
             });
@@ -1533,7 +1580,10 @@ let test_call _ =
               UnaryOperator.operator = UnaryOperator.Not;
               UnaryOperator.operand =
                 +Expression.Call
-                   { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] };
+                   {
+                     Call.callee = !"foo";
+                     arguments = [{ Call.Argument.name = None; value = !"x" }];
+                   };
             });
     ()
   in
@@ -1549,9 +1599,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"b" }];
             });
     assert_parsed
@@ -1559,9 +1610,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = false });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = false });
               arguments = [{ Call.Argument.name = None; value = !"b" }];
             });
     assert_parsed
@@ -1569,9 +1621,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments = [{ Call.Argument.name = None; value = !"b" }];
             });
     assert_parsed
@@ -1579,9 +1632,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1601,9 +1655,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments = [{ Call.Argument.name = None; value = +Expression.Tuple [!"b"; !"c"] }];
             });
     assert_parsed
@@ -1612,13 +1667,17 @@ let test_subscript _ =
         (+Expression.Name
             (Name.Attribute
                {
-                 base =
+                 Name.Attribute.base =
                    +Expression.Call
                       {
-                        callee =
+                        Call.callee =
                           +Expression.Name
                              (Name.Attribute
-                                { base = !"a"; attribute = "__getitem__"; special = true });
+                                {
+                                  Name.Attribute.base = !"a";
+                                  attribute = "__getitem__";
+                                  special = true;
+                                });
                         arguments = [{ Call.Argument.name = None; value = !"b" }];
                       };
                  attribute = "c";
@@ -1629,9 +1688,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1639,7 +1699,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1664,9 +1724,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1674,7 +1735,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1699,9 +1760,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1709,7 +1771,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1734,9 +1796,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1744,7 +1807,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1769,9 +1832,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1779,7 +1843,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1804,9 +1868,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1814,7 +1879,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1839,9 +1904,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1849,7 +1915,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1874,9 +1940,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1884,7 +1951,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1909,9 +1976,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1919,7 +1987,7 @@ let test_subscript _ =
                     value =
                       +Expression.Call
                          {
-                           callee = !"slice";
+                           Call.callee = !"slice";
                            arguments =
                              [
                                {
@@ -1944,9 +2012,10 @@ let test_subscript _ =
       ~expected:
         (+Expression.Call
             {
-              callee =
+              Call.callee =
                 +Expression.Name
-                   (Name.Attribute { base = !"a"; attribute = "__getitem__"; special = true });
+                   (Name.Attribute
+                      { Name.Attribute.base = !"a"; attribute = "__getitem__"; special = true });
               arguments =
                 [
                   {
@@ -1956,7 +2025,7 @@ let test_subscript _ =
                          [
                            +Expression.Call
                               {
-                                callee = !"slice";
+                                Call.callee = !"slice";
                                 arguments =
                                   [
                                     {

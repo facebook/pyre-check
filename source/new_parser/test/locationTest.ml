@@ -260,14 +260,14 @@ let test_assign_locations _ =
                      ~stop:(1, 6)
                      (Expression.Call
                         {
-                          callee =
+                          Call.callee =
                             node
                               ~start:(1, 0)
                               ~stop:(1, 1)
                               (Expression.Name
                                  (Name.Attribute
                                     {
-                                      base =
+                                      Name.Attribute.base =
                                         node
                                           ~start:(1, 0)
                                           ~stop:(1, 1)
@@ -345,14 +345,14 @@ let test_call_locations _ =
                   ~stop:(1, 8)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 1)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -399,14 +399,14 @@ let test_call_locations _ =
                   ~stop:(1, 23)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 13)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -440,7 +440,7 @@ let test_call_locations _ =
                   ~stop:(1, 9)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                        arguments =
                          [
@@ -478,7 +478,7 @@ let test_call_locations _ =
                   ~stop:(1, 15)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                        arguments =
                          [
@@ -514,13 +514,13 @@ let test_call_locations _ =
                   ~stop:(1, 13)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 7)
                            (Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   node
                                     ~start:(1, 0)
                                     ~stop:(1, 1)
@@ -563,13 +563,13 @@ let test_call_locations _ =
                   ~stop:(1, 19)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 9)
                            (Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   node
                                     ~start:(1, 0)
                                     ~stop:(1, 1)
@@ -612,7 +612,7 @@ let test_call_locations _ =
                   ~stop:(1, 30)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node ~start:(1, 0) ~stop:(1, 3) (Expression.Name (Name.Identifier "foo"));
                        arguments =
                          [
@@ -674,7 +674,7 @@ let test_call_locations _ =
                   ~stop:(1, 18)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node ~start:(1, 0) ~stop:(1, 3) (Expression.Name (Name.Identifier "foo"));
                        arguments =
                          [
@@ -710,7 +710,7 @@ let test_call_locations _ =
                   ~stop:(2, 2)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node ~start:(1, 0) ~stop:(1, 3) (Expression.Name (Name.Identifier "foo"));
                        arguments =
                          [
@@ -742,7 +742,8 @@ let test_call_locations _ =
             ~stop:(1, 12)
             (Statement.Assign
                {
-                 target = node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "x"));
+                 Assign.target =
+                   node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "x"));
                  annotation = None;
                  value = node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "y"));
                });
@@ -755,14 +756,14 @@ let test_call_locations _ =
                   ~stop:(1, 12)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 4)
                            ~stop:(1, 5)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 4)
                                        ~stop:(1, 5)
@@ -804,14 +805,14 @@ let test_call_locations _ =
                   ~stop:(1, 5)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 1)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -829,7 +830,7 @@ let test_call_locations _ =
                                  ~stop:(1, 4)
                                  (Expression.Call
                                     {
-                                      callee =
+                                      Call.callee =
                                         node
                                           ~start:(1, 2)
                                           ~stop:(1, 4)
@@ -871,14 +872,14 @@ let test_call_locations _ =
                   ~stop:(1, 6)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 1)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -896,7 +897,7 @@ let test_call_locations _ =
                                  ~stop:(1, 5)
                                  (Expression.Call
                                     {
-                                      callee =
+                                      Call.callee =
                                         node
                                           ~start:(1, 2)
                                           ~stop:(1, 5)
@@ -938,14 +939,14 @@ let test_call_locations _ =
                   ~stop:(1, 4)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 1)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -963,7 +964,7 @@ let test_call_locations _ =
                                  ~stop:(1, 3)
                                  (Expression.Call
                                     {
-                                      callee =
+                                      Call.callee =
                                         node
                                           ~start:(1, 2)
                                           ~stop:(1, 3)
@@ -1030,9 +1031,9 @@ let test_class_locations _ =
                        ~stop:(2, 16)
                        (Statement.Define
                           {
-                            signature =
+                            Define.signature =
                               {
-                                name = !&"bar";
+                                Define.Signature.name = !&"bar";
                                 parameters = [];
                                 decorators = [];
                                 return_annotation = None;
@@ -1127,9 +1128,9 @@ let test_class_locations _ =
                                   ~stop:(5, 10)
                                   (Statement.Define
                                      {
-                                       signature =
+                                       Define.signature =
                                          {
-                                           name = !&"bar";
+                                           Define.Signature.name = !&"bar";
                                            parameters = [];
                                            decorators = [];
                                            return_annotation = None;
@@ -1166,9 +1167,9 @@ let test_define_locations _ =
             ~stop:(2, 3)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters = [];
                      decorators = [];
                      return_annotation = None;
@@ -1208,9 +1209,9 @@ let test_define_locations _ =
             ~stop:(5, 9)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters = [];
                      decorators = [];
                      return_annotation = None;
@@ -1228,9 +1229,9 @@ let test_define_locations _ =
                        ~stop:(5, 9)
                        (Statement.Define
                           {
-                            signature =
+                            Define.signature =
                               {
-                                name = !&"bar";
+                                Define.Signature.name = !&"bar";
                                 parameters = [];
                                 decorators = [];
                                 return_annotation = None;
@@ -2000,14 +2001,14 @@ let test_lambda_locations _ =
                            ~stop:(1, 22)
                            (Expression.Call
                               {
-                                callee =
+                                Call.callee =
                                   node
                                     ~start:(1, 17)
                                     ~stop:(1, 18)
                                     (Expression.Name
                                        (Name.Attribute
                                           {
-                                            base =
+                                            Name.Attribute.base =
                                               node
                                                 ~start:(1, 17)
                                                 ~stop:(1, 18)
@@ -2131,14 +2132,14 @@ let test_name_locations _ =
                   (Expression.Name
                      (Name.Attribute
                         {
-                          base =
+                          Name.Attribute.base =
                             node
                               ~start:(1, 0)
                               ~stop:(1, 3)
                               (Expression.Name
                                  (Name.Attribute
                                     {
-                                      base =
+                                      Name.Attribute.base =
                                         node
                                           ~start:(1, 0)
                                           ~stop:(1, 1)
@@ -2164,7 +2165,7 @@ let test_name_locations _ =
                   (Expression.Name
                      (Name.Attribute
                         {
-                          base =
+                          Name.Attribute.base =
                             node ~start:(1, 2) ~stop:(1, 3) (Expression.Name (Name.Identifier "a"));
                           attribute = "b";
                           special = false;
@@ -2184,7 +2185,7 @@ let test_name_locations _ =
                   (Expression.Name
                      (Name.Attribute
                         {
-                          base =
+                          Name.Attribute.base =
                             node ~start:(1, 1) ~stop:(1, 2) (Expression.Name (Name.Identifier "a"));
                           attribute = "b";
                           special = false;
@@ -2204,7 +2205,7 @@ let test_name_locations _ =
                   (Expression.Name
                      (Name.Attribute
                         {
-                          base =
+                          Name.Attribute.base =
                             node ~start:(1, 0) ~stop:(1, 1) (Expression.Name (Name.Identifier "a"));
                           attribute = "b";
                           special = false;
@@ -2224,13 +2225,13 @@ let test_name_locations _ =
                   (Expression.Name
                      (Name.Attribute
                         {
-                          base =
+                          Name.Attribute.base =
                             node
                               ~start:(1, 0)
                               ~stop:(1, 6)
                               (Expression.Call
                                  {
-                                   callee =
+                                   Call.callee =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -2420,14 +2421,14 @@ let test_operator_locations _ =
                   ~stop:(1, 6)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 1)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 1)
@@ -2785,14 +2786,14 @@ let test_string_locations _ =
                   ~stop:(1, 17)
                   (Expression.Call
                      {
-                       callee =
+                       Call.callee =
                          node
                            ~start:(1, 0)
                            ~stop:(1, 7)
                            (Expression.Name
                               (Name.Attribute
                                  {
-                                   base =
+                                   Name.Attribute.base =
                                      node
                                        ~start:(1, 0)
                                        ~stop:(1, 7)
@@ -2907,9 +2908,9 @@ let test_stub_locations _ =
             ~stop:(1, 15)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters =
                        [
                          node
@@ -3287,14 +3288,14 @@ let test_tuple_locations _ =
                          ~stop:(1, 8)
                          (Expression.Call
                             {
-                              callee =
+                              Call.callee =
                                 node
                                   ~start:(1, 3)
                                   ~stop:(1, 4)
                                   (Expression.Name
                                      (Name.Attribute
                                         {
-                                          base =
+                                          Name.Attribute.base =
                                             node
                                               ~start:(1, 3)
                                               ~stop:(1, 4)
@@ -3470,7 +3471,7 @@ let test_walrus_locations _ =
                   ~stop:(1, 7)
                   (Expression.WalrusOperator
                      {
-                       target =
+                       WalrusOperator.target =
                          node ~start:(1, 1) ~stop:(1, 2) (Expression.Name (Name.Identifier "a"));
                        value =
                          node ~start:(1, 6) ~stop:(1, 7) (Expression.Constant (Constant.Integer 1));
@@ -3537,9 +3538,9 @@ let test_type_comments _ =
             ~stop:(3, 6)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters =
                        [
                          node
@@ -3582,9 +3583,9 @@ let test_type_comments _ =
             ~stop:(3, 6)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters =
                        [
                          node
@@ -3627,9 +3628,9 @@ let test_type_comments _ =
             ~stop:(2, 6)
             (Statement.Define
                {
-                 signature =
+                 Define.signature =
                    {
-                     name = !&"foo";
+                     Define.Signature.name = !&"foo";
                      parameters =
                        [
                          node
@@ -3654,14 +3655,14 @@ let test_type_comments _ =
                             ~stop:(2, 2)
                             (Expression.Call
                                {
-                                 callee =
+                                 Call.callee =
                                    node
                                      ~start:(1, 0)
                                      ~stop:(2, 2)
                                      (Expression.Name
                                         (Name.Attribute
                                            {
-                                             base =
+                                             Name.Attribute.base =
                                                node
                                                  ~start:(1, 0)
                                                  ~stop:(2, 2)

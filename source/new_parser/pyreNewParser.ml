@@ -108,7 +108,8 @@ let comprehension ~target ~iter ~ifs ~is_async =
       let open Ast.Location in
       let map_walrus_operator
           ~mapper:_
-          ~location:{ start = { line; column }; stop = { line = end_line; column = end_column } }
+          ~location:
+            { Location.start = { line; column }; stop = { line = end_line; column = end_column } }
           _
         =
         raise
@@ -168,7 +169,11 @@ let keyword ~location ~arg ~value = { KeywordArgument.location; name = arg; valu
 let convert_positional_argument value = { Ast.Expression.Call.Argument.name = None; value }
 
 let convert_keyword_argument
-    { KeywordArgument.location = { start = { line; column }; _ } as location; name; value }
+    {
+      KeywordArgument.location = { Location.start = { Location.line; column }; _ } as location;
+      name;
+      value;
+    }
   =
   let open Ast.Expression in
   let module Node = Ast.Node in
@@ -184,8 +189,12 @@ let convert_keyword_argument
         Call.Argument.name =
           Some
             {
-              value = name;
-              location = { location with stop = { line; column = column + String.length name } };
+              Node.value = name;
+              location =
+                {
+                  location with
+                  Location.stop = { Location.line; column = column + String.length name };
+                };
             };
         value;
       }
@@ -210,7 +219,7 @@ let argument ~location ~identifier ~annotation ~type_comment =
             let comment_annotation =
               Ast.Expression.(
                 Expression.Constant
-                  (Constant.String { StringLiteral.kind = String; value = comment }))
+                  (Constant.String { StringLiteral.kind = StringLiteral.String; value = comment }))
             in
             Some (Ast.Node.create ~location comment_annotation))
   in
@@ -295,12 +304,13 @@ let expression =
         (* Boolean operators are left-associative *)
         let init =
           Expression.BooleanOperator { BooleanOperator.left = first; operator = op; right = second }
-          |> Node.create ~location:{ location with stop = second.location.stop }
+          |> Node.create
+               ~location:{ location with Location.stop = second.Node.location.Location.stop }
         in
         let f sofar next =
           let { Node.location = { Ast.Location.stop = next_stop; _ }; _ } = next in
           Expression.BooleanOperator { BooleanOperator.left = sofar; operator = op; right = next }
-          |> Node.create ~location:{ location with stop = next_stop }
+          |> Node.create ~location:{ location with Location.stop = next_stop }
         in
         List.fold rest ~init ~f
   in
@@ -314,10 +324,11 @@ let expression =
     let callee =
       let dunder_name = Stdlib.Format.sprintf "__%s__" op in
       Expression.Name
-        (Name.Attribute { base = left; attribute = identifier dunder_name; special = true })
+        (Name.Attribute
+           { Name.Attribute.base = left; attribute = identifier dunder_name; special = true })
       |> Node.create ~location:(Node.location left)
     in
-    Expression.Call { callee; arguments = [{ Call.Argument.name = None; value = right }] }
+    Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value = right }] }
     |> Node.create ~location
   in
   let unary_op ~location ~op ~operand =
@@ -379,7 +390,7 @@ let expression =
       let sofar =
         Expression.BooleanOperator
           { BooleanOperator.left = sofar; operator = BooleanOperator.And; right }
-        |> Node.create ~location:{ location with stop = right.location.stop }
+        |> Node.create ~location:{ location with Location.stop = right.Node.location.Location.stop }
       in
       sofar, next
     in
@@ -391,7 +402,7 @@ let expression =
         let { Node.location = { Ast.Location.stop = right_stop; _ }; _ } = right in
         let first_operand =
           Expression.ComparisonOperator { ComparisonOperator.left; operator; right }
-          |> Node.create ~location:{ location with stop = right_stop }
+          |> Node.create ~location:{ location with Location.stop = right_stop }
         in
         let result, _ = List.fold ~init:(first_operand, right) ~f rest in
         result
@@ -403,7 +414,7 @@ let expression =
         (List.map args ~f:convert_positional_argument)
         (List.map keywords ~f:convert_keyword_argument)
     in
-    Expression.Call { callee = func; arguments } |> Node.create ~location
+    Expression.Call { Call.callee = func; arguments } |> Node.create ~location
   in
   let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
     Expression.FormatString [Substring.Format value] |> Node.create ~location
@@ -411,7 +422,8 @@ let expression =
   let joined_str ~location ~values =
     let collapse_formatted_value ({ Node.value; location } as expression) =
       match value with
-      | Expression.Constant (Constant.String { StringLiteral.kind = String; value }) ->
+      | Expression.Constant (Constant.String { StringLiteral.kind = StringLiteral.String; value })
+        ->
           Substring.Literal (Node.create ~location value)
       | Expression.FormatString [substring] -> substring
       | _ ->
@@ -435,7 +447,7 @@ let expression =
       |> Node.create ~location:value_location
     in
     let arguments = [{ Call.Argument.name = None; value = slice }] in
-    Expression.Call { callee; arguments } |> Node.create ~location
+    Expression.Call { Call.callee; arguments } |> Node.create ~location
   in
   let starred ~location ~value ~ctx:() =
     Expression.Starred (Starred.Once value) |> Node.create ~location
@@ -457,7 +469,7 @@ let expression =
         { Call.Argument.name = None; value = to_argument step };
       ]
     in
-    Expression.Call { callee; arguments } |> Node.create ~location
+    Expression.Call { Call.callee; arguments } |> Node.create ~location
   in
   PyreAst.TaglessFinal.Expression.make
     ~bool_op
@@ -523,7 +535,11 @@ let exception_handler ~location:Location.{ stop = handler_stop; _ } ~type_ ~name
   let new_name =
     match type_, name with
     | ( Some
-          { Node.location = { stop = { line = type_stop_line; column = type_stop_column }; _ }; _ },
+          {
+            Node.location =
+              { Location.stop = { Location.line = type_stop_line; column = type_stop_column }; _ };
+            _;
+          },
         Some name ) ->
         (* Stop at the beginning of body or end of handler if no body *)
         let name_stop =
@@ -531,7 +547,7 @@ let exception_handler ~location:Location.{ stop = handler_stop; _ } ~type_ ~name
           | [] -> handler_stop
           | statement :: _ -> (
               match statement ~context with
-              | { Node.location = { start; _ }; _ } :: _ -> start
+              | { Node.location = { Location.start; _ }; _ } :: _ -> start
               | [] -> handler_stop)
         in
         Some
@@ -539,7 +555,7 @@ let exception_handler ~location:Location.{ stop = handler_stop; _ } ~type_ ~name
              ~location:
                {
                  (* Start " as " characters from end of expression type *)
-                 start = { line = type_stop_line; column = type_stop_column + 4 };
+                 Location.start = { Location.line = type_stop_line; column = type_stop_column + 4 };
                  stop = name_stop;
                }
              name)
@@ -582,8 +598,8 @@ let pattern =
       | Expression.Name name -> Node.create ~location:(Node.location cls) name
       | _ ->
           let {
-            Ast.Location.start = { line; column };
-            stop = { line = end_line; column = end_column };
+            Ast.Location.start = { Location.line; column };
+            stop = { Location.line = end_line; column = end_column };
           }
             =
             location
@@ -607,8 +623,8 @@ let pattern =
     match name, pattern with
     | None, Some _ ->
         let {
-          Ast.Location.start = { line; column };
-          stop = { line = end_line; column = end_column };
+          Ast.Location.start = { Location.line; column };
+          stop = { Location.line = end_line; column = end_column };
         }
           =
           location
@@ -653,7 +669,7 @@ let create_assign ~location ~target ~annotation ~value () =
   match Node.value target with
   | Expression.Call
       {
-        callee =
+        Call.callee =
           {
             Node.value =
               Expression.Name
@@ -665,7 +681,7 @@ let create_assign ~location ~target ~annotation ~value () =
       let setitem =
         Expression.Call
           {
-            callee =
+            Call.callee =
               Expression.Name
                 (Name.Attribute { Name.Attribute.base; attribute = "__setitem__"; special = true })
               |> Node.create ~location:callee_location;
@@ -677,7 +693,7 @@ let create_assign ~location ~target ~annotation ~value () =
   | _ ->
       (* TODO(T101303314): This does not take into account things like `a[0], b = ...`, where we'll
          need to turn `a[0]` into `__setitem__` call. *)
-      Statement.Assign { target; annotation; value } |> Node.create ~location
+      Statement.Assign { Assign.target; annotation; value } |> Node.create ~location
 
 
 let process_function_type_comment
@@ -742,7 +758,10 @@ let process_function_type_comment
                 {
                   Node.location;
                   value =
-                    { parameter with annotation = override_annotation annotation new_annotation };
+                    {
+                      parameter with
+                      Parameter.annotation = override_annotation annotation new_annotation;
+                    };
                 }
               in
               Result.Ok
@@ -765,7 +784,7 @@ let statement =
       ~type_comment
       ~context:({ StatementContext.parent; _ } as context)
     =
-    let body = build_statements ~context:{ context with parent = None } body in
+    let body = build_statements ~context:{ context with StatementContext.parent = None } body in
     let comment_location =
       (* NOTE(grievejia): This is just a rough estimation on where type comment is. We don't know
          for sure since CPython does not preserve the positions of those comments. *)
@@ -775,7 +794,7 @@ let statement =
         | [] -> location.stop
         | { Node.location; _ } :: _ -> location.start
       in
-      { start = location.start; stop = estimated_stop }
+      { Location.start = location.start; stop = estimated_stop }
     in
     match
       process_function_type_comment
@@ -787,8 +806,8 @@ let statement =
     with
     | Result.Error message ->
         let {
-          Ast.Location.start = { line; column };
-          stop = { line = end_line; column = end_column };
+          Ast.Location.start = { Location.line; column };
+          stop = { Location.line = end_line; column = end_column };
         }
           =
           location
@@ -878,8 +897,8 @@ let statement =
               let { stop = { line = start_line; column = start_column }; _ } =
                 Node.location value
               in
-              let { stop; _ } = location in
-              { start = { line = start_line; column = start_column + 1 }; stop }
+              let { Location.stop; _ } = location in
+              { Location.start = { line = start_line; column = start_column + 1 }; stop }
             in
             Some (Node.create ~location annotation)
         | _ ->
@@ -894,11 +913,12 @@ let statement =
     let callee =
       let dunder_name = Stdlib.Format.sprintf "__i%s__" op in
       Expression.Name
-        (Name.Attribute { base = target; attribute = identifier dunder_name; special = true })
+        (Name.Attribute
+           { Name.Attribute.base = target; attribute = identifier dunder_name; special = true })
       |> Node.create ~location:(Node.location target)
     in
     let value =
-      Expression.Call { callee; arguments = [{ Call.Argument.name = None; value }] }
+      Expression.Call { Call.callee; arguments = [{ Call.Argument.name = None; value }] }
       |> Node.create ~location
     in
     [create_assign ~location ~target ~annotation:None ~value:(Some value) ()]
@@ -972,8 +992,8 @@ let statement =
       let raise_remanining_patterns_unreachable { Match.Case.pattern = { Ast.Node.location; _ }; _ }
         =
         let {
-          Ast.Location.start = { line; column };
-          stop = { line = end_line; column = end_column };
+          Ast.Location.start = { Location.line; column };
+          stop = { Location.line = end_line; column = end_column };
         }
           =
           location
@@ -1043,8 +1063,8 @@ let statement =
       | Location.{ start = { line; column }; _ } ->
           (* Add 5 characters for 'from ' *)
           {
-            Location.start = { line; column = column + 5 };
-            stop = { line; column = column + 5 + String.length from_text };
+            Location.start = { Location.line; column = column + 5 };
+            stop = { Location.line; column = column + 5 + String.length from_text };
           }
     in
     [

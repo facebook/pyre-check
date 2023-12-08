@@ -31,8 +31,8 @@ let assert_parsed ~expected text =
   match PyreErrpyParser.parse_module text with
   | Result.Error error -> (
       match error with
-      | Recoverable recoverable -> check_ast recoverable.recovered_ast
-      | Unrecoverable message ->
+      | PyreErrpyParser.ParserError.Recoverable recoverable -> check_ast recoverable.recovered_ast
+      | PyreErrpyParser.ParserError.Unrecoverable message ->
           let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
           assert_failure message)
   | Result.Ok actual_ast -> check_ast actual_ast
@@ -45,8 +45,8 @@ let assert_not_parsed text =
       assert_failure message
   | Result.Error error -> (
       match error with
-      | Recoverable _ -> ()
-      | Unrecoverable message ->
+      | PyreErrpyParser.ParserError.Recoverable _ -> ()
+      | PyreErrpyParser.ParserError.Unrecoverable message ->
           let message = Stdlib.Format.sprintf "Unexpected errpy stacktrace thrown: %s" message in
           assert_failure message)
 
@@ -95,7 +95,7 @@ let test_expression_return_raise _ =
       [
         +Statement.Expression
            (+Expression.Call
-               { callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
+               { Call.callee = !"foo"; arguments = [{ Call.Argument.name = None; value = !"x" }] });
       ];
   assert_parsed
     "return"
@@ -896,7 +896,8 @@ let test_assign _ =
         +Statement.Assign
            {
              Assign.target =
-               +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               +Expression.Name
+                  (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
              annotation = None;
              value = +Expression.Constant (Constant.Integer 1);
            };
@@ -908,15 +909,16 @@ let test_assign _ =
         +Statement.Assign
            {
              Assign.target =
-               +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               +Expression.Name
+                  (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
              annotation = Some !"int";
              value = +Expression.Constant (Constant.Integer 1);
            };
       ];
   (*TODO (T148669698): assert_parsed "a.b = 1 # type: int" ~expected: [ +Statement.Assign {
-    Assign.target = +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false
-    }); annotation = Some (+Expression.Constant (Constant.String (StringLiteral.create "int")));
-    value = +Expression.Constant (Constant.Integer 1); }; ];*)
+    Assign.target = +Expression.Name (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b";
+    special = false }); annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "int"))); value = +Expression.Constant (Constant.Integer 1); }; ];*)
   assert_parsed
     "a, b = 1"
     ~expected:
@@ -939,11 +941,12 @@ let test_assign _ =
              value =
                +Expression.Call
                   {
-                    callee =
+                    Call.callee =
                       +Expression.Name
                          (Name.Attribute
                             {
-                              base = +Expression.Call { callee = !"a"; arguments = [] };
+                              Name.Attribute.base =
+                                +Expression.Call { Call.callee = !"a"; arguments = [] };
                               attribute = "foo";
                               special = false;
                             });
@@ -979,9 +982,10 @@ let test_assign _ =
              value =
                +Expression.Call
                   {
-                    callee =
+                    Call.callee =
                       +Expression.Name
-                         (Name.Attribute { base = !"a"; attribute = "__iadd__"; special = true });
+                         (Name.Attribute
+                            { Name.Attribute.base = !"a"; attribute = "__iadd__"; special = true });
                     arguments =
                       [
                         {
@@ -999,18 +1003,24 @@ let test_assign _ =
         +Statement.Assign
            {
              Assign.target =
-               +Expression.Name (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+               +Expression.Name
+                  (Name.Attribute { Name.Attribute.base = !"a"; attribute = "b"; special = false });
              annotation = None;
              value =
                +Expression.Call
                   {
-                    callee =
+                    Call.callee =
                       +Expression.Name
                          (Name.Attribute
                             {
-                              base =
+                              Name.Attribute.base =
                                 +Expression.Name
-                                   (Name.Attribute { base = !"a"; attribute = "b"; special = false });
+                                   (Name.Attribute
+                                      {
+                                        Name.Attribute.base = !"a";
+                                        attribute = "b";
+                                        special = false;
+                                      });
                               attribute = "__iadd__";
                               special = true;
                             });
@@ -1031,9 +1041,10 @@ let test_assign _ =
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
-                      (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                  arguments =
                    [
                      { Call.Argument.name = None; value = !"j" };
@@ -1051,9 +1062,10 @@ let test_assign _ =
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
-                      (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                  arguments =
                    [
                      { Call.Argument.name = None; value = !"j" };
@@ -1065,9 +1077,10 @@ let test_assign _ =
                });
       ];
   (*TODO (T148669698): assert_parsed "i[j] = 3 # type: int" ~expected: [ +Statement.Expression
-    (+Expression.Call { callee = +Expression.Name (Name.Attribute { base = !"i"; attribute =
-    "__setitem__"; special = true }); arguments = [ { Call.Argument.name = None; value = !"j" }; {
-    Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3); }; ]; }); ];*)
+    (+Expression.Call { Call.callee = +Expression.Name (Name.Attribute { Name.Attribute.base = !"i";
+    attribute = "__setitem__"; special = true }); arguments = [ { Call.Argument.name = None; value =
+    !"j" }; { Call.Argument.name = None; value = +Expression.Constant (Constant.Integer 3); }; ];
+    }); ];*)
   assert_parsed
     "i[j] += 3"
     ~expected:
@@ -1075,9 +1088,10 @@ let test_assign _ =
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
-                      (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                  arguments =
                    [
                      { Call.Argument.name = None; value = !"j" };
@@ -1086,18 +1100,18 @@ let test_assign _ =
                        value =
                          +Expression.Call
                             {
-                              callee =
+                              Call.callee =
                                 +Expression.Name
                                    (Name.Attribute
                                       {
-                                        base =
+                                        Name.Attribute.base =
                                           +Expression.Call
                                              {
-                                               callee =
+                                               Call.callee =
                                                  +Expression.Name
                                                     (Name.Attribute
                                                        {
-                                                         base = !"i";
+                                                         Name.Attribute.base = !"i";
                                                          attribute = "__getitem__";
                                                          special = true;
                                                        });
@@ -1126,17 +1140,21 @@ let test_assign _ =
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
                       (Name.Attribute
                          {
-                           base =
+                           Name.Attribute.base =
                              +Expression.Call
                                 {
-                                  callee =
+                                  Call.callee =
                                     +Expression.Name
                                        (Name.Attribute
-                                          { base = !"i"; attribute = "__getitem__"; special = true });
+                                          {
+                                            Name.Attribute.base = !"i";
+                                            attribute = "__getitem__";
+                                            special = true;
+                                          });
                                   arguments = [{ Call.Argument.name = None; value = !"j" }];
                                 };
                            attribute = "__setitem__";
@@ -1159,9 +1177,10 @@ let test_assign _ =
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
-                      (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                  arguments =
                    [
                      {
@@ -1169,7 +1188,7 @@ let test_assign _ =
                        value =
                          +Expression.Call
                             {
-                              callee = !"slice";
+                              Call.callee = !"slice";
                               arguments =
                                 [
                                   { Call.Argument.name = None; value = !"j" };
@@ -1189,10 +1208,14 @@ let test_assign _ =
                        value =
                          +Expression.Call
                             {
-                              callee =
+                              Call.callee =
                                 +Expression.Name
                                    (Name.Attribute
-                                      { base = !"i"; attribute = "__getitem__"; special = true });
+                                      {
+                                        Name.Attribute.base = !"i";
+                                        attribute = "__getitem__";
+                                        special = true;
+                                      });
                               arguments =
                                 [
                                   {
@@ -1200,7 +1223,7 @@ let test_assign _ =
                                     value =
                                       +Expression.Call
                                          {
-                                           callee = !"slice";
+                                           Call.callee = !"slice";
                                            arguments =
                                              [
                                                {
@@ -1225,13 +1248,14 @@ let test_assign _ =
     "x = i[j] = y"
     ~expected:
       [
-        +Statement.Assign { target = !"x"; annotation = None; value = !"y" };
+        +Statement.Assign { Assign.target = !"x"; annotation = None; value = !"y" };
         +Statement.Expression
            (+Expression.Call
                {
-                 callee =
+                 Call.callee =
                    +Expression.Name
-                      (Name.Attribute { base = !"i"; attribute = "__setitem__"; special = true });
+                      (Name.Attribute
+                         { Name.Attribute.base = !"i"; attribute = "__setitem__"; special = true });
                  arguments =
                    [
                      { Call.Argument.name = None; value = !"j" };
@@ -1246,16 +1270,20 @@ let test_assign _ =
       [
         +Statement.Assign
            {
-             target =
+             Assign.target =
                +Expression.Tuple
                   [
                     !"x";
                     +Expression.Call
                        {
-                         callee =
+                         Call.callee =
                            +Expression.Name
                               (Name.Attribute
-                                 { base = !"i"; attribute = "__getitem__"; special = true });
+                                 {
+                                   Name.Attribute.base = !"i";
+                                   attribute = "__getitem__";
+                                   special = true;
+                                 });
                          arguments = [{ Call.Argument.name = None; value = !"j" }];
                        };
                   ];
@@ -1275,9 +1303,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators = [];
                  return_annotation = None;
@@ -1297,9 +1325,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{ Parameter.name = "*"; value = None; annotation = None };
@@ -1323,9 +1351,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{ Parameter.name = "a"; value = None; annotation = None };
@@ -1350,9 +1378,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "**a"; value = None; annotation = None }];
                  decorators = [];
                  return_annotation = None;
@@ -1372,9 +1400,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{ Parameter.name = "a"; value = None; annotation = None };
@@ -1398,9 +1426,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [];
                  return_annotation = None;
@@ -1420,9 +1448,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [];
                  return_annotation = None;
@@ -1442,9 +1470,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [!"foo"];
                  return_annotation = None;
@@ -1464,9 +1492,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators = [!"decorator"];
                  return_annotation = None;
@@ -1486,9 +1514,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators =
                    [
@@ -1519,9 +1547,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators = [!"foo"; !"bar"];
                  return_annotation = None;
@@ -1541,9 +1569,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators =
                    [
@@ -1590,9 +1618,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = None }];
                  decorators =
                    [
@@ -1620,7 +1648,7 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
                  Define.Signature.name = !&"foo";
                  parameters =
@@ -1646,9 +1674,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{ Parameter.name = "a"; value = None; annotation = None };
@@ -1676,9 +1704,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{
@@ -1705,9 +1733,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [];
                  return_annotation = None;
@@ -1731,9 +1759,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [];
                  return_annotation = None;
@@ -1758,9 +1786,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [];
                  decorators = [];
                  return_annotation = None;
@@ -1775,9 +1803,9 @@ let test_define _ =
                [
                  +Statement.Define
                     {
-                      signature =
+                      Define.signature =
                         {
-                          name = !&"bar";
+                          Define.Signature.name = !&"bar";
                           parameters = [];
                           decorators = [];
                           return_annotation = None;
@@ -1804,9 +1832,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"int" }];
                  decorators = [];
                  return_annotation = None;
@@ -1826,9 +1854,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{
@@ -1855,9 +1883,9 @@ let test_define _ =
       [
         +Statement.Define
            {
-             signature =
+             Define.signature =
                {
-                 name = !&"foo";
+                 Define.Signature.name = !&"foo";
                  parameters =
                    [
                      +{ Parameter.name = "a"; value = None; annotation = Some !"int" };
@@ -1877,121 +1905,127 @@ let test_define _ =
       ];
 
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
-    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
-    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ]; *)
+    4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name = !&"foo";
+    parameters = []; decorators = []; return_annotation = Some !"str"; async = false; generator =
+    false; parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ]; *)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
-    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
-    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name = !&"foo";
+    parameters = []; decorators = []; return_annotation = Some !"str"; async = false; generator =
+    false; parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
+    return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
+    !&"foo"; parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"str" }];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    None; nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
     Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
     }; ];*)
-  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
-    return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [+{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
-    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
-    (str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
-    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
-    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = None }; +{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ]; }; ];*)
+    (str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name = !&"A";
+    base_arguments = []; decorators = []; top_level_unbound_names = []; body = [ +Statement.Define {
+    Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None;
+    annotation = None }; +{ Parameter.name = "a"; value = None; annotation = Some !"str" }; ];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    Some !&"A"; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
-    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
-    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
-    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = Some !"A" }; +{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ]; }; ];*)
+    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name = !&"A";
+    base_arguments = []; decorators = []; top_level_unbound_names = []; body = [ +Statement.Define {
+    Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None;
+    annotation = Some !"A" }; +{ Parameter.name = "a"; value = None; annotation = Some !"str" }; ];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    Some !&"A"; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b # type:
-    bool ): pass |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [
-    +{ Parameter.name = "a"; value = None; annotation = Some (+Expression.Constant (Constant.String
-    (StringLiteral.create "bool"))); }; +{ Parameter.name = "b"; value = None; annotation = Some
-    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = [];
-    return_annotation = None; async = false; generator = false; parent = None; nesting_define =
-    None; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+    bool ): pass |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
+    !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
+    "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = None; async = false;
+    generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names = [];
+    body = [+Statement.Pass]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b #
-    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { signature = { name
-    = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { Define.signature =
+    { name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
     (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
     "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
     (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = Some !"int"; async =
     true; generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names =
     []; body = [+Statement.Pass]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): # type: (
-    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo";
-    parameters = [ +{ Parameter.name = "*args"; value = None; annotation = Some !"str" }; +{
-    Parameter.name = "**kwargs"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
-    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { Define.signature = {
+    Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "*args"; value = None;
+    annotation = Some !"str" }; +{ Parameter.name = "**kwargs"; value = None; annotation = Some
+    !"str" }; ]; decorators = []; return_annotation = Some !"str"; async = false; generator = false;
+    parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
-    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
-    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ];*)
+    4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name = !&"foo";
+    parameters = []; decorators = []; return_annotation = Some !"str"; async = false; generator =
+    false; parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(): # type: () -> str return
-    4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = []; decorators
-    = []; return_annotation = Some !"str"; async = false; generator = false; parent = None;
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ];*)
+    4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name = !&"foo";
+    parameters = []; decorators = []; return_annotation = Some !"str"; async = false; generator =
+    false; parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo(a): # type: (str) -> str
-    return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [+{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
-    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
-  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
-    (str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
-    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
-    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = None }; +{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
+    return 4 |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
+    !&"foo"; parameters = [+{ Parameter.name = "a"; value = None; annotation = Some !"str" }];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    None; nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
     Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ]; }; ];*)
+    }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
-    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { name = !&"A"; base_arguments = [];
-    decorators = []; top_level_unbound_names = []; body = [ +Statement.Define { signature = { name =
-    !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None; annotation = Some !"A" }; +{
-    Parameter.name = "a"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = Some !&"A";
-    nesting_define = None; }; captures = []; unbound_names = []; body = [ +Statement.Return {
-    Return.expression = Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ];
-    }; ]; }; ];*)
+    (str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name = !&"A";
+    base_arguments = []; decorators = []; top_level_unbound_names = []; body = [ +Statement.Define {
+    Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None;
+    annotation = None }; +{ Parameter.name = "a"; value = None; annotation = Some !"str" }; ];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    Some !&"A"; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ]; }; ];*)
+  (*TODO (T148669698): assert_parsed (trim_extra_indentation {| class A: def foo(self, a): # type:
+    (A, str) -> str return 4 |}) ~expected: [ +Statement.Class { Define.Signature.name = !&"A";
+    base_arguments = []; decorators = []; top_level_unbound_names = []; body = [ +Statement.Define {
+    Define.signature = { name = !&"foo"; parameters = [ +{ Parameter.name = "self"; value = None;
+    annotation = Some !"A" }; +{ Parameter.name = "a"; value = None; annotation = Some !"str" }; ];
+    decorators = []; return_annotation = Some !"str"; async = false; generator = false; parent =
+    Some !&"A"; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( a, # type: bool b # type:
-    bool ): pass |}) ~expected: [ +Statement.Define { signature = { name = !&"foo"; parameters = [
-    +{ Parameter.name = "a"; value = None; annotation = Some (+Expression.Constant (Constant.String
-    (StringLiteral.create "bool"))); }; +{ Parameter.name = "b"; value = None; annotation = Some
-    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; ]; decorators = [];
-    return_annotation = None; async = false; generator = false; parent = None; nesting_define =
-    None; }; captures = []; unbound_names = []; body = [+Statement.Pass]; }; ];*)
+    bool ): pass |}) ~expected: [ +Statement.Define { Define.signature = { Define.Signature.name =
+    !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
+    "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
+    (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = None; async = false;
+    generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names = [];
+    body = [+Statement.Pass]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| async def foo( a, # type: bool b #
-    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { signature = { name
-    = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
+    type: bool ): # type: (...) -> int pass |}) ~expected: [ +Statement.Define { Define.signature =
+    { name = !&"foo"; parameters = [ +{ Parameter.name = "a"; value = None; annotation = Some
     (+Expression.Constant (Constant.String (StringLiteral.create "bool"))); }; +{ Parameter.name =
     "b"; value = None; annotation = Some (+Expression.Constant (Constant.String
     (StringLiteral.create "bool"))); }; ]; decorators = []; return_annotation = Some !"int"; async =
     true; generator = false; parent = None; nesting_define = None; }; captures = []; unbound_names =
     []; body = [+Statement.Pass]; }; ];*)
   (*TODO (T148669698): assert_parsed (trim_extra_indentation {| def foo( *args, **kwargs): # type: (
-    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { signature = { name = !&"foo";
-    parameters = [ +{ Parameter.name = "*args"; value = None; annotation = Some !"str" }; +{
-    Parameter.name = "**kwargs"; value = None; annotation = Some !"str" }; ]; decorators = [];
-    return_annotation = Some !"str"; async = false; generator = false; parent = None; nesting_define
-    = None; }; captures = []; unbound_names = []; body = [ +Statement.Return { Return.expression =
-    Some (+Expression.Constant (Constant.Integer 4)); is_implicit = false; }; ]; }; ];*)
+    *str, **str) -> str return 4 |}) ~expected: [ +Statement.Define { Define.signature = {
+    Define.Signature.name = !&"foo"; parameters = [ +{ Parameter.name = "*args"; value = None;
+    annotation = Some !"str" }; +{ Parameter.name = "**kwargs"; value = None; annotation = Some
+    !"str" }; ]; decorators = []; return_annotation = Some !"str"; async = false; generator = false;
+    parent = None; nesting_define = None; }; captures = []; unbound_names = []; body = [
+    +Statement.Return { Return.expression = Some (+Expression.Constant (Constant.Integer 4));
+    is_implicit = false; }; ]; }; ];*)
 
   (*TODO (T148669698): assert_not_parsed (trim_extra_indentation {| def foo(x): # type: (str, str)
     -> str return 4 |});*)
@@ -2038,9 +2072,9 @@ let test_class _ =
                [
                  +Statement.Define
                     {
-                      signature =
+                      Define.signature =
                         {
-                          name = !&"bar";
+                          Define.Signature.name = !&"bar";
                           parameters = [];
                           decorators = [];
                           return_annotation = None;
@@ -2070,9 +2104,9 @@ let test_class _ =
                [
                  +Statement.Define
                     {
-                      signature =
+                      Define.signature =
                         {
-                          name = !&"bar";
+                          Define.Signature.name = !&"bar";
                           parameters = [];
                           decorators = [];
                           return_annotation = None;
@@ -2087,9 +2121,9 @@ let test_class _ =
                         [
                           +Statement.Define
                              {
-                               signature =
+                               Define.signature =
                                  {
-                                   name = !&"baz";
+                                   Define.Signature.name = !&"baz";
                                    parameters = [];
                                    decorators = [];
                                    return_annotation = None;
@@ -2178,9 +2212,9 @@ let test_class _ =
                [
                  +Statement.Define
                     {
-                      signature =
+                      Define.signature =
                         {
-                          name = !&"bar";
+                          Define.Signature.name = !&"bar";
                           parameters = [];
                           decorators = [];
                           return_annotation = None;
@@ -2210,9 +2244,9 @@ let test_class _ =
                [
                  +Statement.Define
                     {
-                      signature =
+                      Define.signature =
                         {
-                          name = !&"foo";
+                          Define.Signature.name = !&"foo";
                           parameters = [];
                           decorators = [];
                           return_annotation = None;
@@ -2233,9 +2267,9 @@ let test_class _ =
                         [
                           +Statement.Define
                              {
-                               signature =
+                               Define.signature =
                                  {
-                                   name = !&"bar";
+                                   Define.Signature.name = !&"bar";
                                    parameters = [];
                                    decorators = [];
                                    return_annotation = None;
