@@ -37,8 +37,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -55,7 +53,9 @@
               "line": 100,
               "start": 10,
               "end": 24
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       }

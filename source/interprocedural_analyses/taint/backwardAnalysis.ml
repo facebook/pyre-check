@@ -2022,7 +2022,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           literal_string_sinks
           ~f:(fun taint { TaintConfiguration.sink_kind; pattern } ->
             if Re2.matches pattern string_literal then
-              BackwardTaint.singleton (CallInfo.Origin location_with_module) sink_kind Frame.initial
+              BackwardTaint.singleton (CallInfo.origin location_with_module) sink_kind Frame.initial
               |> BackwardState.Tree.create_leaf
               |> BackwardState.Tree.join taint
             else

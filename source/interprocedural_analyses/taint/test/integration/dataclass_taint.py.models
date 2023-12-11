@@ -556,8 +556,6 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -573,7 +571,9 @@
               "line": 35,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -791,8 +791,6 @@
         "port": "result[bad]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -815,7 +813,9 @@
               "line": 50,
               "start": 23,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -829,8 +829,6 @@
         "port": "formal(another)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -850,7 +848,9 @@
               "line": 52,
               "start": 8,
               "end": 53
-            }
+            },
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       }

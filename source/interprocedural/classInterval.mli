@@ -6,7 +6,7 @@
  *)
 
 (* Intervals that represent non-strict subclasses of a class. *)
-type t
+type t [@@deriving compare]
 
 val empty : t
 

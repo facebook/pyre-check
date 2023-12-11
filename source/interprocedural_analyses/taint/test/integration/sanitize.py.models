@@ -1893,8 +1893,6 @@
         "port": "formal(value)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1911,11 +1909,11 @@
               "line": 74,
               "start": 8,
               "end": 21
-            }
+            },
+            "caller_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           },
           {
-            "caller_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1932,7 +1930,9 @@
               "line": 75,
               "start": 8,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           }
         ]
       }

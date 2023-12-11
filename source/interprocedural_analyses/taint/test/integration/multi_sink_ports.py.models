@@ -317,8 +317,6 @@
         "port": "formal(self)[_params]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
@@ -349,7 +347,9 @@
               },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
               "port": "formal(x)[_params]"
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -863,8 +863,6 @@
             }
           },
           {
-            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "c_feature" } ],
@@ -895,7 +893,9 @@
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
               "port": "formal(self)[_params]"
-            }
+            },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           },
           {
             "kinds": [
@@ -931,8 +931,6 @@
         "port": "formal(x)[_params]",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "b_feature" } ],
@@ -949,7 +947,9 @@
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
               "port": "formal(self)[_params]"
-            }
+            },
+            "receiver_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }

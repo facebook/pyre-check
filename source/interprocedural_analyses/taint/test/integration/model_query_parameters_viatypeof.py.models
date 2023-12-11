@@ -259,8 +259,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -278,7 +276,9 @@
               "line": 47,
               "start": 9,
               "end": 10
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -333,8 +333,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -354,7 +352,9 @@
               "line": 52,
               "start": 14,
               "end": 15
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -410,8 +410,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -433,7 +431,9 @@
               "line": 57,
               "start": 19,
               "end": 20
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -492,8 +492,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -511,7 +509,9 @@
               "line": 62,
               "start": 9,
               "end": 10
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -569,8 +569,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -592,7 +590,9 @@
               "line": 67,
               "start": 14,
               "end": 15
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -651,8 +651,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -670,7 +668,9 @@
               "line": 72,
               "start": 19,
               "end": 20
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

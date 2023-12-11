@@ -18,7 +18,7 @@
  *   value: Tree[
  *     edges: Abstract.TreeDomain.Label.t = Index of string|Field of string|...,
  *     nodes: ForwardTaint: Map[
- *       key: CallInfo = Declaration|Origin of location|CallSite of {port; path; callees},
+ *       key: CallInfo = Declaration|Origin of {location; class_intervals}|CallSite of {port; path; callees; class_intervals},
  *       value: LocalTaint: Tuple[
  *         BreadcrumbSet,
  *         FirstIndexSet,
@@ -75,118 +75,9 @@ let location_with_module_to_json ~resolve_module_path location_with_module : Yoj
   | _ -> failwith "unreachable"
 
 
-(* Represents the link between frames. *)
-module CallInfo = struct
-  let name = "call info"
-
-  type t =
-    (* User-specified taint on a model. *)
-    | Declaration of {
-        (* If not provided, the leaf name set is set as the callee when taint is propagated. *)
-        leaf_name_provided: bool;
-      }
-    (* Special key to store taint-in-taint-out info (e.g, Sinks.LocalReturn) *)
-    | Tito
-    (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
-    | Origin of Location.WithModule.t
-    (* Taint propagated from a call. *)
-    | CallSite of {
-        port: AccessPath.Root.t;
-        path: AccessPath.Path.t;
-        location: Location.WithModule.t;
-        callees: Target.t list;
-      }
-  [@@deriving compare, equal]
-
-  let declaration = Declaration { leaf_name_provided = false }
-
-  let pp formatter = function
-    | Declaration _ -> Format.fprintf formatter "Declaration"
-    | Tito -> Format.fprintf formatter "Tito"
-    | Origin location -> Format.fprintf formatter "Origin(%a)" Location.WithModule.pp location
-    | CallSite { location; callees; port; path } ->
-        let port = AccessPath.create port path |> AccessPath.show in
-        Format.fprintf
-          formatter
-          "CallSite(callees=[%s], location=%a, port=%s)"
-          (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
-          Location.WithModule.pp
-          location
-          port
-
-
-  let show = Format.asprintf "%a" pp
-
-  (* Whether to show a call site as an extra trace *)
-  let show_as_extra_trace = function
-    | Origin _
-    | CallSite _ ->
-        true (* These are actual call sites *)
-    | Declaration _
-    | Tito ->
-        false
-
-
-  (* Only called when emitting models before we compute the json so we can dedup *)
-  let expand_overrides ~override_graph ~is_valid_callee trace =
-    match trace with
-    | CallSite { location; callees; port; path } ->
-        let callees =
-          OverrideGraph.SharedMemory.ReadOnly.expand_override_targets override_graph callees
-          |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
-        in
-        CallSite { location; callees; port; path }
-    | _ -> trace
-
-
-  (* Returns the (dictionary key * json) to emit *)
-  let to_json ~resolve_module_path trace : string * Yojson.Safe.t =
-    match trace with
-    | Declaration _ -> "declaration", `Null
-    | Tito -> "tito", `Null
-    | Origin location ->
-        let location_json = location_with_module_to_json ~resolve_module_path location in
-        "origin", location_json
-    | CallSite { location; callees; port; path } ->
-        let callee_json =
-          callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
-        in
-        let location_json = location_with_module_to_json ~resolve_module_path location in
-        let port_json = AccessPath.create port path |> AccessPath.to_json in
-        let call_json =
-          `Assoc ["position", location_json; "resolves_to", `List callee_json; "port", port_json]
-        in
-        "call", call_json
-
-
-  let strip_for_callsite = function
-    | Origin _ -> Origin Location.WithModule.any
-    | CallSite { port; path; location = _; callees } ->
-        CallSite { port; path; location = Location.WithModule.any; callees }
-    | Declaration _ -> Declaration { leaf_name_provided = false }
-    | Tito -> Tito
-
-
-  let replace_location ~location call_info =
-    match call_info with
-    | Tito
-    | Declaration _ ->
-        call_info
-    | Origin _ -> Origin location
-    | CallSite callsite -> CallSite { callsite with location }
-end
-
-module TraceLength = struct
-  include Features.MakeScalarDomain (struct
-    let name = "trace length"
-  end)
-
-  let increase n = if n < Int.max_value then n + 1 else n
-end
-
 (* This should be associated with every call site *)
 module CallInfoIntervals = struct
-  type call_info_intervals = {
+  type t = {
     (* The interval of the class that literally contains this call site *)
     caller_interval: ClassIntervalSet.t;
     (* The interval of the receiver object for this call site *)
@@ -196,6 +87,7 @@ module CallInfoIntervals = struct
     (* Whether this call site is a call on `cls` *)
     is_cls_call: bool;
   }
+  [@@deriving compare, eq]
 
   (* If we are not sure if a call is on `self`, then we should treat it as a call not on `self`,
      such that SAPP will not intersect class intervals. *)
@@ -244,102 +136,163 @@ module CallInfoIntervals = struct
     list
 
 
-  include Abstract.SimpleDomain.Make (struct
-    let name = "intervals at call sites"
+  let pp formatter { caller_interval; receiver_interval; is_self_call; is_cls_call } =
+    Format.fprintf
+      formatter
+      "@[[caller_interval: %a receiver_interval: %a is_self_call: %b is_cls_call: %b]@]"
+      ClassIntervalSet.pp
+      caller_interval
+      ClassIntervalSet.pp
+      receiver_interval
+      is_self_call
+      is_cls_call
 
-    type t = call_info_intervals
 
-    let bottom =
-      {
-        caller_interval = ClassIntervalSet.bottom;
-        receiver_interval = ClassIntervalSet.bottom;
-        is_self_call = true;
-        is_cls_call = true;
+  let show = Format.asprintf "%a" pp
+end
+
+(* Represents the link between frames. *)
+module CallInfo = struct
+  let name = "call info"
+
+  type t =
+    (* User-specified taint on a model. *)
+    | Declaration of {
+        (* If not provided, the leaf name set is set as the callee when taint is propagated. *)
+        leaf_name_provided: bool;
       }
-
-
-    let pp formatter { caller_interval; receiver_interval; is_self_call; is_cls_call } =
-      Format.fprintf
-        formatter
-        "@[[caller_interval: %a receiver_interval: %a is_self_call: %b is_cls_call: %b]@]"
-        ClassIntervalSet.pp
-        caller_interval
-        ClassIntervalSet.pp
-        receiver_interval
-        is_self_call
-        is_cls_call
-
-
-    let show = Format.asprintf "%a" pp
-
-    let less_or_equal
-        ~left:
-          {
-            caller_interval = caller_interval_left;
-            receiver_interval = receiver_interval_left;
-            is_self_call = is_self_call_left;
-            is_cls_call = is_cls_call_left;
-          }
-        ~right:
-          {
-            caller_interval = caller_interval_right;
-            receiver_interval = receiver_interval_right;
-            is_self_call = is_self_call_right;
-            is_cls_call = is_cls_call_right;
-          }
-      =
-      ClassIntervalSet.less_or_equal ~left:caller_interval_left ~right:caller_interval_right
-      && ClassIntervalSet.less_or_equal ~left:receiver_interval_left ~right:receiver_interval_right
-      && (not ((not is_self_call_left) && is_self_call_right))
-      && not ((not is_cls_call_left) && is_cls_call_right)
-
-
-    let join
-        {
-          caller_interval = caller_interval_left;
-          receiver_interval = receiver_interval_left;
-          is_self_call = is_self_call_left;
-          is_cls_call = is_cls_call_left;
-        }
-        {
-          caller_interval = caller_interval_right;
-          receiver_interval = receiver_interval_right;
-          is_self_call = is_self_call_right;
-          is_cls_call = is_cls_call_right;
-        }
-      =
-      {
-        caller_interval = ClassIntervalSet.join caller_interval_left caller_interval_right;
-        receiver_interval = ClassIntervalSet.join receiver_interval_left receiver_interval_right;
-        (* The result of joining two calls is a call on `self` iff. both calls are on `self`. *)
-        is_self_call = is_self_call_left && is_self_call_right;
-        is_cls_call = is_cls_call_left && is_cls_call_right;
+    (* Special key to store taint-in-taint-out info (e.g, Sinks.LocalReturn) *)
+    | Tito
+    (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
+    | Origin of {
+        location: Location.WithModule.t;
+        class_intervals: CallInfoIntervals.t;
       }
-
-
-    let meet
-        {
-          caller_interval = caller_interval_left;
-          receiver_interval = receiver_interval_left;
-          is_self_call = is_self_call_left;
-          is_cls_call = is_cls_call_left;
-        }
-        {
-          caller_interval = caller_interval_right;
-          receiver_interval = receiver_interval_right;
-          is_self_call = is_self_call_right;
-          is_cls_call = is_cls_call_right;
-        }
-      =
-      {
-        caller_interval = ClassIntervalSet.meet caller_interval_left caller_interval_right;
-        receiver_interval = ClassIntervalSet.meet receiver_interval_left receiver_interval_right;
-        (* The result of meeting two calls is a call on `self` iff. one of the calls is on
-           `self`. *)
-        is_self_call = is_self_call_left || is_self_call_right;
-        is_cls_call = is_cls_call_left || is_cls_call_right;
+    (* Taint propagated from a call. *)
+    | CallSite of {
+        port: AccessPath.Root.t;
+        path: AccessPath.Path.t;
+        location: Location.WithModule.t;
+        callees: Target.t list;
+        class_intervals: CallInfoIntervals.t;
       }
+  [@@deriving compare, equal]
+
+  let declaration = Declaration { leaf_name_provided = false }
+
+  let origin ?(class_intervals = CallInfoIntervals.top) location =
+    Origin { location; class_intervals }
+
+
+  let pp formatter = function
+    | Declaration _ -> Format.fprintf formatter "Declaration"
+    | Tito -> Format.fprintf formatter "Tito"
+    | Origin { location; class_intervals } ->
+        Format.fprintf
+          formatter
+          "Origin(location=%a, class_intervals=%a)"
+          Location.WithModule.pp
+          location
+          CallInfoIntervals.pp
+          class_intervals
+    | CallSite { location; callees; port; path; class_intervals } ->
+        let port = AccessPath.create port path |> AccessPath.show in
+        Format.fprintf
+          formatter
+          "CallSite(callees=[%s], location=%a, port=%s, class_intervals=%a)"
+          (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
+          Location.WithModule.pp
+          location
+          port
+          CallInfoIntervals.pp
+          class_intervals
+
+
+  let show = Format.asprintf "%a" pp
+
+  (* Whether to show a call site as an extra trace *)
+  let show_as_extra_trace = function
+    | Origin _
+    | CallSite _ ->
+        true (* These are actual call sites *)
+    | Declaration _
+    | Tito ->
+        false
+
+
+  (* Only called when emitting models before we compute the json so we can dedup *)
+  let expand_overrides ~override_graph ~is_valid_callee trace =
+    match trace with
+    | CallSite { location; callees; port; path; class_intervals } ->
+        let callees =
+          OverrideGraph.SharedMemory.ReadOnly.expand_override_targets override_graph callees
+          |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
+        in
+        CallSite { location; callees; port; path; class_intervals }
+    | _ -> trace
+
+
+  (* Returns the (dictionary key * json) to emit *)
+  let to_json ~resolve_module_path trace : (string * Yojson.Safe.t) list =
+    let class_intervals_to_json call_info_intervals =
+      if CallInfoIntervals.is_top call_info_intervals then
+        []
+      else
+        CallInfoIntervals.to_json call_info_intervals
+    in
+    match trace with
+    | Declaration _ -> ["declaration", `Null]
+    | Tito -> ["tito", `Null]
+    | Origin { location; class_intervals } ->
+        let location_json = location_with_module_to_json ~resolve_module_path location in
+        let class_intervals_json_list = class_intervals_to_json class_intervals in
+        ("origin", location_json) :: class_intervals_json_list
+    | CallSite { location; callees; port; path; class_intervals } ->
+        let callee_json =
+          callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
+        in
+        let location_json = location_with_module_to_json ~resolve_module_path location in
+        let port_json = AccessPath.create port path |> AccessPath.to_json in
+        let call_json =
+          `Assoc ["position", location_json; "resolves_to", `List callee_json; "port", port_json]
+        in
+        let class_intervals_json_list = class_intervals_to_json class_intervals in
+        ("call", call_json) :: class_intervals_json_list
+
+
+  let strip_for_callsite = function
+    | Origin { class_intervals; _ } ->
+        Origin { location = Location.WithModule.any; class_intervals }
+    | CallSite { port; path; location = _; callees; class_intervals } ->
+        CallSite { port; path; location = Location.WithModule.any; callees; class_intervals }
+    | Declaration _ -> Declaration { leaf_name_provided = false }
+    | Tito -> Tito
+
+
+  let replace_location ~location call_info =
+    match call_info with
+    | Tito
+    | Declaration _ ->
+        call_info
+    | Origin origin -> Origin { origin with location }
+    | CallSite callsite -> CallSite { callsite with location }
+
+
+  let class_intervals = function
+    | Origin { class_intervals; _ }
+    | CallSite { class_intervals; _ } ->
+        class_intervals
+    | Declaration _
+    | Tito ->
+        CallInfoIntervals.top
+end
+
+module TraceLength = struct
+  include Features.MakeScalarDomain (struct
+    let name = "trace length"
   end)
+
+  let increase n = if n < Int.max_value then n + 1 else n
 end
 
 (* This module represents the first hops of the extra traces that are attached to the trace frames
@@ -377,11 +330,12 @@ module ExtraTraceFirstHop = struct
 
     let to_json { call_info; leaf_kind; message } =
       let json =
-        [
-          CallInfo.to_json ~resolve_module_path:None call_info;
-          "leaf_kind", `String (show_leaf_kind leaf_kind);
-          "trace_kind", `String (trace_kind leaf_kind);
-        ]
+        List.append
+          (CallInfo.to_json ~resolve_module_path:None call_info)
+          [
+            "leaf_kind", `String (show_leaf_kind leaf_kind);
+            "trace_kind", `String (trace_kind leaf_kind);
+          ]
       in
       let json =
         match message with
@@ -680,11 +634,10 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb : Features.BreadcrumbSet.t slot
       | FirstIndex : Features.FirstIndexSet.t slot
       | FirstField : Features.FirstFieldSet.t slot
-      | CallInfoIntervals : CallInfoIntervals.t slot
       | ExtraTraceFirstHopSet : ExtraTraceFirstHop.Set.t slot
 
     (* Must be consistent with above variants *)
-    let slots = 7
+    let slots = 6
 
     let slot_name (type a) (slot : a slot) =
       match slot with
@@ -693,7 +646,6 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> "Breadcrumb"
       | FirstIndex -> "FirstIndex"
       | FirstField -> "FirstField"
-      | CallInfoIntervals -> "CallInfoIntervals"
       | ExtraTraceFirstHopSet -> "ExtraTraceFirstHopSet"
 
 
@@ -704,15 +656,12 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
       | Breadcrumb -> (module Features.BreadcrumbSet : Abstract.Domain.S with type t = a)
       | FirstIndex -> (module Features.FirstIndexSet : Abstract.Domain.S with type t = a)
       | FirstField -> (module Features.FirstFieldSet : Abstract.Domain.S with type t = a)
-      | CallInfoIntervals -> (module CallInfoIntervals : Abstract.Domain.S with type t = a)
       | ExtraTraceFirstHopSet -> (module ExtraTraceFirstHop.Set : Abstract.Domain.S with type t = a)
 
 
     let strict (type a) (slot : a slot) =
       match slot with
-      | Kinds
-      | CallInfoIntervals ->
-          true
+      | Kinds -> true
       | _ -> false
   end
 
@@ -724,11 +673,7 @@ module MakeLocalTaint (Kind : KIND_ARG) = struct
 
   let singleton kind frame =
     (* Initialize strict slots first *)
-    create
-      [
-        Abstract.Domain.Part (KindTaintDomain.KeyValue, (kind, frame));
-        Abstract.Domain.Part (CallInfoIntervals.Self, CallInfoIntervals.top);
-      ]
+    create [Abstract.Domain.Part (KindTaintDomain.KeyValue, (kind, frame))]
     |> update Slots.Breadcrumb Features.BreadcrumbSet.empty
 
 
@@ -818,7 +763,7 @@ end = struct
     in
 
     let trace_to_json (trace_info, local_taint) =
-      let json = [CallInfo.to_json ~resolve_module_path trace_info] in
+      let json = CallInfo.to_json ~resolve_module_path trace_info in
 
       let tito_positions =
         LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
@@ -901,16 +846,6 @@ end = struct
         |> ExtraTraceFirstHop.Set.to_json
       in
       let json = cons_if_non_empty "extra_traces" extra_traces json in
-      let json =
-        let call_info_intervals =
-          LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
-        in
-        if CallInfoIntervals.is_top call_info_intervals then
-          json
-        else
-          let call_info_intervals = CallInfoIntervals.to_json call_info_intervals in
-          List.append call_info_intervals json
-      in
       `Assoc json
     in
     let taint =
@@ -1127,6 +1062,7 @@ end = struct
 
 
   let apply_class_interval
+      ~callee_class_interval
       ~is_static_method
       ~is_class_method
       ~call_info_intervals:
@@ -1134,9 +1070,6 @@ end = struct
         call_info_intervals)
       local_taint
     =
-    let { CallInfoIntervals.caller_interval = callee_class_interval; _ } =
-      LocalTaintDomain.get LocalTaintDomain.Slots.CallInfoIntervals local_taint
-    in
     let intersect left right =
       let new_interval = ClassIntervalSet.meet left right in
       let should_propagate =
@@ -1152,17 +1085,14 @@ end = struct
     if is_static_method then
       (* Case A: Call static methods. The taint is unconditionally propagated from the call, which
          is the same treatment as a function call. *)
-      LocalTaintDomain.update
-        LocalTaintDomain.Slots.CallInfoIntervals
-        call_info_intervals
-        local_taint
+      call_info_intervals, local_taint
     else (* Case B: Call non-static methods. *)
       let new_interval, should_propagate =
         (* Decide if the taint can be propagated from the call. *)
         intersect callee_class_interval receiver_interval
       in
       if not should_propagate then
-        LocalTaintDomain.bottom
+        CallInfoIntervals.top, LocalTaintDomain.bottom
       else if is_self_call || (is_cls_call && is_class_method) then
         (* Case B.1: Call instance methods via `self`, or class methods via `cls`. *)
         let new_interval, should_propagate =
@@ -1171,18 +1101,13 @@ end = struct
           intersect new_interval caller_interval
         in
         if not should_propagate then
-          LocalTaintDomain.bottom
+          CallInfoIntervals.top, LocalTaintDomain.bottom
         else
-          LocalTaintDomain.update
-            LocalTaintDomain.Slots.CallInfoIntervals
-            { call_info_intervals with caller_interval = new_interval }
-            local_taint
-      else (* Case B.2: Call instance methods on any other objects. *)
-        LocalTaintDomain.update
-          LocalTaintDomain.Slots.CallInfoIntervals
-          (* Reset the interval to be the caller's interval. *)
-          call_info_intervals
-          local_taint
+          { call_info_intervals with caller_interval = new_interval }, local_taint
+      else
+        (* Case B.2: Call instance methods on any other objects. *)
+        (* Reset the interval to be the caller's interval. *)
+        call_info_intervals, local_taint
 
 
   let apply_call
@@ -1261,29 +1186,32 @@ end = struct
              ~f:(Features.FirstFieldSet.sequence_join local_first_fields)
       in
       let local_taint = LocalTaintDomain.transform Frame.Self Map ~f:apply_frame local_taint in
-      let local_taint =
+      let class_intervals, local_taint =
         match callee with
         | None
         | Some (Target.Object _)
         | Some (Target.Function _) ->
-            LocalTaintDomain.update
-              LocalTaintDomain.Slots.CallInfoIntervals
-              call_info_intervals
-              local_taint
+            call_info_intervals, local_taint
         | Some (Target.Method _)
         | Some (Target.Override _) ->
-            apply_class_interval ~is_static_method ~is_class_method ~call_info_intervals local_taint
+            let class_intervals = CallInfo.class_intervals call_info in
+            apply_class_interval
+              ~callee_class_interval:class_intervals.CallInfoIntervals.caller_interval
+              ~is_static_method
+              ~is_class_method
+              ~call_info_intervals
+              local_taint
       in
       match call_info with
       | CallInfo.Origin _
       | CallInfo.CallSite _ ->
-          let call_info = CallInfo.CallSite { location; callees; port; path } in
+          let call_info = CallInfo.CallSite { location; callees; port; path; class_intervals } in
           let local_taint =
             local_taint |> LocalTaintDomain.transform TraceLength.Self Map ~f:TraceLength.increase
           in
           call_info, local_taint
       | CallInfo.Declaration { leaf_name_provided } ->
-          let call_info = CallInfo.Origin location in
+          let call_info = CallInfo.Origin { location; class_intervals } in
           let new_leaf_names =
             if leaf_name_provided then
               Features.LeafNameSet.bottom

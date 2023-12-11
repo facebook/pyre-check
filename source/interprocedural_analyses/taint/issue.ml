@@ -477,7 +477,7 @@ let compute_triggered_flows
             ~sink_tree:
               (BackwardState.Tree.create_leaf
                  (BackwardTaint.singleton
-                    (CallInfo.Origin location)
+                    (CallInfo.origin location)
                     (Sinks.TriggeredPartialSink partial_sink)
                     frame))
         in
@@ -842,7 +842,7 @@ module MultiSource = struct
     match call_info with
     | CallInfo.Tito -> "tito"
     | Declaration _ -> "declaration"
-    | Origin location -> Format.asprintf "%s (leaf)" (show_location location)
+    | Origin { location; _ } -> Format.asprintf "%s (leaf)" (show_location location)
     | CallSite { location; callees; _ } ->
         Format.asprintf
           "%s (resolving to: %s)"

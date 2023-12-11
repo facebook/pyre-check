@@ -497,8 +497,6 @@
         "port": "result[x]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -513,7 +511,9 @@
               "line": 80,
               "start": 17,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -540,8 +540,6 @@
         "port": "formal(self)[foo]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -554,7 +552,9 @@
               "line": 71,
               "start": 19,
               "end": 27
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -660,9 +660,6 @@
         "port": "result[x]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -679,7 +676,10 @@
               },
               "resolves_to": [ "constructors.BaseConstructor.__init__" ],
               "port": "result[x]"
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -820,8 +820,6 @@
         "port": "formal(self)[AUTHENTICATE_URL]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 20, "upper": 21 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
@@ -833,7 +831,9 @@
               "line": 23,
               "start": 13,
               "end": 34
-            }
+            },
+            "caller_interval": [ { "lower": 20, "upper": 21 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -891,8 +891,6 @@
         "port": "result[x]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 22, "upper": 23 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -907,7 +905,9 @@
               "line": 39,
               "start": 17,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 22, "upper": 23 } ],
+            "is_self_call": false
           }
         ]
       }

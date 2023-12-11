@@ -517,8 +517,6 @@
         "port": "formal(bad)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -535,7 +533,9 @@
               "line": 87,
               "start": 0,
               "end": 0
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }

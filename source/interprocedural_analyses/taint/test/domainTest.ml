@@ -86,28 +86,4 @@ let test_partition_call_map context =
   assert_equal ~msg:"matches must be equal to original" ~printer:ForwardTaint.show matches joined
 
 
-let test_call_info_interval _ =
-  let assert_equal_interval ~actual ~expected =
-    assert_equal ~printer:CallInfoIntervals.show actual expected
-  in
-  assert_equal_interval
-    ~actual:(CallInfoIntervals.join CallInfoIntervals.top CallInfoIntervals.bottom)
-    ~expected:CallInfoIntervals.top;
-  assert_equal_interval
-    ~actual:(CallInfoIntervals.meet CallInfoIntervals.top CallInfoIntervals.bottom)
-    ~expected:CallInfoIntervals.bottom;
-  assert_equal
-    (CallInfoIntervals.less_or_equal ~left:CallInfoIntervals.top ~right:CallInfoIntervals.bottom)
-    false;
-  assert_equal
-    (CallInfoIntervals.less_or_equal ~left:CallInfoIntervals.bottom ~right:CallInfoIntervals.top)
-    true
-
-
-let () =
-  "taint_domain"
-  >::: [
-         "partition_call_map" >:: test_partition_call_map;
-         "call_info_interval" >:: test_call_info_interval;
-       ]
-  |> Test.run
+let () = "taint_domain" >::: ["partition_call_map" >:: test_partition_call_map] |> Test.run

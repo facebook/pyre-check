@@ -37,8 +37,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -56,7 +54,9 @@
               },
               "resolves_to": [ "binary_operators.Add.__add__" ],
               "port": "formal(other)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -111,8 +111,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -130,7 +128,9 @@
               },
               "resolves_to": [ "binary_operators.Add.__add__" ],
               "port": "formal(other)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -314,8 +314,6 @@
         "port": "formal(other)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -328,7 +326,9 @@
               "line": 11,
               "start": 19,
               "end": 24
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

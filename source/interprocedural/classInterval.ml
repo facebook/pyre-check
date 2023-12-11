@@ -30,6 +30,7 @@ type t =
       lower_bound: int;
       upper_bound: int;
     }
+[@@deriving compare]
 
 let empty = Empty
 

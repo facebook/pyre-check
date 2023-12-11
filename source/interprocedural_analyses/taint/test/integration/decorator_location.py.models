@@ -15,8 +15,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -43,7 +41,9 @@
               },
               "resolves_to": [ "decorator_location.Foo.return_source" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -696,8 +696,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -715,7 +713,9 @@
               "line": 122,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

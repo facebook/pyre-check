@@ -332,8 +332,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -351,7 +349,9 @@
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -406,8 +406,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -425,7 +423,9 @@
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -651,8 +651,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -665,7 +663,9 @@
               "line": 28,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -800,8 +800,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -818,7 +816,9 @@
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
               "port": "formal(arg)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

@@ -64,8 +64,6 @@
         "port": "formal(baz)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -78,7 +76,9 @@
               "line": 26,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -86,8 +86,6 @@
         "port": "formal(bar)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -100,7 +98,9 @@
               "line": 25,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -108,8 +108,6 @@
         "port": "formal(foo)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -122,7 +120,9 @@
               "line": 24,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -156,8 +156,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -174,7 +172,9 @@
               "line": 23,
               "start": 28,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -182,8 +182,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -196,7 +194,9 @@
               "line": 25,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -227,8 +227,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -245,7 +243,9 @@
               "line": 23,
               "start": 23,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -253,8 +253,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 3, "upper": 4 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -267,7 +265,9 @@
               "line": 24,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 3, "upper": 4 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -291,8 +291,6 @@
         "port": "formal(baz)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -305,7 +303,9 @@
               "line": 34,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -313,8 +313,6 @@
         "port": "formal(bar)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -327,7 +325,9 @@
               "line": 33,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -335,8 +335,6 @@
         "port": "formal(foo)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -349,7 +347,9 @@
               "line": 32,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -386,8 +386,6 @@
         "port": "formal(baz)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -400,7 +398,9 @@
               "line": 43,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -408,8 +408,6 @@
         "port": "formal(bar)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -422,7 +420,9 @@
               "line": 42,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -430,8 +430,6 @@
         "port": "formal(foo)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -444,7 +442,9 @@
               "line": 41,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -478,8 +478,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -496,7 +494,9 @@
               "line": 40,
               "start": 28,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -504,8 +504,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -518,7 +516,9 @@
               "line": 42,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -549,8 +549,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -567,7 +565,9 @@
               "line": 40,
               "start": 23,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -575,8 +575,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 7, "upper": 8 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -589,7 +587,9 @@
               "line": 41,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 7, "upper": 8 } ],
+            "is_self_call": false
           }
         ]
       }

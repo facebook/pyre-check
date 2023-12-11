@@ -673,8 +673,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -691,7 +689,9 @@
               "line": 48,
               "start": 11,
               "end": 51
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           },
           {
             "kinds": [

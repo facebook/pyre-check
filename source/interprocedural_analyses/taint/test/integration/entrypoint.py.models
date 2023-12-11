@@ -15,8 +15,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -30,7 +28,9 @@
               "line": 21,
               "start": 8,
               "end": 12
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -38,8 +38,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
@@ -51,7 +49,9 @@
               "line": 21,
               "start": 8,
               "end": 12
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -82,8 +82,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -97,7 +95,9 @@
               "line": 17,
               "start": 8,
               "end": 12
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -105,8 +105,6 @@
         "name": "backward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [ { "name": "list.append", "port": "leaf:self" } ],
@@ -118,7 +116,9 @@
               "line": 17,
               "start": 8,
               "end": 12
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

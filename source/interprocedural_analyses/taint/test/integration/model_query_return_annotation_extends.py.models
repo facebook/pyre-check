@@ -54,8 +54,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -70,7 +68,9 @@
               "line": 75,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -99,8 +99,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -115,7 +113,9 @@
               "line": 75,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -158,8 +158,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -174,7 +172,9 @@
               "line": 78,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -203,8 +203,6 @@
         "name": "forward",
         "roots": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -219,7 +217,9 @@
               "line": 78,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -262,8 +262,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -278,7 +276,9 @@
               "line": 69,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -294,8 +294,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 12, "upper": 13 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -310,7 +308,9 @@
               "line": 72,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 12, "upper": 13 } ],
+            "is_self_call": false
           }
         ]
       }

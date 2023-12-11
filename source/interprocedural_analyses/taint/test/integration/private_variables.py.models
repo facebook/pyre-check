@@ -690,8 +690,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -715,7 +713,9 @@
                 "private_variables.PrivateAttributeSinkModels.set_model_unmangled"
               ],
               "port": "formal(value)"
-            }
+            },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -768,8 +768,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -793,7 +791,9 @@
                 "private_variables.PrivateAttributeSinkModels.set_model_query"
               ],
               "port": "formal(value)"
-            }
+            },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -846,8 +846,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -871,7 +869,9 @@
                 "private_variables.PrivateAttributeSinkModels.set_model_mangled"
               ],
               "port": "formal(value)"
-            }
+            },
+            "receiver_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -902,8 +902,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -927,7 +925,9 @@
                 "private_variables.PrivateAttributeSourceModels.get_model_query"
               ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -978,8 +978,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1003,7 +1001,9 @@
                 "private_variables.PrivateAttributeSourceModels.get_model_unmangled"
               ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -1054,8 +1054,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1079,7 +1077,9 @@
                 "private_variables.PrivateAttributeSourceModels.get_model_mangled"
               ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -1154,8 +1154,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1173,7 +1171,9 @@
               },
               "resolves_to": [ "private_variables.Simple.public_into_sink" ],
               "port": "formal(self)[value]"
-            }
+            },
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1232,8 +1232,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1251,7 +1249,9 @@
               },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
               "port": "formal(self)[_Simple__value]"
-            }
+            },
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1310,8 +1310,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1329,7 +1327,9 @@
               },
               "resolves_to": [ "private_variables.Simple.private_into_sink" ],
               "port": "formal(self)[_Simple__value]"
-            }
+            },
+            "receiver_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1520,8 +1520,6 @@
         "port": "formal(value)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1538,7 +1536,9 @@
               "line": 123,
               "start": 8,
               "end": 28
-            }
+            },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1554,8 +1554,6 @@
         "port": "formal(value)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1572,7 +1570,9 @@
               "line": 129,
               "start": 8,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1588,8 +1588,6 @@
         "port": "formal(value)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1606,7 +1604,9 @@
               "line": 126,
               "start": 8,
               "end": 30
-            }
+            },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1639,8 +1639,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1657,7 +1655,9 @@
               "line": 97,
               "start": 15,
               "end": 35
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1684,8 +1684,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1702,7 +1700,9 @@
               "line": 103,
               "start": 15,
               "end": 33
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1729,8 +1729,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1747,7 +1745,9 @@
               "line": 100,
               "start": 15,
               "end": 37
-            }
+            },
+            "caller_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1928,8 +1928,6 @@
         "port": "formal(self)[_Simple__value]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1942,7 +1940,9 @@
               "line": 16,
               "start": 19,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1958,8 +1958,6 @@
         "port": "formal(self)[value]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 8, "upper": 9 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1972,7 +1970,9 @@
               "line": 19,
               "start": 19,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 8, "upper": 9 } ],
+            "is_self_call": false
           }
         ]
       }

@@ -42,8 +42,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -61,7 +59,9 @@
               },
               "resolves_to": [ "class_attribute.A.sink_d" ],
               "port": "formal(self)[d]"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -245,8 +245,6 @@
         "port": "result[d]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -261,7 +259,9 @@
               "line": 19,
               "start": 17,
               "end": 31
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -299,8 +299,6 @@
         "port": "formal(self)[c]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -313,7 +311,9 @@
               "line": 30,
               "start": 19,
               "end": 25
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -329,8 +329,6 @@
         "port": "formal(self)[d]",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -343,7 +341,9 @@
               "line": 35,
               "start": 19,
               "end": 25
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

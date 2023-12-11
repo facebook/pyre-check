@@ -687,8 +687,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -703,7 +701,9 @@
               "line": 52,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -719,8 +719,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 4, "upper": 5 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -735,7 +733,9 @@
               "line": 42,
               "start": 21,
               "end": 35
-            }
+            },
+            "caller_interval": [ { "lower": 4, "upper": 5 } ],
+            "is_self_call": false
           }
         ]
       }

@@ -58,8 +58,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -77,7 +75,9 @@
               "line": 36,
               "start": 11,
               "end": 17
-            }
+            },
+            "receiver_interval": [ { "lower": 6, "upper": 7 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -93,8 +93,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -112,7 +110,9 @@
               "line": 22,
               "start": 11,
               "end": 17
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

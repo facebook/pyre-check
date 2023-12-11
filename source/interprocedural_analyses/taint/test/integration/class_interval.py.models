@@ -15,8 +15,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 25, "upper": 26 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -36,7 +34,9 @@
               },
               "resolves_to": [ "class_interval.A13.f" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -89,8 +89,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -110,7 +108,9 @@
               },
               "resolves_to": [ "class_interval.B16.m0" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -185,8 +185,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -204,7 +202,9 @@
               },
               "resolves_to": [ "class_interval.B2.m0" ],
               "port": "formal(x)"
-            }
+            },
+            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -259,8 +259,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -280,7 +278,9 @@
                 "class_interval.B3.m0", "class_interval.C3.m0"
               ],
               "port": "formal(x)"
-            }
+            },
+            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -335,8 +335,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -355,7 +353,9 @@
               },
               "resolves_to": [ "class_interval.A17.m2" ],
               "port": "formal(arg)"
-            }
+            },
+            "receiver_interval": [ { "lower": 55, "upper": 56 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -396,8 +396,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -410,7 +408,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -426,8 +426,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -440,7 +438,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -456,8 +456,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 25, "upper": 26 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -472,7 +470,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -488,10 +488,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -506,7 +502,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -522,10 +522,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -540,7 +536,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -556,8 +556,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -572,7 +570,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -588,8 +588,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 57, "upper": 60 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -603,7 +601,27 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false
+          },
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "class_interval.sink_c", "port": "leaf:arg" }
+                ],
+                "kind": "SinkC"
+              }
+            ],
+            "origin": {
+              "filename": "builtins.pyi",
+              "line": -1,
+              "start": -1,
+              "end": -1
+            },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -619,8 +637,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -633,7 +649,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -649,8 +667,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -663,7 +679,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -679,8 +697,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -693,7 +709,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -709,8 +727,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -723,7 +739,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -739,8 +757,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -755,12 +771,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "is_self_call": false
           },
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -777,7 +792,10 @@
               },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -793,8 +811,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -809,7 +825,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -825,9 +843,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -844,7 +859,32 @@
               },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "builtins.pyi",
+                "line": -1,
+                "start": -1,
+                "end": -1
+              },
+              "resolves_to": [ "class_interval.A3.m1" ],
+              "port": "formal(x)"
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -860,8 +900,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -876,12 +914,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "is_self_call": false
           },
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -898,7 +935,10 @@
               },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -914,8 +954,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -928,7 +966,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -944,8 +984,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -958,7 +996,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -974,8 +1014,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 25, "upper": 26 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -990,7 +1028,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1006,10 +1046,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1024,7 +1060,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -1040,8 +1080,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 57, "upper": 58 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1055,7 +1093,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1071,8 +1111,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1085,7 +1123,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1101,9 +1141,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1120,7 +1157,10 @@
               },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1136,8 +1176,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1150,7 +1188,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1166,8 +1206,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1180,7 +1218,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1196,8 +1236,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1212,7 +1250,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1228,8 +1268,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 59, "upper": 60 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1243,7 +1281,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1259,8 +1299,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1273,7 +1311,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1289,8 +1329,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1303,7 +1341,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1319,10 +1359,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1337,7 +1373,11 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -1399,9 +1439,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "receiver_interval": [ { "lower": 2, "upper": 7 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1418,7 +1455,10 @@
               },
               "resolves_to": [ "class_interval.C0.m2" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "receiver_interval": [ { "lower": 2, "upper": 7 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1434,9 +1474,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "receiver_interval": [ { "lower": 8, "upper": 13 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1453,7 +1490,10 @@
               },
               "resolves_to": [ "class_interval.C1.m2" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "receiver_interval": [ { "lower": 8, "upper": 13 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1469,8 +1509,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1487,7 +1525,9 @@
               "line": 345,
               "start": 8,
               "end": 11
-            }
+            },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1521,9 +1561,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 25, "upper": 26 } ],
-            "receiver_interval": [ { "lower": 22, "upper": 27 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1540,7 +1577,10 @@
               },
               "resolves_to": [ "class_interval.C13.g" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "receiver_interval": [ { "lower": 22, "upper": 27 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1556,11 +1596,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
-            ],
-            "receiver_interval": [ { "lower": 28, "upper": 35 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1577,7 +1612,12 @@
               },
               "resolves_to": [ "class_interval.C14.m2" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "receiver_interval": [ { "lower": 28, "upper": 35 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1593,11 +1633,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
-            ],
-            "receiver_interval": [ { "lower": 36, "upper": 45 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1614,7 +1649,12 @@
               },
               "resolves_to": [ "class_interval.E15.m2" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "receiver_interval": [ { "lower": 36, "upper": 45 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1630,9 +1670,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "receiver_interval": [ { "lower": 46, "upper": 53 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1649,7 +1686,10 @@
               },
               "resolves_to": [ "class_interval.D16.m2" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 46, "upper": 53 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1665,9 +1705,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 57, "upper": 60 } ],
-            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
-            "is_self_call": true,
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
               "position": {
@@ -1680,7 +1717,28 @@
                 "class_interval.C17.m1", "class_interval.D17.m1"
               ],
               "port": "formal(arg)"
-            }
+            },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
+            "is_self_call": true
+          },
+          {
+            "kinds": [ { "length": 1, "kind": "SinkC" } ],
+            "call": {
+              "position": {
+                "filename": "class_interval.py",
+                "line": 512,
+                "start": 15,
+                "end": 18
+              },
+              "resolves_to": [
+                "class_interval.C17.m1", "class_interval.D17.m1"
+              ],
+              "port": "formal(arg)"
+            },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "receiver_interval": [ { "lower": 54, "upper": 61 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1696,9 +1754,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 54, "upper": 61 } ],
-            "receiver_interval": [ { "lower": 59, "upper": 60 } ],
-            "is_self_call": false,
             "kinds": [ { "length": 1, "kind": "SinkC" } ],
             "call": {
               "position": {
@@ -1709,7 +1764,10 @@
               },
               "resolves_to": [ "class_interval.D17.m1" ],
               "port": "formal(arg)"
-            }
+            },
+            "caller_interval": [ { "lower": 54, "upper": 61 } ],
+            "receiver_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1725,9 +1783,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 68, "upper": 69 } ],
-            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1744,7 +1799,10 @@
               },
               "resolves_to": [ "class_interval.A19.m1" ],
               "port": "formal(arg)"
-            }
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1760,8 +1818,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 68, "upper": 69 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1774,7 +1830,9 @@
               "line": 590,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1790,9 +1848,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 68, "upper": 69 } ],
-            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1809,7 +1864,10 @@
               },
               "resolves_to": [ "class_interval.A19.m3" ],
               "port": "formal(arg)"
-            }
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "receiver_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1825,8 +1883,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 68, "upper": 69 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1839,7 +1895,9 @@
               "line": 598,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 68, "upper": 69 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1855,9 +1913,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "receiver_interval": [ { "lower": 70, "upper": 77 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1874,7 +1929,10 @@
               },
               "resolves_to": [ "class_interval.D2.m2" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "receiver_interval": [ { "lower": 70, "upper": 77 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1890,9 +1948,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 78, "upper": 85 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1909,7 +1964,10 @@
               },
               "resolves_to": [ "class_interval.C3.m2" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 78, "upper": 85 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1925,9 +1983,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
-            "receiver_interval": [ { "lower": 86, "upper": 93 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1944,7 +1999,10 @@
               },
               "resolves_to": [ "class_interval.C4.m3" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "receiver_interval": [ { "lower": 86, "upper": 93 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1960,9 +2018,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
-            "receiver_interval": [ { "lower": 94, "upper": 101 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1979,7 +2034,10 @@
               },
               "resolves_to": [ "class_interval.D5.m2" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "receiver_interval": [ { "lower": 94, "upper": 101 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -1995,9 +2053,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 102, "upper": 109 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2014,7 +2069,10 @@
               },
               "resolves_to": [ "class_interval.B6.m0" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "receiver_interval": [ { "lower": 102, "upper": 109 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2047,9 +2105,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 110, "upper": 111 } ],
-            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2066,7 +2121,10 @@
               },
               "resolves_to": [ "class_interval.B7.foo" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 110, "upper": 111 } ],
+            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2082,9 +2140,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2101,12 +2156,12 @@
               },
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 112, "upper": 113 } ],
+            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
+            "is_self_call": true
           },
           {
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 118, "upper": 119 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2123,12 +2178,12 @@
               },
               "resolves_to": [ "class_interval.B8.foo" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 112, "upper": 113 } ],
+            "receiver_interval": [ { "lower": 118, "upper": 119 } ],
+            "is_self_call": false
           },
           {
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2145,7 +2200,10 @@
               },
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 112, "upper": 113 } ],
+            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2172,8 +2230,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2188,7 +2244,9 @@
               "line": 328,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 112, "upper": 113 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2204,8 +2262,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 114, "upper": 115 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2220,7 +2276,9 @@
               "line": 333,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 114, "upper": 115 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2236,9 +2294,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2255,7 +2310,10 @@
               },
               "resolves_to": [ "class_interval.A16.m1" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "receiver_interval": [ { "lower": 47, "upper": 50 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2300,9 +2358,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2319,7 +2374,10 @@
               },
               "resolves_to": [ "class_interval.A2.m1" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "receiver_interval": [ { "lower": 71, "upper": 74 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2335,9 +2393,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2354,7 +2409,10 @@
               },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2370,8 +2428,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2386,12 +2442,11 @@
               "line": 246,
               "start": 19,
               "end": 33
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "is_self_call": false
           },
           {
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2408,7 +2463,10 @@
               },
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2424,8 +2482,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 116, "upper": 117 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2440,7 +2496,9 @@
               "line": 281,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2456,9 +2514,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 116, "upper": 117 } ],
-            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2475,7 +2530,10 @@
               },
               "resolves_to": [ "class_interval.B7.bar" ],
               "port": "result"
-            }
+            },
+            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2491,8 +2549,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 118, "upper": 119 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2507,7 +2563,9 @@
               "line": 302,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 118, "upper": 119 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2523,8 +2581,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 5, "upper": 6 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2537,7 +2593,9 @@
               "line": 34,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 5, "upper": 6 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2553,8 +2611,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 11, "upper": 12 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2567,7 +2623,9 @@
               "line": 66,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 11, "upper": 12 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2583,8 +2641,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 19, "upper": 20 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2599,7 +2655,9 @@
               "line": 360,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 19, "upper": 20 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2615,8 +2673,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 25, "upper": 26 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2631,7 +2687,9 @@
               "line": 386,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 25, "upper": 26 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2647,10 +2705,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2665,7 +2719,11 @@
               "line": 419,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [
+              { "lower": 30, "upper": 31 }, { "lower": 33, "upper": 34 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -2681,8 +2739,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 57, "upper": 58 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2696,7 +2752,9 @@
               "line": 532,
               "start": 15,
               "end": 18
-            }
+            },
+            "caller_interval": [ { "lower": 57, "upper": 58 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2738,9 +2796,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
-            "is_self_call": true,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2757,7 +2812,10 @@
               },
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x)"
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": true
           }
         ]
       }
@@ -2773,8 +2831,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2787,7 +2843,9 @@
               "line": 136,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2803,8 +2861,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2817,7 +2873,9 @@
               "line": 175,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2833,8 +2891,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 48, "upper": 49 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2849,7 +2905,9 @@
               "line": 494,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 48, "upper": 49 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2865,8 +2923,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 59, "upper": 60 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -2880,7 +2936,9 @@
               "line": 538,
               "start": 15,
               "end": 18
-            }
+            },
+            "caller_interval": [ { "lower": 59, "upper": 60 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2896,8 +2954,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 72, "upper": 73 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2910,7 +2966,9 @@
               "line": 102,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 72, "upper": 73 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2926,8 +2984,6 @@
         "port": "formal(x)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -2940,7 +2996,9 @@
               "line": 215,
               "start": 19,
               "end": 20
-            }
+            },
+            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -2956,10 +3014,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [
-              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
-            ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -2974,7 +3028,11 @@
               "line": 448,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [
+              { "lower": 39, "upper": 40 }, { "lower": 43, "upper": 44 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -2990,8 +3048,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 122, "upper": 123 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -3006,7 +3062,9 @@
               "line": 263,
               "start": 15,
               "end": 29
-            }
+            },
+            "caller_interval": [ { "lower": 122, "upper": 123 } ],
+            "is_self_call": false
           }
         ]
       }

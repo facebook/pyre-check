@@ -6,7 +6,7 @@
  *)
 
 (* A set of class intervals *)
-type t
+type t [@@deriving compare]
 
 val of_list : ClassInterval.t list -> t
 

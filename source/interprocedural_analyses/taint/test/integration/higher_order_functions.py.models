@@ -717,8 +717,6 @@
         "name": "backward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -736,7 +734,9 @@
               },
               "resolves_to": [ "higher_order_functions.C.self_to_sink" ],
               "port": "formal(self)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1009,8 +1009,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1023,7 +1021,9 @@
               "line": 27,
               "start": 19,
               "end": 22
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1039,8 +1039,6 @@
         "port": "formal(self)",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1053,7 +1051,9 @@
               "line": 30,
               "start": 19,
               "end": 23
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1245,8 +1245,6 @@
         "port": "formal(arg)",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_sink" } ],
@@ -1264,7 +1262,9 @@
               },
               "resolves_to": [ "higher_order_functions.C.method_to_sink" ],
               "port": "formal(arg)"
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

@@ -10,7 +10,7 @@
 open Core
 
 (* A list of non-overlapping intervals sorted with the lower bounds of intervals *)
-type t = ClassInterval.t list
+type t = ClassInterval.t list [@@deriving compare]
 
 let empty = []
 

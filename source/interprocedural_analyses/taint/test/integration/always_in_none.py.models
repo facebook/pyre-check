@@ -125,8 +125,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -143,11 +141,11 @@
               "line": 21,
               "start": 17,
               "end": 60
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           },
           {
-            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -164,7 +162,9 @@
               "line": 29,
               "start": 21,
               "end": 64
-            }
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       },

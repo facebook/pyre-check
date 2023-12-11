@@ -174,8 +174,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -204,7 +202,9 @@
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -259,8 +259,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -286,7 +284,9 @@
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -340,8 +340,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -367,7 +365,9 @@
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -448,8 +448,6 @@
             }
           },
           {
-            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -472,7 +470,9 @@
               },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -687,8 +687,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -713,7 +711,9 @@
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -763,8 +763,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -789,7 +787,9 @@
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -839,8 +839,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -865,7 +863,9 @@
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -936,8 +936,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -957,7 +955,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -973,8 +973,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -994,7 +992,9 @@
               "line": -1,
               "start": -1,
               "end": -1
-            }
+            },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1136,8 +1136,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1154,7 +1152,9 @@
               "line": 87,
               "start": 15,
               "end": 21
-            }
+            },
+            "caller_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1181,8 +1181,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 2, "upper": 3 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [ { "always-via": "special_source" } ],
@@ -1201,7 +1199,9 @@
               "line": 169,
               "start": 12,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1217,8 +1217,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 14, "upper": 15 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1238,7 +1236,9 @@
               "line": 22,
               "start": 15,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 14, "upper": 15 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1254,8 +1254,6 @@
         "port": "result",
         "taint": [
           {
-            "caller_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1275,7 +1273,9 @@
               "line": 17,
               "start": 15,
               "end": 26
-            }
+            },
+            "caller_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1510,8 +1510,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -1534,7 +1532,9 @@
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1588,8 +1588,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -1615,7 +1613,9 @@
               },
               "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -1702,8 +1702,6 @@
         "name": "forward",
         "roots": [
           {
-            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "leaves": [
@@ -1726,7 +1724,9 @@
               },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           }
         ]
       },
@@ -1769,8 +1769,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
-            "is_self_call": false,
             "kinds": [ { "length": 1, "kind": "UserControlled" } ],
             "local_features": [ { "always-via": "format-string" } ],
             "call": {
@@ -1782,7 +1780,9 @@
               },
               "resolves_to": [ "string_conversion.C.__str__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 10, "upper": 11 } ],
+            "is_self_call": false
           }
         ]
       }
@@ -1830,8 +1830,6 @@
         "port": "result",
         "taint": [
           {
-            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
-            "is_self_call": false,
             "kinds": [
               {
                 "features": [
@@ -1851,7 +1849,9 @@
               },
               "resolves_to": [ "string_conversion.ReprIsTainted.__repr__" ],
               "port": "result"
-            }
+            },
+            "receiver_interval": [ { "lower": 5, "upper": 18 } ],
+            "is_self_call": false
           }
         ]
       }
