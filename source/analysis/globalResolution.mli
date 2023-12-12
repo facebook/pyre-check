@@ -17,6 +17,8 @@ val create
 
 val resolve_literal : t -> Expression.t -> Type.t
 
+val get_processed_source : t -> Reference.t -> Source.t option
+
 val parse_annotation
   :  t ->
   ?validation:SharedMemoryKeys.ParseAnnotationKey.type_validation_policy ->

@@ -206,15 +206,12 @@ module Analysis = struct
     let open Ast in
     let module_reference =
       let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-      let annotated_global_environment =
-        GlobalResolution.annotated_global_environment global_resolution
-      in
       (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
       DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
-      >>= AnnotatedGlobalEnvironment.ReadOnly.location_of_global annotated_global_environment
+      >>= GlobalResolution.location_of_global global_resolution
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in
