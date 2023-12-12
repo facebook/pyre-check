@@ -53,12 +53,14 @@ class StrictDefault(ErrorSuppressingCommand):
         remove_strict_headers: bool,
         fixme_threshold: int,
         remove_unsafe_headers: bool,
+        remove_strict_flag: bool,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._local_configuration: Path = local_configuration
         self._remove_strict_headers: bool = remove_strict_headers
         self._fixme_threshold: int = fixme_threshold
         self._remove_unsafe_headers: bool = remove_unsafe_headers
+        self._remove_strict_flag: bool = remove_strict_flag
 
     @staticmethod
     def from_arguments(
@@ -72,6 +74,7 @@ class StrictDefault(ErrorSuppressingCommand):
             remove_strict_headers=arguments.remove_strict_headers,
             fixme_threshold=arguments.fixme_threshold,
             remove_unsafe_headers=arguments.remove_unsafe_headers,
+            remove_strict_flag=arguments.remove_strict_flag,
         )
 
     @classmethod
@@ -100,6 +103,11 @@ class StrictDefault(ErrorSuppressingCommand):
             action="store_true",
             help="Remove `# pyre-unsafe` headers and replace with `# pyre-fixmes` if the number of new suppressions is under the given fixme threshold",
         )
+        parser.add_argument(
+            "--remove-strict-flag",
+            action="store_true",
+            help="Remove the strict flag completely. Useful for repositories where configurations are strict by default.",
+        )
 
     def _commit_changes(self) -> None:
         title = f"Convert {self._local_configuration} to use strict default"
@@ -121,7 +129,10 @@ class StrictDefault(ErrorSuppressingCommand):
             raise UserError("Cannot find a path to configuration")
         configuration = Configuration(configuration_path)
         LOG.info("Processing %s", configuration.get_directory())
-        configuration.use_strict_default()
+        if self._remove_strict_flag:
+            configuration.use_strict_default()
+        else:
+            configuration.add_strict()
         configuration.write()
 
         source_paths = configuration.get_source_paths()
