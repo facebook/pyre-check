@@ -223,7 +223,7 @@ let run_query configuration_file =
           (Lwt.catch
              (fun () -> run_query_on_query_configuration query_configuration)
              (fun exn ->
-               let () = Log.info "Got exception: %s" (Exn.to_string exn) in
+               let () = Log.info "Got exception: %s" (Exception.exn_to_string exn) in
                Lwt.return ExitStatus.PyreError))
   in
   exit (ExitStatus.exit_code exit_status)

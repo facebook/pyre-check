@@ -243,9 +243,10 @@ let on_exception = function
         pid
         message;
       ExitStatus.PyreError
-  | _ ->
+  | exn ->
+      let exn = Exception.wrap exn in
       Log.error "Pyre encountered an internal exception.";
-      Log.error "%s" (Printexc.get_backtrace ());
+      Log.error "%s" (Exception.get_backtrace_string exn);
       ExitStatus.PyreError
 
 
