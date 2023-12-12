@@ -126,7 +126,7 @@ let with_scheduler ~configuration ~should_log_exception ~f =
   match scheduler with
   | SequentialScheduler -> f SequentialScheduler
   | ParallelScheduler _ ->
-      let wrapped_f scheduler =
+      let wrapped_f () =
         try f scheduler with
         | exn ->
             let wrapped_exn = Exception.wrap exn in
@@ -139,7 +139,7 @@ let with_scheduler ~configuration ~should_log_exception ~f =
                 (Worker.exception_backtrace exn);
             Exception.reraise wrapped_exn
       in
-      Exn.protectx ~f:wrapped_f scheduler ~finally:(fun _ -> destroy scheduler)
+      Exception.protect ~f:wrapped_f ~finally:(fun () -> destroy scheduler)
 
 
 let run_process process =
