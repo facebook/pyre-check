@@ -111,6 +111,12 @@ let function_definition ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
+let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
+  AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+    ?dependency
+    (alias_environment resolution)
+
+
 let class_metadata ({ dependency; _ } as resolution) =
   ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
     ?dependency

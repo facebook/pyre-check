@@ -33,6 +33,13 @@ val get_define_names : t -> Reference.t -> Reference.t list
 
 val function_definition : t -> Reference.t -> FunctionDefinition.t option
 
+val parse_annotation_without_validating_type_parameters
+  :  t ->
+  ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
+  ?allow_untracked:bool ->
+  Expression.t ->
+  Type.t
+
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
 val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool

@@ -1175,12 +1175,10 @@ let should_analyze_define
     ~global_resolution
     { Node.value = { Define.signature = { return_annotation; parameters; _ }; _ } as define; _ }
   =
-  let alias_environment = GlobalResolution.alias_environment global_resolution in
   let is_missing_or_invalid maybe_expression =
     let resolve_type expression =
       expression
-      |> AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
-           alias_environment
+      |> GlobalResolution.parse_annotation_without_validating_type_parameters global_resolution
     in
     maybe_expression >>| resolve_type >>| Type.is_untyped |> Option.value ~default:true
   in
