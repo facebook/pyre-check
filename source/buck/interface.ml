@@ -208,9 +208,9 @@ module V1 = struct
       |> List.concat_no_order
       |> List.dedup_and_sort ~compare:String.compare
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _) ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as exn ->
+        let exn = Exception.wrap exn in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let parse_buck_changed_targets_query_output query_output =
@@ -246,9 +246,9 @@ module V1 = struct
       |> Util.to_assoc
       |> List.map ~f:(fun (_, target_json) -> parse_target_json target_json)
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _) ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as exn ->
+        let exn = Exception.wrap exn in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let parse_buck_build_output query_output =
@@ -258,9 +258,9 @@ module V1 = struct
       |> Util.to_assoc
       |> List.map ~f:(fun (target, path_json) -> target, Util.to_string path_json)
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _) ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as exn ->
+        let exn = Exception.wrap exn in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let load_partial_build_map_from_json json =
@@ -286,10 +286,11 @@ module V1 = struct
     try
       Yojson.Safe.from_string ~fname:path content |> load_partial_build_map_from_json |> Lwt.return
     with
-    | Yojson.Safe.Util.Type_error (message, _)
-    | Yojson.Safe.Util.Undefined (message, _) ->
-        raise (JsonError message)
-    | Yojson.Json_error message -> raise (JsonError message)
+    | ( Yojson.Safe.Util.Type_error (message, _)
+      | Yojson.Safe.Util.Undefined (message, _)
+      | Yojson.Json_error message ) as exn ->
+        let exn = Exception.wrap exn in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let normalize_targets_with_options buck_options target_specifications =
@@ -487,9 +488,9 @@ module V2 = struct
       in
       { BuckBxlBuilderOutput.build_map; target_count; conflicts }
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _) ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as exn ->
+        let exn = Exception.wrap exn in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let parse_bxl_output bxl_output =
