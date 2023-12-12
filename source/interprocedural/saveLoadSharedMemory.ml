@@ -10,7 +10,7 @@ open Core
 let exception_to_error ~error ~message ~f =
   try f () with
   | exception_ ->
-      Log.error "Error %s:\n%s" message (Exn.to_string exception_);
+      Log.error "Error %s:\n%s" message (Exception.exn_to_string exception_);
       Error error
 
 

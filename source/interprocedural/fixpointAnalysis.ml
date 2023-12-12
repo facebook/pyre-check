@@ -447,8 +447,9 @@ module Make (Analysis : ANALYSIS) = struct
           ~get_callee_model:(State.get_model shared_models_handle)
       with
       | exn ->
+          let wrapped_exn = Exception.wrap exn in
           let () = Logger.on_analyze_define_exception ~iteration ~callable ~exn in
-          raise exn
+          Exception.reraise wrapped_exn
     in
     widen_if_necessary ~step ~callable ~previous_model ~new_model ~result
 
