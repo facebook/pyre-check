@@ -95,6 +95,12 @@ let is_protocol ({ dependency; _ } as resolution) annotation =
     annotation
 
 
+let first_matching_class_decorator ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
+    (unannotated_global_environment resolution)
+    ?dependency
+
+
 let get_processed_source ({ dependency; _ } as resolution) qualifier =
   AstEnvironment.ReadOnly.get_processed_source (ast_environment resolution) ?dependency qualifier
 

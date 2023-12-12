@@ -64,8 +64,8 @@ let test_first_matching_decorator context =
       | { Node.value = Statement.Class definition; _ } ->
           let actual =
             let class_summary = ClassSummary.create ~qualifier:Reference.empty definition in
-            UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
-              (GlobalResolution.unannotated_global_environment resolution)
+            GlobalResolution.first_matching_class_decorator
+              resolution
               ~names:[name]
               (Node.create_with_default_location class_summary)
           in
