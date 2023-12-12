@@ -500,10 +500,9 @@ module V2 = struct
       in
       from_file merged_sourcedb_path |> parse_merged_sourcedb
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _)
-    | Sys_error message ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _) | Sys_error message) as e ->
+        let exn = Exception.wrap e in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let run_bxl_for_targets
@@ -599,9 +598,9 @@ module Lazy = struct
       BuildMap.Partial.of_json_exn_ignoring_duplicates_no_dependency merged_sourcedb
       |> BuildMap.create
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _) ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as e ->
+        let exn = Exception.wrap e in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let parse_bxl_output bxl_output =
@@ -612,10 +611,9 @@ module Lazy = struct
       in
       from_file merged_sourcedb_path |> parse_merged_sourcedb
     with
-    | Yojson.Json_error message
-    | Util.Type_error (message, _)
-    | Sys_error message ->
-        raise (JsonError message)
+    | (Yojson.Json_error message | Util.Type_error (message, _) | Sys_error message) as e ->
+        let exn = Exception.wrap e in
+        Exception.raise_with_backtrace (JsonError message) exn
 
 
   let run_bxl_for_targets

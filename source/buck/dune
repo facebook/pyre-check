@@ -11,5 +11,6 @@
  (libraries
   core
   ppx_deriving_yojson.runtime
+  pyrelib.exception
   pyrelib.lwtsubprocess
   pyrelib.pyre))
