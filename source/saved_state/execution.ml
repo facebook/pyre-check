@@ -94,7 +94,7 @@ let query_exn
 
 let query setting =
   let on_exception exn =
-    let message = Format.sprintf "Saved state query failed: %s" (Exn.to_string exn) in
+    let message = Format.sprintf "Saved state query failed: %s" (Exception.exn_to_string exn) in
     Lwt.return (Result.Error message)
   in
   Lwt.catch
@@ -116,7 +116,9 @@ let fetch queried =
   Lwt.catch
     (fun () -> fetch_exn queried >>= fun fetched -> Lwt.return (Result.Ok fetched))
     (fun exn ->
-      let message = Format.sprintf "Saved state fetching failed: %s" (Exn.to_string exn) in
+      let message =
+        Format.sprintf "Saved state fetching failed: %s" (Exception.exn_to_string exn)
+      in
       Lwt.return (Result.Error message))
 
 
@@ -126,5 +128,7 @@ let query_and_fetch setting =
   Lwt.catch
     (fun () -> query_and_fetch_exn setting >>= fun fetched -> Lwt.return (Result.Ok fetched))
     (fun exn ->
-      let message = Format.sprintf "Saved state query&fetching failed: %s" (Exn.to_string exn) in
+      let message =
+        Format.sprintf "Saved state query&fetching failed: %s" (Exception.exn_to_string exn)
+      in
       Lwt.return (Result.Error message))
