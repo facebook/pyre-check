@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
 
@@ -145,7 +146,9 @@ module Raw = struct
       (fun () -> create_exn () >>= fun raw -> Lwt.return (Result.Ok raw))
       (fun exn ->
         let message =
-          Format.sprintf "Cannot initialize watchman due to exception: %s" (Exn.to_string exn)
+          Format.sprintf
+            "Cannot initialize watchman due to exception: %s"
+            (Exception.exn_to_string exn)
         in
         Lwt.return (Result.Error message))
 end
@@ -332,8 +335,9 @@ module Subscriber = struct
       >>= fun initial_clock -> Lwt.return { setting; connection; initial_clock }
     in
     Lwt.catch do_subscribe (fun exn ->
+        let exn = Exception.wrap exn in
         (* Make sure the connection is properly shut down when an exception is raised. *)
-        Raw.shutdown_connection connection >>= fun () -> raise exn)
+        Raw.shutdown_connection connection >>= fun () -> Exception.reraise exn)
 
 
   let setting_of { setting; _ } = setting
@@ -545,6 +549,8 @@ module SinceQuery = struct
       (fun () ->
         query_exn ~connection since_query >>= fun response -> Lwt.return (Result.Ok response))
       (fun exn ->
-        let message = Format.sprintf "Watchman query failed. Exception: %s" (Exn.to_string exn) in
+        let message =
+          Format.sprintf "Watchman query failed. Exception: %s" (Exception.exn_to_string exn)
+        in
         Lwt.return (Result.Error message))
 end

@@ -41,10 +41,10 @@ let test_low_level_apis _ =
           (* We need to re-raise OUnit test failures since OUnit relies on it for error
              reporting. *)
           raise exn
-      | _ as exn ->
+      | exn ->
           Format.printf
             "Skipping low-level watchman API test due to exception: %s\n"
-            (Exn.to_string exn);
+            (Exception.exn_to_string exn);
           Lwt.return_unit)
 
 
@@ -134,7 +134,7 @@ let test_subscription _ =
         Lwt.return_unit)
       (fun exn ->
         (if not should_raise then
-           let message = Format.sprintf "Unexpected exception: %s" (Exn.to_string exn) in
+           let message = Format.sprintf "Unexpected exception: %s" (Exception.exn_to_string exn) in
            assert_failure message);
         Lwt.return_unit)
   in
@@ -692,8 +692,8 @@ let test_since_query _ =
       >>= fun _ -> assert_failure "Unexpected success")
     (function
       | Watchman.QueryError _ -> Lwt.return_unit
-      | _ as exn ->
-          let message = Format.sprintf "Unexpected failure: %s" (Exn.to_string exn) in
+      | exn ->
+          let message = Format.sprintf "Unexpected failure: %s" (Exception.exn_to_string exn) in
           assert_failure message)
 
 
