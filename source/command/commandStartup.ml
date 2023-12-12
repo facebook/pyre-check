@@ -157,7 +157,7 @@ module BaseConfiguration = struct
     | Type_error (message, _)
     | Undefined (message, _) ->
         Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 end
 
 (* Read a JSON file from the given path. Return [Result.Ok json] if both file read and JSON parsing
@@ -167,7 +167,7 @@ let read_json file_path =
   | Yojson.Json_error message
   | Sys_error message ->
       Result.Error message
-  | other_exception -> Result.Error (Exn.to_string other_exception)
+  | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 
 
 (* [read_and_parse_json ~f file_path] reads a JSON out of [file_path] using {! read_json}, and

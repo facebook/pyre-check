@@ -52,7 +52,7 @@ module CheckConfiguration = struct
     | Type_error (message, _)
     | Undefined (message, _) ->
         Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 
 
   let analysis_configuration_of
