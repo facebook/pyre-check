@@ -11,8 +11,9 @@ open Core
 
 let parse_json message =
   try Result.Ok (Yojson.Safe.from_string message) with
-  | Yojson.Json_error message ->
-      let message = Format.sprintf "Cannot parse JSON. %s" message in
+  | Yojson.Json_error message as exn ->
+      let exn = Exception.wrap exn in
+      let message = Format.sprintf "Cannot parse JSON. %s: %s" message (Exception.to_string exn) in
       Result.Error message
 
 
