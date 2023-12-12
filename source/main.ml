@@ -35,11 +35,12 @@ let run () =
 
 let () =
   try
-    Printexc.record_backtrace true;
+    Exception.record_backtrace true;
     Random.self_init ();
     Scheduler.initialize ();
     run ()
   with
   | error ->
-      Log.error "%s" (Exn.to_string error);
-      raise error
+      let exn = Exception.wrap error in
+      Log.error "%s" (Exception.to_string exn);
+      Exception.reraise exn

@@ -442,7 +442,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries cmdliner core pyrelib))
+ (libraries cmdliner core pyrelib pyrelib.exception))
 
 (alias
  (name DEFAULT)
