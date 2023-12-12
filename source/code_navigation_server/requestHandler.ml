@@ -350,6 +350,14 @@ let update_build_system_sources ~build_system ~working_set source_path_events =
       | _ as exn -> Lwt.return_error exn)
 
 
+let handle_build_system_working_set_update ~build_system source_paths =
+  let open Lwt.Infix in
+  Lwt.catch
+    (fun () -> BuildSystem.update_working_set build_system source_paths >>= Lwt.return_ok)
+    (function
+      | _ as exn -> Lwt.return_error exn)
+
+
 let get_buck_error_message ~description ~additional_logs () =
   let header = Printf.sprintf "Cannot build the project: %s." description in
   if List.is_empty additional_logs then
@@ -423,12 +431,31 @@ let handle_file_update
       with_broadcast_busy_building ~subscriptions handle_building_file_update
 
 
-let handle_working_set_update ~subscriptions { State.environment; build_system; client_states; _ } =
-  let%lwt artifact_path_events =
+let handle_working_set_update
+    ~subscriptions
+    { State.environment; build_system; client_states; build_failure }
+  =
+  let paths = State.Client.WorkingSet.to_list client_states in
+  match%lwt
     with_broadcast_busy_building ~subscriptions (fun () ->
-        State.Client.WorkingSet.to_list client_states |> BuildSystem.update_working_set build_system)
-  in
-  handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
+        handle_build_system_working_set_update ~build_system paths)
+  with
+  | Result.Ok artifact_path_events ->
+      handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
+  | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
+      (* On working set errors, ignore the build error. On the next successful working set update,
+         we will be consistent since we get the status for every open file. *)
+      Log.log ~section:`Server "Build failure detected. Ignoring...";
+      let error_message = get_buck_error_message ~description ~additional_logs () in
+      Server.ServerState.BuildFailure.update
+        ~events:
+          (List.map paths ~f:(SourcePath.Event.create ~kind:SourcePath.Event.Kind.CreatedOrChanged))
+        ~error_message
+        build_failure;
+      Lwt.return_unit
+  | Result.Error error ->
+      (* We do not currently know how to recover from these exceptions *)
+      Lwt.fail error
 
 
 let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~client_id overlay =
