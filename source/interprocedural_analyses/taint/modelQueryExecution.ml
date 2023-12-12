@@ -1640,7 +1640,11 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 end)
 
 module AttributeQueryExecutor = struct
-  let get_attributes ~resolution =
+  let get_attributes ~environment =
+    let resolution = GlobalResolution.create environment in
+    let unannotated_global_environment =
+      AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment environment
+    in
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
       let class_summary = GlobalResolution.class_summary resolution class_name >>| Node.value in
@@ -1664,9 +1668,7 @@ module AttributeQueryExecutor = struct
           Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
     let all_classes =
-      resolution
-      |> GlobalResolution.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+      UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
     in
     List.concat_map all_classes ~f:get_class_attributes
 
@@ -1823,7 +1825,7 @@ module GlobalVariableQueryExecutor = struct
 end
 
 let generate_models_from_queries
-    ~resolution
+    ~environment
     ~scheduler
     ~class_hierarchy_graph
     ~source_sink_filter
@@ -1834,6 +1836,7 @@ let generate_models_from_queries
     ~stubs
     queries
   =
+  let resolution = GlobalResolution.create environment in
   let extends_to_classnames =
     ModelParseResult.ModelQuery.extract_extends_from_model_queries queries
   in
@@ -1866,7 +1869,7 @@ let generate_models_from_queries
   (* Generate models for attributes. *)
   let execution_result =
     if not (List.is_empty attribute_queries) then
-      let attributes = AttributeQueryExecutor.get_attributes ~resolution in
+      let attributes = AttributeQueryExecutor.get_attributes ~environment in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution

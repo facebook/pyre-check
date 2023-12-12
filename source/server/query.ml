@@ -556,7 +556,7 @@ let rec process_request_exn ~type_environment ~build_system request =
             (Interprocedural.FetchCallables.get_stubs initial_callables)
         in
         Taint.ModelQueryExecution.generate_models_from_queries
-          ~resolution:global_resolution
+          ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
           ~scheduler
           ~class_hierarchy_graph
           ~source_sink_filter:None

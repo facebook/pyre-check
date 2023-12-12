@@ -128,7 +128,9 @@ module AttributeQueryExecutor : sig
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_attributes : resolution:Analysis.GlobalResolution.t -> Interprocedural.Target.t list
+  val get_attributes
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t list
 
   val get_type_annotation
     :  resolution:Analysis.GlobalResolution.t ->
@@ -173,7 +175,7 @@ module GlobalVariableQueryExecutor : sig
 end
 
 val generate_models_from_queries
-  :  resolution:Analysis.GlobalResolution.t ->
+  :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
   scheduler:Scheduler.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->

@@ -532,7 +532,7 @@ let initialize
 
         let { ModelQueryExecution.ExecutionResult.models = model_query_results; errors } =
           ModelQueryExecution.generate_models_from_queries
-            ~resolution:global_resolution
+            ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
             ~scheduler:(Test.mock_scheduler ())
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)

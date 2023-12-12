@@ -272,7 +272,7 @@ let initialize_models
         }
           =
           ModelQueryExecution.generate_models_from_queries
-            ~resolution
+            ~environment:(Analysis.TypeEnvironment.ReadOnly.global_environment environment)
             ~scheduler
             ~class_hierarchy_graph
             ~verbose
