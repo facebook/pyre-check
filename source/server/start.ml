@@ -260,7 +260,7 @@ let initialize_server_state
             | Watchman.ConnectionError message
             | Watchman.QueryError message ->
                 message
-            | _ -> Exn.to_string exn
+            | _ -> Exception.exn_to_string exn
           in
           Format.sprintf "Cannot fetch saved state from file: %s" detailed_message
         in
