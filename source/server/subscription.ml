@@ -35,7 +35,7 @@ module Response = struct
       Log.log
         ~section:`Server
         "Exception occurred while sending subscription responses: %s"
-        (Exn.to_string exn);
+        (Exception.exn_to_string exn);
       Lwt.return_unit
     in
     Lwt.catch (fun () -> send ~output_channel response) on_io_exception

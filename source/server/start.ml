@@ -52,7 +52,7 @@ end
 let handle_request ~properties ~state request =
   let open Lwt.Infix in
   let on_uncaught_server_exception exn =
-    Log.info "Uncaught server exception: %s" (Exn.to_string exn);
+    Log.info "Uncaught server exception: %s" (Exception.exn_to_string exn);
     let () =
       let { ServerProperties.configuration; _ } = properties in
       StartupNotification.produce
@@ -192,7 +192,7 @@ let handle_connection
           Log.log
             ~section:`Server
             "Exception occurred while sending responses: %s"
-            (Exn.to_string exn);
+            (Exception.exn_to_string exn);
           Lwt.return_unit
         in
         let raw_response = Yojson.Safe.to_string (Response.to_yojson response) in
@@ -305,7 +305,7 @@ let initialize_server_state
             | Watchman.QueryError message
             | Saved_state.Execution.QueryFailure message ->
                 message
-            | _ -> Exn.to_string exn
+            | _ -> Exception.exn_to_string exn
           in
           Format.sprintf "Cannot fetch saved state from project: %s" detailed_message
         in

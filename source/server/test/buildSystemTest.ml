@@ -629,7 +629,9 @@ let test_unwatched_dependency_no_failure_on_initialize context =
       >>= fun _ -> assert_failure "should not reach here")
     (function
       | ChecksumMap.LoadError _ -> Lwt.return_unit
-      | _ -> assert_failure "wrong exception raised")
+      | exn ->
+          let exn = Exception.wrap exn in
+          assert_failure (Format.sprintf "wrong exception raised: `%s`" (Exception.to_string exn)))
 
 
 let test_unwatched_dependency_update context =

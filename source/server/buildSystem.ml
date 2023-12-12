@@ -148,13 +148,14 @@ module BuckBuildSystem = struct
         Statistics.buck_event ~normals ~integers ();
         Lwt.return result)
       (fun exn ->
+        let exn = Exception.wrap exn in
         let millisecond = Timer.stop_in_ms timer in
         let normals =
-          ("version", Version.version ()) :: ("exception", Exn.to_string exn) :: normals ()
+          ("version", Version.version ()) :: ("exception", Exception.to_string exn) :: normals ()
         in
         let integers = ["runtime", millisecond] in
         Statistics.buck_event ~normals ~integers ();
-        Lwt.fail exn)
+        Lwt.fail (Exception.unwrap exn))
 
 
   module IncrementalBuilder = struct
