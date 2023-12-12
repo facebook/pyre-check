@@ -81,7 +81,7 @@ val sink_trees_of_argument
   sink_matches:AccessPath.argument_match list ->
   is_class_method:bool ->
   is_static_method:bool ->
-  call_info_intervals:Domains.CallInfoIntervals.t ->
+  call_info_intervals:Domains.ClassIntervals.t ->
   Domains.SinkTreeWithHandle.t list
 
 val type_breadcrumbs_of_calls : CallGraph.CallTarget.t list -> Features.BreadcrumbSet.t

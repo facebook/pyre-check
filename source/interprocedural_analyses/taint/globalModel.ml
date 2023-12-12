@@ -78,7 +78,7 @@ let get_source { models; resolution; location; interval } =
          ~port:AccessPath.Root.LocalResult
          ~is_class_method:false
          ~is_static_method:false
-         ~call_info_intervals:{ Domains.CallInfoIntervals.top with caller_interval = interval }
+         ~call_info_intervals:{ Domains.ClassIntervals.top with caller_interval = interval }
     |> ForwardState.Tree.join existing
   in
   List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
@@ -102,7 +102,7 @@ let get_sinks { models; resolution; location; interval } =
            ~port:AccessPath.Root.LocalResult
            ~is_class_method:false
            ~is_static_method:false
-           ~call_info_intervals:{ Domains.CallInfoIntervals.top with caller_interval = interval }
+           ~call_info_intervals:{ Domains.ClassIntervals.top with caller_interval = interval }
     in
     { Domains.SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_global ~call_target }
   in

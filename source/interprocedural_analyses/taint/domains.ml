@@ -75,8 +75,15 @@ let location_with_module_to_json ~resolve_module_path location_with_module : Yoj
   | _ -> failwith "unreachable"
 
 
-(* This should be associated with every call site *)
-module CallInfoIntervals = struct
+(* Class intervals reduce false positives by removing traces in which the taint is propagated along
+   a sequence of calls in which exists a subsequence of calls where the receiver objects are
+   "incompatible" with each other, in terms of not respecting the subclass relations.
+ * The compatibility is checked by using class intervals. That is, each class is associated with a
+   numerical interval, such that the interval inclusion relation approximates the subclass relation.
+ * For the meaning of "compatibility", see examples in
+   `source/interprocedural_analyses/taint/test/integration/class_interval.py`.
+ * Class intervals are associated with every call site. *)
+module ClassIntervals = struct
   type t = {
     (* The interval of the class that literally contains this call site *)
     caller_interval: ClassIntervalSet.t;
@@ -89,8 +96,8 @@ module CallInfoIntervals = struct
   }
   [@@deriving compare, eq]
 
-  (* If we are not sure if a call is on `self`, then we should treat it as a call not on `self`,
-     such that SAPP will not intersect class intervals. *)
+  (* If we are not sure if a call is on `self` or `cls`, then we should treat it as a call not on
+     `self` or `cls`, such that SAPP will not intersect class intervals. *)
   let top =
     {
       caller_interval = ClassIntervalSet.top;
@@ -166,7 +173,7 @@ module CallInfo = struct
     (* Leaf taint at the callsite of a tainted model, i.e the start or end of the trace. *)
     | Origin of {
         location: Location.WithModule.t;
-        class_intervals: CallInfoIntervals.t;
+        class_intervals: ClassIntervals.t;
       }
     (* Taint propagated from a call. *)
     | CallSite of {
@@ -174,15 +181,13 @@ module CallInfo = struct
         path: AccessPath.Path.t;
         location: Location.WithModule.t;
         callees: Target.t list;
-        class_intervals: CallInfoIntervals.t;
+        class_intervals: ClassIntervals.t;
       }
   [@@deriving compare, equal]
 
   let declaration = Declaration { leaf_name_provided = false }
 
-  let origin ?(class_intervals = CallInfoIntervals.top) location =
-    Origin { location; class_intervals }
-
+  let origin ?(class_intervals = ClassIntervals.top) location = Origin { location; class_intervals }
 
   let pp formatter = function
     | Declaration _ -> Format.fprintf formatter "Declaration"
@@ -193,7 +198,7 @@ module CallInfo = struct
           "Origin(location=%a, class_intervals=%a)"
           Location.WithModule.pp
           location
-          CallInfoIntervals.pp
+          ClassIntervals.pp
           class_intervals
     | CallSite { location; callees; port; path; class_intervals } ->
         let port = AccessPath.create port path |> AccessPath.show in
@@ -204,7 +209,7 @@ module CallInfo = struct
           Location.WithModule.pp
           location
           port
-          CallInfoIntervals.pp
+          ClassIntervals.pp
           class_intervals
 
 
@@ -235,10 +240,10 @@ module CallInfo = struct
   (* Returns the (dictionary key * json) to emit *)
   let to_json ~resolve_module_path trace : (string * Yojson.Safe.t) list =
     let class_intervals_to_json call_info_intervals =
-      if CallInfoIntervals.is_top call_info_intervals then
+      if ClassIntervals.is_top call_info_intervals then
         []
       else
-        CallInfoIntervals.to_json call_info_intervals
+        ClassIntervals.to_json call_info_intervals
     in
     match trace with
     | Declaration _ -> ["declaration", `Null]
@@ -284,7 +289,7 @@ module CallInfo = struct
         class_intervals
     | Declaration _
     | Tito ->
-        CallInfoIntervals.top
+        ClassIntervals.top
 end
 
 module TraceLength = struct
@@ -527,7 +532,7 @@ module type TAINT_DOMAIN = sig
     element:t ->
     is_class_method:bool ->
     is_static_method:bool ->
-    call_info_intervals:CallInfoIntervals.t ->
+    call_info_intervals:ClassIntervals.t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -1066,7 +1071,7 @@ end = struct
       ~is_static_method
       ~is_class_method
       ~call_info_intervals:
-        ({ CallInfoIntervals.is_self_call; is_cls_call; caller_interval; receiver_interval } as
+        ({ ClassIntervals.is_self_call; is_cls_call; caller_interval; receiver_interval } as
         call_info_intervals)
       local_taint
     =
@@ -1092,7 +1097,7 @@ end = struct
         intersect callee_class_interval receiver_interval
       in
       if not should_propagate then
-        CallInfoIntervals.top, LocalTaintDomain.bottom
+        ClassIntervals.top, LocalTaintDomain.bottom
       else if is_self_call || (is_cls_call && is_class_method) then
         (* Case B.1: Call instance methods via `self`, or class methods via `cls`. *)
         let new_interval, should_propagate =
@@ -1101,7 +1106,7 @@ end = struct
           intersect new_interval caller_interval
         in
         if not should_propagate then
-          CallInfoIntervals.top, LocalTaintDomain.bottom
+          ClassIntervals.top, LocalTaintDomain.bottom
         else
           { call_info_intervals with caller_interval = new_interval }, local_taint
       else
@@ -1196,7 +1201,7 @@ end = struct
         | Some (Target.Override _) ->
             let class_intervals = CallInfo.class_intervals call_info in
             apply_class_interval
-              ~callee_class_interval:class_intervals.CallInfoIntervals.caller_interval
+              ~callee_class_interval:class_intervals.ClassIntervals.caller_interval
               ~is_static_method
               ~is_class_method
               ~call_info_intervals

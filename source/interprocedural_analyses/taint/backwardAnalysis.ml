@@ -513,7 +513,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let call_info_intervals =
       {
-        Domains.CallInfoIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
+        Domains.ClassIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
         is_cls_call = Ast.Expression.is_cls_call ~callee;
         caller_interval = FunctionContext.caller_class_interval;
         receiver_interval =

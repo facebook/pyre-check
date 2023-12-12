@@ -509,7 +509,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       taint_model;
     let call_info_intervals =
       {
-        Domains.CallInfoIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
+        Domains.ClassIntervals.is_self_call = Ast.Expression.is_self_call ~callee;
         is_cls_call = Ast.Expression.is_cls_call ~callee;
         caller_interval = FunctionContext.caller_class_interval;
         receiver_interval =
@@ -2389,7 +2389,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~port:AccessPath.Root.LocalResult
         ~is_class_method:false
         ~is_static_method:false
-        ~call_info_intervals:Domains.CallInfoIntervals.top
+        ~call_info_intervals:Domains.ClassIntervals.top
         FunctionContext.string_combine_partial_sink_tree
     in
     let string_literal_taint = StringFormatCall.implicit_string_literal_sources string_literal in
@@ -2972,7 +2972,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~is_static_method:false
              ~call_info_intervals:
                {
-                 Domains.CallInfoIntervals.top with
+                 Domains.ClassIntervals.top with
                  caller_interval = FunctionContext.caller_class_interval;
                }
       in

@@ -443,7 +443,7 @@ let return_sink ~resolution ~location ~callee ~sink_model =
          ~port:AccessPath.Root.LocalResult
          ~is_class_method:false
          ~is_static_method:false
-         ~call_info_intervals:Domains.CallInfoIntervals.top
+         ~call_info_intervals:Domains.ClassIntervals.top
   in
   let breadcrumbs_to_attach, via_features_to_attach =
     BackwardState.extract_features_to_attach

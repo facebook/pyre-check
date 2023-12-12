@@ -41,7 +41,7 @@ let test_partition_call_map context =
       ~element:taint
       ~is_class_method:false
       ~is_static_method:false
-      ~call_info_intervals:Domains.CallInfoIntervals.top
+      ~call_info_intervals:Domains.ClassIntervals.top
   in
   let call_taint2 =
     ForwardTaint.apply_call
@@ -54,7 +54,7 @@ let test_partition_call_map context =
       ~element:taint
       ~is_class_method:false
       ~is_static_method:false
-      ~call_info_intervals:Domains.CallInfoIntervals.top
+      ~call_info_intervals:Domains.ClassIntervals.top
   in
   let joined = ForwardTaint.join call_taint1 call_taint2 in
   assert_equal
