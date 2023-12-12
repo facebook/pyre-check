@@ -215,7 +215,7 @@ module V2 = struct
       Lwt.return_some build_id
     in
     let error exn =
-      Log.info "Failed to read build UUID from %s: %s" filename (Exn.to_string exn);
+      Log.info "Failed to read build UUID from %s: %s" filename (Exception.exn_to_string exn);
       Lwt.return_none
     in
     Lwt.catch read error
