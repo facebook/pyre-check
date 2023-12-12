@@ -20,9 +20,25 @@ import dataclasses
 import json
 import logging
 import random
+import traceback
 from collections import defaultdict
 from pathlib import Path
-from typing import DefaultDict, Dict, Generic, List, Optional, Set, TypeVar, Union
+from typing import (
+    Callable,
+    Coroutine,
+    DefaultDict,
+    Dict,
+    Generic,
+    List,
+    Optional,
+    Protocol,
+    Set,
+    TypeVar,
+    Union,
+)
+
+from pyre_extensions import ParameterSpecification
+from pyre_extensions.type_variable_operators import Concatenate
 
 from .. import background_tasks, identifiers, json_rpc, log, timer
 
@@ -258,6 +274,51 @@ class PyreLanguageServerApi(abc.ABC):
     @abc.abstractmethod
     async def process_shutdown_request(self, request_id: Union[int, str, None]) -> None:
         raise NotImplementedError()
+
+
+P = ParameterSpecification("P")
+T = TypeVar("T")
+
+
+class LanguageServerDecorator(Protocol):
+    def __call__(
+        self,
+        f: Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]],
+        /,
+    ) -> Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]:
+        ...
+
+
+# Decorator factory for catching exceptions and logging as telemetry events.
+def log_exceptions_factory(
+    operation: str,
+) -> LanguageServerDecorator:
+    def log_exceptions(
+        func: Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]
+    ) -> Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]:
+        async def new_func(
+            self_: PyreLanguageServer, *args: P.args, **kwargs: P.kwargs
+        ) -> T:
+            try:
+                return await func(self_, *args, **kwargs)
+            except Exception as exception:
+                await self_.write_telemetry(
+                    {
+                        "type": "LSP",
+                        "operation": operation,
+                        "server_state_open_documents_count": len(
+                            self_.server_state.opened_documents
+                        ),
+                        "error_message": f"exception occurred in handling request: {traceback.format_exception(exception)}",
+                        **self_.server_state.status_tracker.get_status().as_telemetry_dict(),
+                    },
+                    activity_key=None,
+                )
+                raise exception
+
+        return new_func
+
+    return log_exceptions
 
 
 @dataclasses.dataclass(frozen=True)
@@ -732,6 +793,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             overall_duration=overall_timer.stop_in_millisecond(),
         )
 
+    @log_exceptions_factory("definition")
     async def process_definition_request(
         self,
         parameters: lsp.DefinitionParameters,

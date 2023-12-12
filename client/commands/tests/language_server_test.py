@@ -786,6 +786,47 @@ class PyreLanguageServerDispatcherTest(testslide.TestCase):
         self.assertEqual(len(dispatcher.outstanding_tasks), 1)
         self.assertFalse(dispatcher.outstanding_tasks.pop().done())
 
+    @setup.async_test
+    async def test_request_swallows_exceptions(self) -> None:
+        """This is not the ideal behavior. We should be raising these exceptions."""
+
+        class RaisingLanguageServer(BlockingPyreLanguageServer):
+            async def process_definition_request(
+                self,
+                parameters: lsp.DefinitionParameters,
+                request_id: Union[int, str, None],
+                activity_key: Optional[Dict[str, object]] = None,
+            ) -> Optional[Exception]:
+                raise Exception("Test")
+
+        output_channel = connections.AsyncTextWriter(connections.MemoryBytesWriter())
+        server_state = state.ServerState(
+            server_options=server_setup.mock_initial_server_options,
+            opened_documents={},
+            consecutive_start_failure=launch_and_subscribe_handler.CONSECUTIVE_START_ATTEMPT_THRESHOLD,
+        )
+        dispatcher = pyre_language_server.PyreLanguageServerDispatcher(
+            input_channel=connections.create_memory_text_reader(""),
+            output_channel=output_channel,
+            server_state=server_state,
+            daemon_manager=background_tasks.TaskManager(
+                server_setup.NoOpBackgroundTask()
+            ),
+            api=RaisingLanguageServer(),
+        )
+        # See no exceptions raised
+        await dispatcher.dispatch_request(
+            json_rpc.Request(
+                method="textDocument/definition",
+                parameters=self._by_name_parameters(
+                    lsp.DefinitionParameters(
+                        text_document=lsp.TextDocumentIdentifier(uri=""),
+                        position=lsp.LspPosition(line=1, character=1),
+                    )
+                ),
+            )
+        )
+
 
 class ClientTypeErrorHandlerTest(testslide.TestCase):
     @setup.async_test
