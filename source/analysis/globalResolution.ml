@@ -351,16 +351,16 @@ let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~ex
   comparator ~get_typed_dictionary_override:(fun _ -> None) ~left ~right
 
 
-let is_transitive_successor
+let has_transitive_successor
     ?(placeholder_subclass_extends_all = true)
     resolution
-    ~predecessor
     ~successor
+    predecessor
   =
-  ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
+  ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
     ~placeholder_subclass_extends_all
     (class_metadata_environment resolution)
-    ~target:successor
+    ~successor
     predecessor
 
 
@@ -373,11 +373,11 @@ let source_is_unit_test resolution ~source =
   let is_unittest () =
     let is_unittest_class { Node.value = { Class.name; _ }; _ } =
       try
-        is_transitive_successor
+        has_transitive_successor
           ~placeholder_subclass_extends_all:false
           resolution
-          ~predecessor:(Reference.show name)
           ~successor:"unittest.case.TestCase"
+          (Reference.show name)
       with
       | ClassHierarchy.Untracked _ -> false
     in

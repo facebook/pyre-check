@@ -41,7 +41,7 @@ open Assumptions
 type class_hierarchy = {
   instantiate_successors_parameters:
     source:Type.t -> target:Type.Primitive.t -> Type.Parameter.t list option;
-  is_transitive_successor: source:Type.Primitive.t -> target:Type.Primitive.t -> bool;
+  has_transitive_successor: successor:Type.Primitive.t -> Type.Primitive.t -> bool;
   variables: Type.Primitive.t -> Type.Variable.t list option;
   least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
 }
@@ -438,7 +438,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
   and solve_less_or_equal
       ({
          class_hierarchy =
-           { instantiate_successors_parameters; variables; is_transitive_successor; _ };
+           { instantiate_successors_parameters; variables; has_transitive_successor; _ };
          is_protocol;
          assumptions = { protocol_assumptions; _ } as assumptions;
          get_typed_dictionary;
@@ -455,7 +455,7 @@ module Make (OrderedConstraints : OrderedConstraintsType) = struct
       |> List.fold ~init:constraints ~f:OrderedConstraints.add_fallback_to_any
     in
     let solve_less_or_equal_primitives ~source ~target =
-      if is_transitive_successor ~source ~target then
+      if has_transitive_successor ~successor:target source then
         [constraints]
       else if
         is_protocol right ~protocol_assumptions

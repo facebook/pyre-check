@@ -33,11 +33,11 @@ module MetadataReadOnly : sig
 
   val successors : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> string list
 
-  val is_transitive_successor
+  val has_transitive_successor
     :  t ->
     ?dependency:DependencyKey.registered ->
     placeholder_subclass_extends_all:bool ->
-    target:Type.Primitive.t ->
+    successor:Type.Primitive.t ->
     Type.Primitive.t ->
     bool
 

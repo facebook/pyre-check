@@ -292,7 +292,7 @@ let infer ~environment ~user_models =
     then
       compute_dataclass_models class_name
     else if
-      CallResolution.is_transitive_successor_ignoring_untracked
+      CallResolution.has_transitive_successor_ignoring_untracked
         global_resolution
         ~reflexive:false
         ~predecessor:class_name
@@ -300,12 +300,12 @@ let infer ~environment ~user_models =
     then
       compute_named_tuple_models class_name
     else if
-      CallResolution.is_transitive_successor_ignoring_untracked
+      CallResolution.has_transitive_successor_ignoring_untracked
         global_resolution
         ~reflexive:false
         ~predecessor:class_name
         ~successor:"TypedDictionary"
-      || CallResolution.is_transitive_successor_ignoring_untracked
+      || CallResolution.has_transitive_successor_ignoring_untracked
            global_resolution
            ~reflexive:false
            ~predecessor:class_name

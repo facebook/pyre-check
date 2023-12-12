@@ -20,7 +20,7 @@ val is_nonlocal : resolution:Resolution.t -> define:Reference.t -> Reference.t -
 (* Check whether `successor` extends `predecessor`.
  * Returns false on untracked types.
  * Returns `reflexive` if `predecessor` and `successor` are equal. *)
-val is_transitive_successor_ignoring_untracked
+val has_transitive_successor_ignoring_untracked
   :  GlobalResolution.t ->
   reflexive:bool ->
   predecessor:string ->

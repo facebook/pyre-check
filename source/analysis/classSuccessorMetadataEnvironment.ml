@@ -114,20 +114,20 @@ module OutgoingDataComputation = struct
     | _, _ -> None
 
 
-  let is_transitive_successor
+  let has_transitive_successor
       (Queries.{ get_class_hierarchy; _ } as queries)
       ~placeholder_subclass_extends_all
-      ~target
-      source
+      ~successor
+      predecessor
     =
     let class_hierarchy = get_class_hierarchy () in
     let extends_placeholder_stub = ClassHierarchy.extends_placeholder_stub class_hierarchy in
     let counts_as_extends_target current =
-      [%compare.equal: Type.Primitive.t] current target
+      [%compare.equal: Type.Primitive.t] current successor
       || (placeholder_subclass_extends_all && extends_placeholder_stub current)
     in
-    let successors_of_source = successors queries source in
-    List.exists (source :: successors_of_source) ~f:counts_as_extends_target
+    let successors_of_predecessor = successors queries predecessor in
+    List.exists (predecessor :: successors_of_predecessor) ~f:counts_as_extends_target
 end
 
 module ClassMetadataValue = struct
@@ -224,8 +224,8 @@ module ReadOnly = struct
     from_pure_logic ?dependency read_only OutgoingDataComputation.successors
 
 
-  let is_transitive_successor read_only ?dependency =
-    from_pure_logic ?dependency read_only OutgoingDataComputation.is_transitive_successor
+  let has_transitive_successor read_only ?dependency =
+    from_pure_logic ?dependency read_only OutgoingDataComputation.has_transitive_successor
 
 
   let least_upper_bound read_only ?dependency =

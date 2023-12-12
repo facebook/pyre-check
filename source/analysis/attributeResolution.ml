@@ -306,8 +306,11 @@ module Queries = struct
     successors: Type.Primitive.t -> string list;
     get_class_metadata: Type.Primitive.t -> ClassSuccessorMetadataEnvironment.class_metadata option;
     is_typed_dictionary: Type.Primitive.t -> bool;
-    is_transitive_successor:
-      placeholder_subclass_extends_all:bool -> target:Type.Primitive.t -> Type.Primitive.t -> bool;
+    has_transitive_successor:
+      placeholder_subclass_extends_all:bool ->
+      successor:Type.Primitive.t ->
+      Type.Primitive.t ->
+      bool;
     least_upper_bound: Type.Primitive.t -> Type.Primitive.t -> Type.Primitive.t option;
   }
 
@@ -2362,7 +2365,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       | _ -> None
 
     method full_order ~assumptions =
-      let Queries.{ is_protocol; class_hierarchy; is_transitive_successor; least_upper_bound; _ } =
+      let Queries.{ is_protocol; class_hierarchy; has_transitive_successor; least_upper_bound; _ } =
         queries
       in
       let resolve class_type =
@@ -2414,15 +2417,13 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let is_protocol annotation ~protocol_assumptions:_ = is_protocol annotation in
       let class_hierarchy_handler = class_hierarchy () in
       let metaclass class_name ~assumptions = self#metaclass class_name ~assumptions in
-      let is_transitive_successor ~source ~target =
-        is_transitive_successor ~placeholder_subclass_extends_all:true ~target source
-      in
       {
         ConstraintsSet.class_hierarchy =
           {
             instantiate_successors_parameters =
               ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-            is_transitive_successor;
+            has_transitive_successor =
+              has_transitive_successor ~placeholder_subclass_extends_all:true;
             variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
             least_upper_bound;
           };
@@ -4903,8 +4904,8 @@ let create_queries ~class_metadata_environment ~dependency =
         ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
           ?dependency
           class_metadata_environment;
-      is_transitive_successor =
-        ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
+      has_transitive_successor =
+        ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
           ?dependency
           class_metadata_environment;
       get_class_metadata =

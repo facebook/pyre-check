@@ -37,11 +37,12 @@ let extract_constant_name { Node.value = expression; _ } =
 (* Check whether `successor` extends `predecessor`.
  * Returns false on untracked types.
  * Returns `reflexive` if `predecessor` and `successor` are equal. *)
-let is_transitive_successor_ignoring_untracked global_resolution ~reflexive ~predecessor ~successor =
+let has_transitive_successor_ignoring_untracked global_resolution ~reflexive ~predecessor ~successor
+  =
   if String.equal predecessor successor then
     reflexive
   else
-    try GlobalResolution.is_transitive_successor global_resolution ~predecessor ~successor with
+    try GlobalResolution.has_transitive_successor global_resolution ~successor predecessor with
     | Analysis.ClassHierarchy.Untracked untracked_type ->
         Log.warning
           "Found untracked type `%s` when checking whether `%s` is a subclass of `%s`. This could \
@@ -69,7 +70,7 @@ let is_super ~resolution ~define expression =
             in
             class_name
             >>| (fun class_name ->
-                  is_transitive_successor_ignoring_untracked
+                  has_transitive_successor_ignoring_untracked
                     (Resolution.global_resolution resolution)
                     ~reflexive:false
                     ~predecessor:class_name

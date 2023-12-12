@@ -468,8 +468,14 @@ let test_updates context =
   ()
 
 
-let test_is_transitive_successors context =
-  let assert_is_successor ~source ~expected ~placeholder_subclass_extends_all ~target predecessor =
+let test_has_transitive_successors context =
+  let assert_has_successor
+      ~source
+      ~expected
+      ~placeholder_subclass_extends_all
+      ~successor
+      predecessor
+    =
     let project =
       ScratchProject.setup
         ["test.py", source; "my_placeholder_stub.pyi", "# pyre-placeholder-stub"]
@@ -485,90 +491,90 @@ let test_is_transitive_successors context =
       ~cmp:Bool.equal
       ~printer:Bool.to_string
       expected
-      (ClassSuccessorMetadataEnvironment.ReadOnly.is_transitive_successor
+      (ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
          read_only
          ~placeholder_subclass_extends_all
-         ~target
+         ~successor
          predecessor)
   in
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.A"
     ~expected:true;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.A"
     ~expected:true;
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B: pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.B"
     ~expected:false;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B: pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.B"
     ~expected:false;
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.B"
     ~expected:true;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.B"
     ~expected:true;
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
     class C(B): pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.C"
     ~expected:true;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
     class C(B): pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.C"
     ~expected:true;
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
@@ -576,10 +582,10 @@ let test_is_transitive_successors context =
     class D(C, B): pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.D"
     ~expected:true;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     class A: pass
     class B(A): pass
@@ -587,28 +593,28 @@ let test_is_transitive_successors context =
     class D(C, B): pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.A"
+    ~successor:"test.A"
     "test.D"
     ~expected:true;
 
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     from my_placeholder_stub import A
     class B: pass
     class C(A): pass
   |}
     ~placeholder_subclass_extends_all:true
-    ~target:"test.B"
+    ~successor:"test.B"
     "test.C"
     ~expected:true;
-  assert_is_successor
+  assert_has_successor
     ~source:{|
     from my_placeholder_stub import A
     class B: pass
     class C(A): pass
   |}
     ~placeholder_subclass_extends_all:false
-    ~target:"test.B"
+    ~successor:"test.B"
     "test.C"
     ~expected:false;
   ()
@@ -918,7 +924,7 @@ let () =
   >::: [
          "simple_registration" >:: test_simple_registration;
          "updates" >:: test_updates;
-         "is_transitive_successors" >:: test_is_transitive_successors;
+         "has_transitive_successors" >:: test_has_transitive_successors;
          "least_upper_bound" >:: test_least_upper_bound;
          "overlay_dependency_filtering" >:: test_overlay_dependency_filtering;
          "overlay_propagation" >:: test_overlay_propagation;

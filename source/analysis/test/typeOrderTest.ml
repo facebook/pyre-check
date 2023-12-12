@@ -63,24 +63,24 @@ let parse_attributes ~class_name ~parse_annotation attributes =
 let get_typed_dictionary _ = None
 
 let hierarchy class_hierarchy_handler =
-  let is_transitive_successor ~source ~target =
+  let has_transitive_successor ~successor predecessor =
     match
       ClassHierarchy.method_resolution_order_linearize
         ~get_successors:(ClassHierarchy.parents_of class_hierarchy_handler)
-        source
+        predecessor
     with
     | Result.Error error ->
         let message =
           Format.asprintf
             "Invalid type order setup for %s: %a"
-            source
+            predecessor
             Sexp.pp_hum
             (ClassHierarchy.MethodResolutionOrderError.sexp_of_t error)
         in
         failwith message
     | Result.Ok mro_of_source ->
         List.exists mro_of_source ~f:(fun current ->
-            Type.Primitive.equal target current
+            Type.Primitive.equal successor current
             || ClassHierarchy.extends_placeholder_stub class_hierarchy_handler current)
   in
   let least_upper_bound left right =
@@ -114,7 +114,7 @@ let hierarchy class_hierarchy_handler =
   {
     ConstraintsSet.instantiate_successors_parameters =
       ClassHierarchy.instantiate_successors_parameters class_hierarchy_handler;
-    is_transitive_successor;
+    has_transitive_successor;
     variables = ClassHierarchy.type_parameters_as_variables class_hierarchy_handler;
     least_upper_bound;
   }

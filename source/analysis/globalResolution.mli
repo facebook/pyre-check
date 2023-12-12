@@ -175,11 +175,11 @@ val is_consistent_with
   expression:Ast.Expression.t option ->
   bool
 
-val is_transitive_successor
+val has_transitive_successor
   :  ?placeholder_subclass_extends_all:bool ->
   t ->
-  predecessor:string ->
-  successor:string ->
+  successor:Type.Primitive.t ->
+  Type.Primitive.t ->
   bool
 
 val uninstantiated_attributes
