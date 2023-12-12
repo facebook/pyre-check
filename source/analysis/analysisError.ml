@@ -3946,8 +3946,7 @@ let filter ~resolution errors =
       match kind with
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
-          let module_tracker = GlobalResolution.module_tracker resolution in
-          match ModuleTracker.ReadOnly.lookup_module_path module_tracker module_reference with
+          match GlobalResolution.lookup_module_path resolution module_reference with
           | Some { ModulePath.is_stub; _ } -> is_stub
           | _ -> false)
       | _ -> false

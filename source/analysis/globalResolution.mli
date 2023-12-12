@@ -15,6 +15,10 @@ val create
   AnnotatedGlobalEnvironment.ReadOnly.t ->
   t
 
+val lookup_module_path : t -> Ast.Reference.t -> Ast.ModulePath.t option
+
+val lookup_relative_path : t -> Ast.Reference.t -> string option
+
 val resolve_literal : t -> Expression.t -> Type.t
 
 val get_processed_source : t -> Reference.t -> Source.t option

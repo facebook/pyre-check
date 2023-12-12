@@ -378,18 +378,17 @@ module State (Context : Context) = struct
         in
         let errors =
           let error_to_string error =
-            let error =
-              let lookup =
-                GlobalResolution.module_tracker global_resolution
-                |> ModuleTracker.ReadOnly.lookup_relative_path
-              in
-              Error.instantiate ~show_error_traces:true ~lookup error
+            let instantiated =
+              Error.instantiate
+                ~show_error_traces:true
+                ~lookup:(GlobalResolution.lookup_relative_path global_resolution)
+                error
             in
             Format.asprintf
               "    %a -> %s"
               Location.WithPath.pp
-              (Error.Instantiated.location error)
-              (Error.Instantiated.description error)
+              (Error.Instantiated.location instantiated)
+              (Error.Instantiated.description instantiated)
           in
           Context.error_map
           >>| LocalErrorMap.all_errors
@@ -753,12 +752,10 @@ module State (Context : Context) = struct
 
 
   let instantiate_path ~global_resolution location =
-    let lookup =
-      GlobalResolution.module_tracker global_resolution
-      |> ModuleTracker.ReadOnly.lookup_relative_path
-    in
     let location = Location.with_module ~module_reference:Context.qualifier location in
-    Location.WithModule.instantiate ~lookup location
+    Location.WithModule.instantiate
+      ~lookup:(GlobalResolution.lookup_relative_path global_resolution)
+      location
 
 
   let define_signature =
@@ -822,13 +819,12 @@ module State (Context : Context) = struct
 
 
   let module_path_of_type ~global_resolution annotation =
-    let module_tracker = GlobalResolution.module_tracker global_resolution in
     let annotation_base, _ = Type.split annotation in
     Type.primitive_name annotation_base
     >>= GlobalResolution.get_class_summary global_resolution
     >>| Node.value
     >>= fun { ClassSummary.qualifier; _ } ->
-    ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier
+    GlobalResolution.lookup_module_path global_resolution qualifier
 
 
   let forward_reference ~resolution ~location ~errors reference =
@@ -854,8 +850,7 @@ module State (Context : Context) = struct
             | Some qualifier when not (Reference.is_empty qualifier) ->
                 if GlobalResolution.module_exists global_resolution qualifier then
                   let origin =
-                    let module_tracker = GlobalResolution.module_tracker global_resolution in
-                    match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
+                    match GlobalResolution.lookup_module_path global_resolution qualifier with
                     | Some module_path -> Error.ExplicitModule module_path
                     | None -> Error.ImplicitModule qualifier
                   in
@@ -5279,7 +5274,6 @@ module State (Context : Context) = struct
                   else
                     [Error.UndefinedModule from]
               | Some module_metadata ->
-                  let module_tracker = GlobalResolution.module_tracker global_resolution in
                   List.filter_map
                     imports
                     ~f:(fun { Node.value = { Import.name = name_reference; _ }; _ } ->
@@ -5307,7 +5301,7 @@ module State (Context : Context) = struct
                               else
                                 let origin_module =
                                   match
-                                    ModuleTracker.ReadOnly.lookup_module_path module_tracker from
+                                    GlobalResolution.lookup_module_path global_resolution from
                                   with
                                   | Some source_path -> Error.ExplicitModule source_path
                                   | None -> Error.ImplicitModule from

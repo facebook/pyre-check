@@ -797,7 +797,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         Single (Base.ExpressionLevelCoverageResponse results)
     | GlobalLeaks { qualifiers; parse_errors } ->
         let lookup =
-          let module_tracker = GlobalResolution.module_tracker global_resolution in
+          let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
           PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
         in
         let find_leak_errors_for_qualifier qualifier =

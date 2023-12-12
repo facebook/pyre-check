@@ -513,10 +513,10 @@ module State (Context : Context) = struct
     in
     let module_reference =
       let rec get_module_qualifier qualifier =
-        let module_tracker = GlobalResolution.module_tracker Context.global_resolution in
         let qualifier_prefix = Reference.prefix qualifier in
         match
-          ModuleTracker.ReadOnly.is_module_tracked module_tracker qualifier, qualifier_prefix
+          ( GlobalResolution.module_exists (Resolution.global_resolution resolution) qualifier,
+            qualifier_prefix )
         with
         (* we couldn't find a module from the given qualifier *)
         | _, None -> Reference.empty
