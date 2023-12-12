@@ -205,7 +205,7 @@
  (name alarm)
  (modules alarm)
  (public_name pyrelib.alarm)
- (libraries unix pyrelib.log pyrelib.statistics))
+ (libraries unix pyrelib.exception pyrelib.log pyrelib.statistics))
 
 (library
  (name pyrePath)

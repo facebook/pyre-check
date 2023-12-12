@@ -50,5 +50,6 @@ let with_alarm ~max_time_in_seconds ~event_name ~callable f () =
     result
   with
   | e ->
+      let exn = Exception.wrap e in
       clear_alarm id;
-      raise e
+      Exception.reraise exn
