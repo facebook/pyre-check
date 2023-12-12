@@ -382,7 +382,7 @@ let verify_global ~path ~location ~resolution ~name =
       let class_summary =
         Reference.prefix name
         >>| Reference.show
-        >>= GlobalResolution.class_summary resolution
+        >>= GlobalResolution.get_class_summary resolution
         >>| Node.value
       in
       match class_summary, global with

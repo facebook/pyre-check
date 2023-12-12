@@ -36,7 +36,7 @@ let parameter_annotations
 
 let parent_definition { Node.value = { Define.signature = { parent; _ }; _ }; _ } ~resolution =
   match parent with
-  | Some parent -> GlobalResolution.class_summary resolution (Reference.show parent)
+  | Some parent -> GlobalResolution.get_class_summary resolution (Reference.show parent)
   | _ -> None
 
 

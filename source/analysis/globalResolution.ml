@@ -87,7 +87,7 @@ let get_processed_source ({ dependency; _ } as resolution) qualifier =
   AstEnvironment.ReadOnly.get_processed_source (ast_environment resolution) ?dependency qualifier
 
 
-let class_summary ({ dependency; _ } as resolution) =
+let get_class_summary ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
     (unannotated_global_environment resolution)
     ?dependency

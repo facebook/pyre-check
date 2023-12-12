@@ -1207,7 +1207,7 @@ module CalleeKind = struct
             let is_class () =
               let primitive, _ = Type.split parent_type in
               Type.primitive_name primitive
-              >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+              >>= GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
               |> Option.is_some
             in
             if Type.is_meta parent_type then
@@ -1785,7 +1785,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
               _;
             }) -> (
           let class_name = Reference.create ~prefix:from name |> Reference.show in
-          GlobalResolution.class_summary global_resolution class_name
+          GlobalResolution.get_class_summary global_resolution class_name
           >>| Node.value
           >>| ClassSummary.attributes
           >>= Identifier.SerializableMap.find_opt attribute
@@ -1812,7 +1812,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
       | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
           let find_attribute element =
             match
-              GlobalResolution.class_summary global_resolution element
+              GlobalResolution.get_class_summary global_resolution element
               >>| Node.value
               >>| ClassSummary.attributes
               >>= Identifier.SerializableMap.find_opt attribute

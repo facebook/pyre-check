@@ -24,7 +24,7 @@ let class_name ~global_resolution annotation =
 
 
 let field_names_from_class_name ~global_resolution class_name =
-  GlobalResolution.class_summary global_resolution class_name
+  GlobalResolution.get_class_summary global_resolution class_name
   >>| Node.value
   >>| fun summary -> ClassSummary.fields_tuple_value summary |> Option.value ~default:[]
 

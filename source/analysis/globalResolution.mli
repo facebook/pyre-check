@@ -25,7 +25,7 @@ val parse_annotation
   Expression.t ->
   Type.t
 
-val class_summary : t -> Type.Primitive.t -> ClassSummary.t Node.t option
+val get_class_summary : t -> Type.Primitive.t -> ClassSummary.t Node.t option
 
 val get_define_body : t -> Reference.t -> Define.t Node.t option
 

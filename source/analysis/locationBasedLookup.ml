@@ -778,7 +778,7 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name ~stat
                     ~parent
                     ~name:attribute)
             >>| AnnotatedAttribute.parent
-            >>= GlobalResolution.class_summary (Resolution.global_resolution resolution)
+            >>= GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
             >>| Node.value
           in
           match parent_class_summary with

@@ -574,7 +574,7 @@ let rec normalized_parameter_matches_constraint
 
 let class_matches_decorator_constraint ~name_captures ~environment ~decorator_constraint class_name =
   let resolution = GlobalResolution.create environment in
-  GlobalResolution.class_summary resolution class_name
+  GlobalResolution.get_class_summary resolution class_name
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
@@ -1653,7 +1653,7 @@ module AttributeQueryExecutor = struct
     in
     let () = Log.info "Fetching all attributes..." in
     let get_class_attributes class_name =
-      let class_summary = GlobalResolution.class_summary resolution class_name >>| Node.value in
+      let class_summary = GlobalResolution.get_class_summary resolution class_name >>| Node.value in
       match class_summary with
       | None -> []
       | Some ({ name = class_name_reference; _ } as class_summary) ->
@@ -1686,7 +1686,7 @@ module AttributeQueryExecutor = struct
           annotation
       | _ -> None
     in
-    GlobalResolution.class_summary resolution class_name
+    GlobalResolution.get_class_summary resolution class_name
     >>| Node.value
     >>= fun class_summary ->
     match

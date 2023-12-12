@@ -70,7 +70,7 @@ let order_and_environment ~context source =
 
 
 let class_summary environment =
-  GlobalResolution.create environment |> GlobalResolution.class_summary
+  GlobalResolution.create environment |> GlobalResolution.get_class_summary
 
 
 let parse_annotation environment =
@@ -571,7 +571,7 @@ let test_populate context =
 
   (* Check custom class definitions. *)
   let global_resolution = GlobalResolution.create environment in
-  assert_is_some (GlobalResolution.class_summary global_resolution "typing.Optional");
+  assert_is_some (GlobalResolution.get_class_summary global_resolution "typing.Optional");
 
   (* Check type aliases. *)
   let environment =

@@ -1050,7 +1050,7 @@ let rec class_names_from_annotation = function
 let get_class_attributes ~resolution = function
   | "object" -> Some []
   | class_name ->
-      GlobalResolution.class_summary resolution class_name
+      GlobalResolution.get_class_summary resolution class_name
       >>| Node.value
       >>| fun class_summary ->
       let attributes = ClassSummary.attributes ~include_generated_attributes:false class_summary in
@@ -3243,7 +3243,7 @@ let rec parse_statement
         |> Option.bind ~f:(fun parsed ->
                let parent, _ = Type.split parsed in
                Type.primitive_name parent)
-        |> Option.bind ~f:(GlobalResolution.class_summary resolution)
+        |> Option.bind ~f:(GlobalResolution.get_class_summary resolution)
       in
       let call_target =
         match class_candidate with
