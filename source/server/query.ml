@@ -1005,7 +1005,7 @@ let rec process_request_exn ~type_environment ~build_system request =
                 ~should_log_exception:(fun _ -> true)
                 ~f:load_all_modules;
               UnannotatedGlobalEnvironment.ReadOnly.all_classes
-                (GlobalResolution.unannotated_global_environment global_resolution)
+                (TypeEnvironment.ReadOnly.unannotated_global_environment type_environment)
               |> List.map ~f:Reference.create
           | _ ->
               List.filter class_names ~f:(fun class_name ->
