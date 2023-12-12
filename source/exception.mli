@@ -9,8 +9,6 @@ type t
 
 val wrap : exn -> t
 
-val wrap_unraised : ?frames:int -> exn -> t
-
 val unwrap : t -> exn
 
 val reraise : t -> 'a
@@ -21,19 +19,11 @@ val to_string : t -> string
 
 val exn_to_string : exn -> string
 
-val to_exn : t -> exn
-
 val get_exn_string : t -> string
 
 val get_backtrace_string : t -> string
 
 val get_current_callstack_string : int -> string
-
-val print_full_backtrace : Out_channel.t -> int -> t -> unit
-
-val get_full_backtrace_string : int -> t -> string
-
-val register_printer : (exn -> string option) -> unit
 
 val record_backtrace : bool -> unit
 
