@@ -95,6 +95,12 @@ let get_define_body ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
+let get_define_names ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+    ?dependency
+    (unannotated_global_environment resolution)
+
+
 let function_definition ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
     ?dependency

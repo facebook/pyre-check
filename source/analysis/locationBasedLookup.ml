@@ -360,12 +360,8 @@ let create_of_module type_environment qualifier =
     walk_statement Cfg.entry_index 0 define_signature
   in
   let define_names =
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment global_resolution
-    in
-    UnannotatedGlobalEnvironment.ReadOnly.get_define_names unannotated_global_environment qualifier
-    |> List.filter_map
-         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
+    GlobalResolution.get_define_names global_resolution qualifier
+    |> List.filter_map ~f:(GlobalResolution.get_define_body global_resolution)
   in
   List.iter define_names ~f:walk_define;
   coverage_data_lookup
@@ -662,14 +658,8 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     Hashtbl.fold cfg ~init:names_so_far ~f:walk_cfg_node |> walk_define_signature ~define_signature
   in
   let all_defines =
-    let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment global_resolution
-    in
-    UnannotatedGlobalEnvironment.ReadOnly.get_define_names
-      unannotated_global_environment
-      module_reference
-    |> List.filter_map
-         ~f:(UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment)
+    GlobalResolution.get_define_names global_resolution module_reference
+    |> List.filter_map ~f:(GlobalResolution.get_define_body global_resolution)
   in
   let timer = Timer.start () in
   let symbols_covering_position = List.fold all_defines ~init:[] ~f:walk_define in
@@ -695,15 +685,8 @@ let resolve ~resolution expression =
   | ClassHierarchy.Untracked _ -> None
 
 
-let get_define_body ~resolution ~define_name =
-  let unannotated_global_environment =
-    Resolution.global_resolution resolution |> GlobalResolution.unannotated_global_environment
-  in
-  UnannotatedGlobalEnvironment.ReadOnly.get_define_body unannotated_global_environment define_name
-
-
 let look_up_local_definition ~resolution ~define_name ~statement_key identifier =
-  get_define_body ~resolution ~define_name
+  GlobalResolution.get_define_body (Resolution.global_resolution resolution) define_name
   >>| UninitializedLocalCheck.defined_locals_at_each_statement
   >>= (fun defined_locals_at_each_statement ->
         Map.find defined_locals_at_each_statement statement_key)
@@ -1051,7 +1034,9 @@ let find_docstring_for_symbol
           in
           name_to_reference name
           >>= fun define_name ->
-          get_define_body ~resolution ~define_name >>| Node.value >>= get_docstring_from_define
+          GlobalResolution.get_define_body (Resolution.global_resolution resolution) define_name
+          >>| Node.value
+          >>= get_docstring_from_define
       | _ -> None)
   | TypeAnnotation _ -> None
 

@@ -27,6 +27,8 @@ val class_summary : t -> Type.Primitive.t -> ClassSummary.t Node.t option
 
 val get_define_body : t -> Reference.t -> Define.t Node.t option
 
+val get_define_names : t -> Reference.t -> Reference.t list
+
 val function_definition : t -> Reference.t -> FunctionDefinition.t option
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
