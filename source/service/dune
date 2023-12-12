@@ -37,6 +37,7 @@
   sexplib
   ppxlib
   pyrelib.configuration
+  pyrelib.exception
   pyrelib.memory
   pyrelib.statistics
   hack_parallel))
