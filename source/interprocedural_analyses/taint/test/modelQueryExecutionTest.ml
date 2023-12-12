@@ -34,7 +34,7 @@ let test_generated_annotations context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
@@ -45,12 +45,9 @@ let test_generated_annotations context =
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~resolution:global_resolution
+        ~environment
         ~class_hierarchy_graph
-        ~modelable:
-          (ModelQueryExecution.CallableQueryExecutor.make_modelable
-             ~resolution:global_resolution
-             callable)
+        ~modelable:(ModelQueryExecution.CallableQueryExecutor.make_modelable ~environment callable)
         query
     in
     assert_equal
@@ -63,7 +60,7 @@ let test_generated_annotations context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
@@ -75,12 +72,9 @@ let test_generated_annotations context =
     let actual =
       ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~resolution:global_resolution
+        ~environment
         ~class_hierarchy_graph
-        ~modelable:
-          (ModelQueryExecution.AttributeQueryExecutor.make_modelable
-             ~resolution:global_resolution
-             target)
+        ~modelable:(ModelQueryExecution.AttributeQueryExecutor.make_modelable ~environment target)
         query
     in
     assert_equal
@@ -93,7 +87,7 @@ let test_generated_annotations context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
@@ -105,12 +99,10 @@ let test_generated_annotations context =
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~resolution:global_resolution
+        ~environment
         ~class_hierarchy_graph
         ~modelable:
-          (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable
-             ~resolution:global_resolution
-             target)
+          (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable ~environment target)
         query
     in
     assert_equal
@@ -4586,7 +4578,7 @@ let test_generated_cache context =
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
     in
-    let global_resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution type_environment in
+    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
@@ -4597,7 +4589,7 @@ let test_generated_cache context =
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_cache_from_queries_on_targets
         ~verbose:false
-        ~resolution:global_resolution
+        ~environment
         ~class_hierarchy_graph
         ~targets:callables
         queries

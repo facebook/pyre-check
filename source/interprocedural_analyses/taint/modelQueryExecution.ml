@@ -449,12 +449,13 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
 
 
 let matches_annotation_constraint
-    ~resolution
+    ~environment
     ~class_hierarchy_graph
     ~name_captures
     ~annotation_constraint
     annotation
   =
+  let resolution = GlobalResolution.create environment in
   let open Expression in
   match annotation_constraint, annotation with
   | ( ModelQuery.AnnotationConstraint.IsAnnotatedTypeConstraint,
@@ -519,7 +520,7 @@ let matches_annotation_constraint
 
 
 let rec normalized_parameter_matches_constraint
-    ~resolution
+    ~environment
     ~class_hierarchy_graph
     ~name_captures
     ~parameter:
@@ -532,7 +533,7 @@ let rec normalized_parameter_matches_constraint
   | ModelQuery.ParameterConstraint.AnnotationConstraint annotation_constraint ->
       annotation
       >>| matches_annotation_constraint
-            ~resolution
+            ~environment
             ~class_hierarchy_graph
             ~name_captures
             ~annotation_constraint
@@ -548,14 +549,14 @@ let rec normalized_parameter_matches_constraint
         constraints
         ~f:
           (normalized_parameter_matches_constraint
-             ~resolution
+             ~environment
              ~class_hierarchy_graph
              ~name_captures
              ~parameter)
   | ModelQuery.ParameterConstraint.Not query_constraint ->
       not
         (normalized_parameter_matches_constraint
-           ~resolution
+           ~environment
            ~class_hierarchy_graph
            ~name_captures
            ~parameter
@@ -565,13 +566,14 @@ let rec normalized_parameter_matches_constraint
         constraints
         ~f:
           (normalized_parameter_matches_constraint
-             ~resolution
+             ~environment
              ~class_hierarchy_graph
              ~name_captures
              ~parameter)
 
 
-let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint class_name =
+let class_matches_decorator_constraint ~name_captures ~environment ~decorator_constraint class_name =
+  let resolution = GlobalResolution.create environment in
   GlobalResolution.class_summary resolution class_name
   >>| Node.value
   >>| (fun { decorators; _ } ->
@@ -583,7 +585,8 @@ let class_matches_decorator_constraint ~name_captures ~resolution ~decorator_con
   |> Option.value ~default:false
 
 
-let find_parents ~resolution ~is_transitive ~includes_self class_name =
+let find_parents ~environment ~is_transitive ~includes_self class_name =
+  let resolution = GlobalResolution.create environment in
   let parents =
     if is_transitive then
       match GlobalResolution.class_metadata resolution class_name with
@@ -604,19 +607,19 @@ let find_parents ~resolution ~is_transitive ~includes_self class_name =
   parents
 
 
-let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name = function
+let rec class_matches_constraint ~environment ~class_hierarchy_graph ~name_captures ~name = function
   | ModelQuery.ClassConstraint.AnyOf constraints ->
       List.exists
         constraints
-        ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name)
+        ~f:(class_matches_constraint ~environment ~class_hierarchy_graph ~name_captures ~name)
   | ModelQuery.ClassConstraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captures ~name)
+        ~f:(class_matches_constraint ~environment ~class_hierarchy_graph ~name_captures ~name)
   | ModelQuery.ClassConstraint.Not class_constraint ->
       not
         (class_matches_constraint
-           ~resolution
+           ~environment
            ~name
            ~class_hierarchy_graph
            ~name_captures
@@ -632,43 +635,44 @@ let rec class_matches_constraint ~resolution ~class_hierarchy_graph ~name_captur
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self class_name
       |> ClassHierarchyGraph.ClassNameSet.mem name
   | ModelQuery.ClassConstraint.DecoratorConstraint decorator_constraint ->
-      class_matches_decorator_constraint ~name_captures ~resolution ~decorator_constraint name
+      class_matches_decorator_constraint ~name_captures ~environment ~decorator_constraint name
   | ModelQuery.ClassConstraint.AnyChildConstraint { class_constraint; is_transitive; includes_self }
     ->
       find_children ~class_hierarchy_graph ~is_transitive ~includes_self name
       |> ClassHierarchyGraph.ClassNameSet.exists (fun name ->
              class_matches_constraint
-               ~resolution
+               ~environment
                ~name
                ~class_hierarchy_graph
                ~name_captures
                class_constraint)
   | ModelQuery.ClassConstraint.AnyParentConstraint
       { class_constraint; is_transitive; includes_self } ->
-      find_parents ~resolution ~is_transitive ~includes_self name
+      find_parents ~environment ~is_transitive ~includes_self name
       |> List.exists ~f:(fun name ->
              class_matches_constraint
-               ~resolution
+               ~environment
                ~name
                ~class_hierarchy_graph
                ~name_captures
                class_constraint)
 
 
-let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value query_constraint =
+let rec matches_constraint ~environment ~class_hierarchy_graph ~name_captures value query_constraint
+  =
   match query_constraint with
   | ModelQuery.Constraint.AnyOf constraints ->
       List.exists
         constraints
-        ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value)
+        ~f:(matches_constraint ~environment ~class_hierarchy_graph ~name_captures value)
   | ModelQuery.Constraint.AllOf constraints ->
       List.for_all
         constraints
-        ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures value)
+        ~f:(matches_constraint ~environment ~class_hierarchy_graph ~name_captures value)
   | ModelQuery.Constraint.Not query_constraint ->
       not
         (matches_constraint
-           ~resolution
+           ~environment
            ~class_hierarchy_graph
            ~name_captures
            value
@@ -686,7 +690,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
   | ModelQuery.Constraint.AnnotationConstraint annotation_constraint ->
       Modelable.type_annotation value
       >>| matches_annotation_constraint
-            ~resolution
+            ~environment
             ~class_hierarchy_graph
             ~name_captures
             ~annotation_constraint
@@ -694,7 +698,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
   | ModelQuery.Constraint.ReturnConstraint annotation_constraint ->
       Modelable.return_annotation value
       >>| matches_annotation_constraint
-            ~resolution
+            ~environment
             ~class_hierarchy_graph
             ~name_captures
             ~annotation_constraint
@@ -704,7 +708,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
       |> AccessPath.normalize_parameters
       |> List.exists ~f:(fun parameter ->
              normalized_parameter_matches_constraint
-               ~resolution
+               ~environment
                ~class_hierarchy_graph
                ~name_captures
                ~parameter
@@ -723,7 +727,7 @@ let rec matches_constraint ~resolution ~class_hierarchy_graph ~name_captures val
       Modelable.class_name value
       >>| (fun name ->
             class_matches_constraint
-              ~resolution
+              ~environment
               ~class_hierarchy_graph
               ~name_captures
               ~name
@@ -912,18 +916,18 @@ module type QUERY_KIND = sig
 
   val query_kind_name : string
 
-  val make_modelable : resolution:GlobalResolution.t -> Target.t -> Modelable.t
+  val make_modelable : environment:AnnotatedGlobalEnvironment.ReadOnly.t -> Target.t -> Modelable.t
 
   (* Generate taint annotations from the `models` part of a given model query. *)
   val generate_annotations_from_query_models
-    :  resolution:GlobalResolution.t ->
+    :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
     modelable:Modelable.t ->
     ModelQuery.Model.t list ->
     annotation list
 
   val generate_model_from_annotations
-    :  resolution:GlobalResolution.t ->
+    :  environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
     source_sink_filter:SourceSinkFilter.t option ->
     stubs:Target.HashsetSharedMemory.ReadOnly.t ->
     target:Target.t ->
@@ -938,7 +942,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let matches_query_constraints
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~name_captures
       ~modelable
@@ -947,7 +951,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     let result =
       Modelable.matches_find modelable find
       && List.for_all
-           ~f:(matches_constraint ~resolution ~class_hierarchy_graph ~name_captures modelable)
+           ~f:(matches_constraint ~environment ~class_hierarchy_graph ~name_captures modelable)
            where
     in
     let () =
@@ -963,7 +967,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_annotations_from_query_on_target
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~modelable
       ({ ModelQuery.models; _ } as query)
@@ -971,14 +975,14 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     if
       matches_query_constraints
         ~verbose
-        ~resolution
+        ~environment
         ~class_hierarchy_graph
         ~name_captures:None
         ~modelable
         query
     then
       QueryKind.generate_annotations_from_query_models
-        ~resolution
+        ~environment
         ~class_hierarchy_graph
         ~modelable
         models
@@ -988,7 +992,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_model_from_query_on_target
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -999,7 +1003,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     match
       generate_annotations_from_query_on_target
         ~verbose
-        ~resolution
+        ~environment
         ~class_hierarchy_graph
         ~modelable
         query
@@ -1007,7 +1011,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     | [] -> Ok None
     | annotations ->
         QueryKind.generate_model_from_annotations
-          ~resolution
+          ~environment
           ~source_sink_filter
           ~stubs
           ~target
@@ -1018,7 +1022,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_models_from_query_on_targets
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1026,11 +1030,11 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       query
     =
     let fold (registry, errors) target =
-      let modelable = QueryKind.make_modelable ~resolution target in
+      let modelable = QueryKind.make_modelable ~environment target in
       match
         generate_model_from_query_on_target
           ~verbose
-          ~resolution
+          ~environment
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1049,19 +1053,19 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_models_from_queries_on_target
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
       ~queries
       target
     =
-    let modelable = QueryKind.make_modelable ~resolution target in
+    let modelable = QueryKind.make_modelable ~environment target in
     let fold results query =
       match
         generate_model_from_query_on_target
           ~verbose
-          ~resolution
+          ~environment
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1083,7 +1087,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_models_from_queries_on_targets
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1094,7 +1098,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     |> List.map ~f:(fun target ->
            generate_models_from_queries_on_target
              ~verbose
-             ~resolution
+             ~environment
              ~class_hierarchy_graph
              ~source_sink_filter
              ~stubs
@@ -1107,14 +1111,14 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_cache_from_query_on_target
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~initial_cache
       ~target
       ({ ModelQuery.models; name; _ } as query)
     =
     let name_captures = NameCaptures.create () in
-    let modelable = QueryKind.make_modelable ~resolution target in
+    let modelable = QueryKind.make_modelable ~environment target in
     let write_to_cache cache = function
       | ModelQuery.Model.WriteToCache { kind; name } ->
           ReadWriteCache.write
@@ -1134,7 +1138,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     if
       matches_query_constraints
         ~verbose
-        ~resolution
+        ~environment
         ~class_hierarchy_graph
         ~name_captures:(Some name_captures)
         ~modelable
@@ -1147,7 +1151,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_cache_from_queries_on_targets
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~targets
       write_to_cache_queries
@@ -1155,7 +1159,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     let fold_target ~query cache target =
       generate_cache_from_query_on_target
         ~verbose
-        ~resolution
+        ~environment
         ~class_hierarchy_graph
         ~initial_cache:cache
         ~target
@@ -1167,7 +1171,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_cache_from_queries_on_targets_with_multiprocessing
       ~verbose
-      ~resolution
+      ~environment
       ~scheduler
       ~class_hierarchy_graph
       ~targets
@@ -1177,7 +1181,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         let map targets =
           generate_cache_from_queries_on_targets
             ~verbose
-            ~resolution
+            ~environment
             ~class_hierarchy_graph
             ~targets
             write_to_cache_queries
@@ -1199,7 +1203,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_models_from_read_cache_queries_on_targets
       ~verbose
-      ~resolution
+      ~environment
       ~class_hierarchy_graph
       ~source_sink_filter
       ~stubs
@@ -1223,7 +1227,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
           let registry, new_errors =
             generate_models_from_query_on_targets
               ~verbose
-              ~resolution
+              ~environment
               ~class_hierarchy_graph
               ~source_sink_filter
               ~stubs
@@ -1245,7 +1249,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
   (* Generate models from non-cache queries. *)
   let generate_models_from_regular_queries_on_targets_with_multiprocessing
       ~verbose
-      ~resolution
+      ~environment
       ~scheduler
       ~class_hierarchy_graph
       ~source_sink_filter
@@ -1257,7 +1261,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         let map targets =
           generate_models_from_queries_on_targets
             ~verbose
-            ~resolution
+            ~environment
             ~class_hierarchy_graph
             ~source_sink_filter
             ~stubs
@@ -1281,7 +1285,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
 
   let generate_models_from_queries_on_targets_with_multiprocessing
       ~verbose
-      ~resolution
+      ~environment
       ~scheduler
       ~class_hierarchy_graph
       ~source_sink_filter
@@ -1308,7 +1312,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let cache =
         generate_cache_from_queries_on_targets_with_multiprocessing
           ~verbose
-          ~resolution
+          ~environment
           ~scheduler
           ~class_hierarchy_graph
           ~targets
@@ -1323,7 +1327,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let ({ ExecutionResult.models; _ } as results) =
         generate_models_from_read_cache_queries_on_targets
           ~verbose
-          ~resolution
+          ~environment
           ~class_hierarchy_graph
           ~source_sink_filter
           ~stubs
@@ -1349,7 +1353,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       let ({ ExecutionResult.models; _ } as results) =
         generate_models_from_regular_queries_on_targets_with_multiprocessing
           ~verbose
-          ~resolution
+          ~environment
           ~scheduler
           ~class_hierarchy_graph
           ~source_sink_filter
@@ -1377,7 +1381,8 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 
   let query_kind_name = "callable"
 
-  let make_modelable ~resolution callable =
+  let make_modelable ~environment callable =
+    let resolution = GlobalResolution.create environment in
     let signature =
       lazy
         (match Target.get_module_and_definition ~resolution callable with
@@ -1393,7 +1398,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
     Modelable.Callable { target = callable; signature }
 
 
-  let generate_annotations_from_query_models ~resolution ~class_hierarchy_graph ~modelable models =
+  let generate_annotations_from_query_models ~environment ~class_hierarchy_graph ~modelable models =
     let production_to_taint ?(parameter = None) ~production annotation =
       let open Expression in
       let get_subkind_from_annotation ~pattern annotation =
@@ -1597,7 +1602,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                 where
                 ~f:
                   (normalized_parameter_matches_constraint
-                     ~resolution
+                     ~environment
                      ~class_hierarchy_graph
                      ~name_captures:None
                      ~parameter)
@@ -1624,13 +1629,14 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 
 
   let generate_model_from_annotations
-      ~resolution
+      ~environment
       ~source_sink_filter
       ~stubs
       ~target:callable
       ~modelable
       annotations
     =
+    let resolution = GlobalResolution.create environment in
     ModelParser.create_callable_model_from_annotations
       ~resolution
       ~modelable
@@ -1673,7 +1679,8 @@ module AttributeQueryExecutor = struct
     List.concat_map all_classes ~f:get_class_attributes
 
 
-  let get_type_annotation ~resolution class_name attribute =
+  let get_type_annotation ~environment class_name attribute =
+    let resolution = GlobalResolution.create environment in
     let get_annotation = function
       | { ClassSummary.Attribute.kind = Simple { ClassSummary.Attribute.annotation; _ }; _ } ->
           annotation
@@ -1701,19 +1708,19 @@ module AttributeQueryExecutor = struct
 
     let query_kind_name = "attribute"
 
-    let make_modelable ~resolution target =
+    let make_modelable ~environment target =
       let name = Target.object_name target in
       let type_annotation =
         lazy
           (let class_name = Reference.prefix name >>| Reference.show |> Option.value ~default:"" in
            let attribute = Reference.last name in
-           get_type_annotation ~resolution class_name attribute)
+           get_type_annotation ~environment class_name attribute)
       in
       Modelable.Attribute { name; type_annotation }
 
 
     let generate_annotations_from_query_models
-        ~resolution:_
+        ~environment:_
         ~class_hierarchy_graph:_
         ~modelable:_
         models
@@ -1731,13 +1738,14 @@ module AttributeQueryExecutor = struct
 
 
     let generate_model_from_annotations
-        ~resolution
+        ~environment
         ~source_sink_filter
         ~stubs:_
         ~target
         ~modelable:_
         annotations
       =
+      let resolution = GlobalResolution.create environment in
       ModelParser.create_attribute_model_from_annotations
         ~resolution
         ~name:(Target.object_name target)
@@ -1769,10 +1777,13 @@ module GlobalVariableQueryExecutor = struct
     |> List.map ~f:Target.create_object
 
 
-  let get_type_annotation ~resolution reference =
+  let get_type_annotation ~environment reference =
+    let unannotated_global_environment =
+      AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment environment
+    in
     match
       UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-        (GlobalResolution.unannotated_global_environment resolution)
+        unannotated_global_environment
         reference
     with
     | Some (SimpleAssign { explicit_annotation; _ }) -> explicit_annotation
@@ -1784,15 +1795,15 @@ module GlobalVariableQueryExecutor = struct
 
     let query_kind_name = "global"
 
-    let make_modelable ~resolution target =
+    let make_modelable ~environment target =
       let name = Target.object_name target in
-      let type_annotation = lazy (get_type_annotation ~resolution name) in
+      let type_annotation = lazy (get_type_annotation ~environment name) in
       Modelable.Global { name; type_annotation }
 
 
     (* Generate taint annotations from the `models` part of a given model query. *)
     let generate_annotations_from_query_models
-        ~resolution:_
+        ~environment:_
         ~class_hierarchy_graph:_
         ~modelable:_
         models
@@ -1809,13 +1820,14 @@ module GlobalVariableQueryExecutor = struct
 
 
     let generate_model_from_annotations
-        ~resolution
+        ~environment
         ~source_sink_filter
         ~stubs:_
         ~target
         ~modelable:_
         annotations
       =
+      let resolution = GlobalResolution.create environment in
       ModelParser.create_attribute_model_from_annotations
         ~resolution
         ~name:(Target.object_name target)
@@ -1836,7 +1848,6 @@ let generate_models_from_queries
     ~stubs
     queries
   =
-  let resolution = GlobalResolution.create environment in
   let extends_to_classnames =
     ModelParseResult.ModelQuery.extract_extends_from_model_queries queries
   in
@@ -1855,7 +1866,7 @@ let generate_models_from_queries
     if not (List.is_empty callable_queries) then
       CallableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
-        ~resolution
+        ~environment
         ~scheduler
         ~class_hierarchy_graph
         ~source_sink_filter
@@ -1872,7 +1883,7 @@ let generate_models_from_queries
       let attributes = AttributeQueryExecutor.get_attributes ~environment in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
-        ~resolution
+        ~environment
         ~scheduler
         ~class_hierarchy_graph
         ~source_sink_filter
@@ -1890,7 +1901,7 @@ let generate_models_from_queries
       let globals = GlobalVariableQueryExecutor.get_globals ~environment in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
-        ~resolution
+        ~environment
         ~scheduler
         ~class_hierarchy_graph
         ~source_sink_filter

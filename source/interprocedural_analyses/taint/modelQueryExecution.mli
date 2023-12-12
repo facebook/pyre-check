@@ -91,7 +91,7 @@ end
 module CallableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -99,14 +99,14 @@ module CallableQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
   val make_modelable
-    :  resolution:Analysis.GlobalResolution.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -114,7 +114,7 @@ end
 module AttributeQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -122,7 +122,7 @@ module AttributeQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
@@ -133,13 +133,13 @@ module AttributeQueryExecutor : sig
     Interprocedural.Target.t list
 
   val get_type_annotation
-    :  resolution:Analysis.GlobalResolution.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     string ->
     string ->
     Ast.Expression.t option
 
   val make_modelable
-    :  resolution:Analysis.GlobalResolution.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
@@ -147,7 +147,7 @@ end
 module GlobalVariableQueryExecutor : sig
   val generate_annotations_from_query_on_target
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     modelable:ModelParseResult.Modelable.t ->
     ModelParseResult.ModelQuery.t ->
@@ -155,7 +155,7 @@ module GlobalVariableQueryExecutor : sig
 
   val generate_cache_from_queries_on_targets
     :  verbose:bool ->
-    resolution:Analysis.GlobalResolution.t ->
+    environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.SharedMemory.t ->
     targets:Interprocedural.Target.t list ->
     ModelParseResult.ModelQuery.t list ->
@@ -166,12 +166,12 @@ module GlobalVariableQueryExecutor : sig
     Interprocedural.Target.t list
 
   val get_type_annotation
-    :  resolution:Analysis.GlobalResolution.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     Ast.Reference.t ->
     Ast.Expression.t option
 
   val make_modelable
-    :  resolution:Analysis.GlobalResolution.t ->
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
     Interprocedural.Target.t ->
     ModelParseResult.Modelable.t
 end
