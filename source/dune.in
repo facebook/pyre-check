@@ -69,7 +69,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
- (libraries core unix))
+ (libraries core unix pyrelib.exception))
 
 (library
  (name recognized)

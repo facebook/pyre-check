@@ -148,7 +148,7 @@ let log_exception message exception_to_log backtrace =
   error
     "%s\nException: %s\nBacktrace:\n%s"
     message
-    (Exn.to_string exception_to_log)
+    (Exception.exn_to_string exception_to_log)
     (Stdlib.Printexc.raw_backtrace_to_string backtrace)
 
 
