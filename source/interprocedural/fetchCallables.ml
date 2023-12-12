@@ -107,9 +107,7 @@ let gather_raw_definitions
       callables_left
       callables_right
   in
-  GlobalResolution.unannotated_global_environment resolution
-  |> (fun environment ->
-       Analysis.UnannotatedGlobalEnvironment.ReadOnly.get_define_names environment qualifier)
+  GlobalResolution.get_define_names resolution qualifier
   |> Reference.Set.of_list
   |> Set.elements
   |> List.filter ~f:filter_parameters

@@ -59,8 +59,8 @@ let run_infer
   let open Option in
   Log.info "Running inference...";
   let timer = Timer.start () in
+  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment in
   let global_resolution = GlobalResolution.create global_environment in
-  let ast_environment = GlobalResolution.ast_environment global_resolution in
   let should_analyze_qualifier =
     match paths_to_modify with
     | None -> fun _qualifier -> true
