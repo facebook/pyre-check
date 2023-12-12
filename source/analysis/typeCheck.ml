@@ -6497,7 +6497,7 @@ module State (Context : Context) = struct
                             | Anonymous -> true
                             | Named function_name -> (
                                 let definition =
-                                  GlobalResolution.define_body global_resolution function_name
+                                  GlobalResolution.get_define_body global_resolution function_name
                                 in
                                 match definition with
                                 | None -> false
@@ -6625,7 +6625,7 @@ module State (Context : Context) = struct
               | Some define_name -> (
                   (* TODO (T57339384): This operation should only depend on the signature, not the
                      body *)
-                  match GlobalResolution.define_body global_resolution define_name with
+                  match GlobalResolution.get_define_body global_resolution define_name with
                   | None -> sofar
                   | Some
                       {
@@ -7547,7 +7547,7 @@ let compute_local_annotations ~global_environment name =
     in
     exit_state ~resolution (module Context)
   in
-  GlobalResolution.define_body global_resolution name
+  GlobalResolution.get_define_body global_resolution name
   >>| exit_state_of_define
   >>= (fun { local_annotations; _ } -> local_annotations)
   >>| LocalAnnotationMap.read_only

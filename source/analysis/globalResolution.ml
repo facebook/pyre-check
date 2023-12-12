@@ -89,7 +89,7 @@ let class_summary ({ dependency; _ } as resolution) =
     ?dependency
 
 
-let define_body ({ dependency; _ } as resolution) =
+let get_define_body ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.get_define_body
     ?dependency
     (unannotated_global_environment resolution)

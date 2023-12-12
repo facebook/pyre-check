@@ -25,7 +25,7 @@ val parse_annotation
 
 val class_summary : t -> Type.Primitive.t -> ClassSummary.t Node.t option
 
-val define_body : t -> Reference.t -> Define.t Node.t option
+val get_define_body : t -> Reference.t -> Define.t Node.t option
 
 val function_definition : t -> Reference.t -> FunctionDefinition.t option
 

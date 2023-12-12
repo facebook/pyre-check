@@ -1157,7 +1157,7 @@ module CalleeKind = struct
     | Function
 
   let get_define ~resolution reference =
-    reference |> GlobalResolution.define_body (Resolution.global_resolution resolution)
+    reference |> GlobalResolution.get_define_body (Resolution.global_resolution resolution)
 
 
   let rec from_callee ~resolution callee callee_type =
