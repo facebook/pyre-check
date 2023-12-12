@@ -89,7 +89,8 @@ let test_find_globals context =
       }
     in
     let actual =
-      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals ~resolution:global_resolution
+      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals
+        ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
       |> List.map ~f:Target.object_name
       |> List.filter ~f:is_uninteresting_global
       |> List.map ~f:add_type_annotation

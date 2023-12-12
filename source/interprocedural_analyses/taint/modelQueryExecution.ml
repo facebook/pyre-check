@@ -1747,10 +1747,10 @@ module AttributeQueryExecutor = struct
 end
 
 module GlobalVariableQueryExecutor = struct
-  let get_globals ~resolution =
+  let get_globals ~environment =
     let () = Log.info "Fetching all globals..." in
     let unannotated_global_environment =
-      GlobalResolution.unannotated_global_environment resolution
+      AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment environment
     in
     let filter_global global_reference =
       match
@@ -1887,7 +1887,7 @@ let generate_models_from_queries
   (* Generate models for globals. *)
   let execution_result =
     if not (List.is_empty global_queries) then
-      let globals = GlobalVariableQueryExecutor.get_globals ~resolution in
+      let globals = GlobalVariableQueryExecutor.get_globals ~environment in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~resolution

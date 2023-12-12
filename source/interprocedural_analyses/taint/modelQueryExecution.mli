@@ -161,7 +161,9 @@ module GlobalVariableQueryExecutor : sig
     ModelParseResult.ModelQuery.t list ->
     ReadWriteCache.t
 
-  val get_globals : resolution:Analysis.GlobalResolution.t -> Interprocedural.Target.t list
+  val get_globals
+    :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    Interprocedural.Target.t list
 
   val get_type_annotation
     :  resolution:Analysis.GlobalResolution.t ->
