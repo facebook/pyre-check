@@ -73,7 +73,7 @@ module Buck = struct
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
         Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 
 
   let to_yojson
@@ -139,7 +139,7 @@ module ChangeIndicator = struct
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
         Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 
 
   let to_yojson { root; relative } =
@@ -166,7 +166,7 @@ module UnwatchedFiles = struct
     | Yojson.Safe.Util.Type_error (message, _)
     | Yojson.Safe.Util.Undefined (message, _) ->
         Result.Error message
-    | other_exception -> Result.Error (Exn.to_string other_exception)
+    | other_exception -> Result.Error (Exception.exn_to_string other_exception)
 
 
   let to_yojson { root; checksum_path } =

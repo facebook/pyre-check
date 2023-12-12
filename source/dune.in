@@ -378,6 +378,7 @@
  (libraries
   core
   ppx_deriving
+  pyrelib.exception
   pyrelib.pyre
   pyrelib.path
   pyrelib.search_path
