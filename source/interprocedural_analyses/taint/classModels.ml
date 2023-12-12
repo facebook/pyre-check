@@ -321,8 +321,7 @@ let infer ~environment ~user_models =
     |> Option.value ~default:[]
   in
   let all_classes =
-    TypeEnvironment.ReadOnly.global_resolution environment
-    |> GlobalResolution.unannotated_global_environment
+    TypeEnvironment.ReadOnly.unannotated_global_environment environment
     |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
   in
   let models =
