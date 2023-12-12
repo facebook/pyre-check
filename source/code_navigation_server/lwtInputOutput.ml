@@ -16,7 +16,7 @@ let write_line_ignoring_errors ~output_channel message =
     Log.log
       ~section:`Server
       "Exception occurred while writing to output channel: %s"
-      (Exn.to_string exn);
+      (Exception.exn_to_string exn);
     Lwt.return_unit
   in
   Lwt.catch send on_io_exception

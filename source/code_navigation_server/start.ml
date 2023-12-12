@@ -99,7 +99,7 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
                 handle_subscription ~server ~input_channel ~output_channel subscription))
   in
   let on_uncaught_exception exn =
-    Log.warning "Uncaught exception: %s" (Exn.to_string exn);
+    Log.warning "Uncaught exception: %s" (Exception.exn_to_string exn);
     Statistics.log_exception exn ~fatal:true ~origin:"code-navigation";
     Server.Stop.(stop_waiting_server (Reason.UncaughtException exn))
   in
