@@ -89,20 +89,6 @@ val legacy_resolve_exports : t -> Reference.t -> Reference.t
 
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
-val ast_environment : t -> AstEnvironment.ReadOnly.t
-
-val annotated_global_environment : t -> AnnotatedGlobalEnvironment.ReadOnly.t
-
-val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
-
-val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
-
-val alias_environment : t -> AliasEnvironment.ReadOnly.t
-
-val empty_stub_environment : t -> EmptyStubEnvironment.ReadOnly.t
-
-val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
-
 val aliases
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
@@ -112,8 +98,6 @@ val aliases
 val base_is_from_placeholder_stub : t -> Expression.t -> bool
 
 val module_exists : t -> Reference.t -> bool
-
-val module_tracker : t -> ModuleTracker.ReadOnly.t
 
 val get_module_metadata : t -> Reference.t -> Module.t option
 
