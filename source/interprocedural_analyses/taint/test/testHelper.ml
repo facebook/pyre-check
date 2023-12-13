@@ -879,16 +879,28 @@ let end_to_end_integration_test path context =
     assert_bool message false
 
 
+let find_pyre_source_code_root () =
+  match Stdlib.Sys.getenv_opt "PYRE_CODE_ROOT" with
+  | Some pyre_root_string -> PyrePath.create_absolute pyre_root_string
+  | None -> (
+      let current_directory = PyrePath.current_working_directory () in
+      match
+        PyrePath.search_upwards
+          ~target:"source"
+          ~target_type:PyrePath.FileType.Directory
+          ~root:current_directory
+      with
+      | Some pyre_root -> pyre_root
+      | None -> current_directory)
+
+
 let end_to_end_test_paths relative_path =
   let file_filter name =
     String.is_suffix ~suffix:".py" name
     && (not (String.contains name '#'))
     && not (String.contains name '~')
   in
-  PyrePath.current_working_directory ()
-  |> (fun path ->
-       PyrePath.search_upwards ~target:"source" ~target_type:PyrePath.FileType.Directory ~root:path
-       |> Option.value ~default:path)
+  find_pyre_source_code_root ()
   |> (fun root -> PyrePath.create_relative ~root ~relative:relative_path)
   |> fun root -> PyrePath.list ~file_filter ~root ()
 
