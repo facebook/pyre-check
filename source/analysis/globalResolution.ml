@@ -170,10 +170,6 @@ let get_module_metadata ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let function_definitions resolution reference =
-  get_function_definition resolution reference >>| FunctionDefinition.all_bodies
-
-
 let full_order ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.full_order ?dependency (attribute_resolution resolution)
 

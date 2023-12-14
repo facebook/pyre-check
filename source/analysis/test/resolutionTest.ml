@@ -444,50 +444,6 @@ let test_get_typed_dictionary context =
   ()
 
 
-let test_function_definitions context =
-  let assert_functions sources function_name expected =
-    let project = ScratchProject.setup ~context sources in
-    let resolution = ScratchProject.build_resolution project in
-    let resolution = Resolution.global_resolution resolution in
-    let functions =
-      GlobalResolution.function_definitions resolution !&function_name
-      >>| List.map ~f:(fun { Node.value = { Define.signature = { name; _ }; _ }; _ } ->
-              Reference.show name)
-      |> Option.value ~default:[]
-    in
-    assert_equal ~printer:(String.concat ~sep:", ") expected functions
-  in
-  assert_functions ["foo.py", "def foo(): pass\n"] "foo.foo" ["foo.foo"];
-  assert_functions
-    [
-      ( "bar.py",
-        {|
-        @overload
-        def bar(a: int) -> str: ...
-        def bar(a: str) -> int: ...
-      |}
-      );
-    ]
-    "bar.bar"
-    ["bar.bar"; "bar.bar"];
-  assert_functions
-    ["baz.py", {|
-        def foo(a: int) -> str: ...
-        def bar(a: str) -> int: ...
-      |}]
-    "baz.foo"
-    ["baz.foo"];
-  assert_functions [] "undefined.undefined" [];
-  assert_functions
-    ["yarp.py", {|
-        def foo():
-          def nested(): pass
-      |}]
-    "yarp.foo.nested"
-    [];
-  ()
-
-
 (* We don't reverse order when returning the classes. *)
 
 let test_source_is_unit_test context =
@@ -726,7 +682,6 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
-         "function_definitions" >:: test_function_definitions;
          "source_is_unit_test" >:: test_source_is_unit_test;
          "fallback_attribute" >:: test_fallback_attribute;
        ]

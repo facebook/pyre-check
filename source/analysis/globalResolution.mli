@@ -113,8 +113,6 @@ val get_class_metadata
 
 val is_protocol : t -> Type.t -> bool
 
-val function_definitions : t -> Reference.t -> Define.t Node.t list option
-
 val is_from_empty_stub : t -> Reference.t -> bool
 
 val full_order : t -> ConstraintsSet.order
