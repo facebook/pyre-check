@@ -74,18 +74,8 @@ let lookup_relative_path resolution =
   ModuleTracker.ReadOnly.lookup_relative_path (module_tracker resolution)
 
 
-let class_hierarchy ({ dependency; _ } as resolution) =
-  ClassHierarchyEnvironment.ReadOnly.class_hierarchy
-    ?dependency
-    (class_hierarchy_environment resolution)
-
-
-let is_tracked resolution = ClassHierarchy.contains (class_hierarchy resolution)
-
-let contains_untracked resolution annotation =
-  List.exists
-    ~f:(fun annotation -> not (is_tracked resolution annotation))
-    (Type.elements annotation)
+let get_processed_source ({ dependency; _ } as resolution) qualifier =
+  AstEnvironment.ReadOnly.get_processed_source (ast_environment resolution) ?dependency qualifier
 
 
 let is_protocol ({ dependency; _ } as resolution) annotation =
@@ -99,10 +89,6 @@ let first_matching_class_decorator ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.first_matching_class_decorator
     (unannotated_global_environment resolution)
     ?dependency
-
-
-let get_processed_source ({ dependency; _ } as resolution) qualifier =
-  AstEnvironment.ReadOnly.get_processed_source (ast_environment resolution) ?dependency qualifier
 
 
 let get_class_summary ({ dependency; _ } as resolution) =
@@ -129,16 +115,37 @@ let get_function_definition ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
-  AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+let module_exists ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.module_exists
     ?dependency
-    (alias_environment resolution)
+    (unannotated_global_environment resolution)
 
 
-let get_class_metadata ({ dependency; _ } as resolution) =
-  ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
+let class_exists ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.class_exists
+    (unannotated_global_environment resolution)
     ?dependency
-    (class_metadata_environment resolution)
+
+
+let get_module_metadata ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
+    ?dependency
+    (unannotated_global_environment resolution)
+
+
+let legacy_resolve_exports ({ dependency; _ } as resolution) reference =
+  UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
+    ?dependency
+    (unannotated_global_environment resolution)
+    reference
+
+
+let resolve_exports ({ dependency; _ } as resolution) ?from reference =
+  UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
+    ?dependency
+    (unannotated_global_environment resolution)
+    ?from
+    reference
 
 
 let is_from_empty_stub ({ dependency; _ } as resolution) reference =
@@ -152,26 +159,207 @@ let get_alias ({ dependency; _ } as resolution) =
   AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
 
 
+let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
+  AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+    ?dependency
+    (alias_environment resolution)
+
+
+let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
+  AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+    (alias_environment resolution)
+    ?dependency
+    ()
+
+
+let class_hierarchy ({ dependency; _ } as resolution) =
+  ClassHierarchyEnvironment.ReadOnly.class_hierarchy
+    ?dependency
+    (class_hierarchy_environment resolution)
+
+
+let type_parameters_as_variables ?default ({ dependency; _ } as resolution) =
+  ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables
+    ?default
+    ?dependency
+    (class_hierarchy_environment resolution)
+
+
+let has_transitive_successor
+    ?(placeholder_subclass_extends_all = true)
+    resolution
+    ~successor
+    predecessor
+  =
+  ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
+    ~placeholder_subclass_extends_all
+    (class_metadata_environment resolution)
+    ~successor
+    predecessor
+
+
+let successors ~resolution:({ dependency; _ } as resolution) =
+  ClassSuccessorMetadataEnvironment.ReadOnly.successors
+    ?dependency
+    (class_metadata_environment resolution)
+
+
+let get_class_metadata ({ dependency; _ } as resolution) =
+  ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
+    ?dependency
+    (class_metadata_environment resolution)
+
+
+let is_class_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+  ClassSuccessorMetadataEnvironment.ReadOnly.is_class_typed_dictionary
+    (class_metadata_environment resolution)
+    ?dependency
+
+
+let full_order ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.full_order ?dependency (attribute_resolution resolution)
+
+
+let parse_annotation ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
+
+
+let global ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.global (attribute_resolution resolution) ?dependency
+
+
+let attribute ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.attribute (attribute_resolution resolution) ?dependency
+
+
+let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.get_typed_dictionary (attribute_resolution resolution) ?dependency
+
+
+let constraints_solution_exists ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.constraints_solution_exists
+    ?dependency
+    (attribute_resolution resolution)
+
+
+let constraints ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
+
+
+let uninstantiated_attributes
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(accessed_through_class = false)
+    ?(include_generated_attributes = true)
+    name
+  =
+  AttributeResolution.ReadOnly.uninstantiated_attributes
+    (attribute_resolution resolution)
+    ~transitive
+    ~accessed_through_class
+    ~include_generated_attributes
+    name
+    ?dependency
+
+
+let attribute_details
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(accessed_through_class = false)
+    ?(include_generated_attributes = true)
+    name
+  =
+  AttributeResolution.ReadOnly.attribute_details
+    (attribute_resolution resolution)
+    ~transitive
+    ~accessed_through_class
+    ~include_generated_attributes
+    name
+    ?dependency
+
+
+let instantiate_attribute ~resolution:({ dependency; _ } as resolution) ?instantiated =
+  AttributeResolution.ReadOnly.instantiate_attribute
+    (attribute_resolution resolution)
+    ?dependency
+    ?instantiated
+
+
+let metaclass ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.metaclass ?dependency (attribute_resolution resolution)
+
+
+let resolve_mutable_literals ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.resolve_mutable_literals
+    ?dependency
+    (attribute_resolution resolution)
+
+
+let resolve_define ~resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
+
+
+let signature_select ~global_resolution:({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
+
+
+let check_invalid_type_parameters ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.check_invalid_type_parameters
+    (attribute_resolution resolution)
+    ?dependency
+
+
+let resolve_literal ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.resolve_literal ?dependency (attribute_resolution resolution)
+
+
+let attribute_names
+    ~resolution:({ dependency; _ } as resolution)
+    ?(transitive = false)
+    ?(accessed_through_class = false)
+    ?(include_generated_attributes = true)
+    ?instantiated:_
+    name
+  =
+  AttributeResolution.ReadOnly.attribute_names
+    (attribute_resolution resolution)
+    ~transitive
+    ~accessed_through_class
+    ~include_generated_attributes
+    name
+    ?dependency
+
+
+let location_of_global ({ dependency; _ } as resolution) =
+  AnnotatedGlobalEnvironment.ReadOnly.location_of_global
+    (annotated_global_environment resolution)
+    ?dependency
+
+
+let is_tracked resolution = ClassHierarchy.contains (class_hierarchy resolution)
+
+let contains_untracked resolution annotation =
+  List.exists
+    ~f:(fun annotation -> not (is_tracked resolution annotation))
+    (Type.elements annotation)
+
+
+let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
+
+let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
+
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
     ~aliases:(get_alias resolution)
     ~is_from_empty_stub:(is_from_empty_stub resolution)
 
 
-let module_exists ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.module_exists
-    ?dependency
-    (unannotated_global_environment resolution)
-
-
-let get_module_metadata ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_module_metadata
-    ?dependency
-    (unannotated_global_environment resolution)
-
-
-let full_order ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.full_order ?dependency (attribute_resolution resolution)
+let parse_reference ?(allow_untracked = false) resolution reference =
+  let validation =
+    if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives
+  in
+  Expression.from_reference ~location:Location.any reference
+  |> parse_annotation resolution ~validation
 
 
 let less_or_equal resolution = full_order resolution |> TypeOrder.always_less_or_equal
@@ -188,20 +376,6 @@ let less_or_equal_either_way resolution type0 type1 =
 
 
 let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compatible_with
-
-let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
-
-let parse_annotation ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
-
-
-let parse_reference ?(allow_untracked = false) resolution reference =
-  let validation =
-    if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives
-  in
-  Expression.from_reference ~location:Location.any reference
-  |> parse_annotation resolution ~validation
-
 
 let is_invariance_mismatch resolution ~left ~right =
   match left, right with
@@ -235,14 +409,6 @@ let is_invariance_mismatch resolution ~left ~right =
       in
       zipped >>| List.exists ~f:due_to_invariant_variable |> Option.value ~default:false
   | _ -> false
-
-
-let global ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.global (attribute_resolution resolution) ?dependency
-
-
-let attribute ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.attribute (attribute_resolution resolution) ?dependency
 
 
 let attribute_from_class_name
@@ -318,26 +484,10 @@ let attribute_from_annotation ?special_method resolution ~parent:annotation ~nam
   | Some (_ :: _) -> None
 
 
-let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.get_typed_dictionary (attribute_resolution resolution) ?dependency
-
-
-let is_class_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
-  ClassSuccessorMetadataEnvironment.ReadOnly.is_class_typed_dictionary
-    (class_metadata_environment resolution)
-    ?dependency
-
-
 let is_typed_dictionary ~resolution annotation =
   Type.primitive_name annotation
   >>| is_class_typed_dictionary ~resolution
   |> Option.value ~default:false
-
-
-let constraints_solution_exists ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.constraints_solution_exists
-    ?dependency
-    (attribute_resolution resolution)
 
 
 let is_consistent_with resolution ~resolve left right ~expression =
@@ -353,19 +503,6 @@ let is_consistent_with resolution ~resolve left right ~expression =
     |> WeakenMutableLiterals.resolved_type
   in
   comparator ~get_typed_dictionary_override:(fun _ -> None) ~left ~right
-
-
-let has_transitive_successor
-    ?(placeholder_subclass_extends_all = true)
-    resolution
-    ~successor
-    predecessor
-  =
-  ClassSuccessorMetadataEnvironment.ReadOnly.has_transitive_successor
-    ~placeholder_subclass_extends_all
-    (class_metadata_environment resolution)
-    ~successor
-    predecessor
 
 
 (* There isn't a great way of testing whether a file only contains tests in Python.
@@ -410,103 +547,6 @@ let source_is_unit_test resolution ~source =
     imports_pytest () && has_test_function ()
   in
   is_unittest () || is_pytest ()
-
-
-let constraints ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
-
-
-let successors ~resolution:({ dependency; _ } as resolution) =
-  ClassSuccessorMetadataEnvironment.ReadOnly.successors
-    ?dependency
-    (class_metadata_environment resolution)
-
-
-let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
-
-let uninstantiated_attributes
-    ~resolution:({ dependency; _ } as resolution)
-    ?(transitive = false)
-    ?(accessed_through_class = false)
-    ?(include_generated_attributes = true)
-    name
-  =
-  AttributeResolution.ReadOnly.uninstantiated_attributes
-    (attribute_resolution resolution)
-    ~transitive
-    ~accessed_through_class
-    ~include_generated_attributes
-    name
-    ?dependency
-
-
-let attribute_details
-    ~resolution:({ dependency; _ } as resolution)
-    ?(transitive = false)
-    ?(accessed_through_class = false)
-    ?(include_generated_attributes = true)
-    name
-  =
-  AttributeResolution.ReadOnly.attribute_details
-    (attribute_resolution resolution)
-    ~transitive
-    ~accessed_through_class
-    ~include_generated_attributes
-    name
-    ?dependency
-
-
-let instantiate_attribute ~resolution:({ dependency; _ } as resolution) ?instantiated =
-  AttributeResolution.ReadOnly.instantiate_attribute
-    (attribute_resolution resolution)
-    ?dependency
-    ?instantiated
-
-
-let metaclass ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.metaclass ?dependency (attribute_resolution resolution)
-
-
-let resolve_mutable_literals ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.resolve_mutable_literals
-    ?dependency
-    (attribute_resolution resolution)
-
-
-let resolve_define ~resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
-
-
-let signature_select ~global_resolution:({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
-
-
-let legacy_resolve_exports ({ dependency; _ } as resolution) reference =
-  UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
-    ?dependency
-    (unannotated_global_environment resolution)
-    reference
-
-
-let resolve_exports ({ dependency; _ } as resolution) ?from reference =
-  UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
-    ?dependency
-    (unannotated_global_environment resolution)
-    ?from
-    reference
-
-
-let check_invalid_type_parameters ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.check_invalid_type_parameters
-    (attribute_resolution resolution)
-    ?dependency
-
-
-let type_parameters_as_variables ?default ({ dependency; _ } as resolution) =
-  ClassHierarchyEnvironment.ReadOnly.type_parameters_as_variables
-    ?default
-    ?dependency
-    (class_hierarchy_environment resolution)
 
 
 module ConstraintsSet = struct
@@ -590,17 +630,6 @@ let type_of_generator_send_and_return ~global_resolution generator_type =
           Type.none, Type.none)
 
 
-let resolve_literal ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.resolve_literal ?dependency (attribute_resolution resolution)
-
-
-let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
-  AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
-    (alias_environment resolution)
-    ?dependency
-    ()
-
-
 let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
   let validation =
     if allow_invalid_type_parameters then
@@ -613,35 +642,6 @@ let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
     parse_as_parameter_specification_instance_annotation =
       parse_as_parameter_specification_instance_annotation resolution;
   }
-
-
-let attribute_names
-    ~resolution:({ dependency; _ } as resolution)
-    ?(transitive = false)
-    ?(accessed_through_class = false)
-    ?(include_generated_attributes = true)
-    ?instantiated:_
-    name
-  =
-  AttributeResolution.ReadOnly.attribute_names
-    (attribute_resolution resolution)
-    ~transitive
-    ~accessed_through_class
-    ~include_generated_attributes
-    name
-    ?dependency
-
-
-let location_of_global ({ dependency; _ } as resolution) =
-  AnnotatedGlobalEnvironment.ReadOnly.location_of_global
-    (annotated_global_environment resolution)
-    ?dependency
-
-
-let class_exists ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.class_exists
-    (unannotated_global_environment resolution)
-    ?dependency
 
 
 let overrides class_name ~resolution ~name =
