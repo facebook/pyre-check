@@ -41,10 +41,6 @@ module GlobalLocationValue = struct
   let equal = Memory.equal_from_compare (Option.compare Location.WithModule.compare)
 end
 
-module Common = struct
-  let show_key = Reference.show
-end
-
 let produce_location_of_global attribute_resolution name ~dependency =
   let unannotated_global_environment =
     AttributeResolution.ReadOnly.unannotated_global_environment attribute_resolution
@@ -75,10 +71,11 @@ let produce_location_of_global attribute_resolution name ~dependency =
 
 
 module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
-  include Common
   module PreviousEnvironment = AttributeResolution
   module Key = SharedMemoryKeys.ReferenceKey
   module Value = GlobalLocationValue
+
+  let show_key = Reference.show
 
   type trigger = Reference.t [@@deriving sexp, compare]
 
