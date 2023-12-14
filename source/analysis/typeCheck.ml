@@ -938,6 +938,7 @@ module State (Context : Context) = struct
         && (not
               (GlobalResolution.constraints_solution_exists
                  global_resolution
+                 ~get_typed_dictionary_override:(fun _ -> None)
                  ~left:actual
                  ~right:return_annotation))
         && (not (Define.is_abstract_method define))
@@ -4334,6 +4335,7 @@ module State (Context : Context) = struct
                           && (not
                                 (GlobalResolution.constraints_solution_exists
                                    global_resolution
+                                   ~get_typed_dictionary_override:(fun _ -> None)
                                    ~left:resolved
                                    ~right:expected))
                           && not is_valid_enumeration_assignment
@@ -5671,6 +5673,7 @@ module State (Context : Context) = struct
             || GlobalResolution.less_or_equal global_resolution ~left:default ~right:annotation
             || GlobalResolution.constraints_solution_exists
                  global_resolution
+                 ~get_typed_dictionary_override:(fun _ -> None)
                  ~left:default
                  ~right:annotation
           then
@@ -5784,6 +5787,7 @@ module State (Context : Context) = struct
                           let compatible =
                             GlobalResolution.constraints_solution_exists
                               global_resolution
+                              ~get_typed_dictionary_override:(fun _ -> None)
                               ~left:resolved
                               ~right:annotation
                           in
@@ -6358,6 +6362,7 @@ module State (Context : Context) = struct
                             let expected = Type.Variable.mark_all_variables_as_bound expected in
                             GlobalResolution.constraints_solution_exists
                               global_resolution
+                              ~get_typed_dictionary_override:(fun _ -> None)
                               ~left:expected
                               ~right:actual
                           in

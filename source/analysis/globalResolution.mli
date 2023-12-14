@@ -52,7 +52,12 @@ val parse_annotation_without_validating_type_parameters
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
-val constraints_solution_exists : t -> left:Type.t -> right:Type.t -> bool
+val constraints_solution_exists
+  :  t ->
+  get_typed_dictionary_override:(Type.t -> Type.t Type.Record.TypedDictionary.record option) ->
+  left:Type.t ->
+  right:Type.t ->
+  bool
 
 module ConstraintsSet : sig
   val add

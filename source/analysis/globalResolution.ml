@@ -170,13 +170,8 @@ let get_module_metadata ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let function_definitions ({ dependency; _ } as resolution) reference =
-  let unannotated_global_environment = unannotated_global_environment resolution in
-  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
-    unannotated_global_environment
-    reference
-    ?dependency
-  >>| FunctionDefinition.all_bodies
+let function_definitions resolution reference =
+  function_definition resolution reference >>| FunctionDefinition.all_bodies
 
 
 let full_order ({ dependency; _ } as resolution) =
@@ -200,15 +195,16 @@ let is_compatible_with resolution = full_order resolution |> TypeOrder.is_compat
 
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
 
-let parse_reference ?(allow_untracked = false) ({ dependency; _ } as resolution) reference =
+let parse_annotation ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
+
+
+let parse_reference ?(allow_untracked = false) resolution reference =
   let validation =
     if allow_untracked then SharedMemoryKeys.ParseAnnotationKey.NoValidation else ValidatePrimitives
   in
   Expression.from_reference ~location:Location.any reference
-  |> AttributeResolution.ReadOnly.parse_annotation
-       ?dependency
-       ~validation
-       (attribute_resolution resolution)
+  |> parse_annotation resolution ~validation
 
 
 let is_invariance_mismatch resolution ~left ~right =
@@ -342,13 +338,14 @@ let is_typed_dictionary ~resolution annotation =
   |> Option.value ~default:false
 
 
-let is_consistent_with ({ dependency; _ } as resolution) ~resolve left right ~expression =
-  let comparator =
-    AttributeResolution.ReadOnly.constraints_solution_exists
-      ?dependency
-      (attribute_resolution resolution)
-  in
+let constraints_solution_exists ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.constraints_solution_exists
+    ?dependency
+    (attribute_resolution resolution)
 
+
+let is_consistent_with resolution ~resolve left right ~expression =
+  let comparator = constraints_solution_exists resolution in
   let left =
     WeakenMutableLiterals.weaken_mutable_literals
       ~resolve
@@ -535,13 +532,6 @@ module ConstraintsSet = struct
   end
 end
 
-let constraints_solution_exists ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.constraints_solution_exists
-    ~get_typed_dictionary_override:(fun _ -> None)
-    ?dependency
-    (attribute_resolution resolution)
-
-
 let extract_type_parameters resolution ~source ~target =
   match source with
   | Type.Top
@@ -602,10 +592,6 @@ let type_of_generator_send_and_return ~global_resolution generator_type =
              `Iterator` on a generator function, but in those cases the send type is always
              NoneType *)
           Type.none, Type.none)
-
-
-let parse_annotation ({ dependency; _ } as resolution) =
-  AttributeResolution.ReadOnly.parse_annotation ?dependency (attribute_resolution resolution)
 
 
 let resolve_literal ({ dependency; _ } as resolution) =
