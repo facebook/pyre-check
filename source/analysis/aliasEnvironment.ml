@@ -93,7 +93,7 @@ module UnresolvedAlias = struct
                 | _ -> Reference.create "typing.Any"
               in
               if
-                EmptyStubEnvironment.ReadOnly.from_empty_stub
+                EmptyStubEnvironment.ReadOnly.is_from_empty_stub
                   empty_stub_environment
                   ?dependency
                   reference
@@ -410,14 +410,14 @@ module ReadOnly = struct
     let annotation =
       let type_map = function
         | Type.Primitive name ->
-            let originates_from_empty_stub =
+            let originates_is_from_empty_stub =
               let reference = Reference.create name in
-              EmptyStubEnvironment.ReadOnly.from_empty_stub
+              EmptyStubEnvironment.ReadOnly.is_from_empty_stub
                 ?dependency
                 (empty_stub_environment environment)
                 reference
             in
-            if originates_from_empty_stub then
+            if originates_is_from_empty_stub then
               Some Type.Any
             else
               None

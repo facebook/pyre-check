@@ -141,8 +141,8 @@ let get_class_metadata ({ dependency; _ } as resolution) =
     (class_metadata_environment resolution)
 
 
-let is_suppressed_module ({ dependency; _ } as resolution) reference =
-  EmptyStubEnvironment.ReadOnly.from_empty_stub
+let is_from_empty_stub ({ dependency; _ } as resolution) reference =
+  EmptyStubEnvironment.ReadOnly.is_from_empty_stub
     ?dependency
     (empty_stub_environment resolution)
     reference
@@ -155,7 +155,7 @@ let get_alias ({ dependency; _ } as resolution) =
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
     ~aliases:(get_alias resolution)
-    ~from_empty_stub:(is_suppressed_module resolution)
+    ~is_from_empty_stub:(is_from_empty_stub resolution)
 
 
 let module_exists ({ dependency; _ } as resolution) =

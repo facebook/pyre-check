@@ -8,7 +8,7 @@
 module EmptyStubReadOnly : sig
   include Environment.ReadOnly
 
-  val from_empty_stub
+  val is_from_empty_stub
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Ast.Reference.t ->

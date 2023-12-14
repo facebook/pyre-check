@@ -844,7 +844,7 @@ module State (Context : Context) = struct
         let errors =
           if
             (not (GlobalResolution.module_exists global_resolution reference))
-            && not (GlobalResolution.is_suppressed_module global_resolution reference)
+            && not (GlobalResolution.is_from_empty_stub global_resolution reference)
           then
             match Reference.prefix reference with
             | Some qualifier when not (Reference.is_empty qualifier) ->
@@ -5266,13 +5266,13 @@ module State (Context : Context) = struct
                   match GlobalResolution.module_exists global_resolution name with
                   | true -> None
                   | false -> (
-                      match GlobalResolution.is_suppressed_module global_resolution name with
+                      match GlobalResolution.is_from_empty_stub global_resolution name with
                       | true -> None
                       | false -> Some (Error.UndefinedModule name)))
           | Some { Node.value = from; _ } -> (
               match GlobalResolution.get_module_metadata global_resolution from with
               | None ->
-                  if GlobalResolution.is_suppressed_module global_resolution from then
+                  if GlobalResolution.is_from_empty_stub global_resolution from then
                     []
                   else
                     [Error.UndefinedModule from]
@@ -5298,7 +5298,7 @@ module State (Context : Context) = struct
                                   (Reference.combine from name_reference)
                                 || (* The current module is descendant of a placeholder-stub
                                       module. *)
-                                GlobalResolution.is_suppressed_module global_resolution from
+                                GlobalResolution.is_from_empty_stub global_resolution from
                               then
                                 None
                               else

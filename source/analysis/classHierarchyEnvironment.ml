@@ -44,16 +44,16 @@ end
 let compute_extends_placeholder_stub_class
     { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
     ~aliases
-    ~from_empty_stub
+    ~is_from_empty_stub
   =
   let metaclass_is_from_placeholder_stub =
     metaclass
-    >>| AnnotatedBases.base_is_from_placeholder_stub ~aliases ~from_empty_stub
+    >>| AnnotatedBases.base_is_from_placeholder_stub ~aliases ~is_from_empty_stub
     |> Option.value ~default:false
   in
   List.exists
     base_classes
-    ~f:(AnnotatedBases.base_is_from_placeholder_stub ~aliases ~from_empty_stub)
+    ~f:(AnnotatedBases.base_is_from_placeholder_stub ~aliases ~is_from_empty_stub)
   || metaclass_is_from_placeholder_stub
 
 
@@ -223,8 +223,8 @@ let get_parents alias_environment name ~dependency =
         compute_extends_placeholder_stub_class
           class_summary
           ~aliases:(AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency)
-          ~from_empty_stub:
-            (EmptyStubEnvironment.ReadOnly.from_empty_stub
+          ~is_from_empty_stub:
+            (EmptyStubEnvironment.ReadOnly.is_from_empty_stub
                (empty_stub_environment alias_environment))
       in
       Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }

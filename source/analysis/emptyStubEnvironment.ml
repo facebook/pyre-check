@@ -80,7 +80,7 @@ include EmptyStubCache
 module ReadOnly = struct
   include ReadOnly
 
-  let from_empty_stub = get
+  let is_from_empty_stub = get
 
   let unannotated_global_environment = upstream_environment
 end
