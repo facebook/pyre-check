@@ -249,8 +249,12 @@ let global ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.global (attribute_resolution resolution) ?dependency
 
 
+let attribute ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.attribute (attribute_resolution resolution) ?dependency
+
+
 let attribute_from_class_name
-    ~resolution:({ dependency; _ } as resolution)
+    ~resolution
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(accessed_through_readonly = false)
@@ -262,12 +266,7 @@ let attribute_from_class_name
   let access = function
     | Some attribute -> Some attribute
     | None -> (
-        match
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-            (unannotated_global_environment resolution)
-            ?dependency
-            class_name
-        with
+        match get_class_summary resolution class_name with
         | Some _ ->
             AnnotatedAttribute.create
               ~annotation:Type.Top
@@ -288,15 +287,14 @@ let attribute_from_class_name
         | None -> None)
   in
   try
-    AttributeResolution.ReadOnly.attribute
+    attribute
       ~instantiated
       ~transitive
       ~accessed_through_class
       ~accessed_through_readonly
       ~special_method
       ~include_generated_attributes:true
-      ?dependency
-      (attribute_resolution resolution)
+      resolution
       ~attribute_name:name
       class_name
     |> access
