@@ -330,11 +330,15 @@ let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.get_typed_dictionary (attribute_resolution resolution) ?dependency
 
 
-let is_typed_dictionary ~resolution:({ dependency; _ } as resolution) annotation =
+let is_class_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+  ClassSuccessorMetadataEnvironment.ReadOnly.is_class_typed_dictionary
+    (class_metadata_environment resolution)
+    ?dependency
+
+
+let is_typed_dictionary ~resolution annotation =
   Type.primitive_name annotation
-  >>| ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
-        (class_metadata_environment resolution)
-        ?dependency
+  >>| is_class_typed_dictionary ~resolution
   |> Option.value ~default:false
 
 

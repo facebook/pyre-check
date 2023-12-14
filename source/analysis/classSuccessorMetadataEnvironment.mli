@@ -27,7 +27,11 @@ module MetadataReadOnly : sig
     Type.Primitive.t ->
     class_metadata option
 
-  val is_typed_dictionary : t -> ?dependency:DependencyKey.registered -> Type.Primitive.t -> bool
+  val is_class_typed_dictionary
+    :  t ->
+    ?dependency:DependencyKey.registered ->
+    Type.Primitive.t ->
+    bool
 
   val class_hierarchy_environment : t -> ClassHierarchyEnvironment.ReadOnly.t
 

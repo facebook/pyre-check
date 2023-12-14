@@ -201,7 +201,7 @@ module ReadOnly = struct
 
   let get_class_metadata = get
 
-  let is_typed_dictionary read_only ?dependency class_name =
+  let is_class_typed_dictionary read_only ?dependency class_name =
     get read_only ?dependency class_name
     |> Option.value_map ~default:false ~f:(fun ({ is_typed_dictionary; _ } : class_metadata) ->
            is_typed_dictionary)

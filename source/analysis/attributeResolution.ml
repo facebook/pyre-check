@@ -4925,7 +4925,7 @@ let create_queries ~class_metadata_environment ~dependency =
           ?dependency
           class_metadata_environment;
       is_typed_dictionary =
-        ClassSuccessorMetadataEnvironment.ReadOnly.is_typed_dictionary
+        ClassSuccessorMetadataEnvironment.ReadOnly.is_class_typed_dictionary
           ?dependency
           class_metadata_environment;
       has_transitive_successor =
