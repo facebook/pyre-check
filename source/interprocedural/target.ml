@@ -237,7 +237,7 @@ type definitions_result = {
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
 let get_definitions ~resolution define_name =
-  GlobalResolution.function_definition resolution define_name
+  GlobalResolution.get_function_definition resolution define_name
   >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
   let bodies = FunctionDefinition.all_bodies definitions in
   (* Ignore defines for type overloads. *)

@@ -123,7 +123,7 @@ let get_define_names ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let function_definition ({ dependency; _ } as resolution) =
+let get_function_definition ({ dependency; _ } as resolution) =
   UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
     ?dependency
     (unannotated_global_environment resolution)
@@ -135,7 +135,7 @@ let parse_annotation_without_validating_type_parameters ({ dependency; _ } as re
     (alias_environment resolution)
 
 
-let class_metadata ({ dependency; _ } as resolution) =
+let get_class_metadata ({ dependency; _ } as resolution) =
   ClassSuccessorMetadataEnvironment.ReadOnly.get_class_metadata
     ?dependency
     (class_metadata_environment resolution)
@@ -148,13 +148,13 @@ let is_suppressed_module ({ dependency; _ } as resolution) reference =
     reference
 
 
-let aliases ({ dependency; _ } as resolution) =
+let get_alias ({ dependency; _ } as resolution) =
   AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
 
 
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
-    ~aliases:(aliases resolution)
+    ~aliases:(get_alias resolution)
     ~from_empty_stub:(is_suppressed_module resolution)
 
 
@@ -171,7 +171,7 @@ let get_module_metadata ({ dependency; _ } as resolution) =
 
 
 let function_definitions resolution reference =
-  function_definition resolution reference >>| FunctionDefinition.all_bodies
+  get_function_definition resolution reference >>| FunctionDefinition.all_bodies
 
 
 let full_order ({ dependency; _ } as resolution) =

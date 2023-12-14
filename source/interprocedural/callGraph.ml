@@ -1977,7 +1977,7 @@ let resolve_attribute_access_global_targets
             let parents =
               let successors =
                 match
-                  GlobalResolution.class_metadata
+                  GlobalResolution.get_class_metadata
                     (Resolution.global_resolution resolution)
                     class_name
                 with

@@ -3873,7 +3873,7 @@ let filter ~resolution errors =
               match annotation with
               | Type.Primitive predecessor
               | Type.Parametric { name = predecessor; _ } -> (
-                  match GlobalResolution.class_metadata resolution predecessor with
+                  match GlobalResolution.get_class_metadata resolution predecessor with
                   | None -> false
                   | Some { ClassSuccessorMetadataEnvironment.is_mock; _ } -> is_mock)
               | _ -> false

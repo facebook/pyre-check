@@ -195,7 +195,7 @@ let make_assert_functions context =
       if Set.mem s a then
         Some (Type.TypeAlias (Type.Primitive ("test." ^ a)))
       else
-        GlobalResolution.aliases resolution a
+        GlobalResolution.get_alias resolution a
     in
     annotation |> Type.create ~aliases |> Type.expression
   in
@@ -286,7 +286,7 @@ let make_assert_functions context =
                 | _ -> failwith "expected tuple"
               in
               let global_resolution = GlobalResolution.create environment in
-              match GlobalResolution.aliases global_resolution primitive with
+              match GlobalResolution.get_alias global_resolution primitive with
               | Some (Type.VariableAlias (ParameterVariadic variable)) ->
                   Type.Variable.ParameterVariadicPair (variable, parse_parameters value)
               | Some (Type.VariableAlias (TupleVariadic variable)) -> (

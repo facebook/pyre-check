@@ -1068,7 +1068,7 @@ let get_class_attributes ~resolution = function
 
 let get_class_attributes_transitive ~resolution class_name =
   let successors =
-    match GlobalResolution.class_metadata resolution class_name with
+    match GlobalResolution.get_class_metadata resolution class_name with
     | Some { ClassSuccessorMetadataEnvironment.successors = Some successors; _ } -> successors
     | _ -> []
   in

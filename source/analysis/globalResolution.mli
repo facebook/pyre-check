@@ -41,7 +41,7 @@ val get_define_body : t -> Reference.t -> Define.t Node.t option
 
 val get_define_names : t -> Reference.t -> Reference.t list
 
-val function_definition : t -> Reference.t -> FunctionDefinition.t option
+val get_function_definition : t -> Reference.t -> FunctionDefinition.t option
 
 val parse_annotation_without_validating_type_parameters
   :  t ->
@@ -94,7 +94,7 @@ val legacy_resolve_exports : t -> Reference.t -> Reference.t
 
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
-val aliases
+val get_alias
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
   Type.Primitive.t ->
@@ -106,7 +106,7 @@ val module_exists : t -> Reference.t -> bool
 
 val get_module_metadata : t -> Reference.t -> Module.t option
 
-val class_metadata
+val get_class_metadata
   :  t ->
   Type.Primitive.t ->
   ClassSuccessorMetadataEnvironment.class_metadata option

@@ -589,7 +589,7 @@ let find_parents ~environment ~is_transitive ~includes_self class_name =
   let resolution = GlobalResolution.create environment in
   let parents =
     if is_transitive then
-      match GlobalResolution.class_metadata resolution class_name with
+      match GlobalResolution.get_class_metadata resolution class_name with
       | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
           successors
       | _ -> []
