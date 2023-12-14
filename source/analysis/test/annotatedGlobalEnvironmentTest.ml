@@ -26,7 +26,7 @@ let test_simple_registration context =
       global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
     in
     let expectation = expected >>| Annotation.create_immutable ?original in
-    AttributeResolution.ReadOnly.get_global read_only (Reference.create name)
+    AttributeResolution.ReadOnly.global read_only (Reference.create name)
     >>| (fun { annotation; _ } -> annotation)
     |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
   in
@@ -97,10 +97,7 @@ let test_updates context =
             global >>| Annotation.sexp_of_t >>| Sexp.to_string_hum |> Option.value ~default:"None"
           in
           let expectation = expectation >>| Annotation.create_immutable in
-          AttributeResolution.ReadOnly.get_global
-            read_only
-            (Reference.create global_name)
-            ~dependency
+          AttributeResolution.ReadOnly.global read_only (Reference.create global_name) ~dependency
           >>| (fun { annotation; _ } -> annotation)
           |> assert_equal ~cmp:location_insensitive_compare ~printer expectation
     in

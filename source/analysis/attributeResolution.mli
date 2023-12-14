@@ -321,7 +321,7 @@ module AttributeReadOnly : sig
     AnnotatedAttribute.uninstantiated ->
     AnnotatedAttribute.instantiated
 
-  val get_global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
+  val global : t -> ?dependency:DependencyKey.registered -> Reference.t -> Global.t option
 end
 
 include

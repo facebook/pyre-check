@@ -4837,6 +4837,30 @@ let empty_assumptions =
   }
 
 
+module OutgoingDataComputation = struct
+  module Queries = struct
+    type t = { global_annotation: Reference.t -> Global.t option }
+  end
+
+  let global Queries.{ global_annotation; _ } reference =
+    match Reference.last reference with
+    | "__doc__"
+    | "__file__"
+    | "__name__"
+    | "__package__" ->
+        let annotation = Annotation.create_immutable Type.string in
+        Some { Global.annotation; undecorated_signature = None; problem = None }
+    | "__path__" ->
+        let annotation = Type.list Type.string |> Annotation.create_immutable in
+        Some { Global.annotation; undecorated_signature = None; problem = None }
+    | "__dict__" ->
+        let annotation =
+          Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable
+        in
+        Some { annotation; undecorated_signature = None; problem = None }
+    | _ -> global_annotation reference
+end
+
 let class_hierarchy_environment class_metadata_environment =
   ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment class_metadata_environment
 
@@ -5296,7 +5320,13 @@ module ReadOnly = struct
     add_all_caches_and_empty_assumptions (fun o -> o#signature_select ~skip_marking_escapees:false)
 
 
-  let get_global = add_all_caches_and_empty_assumptions (fun o -> o#global_annotation)
+  let global_annotation = add_all_caches_and_empty_assumptions (fun o -> o#global_annotation)
+
+  let global read_only ?dependency reference =
+    OutgoingDataComputation.global
+      OutgoingDataComputation.Queries.
+        { global_annotation = global_annotation ?dependency read_only }
+      reference
 end
 
 module AttributeReadOnly = ReadOnly

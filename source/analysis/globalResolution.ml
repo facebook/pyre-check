@@ -245,27 +245,8 @@ let is_invariance_mismatch resolution ~left ~right =
   | _ -> false
 
 
-let global ({ dependency; _ } as resolution) reference =
-  match Reference.last reference with
-  | "__doc__"
-  | "__file__"
-  | "__name__"
-  | "__package__" ->
-      let annotation = Annotation.create_immutable Type.string in
-      Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
-  | "__path__" ->
-      let annotation = Type.list Type.string |> Annotation.create_immutable in
-      Some { AttributeResolution.Global.annotation; undecorated_signature = None; problem = None }
-  | "__dict__" ->
-      let annotation =
-        Type.dictionary ~key:Type.string ~value:Type.Any |> Annotation.create_immutable
-      in
-      Some { annotation; undecorated_signature = None; problem = None }
-  | _ ->
-      AttributeResolution.ReadOnly.get_global
-        (attribute_resolution resolution)
-        ?dependency
-        reference
+let global ({ dependency; _ } as resolution) =
+  AttributeResolution.ReadOnly.global (attribute_resolution resolution) ?dependency
 
 
 let attribute_from_class_name
