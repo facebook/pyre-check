@@ -41,34 +41,33 @@ module GlobalLocationValue = struct
   let equal = Memory.equal_from_compare (Option.compare Location.WithModule.compare)
 end
 
-let produce_location_of_global attribute_resolution name ~dependency =
-  let unannotated_global_environment =
-    AttributeResolution.ReadOnly.unannotated_global_environment attribute_resolution
-  in
-  let class_location =
-    Reference.show name
-    |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
-         unannotated_global_environment
-         ?dependency
-    >>| fun { Node.location; value = { ClassSummary.qualifier; _ } } ->
-    Location.with_module ~module_reference:qualifier location
-  in
-  match class_location with
-  | Some location -> Some location
-  | None ->
-      let extract_location = function
-        | UnannotatedGlobal.Define ({ UnannotatedGlobal.UnannotatedDefine.location; _ } :: _) ->
-            Some location
-        | SimpleAssign { target_location; _ } -> Some target_location
-        | TupleAssign { target_location; _ } -> Some target_location
-        | _ -> None
-      in
-      UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
-        unannotated_global_environment
-        ?dependency
-        name
-      >>= extract_location
+module IncomingDataComputation = struct
+  module Queries = struct
+    type t = {
+      get_class_summary: Identifier.t -> ClassSummary.t Node.t option;
+      get_unannotated_global: Reference.t -> UnannotatedGlobal.t option;
+    }
+  end
 
+  let produce_location_of_global Queries.{ get_class_summary; get_unannotated_global } name =
+    let class_location =
+      Reference.show name
+      |> get_class_summary
+      >>| fun { Node.location; value = { ClassSummary.qualifier; _ } } ->
+      Location.with_module ~module_reference:qualifier location
+    in
+    match class_location with
+    | Some location -> Some location
+    | None ->
+        let extract_location = function
+          | UnannotatedGlobal.Define ({ UnannotatedGlobal.UnannotatedDefine.location; _ } :: _) ->
+              Some location
+          | SimpleAssign { target_location; _ } -> Some target_location
+          | TupleAssign { target_location; _ } -> Some target_location
+          | _ -> None
+        in
+        get_unannotated_global name >>= extract_location
+end
 
 module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = AttributeResolution
@@ -87,7 +86,27 @@ module GlobalLocationTable = Environment.EnvironmentTable.WithCache (struct
 
   let lazy_incremental = false
 
-  let produce_value = produce_location_of_global
+  let produce_value attribute_resolution key ~dependency =
+    let unannotated_global_environment =
+      attribute_resolution
+      |> AttributeResolution.ReadOnly.class_metadata_environment
+      |> ClassSuccessorMetadataEnvironment.ReadOnly.unannotated_global_environment
+    in
+    let queries =
+      IncomingDataComputation.Queries.
+        {
+          get_class_summary =
+            UnannotatedGlobalEnvironment.ReadOnly.get_class_summary
+              ?dependency
+              unannotated_global_environment;
+          get_unannotated_global =
+            UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+              ?dependency
+              unannotated_global_environment;
+        }
+    in
+    IncomingDataComputation.produce_location_of_global queries key
+
 
   let filter_upstream_dependency = function
     | SharedMemoryKeys.AnnotateGlobalLocation name -> Some name
