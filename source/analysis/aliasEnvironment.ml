@@ -32,16 +32,6 @@ let preprocess_alias_value value =
   |> Preprocessing.expand_strings_in_annotation_expression
 
 
-module AliasValue = struct
-  type t = Type.alias option
-
-  let prefix = Hack_parallel.Std.Prefix.make ()
-
-  let description = "Alias"
-
-  let equal = Memory.equal_from_compare (Option.compare Type.compare_alias)
-end
-
 module UnresolvedAlias = struct
   type t = {
     value: Expression.t;
@@ -340,6 +330,16 @@ let produce_alias empty_stub_environment global_name ~dependency =
   in
   get_aliased_type_for global_name ~visited:Reference.Set.empty
 
+
+module AliasValue = struct
+  type t = Type.alias option
+
+  let prefix = Hack_parallel.Std.Prefix.make ()
+
+  let description = "Alias"
+
+  let equal = Memory.equal_from_compare (Option.compare Type.compare_alias)
+end
 
 module Aliases = Environment.EnvironmentTable.NoCache (struct
   module PreviousEnvironment = PreviousEnvironment
