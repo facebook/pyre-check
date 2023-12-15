@@ -142,7 +142,10 @@ let translate_constant (constant : Errpyast.constant) =
           let last_char_quote_or_double = get value (length value - 1) in
           let first_quote_or_double = index_exn value last_char_quote_or_double + 1 in
           let just_string =
-            sub value ~pos:first_quote_or_double ~len:(length value - 2 - first_quote_or_double + 1)
+            sub
+              value
+              ~pos:first_quote_or_double
+              ~len:(Stdlib.max 0 (length value - 2 - first_quote_or_double + 1))
           in
           let newlines_unescaped = Str.(global_replace (regexp "\\\\n") "\n" just_string) in
           let bytes =
