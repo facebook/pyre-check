@@ -263,6 +263,7 @@ class CoverageArguments:
 class PysaSavedStateArguments:
     watchman_root: Optional[Path] = None
     project_name: Optional[str] = None
+    preset: Optional[str] = None
     cache_critical_files: List[str] = field(default_factory=list)
 
     def serialize(self) -> Dict[str, Any]:
@@ -271,6 +272,7 @@ class PysaSavedStateArguments:
             if self.watchman_root is not None
             else None,
             "project_name": self.project_name,
+            "preset": self.preset,
             "cache_critical_files": self.cache_critical_files,
         }
 

@@ -75,6 +75,7 @@ class ArgumentTest(testslide.TestCase):
                 saved_state_arguments=command_arguments.PysaSavedStateArguments(
                     watchman_root=Path("/root"),
                     project_name="my_project",
+                    preset="some_preset",
                     cache_critical_files=["*.py"],
                 ),
             ),
@@ -118,6 +119,7 @@ class ArgumentTest(testslide.TestCase):
                     {
                         "watchman_root": "/root",
                         "project_name": "my_project",
+                        "preset": "some_preset",
                         "cache_critical_files": ["*.py"],
                     },
                 ),
@@ -195,6 +197,7 @@ class ArgumentTest(testslide.TestCase):
                         saved_state_arguments=command_arguments.PysaSavedStateArguments(
                             watchman_root=Path("/root"),
                             project_name="test_project",
+                            preset="some_preset",
                             cache_critical_files=["*.py"],
                         ),
                     ),
@@ -260,6 +263,7 @@ class ArgumentTest(testslide.TestCase):
                     saved_state_arguments=command_arguments.PysaSavedStateArguments(
                         watchman_root=Path("/root"),
                         project_name="test_project",
+                        preset="some_preset",
                         cache_critical_files=["*.py"],
                     ),
                 ),
