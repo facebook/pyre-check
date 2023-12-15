@@ -31,16 +31,6 @@ let empty_stub_environment alias_environment =
   AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
 
 
-module EdgesValue = struct
-  type t = ClassHierarchy.Edges.t option
-
-  let prefix = Hack_parallel.Std.Prefix.make ()
-
-  let description = "Edges"
-
-  let equal = Memory.equal_from_compare [%compare: ClassHierarchy.Edges.t option]
-end
-
 let compute_extends_placeholder_stub_class
     { Node.value = { ClassSummary.bases = { base_classes; metaclass; _ }; _ }; _ }
     ~aliases
@@ -229,6 +219,16 @@ let get_parents alias_environment name ~dependency =
       in
       Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
 
+
+module EdgesValue = struct
+  type t = ClassHierarchy.Edges.t option
+
+  let prefix = Hack_parallel.Std.Prefix.make ()
+
+  let description = "Edges"
+
+  let equal = Memory.equal_from_compare [%compare: ClassHierarchy.Edges.t option]
+end
 
 module Edges = Environment.EnvironmentTable.WithCache (struct
   module PreviousEnvironment = PreviousEnvironment
