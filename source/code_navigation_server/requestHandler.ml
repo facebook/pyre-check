@@ -318,7 +318,12 @@ let get_artifact_path_event_kind = function
 
 let get_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
   let kind = get_artifact_path_event_kind kind in
-  BuildSystem.lookup_artifact build_system path |> List.map ~f:(ArtifactPath.Event.create ~kind)
+  (match BuildSystem.lookup_artifact build_system path with
+  (* In case there's no build system artifacts for this source, lookup the module as if it's built
+     by a no-op build system (using normal source path mapping) *)
+  | [] -> BuildSystem.default_lookup_artifact path
+  | artifacts -> artifacts)
+  |> List.map ~f:(ArtifactPath.Event.create ~kind)
 
 
 let handle_non_critical_file_update ~subscriptions ~environment artifact_path_events =

@@ -522,6 +522,71 @@ let test_build_system_file_update context =
       ]
 
 
+let test_build_system_external_file_update context =
+  let source_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let artifact_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let external_root =
+    bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
+  in
+  let external_path = PyrePath.create_relative ~root:external_root ~relative:"external.py" in
+
+  let project =
+    let build_system_initializer =
+      let construct_build_map _ = Buck.BuildMap.(Partial.of_alist_exn [] |> create) |> Lwt.return in
+      create_buck_build_system_initializer_for_testing
+        ~source_root
+        ~artifact_root
+        ~construct_build_map
+        ()
+    in
+    ScratchProject.setup
+      ~context
+      ~source_root:artifact_root
+      ~filter_directories:[source_root]
+      ~build_system_initializer
+      ~external_root
+      []
+  in
+  let open TestHelper in
+  let client_id = "foo" in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        register_client ~client_id;
+        assert_file_not_opened ~client_id external_path;
+        (fun _ ->
+          File.create external_path ~content:"print('test')" |> File.write;
+          Lwt.return_unit);
+        assert_single_file_update external_path;
+        open_file ~client_id ~path:(PyrePath.absolute external_path);
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Command
+                (Command.FileUpdate
+                   [
+                     {
+                       FileUpdateEvent.path = PyrePath.absolute external_path;
+                       kind = FileUpdateEvent.Kind.CreatedOrChanged;
+                     };
+                   ]))
+          ~expected:Response.Ok;
+        (* Ensure not ModuleNotTracked *)
+        assert_type_error_count_for_path
+          ~path:(PyrePath.absolute external_path)
+          ~client_id
+          ~expected:0;
+        close_file ~client_id ~path:(PyrePath.absolute external_path);
+        dispose_client ~client_id;
+      ]
+
+
 let test_build_system_file_open_and_update context =
   let source_root =
     bracket_tmpdir context |> PyrePath.create_absolute ~follow_symbolic_links:true
@@ -757,5 +822,7 @@ let () =
          >:: OUnitLwt.lwt_wrapper test_build_system_failure_in_update_sources;
          "test_build_system_failure_in_update_working_set"
          >:: OUnitLwt.lwt_wrapper test_build_system_failure_in_update_working_set;
+         "test_build_system_external_file_update"
+         >:: OUnitLwt.lwt_wrapper test_build_system_external_file_update;
        ]
   |> Test.run
