@@ -197,6 +197,7 @@ let test_json_parsing context =
            [
              "watchman_root", `String "/root";
              "project_name", `String "my_project";
+             "preset", `String "some_preset";
              "cache_critical_files", `List [`String "*.py"; `String "*.pysa"];
            ] )
       :: BaseConfigurationTest.dummy_base_json))
@@ -207,6 +208,7 @@ let test_json_parsing context =
           {
             watchman_root = Some "/root";
             project_name = Some "my_project";
+            preset = Some "some_preset";
             cache_critical_files = ["*.py"; "*.pysa"];
           };
       };

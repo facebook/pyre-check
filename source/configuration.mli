@@ -229,6 +229,7 @@ module StaticAnalysis : sig
     type t = {
       watchman_root: string option;
       project_name: string option;
+      preset: string option;
       cache_critical_files: string list;
     }
     [@@deriving sexp, compare, hash, yojson]

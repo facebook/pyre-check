@@ -130,7 +130,20 @@ module AnalyzeConfiguration = struct
           let compact_ocaml_heap = bool_member "compact_ocaml_heap" ~default:false json in
           (match Yojson.Safe.Util.member "saved_state" json with
           | `Null -> Result.Ok Configuration.StaticAnalysis.SavedState.empty
-          | saved_state -> Configuration.StaticAnalysis.SavedState.of_yojson saved_state)
+          | saved_state ->
+              let watchman_root = optional_string_member "watchman_root" saved_state in
+              let project_name = optional_string_member "project_name" saved_state in
+              let preset = optional_string_member "preset" saved_state in
+              let cache_critical_files =
+                list_member ~f:to_string "cache_critical_files" saved_state
+              in
+              Result.Ok
+                {
+                  Configuration.StaticAnalysis.SavedState.watchman_root;
+                  project_name;
+                  preset;
+                  cache_critical_files;
+                })
           >>= fun saved_state ->
           Result.Ok
             {

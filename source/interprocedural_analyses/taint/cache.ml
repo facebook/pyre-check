@@ -208,6 +208,7 @@ module FileLoading = struct
             Configuration.StaticAnalysis.SavedState.watchman_root;
             cache_critical_files;
             project_name;
+            preset;
           }
       =
       let open Lwt.Infix in
@@ -236,7 +237,12 @@ module FileLoading = struct
                       watchman_filter;
                       watchman_connection;
                       project_name;
-                      project_metadata = None;
+                      project_metadata =
+                        preset
+                        (* The encoding of information into `project_metadata` needs to be the same
+                           between the usage of the saved state (i.e., here) and the creation of
+                           saved states (i.e., in Sandcastle), so that we can locate the saved
+                           states that are created with the same information. *);
                       critical_files = [];
                       target = saved_state_storage_location;
                     }

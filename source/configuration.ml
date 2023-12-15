@@ -568,11 +568,14 @@ module StaticAnalysis = struct
     type t = {
       watchman_root: string option;
       project_name: string option;
+      (* The Pysa preset that was used to build the saved state. *)
+      preset: string option;
       cache_critical_files: string list;
     }
     [@@deriving sexp, compare, hash, yojson]
 
-    let empty = { watchman_root = None; project_name = None; cache_critical_files = [] }
+    let empty =
+      { watchman_root = None; project_name = None; preset = None; cache_critical_files = [] }
   end
 
   type t = {
