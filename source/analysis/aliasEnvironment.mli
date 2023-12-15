@@ -24,8 +24,8 @@ module AliasReadOnly : sig
 
   val parse_annotation_without_validating_type_parameters
     :  t ->
-    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
     ?dependency:DependencyKey.registered ->
+    ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
     ?allow_untracked:bool ->
     Expression.t ->
     Type.t

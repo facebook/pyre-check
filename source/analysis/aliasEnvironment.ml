@@ -322,6 +322,68 @@ module IncomingDataComputation = struct
     get_aliased_type_for global_name ~visited:Reference.Set.empty
 end
 
+module OutgoingDataComputation = struct
+  module Queries = struct
+    type t = {
+      contains_untracked: Type.t -> bool;
+      is_from_empty_stub: Ast.Reference.t -> bool;
+      get_alias: ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
+    }
+  end
+
+  let parse_annotation_without_validating_type_parameters
+      Queries.{ contains_untracked; is_from_empty_stub; get_alias; _ }
+      ?modify_aliases
+      ?(allow_untracked = false)
+      expression
+    =
+    let modify_aliases =
+      Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
+    in
+    let parsed =
+      let expression = preprocess_alias_value expression |> delocalize in
+      let aliases ?replace_unbound_parameters_with_any name =
+        get_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
+      in
+      Type.create ~aliases expression
+    in
+    let annotation =
+      let type_map = function
+        | Type.Primitive name ->
+            let originates_is_from_empty_stub =
+              let reference = Reference.create name in
+              is_from_empty_stub reference
+            in
+            if originates_is_from_empty_stub then
+              Some Type.Any
+            else
+              None
+        | _ -> None
+      in
+      Type.apply_type_map parsed ~type_map
+    in
+    if contains_untracked annotation && not allow_untracked then
+      Type.Top
+    else
+      annotation
+
+
+  let parse_as_parameter_specification_instance_annotation
+      Queries.{ get_alias; _ }
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
+      ()
+    =
+    let variable_parameter_annotation, keywords_parameter_annotation =
+      delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
+    in
+    Type.Variable.Variadic.Parameters.parse_instance_annotation
+      ~create_type:Type.create
+      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> get_alias name)
+      ~variable_parameter_annotation
+      ~keywords_parameter_annotation
+end
+
 module AliasValue = struct
   type t = Type.alias option
 
@@ -404,69 +466,29 @@ module ReadOnly = struct
     empty_stub_environment read_only |> EmptyStubEnvironment.ReadOnly.unannotated_global_environment
 
 
-  let parse_annotation_without_validating_type_parameters
-      environment
-      ?modify_aliases
-      ?dependency
-      ?(allow_untracked = false)
-      expression
-    =
-    let modify_aliases =
-      Option.value modify_aliases ~default:(fun ?replace_unbound_parameters_with_any:_ name -> name)
-    in
-    let parsed =
-      let expression = preprocess_alias_value expression |> delocalize in
-      let aliases ?replace_unbound_parameters_with_any name =
-        get_alias environment ?dependency name
-        >>| modify_aliases ?replace_unbound_parameters_with_any
-      in
-      Type.create ~aliases expression
-    in
-    let annotation =
-      let type_map = function
-        | Type.Primitive name ->
-            let originates_is_from_empty_stub =
-              let reference = Reference.create name in
-              EmptyStubEnvironment.ReadOnly.is_from_empty_stub
-                ?dependency
-                (empty_stub_environment environment)
-                reference
-            in
-            if originates_is_from_empty_stub then
-              Some Type.Any
-            else
-              None
-        | _ -> None
-      in
-      Type.apply_type_map parsed ~type_map
-    in
-    let contains_untracked =
-      UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
-        (unannotated_global_environment environment)
-        ?dependency
-    in
-    if contains_untracked annotation && not allow_untracked then
-      Type.Top
-    else
-      annotation
+  let outgoing_queries ?dependency environment =
+    OutgoingDataComputation.Queries.
+      {
+        contains_untracked =
+          UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
+            (unannotated_global_environment environment)
+            ?dependency;
+        is_from_empty_stub =
+          EmptyStubEnvironment.ReadOnly.is_from_empty_stub
+            (empty_stub_environment environment)
+            ?dependency;
+        get_alias = get_alias environment ?dependency;
+      }
 
 
-  let parse_as_parameter_specification_instance_annotation
-      environment
-      ?dependency
-      ~variable_parameter_annotation
-      ~keywords_parameter_annotation
-      ()
-    =
-    let variable_parameter_annotation, keywords_parameter_annotation =
-      delocalize variable_parameter_annotation, delocalize keywords_parameter_annotation
-    in
-    Type.Variable.Variadic.Parameters.parse_instance_annotation
-      ~create_type:Type.create
-      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
-        get_alias environment ?dependency name)
-      ~variable_parameter_annotation
-      ~keywords_parameter_annotation
+  let parse_annotation_without_validating_type_parameters environment ?dependency =
+    OutgoingDataComputation.parse_annotation_without_validating_type_parameters
+      (outgoing_queries ?dependency environment)
+
+
+  let parse_as_parameter_specification_instance_annotation environment ?dependency =
+    OutgoingDataComputation.parse_as_parameter_specification_instance_annotation
+      (outgoing_queries ?dependency environment)
 end
 
 module AliasReadOnly = ReadOnly
