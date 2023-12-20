@@ -6,7 +6,6 @@
  *)
 
 open Ast
-module Error = AnalysisError
 
 module TypeEnvironmentReadOnly : sig
   type t
@@ -27,7 +26,7 @@ module TypeEnvironmentReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
-    Error.t list
+    AnalysisError.t list
 
   val get_local_annotations
     :  t ->

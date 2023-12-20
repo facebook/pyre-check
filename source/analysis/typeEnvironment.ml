@@ -23,7 +23,6 @@ open Pyre
 open Ast
 open Core
 module PreviousEnvironment = AnnotatedGlobalEnvironment
-module Error = AnalysisError
 
 module CheckResultValue = struct
   type t = TypeCheck.CheckResult.t option [@@deriving equal]
