@@ -649,7 +649,7 @@ module State (Context : Context) = struct
         | Statement.Expression { Node.value = Expression.YieldFrom yielded_from; _ } ->
             let actual =
               Resolution.resolve_expression_to_type resolution yielded_from
-              |> GlobalResolution.type_of_iteration_value ~global_resolution
+              |> GlobalResolution.type_of_iteration_value global_resolution
               |> Option.value ~default:Type.Any
             in
             Value (validate_return ~expression:None ~actual)

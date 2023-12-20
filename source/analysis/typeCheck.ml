@@ -1108,7 +1108,7 @@ module State (Context : Context) = struct
             in
             let parameter =
               new_resolved
-              |> GlobalResolution.type_of_iteration_value ~global_resolution
+              |> GlobalResolution.type_of_iteration_value global_resolution
               |> Option.value ~default:Type.Any
             in
             {
@@ -1424,7 +1424,7 @@ module State (Context : Context) = struct
         unpack_callable_and_self_argument
           ~signature_select:
             (GlobalResolution.signature_select
-               ~global_resolution
+               global_resolution
                ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution))
           ~global_resolution
       in
@@ -1546,8 +1546,8 @@ module State (Context : Context) = struct
                         callable_data with
                         selected_return_annotation =
                           GlobalResolution.signature_select
+                            (Resolution.global_resolution resolution)
                             ~arguments
-                            ~global_resolution:(Resolution.global_resolution resolution)
                             ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                             ~callable
                             ~self_argument;
@@ -1815,7 +1815,7 @@ module State (Context : Context) = struct
               let arguments = List.rev reversed_arguments in
               let selected_return_annotation =
                 GlobalResolution.signature_select
-                  ~global_resolution
+                  global_resolution
                   ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                   ~arguments
                   ~callable
@@ -1860,7 +1860,7 @@ module State (Context : Context) = struct
                   callable_data) ->
                   let selected_return_annotation =
                     GlobalResolution.signature_select
-                      ~global_resolution
+                      global_resolution
                       ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                       ~arguments
                       ~callable
@@ -3189,7 +3189,7 @@ module State (Context : Context) = struct
                     | _ -> (
                         match
                           GlobalResolution.type_of_iteration_value
-                            ~global_resolution
+                            global_resolution
                             resolved_element
                         with
                         | Some element_type ->
@@ -3285,7 +3285,7 @@ module State (Context : Context) = struct
         in
         let send_type, _ =
           return_annotation ~global_resolution
-          |> GlobalResolution.type_of_generator_send_and_return ~global_resolution
+          |> GlobalResolution.type_of_generator_send_and_return global_resolution
         in
         { resolution; errors; resolved = send_type; resolved_annotation = None; base = None }
     | Expression.YieldFrom yielded_from ->
@@ -3294,11 +3294,11 @@ module State (Context : Context) = struct
         in
         let yield_type =
           resolved
-          |> GlobalResolution.type_of_iteration_value ~global_resolution
+          |> GlobalResolution.type_of_iteration_value global_resolution
           |> Option.value ~default:Type.Any
         in
         let send_type, subgenerator_return_type =
-          GlobalResolution.type_of_generator_send_and_return ~global_resolution resolved
+          GlobalResolution.type_of_generator_send_and_return global_resolution resolved
         in
         let actual =
           if define_signature.async then
@@ -4201,7 +4201,7 @@ module State (Context : Context) = struct
             | _ ->
                 (not (NamedTuple.is_named_tuple ~global_resolution ~annotation))
                 && Option.is_some
-                     (GlobalResolution.type_of_iteration_value ~global_resolution annotation)
+                     (GlobalResolution.type_of_iteration_value global_resolution annotation)
           in
           match target_value with
           | Expression.Name name -> (
@@ -4838,7 +4838,7 @@ module State (Context : Context) = struct
                   in
                   let is_not_local = is_global && not (Define.is_toplevel Context.define.value) in
                   let refine_annotation annotation refined =
-                    GlobalResolution.refine ~global_resolution annotation refined
+                    GlobalResolution.refine global_resolution annotation refined
                   in
                   let annotation =
                     (* Do not refine targets explicitly annotated as 'Any' to allow for escape

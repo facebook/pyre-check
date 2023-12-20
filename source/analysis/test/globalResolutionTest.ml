@@ -2047,7 +2047,7 @@ let test_type_of_iteration_value context =
   in
   let assert_type_of_iteration_value ~annotation ~expected =
     let type_ = parse_annotation annotation in
-    let actual = GlobalResolution.type_of_iteration_value ~global_resolution type_ in
+    let actual = GlobalResolution.type_of_iteration_value global_resolution type_ in
     assert_equal
       ~cmp:[%equal: Type.t option]
       ~printer:(function
@@ -2080,7 +2080,7 @@ let test_type_of_generator_send_and_return context =
   let assert_type_of_generator_send_and_return ~annotation ~expected_send ~expected_return =
     let type_ = parse_annotation annotation in
     let actual_send, actual_return =
-      GlobalResolution.type_of_generator_send_and_return ~global_resolution type_
+      GlobalResolution.type_of_generator_send_and_return global_resolution type_
     in
     assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_send actual_send;
     assert_equal ~cmp:[%equal: Type.t] ~printer:Type.show expected_return actual_return;
@@ -2115,24 +2115,24 @@ let test_refine context =
   in
   assert_equal
     (GlobalResolution.refine
-       ~global_resolution
+       global_resolution
        (Annotation.create_immutable Type.float)
        Type.integer)
     (Annotation.create_immutable ~original:(Some Type.float) Type.integer);
   assert_equal
     (GlobalResolution.refine
-       ~global_resolution
+       global_resolution
        (Annotation.create_immutable Type.integer)
        Type.float)
     (Annotation.create_immutable Type.integer);
   assert_equal
     (GlobalResolution.refine
-       ~global_resolution
+       global_resolution
        (Annotation.create_immutable Type.integer)
        Type.Bottom)
     (Annotation.create_immutable Type.integer);
   assert_equal
-    (GlobalResolution.refine ~global_resolution (Annotation.create_immutable Type.integer) Type.Top)
+    (GlobalResolution.refine global_resolution (Annotation.create_immutable Type.integer) Type.Top)
     (Annotation.create_immutable ~original:(Some Type.integer) Type.Top);
   ()
 

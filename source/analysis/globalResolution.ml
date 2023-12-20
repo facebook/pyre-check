@@ -299,7 +299,7 @@ let resolve_define ~resolution:({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
 
 
-let signature_select ~global_resolution:({ dependency; _ } as resolution) =
+let signature_select ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.signature_select ?dependency (attribute_resolution resolution)
 
 
@@ -589,7 +589,7 @@ let extract_type_parameters resolution ~source ~target =
       |> Option.all
 
 
-let type_of_iteration_value ~global_resolution iterator_type =
+let type_of_iteration_value global_resolution iterator_type =
   match
     extract_type_parameters global_resolution ~target:"typing.Iterable" ~source:iterator_type
   with
@@ -599,7 +599,7 @@ let type_of_iteration_value ~global_resolution iterator_type =
 
 (* Determine the appropriate type for `yield` expressions in a generator function, based on the
    return annotation. *)
-let type_of_generator_send_and_return ~global_resolution generator_type =
+let type_of_generator_send_and_return global_resolution generator_type =
   (* First match against Generator *)
   match
     extract_type_parameters global_resolution ~target:"typing.Generator" ~source:generator_type
@@ -651,7 +651,7 @@ let overrides class_name ~resolution ~name =
   successors class_name ~resolution |> List.find_map ~f:find_override
 
 
-let refine ~global_resolution annotation refined_type =
+let refine global_resolution annotation refined_type =
   let solve_less_or_equal ~left ~right =
     ConstraintsSet.add
       ConstraintsSet.empty

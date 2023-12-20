@@ -161,7 +161,7 @@ val resolve_define
   AttributeResolution.resolved_define
 
 val signature_select
-  :  global_resolution:t ->
+  :  t ->
   resolve_with_locals:
     (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
   arguments:Type.t AttributeResolution.Argument.t list ->
@@ -240,9 +240,9 @@ val source_is_unit_test : t -> source:Ast.Source.t -> bool
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 
-val type_of_iteration_value : global_resolution:t -> Type.t -> Type.t option
+val type_of_iteration_value : t -> Type.t -> Type.t option
 
-val type_of_generator_send_and_return : global_resolution:t -> Type.t -> Type.t * Type.t
+val type_of_generator_send_and_return : t -> Type.t -> Type.t * Type.t
 
 val annotation_parser
   :  ?allow_invalid_type_parameters:bool ->
@@ -255,4 +255,4 @@ val overrides
   name:Identifier.t ->
   AnnotatedAttribute.instantiated option
 
-val refine : global_resolution:t -> Annotation.t -> Type.t -> Annotation.t
+val refine : t -> Annotation.t -> Type.t -> Annotation.t

@@ -167,8 +167,8 @@ let test_unresolved_select context =
         in
         ( callable,
           GlobalResolution.signature_select
+            global_resolution
             ~arguments:resolved_arguments
-            ~global_resolution
             ~callable
             ~self_argument:None
             ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution) )
@@ -279,8 +279,8 @@ let test_unresolved_select context =
         List.map arguments ~f:create_argument
       in
       GlobalResolution.signature_select
+        global_resolution
         ~arguments:resolved_arguments
-        ~global_resolution
         ~callable
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
@@ -811,8 +811,8 @@ let test_resolved_select context =
     let global_resolution = Resolution.global_resolution resolution in
     let signature =
       GlobalResolution.signature_select
+        global_resolution
         ~arguments
-        ~global_resolution
         ~callable
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)

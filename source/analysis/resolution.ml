@@ -390,7 +390,7 @@ let fallback_attribute
             let return_annotation =
               match
                 GlobalResolution.signature_select
-                  ~global_resolution
+                  global_resolution
                   ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
                   ~arguments:
                     [{ expression = None; kind = Positional; resolved = Type.literal_string name }]
