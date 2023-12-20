@@ -1,0 +1,427 @@
+; Copyright (c) Meta Platforms, Inc. and affiliates. All Rights Reserved.
+
+(env
+ (dev
+  (flags))
+ (release
+  (flags
+   (:standard -w A-4-40-41-42-44-45-48-70 ))
+  (ocamlopt_flags (-O3))
+  (link_flags -cclib -lbcrypt -cclib -lntdll -cclib -luserenv -cclib -lpathcch -cclib -lstdc++)))
+
+(library
+  (name exception)
+  (modules exception)
+  (public_name pyrelib.exception)
+  (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+  (libraries core))
+
+(library
+ (name version)
+ (modules version)
+ (public_name pyrelib.version)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries pyrelib.log))
+
+(library
+ (name timer)
+ (modules timer)
+ (public_name pyrelib.timer)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries base mtime mtime.clock.os))
+
+(library
+ (name log)
+ (public_name pyrelib.log)
+ (modules log)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core unix pyrelib.exception))
+
+(library
+ (name recognized)
+ (modules recognized)
+ (public_name pyrelib.recognized)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core))
+
+(library
+ (name decorators)
+ (modules decorators)
+ (public_name pyrelib.decorators)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core pyrelib.ast pyrelib.type))
+
+(library
+ (name fetchSavedState)
+ (modules fetchSavedState)
+ (public_name pyrelib.fetchSavedState)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core yojson pyrelib.lwtsubprocess pyrelib.path))
+
+(library
+ (name specialCallResolution)
+ (modules specialCallResolution)
+ (public_name pyrelib.specialCallResolution)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries pyrelib.analysis))
+
+(library
+ (name taintAnalysisFeatureStats)
+ (modules taintAnalysisFeatureStats)
+ (public_name pyrelib.taintAnalysisFeatureStats)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core))
+
+(library
+ (name lwtSocketServer)
+ (modules lwtSocketServer)
+ (public_name pyrelib.lwtsocketserver)
+ (preprocess
+  (pps lwt_ppx))
+ (libraries lwt lwt.unix pyrelib.path))
+
+(library
+ (name lwtSubprocess)
+ (modules lwtSubprocess)
+ (public_name pyrelib.lwtsubprocess)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries lwt lwt.unix))
+
+(library
+ (name pyreProfiling)
+ (modules pyreProfiling)
+ (public_name pyrelib.profiling)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  unix
+  pyrelib.configuration
+  pyrelib.timer
+  pyrelib.file
+  ppx_deriving_yojson.runtime))
+
+(library
+ (name statistics)
+ (modules statistics)
+ (public_name pyrelib.statistics)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  pyrelib.configuration
+  pyrelib.timer
+  pyrelib.profiling
+  yojson))
+
+(library
+ (name alarm)
+ (modules alarm)
+ (public_name pyrelib.alarm)
+ (libraries unix pyrelib.exception pyrelib.log pyrelib.statistics))
+
+(library
+ (name pyrePath)
+ (public_name pyrelib.path)
+ (modules pyrePath)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core unix sexplib ppxlib ppx_deriving pyrelib.log))
+
+(library
+ (name sourcePath)
+ (public_name pyrelib.sourcepath)
+ (modules sourcePath)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+
+(library
+ (name artifactPath)
+ (public_name pyrelib.artifactpath)
+ (modules artifactPath)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.log pyrelib.path))
+
+(library
+ (name searchPath)
+ (public_name pyrelib.search_path)
+ (modules searchPath)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.log
+  pyrelib.path
+  pyrelib.artifactpath))
+
+(library
+ (name jsonParsing)
+ (public_name pyrelib.json_parsing)
+ (modules jsonParsing)
+ (preprocess
+  (pps ppx_deriving.show ppx_compare))
+ (libraries yojson jsonm pyrePath))
+
+(library
+ (name algorithms)
+ (public_name pyrelib.algorithms)
+ (modules algorithms)
+ (libraries core))
+
+(library
+ (name file)
+ (modules file)
+ (public_name pyrelib.file)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  hack_parallel
+  pyrelib.configuration
+  pyrelib.pyre
+  pyrelib.path
+  pyrelib.search_path))
+
+(library
+ (name criticalFile)
+ (modules criticalFile)
+ (public_name pyrelib.criticalFile)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries core sexplib ppxlib ppx_deriving pyrelib.path))
+
+(library
+ (name watchman)
+ (modules watchman)
+ (public_name pyrelib.watchman)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  pyrelib.lwtsocketserver
+  pyrelib.lwtsubprocess
+  pyrelib.criticalFile
+  pyrelib.analysis))
+
+(library
+ (name pyre)
+ (public_name pyrelib.pyre)
+ (modules pyre)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare))
+ (libraries
+  core
+  sexplib
+  ppxlib
+  ppx_deriving
+  hack_parallel
+  pyrelib.sourcepath
+  pyrelib.artifactpath))
+
+(library
+ (name configuration)
+ (public_name pyrelib.configuration)
+ (modules configuration)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  core
+  ppx_deriving
+  pyrelib.exception
+  pyrelib.pyre
+  pyrelib.path
+  pyrelib.search_path
+  pyrelib.json_parsing))
+
+(library
+ (name pyrelib)
+ (public_name pyrelib)
+ (modules ())
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries
+  pyrelib.pyreParser
+  pyrelib.analysis
+  pyrelib.ast
+  pyrelib.commands
+  pyrelib.configuration
+  pyrelib.pyre
+  pyrelib.taint
+  pyrelib.timer
+  pyrelib.file
+  pyrelib.version))
+
+
+(executable
+ (name main)
+ (modules main)
+ (preprocess
+  (pps
+   ppx_deriving.eq
+   ppx_deriving.show
+   ppx_deriving_yojson
+   ppx_hash
+   ppx_compare
+   ppx_sexp_conv))
+ (libraries cmdliner core pyrelib pyrelib.exception))
+
+(alias
+ (name DEFAULT)
+ (deps main.exe))
+
+(install
+ (section bin)
+ (package pyrelib)
+ (files
+  (main.exe as pyrelib)))
