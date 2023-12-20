@@ -275,8 +275,8 @@ let resolve_method ~resolution ~class_type ~method_name =
     |> fst
     |> Type.primitive_name
     >>= GlobalResolution.attribute_from_class_name
+          resolution
           ~transitive:true
-          ~resolution
           ~name:method_name
           ~instantiated:class_type
   in

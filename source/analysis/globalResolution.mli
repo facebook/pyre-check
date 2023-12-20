@@ -174,7 +174,7 @@ val check_invalid_type_parameters
 val resolve_literal : t -> Expression.t -> Type.t
 
 val attribute_names
-  :  resolution:t ->
+  :  t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
@@ -205,7 +205,7 @@ val less_or_equal_either_way : t -> Type.t -> Type.t -> bool
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val attribute_from_class_name
-  :  resolution:t ->
+  :  t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->
   ?accessed_through_readonly:bool ->
@@ -222,7 +222,7 @@ val attribute_from_annotation
   name:string ->
   AnnotatedAttribute.instantiated option
 
-val is_typed_dictionary : resolution:t -> Type.t -> bool
+val is_typed_dictionary : t -> Type.t -> bool
 
 val is_consistent_with
   :  t ->
@@ -246,10 +246,6 @@ val annotation_parser
   t ->
   AnnotatedCallable.annotation_parser
 
-val overrides
-  :  Type.Primitive.t ->
-  resolution:t ->
-  name:Identifier.t ->
-  AnnotatedAttribute.instantiated option
+val overrides : t -> Type.Primitive.t -> name:Identifier.t -> AnnotatedAttribute.instantiated option
 
 val refine : t -> Annotation.t -> Type.t -> Annotation.t

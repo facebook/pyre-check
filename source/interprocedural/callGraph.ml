@@ -1957,8 +1957,8 @@ let resolve_attribute_access_global_targets
                 |> fst
                 |> Type.primitive_name
                 >>= GlobalResolution.attribute_from_class_name
+                      global_resolution
                       ~transitive:true
-                      ~resolution:global_resolution
                       ~name:attribute
                       ~instantiated:annotation
               in

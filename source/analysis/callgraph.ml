@@ -246,11 +246,11 @@ module DefaultBuilder : Builder = struct
             | Some [{ instantiated; accessed_through_class; class_name; _ }] -> (
                 let attribute =
                   GlobalResolution.attribute_from_class_name
+                    global_resolution
                     class_name
                     ~transitive:true
                     ~accessed_through_class
                     ~special_method:false
-                    ~resolution:global_resolution
                     ~name
                     ~instantiated
                 in

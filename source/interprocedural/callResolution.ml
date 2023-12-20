@@ -126,8 +126,8 @@ let defining_attribute ~resolution parent_type attribute =
   >>= fun class_name ->
   let instantiated_attribute =
     GlobalResolution.attribute_from_class_name
+      global_resolution
       ~transitive:true
-      ~resolution:global_resolution
       ~name:attribute
       ~instantiated:parent_type
       class_name

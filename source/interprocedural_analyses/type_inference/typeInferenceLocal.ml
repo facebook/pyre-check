@@ -1026,7 +1026,7 @@ let infer_parameters_from_parent
     parent
     >>| Reference.show
     >>= GlobalResolution.overrides
-          ~resolution:global_resolution
+          global_resolution
           ~name:(Define.unqualified_name (Node.value define))
   in
   let missing_parameter_errors overridden_attribute =

@@ -210,7 +210,7 @@ let get_class_metadata ({ dependency; _ } as resolution) =
     (class_metadata_environment resolution)
 
 
-let is_class_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+let is_class_typed_dictionary ({ dependency; _ } as resolution) =
   ClassSuccessorMetadataEnvironment.ReadOnly.is_class_typed_dictionary
     (class_metadata_environment resolution)
     ?dependency
@@ -314,7 +314,7 @@ let resolve_literal ({ dependency; _ } as resolution) =
 
 
 let attribute_names
-    ~resolution:({ dependency; _ } as resolution)
+    ({ dependency; _ } as resolution)
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
@@ -405,7 +405,7 @@ let is_invariance_mismatch resolution ~left ~right =
 
 
 let attribute_from_class_name
-    ~resolution
+    resolution
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(accessed_through_readonly = false)
@@ -465,7 +465,7 @@ let attribute_from_annotation ?special_method resolution ~parent:annotation ~nam
   | Some [] -> None
   | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }] ->
       attribute_from_class_name
-        ~resolution
+        resolution
         ~transitive:true
         ~instantiated
         ~accessed_through_class
@@ -477,9 +477,9 @@ let attribute_from_annotation ?special_method resolution ~parent:annotation ~nam
   | Some (_ :: _) -> None
 
 
-let is_typed_dictionary ~resolution annotation =
+let is_typed_dictionary resolution annotation =
   Type.primitive_name annotation
-  >>| is_class_typed_dictionary ~resolution
+  >>| is_class_typed_dictionary resolution
   |> Option.value ~default:false
 
 
@@ -637,14 +637,14 @@ let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
   }
 
 
-let overrides class_name ~resolution ~name =
+let overrides resolution class_name ~name =
   let find_override parent =
     attribute_from_class_name
+      resolution
       ~transitive:false
       ~accessed_through_class:true
       ~name
       parent
-      ~resolution
       ~instantiated:(Type.Primitive class_name)
     >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   in

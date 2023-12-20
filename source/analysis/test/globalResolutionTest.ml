@@ -689,11 +689,11 @@ let test_attribute_from_class_name context =
     =
     let actual_attribute =
       GlobalResolution.attribute_from_class_name
+        resolution
         parent
         ~transitive:true
         ~accessed_through_class
         ~accessed_through_readonly
-        ~resolution
         ~name:attribute_name
         ~instantiated
     in
@@ -1813,7 +1813,7 @@ let test_overrides context =
     |> ScratchProject.build_global_resolution
   in
   let assert_overrides ~class_name ~method_name ~expected_override =
-    let overrides = GlobalResolution.overrides ~resolution ~name:method_name class_name in
+    let overrides = GlobalResolution.overrides resolution ~name:method_name class_name in
     let print_attribute attribute =
       AnnotatedAttribute.sexp_of_instantiated attribute |> Sexp.to_string_hum
     in

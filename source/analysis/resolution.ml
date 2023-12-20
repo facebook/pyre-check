@@ -358,7 +358,7 @@ let fallback_attribute
     match name with
     | Some name ->
         GlobalResolution.attribute_from_class_name
-          ~resolution:global_resolution
+          global_resolution
           class_name
           ~accessed_through_class:false
           ~transitive:true
@@ -369,11 +369,11 @@ let fallback_attribute
   let getattr_backup () =
     let fallback =
       GlobalResolution.attribute_from_class_name
+        global_resolution
         class_name
         ~accessed_through_class
         ~special_method:true
         ~transitive:true
-        ~resolution:global_resolution
         ~name:"__getattr__"
         ~instantiated:(Type.Primitive class_name)
     in

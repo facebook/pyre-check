@@ -59,7 +59,7 @@ module Heap = struct
           let method_name = Define.unqualified_name child_method in
           let ancestor =
             try
-              GlobalResolution.overrides (Reference.show class_name) ~name:method_name ~resolution
+              GlobalResolution.overrides resolution (Reference.show class_name) ~name:method_name
             with
             | Analysis.ClassHierarchy.Untracked untracked_type ->
                 Log.warning
