@@ -343,8 +343,6 @@ let class_hierarchy_contains_class resolution = ClassHierarchy.contains (class_h
 
 let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
-let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)
-
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
     ~aliases:(get_alias resolution)

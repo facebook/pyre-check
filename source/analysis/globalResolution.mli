@@ -191,8 +191,6 @@ val class_hierarchy_contains_class : t -> Type.Primitive.t -> bool
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
-val is_instantiated : t -> Type.t -> bool
-
 val base_is_from_placeholder_stub : t -> Expression.t -> bool
 
 val parse_reference : ?allow_untracked:bool -> t -> Reference.t -> Type.t
