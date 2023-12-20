@@ -149,6 +149,13 @@ static sqlite3_stmt* get_select_stmt = NULL;
 
 #define HASHTBL_WRITE_IN_PROGRESS ((heap_entry_t*)1)
 
+// setenv.c
+#ifdef _WIN32
+void setenv(const char* name, const char* value, int overwrite) {
+  SetEnvironmentVariable(name, value);
+}
+#endif
+
 /****************************************************************************
  * Quoting the linux manpage: memfd_create() creates an anonymous file
  * and returns a file descriptor that refers to it. The file behaves
