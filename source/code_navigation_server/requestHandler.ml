@@ -262,7 +262,7 @@ let handle_superclasses
       | Some resolved_class_name ->
           let superclasses =
             resolved_class_name
-            |> GlobalResolution.successors ~resolution:global_resolution
+            |> GlobalResolution.successors global_resolution
             |> List.filter_map ~f:to_class_expression
           in
           Response.Superclasses { superclasses } |> Result.return)

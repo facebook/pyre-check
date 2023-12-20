@@ -198,7 +198,7 @@ let has_transitive_successor
     predecessor
 
 
-let successors ~resolution:({ dependency; _ } as resolution) =
+let successors ({ dependency; _ } as resolution) =
   ClassSuccessorMetadataEnvironment.ReadOnly.successors
     ?dependency
     (class_metadata_environment resolution)
@@ -232,7 +232,7 @@ let attribute ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.attribute (attribute_resolution resolution) ?dependency
 
 
-let get_typed_dictionary ~resolution:({ dependency; _ } as resolution) =
+let get_typed_dictionary ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.get_typed_dictionary (attribute_resolution resolution) ?dependency
 
 
@@ -242,12 +242,12 @@ let constraints_solution_exists ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let constraints ~resolution:({ dependency; _ } as resolution) =
+let constraints ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.constraints ?dependency (attribute_resolution resolution)
 
 
 let uninstantiated_attributes
-    ~resolution:({ dependency; _ } as resolution)
+    ({ dependency; _ } as resolution)
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
@@ -263,7 +263,7 @@ let uninstantiated_attributes
 
 
 let attribute_details
-    ~resolution:({ dependency; _ } as resolution)
+    ({ dependency; _ } as resolution)
     ?(transitive = false)
     ?(accessed_through_class = false)
     ?(include_generated_attributes = true)
@@ -278,14 +278,14 @@ let attribute_details
     ?dependency
 
 
-let instantiate_attribute ~resolution:({ dependency; _ } as resolution) ?instantiated =
+let instantiate_attribute ({ dependency; _ } as resolution) ?instantiated =
   AttributeResolution.ReadOnly.instantiate_attribute
     (attribute_resolution resolution)
     ?dependency
     ?instantiated
 
 
-let metaclass ~resolution:({ dependency; _ } as resolution) =
+let metaclass ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.metaclass ?dependency (attribute_resolution resolution)
 
 
@@ -295,7 +295,7 @@ let resolve_mutable_literals ({ dependency; _ } as resolution) =
     (attribute_resolution resolution)
 
 
-let resolve_define ~resolution:({ dependency; _ } as resolution) =
+let resolve_define ({ dependency; _ } as resolution) =
   AttributeResolution.ReadOnly.resolve_define ?dependency (attribute_resolution resolution)
 
 
@@ -341,7 +341,7 @@ let location_of_global ({ dependency; _ } as resolution) =
    cannot find the relevant source code. *)
 let class_hierarchy_contains_class resolution = ClassHierarchy.contains (class_hierarchy resolution)
 
-let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
+let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
@@ -488,7 +488,7 @@ let is_consistent_with resolution ~resolve left right ~expression =
   let left =
     WeakenMutableLiterals.weaken_mutable_literals
       ~resolve
-      ~get_typed_dictionary:(get_typed_dictionary ~resolution)
+      ~get_typed_dictionary:(get_typed_dictionary resolution)
       ~expression
       ~resolved:left
       ~expected:right
@@ -648,7 +648,7 @@ let overrides class_name ~resolution ~name =
       ~instantiated:(Type.Primitive class_name)
     >>= fun attribute -> Option.some_if (AnnotatedAttribute.defined attribute) attribute
   in
-  successors class_name ~resolution |> List.find_map ~f:find_override
+  successors resolution class_name |> List.find_map ~f:find_override
 
 
 let refine global_resolution annotation refined_type =

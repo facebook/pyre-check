@@ -56,7 +56,7 @@ let decorate
   | [] -> define_node
   | _ -> (
       match
-        GlobalResolution.resolve_define ~resolution ~implementation:(Some signature) ~overloads:[]
+        GlobalResolution.resolve_define resolution ~implementation:(Some signature) ~overloads:[]
       with
       | {
        decorated =
@@ -137,7 +137,7 @@ let is_constructor
   match parent >>| Reference.show with
   | Some parent_class ->
       let in_test =
-        let superclasses = GlobalResolution.successors ~resolution parent_class in
+        let superclasses = GlobalResolution.successors resolution parent_class in
         List.exists ~f:Type.Primitive.is_unit_test (parent_class :: superclasses)
       in
       Define.is_constructor ~in_test (Node.value definition)

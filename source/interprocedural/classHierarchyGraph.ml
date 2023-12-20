@@ -100,7 +100,7 @@ module Heap = struct
           { Node.value = { Class.name = class_name; _ }; _ }
         =
         let class_name = Reference.show class_name in
-        let parents = GlobalResolution.immediate_parents ~resolution class_name in
+        let parents = GlobalResolution.immediate_parents resolution class_name in
         List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
             add accumulator ~parent ~child:class_name)
       in

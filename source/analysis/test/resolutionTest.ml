@@ -382,9 +382,7 @@ let test_get_typed_dictionary context =
     assert_equal
       ~printer:[%show: Type.t Type.Record.TypedDictionary.record option]
       expected_type
-      (GlobalResolution.get_typed_dictionary
-         ~resolution:(Resolution.global_resolution resolution)
-         annotation)
+      (GlobalResolution.get_typed_dictionary (Resolution.global_resolution resolution) annotation)
   in
   assert_typed_dictionary ~annotation:(Type.Primitive "test.RegularClass") None;
   assert_typed_dictionary

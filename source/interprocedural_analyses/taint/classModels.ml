@@ -228,9 +228,7 @@ let infer ~environment ~user_models =
   in
   let compute_typed_dict_models class_name =
     let fields =
-      GlobalResolution.get_typed_dictionary
-        ~resolution:global_resolution
-        (Type.Primitive class_name)
+      GlobalResolution.get_typed_dictionary global_resolution (Type.Primitive class_name)
       >>| (fun { Type.Record.TypedDictionary.fields; _ } -> fields)
       >>| List.map ~f:(fun { Analysis.Type.Record.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]

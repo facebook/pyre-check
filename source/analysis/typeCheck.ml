@@ -275,7 +275,7 @@ let errors_from_not_found
                           (Binary { operator_name; left_operand; right_operand }) )
                   | _ -> default_location_and_error)
               | Some (Type.Primitive _ as annotation), Some method_name ->
-                  GlobalResolution.get_typed_dictionary ~resolution:global_resolution annotation
+                  GlobalResolution.get_typed_dictionary global_resolution annotation
                   >>= typed_dictionary_error ~mismatch ~method_name ~position
                   >>| (fun kind -> mismatch_location, kind)
                   |> Option.value ~default:default_location_and_error
@@ -730,7 +730,7 @@ module State (Context : Context) = struct
     let global_resolution = Resolution.global_resolution resolution in
     match
       GlobalResolution.resolve_define
-        ~resolution:global_resolution
+        global_resolution
         ~implementation:(Some signature)
         ~overloads:[]
     with
@@ -1567,9 +1567,9 @@ module State (Context : Context) = struct
                   | class_name ->
                       let abstract_methods =
                         GlobalResolution.uninstantiated_attributes
+                          global_resolution
                           ~transitive:true
                           class_name
-                          ~resolution:global_resolution
                         >>| List.filter ~f:AnnotatedAttribute.abstract
                         |> Option.value ~default:[]
                         |> List.map ~f:AnnotatedAttribute.name
@@ -6062,9 +6062,7 @@ module State (Context : Context) = struct
           let superclass_pairs_with_same_field_name =
             let field_name_to_successor_fields_map =
               let get_typed_dictionary_fields class_name =
-                GlobalResolution.get_typed_dictionary
-                  ~resolution:global_resolution
-                  (Type.Primitive class_name)
+                GlobalResolution.get_typed_dictionary global_resolution (Type.Primitive class_name)
                 >>| (fun { fields; _ } -> fields)
                 |> Option.value ~default:[]
               in
@@ -6075,7 +6073,7 @@ module State (Context : Context) = struct
               in
               let base_classes =
                 current_class_name
-                >>| GlobalResolution.immediate_parents ~resolution:global_resolution
+                >>| GlobalResolution.immediate_parents global_resolution
                 |> Option.value ~default:[]
               in
               List.concat_map base_classes ~f:get_successor_map_entries
@@ -6177,7 +6175,7 @@ module State (Context : Context) = struct
         in
         parent
         >>| Reference.show
-        >>| GlobalResolution.successors ~resolution:global_resolution
+        >>| GlobalResolution.successors global_resolution
         >>= List.find_map ~f:find_init_subclass
       in
       match init_subclass_parent with
@@ -6777,7 +6775,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
           GlobalResolution.uninstantiated_attributes
             ~transitive:false
             ~include_generated_attributes:true
-            ~resolution:global_resolution
+            global_resolution
             (Reference.show (ClassSummary.name definition))
           >>| List.filter ~f:(fun attribute -> AnnotatedAttribute.is_private attribute)
           >>| List.map ~f:(fun attribute ->
@@ -6812,7 +6810,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               let attributes =
                 GlobalResolution.uninstantiated_attributes
                   ~include_generated_attributes:true
-                  ~resolution:global_resolution
+                  global_resolution
                   class_name
                 |> Option.value ~default:[]
               in
@@ -6824,7 +6822,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               let add_to_map sofar attribute =
                 let annotation =
                   GlobalResolution.instantiate_attribute
-                    ~resolution:global_resolution
+                    global_resolution
                     ~accessed_through_class:false
                     ~accessed_through_readonly:false
                     ?instantiated:None
@@ -6843,9 +6841,9 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             let remove_initialized { class_name; _ } attribute_map =
               let attributes =
                 GlobalResolution.uninstantiated_attributes
+                  global_resolution
                   ~transitive:true
                   ~include_generated_attributes:true
-                  ~resolution:global_resolution
                   class_name
                 |> Option.value ~default:[]
               in
@@ -6876,7 +6874,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                       `Snd { class_name; is_abstract; is_protocol }
                   | None -> `Trd ()
                 in
-                GlobalResolution.successors class_name ~resolution:global_resolution
+                GlobalResolution.successors global_resolution class_name
                 |> List.partition3_map ~f:is_protocol_or_abstract
               in
               let name_and_metadata =
@@ -6981,9 +6979,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
         let override_errors_for_typed_dictionary class_name =
           let open Type.Record.TypedDictionary in
           let get_typed_dictionary_fields class_name =
-            GlobalResolution.get_typed_dictionary
-              ~resolution:global_resolution
-              (Type.Primitive class_name)
+            GlobalResolution.get_typed_dictionary global_resolution (Type.Primitive class_name)
             >>| (fun typed_dictionary -> typed_dictionary.fields)
             |> Option.value ~default:[]
           in
@@ -6993,7 +6989,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
               |> List.map ~f:(fun (field : Type.t typed_dictionary_field) ->
                      field.name, (successor_name, field))
             in
-            GlobalResolution.successors ~resolution:global_resolution class_name
+            GlobalResolution.successors global_resolution class_name
             |> List.concat_map ~f:get_successor_map_entries
             |> Map.of_alist_multi (module String)
           in
@@ -7054,8 +7050,8 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
             override_errors_for_typed_dictionary class_name
           else
             GlobalResolution.uninstantiated_attributes
+              global_resolution
               ~include_generated_attributes:false
-              ~resolution:global_resolution
               class_name
             >>| List.filter_map ~f:(fun attribute ->
                     (* `accessed_through_class` is true here because it is ture in
@@ -7064,9 +7060,9 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
                        TODO(T146994981) we should check for both attribute access patterns. *)
                     let annotation =
                       GlobalResolution.instantiate_attribute
+                        global_resolution
                         ~accessed_through_class:true
                         ~accessed_through_readonly:false
-                        ~resolution:global_resolution
                         ?instantiated:None
                         attribute
                       |> AnnotatedAttribute.annotation

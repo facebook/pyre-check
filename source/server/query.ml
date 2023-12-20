@@ -604,7 +604,7 @@ let rec process_request_exn ~type_environment ~build_system request =
           let name = AnnotatedAttribute.name attribute in
           let instantiated_annotation =
             GlobalResolution.instantiate_attribute
-              ~resolution:global_resolution
+              global_resolution
               ~accessed_through_class:false
               ~accessed_through_readonly:false
               attribute
@@ -626,7 +626,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         |> Type.split
         |> fst
         |> Type.primitive_name
-        >>= GlobalResolution.uninstantiated_attributes ~resolution:global_resolution
+        >>= GlobalResolution.uninstantiated_attributes global_resolution
         >>| List.map ~f:to_attribute
         >>| (fun attributes -> Single (Base.FoundAttributes attributes))
         |> Option.value
@@ -971,7 +971,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     | Superclasses class_names ->
         let get_superclasses class_name =
           Reference.show class_name
-          |> GlobalResolution.successors ~resolution:global_resolution
+          |> GlobalResolution.successors global_resolution
           |> List.sort ~compare:String.compare
           |> List.map ~f:Reference.create
           |> fun superclasses -> { Base.class_name; superclasses }

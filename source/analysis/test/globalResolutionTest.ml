@@ -38,7 +38,7 @@ let test_superclasses context =
     |> ScratchProject.build_global_resolution
   in
   let assert_successors target expected =
-    let actual = GlobalResolution.successors ~resolution target in
+    let actual = GlobalResolution.successors resolution target in
     assert_equal
       ~printer:(List.fold ~init:"" ~f:(fun sofar next -> sofar ^ Type.Primitive.show next ^ " "))
       ~cmp:(List.equal Type.Primitive.equal)
@@ -564,12 +564,12 @@ let test_all_attributes context =
       ~cmp:attribute_list_equal
       ~printer:print_attributes
       ~pp_diff:(diff ~print)
-      (GlobalResolution.uninstantiated_attributes ~resolution definition
+      (GlobalResolution.uninstantiated_attributes resolution definition
       |> (fun a -> Option.value_exn a)
       |> List.map
            ~f:
              (GlobalResolution.instantiate_attribute
-                ~resolution
+                resolution
                 ~accessed_through_class:false
                 ~accessed_through_readonly:false))
       attributes
@@ -1305,7 +1305,7 @@ let test_typed_dictionary_attributes context =
     let resolution = Resolution.global_resolution resolution in
     let attributes =
       GlobalResolution.uninstantiated_attributes
-        ~resolution
+        resolution
         ~accessed_through_class:true
         ~transitive:true
         ~include_generated_attributes:true
@@ -1398,7 +1398,7 @@ let test_constraints context =
     in
     let resolution = GlobalResolution.create global_environment in
     let constraints =
-      GlobalResolution.constraints ~target ~resolution ?parameters ~instantiated ()
+      GlobalResolution.constraints ~target resolution ?parameters ~instantiated ()
     in
     let expected =
       List.map expected ~f:(fun (variable, value) -> Type.Variable.UnaryPair (variable, value))
@@ -1656,7 +1656,7 @@ let test_metaclasses context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let resolution = GlobalResolution.create global_environment in
-    assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass ~resolution target)
+    assert_equal (Some (Type.Primitive metaclass)) (GlobalResolution.metaclass resolution target)
   in
   assert_metaclass ~source:{|
        class C:

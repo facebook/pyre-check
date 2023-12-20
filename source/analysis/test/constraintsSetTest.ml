@@ -220,7 +220,7 @@ let make_assert_functions context =
       ()
     =
     let handler =
-      let metaclass name ~assumptions:_ = GlobalResolution.metaclass ~resolution name in
+      let metaclass name ~assumptions:_ = GlobalResolution.metaclass resolution name in
       let order =
         {
           ConstraintsSet.class_hierarchy = hierarchy environment;
@@ -245,14 +245,14 @@ let make_assert_functions context =
             | Some [{ instantiated; accessed_through_class; class_name; accessed_through_readonly }]
               ->
                 GlobalResolution.uninstantiated_attributes
+                  resolution
                   ~transitive:true
-                  ~resolution
                   ~accessed_through_class
                   class_name
                 >>| List.map
                       ~f:
                         (GlobalResolution.instantiate_attribute
-                           ~resolution
+                           resolution
                            ~instantiated
                            ~accessed_through_class
                            ~accessed_through_readonly)

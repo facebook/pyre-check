@@ -68,7 +68,7 @@ val parse_as_parameter_specification_instance_annotation
   keywords_parameter_annotation:Expression.t ->
   Type.Variable.Variadic.Parameters.t option
 
-val immediate_parents : resolution:t -> Type.Primitive.t -> string list
+val immediate_parents : t -> Type.Primitive.t -> string list
 
 val type_parameters_as_variables
   :  ?default:Type.Variable.t list option ->
@@ -83,7 +83,7 @@ val has_transitive_successor
   Type.Primitive.t ->
   bool
 
-val successors : resolution:t -> Type.Primitive.t -> string list
+val successors : t -> Type.Primitive.t -> string list
 
 val get_class_metadata
   :  t ->
@@ -100,10 +100,7 @@ val parse_annotation
 
 val global : t -> Reference.t -> AttributeResolution.Global.t option
 
-val get_typed_dictionary
-  :  resolution:t ->
-  Type.t ->
-  Type.t Type.Record.TypedDictionary.record option
+val get_typed_dictionary : t -> Type.t -> Type.t Type.Record.TypedDictionary.record option
 
 val constraints_solution_exists
   :  t ->
@@ -113,7 +110,7 @@ val constraints_solution_exists
   bool
 
 val constraints
-  :  resolution:t ->
+  :  t ->
   target:Type.Primitive.t ->
   ?parameters:Type.Parameter.t list ->
   instantiated:Type.t ->
@@ -121,7 +118,7 @@ val constraints
   ConstraintsSet.Solution.t
 
 val uninstantiated_attributes
-  :  resolution:t ->
+  :  t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
@@ -129,7 +126,7 @@ val uninstantiated_attributes
   AnnotatedAttribute.uninstantiated list option
 
 val attribute_details
-  :  resolution:t ->
+  :  t ->
   ?transitive:bool ->
   ?accessed_through_class:bool ->
   ?include_generated_attributes:bool ->
@@ -137,14 +134,14 @@ val attribute_details
   AttributeResolution.AttributeDetail.t list option
 
 val instantiate_attribute
-  :  resolution:t ->
+  :  t ->
   ?instantiated:Type.t ->
   accessed_through_class:bool ->
   accessed_through_readonly:bool ->
   AnnotatedAttribute.uninstantiated ->
   AnnotatedAttribute.instantiated
 
-val metaclass : resolution:t -> Type.Primitive.t -> Type.t option
+val metaclass : t -> Type.Primitive.t -> Type.t option
 
 val resolve_mutable_literals
   :  t ->
@@ -155,7 +152,7 @@ val resolve_mutable_literals
   WeakenMutableLiterals.weakened_type
 
 val resolve_define
-  :  resolution:t ->
+  :  t ->
   implementation:Define.Signature.t option ->
   overloads:Define.Signature.t list ->
   AttributeResolution.resolved_define

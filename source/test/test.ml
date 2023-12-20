@@ -3403,7 +3403,7 @@ let assert_equivalent_attributes
       String.compare (AnnotatedAttribute.name left) (AnnotatedAttribute.name right)
     in
     Format.asprintf "%s.%s" module_name class_name
-    |> GlobalResolution.uninstantiated_attributes ~transitive:false ~resolution:global_resolution
+    |> GlobalResolution.uninstantiated_attributes global_resolution ~transitive:false
     |> (fun attributes ->
          Option.value_exn
            ~message:(Format.asprintf "Expected to find class `%s` in `%s`" class_name source)
@@ -3412,7 +3412,7 @@ let assert_equivalent_attributes
     |> List.map
          ~f:
            (GlobalResolution.instantiate_attribute
-              ~resolution:global_resolution
+              global_resolution
               ~accessed_through_class:false
               ~accessed_through_readonly:false)
   in

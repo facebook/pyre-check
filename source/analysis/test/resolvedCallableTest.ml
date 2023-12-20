@@ -30,7 +30,7 @@ let test_apply_decorators context =
   (* Contextlib related tests *)
   let assert_apply_contextlib_decorators define expected_return_annotation =
     let applied_return_annotation =
-      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
+      GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[]
       |> function
       | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
           annotation
@@ -44,7 +44,7 @@ let test_apply_decorators context =
 
     (* Test decorators with old AST. *)
     let applied_return_annotation =
-      GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[]
+      GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[]
       |> function
       | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
           annotation
@@ -84,7 +84,7 @@ let test_apply_decorators context =
     ~parameters:[create_parameter ~name:"self"; create_parameter ~name:"other"]
     ~return_annotation:None
   |> (fun define ->
-       GlobalResolution.resolve_define ~resolution ~implementation:(Some define) ~overloads:[])
+       GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[])
   |> (function
        | { decorated = Ok (Callable { implementation = { Type.Callable.parameters; _ }; _ }); _ } ->
            parameters

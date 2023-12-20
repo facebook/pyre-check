@@ -805,9 +805,7 @@ let resolve_attributes_for_expression ~resolution expression =
   base_type
   >>| Type.split
   >>= (fun (parent, _) -> Type.primitive_name parent)
-  >>= GlobalResolution.attribute_details
-        ~resolution:(Resolution.global_resolution resolution)
-        ~transitive:true
+  >>= GlobalResolution.attribute_details (Resolution.global_resolution resolution) ~transitive:true
   |> Option.value ~default:[]
 
 
