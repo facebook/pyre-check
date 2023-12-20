@@ -581,10 +581,10 @@ let extract_type_parameters resolution ~source ~target =
         List.map unaries ~f:(fun unary -> Type.Parameter.Single (Type.Variable unary))
         |> Type.parametric target
       in
-      ConstraintsSet.add
+      TypeOrder.OrderedConstraintsSet.add
         ConstraintsSet.empty
         ~new_constraint:(LessOrEqual { left = source; right = solve_against })
-        ~global_resolution:resolution
+        ~order:(full_order resolution)
       |> ConstraintsSet.solve ~global_resolution:resolution
       >>= fun solution ->
       List.map unaries ~f:(ConstraintsSet.Solution.instantiate_single_variable solution)

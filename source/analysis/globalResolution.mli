@@ -239,22 +239,6 @@ val is_consistent_with
 
 val source_is_unit_test : t -> source:Ast.Source.t -> bool
 
-module ConstraintsSet : sig
-  val add
-    :  ConstraintsSet.t ->
-    new_constraint:ConstraintsSet.kind ->
-    global_resolution:t ->
-    ConstraintsSet.t
-
-  val solve : ConstraintsSet.t -> global_resolution:t -> ConstraintsSet.Solution.t option
-
-  type order = ConstraintsSet.order
-
-  module Solution : sig
-    type t = ConstraintsSet.Solution.t
-  end
-end
-
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 
