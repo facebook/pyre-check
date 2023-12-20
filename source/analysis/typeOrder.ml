@@ -620,51 +620,6 @@ module IncludableImplementation : FullOrderTypeWithoutT = Implementation
 
 include IncludableImplementation
 
-let rec is_compatible_with order ~left ~right =
-  let fallback () = always_less_or_equal order ~left ~right in
-  match left, right with
-  (* Any *)
-  | _, Type.Any
-  | Type.Any, _ ->
-      true
-  (* Top *)
-  | _, Type.Top -> true
-  | Type.Top, _ -> false
-  (* None *)
-  | Type.NoneType, Type.NoneType -> true
-  (* Tuple *)
-  | Type.Tuple (Concrete left), Type.Tuple (Concrete right)
-    when List.length left = List.length right ->
-      List.for_all2_exn left right ~f:(fun left right -> is_compatible_with order ~left ~right)
-  | Type.Tuple (Concrete bounded), Type.Tuple (Concatenation concatenation) -> (
-      match Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation with
-      | Some unbounded_element ->
-          List.for_all bounded ~f:(fun bounded_type ->
-              is_compatible_with order ~left:bounded_type ~right:unbounded_element)
-      | None -> fallback ())
-  (* Union *)
-  | Type.Union left, right ->
-      List.fold
-        ~init:true
-        ~f:(fun current left -> current && is_compatible_with order ~left ~right)
-        left
-  | left, Type.Union right ->
-      List.exists ~f:(fun right -> is_compatible_with order ~left ~right) right
-  (* Parametric *)
-  | ( Parametric { name = left_name; parameters = left_parameters },
-      Parametric { name = right_name; parameters = right_parameters } )
-    when Type.Primitive.equal left_name right_name
-         && Int.equal (List.length left_parameters) (List.length right_parameters) -> (
-      match
-        Type.Parameter.all_singles left_parameters, Type.Parameter.all_singles right_parameters
-      with
-      | Some left_parameters, Some right_parameters ->
-          List.for_all2_exn left_parameters right_parameters ~f:(fun left right ->
-              is_compatible_with order ~left ~right)
-      | _ -> fallback ())
-  | _, _ -> fallback ()
-
-
 let widen order ~widening_threshold ~previous ~next ~iteration =
   if iteration > widening_threshold then
     Type.Top

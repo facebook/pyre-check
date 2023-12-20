@@ -150,24 +150,6 @@ let less_or_equal
     }
 
 
-let is_compatible_with handler =
-  is_compatible_with
-    {
-      ConstraintsSet.class_hierarchy = hierarchy handler;
-      instantiated_attributes = (fun _ ~assumptions:_ -> None);
-      attribute = (fun _ ~assumptions:_ ~name:_ -> None);
-      is_protocol = (fun _ ~protocol_assumptions:_ -> false);
-      assumptions =
-        {
-          protocol_assumptions = ProtocolAssumptions.empty;
-          callable_assumptions = CallableAssumptions.empty;
-          decorator_assumptions = DecoratorAssumptions.empty;
-        };
-      get_typed_dictionary;
-      metaclass = (fun _ ~assumptions:_ -> Some (Type.Primitive "type"));
-    }
-
-
 let join ?(attributes = fun _ ~assumptions:_ -> None) handler =
   join
     {
@@ -1556,161 +1538,6 @@ let test_less_or_equal context =
   ()
 
 
-let test_is_compatible_with _ =
-  let assert_is_compatible ?(order = default) left right =
-    assert_true (is_compatible_with order ~left ~right)
-  in
-  let assert_not_compatible ?(order = default) left right =
-    assert_false (is_compatible_with order ~left ~right)
-  in
-  let list_of_integer = Type.list Type.integer in
-  let list_of_float = Type.list Type.float in
-  let list_of_string = Type.list Type.string in
-  let list_of_top = Type.list Type.Top in
-  let list_of_any = Type.list Type.Any in
-  let iterable_of_integer = Type.iterable Type.integer in
-  let iterable_of_any = Type.iterable Type.Any in
-  (* Any *)
-  assert_is_compatible list_of_integer Type.Any;
-  assert_is_compatible Type.Any list_of_integer;
-  assert_is_compatible Type.none Type.Any;
-  assert_is_compatible Type.Any Type.none;
-  assert_is_compatible (Type.Primitive "A") Type.Any;
-  assert_is_compatible Type.Any (Type.Primitive "A");
-  assert_is_compatible Type.Top Type.Any;
-  assert_is_compatible Type.Any Type.Top;
-  assert_is_compatible list_of_integer list_of_any;
-  assert_is_compatible list_of_any list_of_integer;
-  assert_is_compatible Type.Any Type.Any;
-
-  (* Top *)
-  assert_is_compatible list_of_integer Type.Top;
-  assert_not_compatible Type.Top list_of_integer;
-  assert_is_compatible Type.none Type.Top;
-  assert_not_compatible Type.Top Type.none;
-  assert_is_compatible (Type.Primitive "A") Type.Top;
-  assert_not_compatible Type.Top (Type.Primitive "A");
-  assert_is_compatible list_of_integer list_of_top;
-  assert_not_compatible list_of_top list_of_integer;
-  assert_is_compatible Type.Top Type.Top;
-
-  (* Basic *)
-  assert_is_compatible list_of_integer list_of_integer;
-  assert_is_compatible list_of_integer list_of_float;
-  assert_not_compatible list_of_float list_of_integer;
-  assert_not_compatible list_of_integer list_of_string;
-
-  (* Optional *)
-  assert_is_compatible Type.none (Type.optional Type.Any);
-  assert_is_compatible (Type.optional Type.Any) Type.none;
-  assert_is_compatible Type.none (Type.optional Type.Top);
-  assert_not_compatible (Type.optional Type.Top) Type.none;
-  assert_is_compatible list_of_integer (Type.optional list_of_integer);
-  assert_is_compatible (Type.optional list_of_integer) (Type.optional list_of_integer);
-  assert_is_compatible list_of_integer (Type.optional list_of_float);
-  assert_is_compatible (Type.optional list_of_integer) (Type.optional list_of_float);
-  assert_not_compatible list_of_float (Type.optional list_of_integer);
-  assert_not_compatible list_of_integer (Type.optional list_of_string);
-
-  (* Tuple *)
-  assert_is_compatible
-    (Type.tuple [list_of_integer; list_of_string])
-    (Type.tuple [list_of_integer; list_of_string]);
-  assert_is_compatible
-    (Type.tuple [list_of_integer; list_of_string])
-    (Type.tuple [list_of_float; list_of_string]);
-  assert_is_compatible
-    (Type.tuple [list_of_string; list_of_integer])
-    (Type.tuple [list_of_string; list_of_float]);
-  assert_is_compatible
-    (Type.tuple [list_of_integer; list_of_integer])
-    (Type.tuple [list_of_float; list_of_float]);
-  assert_is_compatible
-    (Type.tuple [list_of_integer; list_of_integer])
-    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_integer));
-  assert_is_compatible
-    (Type.tuple [list_of_integer; list_of_integer])
-    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_float));
-  assert_not_compatible
-    (Type.tuple [list_of_integer; list_of_string])
-    (Type.tuple [list_of_string; list_of_string]);
-  assert_not_compatible
-    (Type.tuple [list_of_float; list_of_integer])
-    (Type.tuple [list_of_integer; list_of_float]);
-  assert_not_compatible
-    (Type.tuple [list_of_string; list_of_integer])
-    (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation list_of_float));
-
-  (* Union *)
-  assert_is_compatible list_of_integer (Type.union [list_of_integer]);
-  assert_is_compatible list_of_integer (Type.union [list_of_float]);
-  assert_is_compatible list_of_float (Type.union [list_of_float; list_of_integer]);
-  assert_is_compatible list_of_string (Type.union [list_of_float; list_of_string]);
-  assert_is_compatible list_of_string (Type.union [list_of_float; Type.optional list_of_string]);
-  assert_not_compatible list_of_string (Type.union [list_of_float; list_of_integer]);
-  assert_is_compatible
-    (Type.union [Type.integer; Type.string])
-    (Type.union [Type.integer; Type.string]);
-  assert_is_compatible
-    (Type.union [Type.integer; Type.string])
-    (Type.union [Type.string; Type.integer]);
-  assert_is_compatible
-    (Type.set (Type.union [Type.integer; Type.string]))
-    (Type.set (Type.union [Type.string; Type.integer]));
-  assert_is_compatible
-    (Type.union [Type.integer; list_of_integer])
-    (Type.union [Type.integer; Type.integer; list_of_integer]);
-  assert_not_compatible (Type.union [Type.integer; Type.string]) Type.integer;
-  assert_not_compatible
-    (Type.union [Type.integer; Type.string; list_of_float])
-    (Type.union [Type.integer; list_of_float]);
-  assert_not_compatible
-    (Type.set (Type.union [Type.integer; Type.string]))
-    (Type.set (Type.union [list_of_string; list_of_integer]));
-
-  (* Parametric *)
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
-    (Type.dictionary ~key:list_of_float ~value:list_of_string);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_string ~value:list_of_integer)
-    (Type.dictionary ~key:list_of_string ~value:list_of_float);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_integer)
-    (Type.dictionary ~key:list_of_float ~value:list_of_float);
-  assert_not_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_integer)
-    (Type.dictionary ~key:list_of_string ~value:list_of_integer);
-  assert_not_compatible
-    (Type.dictionary ~key:list_of_string ~value:list_of_string)
-    (Type.dictionary ~key:list_of_string ~value:list_of_integer);
-  assert_not_compatible (Type.dictionary ~key:list_of_string ~value:list_of_integer) list_of_string;
-  assert_not_compatible list_of_string (Type.dictionary ~key:list_of_string ~value:list_of_integer);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
-    (Type.dictionary ~key:list_of_any ~value:list_of_any);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_any ~value:list_of_any)
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
-  assert_is_compatible
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string)
-    (Type.dictionary ~key:list_of_top ~value:list_of_top);
-  assert_not_compatible
-    (Type.dictionary ~key:list_of_top ~value:list_of_top)
-    (Type.dictionary ~key:list_of_integer ~value:list_of_string);
-  assert_is_compatible list_of_integer iterable_of_integer;
-  assert_not_compatible list_of_string iterable_of_integer;
-  assert_not_compatible iterable_of_integer list_of_integer;
-  assert_is_compatible list_of_any iterable_of_any;
-  assert_not_compatible iterable_of_any list_of_any;
-  assert_is_compatible list_of_any iterable_of_integer;
-  assert_is_compatible list_of_integer iterable_of_any;
-  ()
-
-
 let test_less_or_equal_variance _ =
   let assert_strict_less ~order ~right ~left =
     assert_equal
@@ -2831,7 +2658,6 @@ let () =
          "join_recursive_types" >:: test_join_recursive_types;
          "less_or_equal" >:: test_less_or_equal;
          "less_or_equal_variance" >:: test_less_or_equal_variance;
-         "is_compatible_with" >:: test_is_compatible_with;
          "meet" >:: test_meet;
          "meet_callable" >:: test_meet_callable;
        ]

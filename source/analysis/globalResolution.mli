@@ -207,9 +207,6 @@ val widen : t -> widening_threshold:int -> previous:Type.t -> next:Type.t -> ite
 
 val less_or_equal_either_way : t -> Type.t -> Type.t -> bool
 
-(* Only for use in monkey check. *)
-val is_compatible_with : t -> left:Type.t -> right:Type.t -> bool
-
 val is_invariance_mismatch : t -> left:Type.t -> right:Type.t -> bool
 
 val attribute_from_class_name
