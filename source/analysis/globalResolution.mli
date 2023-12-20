@@ -187,7 +187,7 @@ val attribute_names
 
 val location_of_global : t -> Reference.t -> Location.WithModule.t option
 
-val is_tracked : t -> Type.Primitive.t -> bool
+val class_hierarchy_contains_class : t -> Type.Primitive.t -> bool
 
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 

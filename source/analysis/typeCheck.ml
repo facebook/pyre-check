@@ -458,7 +458,7 @@ module State (Context : Context) = struct
       let is_untracked_name class_name =
         match class_name with
         | "..." -> false
-        | _ -> not (GlobalResolution.is_tracked resolution class_name)
+        | _ -> not (GlobalResolution.class_hierarchy_contains_class resolution class_name)
       in
       let untracked =
         List.filter (Type.elements annotation) ~f:is_untracked_name
@@ -483,7 +483,7 @@ module State (Context : Context) = struct
         | Type.Literal
             (Type.EnumerationMember
               { enumeration_type = Type.Primitive enumeration_name; member_name })
-          when not (GlobalResolution.is_tracked resolution enumeration_name) ->
+          when not (GlobalResolution.class_hierarchy_contains_class resolution enumeration_name) ->
             emit_error
               ~errors
               ~location
