@@ -72,8 +72,6 @@ module ReadOnly : sig
     Reference.t ->
     UnannotatedGlobal.t option
 
-  val contains_untracked : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
-
   val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 
   val legacy_resolve_exports

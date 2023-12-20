@@ -237,10 +237,6 @@ module OutgoingDataComputation = struct
     |> Option.value ~default:false
 
 
-  let contains_untracked Queries.{ class_exists; _ } annotation =
-    List.exists ~f:(fun annotation -> not (class_exists annotation)) (Type.elements annotation)
-
-
   let legacy_resolve_exports Queries.{ get_module_metadata; _ } reference =
     (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
     let widening_threshold = 25 in
@@ -484,10 +480,6 @@ module ReadOnly = struct
 
   let is_protocol { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.is_protocol
-
-
-  let contains_untracked { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.contains_untracked
 
 
   let legacy_resolve_exports { get_queries; _ } ?dependency =

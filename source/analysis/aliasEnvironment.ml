@@ -325,14 +325,18 @@ end
 module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
-      contains_untracked: Type.t -> bool;
+      class_exists: Type.Primitive.t -> bool;
       is_from_empty_stub: Ast.Reference.t -> bool;
       get_alias: ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
     }
   end
 
+  let type_contains_untracked_name Queries.{ class_exists; _ } annotation =
+    List.exists ~f:(fun class_name -> not (class_exists class_name)) (Type.elements annotation)
+
+
   let parse_annotation_without_validating_type_parameters
-      Queries.{ contains_untracked; is_from_empty_stub; get_alias; _ }
+      (Queries.{ is_from_empty_stub; get_alias; _ } as queries)
       ?modify_aliases
       ?(allow_untracked = false)
       expression
@@ -362,7 +366,7 @@ module OutgoingDataComputation = struct
       in
       Type.apply_type_map parsed ~type_map
     in
-    if contains_untracked annotation && not allow_untracked then
+    if type_contains_untracked_name queries annotation && not allow_untracked then
       Type.Top
     else
       annotation
@@ -469,8 +473,8 @@ module ReadOnly = struct
   let outgoing_queries ?dependency environment =
     OutgoingDataComputation.Queries.
       {
-        contains_untracked =
-          UnannotatedGlobalEnvironment.ReadOnly.contains_untracked
+        class_exists =
+          UnannotatedGlobalEnvironment.ReadOnly.class_exists
             (unannotated_global_environment environment)
             ?dependency;
         is_from_empty_stub =
