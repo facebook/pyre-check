@@ -338,12 +338,6 @@ let location_of_global ({ dependency; _ } as resolution) =
 
 let is_tracked resolution = ClassHierarchy.contains (class_hierarchy resolution)
 
-let contains_untracked resolution annotation =
-  List.exists
-    ~f:(fun annotation -> not (is_tracked resolution annotation))
-    (Type.elements annotation)
-
-
 let immediate_parents ~resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
 let is_instantiated resolution = ClassHierarchy.is_instantiated (class_hierarchy resolution)

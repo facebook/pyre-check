@@ -189,8 +189,6 @@ val location_of_global : t -> Reference.t -> Location.WithModule.t option
 
 val is_tracked : t -> Type.Primitive.t -> bool
 
-val contains_untracked : t -> Type.t -> bool
-
 val class_hierarchy : t -> (module ClassHierarchy.Handler)
 
 val is_instantiated : t -> Type.t -> bool
