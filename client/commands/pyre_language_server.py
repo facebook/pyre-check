@@ -570,8 +570,14 @@ class PyreLanguageServer(PyreLanguageServerApi):
         if (
             process_unsaved_changes
             and self.get_language_server_features().type_errors.is_enabled()
+            # TODO(T165048078): temporary change to prevent tons of didChange requests
+            # from queueing up and severely slowing down daemon
             and self.server_state.status_tracker.get_status().connection_status
             == state.ConnectionStatus.READY
+            # TODO(T165048078): hack to turn this off for codenav server, since it
+            # will be incompatible with early per-target implementations
+            and self.server_state.server_options.flavor
+            != identifiers.PyreFlavor.CODE_NAVIGATION
         ):
             await self.send_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key
