@@ -226,6 +226,31 @@ module IncomingDataComputation = struct
         Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
 end
 
+module OutgoingDataComputation = struct
+  module Queries = struct
+    type t = {
+      controls: EnvironmentControls.t;
+      class_exists: string -> bool;
+      get_edges: Ast.Identifier.t -> ClassHierarchy.Edges.t option;
+    }
+  end
+
+  let class_hierarchy Queries.{ controls; class_exists; get_edges; _ } =
+    (module struct
+      let edges = get_edges
+
+      let contains key =
+        if EnvironmentControls.no_validation_on_class_lookup_failure controls then
+          true
+        else
+          class_exists key
+    end : ClassHierarchy.Handler)
+
+
+  let type_parameters_as_variables queries ?(default = None) class_name =
+    ClassHierarchy.type_parameters_as_variables ~default (class_hierarchy queries) class_name
+end
+
 module EdgesValue = struct
   type t = ClassHierarchy.Edges.t option
 
@@ -304,50 +329,37 @@ module ReadOnly = struct
 
   let get_edges = get
 
-  let check_integrity read_only =
+  let outgoing_queries ?dependency read_only =
     let unannotated_global_environment =
       alias_environment read_only |> AliasEnvironment.ReadOnly.unannotated_global_environment
     in
-    let class_names =
-      unannotated_global_environment |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
-    in
-    let class_hierarchy =
-      (module struct
-        let edges = get_edges read_only ?dependency:None
+    let controls = UnannotatedGlobalEnvironment.ReadOnly.controls unannotated_global_environment in
+    OutgoingDataComputation.Queries.
+      {
+        controls;
+        class_exists =
+          UnannotatedGlobalEnvironment.ReadOnly.class_exists
+            unannotated_global_environment
+            ?dependency;
+        get_edges = get_edges read_only ?dependency;
+      }
 
-        let contains key =
-          UnannotatedGlobalEnvironment.ReadOnly.get_class_summary unannotated_global_environment key
-          |> Option.is_some
-      end : ClassHierarchy.Handler)
-    in
-    ClassHierarchy.check_integrity class_hierarchy ~class_names
+
+  let type_parameters_as_variables read_only ?dependency =
+    outgoing_queries ?dependency read_only |> OutgoingDataComputation.type_parameters_as_variables
 
 
   let class_hierarchy ?dependency read_only =
-    let alias_environment = alias_environment read_only in
-    let unannotated_global_environment =
-      AliasEnvironment.ReadOnly.unannotated_global_environment alias_environment
+    outgoing_queries ?dependency read_only |> OutgoingDataComputation.class_hierarchy
+
+
+  let check_integrity read_only =
+    let class_names =
+      alias_environment read_only
+      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
     in
-    (module struct
-      let edges = get_edges read_only ?dependency
-
-      let contains key =
-        let env_controls = AliasEnvironment.ReadOnly.controls alias_environment in
-        if EnvironmentControls.no_validation_on_class_lookup_failure env_controls then
-          true
-        else
-          UnannotatedGlobalEnvironment.ReadOnly.class_exists
-            unannotated_global_environment
-            ?dependency
-            key
-    end : ClassHierarchy.Handler)
-
-
-  let type_parameters_as_variables read_only ?dependency ?(default = None) class_name =
-    ClassHierarchy.type_parameters_as_variables
-      ~default
-      (class_hierarchy ?dependency read_only)
-      class_name
+    ClassHierarchy.check_integrity (class_hierarchy read_only) ~class_names
 end
 
 type t = { edges: Edges.t }
