@@ -6581,9 +6581,7 @@ module State (Context : Context) = struct
         |> Option.value ~default:[]
       in
       let type_variables_of_define signature =
-        let parser =
-          GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
-        in
+        let parser = GlobalResolution.nonvalidating_annotation_parser global_resolution in
         let variables = GlobalResolution.type_parameters_as_variables global_resolution in
         let define_variables =
           AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature
@@ -7150,9 +7148,7 @@ let emit_errors_on_exit (module Context : Context) ~errors_sofar ~resolution () 
       errors
   in
   let overload_errors errors =
-    let parser =
-      GlobalResolution.annotation_parser ~allow_invalid_type_parameters:true global_resolution
-    in
+    let parser = GlobalResolution.nonvalidating_annotation_parser global_resolution in
     let variables = GlobalResolution.type_parameters_as_variables global_resolution in
     let ({ Type.Callable.annotation = current_overload_annotation; _ } as current_overload) =
       AnnotatedCallable.create_overload_without_applying_decorators ~parser ~variables signature

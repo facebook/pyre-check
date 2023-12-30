@@ -623,15 +623,24 @@ let type_of_generator_send_and_return global_resolution generator_type =
           Type.none, Type.none)
 
 
-let annotation_parser ?(allow_invalid_type_parameters = false) resolution =
-  let validation =
-    if allow_invalid_type_parameters then
-      SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitives
-    else
-      ValidatePrimitivesAndTypeParameters
-  in
+let annotation_parser resolution =
   {
-    AnnotatedCallable.parse_annotation = parse_annotation ~validation resolution;
+    AnnotatedCallable.parse_annotation =
+      parse_annotation ~validation:ValidatePrimitivesAndTypeParameters resolution;
+    parse_as_parameter_specification_instance_annotation =
+      parse_as_parameter_specification_instance_annotation resolution;
+  }
+
+
+(* Normally we validate not only that concrete types exist but also that all type variables are
+   bound when converting expressions to types, and we refuse to return *any* type information if
+   this validation fails. There are a few cases where producing good type errors requires us to
+   allow type-checking code to work with a type that may have unbound variables, and this variation
+   if the parser is used there. *)
+let nonvalidating_annotation_parser resolution =
+  {
+    AnnotatedCallable.parse_annotation =
+      parse_annotation ~validation:SharedMemoryKeys.ParseAnnotationKey.ValidatePrimitives resolution;
     parse_as_parameter_specification_instance_annotation =
       parse_as_parameter_specification_instance_annotation resolution;
   }

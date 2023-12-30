@@ -241,10 +241,9 @@ val type_of_iteration_value : t -> Type.t -> Type.t option
 
 val type_of_generator_send_and_return : t -> Type.t -> Type.t * Type.t
 
-val annotation_parser
-  :  ?allow_invalid_type_parameters:bool ->
-  t ->
-  AnnotatedCallable.annotation_parser
+val annotation_parser : t -> AnnotatedCallable.annotation_parser
+
+val nonvalidating_annotation_parser : t -> AnnotatedCallable.annotation_parser
 
 val overrides : t -> Type.Primitive.t -> name:Identifier.t -> AnnotatedAttribute.instantiated option
 
