@@ -36,7 +36,12 @@ let assert_parsed ~expected text =
                 (Statement.sexp_of_statement value)
             in
             assert_failure message)
-    | None -> assert_failure "expected parse result"
+    | None ->
+        assert_failure
+          (Printf.sprintf
+             "expected parse result. expected %s but got %s"
+             (expression_print_to_sexp expected)
+             (Sexp.to_string ([%sexp_of: Ast.Statement.t list] actual_ast)))
   in
   match PyreErrpyParser.parse_module text with
   | Result.Error error -> (
