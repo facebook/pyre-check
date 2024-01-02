@@ -33,7 +33,7 @@ def multiple_patterns():
     return "<123.456.789.123>"
 
 
-GOOGLE_API_KEY = "AIzaSyB2qiehH9CMRIuRVJghvnluwA1GvQ3FCe4"
+GOOGLE_API_KEY = "AIzafakekeyfakekeyfakekeyfakekeyfakekey"
 
 
 def string_source_top_level():
@@ -42,7 +42,7 @@ def string_source_top_level():
 
 
 def string_source_not_top_level():
-    params = {"key": "AIzaSyB2qiehH9CMRIuRVJghvnluwA1GvQ3FCe4"}
+    params = {"key": "AIzafakekeyfakekeyfakekeyfakekeyfakekey"}
     return params
 
 
