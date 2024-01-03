@@ -24,9 +24,7 @@ end
 type t = {
   raw: Raw.t;
   qualifier: Reference.t;
-  is_stub: bool;
   is_external: bool;
-  is_init: bool;
 }
 [@@deriving compare, eq, hash, sexp]
 

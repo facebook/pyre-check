@@ -95,19 +95,12 @@ let create_test_configuration ~context ~local_tree ~external_tree =
 
 let assert_module_path
     ?priority
-    ?is_stub
     ?is_external
-    ?is_init
     ~configuration
     ~search_root
     ~relative
-    ({
-       ModulePath.raw = { priority = actual_priority; _ };
-       is_stub = actual_is_stub;
-       is_external = actual_is_external;
-       is_init = actual_is_init;
-       _;
-     } as module_path)
+    ({ ModulePath.raw = { priority = actual_priority; _ }; is_external = actual_is_external; _ } as
+    module_path)
   =
   let expected_path = Test.relative_artifact_path ~root:search_root ~relative in
   let actual_path = ModulePath.full_path ~configuration module_path in
@@ -118,12 +111,8 @@ let assert_module_path
     actual_path;
   Option.iter priority ~f:(fun expected_priority ->
       assert_equal ~cmp:Int.equal ~printer:Int.to_string expected_priority actual_priority);
-  Option.iter is_stub ~f:(fun expected_is_stub ->
-      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_stub actual_is_stub);
   Option.iter is_external ~f:(fun expected_is_external ->
-      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_external actual_is_external);
-  Option.iter is_init ~f:(fun expected_is_init ->
-      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_init actual_is_init)
+      assert_equal ~cmp:Bool.equal ~printer:Bool.to_string expected_is_external actual_is_external)
 
 
 let assert_no_module_path ~configuration root relative =
@@ -187,109 +176,39 @@ let test_module_path_create context =
   let assert_no_module_path = assert_no_module_path ~configuration in
   (* Creation test *)
   let local_a = create_exn local_root "a.py" in
-  assert_module_path
-    local_a
-    ~search_root:local_root
-    ~relative:"a.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_a ~search_root:local_root ~relative:"a.py" ~is_external:false;
   let local_b = create_exn local_root "b.py" in
-  assert_module_path
-    local_b
-    ~search_root:local_root
-    ~relative:"b.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_b ~search_root:local_root ~relative:"b.py" ~is_external:false;
   let local_c = create_exn local_root "c.py" in
-  assert_module_path
-    local_c
-    ~search_root:local_root
-    ~relative:"c.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_c ~search_root:local_root ~relative:"c.py" ~is_external:false;
   let local_cstub = create_exn local_root "c.pyi" in
-  assert_module_path
-    local_cstub
-    ~search_root:local_root
-    ~relative:"c.pyi"
-    ~is_stub:true
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_cstub ~search_root:local_root ~relative:"c.pyi" ~is_external:false;
   let local_d = create_exn local_root "d.py" in
-  assert_module_path
-    local_d
-    ~search_root:local_root
-    ~relative:"d.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_d ~search_root:local_root ~relative:"d.py" ~is_external:false;
   let local_dinit = create_exn local_root "d/__init__.py" in
   assert_module_path
     local_dinit
     ~search_root:local_root
     ~relative:"d/__init__.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:true;
+    ~is_external:false;
   let local_e = create_exn local_root "e.py" in
-  assert_module_path
-    local_e
-    ~search_root:local_root
-    ~relative:"e.py"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_e ~search_root:local_root ~relative:"e.py" ~is_external:false;
   let local_f = create_exn local_root "f.special" in
-  assert_module_path
-    local_f
-    ~search_root:local_root
-    ~relative:"f.special"
-    ~is_stub:false
-    ~is_external:false
-    ~is_init:false;
+  assert_module_path local_f ~search_root:local_root ~relative:"f.special" ~is_external:false;
   let external_a = create_exn external_root "a.py" in
-  assert_module_path
-    external_a
-    ~search_root:external_root
-    ~relative:"a.py"
-    ~is_stub:false
-    ~is_external:true
-    ~is_init:false;
+  assert_module_path external_a ~search_root:external_root ~relative:"a.py" ~is_external:true;
   let external_bstub = create_exn external_root "b.pyi" in
-  assert_module_path
-    external_bstub
-    ~search_root:external_root
-    ~relative:"b.pyi"
-    ~is_stub:true
-    ~is_external:true
-    ~is_init:false;
+  assert_module_path external_bstub ~search_root:external_root ~relative:"b.pyi" ~is_external:true;
   let external_binit = create_exn external_root "b/__init__.py" in
   assert_module_path
     external_binit
     ~search_root:external_root
     ~relative:"b/__init__.py"
-    ~is_stub:false
-    ~is_external:true
-    ~is_init:true;
+    ~is_external:true;
   let external_c = create_exn external_root "c.py" in
-  assert_module_path
-    external_c
-    ~search_root:external_root
-    ~relative:"c.py"
-    ~is_stub:false
-    ~is_external:true
-    ~is_init:false;
+  assert_module_path external_c ~search_root:external_root ~relative:"c.py" ~is_external:true;
   let external_cstub = create_exn external_root "c.pyi" in
-  assert_module_path
-    external_cstub
-    ~search_root:external_root
-    ~relative:"c.pyi"
-    ~is_stub:true
-    ~is_external:true
-    ~is_init:false;
+  assert_module_path external_cstub ~search_root:external_root ~relative:"c.pyi" ~is_external:true;
   assert_no_module_path external_root "thereisnospoon.py";
   assert_no_module_path external_root "foo/thereisnospoon.py";
   let extension_first = create_exn local_root "dir/a.first" in
@@ -713,44 +632,37 @@ let test_module_path_overlapping2 context =
   assert_module_path
     (create_exn local_root "a.py")
     ~search_root:local_root
-    ~is_stub:false
     ~relative:"a.py"
     ~is_external:false;
   assert_module_path
     (create_exn stubs_root "a.pyi")
     ~search_root:stubs_root
     ~relative:"a.pyi"
-    ~is_stub:true
     ~is_external:false;
   assert_module_path
     (create_exn venv_root "a.pyi")
     ~search_root:venv_root
     ~relative:"a.pyi"
-    ~is_stub:true
     ~is_external:true;
   assert_module_path
     (create_exn venv_root "b.pyi")
     ~search_root:venv_root
     ~relative:"b.pyi"
-    ~is_stub:true
     ~is_external:true;
   assert_module_path
     (create_exn local_root "b.pyi")
     ~search_root:local_root
     ~relative:"b.pyi"
-    ~is_stub:true
     ~is_external:false;
   assert_module_path
     (create_exn venv_root "c.py")
     ~search_root:venv_root
     ~relative:"c.py"
-    ~is_stub:false
     ~is_external:true;
   assert_module_path
     (create_exn local_root "c.pyi")
     ~search_root:local_root
     ~relative:"c.pyi"
-    ~is_stub:true
     ~is_external:false;
 
   assert_same_module_less (create_exn stubs_root "a.pyi") (create_exn venv_root "a.pyi");
@@ -801,58 +713,42 @@ let test_initialization context =
       (lookup_exn tracker (Reference.create "a"))
       ~search_root:external_root
       ~relative:"a.py"
-      ~is_stub:false
-      ~is_external:true
-      ~is_init:false;
+      ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "b"))
       ~search_root:external_root
       ~relative:"b.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
+      ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "c"))
       ~search_root:external_root
       ~relative:"c.pyi"
-      ~is_stub:true
-      ~is_external:true
-      ~is_init:false;
+      ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:local_root
       ~relative:"d/__init__.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:true;
+      ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "e"))
       ~search_root:local_root
       ~relative:"e.py"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
+      ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "f"))
       ~search_root:local_root
       ~relative:"f.first"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
+      ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "a.special"))
       ~search_root:local_root
       ~relative:"a.special"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
+      ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "a.b.special"))
       ~search_root:local_root
       ~relative:"a/b.special"
-      ~is_stub:false
-      ~is_external:false
-      ~is_init:false;
+      ~is_external:false;
     ()
   in
   run_lazy_and_nonlazy ~f:run_tracker_tests
@@ -888,24 +784,21 @@ let test_priority context =
         (create_exn local_root path)
         ~search_root:local_root
         ~relative:path
-        ~is_external:false
-        ~is_init:false);
+        ~is_external:false);
   List.iter external_paths0 ~f:(fun path ->
       assert_module_path
         (create_exn external_root0 path)
         ~search_root:external_root0
         ~relative:path
         ~priority:0
-        ~is_external:true
-        ~is_init:false);
+        ~is_external:true);
   List.iter external_paths1 ~f:(fun path ->
       assert_module_path
         (create_exn external_root1 path)
         ~search_root:external_root1
         ~relative:path
         ~priority:1
-        ~is_external:true
-        ~is_init:false);
+        ~is_external:true);
   (* Test ModuleTracker behavior *)
   let run_tracker_tests use_lazy_module_tracking =
     let tracker =
@@ -918,43 +811,36 @@ let test_priority context =
       ~search_root:external_root0
       ~relative:"a.py"
       ~priority:0
-      ~is_stub:false
       ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "b"))
       ~search_root:local_root
       ~relative:"b.pyi"
-      ~is_stub:true
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "c"))
       ~search_root:external_root0
       ~relative:"c.pyi"
-      ~is_stub:true
       ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:external_root1
       ~relative:"d.pyi"
-      ~is_stub:true
       ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "e"))
       ~search_root:external_root0
       ~relative:"e.pyi"
-      ~is_stub:true
       ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "f"))
       ~search_root:external_root0
       ~relative:"f.pyi"
-      ~is_stub:true
       ~is_external:true;
     assert_module_path
       (lookup_exn tracker (Reference.create "g"))
       ~search_root:external_root0
       ~relative:"g.pyi"
-      ~is_stub:true
       ~is_external:true;
     ()
   in
@@ -987,16 +873,14 @@ let test_priority_multi_source_paths context =
         ~search_root:source_root0
         ~relative:path
         ~priority:0
-        ~is_external:false
-        ~is_init:false);
+        ~is_external:false);
   List.iter source_paths1 ~f:(fun path ->
       assert_module_path
         (create_exn source_root1 path)
         ~search_root:source_root1
         ~relative:path
         ~priority:1
-        ~is_external:false
-        ~is_init:false);
+        ~is_external:false);
 
   (* ModuleTracker initialization test *)
   let run_tracker_tests use_lazy_module_tracking =
@@ -1010,37 +894,31 @@ let test_priority_multi_source_paths context =
       ~search_root:source_root0
       ~relative:"a.py"
       ~priority:0
-      ~is_stub:false
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "c"))
       ~search_root:source_root0
       ~relative:"c.pyi"
-      ~is_stub:true
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "d"))
       ~search_root:source_root1
       ~relative:"d.pyi"
-      ~is_stub:true
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "e"))
       ~search_root:source_root0
       ~relative:"e.pyi"
-      ~is_stub:true
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "f"))
       ~search_root:source_root0
       ~relative:"f.pyi"
-      ~is_stub:true
       ~is_external:false;
     assert_module_path
       (lookup_exn tracker (Reference.create "g"))
       ~search_root:source_root0
       ~relative:"g.pyi"
-      ~is_stub:true
       ~is_external:false;
     ()
   in
@@ -1145,7 +1023,6 @@ let test_hidden_files2 context =
     (create_exn local_root "b.py")
     ~search_root:local_root
     ~relative:"b.py"
-    ~is_stub:false
     ~is_external:false;
   ()
 
@@ -1211,14 +1088,12 @@ let test_stub_package_priority context =
     ~search_root:local_root
     ~relative:"foo/my_stub.pyi"
     ~priority:1
-    ~is_stub:true
     ~is_external:false;
   assert_module_path
     (lookup_exn lazy_module_tracker (Reference.create "foo.bar"))
     ~search_root:local_root
     ~relative:"foo/bar.py"
     ~priority:1
-    ~is_stub:false
     ~is_external:false;
   let eager_module_tracker =
     EnvironmentControls.create configuration ~use_lazy_module_tracking:false
@@ -1230,14 +1105,12 @@ let test_stub_package_priority context =
     ~search_root:local_root
     ~relative:"foo-stubs/my_stub.pyi"
     ~priority:1
-    ~is_stub:true
     ~is_external:false;
   assert_module_path
     (lookup_exn eager_module_tracker (Reference.create "foo.bar"))
     ~search_root:local_root
     ~relative:"foo-stubs/bar.py"
     ~priority:1
-    ~is_stub:false
     ~is_external:false;
   ()
 

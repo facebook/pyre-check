@@ -104,12 +104,13 @@ let create_for_testing ~stub =
 
 let create
     ({
-       Source.module_path = { ModulePath.is_stub; qualifier; _ } as module_path;
+       Source.module_path = { ModulePath.qualifier; _ } as module_path;
        statements;
        typecheck_flags = { Source.TypecheckFlags.local_mode; _ };
        _;
      } as source)
   =
+  let is_stub = ModulePath.is_stub module_path in
   let exports =
     let open UnannotatedGlobal in
     let is_getattr_any

@@ -2856,12 +2856,9 @@ let rec messages ~concise ~signature location kind =
             Format.asprintf "Module `%a`" pp_reference name
       in
       match origin with
-      | Class
-          {
-            class_origin = ClassType class_type;
-            parent_module_path = Some { ModulePath.raw = { relative; _ }; is_stub = true; _ };
-          }
-        when not (Type.is_optional_primitive class_type) ->
+      | Class { class_origin = ClassType class_type; parent_module_path = Some module_path }
+        when ModulePath.is_stub module_path && not (Type.is_optional_primitive class_type) ->
+          let { ModulePath.raw = { relative; _ }; _ } = module_path in
           let stub_trace =
             Format.asprintf
               "`%a` is defined in a stub file at `%s`. Ensure attribute `%a` is defined in the \
@@ -2874,7 +2871,8 @@ let rec messages ~concise ~signature location kind =
               (private_attribute_warning ())
           in
           [Format.asprintf "%s has no attribute `%a`." target pp_identifier attribute; stub_trace]
-      | Module (ExplicitModule { ModulePath.raw = { relative; _ }; is_stub = true; _ }) ->
+      | Module (ExplicitModule module_path) when ModulePath.is_stub module_path ->
+          let { ModulePath.raw = { relative; _ }; _ } = module_path in
           let stub_trace =
             Format.asprintf
               "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the stub \
@@ -2898,7 +2896,8 @@ let rec messages ~concise ~signature location kind =
   | UndefinedImport (UndefinedName { from; name }) when concise ->
       let from_name, is_stub =
         match from with
-        | ExplicitModule { ModulePath.qualifier; is_stub; _ } -> qualifier, is_stub
+        | ExplicitModule ({ ModulePath.qualifier; _ } as module_path) ->
+            qualifier, ModulePath.is_stub module_path
         | ImplicitModule qualifier -> qualifier, false
       in
       [
@@ -2926,7 +2925,8 @@ let rec messages ~concise ~signature location kind =
            https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import"
         in
         match from with
-        | ExplicitModule { ModulePath.raw = { relative; _ }; qualifier; is_stub = true; _ } ->
+        | ExplicitModule module_path when ModulePath.is_stub module_path ->
+            let { ModulePath.raw = { relative; _ }; qualifier; _ } = module_path in
             ( qualifier,
               Format.asprintf
                 "This module is shadowed by a stub file at `%s`. Ensure `%a` is defined in the \
@@ -3947,7 +3947,7 @@ let filter ~resolution errors =
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
           match GlobalResolution.lookup_module_path resolution module_reference with
-          | Some { ModulePath.is_stub; _ } -> is_stub
+          | Some module_path -> ModulePath.is_stub module_path
           | _ -> false)
       | _ -> false
     in

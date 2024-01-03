@@ -44,9 +44,7 @@ module T = struct
   type t = {
     raw: Raw.t;
     qualifier: Reference.t;
-    is_stub: bool;
     is_external: bool;
-    is_init: bool;
   }
   [@@deriving compare, hash, sexp]
 end
@@ -56,20 +54,9 @@ include T
 
 let equal = [%compare.equal: t]
 
-let pp formatter { raw; qualifier; is_stub; is_external; is_init } =
-  let is_stub = if is_stub then " [STUB]" else "" in
+let pp formatter { raw; qualifier; is_external } =
   let is_external = if is_external then " [EXTERNAL]" else "" in
-  let is_init = if is_init then " [INIT]" else "" in
-  Format.fprintf
-    formatter
-    "[%a(%a)%s%s%s]"
-    Raw.pp
-    raw
-    Reference.pp
-    qualifier
-    is_stub
-    is_external
-    is_init
+  Format.fprintf formatter "[%a(%a)%s]" Raw.pp raw Reference.pp qualifier is_external
 
 
 let file_name_parts_for_relative_path path =
@@ -165,16 +152,7 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
           qualifier_from_relative_path (relative ^ ".py")
       | _ -> qualifier_from_relative_path relative
     in
-    let is_stub = PyrePath.is_path_python_stub relative in
-    let is_init = PyrePath.is_path_python_init relative in
-    Some
-      {
-        raw;
-        qualifier;
-        is_stub;
-        is_external = not (should_type_check ~configuration path);
-        is_init;
-      }
+    Some { raw; qualifier; is_external = not (should_type_check ~configuration path) }
 
 
 let qualifier { qualifier; _ } = qualifier
@@ -187,9 +165,7 @@ let is_in_project { is_external; _ } = not is_external
 
 let create_from_raw_for_testing ~is_external ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
-  let is_stub = PyrePath.is_path_python_stub relative in
-  let is_init = PyrePath.is_path_python_init relative in
-  { raw; qualifier; is_stub; is_external; is_init }
+  { raw; qualifier; is_external }
 
 
 let create_for_testing ~relative ~is_external ~priority =
@@ -212,28 +188,18 @@ let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
    only. Do NOT use it on aribitrary SourceFiles. *)
 let same_module_compare
     ~configuration
-    {
-      raw = { Raw.relative = left_path; priority = left_priority };
-      is_stub = left_is_stub;
-      is_init = left_is_init;
-      _;
-    }
-    {
-      raw = { Raw.relative = right_path; priority = right_priority };
-      is_stub = right_is_stub;
-      is_init = right_is_init;
-      _;
-    }
+    { raw = { Raw.relative = left_path; priority = left_priority }; _ }
+    { raw = { Raw.relative = right_path; priority = right_priority }; _ }
   =
   let stub_comes_before_py_file _ =
-    match left_is_stub, right_is_stub with
+    match PyrePath.is_path_python_stub left_path, PyrePath.is_path_python_stub right_path with
     | true, false -> -1
     | false, true -> 1
     | _, _ -> 0
   in
   let lower_path_priority_value_comes_first _ = Int.compare left_priority right_priority in
   let package_comes_before_file_module _ =
-    match left_is_init, right_is_init with
+    match PyrePath.is_path_python_init left_path, PyrePath.is_path_python_init right_path with
     | true, false -> -1
     | false, true -> 1
     | _, _ -> 0
@@ -288,11 +254,11 @@ let same_module_compare
   |> Option.value ~default:0
 
 
-let is_stub { is_stub; _ } = is_stub
+let is_stub { raw = { Raw.relative; _ }; _ } = PyrePath.is_path_python_stub relative
 
-let is_init { is_init; _ } = is_init
+let is_init { raw = { Raw.relative; _ }; _ } = PyrePath.is_path_python_init relative
 
-let expand_relative_import ~from { is_init; qualifier; _ } =
+let expand_relative_import ~from { qualifier; raw = { Raw.relative; _ }; _ } =
   match Reference.show from with
   | "builtins" -> Reference.empty
   | serialized ->
@@ -310,7 +276,7 @@ let expand_relative_import ~from { is_init; qualifier; _ } =
             (* `.` corresponds to the directory containing the module. For non-init modules, the
                qualifier matches the path, so we drop exactly the number of dots. However, for
                __init__ modules, the directory containing it represented by the qualifier. *)
-            if is_init then
+            if PyrePath.is_path_python_init relative then
               1
             else
               0

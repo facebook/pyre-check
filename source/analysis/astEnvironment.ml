@@ -213,7 +213,7 @@ module OutgoingDataComputation = struct
     type t = { get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option }
   end
 
-  let wildcard_exports_of ({ Source.module_path = { ModulePath.is_stub; _ }; _ } as source) =
+  let wildcard_exports_of ({ Source.module_path; _ } as source) =
     let open Expression in
     let open UnannotatedGlobal in
     let extract_dunder_all = function
@@ -247,7 +247,7 @@ module OutgoingDataComputation = struct
                 not implicit_alias
             | _ -> true
           in
-          if is_stub then
+          if ModulePath.is_stub module_path then
             List.filter unannotated_globals ~f:filter_unaliased_import
           else
             unannotated_globals
