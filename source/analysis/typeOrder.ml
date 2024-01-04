@@ -16,18 +16,14 @@ type class_hierarchy = ConstraintsSet.class_hierarchy
 
 type order = ConstraintsSet.order
 
-module type FullOrderTypeWithoutT = sig
+module type FullOrderType = sig
+  type t = order
+
   val always_less_or_equal : order -> left:Type.t -> right:Type.t -> bool
 
   val meet : order -> Type.t -> Type.t -> Type.t
 
   val join : order -> Type.t -> Type.t -> Type.t
-end
-
-module type FullOrderType = sig
-  type t = order
-
-  include FullOrderTypeWithoutT
 end
 
 module type OrderedConstraintsType = TypeConstraints.OrderedConstraintsType with type order = order
@@ -616,7 +612,7 @@ let instantiate_protocol_parameters = OrderedConstraintsSet.instantiate_protocol
 
 module OrderedConstraints = Constraints
 
-module IncludableImplementation : FullOrderTypeWithoutT = Implementation
+module IncludableImplementation : FullOrderType = Implementation
 
 include IncludableImplementation
 

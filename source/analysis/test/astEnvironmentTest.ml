@@ -41,7 +41,7 @@ let test_basic context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_module_path ~module_tracker ~expected reference =
-    match ModuleTracker.ReadOnly.lookup_module_path module_tracker reference with
+    match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker reference with
     | None ->
         let message =
           Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference

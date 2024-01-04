@@ -22,7 +22,7 @@ module ReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val lookup_module_path : t -> Ast.Reference.t -> Ast.ModulePath.t option
+  val module_path_of_qualifier : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
   (** NOTE(grievejia): This API is oblivious to the existence of a build system. User-facing logic
       should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)

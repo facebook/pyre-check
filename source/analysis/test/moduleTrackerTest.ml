@@ -32,7 +32,7 @@ let create_module_path_exn ~configuration root relative =
 
 
 let lookup_exn tracker reference =
-  match ModuleTracker.ReadOnly.lookup_module_path tracker reference with
+  match ModuleTracker.ReadOnly.module_path_of_qualifier tracker reference with
   | Some module_path -> module_path
   | None ->
       let message =
@@ -1711,7 +1711,8 @@ let test_invalidate_lazy_tracker_cache__removal context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
+    >>| ModulePath.qualifier)
     (Some !&"package.a");
   (* Remove the entire directory *)
   PyrePath.create_relative ~root:local_root ~relative:"package"
@@ -1735,12 +1736,14 @@ let test_invalidate_lazy_tracker_cache__removal context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
+    >>| ModulePath.qualifier)
     None;
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.b" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.b"
+    >>| ModulePath.qualifier)
     None;
   ()
 
@@ -1761,7 +1764,8 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
+    >>| ModulePath.qualifier)
     (Some !&"package.a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
   let events =
@@ -1777,12 +1781,14 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
+    >>| ModulePath.qualifier)
     (Some !&"package.a");
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"package.b" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.b"
+    >>| ModulePath.qualifier)
     (Some !&"package.b");
   (*
    * Case 2: modules in the project top-level
@@ -1797,7 +1803,7 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
     (Some !&"a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
   let events =
@@ -1813,13 +1819,13 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"a" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
     (Some !&"a");
   (* TODO(T130802871): this is a bug! We should have gotten a result here. *)
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.lookup_module_path read_only !&"b" >>| ModulePath.qualifier)
+    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"b" >>| ModulePath.qualifier)
     (Some !&"b");
   ()
 
@@ -1830,7 +1836,7 @@ let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_t
   let overlay_owns qualifier = ModuleTracker.Overlay.owns_qualifier tracker qualifier in
   let assert_raw_code qualifier expected =
     let actual =
-      Option.value_exn (ModuleTracker.ReadOnly.lookup_module_path read_only qualifier)
+      Option.value_exn (ModuleTracker.ReadOnly.module_path_of_qualifier read_only qualifier)
       |> ModuleTracker.ReadOnly.get_raw_code read_only
       |> Result.ok
       |> Option.value ~default:"Error loading code!"

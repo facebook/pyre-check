@@ -923,7 +923,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         GlobalResolution.less_or_equal global_resolution ~left ~right
         |> fun response -> Single (Base.Boolean response)
     | PathOfModule module_name ->
-        ModuleTracker.ReadOnly.lookup_module_path module_tracker module_name
+        ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker module_name
         >>= (fun source_path ->
               let path =
                 ModulePath.full_path ~configuration source_path

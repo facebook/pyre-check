@@ -3946,7 +3946,7 @@ let filter ~resolution errors =
       match kind with
       | UninitializedAttribute _
       | MissingOverloadImplementation _ -> (
-          match GlobalResolution.lookup_module_path resolution module_reference with
+          match GlobalResolution.module_path_of_qualifier resolution module_reference with
           | Some module_path -> ModulePath.is_stub module_path
           | _ -> false)
       | _ -> false

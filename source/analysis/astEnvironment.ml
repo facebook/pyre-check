@@ -482,7 +482,7 @@ module FromReadOnlyUpstream = struct
 
   module LazyRawSources = struct
     let load ~ast_environment:({ module_tracker; raw_sources; _ } as ast_environment) qualifier =
-      match ModuleTracker.ReadOnly.lookup_module_path module_tracker qualifier with
+      match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker qualifier with
       | Some module_path -> load_raw_source ~ast_environment module_path
       | None -> RawSources.add raw_sources qualifier None
 

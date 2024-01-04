@@ -824,7 +824,7 @@ module State (Context : Context) = struct
     >>= GlobalResolution.get_class_summary global_resolution
     >>| Node.value
     >>= fun { ClassSummary.qualifier; _ } ->
-    GlobalResolution.lookup_module_path global_resolution qualifier
+    GlobalResolution.module_path_of_qualifier global_resolution qualifier
 
 
   let forward_reference ~resolution ~location ~errors reference =
@@ -850,7 +850,7 @@ module State (Context : Context) = struct
             | Some qualifier when not (Reference.is_empty qualifier) ->
                 if GlobalResolution.module_exists global_resolution qualifier then
                   let origin =
-                    match GlobalResolution.lookup_module_path global_resolution qualifier with
+                    match GlobalResolution.module_path_of_qualifier global_resolution qualifier with
                     | Some module_path -> Error.ExplicitModule module_path
                     | None -> Error.ImplicitModule qualifier
                   in
@@ -5296,7 +5296,7 @@ module State (Context : Context) = struct
                               else
                                 let origin_module =
                                   match
-                                    GlobalResolution.lookup_module_path global_resolution from
+                                    GlobalResolution.module_path_of_qualifier global_resolution from
                                   with
                                   | Some source_path -> Error.ExplicitModule source_path
                                   | None -> Error.ImplicitModule from
