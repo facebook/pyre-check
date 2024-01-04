@@ -1051,13 +1051,16 @@ class ModuleModecollectorTest(testslide.TestCase):
         default_strict: bool,
         mode: ModuleMode,
         explicit_comment_line: Optional[int],
+        is_generated: bool = False,
     ) -> None:
         source_module = parse_code(source)
         result = coverage_data.collect_mode(source_module, default_strict)
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
+        self.assertEqual(is_generated, result.is_generated)
 
     def test_strict_files(self) -> None:
+        generated_string = "generated"
         self.assert_counts(
             """
             # pyre-unsafe
@@ -1135,6 +1138,18 @@ class ModuleModecollectorTest(testslide.TestCase):
             default_strict=True,
             mode=ModuleMode.STRICT,
             explicit_comment_line=None,
+        )
+        self.assert_counts(
+            f"""
+            # @{generated_string}
+
+            def foo(x: str) -> int:
+                return x
+            """,
+            default_strict=True,
+            mode=ModuleMode.STRICT,
+            explicit_comment_line=None,
+            is_generated=True,
         )
 
 

@@ -91,6 +91,7 @@ class ModuleMode(str, Enum):
 class ModuleModeInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     mode: ModuleMode
     explicit_comment_line: Optional[LineNumber]
+    is_generated: bool
 
 
 class FunctionAnnotationStatus(str, Enum):
@@ -461,6 +462,7 @@ class ModuleModeCollector(VisitorWithPositionData):
     ignore_all_by_code_regex: Pattern[str] = compile(
         r" ?#+ *pyre-ignore-all-errors\[[0-9]+[0-9, ]*\]"
     )
+    is_generated_regex: Pattern[str] = compile(r"@" + "generated")
 
     def __init__(self, strict_by_default: bool) -> None:
         self.strict_by_default: bool = strict_by_default
@@ -471,6 +473,7 @@ class ModuleModeCollector(VisitorWithPositionData):
             ModuleMode.STRICT if strict_by_default else ModuleMode.UNSAFE
         )
         self.explicit_comment_line: Optional[int] = None
+        self.is_generated: bool = False
 
     def is_strict_module(self) -> bool:
         return self.mode == ModuleMode.STRICT
@@ -488,6 +491,9 @@ class ModuleModeCollector(VisitorWithPositionData):
             self.mode = ModuleMode.IGNORE_ALL
             self.explicit_comment_line = self.location(node).start_line
 
+        if self.is_generated_regex.search(node.value):
+            self.is_generated = True
+
 
 def collect_mode(
     module: libcst.MetadataWrapper,
@@ -500,6 +506,7 @@ def collect_mode(
     return ModuleModeInfo(
         mode=mode,
         explicit_comment_line=visitor.explicit_comment_line,
+        is_generated=visitor.is_generated,
     )
 
 
