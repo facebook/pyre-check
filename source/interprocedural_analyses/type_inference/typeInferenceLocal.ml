@@ -140,7 +140,7 @@ module State (Context : Context) = struct
           let error_to_string error =
             let error =
               let lookup reference =
-                GlobalResolution.lookup_relative_path global_resolution reference
+                GlobalResolution.relative_path_of_qualifier global_resolution reference
               in
               Error.instantiate ~show_error_traces:true ~lookup error
             in

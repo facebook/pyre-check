@@ -56,7 +56,8 @@ let assert_global_leak_errors
     |> ErrorsEnvironment.ReadOnly.get_all_errors
     |> instantiate_and_stringify
          ~lookup:
-           (ScratchProject.module_tracker project |> ModuleTracker.ReadOnly.lookup_relative_path)
+           (ScratchProject.module_tracker project
+           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
   in
   if skip_type_check || List.is_empty preliminary_type_check_errors then
     let check ~environment ~source = run_check_module ~environment source in

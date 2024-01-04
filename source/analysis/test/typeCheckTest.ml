@@ -111,7 +111,7 @@ end
 let description ~resolution error =
   Error.instantiate
     ~show_error_traces:false
-    ~lookup:(Resolution.global_resolution resolution |> GlobalResolution.lookup_relative_path)
+    ~lookup:(Resolution.global_resolution resolution |> GlobalResolution.relative_path_of_qualifier)
     error
   |> Error.Instantiated.description
 

@@ -381,7 +381,7 @@ module State (Context : Context) = struct
             let instantiated =
               Error.instantiate
                 ~show_error_traces:true
-                ~lookup:(GlobalResolution.lookup_relative_path global_resolution)
+                ~lookup:(GlobalResolution.relative_path_of_qualifier global_resolution)
                 error
             in
             Format.asprintf
@@ -754,7 +754,7 @@ module State (Context : Context) = struct
   let instantiate_path ~global_resolution location =
     let location = Location.with_module ~module_reference:Context.qualifier location in
     Location.WithModule.instantiate
-      ~lookup:(GlobalResolution.lookup_relative_path global_resolution)
+      ~lookup:(GlobalResolution.relative_path_of_qualifier global_resolution)
       location
 
 

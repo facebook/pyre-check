@@ -339,7 +339,7 @@ let check_expectation
         ~show_error_traces:true
         ~lookup:
           (TypeEnvironment.ReadOnly.module_tracker type_environment
-          |> ModuleTracker.ReadOnly.lookup_relative_path)
+          |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -471,7 +471,7 @@ let initialize
                 AnalysisError.instantiate
                   ~show_error_traces:false
                   ~lookup:
-                    (ModuleTracker.ReadOnly.lookup_relative_path
+                    (ModuleTracker.ReadOnly.relative_path_of_qualifier
                        (AstEnvironment.ReadOnly.module_tracker ast_environment))
                   error
               in
@@ -818,7 +818,7 @@ let end_to_end_integration_test path context =
         ~shared_models
     in
     let resolve_module_path qualifier =
-      ModuleTracker.ReadOnly.lookup_relative_path
+      ModuleTracker.ReadOnly.relative_path_of_qualifier
         (TypeEnvironment.ReadOnly.module_tracker type_environment)
         qualifier
       >>| fun filename ->

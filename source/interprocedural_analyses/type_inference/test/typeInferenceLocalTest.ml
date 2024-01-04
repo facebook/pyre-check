@@ -201,7 +201,7 @@ module Setup = struct
     let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let filename_lookup =
-      ModuleTracker.ReadOnly.lookup_relative_path
+      ModuleTracker.ReadOnly.relative_path_of_qualifier
         (AstEnvironment.ReadOnly.module_tracker ast_environment)
     in
     let source =

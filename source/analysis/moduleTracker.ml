@@ -70,7 +70,7 @@ module ReadOnly = struct
     |> Option.map ~f:(ModulePath.full_path ~configuration)
 
 
-  let lookup_relative_path tracker qualifier =
+  let relative_path_of_qualifier tracker qualifier =
     module_path_of_qualifier tracker qualifier |> Option.map ~f:ModulePath.relative
 
 

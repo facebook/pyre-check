@@ -3321,7 +3321,7 @@ let assert_errors
              (AnalysisError.instantiate
                 ~show_error_traces
                 ~lookup:
-                  (ModuleTracker.ReadOnly.lookup_relative_path
+                  (ModuleTracker.ReadOnly.relative_path_of_qualifier
                      (TypeEnvironment.module_tracker environment |> ModuleTracker.read_only)))
     in
     let errors_with_any_location =

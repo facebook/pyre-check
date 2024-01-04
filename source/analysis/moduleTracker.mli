@@ -28,7 +28,7 @@ module ReadOnly : sig
       should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)
   val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
 
-  val lookup_relative_path : t -> Ast.Reference.t -> string option
+  val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
   val lookup_path : t -> ArtifactPath.t -> Ast.ModulePath.t option
 

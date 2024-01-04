@@ -17,7 +17,7 @@ val create
 
 val module_path_of_qualifier : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
-val lookup_relative_path : t -> Ast.Reference.t -> string option
+val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
 val get_processed_source : t -> Reference.t -> Source.t option
 

@@ -644,7 +644,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     | CalleesWithLocation caller ->
         let instantiate =
           Location.WithModule.instantiate
-            ~lookup:(ModuleTracker.ReadOnly.lookup_relative_path module_tracker)
+            ~lookup:(ModuleTracker.ReadOnly.relative_path_of_qualifier module_tracker)
         in
         let callees =
           (* We don't yet support a syntax for fetching property setters. *)

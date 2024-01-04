@@ -70,8 +70,8 @@ let module_path_of_qualifier resolution =
   ModuleTracker.ReadOnly.module_path_of_qualifier (module_tracker resolution)
 
 
-let lookup_relative_path resolution =
-  ModuleTracker.ReadOnly.lookup_relative_path (module_tracker resolution)
+let relative_path_of_qualifier resolution =
+  ModuleTracker.ReadOnly.relative_path_of_qualifier (module_tracker resolution)
 
 
 let get_processed_source ({ dependency; _ } as resolution) qualifier =
