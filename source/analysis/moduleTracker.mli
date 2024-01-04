@@ -30,7 +30,7 @@ module ReadOnly : sig
 
   val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-  val lookup_path : t -> ArtifactPath.t -> Ast.ModulePath.t option
+  val module_path_of_artifact_path : t -> ArtifactPath.t -> Ast.ModulePath.t option
 
   val module_paths : t -> Ast.ModulePath.t list
 

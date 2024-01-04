@@ -10,7 +10,7 @@
 open Base
 
 let module_of_path ~module_tracker path =
-  match Analysis.ModuleTracker.ReadOnly.lookup_path module_tracker path with
+  match Analysis.ModuleTracker.ReadOnly.module_path_of_artifact_path module_tracker path with
   | Some { Ast.ModulePath.qualifier; _ } -> Some qualifier
   | None -> None
 

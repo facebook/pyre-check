@@ -74,7 +74,7 @@ module ReadOnly = struct
     module_path_of_qualifier tracker qualifier |> Option.map ~f:ModulePath.relative
 
 
-  let lookup_path tracker path =
+  let module_path_of_artifact_path tracker path =
     let configuration = controls tracker |> EnvironmentControls.configuration in
     let open Option in
     ModulePath.create ~configuration path
