@@ -27,7 +27,7 @@ let modules_of_source_path_with_build_system ~build_system ~module_tracker path 
 
 
 let instantiate_path ~lookup_source ~module_tracker qualifier =
-  match Analysis.ModuleTracker.ReadOnly.lookup_full_path module_tracker qualifier with
+  match Analysis.ModuleTracker.ReadOnly.artifact_path_of_qualifier module_tracker qualifier with
   | None -> None
   | Some analysis_path ->
       let path =

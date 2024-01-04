@@ -64,7 +64,7 @@ module ReadOnly = struct
 
   let is_module_tracked { is_module_tracked; _ } = is_module_tracked
 
-  let lookup_full_path tracker qualifier =
+  let artifact_path_of_qualifier tracker qualifier =
     let configuration = controls tracker |> EnvironmentControls.configuration in
     module_path_of_qualifier tracker qualifier
     |> Option.map ~f:(ModulePath.full_path ~configuration)

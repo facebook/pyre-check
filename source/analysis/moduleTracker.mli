@@ -26,7 +26,7 @@ module ReadOnly : sig
 
   (** NOTE(grievejia): This API is oblivious to the existence of a build system. User-facing logic
       should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)
-  val lookup_full_path : t -> Ast.Reference.t -> ArtifactPath.t option
+  val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
 
   val lookup_relative_path : t -> Ast.Reference.t -> string option
 
