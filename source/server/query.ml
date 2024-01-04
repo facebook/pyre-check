@@ -656,7 +656,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     | Defines module_or_class_names ->
         let defines_of_module module_or_class_name =
           let module_name, filter_define =
-            if ModuleTracker.ReadOnly.is_module_tracked module_tracker module_or_class_name then
+            if ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker module_or_class_name then
               Some module_or_class_name, fun _ -> false
             else
               let filter
@@ -665,7 +665,7 @@ let rec process_request_exn ~type_environment ~build_system request =
                 not (Option.equal Reference.equal parent (Some module_or_class_name))
               in
               let rec find_module_name current_reference =
-                if ModuleTracker.ReadOnly.is_module_tracked module_tracker current_reference then
+                if ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker current_reference then
                   Some current_reference
                 else
                   Reference.prefix current_reference >>= find_module_name

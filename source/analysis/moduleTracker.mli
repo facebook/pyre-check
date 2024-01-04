@@ -40,7 +40,7 @@ module ReadOnly : sig
      tracked *)
   val tracked_explicit_modules : t -> Ast.Reference.t list
 
-  val is_module_tracked : t -> Ast.Reference.t -> bool
+  val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 
   val get_raw_code : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
 end

@@ -1216,7 +1216,7 @@ module IncrementalTest = struct
         let read_only = ModuleTracker.read_only module_tracker in
         List.map
           (LoadingStyle.look_up_qualifiers loading_style)
-          ~f:(ModuleTracker.ReadOnly.is_module_tracked read_only)
+          ~f:(ModuleTracker.ReadOnly.is_qualifier_tracked read_only)
         |> ignore
       in
       configuration, module_tracker

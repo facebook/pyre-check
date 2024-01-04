@@ -172,16 +172,16 @@ end
 module IncomingDataComputation = struct
   module Queries = struct
     type t = {
-      is_module_tracked: Ast.Reference.t -> bool;
+      is_qualifier_tracked: Ast.Reference.t -> bool;
       get_processed_source: Ast.Reference.t -> Ast.Source.t option;
     }
   end
 
-  let module_components Queries.{ is_module_tracked; get_processed_source } qualifier =
+  let module_components Queries.{ is_qualifier_tracked; get_processed_source } qualifier =
     match get_processed_source qualifier with
     | Some source -> Some (ModuleComponents.of_source source)
     | None ->
-        if is_module_tracked qualifier then
+        if is_qualifier_tracked qualifier then
           Some (ModuleComponents.implicit_module ())
         else
           None
@@ -981,9 +981,9 @@ module FromReadOnlyUpstream = struct
     let track_dependencies =
       AstEnvironment.ReadOnly.controls ast_environment |> EnvironmentControls.track_dependencies
     in
-    let is_module_tracked =
+    let is_qualifier_tracked =
       AstEnvironment.ReadOnly.module_tracker ast_environment
-      |> ModuleTracker.ReadOnly.is_module_tracked
+      |> ModuleTracker.ReadOnly.is_qualifier_tracked
     in
     let get_processed_source qualifier =
       let dependency =
@@ -994,7 +994,7 @@ module FromReadOnlyUpstream = struct
       in
       AstEnvironment.ReadOnly.get_processed_source ast_environment ?dependency qualifier
     in
-    IncomingDataComputation.Queries.{ is_module_tracked; get_processed_source }
+    IncomingDataComputation.Queries.{ is_qualifier_tracked; get_processed_source }
 
 
   let cold_start environment =
