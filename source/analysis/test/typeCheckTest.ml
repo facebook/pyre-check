@@ -494,7 +494,7 @@ let test_forward_expression context =
       annotation
     =
     let expression =
-      let expression = parse expression |> Preprocessing.preprocess in
+      let expression = parse expression |> Preprocessing.preprocess_no_wildcards in
       expression
       |> function
       | { Source.statements = [{ Node.value = Expression expression; _ }]; _ } -> expression

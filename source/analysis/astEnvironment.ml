@@ -155,14 +155,13 @@ module OutgoingDataComputation = struct
 
 
   let get_processed_source (Queries.{ get_raw_source; _ } as queries) qualifier =
-    let preprocessing = Preprocessing.preprocess_phase1 in
     (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No
        need to explicitly record the dependency. *)
     get_raw_source qualifier
     >>| function
     | Result.Ok source ->
         expand_wildcard_imports queries source
-        |> preprocessing
+        |> Preprocessing.preprocess_after_wildcards
         |> DecoratorPreprocessing.preprocess_source ~get_source:(fun qualifier ->
                get_raw_source qualifier >>= Result.ok)
     | Result.Error
@@ -175,7 +174,8 @@ module OutgoingDataComputation = struct
         let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
-        Parsing.create_source ~typecheck_flags ~module_path statements |> preprocessing
+        Parsing.create_source ~typecheck_flags ~module_path statements
+        |> Preprocessing.preprocess_after_wildcards
 end
 
 module ReadOnly = struct

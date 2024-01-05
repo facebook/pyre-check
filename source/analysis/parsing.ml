@@ -156,7 +156,7 @@ let load_and_parse ~controls ~get_raw_code module_path =
       EnvironmentControls.python_version_info controls
     in
     Preprocessing.replace_version_specific_code ~major_version ~minor_version ~micro_version source
-    |> Preprocessing.preprocess_phase0
+    |> Preprocessing.preprocess_before_wildcards
   in
   match get_raw_code module_path with
   | Ok raw_code ->

@@ -11,11 +11,12 @@
 
    We break this into two phases:
 
-   * phase0: transformations that don't depend on expanding wildcard imports (e.g., selecting
-   platform-specific code)
+   * preprocess_before_wildcards: transformations that don't depend on expanding wildcard imports
+   (e.g., selecting platform-specific code)
 
-   * phase1: transformations that depend on expanding wildcard imports (e.g., expanding functional
-   TypedDict declarations, since the `TypedDict` may be imported via wildcard) *)
+   * preprocess_after_wildcards: transformations that depend on expanding wildcard imports (e.g.,
+   expanding functional TypedDict declarations, since the `TypedDict` may be imported via
+   wildcard) *)
 
 open Core
 open Ast
@@ -4812,7 +4813,7 @@ let expand_enum_functional_syntax
   { source with Source.statements }
 
 
-let preprocess_phase0 source =
+let preprocess_before_wildcards source =
   source
   |> expand_relative_imports
   |> replace_platform_specific_code
@@ -4821,7 +4822,7 @@ let preprocess_phase0 source =
   |> expand_import_python_calls
 
 
-let preprocess_phase1 source =
+let preprocess_after_wildcards source =
   source
   |> expand_new_types
   |> populate_unbound_names
@@ -4843,4 +4844,5 @@ let preprocess_phase1 source =
   |> populate_captures
 
 
-let preprocess source = preprocess_phase0 source |> preprocess_phase1
+let preprocess_no_wildcards source =
+  preprocess_before_wildcards source |> preprocess_after_wildcards

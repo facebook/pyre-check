@@ -4311,7 +4311,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             let parsed =
               Parser.parse_exn [value]
               |> Source.create
-              |> Preprocessing.preprocess
+              |> Preprocessing.preprocess_no_wildcards
               |> Source.statements
             in
             match parsed with

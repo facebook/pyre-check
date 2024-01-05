@@ -96,13 +96,13 @@ val toplevel_expand_tuple_assign : Statement.Assign.t Node.t -> Statement.Assign
 val dequalify_map : Source.t -> Reference.t Reference.Map.t
 
 (* Steps that may affect wildcard imports, excluding version-specific code replacement *)
-val preprocess_phase0 : Source.t -> Source.t
+val preprocess_before_wildcards : Source.t -> Source.t
 
-(* Steps that does not affect wildcard imports *)
-val preprocess_phase1 : Source.t -> Source.t
+(* Steps that do not affect wildcard imports *)
+val preprocess_after_wildcards : Source.t -> Source.t
 
-(* Phase0 followed by Phase1 *)
-val preprocess : Source.t -> Source.t
+(* All preprocessing steps, skipping wildcard expansion *)
+val preprocess_no_wildcards : Source.t -> Source.t
 
 (* Following are exposed for testing only *)
 
