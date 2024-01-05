@@ -166,12 +166,11 @@ let run_on_qualifier environment ~dependency qualifier =
   | None -> []
   | Some
       ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
-      | Result.Error { AstEnvironment.ParserError.module_path = { ModulePath.is_external; _ }; _ }
-        )
+      | Result.Error { Parsing.ParserError.module_path = { ModulePath.is_external; _ }; _ } )
     when is_external ->
       []
-  | Some (Result.Error { AstEnvironment.ParserError.is_suppressed; _ }) when is_suppressed -> []
-  | Some (Result.Error { AstEnvironment.ParserError.message; location; _ }) ->
+  | Some (Result.Error { Parsing.ParserError.is_suppressed; _ }) when is_suppressed -> []
+  | Some (Result.Error { Parsing.ParserError.message; location; _ }) ->
       let location_with_module =
         {
           Location.WithModule.module_reference = qualifier;

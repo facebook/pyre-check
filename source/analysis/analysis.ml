@@ -42,6 +42,7 @@ module LocationBasedLookup = LocationBasedLookup
 module ModuleTracker = ModuleTracker
 module OverlaidEnvironment = OverlaidEnvironment
 module NamedTuple = NamedTuple
+module Parsing = Parsing
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
 module Refinement = Refinement

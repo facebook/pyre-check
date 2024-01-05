@@ -1036,7 +1036,7 @@ let make_overlay_testing_functions ~context ~test_sources =
     let unpack_result = function
       (* Getting good failure errors here is important because it is easy to mess up indentation *)
       | Some (Ok source) -> source
-      | Some (Error { AstEnvironment.ParserError.message; _ }) ->
+      | Some (Error { Parsing.ParserError.message; _ }) ->
           failwith ("Loading source failed with message: " ^ message)
       | None -> failwith "Loading source produced None"
     in

@@ -8,16 +8,6 @@
 open Ast
 open Core
 
-module ParserError : sig
-  type t = {
-    module_path: ModulePath.t;
-    location: Location.t;
-    is_suppressed: bool;
-    message: string;
-  }
-  [@@deriving sexp, compare, hash]
-end
-
 module ReadOnly : sig
   type t
 
@@ -33,7 +23,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
-    (Source.t, ParserError.t) Result.t option
+    (Source.t, Parsing.ParserError.t) Result.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 end

@@ -28,189 +28,9 @@ open Core
 open Pyre
 open PyreParser
 
-module ParserError = struct
-  type t = {
-    module_path: ModulePath.t;
-    location: Location.t;
-    is_suppressed: bool;
-    message: string;
-  }
-  [@@deriving sexp, compare, hash]
-end
-
-module IncomingDataComputation = struct
-  module Queries = struct
-    type t = { get_raw_code: ModulePath.t -> (string, string) Result.t }
-  end
-
-  let create_source ~typecheck_flags ~module_path statements =
-    Source.create_from_module_path
-      ~collect_format_strings_with_ignores:Visit.collect_format_strings_with_ignores
-      ~typecheck_flags
-      ~module_path
-      statements
-
-
-  let create_parse_error
-      ~configuration
-      ~typecheck_flags
-      ~module_path
-      ~line
-      ~column
-      ~end_line
-      ~end_column
-      ~message
-      ()
-    =
-    let is_suppressed =
-      let { Source.TypecheckFlags.local_mode; ignore_codes; _ } = typecheck_flags in
-      match Source.mode ~configuration ~local_mode with
-      | Source.Declare -> true
-      | _ ->
-          (* NOTE: The number needs to be updated when the error code changes. *)
-          List.exists ignore_codes ~f:(Int.equal 404)
-    in
-    let location =
-      (* CPython set line/column number to -1 in some exceptional cases. *)
-      let replace_invalid_position number = if number <= 0 then 1 else number in
-      let start =
-        { Location.line = replace_invalid_position line; column = replace_invalid_position column }
-      in
-      let stop =
-        (* Work around CPython bug where the end location sometimes precedes start location. *)
-        if [%compare: int * int] (line, column) (end_line, end_column) > 0 then
-          start
-        else
-          {
-            Location.line = replace_invalid_position end_line;
-            column = replace_invalid_position end_column;
-          }
-      in
-      { Location.start; stop }
-    in
-    ParserError.{ location; message; is_suppressed; module_path }
-
-
-  let parse_raw_code_with_cpython
-      ~configuration:({ Configuration.Analysis.enable_type_comments; _ } as configuration)
-      ({ ModulePath.qualifier; _ } as module_path)
-      raw_code
-    =
-    let parse context =
-      let typecheck_flags =
-        Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n')
-      in
-      match
-        PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
-      with
-      | Ok statements -> Ok (create_source ~typecheck_flags ~module_path statements)
-      | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
-          Error
-            (create_parse_error
-               ~configuration
-               ~typecheck_flags
-               ~module_path
-               ~line
-               ~column
-               ~end_line
-               ~end_column
-               ~message
-               ())
-    in
-    PyreNewParser.with_context parse
-
-
-  let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as module_path) raw_code
-    =
-    let timer = Timer.start () in
-    let log_errpy_ok ~recovered_count =
-      let integers = ["recovered_count", recovered_count] in
-      let normals =
-        match recovered_count with
-        | 0 -> []
-        | _ -> (
-            match Int.equal (Random.int 100) 0 with
-            | false -> []
-            | true ->
-                (*so as to avoid a torrent of data we only log 1/100 of the sources where there is
-                  error recovery for the purposes of error recovery quality management *)
-                ["raw_code", raw_code])
-      in
-      Statistics.errpy_call ~flush:false ~name:"ok" ~timer ~integers ~normals ()
-    in
-    let log_errpy_error ~error_string =
-      Statistics.errpy_call
-        ~flush:true
-        ~name:"error"
-        ~timer
-        ~integers:[]
-        ~normals:["raw_code", raw_code; "error", error_string]
-        ()
-    in
-    let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
-    match PyreErrpyParser.parse_module raw_code with
-    | Ok statements ->
-        log_errpy_ok ~recovered_count:0;
-        Ok (create_source ~typecheck_flags ~module_path statements)
-    | Error parserError -> (
-        match parserError with
-        | Recoverable recoverable ->
-            log_errpy_ok ~recovered_count:(List.length recoverable.errors);
-            Ok (create_source ~typecheck_flags ~module_path recoverable.recovered_ast)
-        | Unrecoverable error_string ->
-            log_errpy_error ~error_string;
-            Error
-              (create_parse_error
-                 ~configuration
-                 ~typecheck_flags
-                 ~module_path
-                 ~line:1
-                 ~column:1
-                 ~end_line:1
-                 ~end_column:1
-                 ~message:error_string
-                 ()))
-
-
-  let load_and_parse ~controls Queries.{ get_raw_code; _ } module_path =
-    let configuration = EnvironmentControls.configuration controls in
-    let parse_raw_code =
-      match configuration with
-      | { use_errpy_parser = false; _ } -> parse_raw_code_with_cpython
-      | _ -> parse_raw_code_with_errpy
-    in
-    let post_process_source source =
-      let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
-        EnvironmentControls.python_version_info controls
-      in
-      Preprocessing.replace_version_specific_code
-        ~major_version
-        ~minor_version
-        ~micro_version
-        source
-      |> Preprocessing.preprocess_phase0
-    in
-    match get_raw_code module_path with
-    | Ok raw_code ->
-        parse_raw_code ~configuration module_path raw_code |> Result.map ~f:post_process_source
-    | Error message ->
-        Error
-          ParserError.
-            {
-              location =
-                {
-                  Location.start = { Location.line = 1; column = 1 };
-                  stop = { Location.line = 1; column = 1 };
-                };
-              message;
-              is_suppressed = false;
-              module_path;
-            }
-end
-
 module OutgoingDataComputation = struct
   module Queries = struct
-    type t = { get_raw_source: Reference.t -> (Source.t, ParserError.t) Result.t option }
+    type t = { get_raw_source: Reference.t -> (Source.t, Parsing.ParserError.t) Result.t option }
   end
 
   let wildcard_exports_of ({ Source.module_path; _ } as source) =
@@ -347,7 +167,7 @@ module OutgoingDataComputation = struct
                get_raw_source qualifier >>= Result.ok)
     | Result.Error
         {
-          ParserError.module_path =
+          Parsing.ParserError.module_path =
             { ModulePath.raw = { relative; _ }; qualifier; _ } as module_path;
           _;
         } ->
@@ -355,8 +175,7 @@ module OutgoingDataComputation = struct
         let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
         let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
         let statements = Parser.parse_exn ~relative fallback_source in
-        IncomingDataComputation.create_source ~typecheck_flags ~module_path statements
-        |> preprocessing
+        Parsing.create_source ~typecheck_flags ~module_path statements |> preprocessing
 end
 
 module ReadOnly = struct
@@ -365,7 +184,7 @@ module ReadOnly = struct
     get_raw_source:
       ?dependency:SharedMemoryKeys.DependencyKey.registered ->
       Reference.t ->
-      (Source.t, ParserError.t) Result.t option;
+      (Source.t, Parsing.ParserError.t) Result.t option;
   }
 
   let module_tracker { module_tracker; _ } = module_tracker
@@ -406,14 +225,15 @@ end
 
 module FromReadOnlyUpstream = struct
   module RawSourceValue = struct
-    type t = (Source.t, ParserError.t) Result.t option
+    type t = (Source.t, Parsing.ParserError.t) Result.t option
 
     let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Unprocessed source"
 
     let equal =
-      Memory.equal_from_compare (Option.compare (Result.compare Source.compare ParserError.compare))
+      Memory.equal_from_compare
+        (Option.compare (Result.compare Source.compare Parsing.ParserError.compare))
   end
 
   module RawSources = struct
@@ -429,7 +249,7 @@ module FromReadOnlyUpstream = struct
 
     let add_unparsed_source
         table
-        ({ ParserError.module_path = { ModulePath.qualifier; _ }; _ } as error)
+        ({ Parsing.ParserError.module_path = { ModulePath.qualifier; _ }; _ } as error)
       =
       add table qualifier (Some (Result.Error error))
 
@@ -452,13 +272,10 @@ module FromReadOnlyUpstream = struct
   let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
 
   let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
-    let controls = ModuleTracker.ReadOnly.controls module_tracker in
-    let get_raw_code = ModuleTracker.ReadOnly.get_raw_code module_tracker in
     match
-      IncomingDataComputation.load_and_parse
-        ~controls
-        IncomingDataComputation.Queries.{ get_raw_code }
-        module_path
+      let controls = ModuleTracker.ReadOnly.controls module_tracker in
+      let get_raw_code = ModuleTracker.ReadOnly.get_raw_code module_tracker in
+      Parsing.load_and_parse ~controls ~get_raw_code module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source
     | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error
