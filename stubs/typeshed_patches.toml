@@ -684,3 +684,204 @@ else:
         *coros_or_futures: _FutureLike[Any], loop: AbstractEventLoop | None = None, return_exceptions: bool = False
     ) -> Future[list[Any]]: ...
 '''
+
+# random.pyi contains a bunch of unannotated top-level definitions aliased to attributes in the `random.Random` class. 
+# Pyre does not really like that.
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "seed"
+content = '''
+if sys.version_info >= (3, 9):
+    def seed(a: int | float | str | bytes | bytearray | None = None, version: int = 2) -> None: ...
+else:
+    def seed(a: Any = None, version: int = 2) -> None: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "random"
+content = '''
+def random() -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "uniform"
+content = '''
+def uniform(a: float, b: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "triangular"
+content = '''
+def triangular(low: float = 0.0, high: float = 1.0, mode: float | None = None) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "randint"
+content = '''
+def randint(a: int, b: int) -> int: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "choice"
+content = '''
+def choice(seq: SupportsLenAndGetItem[_T]) -> _T: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "randrange"
+content = '''
+def randrange(start: int, stop: int | None = None, step: int = 1) -> int: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "sample"
+content = '''
+if sys.version_info >= (3, 11):
+    def sample(self, population: Sequence[_T], k: int, *, counts: Iterable[int] | None = None) -> list[_T]: ...
+elif sys.version_info >= (3, 9):
+    def sample(
+        population: Sequence[_T] | AbstractSet[_T], k: int, *, counts: Iterable[int] | None = None
+    ) -> list[_T]: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "shuffle"
+content = '''
+if sys.version_info >= (3, 11):
+    def shuffle(x: MutableSequence[Any]) -> None: ...
+else:
+    def shuffle(x: MutableSequence[Any], random: Callable[[], float] | None = None) -> None: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "choices"
+content = '''
+def choices(
+    population: SupportsLenAndGetItem[_T],
+    weights: Sequence[float | Fraction] | None = None,
+    *,
+    cum_weights: Sequence[float | Fraction] | None = None,
+    k: int = 1,
+) -> list[_T]: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "normalvariate"
+content = '''
+if sys.version_info >= (3, 11):
+    def normalvariate(mu: float = 0.0, sigma: float = 1.0) -> float: ...
+else:
+    def normalvariate(mu: float, sigma: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "lognormvariate"
+content = '''
+def lognormvariate(mu: float, sigma: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "expovariate"
+content = '''
+if sys.version_info >= (3, 12):
+    def expovariate(lambd: float = 1.0) -> float: ...
+else:
+    def expovariate(lambd: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "vonmisesvariate"
+content = '''
+def vonmisesvariate(mu: float, kappa: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "gammavariate"
+content = '''
+def gammavariate(alpha: float, beta: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "gauss"
+content = '''
+if sys.version_info >= (3, 11):
+    def gauss(mu: float = 0.0, sigma: float = 1.0) -> float: ...
+else:
+    def gauss(mu: float, sigma: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "binomialvariate"
+content = '''
+if sys.version_info >= (3, 12):
+    def binomialvariate(n: int = 1, p: float = 0.5) -> int: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "betavariate"
+content = '''
+def betavariate(alpha: float, beta: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "paretovariate"
+content = '''
+def paretovariate(alpha: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "weibullvariate"
+content = '''
+def weibullvariate(alpha: float, beta: float) -> float: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "getstate"
+content = '''
+def getstate() -> _random._State: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "setstate"
+content = '''
+def setstate(__state: _random._State) -> None: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "getrandbits"
+content = '''
+def getrandbits(__k: int) -> int: ...
+'''
+
+[["stdlib/random.pyi"]]
+action = "replace"
+name = "randbytes"
+content = '''
+if sys.version_info >= (3, 9):
+    def randbytes(n: int) -> bytes: ...
+'''
+
+
