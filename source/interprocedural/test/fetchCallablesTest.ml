@@ -23,7 +23,7 @@ let test_callables context =
         Analysis.GlobalResolution.create global_environment )
     in
     let source =
-      Analysis.AstEnvironment.ReadOnly.get_processed_source
+      Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier
         ast_environment
         ?dependency:None
         (Ast.Reference.create "test")

@@ -452,7 +452,7 @@ let test_source_is_unit_test context =
     in
     let resolution = GlobalResolution.create global_environment in
     let source =
-      AstEnvironment.ReadOnly.get_processed_source
+      AstEnvironment.ReadOnly.processed_source_of_qualifier
         (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
@@ -491,7 +491,7 @@ let test_fallback_attribute context =
     let attribute =
       let qualifier = Reference.create "test" in
       let source =
-        AstEnvironment.ReadOnly.get_processed_source
+        AstEnvironment.ReadOnly.processed_source_of_qualifier
           (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
           qualifier
       in

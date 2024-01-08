@@ -162,7 +162,7 @@ let run_on_source
 
 let run_on_qualifier environment ~dependency qualifier =
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  match AstEnvironment.ReadOnly.get_raw_source ?dependency ast_environment qualifier with
+  match AstEnvironment.ReadOnly.raw_source_of_qualifier ?dependency ast_environment qualifier with
   | None -> []
   | Some
       ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }

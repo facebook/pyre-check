@@ -152,7 +152,7 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
 
 let get_source ~environment qualifier =
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+  AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
 
 
 let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =

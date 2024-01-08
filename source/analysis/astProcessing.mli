@@ -7,7 +7,8 @@
 
 open Core
 
-val get_processed_source
-  :  get_raw_source:(Ast.Reference.t -> (Ast.Source.t, Parsing.ParserError.t) Result.t option) ->
+val processed_source_of_qualifier
+  :  raw_source_of_qualifier:
+       (Ast.Reference.t -> (Ast.Source.t, Parsing.ParserError.t) Result.t option) ->
   Ast.Reference.t ->
   Ast.Source.t option

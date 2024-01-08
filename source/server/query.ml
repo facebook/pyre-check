@@ -590,7 +590,7 @@ let rec process_request_exn ~type_environment ~build_system request =
               Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
         in
         let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
-        AstEnvironment.ReadOnly.get_processed_source ast_environment module_qualifier
+        AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment module_qualifier
         >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false ~include_nested:true
         >>| List.fold_left ~init:callgraph_map ~f:callees
         |> Option.value ~default:callgraph_map
@@ -675,7 +675,7 @@ let rec process_request_exn ~type_environment ~build_system request =
           let defines =
             let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
             module_name
-            >>= AstEnvironment.ReadOnly.get_processed_source ast_environment
+            >>= AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment
             >>| Analysis.FunctionDefinition.collect_defines
             >>| List.map ~f:snd
             >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies

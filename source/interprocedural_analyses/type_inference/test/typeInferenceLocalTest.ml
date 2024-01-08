@@ -205,7 +205,9 @@ module Setup = struct
         (AstEnvironment.ReadOnly.module_tracker ast_environment)
     in
     let source =
-      AstEnvironment.ReadOnly.get_processed_source ast_environment (Reference.create "test")
+      AstEnvironment.ReadOnly.processed_source_of_qualifier
+        ast_environment
+        (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     configuration, global_resolution, filename_lookup, source

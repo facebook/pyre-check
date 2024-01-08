@@ -873,7 +873,7 @@ let assert_update
         |> List.length
         |> assert_equal ~printer expected_number_of_names
     | `GetRawSource (qualifier, dependency) ->
-        AstEnvironment.ReadOnly.get_raw_source
+        AstEnvironment.ReadOnly.raw_source_of_qualifier
           (UnannotatedGlobalEnvironment.ReadOnly.ast_environment read_only)
           ~dependency
           qualifier

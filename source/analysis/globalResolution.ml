@@ -74,8 +74,11 @@ let relative_path_of_qualifier resolution =
   ModuleTracker.ReadOnly.relative_path_of_qualifier (module_tracker resolution)
 
 
-let get_processed_source ({ dependency; _ } as resolution) qualifier =
-  AstEnvironment.ReadOnly.get_processed_source (ast_environment resolution) ?dependency qualifier
+let processed_source_of_qualifier ({ dependency; _ } as resolution) qualifier =
+  AstEnvironment.ReadOnly.processed_source_of_qualifier
+    (ast_environment resolution)
+    ?dependency
+    qualifier
 
 
 let is_protocol ({ dependency; _ } as resolution) annotation =

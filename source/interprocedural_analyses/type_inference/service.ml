@@ -82,7 +82,9 @@ let run_infer
           ~filename_lookup
           source
       in
-      qualifier |> AstEnvironment.ReadOnly.get_processed_source ast_environment >>| analyze_source
+      qualifier
+      |> AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment
+      >>| analyze_source
     in
     qualifiers |> List.filter_map ~f:analyze_qualifier |> List.concat
   in

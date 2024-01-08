@@ -402,7 +402,7 @@ let test_register_implicit_namespace_modules context =
   let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    (AstEnvironment.ReadOnly.get_raw_source ast_environment (Reference.create "a.b.c")
+    (AstEnvironment.ReadOnly.raw_source_of_qualifier ast_environment (Reference.create "a.b.c")
     |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"

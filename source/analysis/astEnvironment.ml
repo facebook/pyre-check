@@ -29,7 +29,7 @@ open Core
 module ReadOnly = struct
   type t = {
     module_tracker: ModuleTracker.ReadOnly.t;
-    get_raw_source:
+    raw_source_of_qualifier:
       ?dependency:SharedMemoryKeys.DependencyKey.registered ->
       Reference.t ->
       (Source.t, Parsing.ParserError.t) Result.t option;
@@ -39,19 +39,21 @@ module ReadOnly = struct
 
   let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
 
-  let get_raw_source { get_raw_source; _ } = get_raw_source
+  let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier
 
-  let get_processed_source environment ?dependency qualifier =
+  let processed_source_of_qualifier environment ?dependency qualifier =
     (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
        `update`. No need to explicitly record the dependency. But we do need to record all other
        modules used *)
-    let get_raw_source_and_maybe_track qualifier_to_load =
+    let raw_source_of_qualifier_and_maybe_track qualifier_to_load =
       let maybe_dependency =
         if Reference.equal qualifier_to_load qualifier then None else dependency
       in
-      get_raw_source environment ?dependency:maybe_dependency qualifier_to_load
+      raw_source_of_qualifier environment ?dependency:maybe_dependency qualifier_to_load
     in
-    AstProcessing.get_processed_source ~get_raw_source:get_raw_source_and_maybe_track qualifier
+    AstProcessing.processed_source_of_qualifier
+      ~raw_source_of_qualifier:raw_source_of_qualifier_and_maybe_track
+      qualifier
 end
 
 module UpdateResult = struct
@@ -236,7 +238,7 @@ module FromReadOnlyUpstream = struct
   let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
 
   let read_only ({ module_tracker; _ } as ast_environment) =
-    { ReadOnly.module_tracker; get_raw_source = LazyRawSources.get ~ast_environment }
+    { ReadOnly.module_tracker; raw_source_of_qualifier = LazyRawSources.get ~ast_environment }
 
 
   let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
@@ -320,13 +322,13 @@ module Overlay = struct
 
   let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
     let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
-    let get_raw_source ?dependency qualifier =
+    let raw_source_of_qualifier ?dependency qualifier =
       if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
-        ReadOnly.get_raw_source this_read_only ?dependency qualifier
+        ReadOnly.raw_source_of_qualifier this_read_only ?dependency qualifier
       else
-        ReadOnly.get_raw_source parent ?dependency qualifier
+        ReadOnly.raw_source_of_qualifier parent ?dependency qualifier
     in
-    { this_read_only with get_raw_source }
+    { this_read_only with raw_source_of_qualifier }
 end
 
 include Base

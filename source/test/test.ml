@@ -3201,7 +3201,7 @@ module ScratchProject = struct
       global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
     in
     project_qualifiers project
-    |> List.filter_map ~f:(AstEnvironment.ReadOnly.get_processed_source ast_environment)
+    |> List.filter_map ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
 
 
   let build_ast_environment = ast_environment

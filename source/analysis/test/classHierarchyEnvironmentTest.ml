@@ -532,7 +532,7 @@ let test_compute_inferred_generic_base context =
       ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
     in
     let source =
-      AstEnvironment.ReadOnly.get_processed_source
+      AstEnvironment.ReadOnly.processed_source_of_qualifier
         (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
         qualifier
     in

@@ -20,7 +20,7 @@ let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
   let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment type_environment in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let ast_source =
-    Analysis.AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+    Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_callables =

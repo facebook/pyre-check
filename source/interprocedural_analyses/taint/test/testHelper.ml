@@ -460,7 +460,7 @@ let initialize
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source =
-    AstEnvironment.ReadOnly.get_processed_source ast_environment qualifier
+    AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
     |> fun option -> Option.value_exn option
   in
   (if not (List.is_empty errors) then

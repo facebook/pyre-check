@@ -11,7 +11,7 @@ open Core
 module ReadOnly : sig
   type t
 
-  val get_processed_source
+  val processed_source_of_qualifier
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
@@ -19,7 +19,7 @@ module ReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val get_raw_source
+  val raw_source_of_qualifier
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
