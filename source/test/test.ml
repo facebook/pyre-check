@@ -3063,15 +3063,18 @@ module ScratchProject = struct
       in
       if in_memory then
         let in_memory_sources =
-          let to_in_memory_source (relative, content) ~is_external =
+          let to_in_memory_source (relative, content) ~should_type_check =
             let code = trim_extra_indentation content in
             let module_path =
-              ModulePath.create_for_in_memory_scratch_project ~configuration ~relative ~is_external
+              ModulePath.create_for_in_memory_scratch_project
+                ~configuration
+                ~relative
+                ~should_type_check
             in
             module_path, code
           in
-          List.map sources ~f:(to_in_memory_source ~is_external:false)
-          @ List.map external_sources ~f:(to_in_memory_source ~is_external:true)
+          List.map sources ~f:(to_in_memory_source ~should_type_check:true)
+          @ List.map external_sources ~f:(to_in_memory_source ~should_type_check:false)
         in
         EnvironmentControls.create
           ~populate_call_graph

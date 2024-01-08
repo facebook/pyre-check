@@ -189,7 +189,7 @@ module FromReadOnlyUpstream = struct
        be checked. *)
     let reparse_modules_union_in_project_modules =
       let fold qualifiers { ModulePath.qualifier; _ } = Set.add qualifiers qualifier in
-      List.filter changed_module_paths ~f:ModulePath.is_in_project
+      List.filter changed_module_paths ~f:ModulePath.should_type_check
       |> List.fold ~init:(Reference.Set.of_list reparse_modules) ~f:fold
       |> Set.to_list
     in

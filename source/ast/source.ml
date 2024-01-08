@@ -301,11 +301,11 @@ let create_from_module_path
 let create
     ?(typecheck_flags = TypecheckFlags.create_for_testing ())
     ?(relative = "")
-    ?(is_external = false)
+    ?(should_type_check = false)
     ?(priority = 0)
     statements
   =
-  let module_path = ModulePath.create_for_testing ~relative ~is_external ~priority in
+  let module_path = ModulePath.create_for_testing ~relative ~should_type_check ~priority in
   create_from_module_path ~typecheck_flags ~module_path statements
 
 

@@ -44,7 +44,7 @@ module T = struct
   type t = {
     raw: Raw.t;
     qualifier: Reference.t;
-    is_external: bool;
+    should_type_check: bool;
   }
   [@@deriving compare, hash, sexp]
 end
@@ -54,9 +54,9 @@ include T
 
 let equal = [%compare.equal: t]
 
-let pp formatter { raw; qualifier; is_external } =
-  let is_external = if is_external then " [EXTERNAL]" else "" in
-  Format.fprintf formatter "[%a(%a)%s]" Raw.pp raw Reference.pp qualifier is_external
+let pp formatter { raw; qualifier; should_type_check } =
+  let should_type_check = if not should_type_check then " [EXTERNAL]" else "" in
+  Format.fprintf formatter "[%a(%a)%s]" Raw.pp raw Reference.pp qualifier should_type_check
 
 
 let file_name_parts_for_relative_path path =
@@ -130,7 +130,7 @@ let is_internal_path
   && not (List.exists ignore_all_errors ~f:source_path_is_covered)
 
 
-let should_type_check
+let should_type_check_path
     ~configuration:({ Configuration.Analysis.analyze_external_sources; _ } as configuration)
     path
   =
@@ -152,7 +152,7 @@ let create ~configuration:({ Configuration.Analysis.excludes; _ } as configurati
           qualifier_from_relative_path (relative ^ ".py")
       | _ -> qualifier_from_relative_path relative
     in
-    Some { raw; qualifier; is_external = not (should_type_check ~configuration path) }
+    Some { raw; qualifier; should_type_check = should_type_check_path ~configuration path }
 
 
 let qualifier { qualifier; _ } = qualifier
@@ -161,25 +161,25 @@ let raw { raw; _ } = raw
 
 let relative { raw = { Raw.relative; _ }; _ } = relative
 
-let is_in_project { is_external; _ } = not is_external
+let should_type_check { should_type_check; _ } = should_type_check
 
-let create_from_raw_for_testing ~is_external ({ Raw.relative; _ } as raw) =
+let create_from_raw_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
-  { raw; qualifier; is_external }
+  { raw; qualifier; should_type_check }
 
 
-let create_for_testing ~relative ~is_external ~priority =
+let create_for_testing ~relative ~should_type_check ~priority =
   let raw = Raw.{ relative; priority } in
-  create_from_raw_for_testing ~is_external raw
+  create_from_raw_for_testing ~should_type_check raw
 
 
-let create_for_in_memory_scratch_project ~configuration ~relative ~is_external =
+let create_for_in_memory_scratch_project ~configuration ~relative ~should_type_check =
   let raw =
     let { Configuration.Analysis.local_root; _ } = configuration in
     let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
     Raw.create ~configuration (ArtifactPath.create path_in_local_root) |> Option.value_exn
   in
-  create_from_raw_for_testing ~is_external raw
+  create_from_raw_for_testing ~should_type_check raw
 
 
 let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw

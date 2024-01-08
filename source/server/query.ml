@@ -727,7 +727,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         Single
           (Base.TypecheckedPaths
              (ModuleTracker.ReadOnly.module_paths module_tracker
-             |> List.filter ~f:(fun { ModulePath.is_external; _ } -> not is_external)
+             |> List.filter ~f:ModulePath.should_type_check
              |> List.map ~f:(fun { ModulePath.qualifier; _ } ->
                     PathLookup.instantiate_path_with_build_system
                       ~build_system
@@ -1020,8 +1020,8 @@ let rec process_request_exn ~type_environment ~build_system request =
           match
             LocationBasedLookupProcessor.get_module_path ~build_system ~type_environment path
           with
-          | Result.Ok { Ast.ModulePath.is_external; _ } ->
-              { Base.path; is_typechecked = not is_external }
+          | Result.Ok module_path ->
+              { Base.path; is_typechecked = ModulePath.should_type_check module_path }
           | Result.Error _ -> { Base.path; is_typechecked = false }
         in
         Single (Base.IsTypechecked (List.map paths ~f:get_is_typechecked))

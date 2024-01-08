@@ -24,7 +24,7 @@ end
 type t = {
   raw: Raw.t;
   qualifier: Reference.t;
-  is_external: bool;
+  should_type_check: bool;
 }
 [@@deriving compare, eq, hash, sexp]
 
@@ -40,15 +40,15 @@ val raw : t -> Raw.t
 
 val relative : t -> string
 
-val is_in_project : t -> bool
+val should_type_check : t -> bool
 
 val create_for_in_memory_scratch_project
   :  configuration:Configuration.Analysis.t ->
   relative:string ->
-  is_external:bool ->
+  should_type_check:bool ->
   t
 
-val create_for_testing : relative:string -> is_external:bool -> priority:int -> t
+val create_for_testing : relative:string -> should_type_check:bool -> priority:int -> t
 
 val qualifier_from_relative_path : string -> Reference.t
 

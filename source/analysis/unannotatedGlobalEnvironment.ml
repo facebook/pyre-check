@@ -101,12 +101,12 @@ module ModuleComponents = struct
     List.map classes ~f:definition_to_summary
 
 
-  let function_definitions_of_source ({ Source.module_path = { is_external; _ }; _ } as source) =
-    match is_external with
-    | true ->
+  let function_definitions_of_source ({ Source.module_path; _ } as source) =
+    match ModulePath.should_type_check module_path with
+    | false ->
         (* Do not collect function bodies for external sources as they won't get type checked *)
         []
-    | false -> FunctionDefinition.collect_defines source
+    | true -> FunctionDefinition.collect_defines source
 
 
   let unannotated_globals_of_source

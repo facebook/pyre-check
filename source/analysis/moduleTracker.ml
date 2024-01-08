@@ -90,7 +90,7 @@ module ReadOnly = struct
 
   let project_qualifiers tracker =
     module_paths tracker
-    |> List.filter ~f:ModulePath.is_in_project
+    |> List.filter ~f:ModulePath.should_type_check
     |> List.map ~f:ModulePath.qualifier
 end
 
@@ -410,7 +410,7 @@ module ExplicitModules = struct
                 let () =
                   (* For removed files, we only check for equality on relative path & priority. *)
                   (* There's a corner case (where an in-project file's symlink gas been removed)
-                     that may cause `removed` to have a different `is_external` flag, since we
+                     that may cause `removed` to have a different `should_type_check` flag, since we
                      cannot follow a deleted symlink. *)
                   if not (ModulePath.equal_raw_paths to_remove current_path) then
                     fail_on_module_path_invariant

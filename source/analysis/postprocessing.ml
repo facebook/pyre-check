@@ -164,10 +164,8 @@ let run_on_qualifier environment ~dependency qualifier =
   let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
   match AstEnvironment.ReadOnly.raw_source_of_qualifier ?dependency ast_environment qualifier with
   | None -> []
-  | Some
-      ( Result.Ok { Source.module_path = { ModulePath.is_external; _ }; _ }
-      | Result.Error { Parsing.ParserError.module_path = { ModulePath.is_external; _ }; _ } )
-    when is_external ->
+  | Some (Result.Ok { Source.module_path; _ } | Result.Error { Parsing.ParserError.module_path; _ })
+    when not (ModulePath.should_type_check module_path) ->
       []
   | Some (Result.Error { Parsing.ParserError.is_suppressed; _ }) when is_suppressed -> []
   | Some (Result.Error { Parsing.ParserError.message; location; _ }) ->

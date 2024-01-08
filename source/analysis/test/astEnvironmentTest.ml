@@ -147,7 +147,7 @@ let test_parse_source context =
 
 
 let test_parse_sources context =
-  (* Following symbolic links is needed to avoid is_external being always false on macos *)
+  (* Following symbolic links is needed to avoid should_type_check being always true on macos *)
   let create_path = PyrePath.create_absolute ~follow_symbolic_links:true in
   let local_root = create_path (bracket_tmpdir context) in
   let module_root = create_path (bracket_tmpdir context) in

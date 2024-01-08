@@ -68,7 +68,7 @@ val create_from_module_path
 val create
   :  ?typecheck_flags:TypecheckFlags.t ->
   ?relative:string ->
-  ?is_external:bool ->
+  ?should_type_check:bool ->
   ?priority:int ->
   Statement.t list ->
   t
