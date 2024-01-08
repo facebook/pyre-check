@@ -38,7 +38,7 @@ module ReadOnly : sig
 
   (* This function returns all explicit modules (i.e. those backed up by a source path) that are
      tracked *)
-  val tracked_explicit_modules : t -> Ast.Reference.t list
+  val explicit_qualifiers : t -> Ast.Reference.t list
 
   val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 

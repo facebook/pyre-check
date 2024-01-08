@@ -536,7 +536,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
-        let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
+        let qualifiers = ModuleTracker.ReadOnly.explicit_qualifiers module_tracker in
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
@@ -595,7 +595,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         >>| List.fold_left ~init:callgraph_map ~f:callees
         |> Option.value ~default:callgraph_map
       in
-      let qualifiers = ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker in
+      let qualifiers = ModuleTracker.ReadOnly.explicit_qualifiers module_tracker in
       List.fold_left qualifiers ~f:get_callgraph ~init:Reference.Map.empty
     in
     match request with
@@ -998,7 +998,7 @@ let rec process_request_exn ~type_environment ~build_system request =
                        ~preferred_chunks_per_worker:5
                        ())
                   ~f:load_modules
-                  ~inputs:(ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker)
+                  ~inputs:(ModuleTracker.ReadOnly.explicit_qualifiers module_tracker)
               in
               Scheduler.with_scheduler
                 ~configuration

@@ -1066,11 +1066,11 @@ module FromReadOnlyUpstream = struct
     in
     (* Define the bulk key reads - these tell us what's been loaded thus far *)
     let all_classes () =
-      ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
+      ModuleTracker.ReadOnly.explicit_qualifiers module_tracker
       |> KeyTracker.get_class_keys key_tracker
     in
     let all_unannotated_globals () =
-      ModuleTracker.ReadOnly.tracked_explicit_modules module_tracker
+      ModuleTracker.ReadOnly.explicit_qualifiers module_tracker
       |> KeyTracker.get_unannotated_global_keys key_tracker
     in
     OutgoingDataComputation.Queries.

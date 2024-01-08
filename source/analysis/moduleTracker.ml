@@ -84,7 +84,7 @@ module ReadOnly = struct
     Option.some_if (ModulePath.Raw.equal raw tracked_raw) module_path
 
 
-  let tracked_explicit_modules tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
+  let explicit_qualifiers tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
 
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
 
