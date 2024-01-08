@@ -1032,7 +1032,7 @@ let make_overlay_testing_functions ~context ~test_sources =
   in
   let overlay_environment = AstEnvironment.Overlay.create parent_read_only in
   let read_only = AstEnvironment.Overlay.read_only overlay_environment in
-  let load_raw_sources qualifier =
+  let source_of_module_paths qualifier =
     let unpack_result = function
       (* Getting good failure errors here is important because it is easy to mess up indentation *)
       | Some (Ok source) -> source
@@ -1044,11 +1044,11 @@ let make_overlay_testing_functions ~context ~test_sources =
       AstEnvironment.ReadOnly.get_raw_source read_only qualifier |> unpack_result )
   in
   let assert_not_overlaid qualifier =
-    let from_parent, from_overlay = load_raw_sources qualifier in
+    let from_parent, from_overlay = source_of_module_paths qualifier in
     assert_equal ~ctxt:context ~printer:Source.show from_parent from_overlay
   in
   let assert_is_overlaid qualifier =
-    let from_parent, from_overlay = load_raw_sources qualifier in
+    let from_parent, from_overlay = source_of_module_paths qualifier in
     [%compare.equal: Source.t] from_parent from_overlay
     |> not
     |> assert_bool "Sources should be different, but are not"

@@ -48,7 +48,7 @@ module ReadOnly = struct
   type t = {
     module_path_of_qualifier: Reference.t -> ModulePath.t option;
     is_qualifier_tracked: Reference.t -> bool;
-    get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
+    code_of_module_path: ModulePath.t -> (raw_code, message) Result.t;
     module_paths: unit -> ModulePath.t list;
     all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
@@ -86,7 +86,7 @@ module ReadOnly = struct
 
   let tracked_explicit_modules tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
 
-  let get_raw_code { get_raw_code; _ } = get_raw_code
+  let code_of_module_path { code_of_module_path; _ } = code_of_module_path
 
   let project_qualifiers tracker =
     module_paths tracker
@@ -959,7 +959,7 @@ module Base = struct
   type t = {
     layouts: Layouts.Api.t;
     controls: EnvironmentControls.t;
-    get_raw_code: ModulePath.t -> (raw_code, message) Result.t;
+    code_of_module_path: ModulePath.t -> (raw_code, message) Result.t;
   }
 
   let load_raw_code ~configuration module_path =
@@ -969,7 +969,7 @@ module Base = struct
         Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)
 
 
-  let make_get_raw_code ~controls =
+  let make_code_of_module_path ~controls =
     let configuration = EnvironmentControls.configuration controls in
     match EnvironmentControls.in_memory_sources controls with
     | None -> load_raw_code ~configuration
@@ -982,21 +982,21 @@ module Base = struct
           List.iter in_memory_sources ~f:add_pair;
           table
         in
-        let get_raw_code ({ ModulePath.qualifier; _ } as module_path) =
+        let code_of_module_path ({ ModulePath.qualifier; _ } as module_path) =
           match Hashtbl.find in_memory_sources qualifier with
           | Some code -> Ok code
           | None -> load_raw_code ~configuration module_path
         in
-        get_raw_code
+        code_of_module_path
 
 
   let create controls =
     Log.info "Building module tracker...";
     let timer = Timer.start () in
     let layouts = Layouts.create ~controls in
-    let get_raw_code = make_get_raw_code ~controls in
+    let code_of_module_path = make_code_of_module_path ~controls in
     Statistics.performance ~name:"module tracker built" ~timer ~phase_name:"Module tracking" ();
-    { layouts; controls; get_raw_code }
+    { layouts; controls; code_of_module_path }
 
 
   let controls { controls; _ } = controls
@@ -1018,10 +1018,10 @@ module Base = struct
     let from_stored_layouts ~controls () =
       let configuration = EnvironmentControls.configuration controls in
       let layouts = Layouts.load ~controls in
-      { layouts; controls; get_raw_code = load_raw_code ~configuration }
+      { layouts; controls; code_of_module_path = load_raw_code ~configuration }
   end
 
-  let read_only { layouts; controls; get_raw_code; _ } =
+  let read_only { layouts; controls; code_of_module_path; _ } =
     let module_path_of_qualifier qualifier =
       Layouts.Api.module_path_of_qualifier layouts ~qualifier
     in
@@ -1031,7 +1031,7 @@ module Base = struct
     {
       ReadOnly.module_path_of_qualifier;
       is_qualifier_tracked;
-      get_raw_code;
+      code_of_module_path;
       module_paths;
       all_module_paths;
       controls = (fun () -> controls);
@@ -1094,12 +1094,12 @@ module Overlay = struct
 
 
   let read_only { parent; overlaid_code; _ } =
-    let get_raw_code module_path =
+    let code_of_module_path module_path =
       match Hashtbl.find overlaid_code module_path with
       | Some code -> Result.Ok code
-      | _ -> ReadOnly.get_raw_code parent module_path
+      | _ -> ReadOnly.code_of_module_path parent module_path
     in
-    { parent with get_raw_code }
+    { parent with code_of_module_path }
 end
 
 include Base

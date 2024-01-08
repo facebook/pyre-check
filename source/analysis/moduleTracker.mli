@@ -42,7 +42,7 @@ module ReadOnly : sig
 
   val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 
-  val get_raw_code : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
+  val code_of_module_path : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
 end
 
 type t

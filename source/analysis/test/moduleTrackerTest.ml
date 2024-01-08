@@ -1837,7 +1837,7 @@ let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_t
   let assert_raw_code qualifier expected =
     let actual =
       Option.value_exn (ModuleTracker.ReadOnly.module_path_of_qualifier read_only qualifier)
-      |> ModuleTracker.ReadOnly.get_raw_code read_only
+      |> ModuleTracker.ReadOnly.code_of_module_path read_only
       |> Result.ok
       |> Option.value ~default:"Error loading code!"
     in

@@ -144,7 +144,7 @@ let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as mod
                ()))
 
 
-let load_and_parse ~controls ~get_raw_code module_path =
+let load_and_parse ~controls ~code_of_module_path module_path =
   let configuration = EnvironmentControls.configuration controls in
   let parse_raw_code =
     match configuration with
@@ -158,7 +158,7 @@ let load_and_parse ~controls ~get_raw_code module_path =
     Preprocessing.replace_version_specific_code ~major_version ~minor_version ~micro_version source
     |> Preprocessing.preprocess_before_wildcards
   in
-  match get_raw_code module_path with
+  match code_of_module_path module_path with
   | Ok raw_code ->
       parse_raw_code ~configuration module_path raw_code |> Result.map ~f:post_process_source
   | Error message ->

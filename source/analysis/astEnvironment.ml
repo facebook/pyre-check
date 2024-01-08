@@ -116,17 +116,17 @@ module FromReadOnlyUpstream = struct
 
   let create module_tracker = { module_tracker; raw_sources = RawSources.create () }
 
-  let load_raw_source ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
+  let source_of_module_path ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
     match
       let controls = ModuleTracker.ReadOnly.controls module_tracker in
-      let get_raw_code = ModuleTracker.ReadOnly.get_raw_code module_tracker in
-      Parsing.load_and_parse ~controls ~get_raw_code module_path
+      let code_of_module_path = ModuleTracker.ReadOnly.code_of_module_path module_tracker in
+      Parsing.load_and_parse ~controls ~code_of_module_path module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source
     | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error
 
 
-  let load_raw_sources ~scheduler ~ast_environment module_paths =
+  let source_of_module_paths ~scheduler ~ast_environment module_paths =
     (* Note: We don't need SharedMemoryKeys.DependencyKey.Registry.collected_iter here; the
        collection handles *registering* dependencies but not detecting triggered dependencies, and
        this is the upstream-most part of the dependency DAG *)
@@ -138,14 +138,14 @@ module FromReadOnlyUpstream = struct
            ~minimum_chunk_size:100
            ~preferred_chunks_per_worker:5
            ())
-      ~f:(List.iter ~f:(load_raw_source ~ast_environment))
+      ~f:(List.iter ~f:(source_of_module_path ~ast_environment))
       ~inputs:module_paths
 
 
   module LazyRawSources = struct
     let load ~ast_environment:({ module_tracker; raw_sources; _ } as ast_environment) qualifier =
       match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker qualifier with
-      | Some module_path -> load_raw_source ~ast_environment module_path
+      | Some module_path -> source_of_module_path ~ast_environment module_path
       | None -> RawSources.add raw_sources qualifier None
 
 
@@ -194,7 +194,9 @@ module FromReadOnlyUpstream = struct
     let invalidated_modules_before_preprocessing =
       List.concat [removed_modules; new_implicits; reparse_modules_union_in_project_modules]
     in
-    let update_raw_sources () = load_raw_sources ~scheduler ~ast_environment reparse_module_paths in
+    let update_raw_sources () =
+      source_of_module_paths ~scheduler ~ast_environment reparse_module_paths
+    in
     let _, raw_source_dependencies =
       PyreProfiling.track_duration_and_shared_memory
         "Parse Raw Sources"

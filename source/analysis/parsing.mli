@@ -25,6 +25,6 @@ val create_source
 
 val load_and_parse
   :  controls:EnvironmentControls.t ->
-  get_raw_code:(Ast.ModulePath.t -> (string, string) Result.t) ->
+  code_of_module_path:(Ast.ModulePath.t -> (string, string) Result.t) ->
   Ast.ModulePath.t ->
   (Ast.Source.t, ParserError.t) Result.t
