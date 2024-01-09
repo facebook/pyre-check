@@ -16,7 +16,7 @@ module ErrorsEnvironmentReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val project_qualifiers : t -> Ast.Reference.t list
+  val type_check_qualifiers : t -> Ast.Reference.t list
 
   val get_errors_for_qualifier : t -> Ast.Reference.t -> AnalysisError.t list
 
@@ -37,7 +37,7 @@ val module_tracker : t -> ModuleTracker.t
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
-val project_qualifiers : t -> Ast.Reference.t list
+val type_check_qualifiers : t -> Ast.Reference.t list
 
 module UpdateStatistics : sig
   type t = {

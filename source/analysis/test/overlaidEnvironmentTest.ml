@@ -72,7 +72,7 @@ let test_update_root context =
   in
   let local_root = ScratchProject.local_root_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
-  ErrorsEnvironment.project_qualifiers errors_environment
+  ErrorsEnvironment.type_check_qualifiers errors_environment
   |> ErrorsEnvironment.populate_for_modules errors_environment ~scheduler:(Test.mock_scheduler ());
   let overlaid_environment = OverlaidEnvironment.create errors_environment in
   assert_root_errors

@@ -69,7 +69,7 @@ let instantiate_and_create_type_errors_response_for_all
     errors_environment
     ~build_system
     ?build_failure
-    ~modules:(ErrorsEnvironment.ReadOnly.project_qualifiers errors_environment)
+    ~modules:(ErrorsEnvironment.ReadOnly.type_check_qualifiers errors_environment)
 
 
 let process_display_type_error_request
@@ -85,7 +85,7 @@ let process_display_type_error_request
   let modules =
     let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
     match paths with
-    | [] -> ModuleTracker.ReadOnly.project_qualifiers module_tracker
+    | [] -> ModuleTracker.ReadOnly.type_check_qualifiers module_tracker
     | _ ->
         let get_module_for_source_path path =
           PyrePath.create_absolute path

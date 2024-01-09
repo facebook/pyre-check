@@ -49,7 +49,7 @@ let assert_overlay_errors ~context ~project ~overlay qualifier expected =
 
 let populate_errors_environment project =
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
-  ErrorsEnvironment.project_qualifiers errors_environment
+  ErrorsEnvironment.type_check_qualifiers errors_environment
   |> ErrorsEnvironment.populate_for_modules ~scheduler:(Test.mock_scheduler ()) errors_environment;
   ()
 
@@ -326,7 +326,7 @@ let test_error_filtering context =
         EnvironmentControls.create ~populate_call_graph:true configuration
         |> ErrorsEnvironment.create
       in
-      ErrorsEnvironment.project_qualifiers read_write
+      ErrorsEnvironment.type_check_qualifiers read_write
       |> ErrorsEnvironment.check_and_preprocess ~scheduler read_write;
       ErrorsEnvironment.read_only read_write
     in

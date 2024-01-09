@@ -24,7 +24,7 @@ module AnnotatedReadOnly : sig
   (* Shortcut for walking through all of the environments *)
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
-  val project_qualifiers : t -> Ast.Reference.t list
+  val type_check_qualifiers : t -> Ast.Reference.t list
 end
 
 include

@@ -126,7 +126,7 @@ let test_parse_source context =
   in
   let sources =
     List.filter_map
-      (ModuleTracker.ReadOnly.project_qualifiers
+      (ModuleTracker.ReadOnly.type_check_qualifiers
          (AstEnvironment.ReadOnly.module_tracker ast_environment))
       ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
   in
@@ -188,13 +188,13 @@ let test_parse_sources context =
     let ast_environment =
       EnvironmentControls.create configuration |> Analysis.AstEnvironment.create
     in
-    let project_qualifiers =
+    let type_check_qualifiers =
       let module_tracker = AstEnvironment.module_tracker ast_environment in
-      ModuleTracker.ReadOnly.project_qualifiers (ModuleTracker.read_only module_tracker)
+      ModuleTracker.ReadOnly.type_check_qualifiers (ModuleTracker.read_only module_tracker)
     in
     let sources =
       List.filter_map
-        project_qualifiers
+        type_check_qualifiers
         ~f:
           (AstEnvironment.ReadOnly.processed_source_of_qualifier
              (AstEnvironment.read_only ast_environment))
@@ -239,7 +239,7 @@ let test_parse_sources context =
     ~cmp:(List.equal String.equal)
     ~printer:(String.concat ~sep:", ")
     (* Because `d` is a symlink that points outside of the source directory, it does not get
-       included in `project_qualifiers` *)
+       included in `type_check_qualifiers` *)
     ["a.pyi"; "c.py"; "foo.pyi"]
     source_handles;
   let source_handles =
@@ -627,7 +627,7 @@ let test_parse_repository context =
           |> ScratchProject.build_ast_environment
         in
         List.filter_map
-          (ModuleTracker.ReadOnly.project_qualifiers
+          (ModuleTracker.ReadOnly.type_check_qualifiers
              (AstEnvironment.ReadOnly.module_tracker ast_environment))
           ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
       in
@@ -745,7 +745,7 @@ module IncrementalTest = struct
          List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
         (* Preprocess invalidated modules (which are internal sources) *)
-        ModuleTracker.ReadOnly.project_qualifiers
+        ModuleTracker.ReadOnly.type_check_qualifiers
           (AstEnvironment.ReadOnly.module_tracker ast_environment)
         |> List.iter ~f:(fun qualifier ->
                let dependency =

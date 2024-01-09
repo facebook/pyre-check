@@ -227,7 +227,7 @@ let initialize_server_state
             if skip_initial_type_check then
               ()
             else
-              Analysis.ErrorsEnvironment.project_qualifiers environment
+              Analysis.ErrorsEnvironment.type_check_qualifiers environment
               |> Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
           in
           Analysis.OverlaidEnvironment.create environment)

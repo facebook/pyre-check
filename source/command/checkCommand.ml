@@ -154,7 +154,7 @@ let do_check configuration =
             |> Analysis.ErrorsEnvironment.create
           in
           let () =
-            Analysis.ErrorsEnvironment.project_qualifiers read_write_environment
+            Analysis.ErrorsEnvironment.type_check_qualifiers read_write_environment
             |> Analysis.ErrorsEnvironment.check_and_preprocess read_write_environment ~scheduler
           in
           Analysis.ErrorsEnvironment.read_only read_write_environment))

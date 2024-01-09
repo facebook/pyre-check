@@ -3195,15 +3195,15 @@ module ScratchProject = struct
 
   let qualifiers_of project = module_paths_of project |> List.map ~f:ModulePath.qualifier
 
-  let project_qualifiers project =
-    module_tracker project |> ModuleTracker.ReadOnly.project_qualifiers
+  let type_check_qualifiers project =
+    module_tracker project |> ModuleTracker.ReadOnly.type_check_qualifiers
 
 
   let get_project_sources project =
     let ast_environment =
       global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
     in
-    project_qualifiers project
+    type_check_qualifiers project
     |> List.filter_map ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
 
 

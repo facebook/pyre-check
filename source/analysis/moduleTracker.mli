@@ -34,7 +34,7 @@ module ReadOnly : sig
 
   val module_paths : t -> Ast.ModulePath.t list
 
-  val project_qualifiers : t -> Ast.Reference.t list
+  val type_check_qualifiers : t -> Ast.Reference.t list
 
   (* This function returns all explicit modules (i.e. those backed up by a source path) that are
      tracked *)

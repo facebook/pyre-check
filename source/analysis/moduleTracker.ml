@@ -88,7 +88,7 @@ module ReadOnly = struct
 
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
 
-  let project_qualifiers tracker =
+  let type_check_qualifiers tracker =
     module_paths tracker
     |> List.filter ~f:ModulePath.should_type_check
     |> List.map ~f:ModulePath.qualifier

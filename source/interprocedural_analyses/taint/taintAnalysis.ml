@@ -147,7 +147,7 @@ let type_check ~scheduler ~configuration ~decorator_configuration ~cache =
         |> Analysis.ErrorsEnvironment.create
       in
       let type_environment = Analysis.ErrorsEnvironment.type_environment errors_environment in
-      let qualifiers = Analysis.ErrorsEnvironment.project_qualifiers errors_environment in
+      let qualifiers = Analysis.ErrorsEnvironment.type_check_qualifiers errors_environment in
       Log.info "Found %d modules" (List.length qualifiers);
       let () =
         Analysis.TypeEnvironment.populate_for_modules ~scheduler type_environment qualifiers
