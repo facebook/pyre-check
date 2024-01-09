@@ -5,6 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* Parsing: the core logic for converting a ModulePath to a parsed Source.t.
+ *
+ * The actual low-level parse is delegated to a parser implementation (e.g. Errpy),
+ * but this module handles metadata and representing errors.
+ *
+ * The only functional dependency of this logic is a code_of_module_path callback.
+ *)
+
 open Core
 open Ast
 
