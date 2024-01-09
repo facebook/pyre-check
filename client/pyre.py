@@ -1120,7 +1120,7 @@ def query(
     """
     Query a running Pyre server for type, function, and attribute information.
 
-    `https://pyre-check.org/docs/querying-pyre.html` contains examples and
+    `https://pyre-check.org/docs/querying-pyre/` contains examples and
     documentation for this command.
 
     To get a full list of queries, you can run `pyre query help`.
