@@ -198,6 +198,15 @@ let method_name = function
       None
 
 
+let is_method = function
+  | Method _
+  | Override _ ->
+      true
+  | Function _
+  | Object _ ->
+      false
+
+
 let override_to_method = function
   | Function target -> Function target
   | Method target

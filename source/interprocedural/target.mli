@@ -99,6 +99,8 @@ val class_name : t -> string option
 
 val method_name : t -> string option
 
+val is_method : t -> bool
+
 val override_to_method : t -> t
 
 (** Return the define name of a target. Note that multiple targets can match to the same define name
