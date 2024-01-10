@@ -160,7 +160,7 @@ let processed_source_of_qualifier ~raw_source_of_qualifier qualifier =
              raw_source_of_qualifier qualifier >>= Result.ok)
   | Result.Error
       {
-        Parsing.ParserError.module_path =
+        Parsing.ParseResult.Error.module_path =
           { ModulePath.raw = { relative; _ }; qualifier; _ } as module_path;
         _;
       } ->

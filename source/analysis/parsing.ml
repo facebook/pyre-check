@@ -9,21 +9,35 @@
  *
  * The actual low-level parse is delegated to a parser implementation (e.g. Errpy),
  * but this module handles metadata and representing errors.
- *
- * The only functional dependency of this logic is a code_of_module_path callback.
  *)
 
 open Core
 open Ast
 
-module ParserError = struct
-  type t = {
-    module_path: Ast.ModulePath.t;
-    location: Ast.Location.t;
-    is_suppressed: bool;
-    message: string;
-  }
-  [@@deriving sexp, compare, hash]
+module LoadResult = struct
+  module Code = struct
+    type t = string [@@deriving sexp, compare, hash]
+  end
+
+  module Error = struct
+    type t = string [@@deriving sexp, compare, hash]
+  end
+
+  type t = (Code.t, Error.t) Result.t [@@deriving sexp, compare, hash]
+end
+
+module ParseResult = struct
+  module Error = struct
+    type t = {
+      module_path: Ast.ModulePath.t;
+      location: Ast.Location.t;
+      is_suppressed: bool;
+      message: string;
+    }
+    [@@deriving sexp, compare, hash]
+  end
+
+  type t = (Ast.Source.t, Error.t) Result.t [@@deriving sexp, compare, hash]
 end
 
 let create_source ~typecheck_flags ~module_path statements =
@@ -71,7 +85,7 @@ let create_parse_error
     in
     { Location.start; stop }
   in
-  ParserError.{ location; message; is_suppressed; module_path }
+  ParseResult.Error.{ location; message; is_suppressed; module_path }
 
 
 let parse_raw_code_with_cpython
@@ -152,7 +166,10 @@ let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as mod
                ()))
 
 
-let load_and_parse ~controls ~code_of_module_path module_path =
+(* Parse the results of loading code, if no error. If there's any error (which could
+ * happen either in parsing or upstream if we weren't able to load the code) represent
+ * the error as a ParseError.t *)
+let parse_result_of_load_result ~controls module_path code_result =
   let configuration = EnvironmentControls.configuration controls in
   let parse_raw_code =
     match configuration with
@@ -166,19 +183,19 @@ let load_and_parse ~controls ~code_of_module_path module_path =
     Preprocessing.replace_version_specific_code ~major_version ~minor_version ~micro_version source
     |> Preprocessing.preprocess_before_wildcards
   in
-  match code_of_module_path module_path with
+  match code_result with
   | Ok raw_code ->
       parse_raw_code ~configuration module_path raw_code |> Result.map ~f:post_process_source
-  | Error message ->
+  | Error load_error ->
       Error
-        ParserError.
+        ParseResult.Error.
           {
             location =
               {
                 Location.start = { Location.line = 1; column = 1 };
                 stop = { Location.line = 1; column = 1 };
               };
-            message;
+            message = load_error;
             is_suppressed = false;
             module_path;
           }

@@ -5,10 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type raw_code = string
-
-type message = string
-
 module IncrementalUpdate : sig
   type t =
     | NewExplicit of Ast.ModulePath.t
@@ -42,7 +38,7 @@ module ReadOnly : sig
 
   val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 
-  val code_of_module_path : t -> Ast.ModulePath.t -> (raw_code, message) Result.t
+  val code_of_module_path : t -> Ast.ModulePath.t -> Parsing.LoadResult.t
 end
 
 type t
@@ -69,7 +65,7 @@ val read_only : t -> ReadOnly.t
 module Overlay : sig
   module CodeUpdate : sig
     type t =
-      | NewCode of raw_code
+      | NewCode of string
       | ResetCode
   end
 

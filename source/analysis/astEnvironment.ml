@@ -32,7 +32,7 @@ module ReadOnly = struct
     raw_source_of_qualifier:
       ?dependency:SharedMemoryKeys.DependencyKey.registered ->
       Reference.t ->
-      (Source.t, Parsing.ParserError.t) Result.t option;
+      Parsing.ParseResult.t option;
   }
 
   let module_tracker { module_tracker; _ } = module_tracker
@@ -72,15 +72,13 @@ end
 
 module FromReadOnlyUpstream = struct
   module RawSourceValue = struct
-    type t = (Source.t, Parsing.ParserError.t) Result.t option
+    type t = Parsing.ParseResult.t option
 
     let prefix = Hack_parallel.Std.Prefix.make ()
 
     let description = "Unprocessed source"
 
-    let equal =
-      Memory.equal_from_compare
-        (Option.compare (Result.compare Source.compare Parsing.ParserError.compare))
+    let equal = Memory.equal_from_compare (Option.compare Parsing.ParseResult.compare)
   end
 
   module RawSources = struct
@@ -96,7 +94,7 @@ module FromReadOnlyUpstream = struct
 
     let add_unparsed_source
         table
-        ({ Parsing.ParserError.module_path = { ModulePath.qualifier; _ }; _ } as error)
+        ({ Parsing.ParseResult.Error.module_path = { ModulePath.qualifier; _ }; _ } as error)
       =
       add table qualifier (Some (Result.Error error))
 
@@ -121,8 +119,8 @@ module FromReadOnlyUpstream = struct
   let source_of_module_path ~ast_environment:{ raw_sources; module_tracker; _ } module_path =
     match
       let controls = ModuleTracker.ReadOnly.controls module_tracker in
-      let code_of_module_path = ModuleTracker.ReadOnly.code_of_module_path module_tracker in
-      Parsing.load_and_parse ~controls ~code_of_module_path module_path
+      ModuleTracker.ReadOnly.code_of_module_path module_tracker module_path
+      |> Parsing.parse_result_of_load_result ~controls module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source
     | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error

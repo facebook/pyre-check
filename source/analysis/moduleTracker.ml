@@ -40,15 +40,11 @@ open Core
 open Ast
 open Pyre
 
-type raw_code = string
-
-type message = string
-
 module ReadOnly = struct
   type t = {
     module_path_of_qualifier: Reference.t -> ModulePath.t option;
     is_qualifier_tracked: Reference.t -> bool;
-    code_of_module_path: ModulePath.t -> (raw_code, message) Result.t;
+    code_of_module_path: ModulePath.t -> Parsing.LoadResult.t;
     module_paths: unit -> ModulePath.t list;
     all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
@@ -959,7 +955,7 @@ module Base = struct
   type t = {
     layouts: Layouts.Api.t;
     controls: EnvironmentControls.t;
-    code_of_module_path: ModulePath.t -> (raw_code, message) Result.t;
+    code_of_module_path: ModulePath.t -> Parsing.LoadResult.t;
   }
 
   let load_raw_code ~configuration module_path =
@@ -1046,7 +1042,7 @@ end
 module Overlay = struct
   module CodeUpdate = struct
     type t =
-      | NewCode of raw_code
+      | NewCode of string
       | ResetCode
   end
 

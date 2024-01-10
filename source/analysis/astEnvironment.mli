@@ -6,7 +6,6 @@
  *)
 
 open Ast
-open Core
 
 module ReadOnly : sig
   type t
@@ -23,7 +22,7 @@ module ReadOnly : sig
     :  t ->
     ?dependency:SharedMemoryKeys.DependencyKey.registered ->
     Reference.t ->
-    (Source.t, Parsing.ParserError.t) Result.t option
+    Parsing.ParseResult.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
 end

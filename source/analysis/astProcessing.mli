@@ -5,10 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
 val processed_source_of_qualifier
-  :  raw_source_of_qualifier:
-       (Ast.Reference.t -> (Ast.Source.t, Parsing.ParserError.t) Result.t option) ->
+  :  raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
   Ast.Reference.t ->
   Ast.Source.t option
