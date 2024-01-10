@@ -2862,11 +2862,11 @@ foo(10)
                     "changes": {
                         "file:///global/root/path/to/foo.py": [
                             lsp.TextEdit(
-                                range=local_test_range_2,
+                                range=local_test_range_1,
                                 new_text=test_text,
                             ),
                             lsp.TextEdit(
-                                range=local_test_range_1,
+                                range=local_test_range_2,
                                 new_text=test_text,
                             ),
                         ],

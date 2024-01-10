@@ -1282,7 +1282,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
         2. Filtering out references that don't point to the same symbol
             a. References from an index can be stale and mispoint.
         """
-        deduped_references = list(set(references))
+        # Why `dict.fromkeys`? This is a trick to get ordered-set behavior in Python 3.7+
+        deduped_references = list(dict.fromkeys(references))
         code_text = self.server_state.opened_documents[document_path].code
         global_root = (
             self.server_state.server_options.start_arguments.base_arguments.global_root
