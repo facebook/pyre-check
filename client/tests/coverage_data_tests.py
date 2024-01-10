@@ -1052,12 +1052,17 @@ class ModuleModecollectorTest(testslide.TestCase):
         mode: ModuleMode,
         explicit_comment_line: Optional[int],
         is_generated: bool = False,
+        is_test: bool = False,
+        path: Optional[str] = None,
     ) -> None:
         source_module = parse_code(source)
-        result = coverage_data.collect_mode(source_module, default_strict)
+        if path is None:
+            path = "/a/b/c.py"
+        result = coverage_data.collect_mode(source_module, default_strict, Path(path))
         self.assertEqual(mode, result.mode)
         self.assertEqual(explicit_comment_line, result.explicit_comment_line)
         self.assertEqual(is_generated, result.is_generated)
+        self.assertEqual(is_test, result.is_test)
 
     def test_strict_files(self) -> None:
         generated_string = "generated"
@@ -1150,6 +1155,39 @@ class ModuleModecollectorTest(testslide.TestCase):
             mode=ModuleMode.STRICT,
             explicit_comment_line=None,
             is_generated=True,
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x
+            """,
+            default_strict=True,
+            mode=ModuleMode.STRICT,
+            explicit_comment_line=None,
+            is_test=True,
+            path="path/tests/example_test.py",
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x
+            """,
+            default_strict=True,
+            mode=ModuleMode.STRICT,
+            explicit_comment_line=None,
+            is_test=True,
+            path="path/tests/example_tests.py",
+        )
+        self.assert_counts(
+            """
+            def foo(x: str) -> int:
+                return x
+            """,
+            default_strict=True,
+            mode=ModuleMode.STRICT,
+            explicit_comment_line=None,
+            is_test=False,
+            path="path/test_example.py",
         )
 
 

@@ -92,6 +92,7 @@ class ModuleModeInfo(json_mixins.SnakeCaseAndExcludeJsonMixin):
     mode: ModuleMode
     explicit_comment_line: Optional[LineNumber]
     is_generated: bool
+    is_test: bool
 
 
 class FunctionAnnotationStatus(str, Enum):
@@ -498,8 +499,10 @@ class ModuleModeCollector(VisitorWithPositionData):
 def collect_mode(
     module: libcst.MetadataWrapper,
     strict_by_default: bool,
+    path: Path,
     ignored: bool = False,  # means the module was ignored in the pyre configuration
 ) -> ModuleModeInfo:
+    is_test_regex = compile(r".*\/(test|tests)\/.*\.py$")
     visitor = ModuleModeCollector(strict_by_default)
     module.visit(visitor)
     mode = ModuleMode.IGNORE_ALL if ignored else visitor.mode
@@ -507,6 +510,7 @@ def collect_mode(
         mode=mode,
         explicit_comment_line=visitor.explicit_comment_line,
         is_generated=visitor.is_generated,
+        is_test=bool(is_test_regex.match(str(path))),
     )
 
 

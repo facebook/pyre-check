@@ -98,7 +98,9 @@ class ModuleData(json_mixins.SnakeCaseAndExcludeJsonMixin):
         strict_by_default: bool,
         ignored: bool,
     ) -> ModuleData:
-        mode = coverage_data.collect_mode(module, strict_by_default, ignored)
+        mode = coverage_data.collect_mode(
+            module, strict_by_default, path.relative_to_root, ignored
+        )
         suppressions = coverage_data.collect_suppressions(module)
         functions = coverage_data.collect_functions(module)
         return ModuleData(
