@@ -782,6 +782,44 @@ let test_call_graph_of_define context =
       ]
     ();
   assert_call_graph_of_define
+    ~source:
+      {|
+    # Original code: https://fburl.com/code/k6hypgar
+    class A:
+      def foo(self):
+        raise NotImplementedError
+    class B(A):
+      # The type of B.foo would be different without the if-else here.
+      if 1 == 1:
+        @classmethod
+        def foo(cls) -> None:
+          pass
+      else:
+        @classmethod
+        def foo(cls) -> None:
+          pass
+
+    def bar():
+      B.foo()
+  |}
+    ~define_name:"test.bar"
+    ~expected:
+      [
+        ( "18:2-18:9",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~is_class_method:true
+                        (Target.Method { class_name = "test.A"; method_name = "foo"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
     ~source:{|
         def foo():
           1 > 2
