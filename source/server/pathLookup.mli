@@ -5,13 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(** Given an artifact path, return the corresponding module name for that path, or [None] if the
-    path is not tracked. *)
-val module_of_path
-  :  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
-  ArtifactPath.t ->
-  Ast.Reference.t option
-
 (** Given a source path, return the corresponding module names for that path. This API will take
     into account any potential path translation done by [lookup_artifact].*)
 val modules_of_source_path

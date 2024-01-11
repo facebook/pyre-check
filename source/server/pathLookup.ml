@@ -9,14 +9,11 @@
 
 open Base
 
-let module_of_path ~module_tracker path =
-  match Analysis.ModuleTracker.ReadOnly.module_path_of_artifact_path module_tracker path with
-  | Some { Ast.ModulePath.qualifier; _ } -> Some qualifier
-  | None -> None
-
-
 let modules_of_source_path ~lookup_artifact ~module_tracker path =
-  lookup_artifact path |> List.filter_map ~f:(module_of_path ~module_tracker)
+  lookup_artifact path
+  |> List.filter_map
+       ~f:(Analysis.ModuleTracker.ReadOnly.module_path_of_artifact_path module_tracker)
+  |> List.map ~f:Ast.ModulePath.qualifier
 
 
 let modules_of_source_path_with_build_system ~build_system ~module_tracker path =
