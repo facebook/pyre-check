@@ -712,7 +712,10 @@ let rec process_request_exn ~type_environment ~build_system request =
         let create_response_with_caller ~key:caller ~data:callees response =
           let instantiate =
             Location.WithModule.instantiate
-              ~lookup:(PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker)
+              ~lookup:
+                (PathLookup.absolute_source_path_of_qualifier_with_build_system
+                   ~build_system
+                   ~module_tracker)
           in
           List.map
             ~f:(fun { Callgraph.callee; locations } ->
@@ -729,7 +732,7 @@ let rec process_request_exn ~type_environment ~build_system request =
              (ModuleTracker.ReadOnly.module_paths module_tracker
              |> List.filter ~f:ModulePath.should_type_check
              |> List.map ~f:(fun { ModulePath.qualifier; _ } ->
-                    PathLookup.instantiate_path_with_build_system
+                    PathLookup.absolute_source_path_of_qualifier_with_build_system
                       ~build_system
                       ~module_tracker
                       qualifier)
@@ -798,7 +801,9 @@ let rec process_request_exn ~type_environment ~build_system request =
     | GlobalLeaks { qualifiers; parse_errors } ->
         let lookup =
           let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
-          PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker
+          PathLookup.absolute_source_path_of_qualifier_with_build_system
+            ~build_system
+            ~module_tracker
         in
         let find_leak_errors_for_qualifier qualifier =
           Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
@@ -916,7 +921,8 @@ let rec process_request_exn ~type_environment ~build_system request =
         Single
           (Base.FoundModules
              (SourcePath.create path
-             |> PathLookup.modules_of_source_path_with_build_system ~build_system ~module_tracker))
+             |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~module_tracker
+             ))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

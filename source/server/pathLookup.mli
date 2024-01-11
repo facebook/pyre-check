@@ -7,7 +7,7 @@
 
 (** Given a source path, return the corresponding module names for that path. This API will take
     into account any potential path translation done by [lookup_artifact].*)
-val modules_of_source_path
+val qualifiers_of_source_path
   :  lookup_artifact:(SourcePath.t -> ArtifactPath.t list) ->
   module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   SourcePath.t ->
@@ -15,7 +15,7 @@ val modules_of_source_path
 
 (** Given a source path, return the corresponding module names for that path. This API will take
     into account any potential path translation done by the {!BuildSystem.t}.*)
-val modules_of_source_path_with_build_system
+val qualifiers_of_source_path_with_build_system
   :  build_system:BuildSystem.t ->
   module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   SourcePath.t ->
@@ -23,7 +23,7 @@ val modules_of_source_path_with_build_system
 
 (** Given a Python module name, Return path to the corresponding Python source file as a string.
     This API will take into account any potential path translation done by [lookup_source]. *)
-val instantiate_path
+val absolute_source_path_of_qualifier
   :  lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
   module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   Ast.Reference.t ->
@@ -31,7 +31,7 @@ val instantiate_path
 
 (** Given a Python module name, Return path to the corresponding Python source file as a string.
     This API will take into account any potential path translation done by the {!BuildSystem.t}. *)
-val instantiate_path_with_build_system
+val absolute_source_path_of_qualifier_with_build_system
   :  build_system:BuildSystem.t ->
   module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
   Ast.Reference.t ->

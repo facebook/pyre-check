@@ -21,7 +21,8 @@ module ReadOnly : sig
   val module_path_of_qualifier : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
   (** NOTE(grievejia): This API is oblivious to the existence of a build system. User-facing logic
-      should always prefer {!Server.PathLookup.instantiate_path} for module-to-path translation. *)
+      should always prefer {!Server.PathLookup.absolute_source_path_of_qualifier} for module-to-path
+      translation. *)
   val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
 
   val relative_path_of_qualifier : t -> Ast.Reference.t -> string option

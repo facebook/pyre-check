@@ -356,7 +356,10 @@ let resolve_module_path
     qualifier
   =
   match
-    Server.PathLookup.instantiate_path_with_build_system ~build_system ~module_tracker qualifier
+    Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
+      ~build_system
+      ~module_tracker
+      qualifier
   with
   | None -> None
   | Some path ->

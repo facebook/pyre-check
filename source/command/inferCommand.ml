@@ -122,7 +122,7 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
             Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
             |> Analysis.AstEnvironment.ReadOnly.module_tracker
           in
-          Server.PathLookup.instantiate_path_with_build_system
+          Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
             ~build_system
             ~module_tracker
             qualifier

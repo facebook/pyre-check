@@ -15,7 +15,7 @@ open Analysis
 let instantiate_error ~lookup_source ~show_error_traces ~module_tracker error =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(PathLookup.instantiate_path ~lookup_source ~module_tracker)
+    ~lookup:(PathLookup.absolute_source_path_of_qualifier ~lookup_source ~module_tracker)
     error
 
 
@@ -90,7 +90,7 @@ let process_display_type_error_request
         let get_module_for_source_path path =
           PyrePath.create_absolute path
           |> SourcePath.create
-          |> PathLookup.modules_of_source_path_with_build_system ~build_system ~module_tracker
+          |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~module_tracker
         in
         List.concat_map paths ~f:get_module_for_source_path
   in

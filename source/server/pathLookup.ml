@@ -18,21 +18,21 @@
 
 open Base
 
-let modules_of_source_path ~lookup_artifact ~module_tracker path =
+let qualifiers_of_source_path ~lookup_artifact ~module_tracker path =
   lookup_artifact path
   |> List.filter_map
        ~f:(Analysis.ModuleTracker.ReadOnly.module_path_of_artifact_path module_tracker)
   |> List.map ~f:Ast.ModulePath.qualifier
 
 
-let modules_of_source_path_with_build_system ~build_system ~module_tracker path =
-  modules_of_source_path
+let qualifiers_of_source_path_with_build_system ~build_system ~module_tracker path =
+  qualifiers_of_source_path
     ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
     ~module_tracker
     path
 
 
-let instantiate_path ~lookup_source ~module_tracker qualifier =
+let absolute_source_path_of_qualifier ~lookup_source ~module_tracker qualifier =
   match Analysis.ModuleTracker.ReadOnly.artifact_path_of_qualifier module_tracker qualifier with
   | None -> None
   | Some analysis_path ->
@@ -49,5 +49,8 @@ let instantiate_path ~lookup_source ~module_tracker qualifier =
       Some (PyrePath.absolute path)
 
 
-let instantiate_path_with_build_system ~build_system ~module_tracker qualifier =
-  instantiate_path ~lookup_source:(BuildSystem.lookup_source build_system) ~module_tracker qualifier
+let absolute_source_path_of_qualifier_with_build_system ~build_system ~module_tracker qualifier =
+  absolute_source_path_of_qualifier
+    ~lookup_source:(BuildSystem.lookup_source build_system)
+    ~module_tracker
+    qualifier
