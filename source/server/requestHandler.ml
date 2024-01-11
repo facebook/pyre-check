@@ -282,18 +282,17 @@ let process_overlay_update
   =
   let artifact_paths = BuildSystem.lookup_artifact build_system source_path in
   let code_updates = List.map artifact_paths ~f:(fun artifact_path -> artifact_path, code_update) in
-  let _ =
+  let modules =
     OverlaidEnvironment.update_overlay_with_code overlaid_environment ~code_updates overlay_id
+    |> ErrorsEnvironment.UpdateResult.invalidated_modules
   in
   match OverlaidEnvironment.overlay overlaid_environment overlay_id with
   | None -> Response.Error ("Unable to update overlay " ^ overlay_id)
   | Some errors_environment ->
-      let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
       (* TODO(T126093907) Handle shadowed files correctly; this is not possible without a refactor
          of ModuleTracker and isn't necessary to get early feedback, but what we actually want to do
          is overlay the artifact path even though it is shadowed; this will be a no-op but it is
          needed to behave correctly if the user then deletes the shadowing file. *)
-      let modules = List.filter_map artifact_paths ~f:(PathLookup.module_of_path ~module_tracker) in
       instantiate_and_create_type_errors_response_for_modules
         ?build_failure:(ServerState.BuildFailure.get_last_error_message build_failure)
         ~build_system
