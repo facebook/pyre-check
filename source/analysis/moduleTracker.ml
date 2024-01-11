@@ -60,24 +60,8 @@ module ReadOnly = struct
 
   let is_qualifier_tracked { is_qualifier_tracked; _ } = is_qualifier_tracked
 
-  let artifact_path_of_qualifier tracker qualifier =
-    let configuration = controls tracker |> EnvironmentControls.configuration in
-    module_path_of_qualifier tracker qualifier
-    |> Option.map ~f:(ModulePath.full_path ~configuration)
-
-
   let relative_path_of_qualifier tracker qualifier =
     module_path_of_qualifier tracker qualifier |> Option.map ~f:ModulePath.relative
-
-
-  let module_path_of_artifact_path tracker path =
-    let configuration = controls tracker |> EnvironmentControls.configuration in
-    let open Option in
-    ModulePath.create ~configuration path
-    >>= fun { ModulePath.raw; qualifier; _ } ->
-    module_path_of_qualifier tracker qualifier
-    >>= fun ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
-    Option.some_if (ModulePath.Raw.equal raw tracked_raw) module_path
 
 
   let explicit_qualifiers tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
@@ -88,6 +72,28 @@ module ReadOnly = struct
     module_paths tracker
     |> List.filter ~f:ModulePath.should_type_check
     |> List.map ~f:ModulePath.qualifier
+
+
+  (* Pyre analysis code should not generally deal directly with ArtifactPaths, but at the outer
+     layer it is necessary, in order to work with the BuildSystem.
+
+     This module provides a dedicated namespace for ArtifactPath.t conversions. *)
+  module ArtifactPaths = struct
+    let artifact_path_of_qualifier tracker qualifier =
+      let configuration = controls tracker |> EnvironmentControls.configuration in
+      module_path_of_qualifier tracker qualifier
+      |> Option.map ~f:(ModulePath.full_path ~configuration)
+
+
+    let module_path_of_artifact_path tracker path =
+      let configuration = controls tracker |> EnvironmentControls.configuration in
+      let open Option in
+      ModulePath.create ~configuration path
+      >>= fun { ModulePath.raw; qualifier; _ } ->
+      module_path_of_qualifier tracker qualifier
+      >>= fun ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
+      Option.some_if (ModulePath.Raw.equal raw tracked_raw) module_path
+  end
 end
 
 module ModulePaths = struct
