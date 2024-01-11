@@ -5,7 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* The RequestHandler module provides event handling to power the code navigation backend server.
+   Requests coming from either the LSP or the file watcher are dispatched to the build system and/or
+   analyzer from this module *)
 
 open Base
 open Analysis
