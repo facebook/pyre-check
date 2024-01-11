@@ -5,10 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+(* SourcePath.t represents the path of source code in a user's source tree.
+
+   We distinguish it from ArtifactPath.t, which is a path of code the analyzer sees, because a build
+   system like buck might mean that the two paths are not the same. We need to be careful to always
+   convert between user-facing paths and paths that the analyzer can understand. *)
+
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
-
-(* TODO(T132410158) Add a module-level doc comment. *)
 
 type t = SourcePath of PyrePath.t [@@deriving sexp, compare, hash, show]
 
