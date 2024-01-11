@@ -5,7 +5,16 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* The PathLookup module provides helpers for converting between `SourcePath.t` and qualifiers
+   (`Reference.t`).
+
+   This always requires converting between `ArtifactPath.t` and `SourcePath.t` (the two are
+   different because we need to account for builds that might remap the paths; for example under
+   buck the `ArtifactPath.t` is the result of a buck build and the `SourcePath.t` is the user-facing
+   path in the original source tree).
+
+   The conversion functions have two forms, one that uses dependency injection for converting and
+   another that takes a `BuildSystem.t` as input. *)
 
 open Base
 
