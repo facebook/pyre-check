@@ -693,6 +693,23 @@ let test_check_callable_class_decorators context =
     {|
       import typing
       T = typing.TypeVar("T")
+      R = typing.TypeVar("R")
+      P = typing.ParamSpec("P")
+      def my_decorator(f: typing.Callable[P, R]) -> typing.Callable[P, R]: ...
+
+      @my_decorator
+      def foo(x: T) -> T: ...
+    |}
+    [
+      "Invalid decoration [56]: While applying decorator `test.my_decorator`: In call \
+       `test.my_decorator`, for 1st positional argument, expected `typing.Callable[test.P, \
+       Variable[R]]` but got `typing.Callable(test.foo)[[Named(x, Variable[T])], Variable[T]]`.";
+    ];
+
+  assert_type_errors
+    {|
+      import typing
+      T = typing.TypeVar("T")
       class synchronize:
         @typing.overload
         def __call__(
