@@ -701,9 +701,8 @@ let test_check_callable_class_decorators context =
       def foo(x: T) -> T: ...
     |}
     [
-      "Invalid decoration [56]: While applying decorator `test.my_decorator`: In call \
-       `test.my_decorator`, for 1st positional argument, expected `typing.Callable[test.P, \
-       Variable[R]]` but got `typing.Callable(test.foo)[[Named(x, Variable[T])], Variable[T]]`.";
+      "Invalid decoration [56]: Pyre doesn't yet support decorators with ParamSpec applied to \
+       generic functions Please add # pyre-ignore[56] to `test.my_decorator`.";
     ];
 
   assert_type_errors

@@ -1780,14 +1780,30 @@ let rec messages ~concise ~signature location kind =
       | Some inner_message ->
           [Format.asprintf "While applying decorator factory `%s`: %s" name inner_message]
       | None -> [Format.asprintf "Decorator factory `%s` failed to apply." name])
-  | InvalidDecoration (ApplicationFailed { name; has_arguments; reason }) -> (
+  | InvalidDecoration (ApplicationFailed { name; has_arguments; reason }) as kind -> (
       let name = Reference.sanitized name |> Reference.show in
       let arguments = if has_arguments then "(...)" else "" in
       let recurse = messages ~concise ~signature location in
-      match reason >>| recurse >>= List.hd with
-      | Some inner_message ->
-          [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message]
-      | None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments])
+      let has_param_spec_variable = function
+        | Type.Callable { implementation = { parameters = ParameterVariadicTypeVariable _; _ }; _ }
+          ->
+            true
+        | _ -> false
+      in
+      match reason, reason >>| recurse >>= List.hd with
+      | _, None -> [Format.asprintf "Decorator `%s%s` failed to apply." name arguments]
+      | Some (IncompatibleParameterType { mismatch = { expected; _ }; _ }), _
+        when Type.exists expected ~predicate:has_param_spec_variable ->
+          [
+            Format.asprintf
+              "Pyre doesn't yet support decorators with ParamSpec applied to generic functions \
+               Please add # pyre-ignore[%d] to `%s%s`."
+              (code_of_kind kind)
+              name
+              arguments;
+          ]
+      | _, Some inner_message ->
+          [Format.asprintf "While applying decorator `%s%s`: %s" name arguments inner_message])
   | InvalidDecoration (SetterNameMismatch { name; expected; actual }) ->
       let name = Reference.sanitized name |> Reference.show in
       [
