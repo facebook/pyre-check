@@ -518,12 +518,24 @@ module UpdateResult = struct
 end
 
 module FromReadOnlyUpstream = struct
-  (* The key tracking is necessary because there is no empirical way to determine which classes
-     exist for a given class. This "fan-out" necessitates internal tracking. However, this module
-     need not be sealed to ensure write only-ness since we're not dependency tracking this, since
-     it's only used internally for doing our dependency analysis, and for all_classes, which is only
-     used for all-or-nothing operations like validating the class hierarchy and printing it for
-     debugging purposes *)
+  (* The key tracking is necessary because there is no way to use the normal symbol-level lookup
+     tables, which don't have an API to get all keys, to directly ask for all the names (or classes,
+     or defines) in a given module.
+
+     As a result, we need internal tracking. The KeyTracker API is entirely internal to
+     UnannotatedGlobalEnvironment.
+
+     Importantly, *reads are not dependency-tracked*; it is not safe to call these functions as part
+     of the core analysis.
+
+     Type checking does rely on listing the define names, but it is correct because it does *not*
+     rely on this inside of the core dependency-tracked logic. Instead, on both cold-start and
+     rechecks, we re-request all-defines-in-all-type-checked-qualifiers (which does not rely on
+     dependency tracking). If we were to assume that incremental update alone is sufficient after
+     cold start, we would never type check new functions!
+
+     These functions are helpful in many settings where dependency tracking is not important,
+     including Pysa analysis, certain IDE queries, and state dumps for debugging. *)
   module KeyTracker = struct
     module ClassKeyValue = struct
       type t = Identifier.t list [@@deriving compare]
