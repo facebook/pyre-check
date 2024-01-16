@@ -46,7 +46,6 @@ module ReadOnly = struct
     is_qualifier_tracked: Reference.t -> bool;
     code_of_module_path: ModulePath.t -> Parsing.LoadResult.t;
     module_paths: unit -> ModulePath.t list;
-    all_module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
   }
 
@@ -55,8 +54,6 @@ module ReadOnly = struct
   let module_path_of_qualifier { module_path_of_qualifier; _ } = module_path_of_qualifier
 
   let module_paths { module_paths; _ } = module_paths ()
-
-  let all_module_paths { all_module_paths; _ } = all_module_paths ()
 
   let is_qualifier_tracked { is_qualifier_tracked; _ } = is_qualifier_tracked
 
@@ -1029,20 +1026,18 @@ module Base = struct
     in
     let is_qualifier_tracked qualifier = Layouts.Api.is_qualifier_tracked layouts ~qualifier in
     let module_paths () = Layouts.Api.module_paths layouts in
-    let all_module_paths () = Layouts.Api.all_module_paths layouts in
     {
       ReadOnly.module_path_of_qualifier;
       is_qualifier_tracked;
       code_of_module_path;
       module_paths;
-      all_module_paths;
       controls = (fun () -> controls);
     }
 
 
   let module_paths tracker = read_only tracker |> ReadOnly.module_paths
 
-  let all_module_paths tracker = read_only tracker |> ReadOnly.all_module_paths
+  let all_module_paths { layouts; _ } = Layouts.Api.all_module_paths layouts
 end
 
 module Overlay = struct
