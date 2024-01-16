@@ -493,17 +493,33 @@ module V2 = struct
         Exception.raise_with_backtrace (JsonError message) exn
 
 
-  let parse_bxl_output bxl_output =
+  let parse_merged_sourcedb_path_json bxl_output =
     let open Yojson.Safe in
-    try
-      let merged_sourcedb_path =
-        from_string ~fname:"buck bxl output" bxl_output |> Util.member "db" |> Util.to_string
-      in
-      from_file merged_sourcedb_path |> parse_merged_sourcedb
-    with
+    try from_string ~fname:"buck bxl output" bxl_output |> Util.member "db" |> Util.to_string with
+    | (Yojson.Json_error message | Util.Type_error (message, _)) as e ->
+        let exn = Exception.wrap e in
+        let message = Stdlib.Format.sprintf "Error parsing BXL output: %s" message in
+        Exception.raise_with_backtrace (JsonError message) exn
+
+
+  let parse_merged_sourcedb_json merged_sourcedb_path =
+    let open Yojson.Safe in
+    try from_file merged_sourcedb_path with
     | (Yojson.Json_error message | Util.Type_error (message, _) | Sys_error message) as e ->
         let exn = Exception.wrap e in
+        let message =
+          Stdlib.Format.sprintf
+            "Error parsing merged sourcedb at `%s`: %s"
+            merged_sourcedb_path
+            message
+        in
         Exception.raise_with_backtrace (JsonError message) exn
+
+
+  let parse_bxl_output bxl_output =
+    parse_merged_sourcedb_path_json bxl_output
+    |> parse_merged_sourcedb_json
+    |> parse_merged_sourcedb
 
 
   let run_bxl_for_targets
@@ -605,16 +621,9 @@ module Lazy = struct
 
 
   let parse_bxl_output bxl_output =
-    let open Yojson.Safe in
-    try
-      let merged_sourcedb_path =
-        from_string ~fname:"buck bxl output" bxl_output |> Util.member "db" |> Util.to_string
-      in
-      from_file merged_sourcedb_path |> parse_merged_sourcedb
-    with
-    | (Yojson.Json_error message | Util.Type_error (message, _) | Sys_error message) as e ->
-        let exn = Exception.wrap e in
-        Exception.raise_with_backtrace (JsonError message) exn
+    V2.parse_merged_sourcedb_path_json bxl_output
+    |> V2.parse_merged_sourcedb_json
+    |> parse_merged_sourcedb
 
 
   let run_bxl_for_targets
