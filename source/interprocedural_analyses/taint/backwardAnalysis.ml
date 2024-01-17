@@ -117,7 +117,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             FunctionContext.qualifier
             Location.pp
             location;
-          CallGraph.CallCallees.unresolved
+          CallGraph.CallCallees.unresolved ()
     in
     log
       "Resolved callees for call `%a` at %a:@,%a"

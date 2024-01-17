@@ -441,7 +441,15 @@ module CallCallees = struct
     { call_targets; new_targets; init_targets; higher_order_parameters; unresolved }
 
 
-  let unresolved =
+  (* When `debug` is true, log the reason for creating `unresolved`. *)
+  let unresolved ?(debug = false) ?(reason = None) () =
+    let () =
+      match reason with
+      | Some reason when debug ->
+          (* Use `dump` so that the log can also be printed when testing. *)
+          Log.dump "Unresolved call: %s" reason
+      | _ -> ()
+    in
     {
       call_targets = [];
       new_targets = [];
@@ -449,6 +457,10 @@ module CallCallees = struct
       higher_order_parameters = HigherOrderParameterMap.empty;
       unresolved = true;
     }
+
+
+  let default_to_unresolved ?(debug = false) ?(reason = None) =
+    Option.value ~default:(unresolved ~debug ~reason ())
 
 
   let is_partially_resolved = function
@@ -1316,6 +1328,7 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
 
 
 let rec resolve_callees_from_type
+    ~debug
     ~resolution
     ~override_graph
     ~call_indexer
@@ -1327,6 +1340,13 @@ let rec resolve_callees_from_type
   =
   let resolve_callees_from_type ?(dunder_call = dunder_call) =
     resolve_callees_from_type ~dunder_call
+  in
+  let callable_type_string =
+    Format.asprintf
+      "callable type %a (i.e., %s)"
+      Type.pp
+      callable_type
+      (Type.show_type_t callable_type)
   in
   match callable_type with
   | Type.Callable { kind = Named name; _ } -> (
@@ -1379,10 +1399,15 @@ let rec resolve_callees_from_type
                   target;
               ]
             ())
-  | Type.Callable { kind = Anonymous; _ } -> CallCallees.unresolved
+  | Type.Callable { kind = Anonymous; _ } ->
+      CallCallees.unresolved
+        ~debug
+        ~reason:(Some (Format.asprintf "%s has kind `Anonymous`" callable_type_string))
+        ()
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
       resolve_callees_from_type
+        ~debug
         ~resolution
         ~override_graph
         ~call_indexer
@@ -1393,6 +1418,7 @@ let rec resolve_callees_from_type
   | Type.Union (element :: elements) ->
       let first_targets =
         resolve_callees_from_type
+          ~debug
           ~resolution
           ~override_graph
           ~call_indexer
@@ -1403,6 +1429,7 @@ let rec resolve_callees_from_type
       in
       List.fold elements ~init:first_targets ~f:(fun combined_targets new_target ->
           resolve_callees_from_type
+            ~debug
             ~resolution
             ~override_graph
             ~call_indexer
@@ -1412,8 +1439,12 @@ let rec resolve_callees_from_type
             new_target
           |> CallCallees.join combined_targets)
   | Type.Parametric { name = "type"; parameters = [Single class_type] } ->
-      resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_type
-      |> Option.value ~default:CallCallees.unresolved
+      resolve_constructor_callee ~debug ~resolution ~override_graph ~call_indexer class_type
+      |> CallCallees.default_to_unresolved
+           ~debug
+           ~reason:
+             (Some
+                (Format.asprintf "Failed to resolve construct callees from %s" callable_type_string))
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
@@ -1426,6 +1457,13 @@ let rec resolve_callees_from_type
       | Type.Any
       | Type.Top ->
           CallCallees.unresolved
+            ~debug
+            ~reason:
+              (Some
+                 (Format.asprintf
+                    "Resolved `Any` or `Top` when treating %s as callable class"
+                    callable_type_string))
+            ()
       (* Callable protocol. *)
       | Type.Callable { kind = Anonymous; _ } as resolved_dunder_call ->
           Type.primitive_name callable_type
@@ -1457,10 +1495,14 @@ let rec resolve_callees_from_type
                         target;
                     ]
                   ())
-          |> Option.value ~default:CallCallees.unresolved
+          |> CallCallees.default_to_unresolved
+               ~debug
+               ~reason:
+                 (Some (Format.asprintf "Failed to resolve protocol from %s" callable_type_string))
       | annotation ->
           if not dunder_call then
             resolve_callees_from_type
+              ~debug
               ~resolution
               ~override_graph
               ~call_indexer
@@ -1469,10 +1511,17 @@ let rec resolve_callees_from_type
               ~callee_kind
               annotation
           else
-            CallCallees.unresolved)
+            CallCallees.unresolved
+              ~debug
+              ~reason:
+                (Some
+                   (Format.asprintf
+                      "Failed to resolve %s as callable class, protocol, or a non dunder call."
+                      callable_type_string))
+              ())
 
 
-and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_type =
+and resolve_constructor_callee ~debug ~resolution ~override_graph ~call_indexer class_type =
   let meta_type = Type.meta class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
@@ -1492,6 +1541,7 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
   | new_callable_type, init_callable_type ->
       let new_callees =
         resolve_callees_from_type
+          ~debug
           ~resolution
           ~override_graph
           ~call_indexer
@@ -1505,6 +1555,7 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
       in
       let init_callees =
         resolve_callees_from_type
+          ~debug
           ~resolution
           ~override_graph
           ~call_indexer
@@ -1540,6 +1591,7 @@ and resolve_constructor_callee ~resolution ~override_graph ~call_indexer class_t
 
 
 let resolve_callee_from_defining_expression
+    ~debug
     ~resolution
     ~override_graph
     ~call_indexer
@@ -1558,6 +1610,7 @@ let resolve_callee_from_defining_expression
       undecorated_signature
       >>| fun undecorated_signature ->
       resolve_callees_from_type
+        ~debug
         ~resolution
         ~override_graph
         ~call_indexer
@@ -1607,6 +1660,7 @@ let resolve_callee_from_defining_expression
           in
           Some
             (resolve_callees_from_type
+               ~debug
                ~resolution
                ~override_graph
                ~call_indexer
@@ -1681,6 +1735,7 @@ let redirect_special_calls ~resolution call =
 
 
 let resolve_recognized_callees
+    ~debug
     ~resolution
     ~override_graph
     ~call_indexer
@@ -1698,6 +1753,7 @@ let resolve_recognized_callees
         } )
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       resolve_callee_from_defining_expression
+        ~debug
         ~resolution
         ~override_graph
         ~call_indexer
@@ -1711,6 +1767,7 @@ let resolve_recognized_callees
       CallResolution.resolve_ignoring_errors ~resolution base
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
+        ~debug
         ~resolution
         ~override_graph
         ~call_indexer
@@ -2077,13 +2134,14 @@ struct
       callee_type;
     let recognized_callees =
       resolve_recognized_callees
+        ~debug:Context.debug
         ~resolution
         ~override_graph
         ~call_indexer
         ~callee
         ~return_type
         ~callee_type
-      |> Option.value ~default:CallCallees.unresolved
+      |> CallCallees.default_to_unresolved
     in
     if CallCallees.is_partially_resolved recognized_callees then
       let () = log "Recognized special callee:@,`%a`" CallCallees.pp recognized_callees in
@@ -2092,6 +2150,7 @@ struct
       let callee_kind = CalleeKind.from_callee ~resolution callee callee_type in
       let callees_from_type =
         resolve_callees_from_type
+          ~debug:Context.debug
           ~resolution
           ~override_graph
           ~call_indexer
@@ -2114,7 +2173,15 @@ struct
                   target
               in
               CallCallees.create ~call_targets:[target] ())
-        |> Option.value ~default:CallCallees.unresolved
+        |> CallCallees.default_to_unresolved
+             ~debug:Context.debug
+             ~reason:
+               (Some
+                  (Format.asprintf
+                     "Bypassed decorators to resolve callees (using global resolution): Failed to \
+                      resolve callee %a"
+                     Expression.pp
+                     callee))
 
 
   let resolve_callees

@@ -1572,7 +1572,10 @@ let test_call_graph_of_define context =
     |}
     ~define_name:"test.foo"
     ~expected:
-      ["12:2-12:5", LocationCallees.Singleton (ExpressionCallees.from_call CallCallees.unresolved)]
+      [
+        ( "12:2-12:5",
+          LocationCallees.Singleton (ExpressionCallees.from_call (CallCallees.unresolved ())) );
+      ]
     ();
 
   assert_call_graph_of_define
@@ -2130,7 +2133,8 @@ let test_call_graph_of_define context =
                  global_targets = [];
                  is_attribute = false;
                }) );
-        "8:9-8:22", LocationCallees.Singleton (ExpressionCallees.from_call CallCallees.unresolved);
+        ( "8:9-8:22",
+          LocationCallees.Singleton (ExpressionCallees.from_call (CallCallees.unresolved ())) );
       ]
     ();
   assert_call_graph_of_define
