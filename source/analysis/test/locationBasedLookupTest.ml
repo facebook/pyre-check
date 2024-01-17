@@ -1207,7 +1207,7 @@ let test_resolve_definition_for_symbol context =
           return 42
     |}
     (* This points to builtins.pyi. *)
-    (Some ":109:0-210:35");
+    (Some ":111:0-212:35");
   assert_resolved_definition_with_location_string
     ~source:
       {|
@@ -1218,7 +1218,7 @@ let test_resolve_definition_for_symbol context =
           # No definition found.
     |}
     (* This points to builtins.pyi. *)
-    (Some ":392:0-420:31");
+    (Some ":394:0-422:31");
   assert_resolved_definition
     {|
       class Foo:
@@ -1279,7 +1279,7 @@ let test_resolve_definition_for_symbol context =
                      # ^- cursor
     |}
     (* This points to builtins.pyi. *)
-    (Some ":333:2-333:34");
+    (Some ":335:2-335:34");
   assert_resolved_definition
     {|
         class Foo:
@@ -1418,7 +1418,7 @@ let test_resolve_definition_for_symbol context =
                         # ^- cursor
     |}
     (* This points to builtins.pyi. *)
-    (Some ":408:2-408:46");
+    (Some ":410:2-410:46");
   assert_resolved_definition_with_location_string
     ~source:
       {|

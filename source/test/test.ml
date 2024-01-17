@@ -504,7 +504,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           SupportsIter, SupportsNext,
         )
         from pyre_extensions import Add, Multiply, Divide, ReadOnly
-        from typing_extensions import Literal, LiteralString, Self
+        from typing_extensions import Literal, LiteralString, Self, ParamSpec, Concatenate
 
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)
@@ -512,6 +512,8 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         _KT = TypeVar('_KT')
         _VT = TypeVar('_VT')
         _Self = TypeVar('_Self')
+        _R_co = TypeVar('_R_co', covariant=True)
+        _P = ParamSpec("_P")
 
         class type:
           __name__: str = ...
@@ -1023,8 +1025,12 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         class staticmethod:
            def __init__(self, f: Callable[..., Any]): ...
 
-        class classmethod:
-           def __init__(self, f: Callable[..., Any]): ...
+        class classmethod(Generic[_T, _P, _R_co]):
+           def __init__(self, __f: Callable[Concatenate[type[_T], _P], _R_co]) -> None: ...
+           @overload
+           def __get__(self, __instance: _T, __owner: type[_T] | None = None) -> Callable[_P, _R_co]: ...
+           @overload
+           def __get__(self, __instance: None, __owner: type[_T]) -> Callable[_P, _R_co]: ...
 
         def callable(__o: object) -> bool: ...
 
@@ -1473,14 +1479,19 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     ( "abc.pyi",
       {|
         from typing import Type, TypeVar
-        _T = TypeVar('_T')
+        from collections.abc import Callable
+        from typing_extensions import Concatenate, Literal, ParamSpec
+        _T = TypeVar("_T")
         _FuncT = TypeVar('FuncT')
+        _R_co = TypeVar("_R_co", covariant=True)
+        _P = ParamSpec("_P")
         class ABCMeta(type):
           def register(cls: ABCMeta, subclass: Type[_T]) -> Type[_T]: ...
         def abstractmethod(callable: _FuncT) -> _FuncT: ...
         class abstractproperty(property): ...
         class ABC(metaclass=ABCMeta): ...
-        def abstractclassmethod(callable: _FuncT) -> _FuncT: ...
+        class abstractclassmethod(classmethod[_T, _P, _R_co]):
+          def __init__(self, callable: Callable[Concatenate[type[_T], _P], _R_co]) -> None: ...
         |}
     );
     ( "mock.pyi",

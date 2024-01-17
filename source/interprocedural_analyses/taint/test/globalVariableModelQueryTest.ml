@@ -36,6 +36,8 @@ let test_find_globals context =
       [
         !&"_T";
         !&"_T_co";
+        !&"_R_co";
+        !&"_P";
         !&"_S";
         !&"_KT";
         !&"_VT";

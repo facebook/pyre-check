@@ -820,6 +820,29 @@ let test_call_graph_of_define context =
       ]
     ();
   assert_call_graph_of_define
+    ~source:
+      {|
+      from abc import abstractclassmethod
+      from typing import TypeVar, Generic
+      TInput = TypeVar("TInput")
+      class C(Generic[TInput]):
+        @abstractclassmethod
+        def f(cls):
+          raise NotImplementedError()
+        @classmethod
+        def g(cls):
+          cls.f()
+      |}
+    ~define_name:"test.C.g"
+    ~expected:
+      [
+        ( "11:4-11:11",
+          LocationCallees.Singleton
+            (* TODO(T174935624): We would like to get this call resolved. *)
+            (ExpressionCallees.from_call (CallCallees.create ~unresolved:true ())) );
+      ]
+    ();
+  assert_call_graph_of_define
     ~source:{|
         def foo():
           1 > 2
