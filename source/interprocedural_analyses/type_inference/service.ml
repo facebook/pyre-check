@@ -40,7 +40,11 @@ let build_environment_data
     AnnotatedGlobalEnvironment.read_only annotated_global_environment
   in
 
-  let qualifiers = AnnotatedGlobalEnvironment.ReadOnly.type_check_qualifiers global_environment in
+  let qualifiers =
+    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
+    |> AstEnvironment.ReadOnly.module_tracker
+    |> ModuleTracker.ReadOnly.type_check_qualifiers
+  in
   { global_environment; qualifiers }
 
 

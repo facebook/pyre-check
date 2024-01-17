@@ -140,12 +140,6 @@ module ReadOnly = struct
     |> ClassHierarchyEnvironment.ReadOnly.alias_environment
     |> AliasEnvironment.ReadOnly.unannotated_global_environment
     |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-
-
-  let type_check_qualifiers environment =
-    ast_environment environment
-    |> AstEnvironment.ReadOnly.module_tracker
-    |> ModuleTracker.ReadOnly.type_check_qualifiers
 end
 
 module UpdateResult = GlobalLocationTable.UpdateResult
