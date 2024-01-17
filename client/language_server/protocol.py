@@ -428,6 +428,7 @@ class ServerCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     completion_provider: Optional[bool] = None
     call_hierarchy_provider: Optional[bool] = None
     rename_provider: Optional[bool] = None
+    symbol_search_provider: Optional[bool] = None
 
 
 @dataclasses.dataclass(frozen=True)
