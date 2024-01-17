@@ -843,6 +843,39 @@ let test_call_graph_of_define context =
       ]
     ();
   assert_call_graph_of_define
+    ~source:
+      {|
+      from abc import abstractmethod
+      class A:
+        def f(self):
+            return self.g()
+
+        @abstractmethod
+        def g(self):
+            pass
+
+      class B(A):
+        def g(self):
+            pass
+      |}
+    ~define_name:"test.A.f"
+    ~expected:
+      [
+        ( "5:13-5:21",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~receiver_class:"test.A"
+                        (Target.Override { class_name = "test.A"; method_name = "g"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
     ~source:{|
         def foo():
           1 > 2
