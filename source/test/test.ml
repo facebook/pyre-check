@@ -3202,10 +3202,6 @@ module ScratchProject = struct
 
   let module_tracker project = ast_environment project |> AstEnvironment.ReadOnly.module_tracker
 
-  let module_paths_of project = module_tracker project |> ModuleTracker.ReadOnly.module_paths
-
-  let qualifiers_of project = module_paths_of project |> List.map ~f:ModulePath.qualifier
-
   let type_check_qualifiers project =
     module_tracker project |> ModuleTracker.ReadOnly.type_check_qualifiers
 
