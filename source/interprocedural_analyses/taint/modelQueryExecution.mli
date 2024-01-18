@@ -130,6 +130,7 @@ module AttributeQueryExecutor : sig
 
   val get_attributes
     :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
     Interprocedural.Target.t list
 
   val get_type_annotation
@@ -163,6 +164,7 @@ module GlobalVariableQueryExecutor : sig
 
   val get_globals
     :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+    global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
     Interprocedural.Target.t list
 
   val get_type_annotation
@@ -178,6 +180,7 @@ end
 
 val generate_models_from_queries
   :  environment:Analysis.AnnotatedGlobalEnvironment.ReadOnly.t ->
+  global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
   scheduler:Scheduler.t ->
   class_hierarchy_graph:Interprocedural.ClassHierarchyGraph.Heap.t ->
   source_sink_filter:SourceSinkFilter.t option ->

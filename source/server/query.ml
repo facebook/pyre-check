@@ -557,6 +557,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         in
         Taint.ModelQueryExecution.generate_models_from_queries
           ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
+          ~global_module_paths_api
           ~scheduler
           ~class_hierarchy_graph
           ~source_sink_filter:None

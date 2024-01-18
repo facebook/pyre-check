@@ -232,6 +232,7 @@ let initialize_models
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
     ~environment
+    ~global_module_paths_api
     ~initial_callables
   =
   let open TaintConfiguration.Heap in
@@ -276,6 +277,7 @@ let initialize_models
           =
           ModelQueryExecution.generate_models_from_queries
             ~environment:(Analysis.TypeEnvironment.ReadOnly.global_environment environment)
+            ~global_module_paths_api
             ~scheduler
             ~class_hierarchy_graph
             ~verbose
@@ -315,7 +317,7 @@ let initialize_models
   in
 
   let models =
-    ClassModels.infer ~environment ~user_models:models
+    ClassModels.infer ~environment ~global_module_paths_api ~user_models:models
     |> Registry.merge ~join:Model.join_user_models models
   in
 
@@ -422,11 +424,8 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let qualifiers =
-    environment
-    |> Analysis.TypeEnvironment.global_module_paths_api
-    |> Analysis.GlobalModulePathsApi.explicit_qualifiers
-  in
+  let global_module_paths_api = environment |> Analysis.TypeEnvironment.global_module_paths_api in
+  let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
   let module_tracker =
     environment
     |> Analysis.TypeEnvironment.read_only
@@ -503,6 +502,7 @@ let run_taint_analysis
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
       ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~global_module_paths_api
       ~initial_callables
   in
 

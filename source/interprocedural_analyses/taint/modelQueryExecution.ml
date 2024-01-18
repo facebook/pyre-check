@@ -1646,7 +1646,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
 end)
 
 module AttributeQueryExecutor = struct
-  let get_attributes ~environment =
+  let get_attributes ~environment ~global_module_paths_api =
     let resolution = GlobalResolution.create environment in
     let unannotated_global_environment =
       AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment environment
@@ -1674,7 +1674,9 @@ module AttributeQueryExecutor = struct
           Identifier.SerializableMap.fold get_target_from_attributes all_attributes []
     in
     let all_classes =
-      UnannotatedGlobalEnvironment.ReadOnly.all_classes unannotated_global_environment
+      UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+        unannotated_global_environment
+        ~global_module_paths_api
     in
     List.concat_map all_classes ~f:get_class_attributes
 
@@ -1755,7 +1757,7 @@ module AttributeQueryExecutor = struct
 end
 
 module GlobalVariableQueryExecutor = struct
-  let get_globals ~environment =
+  let get_globals ~environment ~global_module_paths_api =
     let () = Log.info "Fetching all globals..." in
     let unannotated_global_environment =
       AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment environment
@@ -1772,7 +1774,8 @@ module GlobalVariableQueryExecutor = struct
       | _ -> false
     in
     unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.all_unannotated_globals
+    |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_unannotated_globals
+         ~global_module_paths_api
     |> List.filter ~f:filter_global
     |> List.map ~f:Target.create_object
 
@@ -1838,6 +1841,7 @@ end
 
 let generate_models_from_queries
     ~environment
+    ~global_module_paths_api
     ~scheduler
     ~class_hierarchy_graph
     ~source_sink_filter
@@ -1880,7 +1884,9 @@ let generate_models_from_queries
   (* Generate models for attributes. *)
   let execution_result =
     if not (List.is_empty attribute_queries) then
-      let attributes = AttributeQueryExecutor.get_attributes ~environment in
+      let attributes =
+        AttributeQueryExecutor.get_attributes ~environment ~global_module_paths_api
+      in
       AttributeQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~environment
@@ -1898,7 +1904,7 @@ let generate_models_from_queries
   (* Generate models for globals. *)
   let execution_result =
     if not (List.is_empty global_queries) then
-      let globals = GlobalVariableQueryExecutor.get_globals ~environment in
+      let globals = GlobalVariableQueryExecutor.get_globals ~environment ~global_module_paths_api in
       GlobalVariableQueryExecutor.generate_models_from_queries_on_targets_with_multiprocessing
         ~verbose
         ~environment

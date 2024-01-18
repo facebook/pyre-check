@@ -446,13 +446,16 @@ let initialize
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
-  let configuration, type_environment, errors =
+  let configuration, type_environment, global_module_paths_api, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     set_up_decorator_preprocessing ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
       Test.ScratchProject.build_type_environment_and_postprocess project
     in
-    Test.ScratchProject.configuration_of project, type_environment, errors
+    ( Test.ScratchProject.configuration_of project,
+      type_environment,
+      Test.ScratchProject.global_module_paths_api project,
+      errors )
   in
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
@@ -533,6 +536,7 @@ let initialize
         let { ModelQueryExecution.ExecutionResult.models = model_query_results; errors } =
           ModelQueryExecution.generate_models_from_queries
             ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
+            ~global_module_paths_api
             ~scheduler:(Test.mock_scheduler ())
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -559,7 +563,9 @@ let initialize
         in
         models, model_query_results
   in
-  let inferred_models = ClassModels.infer ~environment:type_environment ~user_models in
+  let inferred_models =
+    ClassModels.infer ~environment:type_environment ~global_module_paths_api ~user_models
+  in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =

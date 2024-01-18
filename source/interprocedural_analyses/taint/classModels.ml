@@ -43,7 +43,7 @@ module FeatureSet = struct
     }
 end
 
-let infer ~environment ~user_models =
+let infer ~environment ~global_module_paths_api ~user_models =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
@@ -320,7 +320,7 @@ let infer ~environment ~user_models =
   in
   let all_classes =
     TypeEnvironment.ReadOnly.unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+    |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes ~global_module_paths_api
   in
   let models =
     List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models

@@ -91,6 +91,7 @@ let test_find_globals context =
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.get_globals
         ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
+        ~global_module_paths_api:(ScratchProject.global_module_paths_api project)
       |> List.map ~f:Target.object_name
       |> List.filter ~f:is_uninteresting_global
       |> List.map ~f:add_type_annotation
