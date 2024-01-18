@@ -353,11 +353,13 @@ module ReadOnly = struct
     outgoing_queries ?dependency read_only |> OutgoingDataComputation.class_hierarchy
 
 
-  let check_integrity read_only =
+  (* This function is not used in production, but in the past it has been useful to run it after
+     incremental updates when debugging bugs in incremental logic *)
+  let check_integrity read_only ~global_module_paths_api =
     let class_names =
       alias_environment read_only
       |> AliasEnvironment.ReadOnly.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.ReadOnly.all_classes
+      |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes ~global_module_paths_api
     in
     ClassHierarchy.check_integrity (class_hierarchy read_only) ~class_names
 end
@@ -374,30 +376,8 @@ let ast_environment { edges } = Edges.ast_environment edges
 
 let read_only { edges } = Edges.read_only edges
 
-let update_this_and_all_preceding_environments
-    ({ edges } as this_environment)
-    ~scheduler
-    ast_environment_trigger
-  =
-  let result =
-    Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
-  in
-  let read_only = read_only this_environment in
-  let controls = ReadOnly.controls read_only in
-  (if
-   EnvironmentControls.debug controls && not (EnvironmentControls.use_lazy_module_tracking controls)
-  then
-     match ReadOnly.check_integrity read_only with
-     | Result.Ok () -> ()
-     | Result.Error error ->
-         let message =
-           Format.asprintf
-             "Class hierarchy integrity check failed: %a"
-             Sexp.pp
-             (ClassHierarchy.CheckIntegrityError.sexp_of_t error)
-         in
-         failwith message);
-  result
+let update_this_and_all_preceding_environments { edges } ~scheduler ast_environment_trigger =
+  Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
 
 
 module HierarchyReadOnly = ReadOnly

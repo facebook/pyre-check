@@ -26,6 +26,13 @@ module HierarchyReadOnly : sig
     ?default:Type.Variable.t list option ->
     Type.Primitive.t ->
     Type.Variable.t list option
+
+  (* This function is not used in production, but in the past it has been useful to run it after
+     incremental updates when debugging bugs in incremental logic *)
+  val check_integrity
+    :  t ->
+    global_module_paths_api:GlobalModulePathsApi.t ->
+    (unit, ClassHierarchy.CheckIntegrityError.t) result
 end
 
 include
