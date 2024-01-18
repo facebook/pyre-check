@@ -18,18 +18,6 @@ module ReadOnly : sig
 
   val unannotated_global_environment : t -> t
 
-  (* These functions are not dependency tracked and should only be used:
-   * - for testing
-   * - to wipe all keys from environments
-   * - (only all_defines_in_module) to help decide which defines need to be
-   *   typechecked; we rely on both listing all defines in directly changed
-   *   modules and on dependency tracking for indirect changes.
-   *)
-
-  val all_classes : t -> Type.Primitive.t list
-
-  val all_unannotated_globals : t -> Reference.t list
-
   (* All other functions are dependency tracked *)
 
   val get_module_metadata
