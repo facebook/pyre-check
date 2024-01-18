@@ -45,7 +45,6 @@ module ReadOnly = struct
     module_path_of_qualifier: Reference.t -> ModulePath.t option;
     is_qualifier_tracked: Reference.t -> bool;
     code_of_module_path: ModulePath.t -> Parsing.LoadResult.t;
-    module_paths: unit -> ModulePath.t list;
     controls: unit -> EnvironmentControls.t;
   }
 
@@ -53,23 +52,13 @@ module ReadOnly = struct
 
   let module_path_of_qualifier { module_path_of_qualifier; _ } = module_path_of_qualifier
 
-  let module_paths { module_paths; _ } = module_paths ()
-
   let is_qualifier_tracked { is_qualifier_tracked; _ } = is_qualifier_tracked
 
   let relative_path_of_qualifier tracker qualifier =
     module_path_of_qualifier tracker qualifier |> Option.map ~f:ModulePath.relative
 
 
-  let explicit_qualifiers tracker = module_paths tracker |> List.map ~f:ModulePath.qualifier
-
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
-
-  let type_check_qualifiers tracker =
-    module_paths tracker
-    |> List.filter ~f:ModulePath.should_type_check
-    |> List.map ~f:ModulePath.qualifier
-
 
   (* Pyre analysis code should not generally deal directly with ArtifactPaths, but at the outer
      layer it is necessary, in order to work with the BuildSystem.
@@ -1026,7 +1015,7 @@ module Base = struct
 
   let global_module_paths_api tracker = GlobalModulePathsApi.create (fun () -> module_paths tracker)
 
-  let read_only ({ layouts; controls; code_of_module_path; _ } as tracker) =
+  let read_only { layouts; controls; code_of_module_path; _ } =
     let module_path_of_qualifier qualifier =
       Layouts.Api.module_path_of_qualifier layouts ~qualifier
     in
@@ -1035,7 +1024,6 @@ module Base = struct
       ReadOnly.module_path_of_qualifier;
       is_qualifier_tracked;
       code_of_module_path;
-      module_paths = (fun () -> module_paths tracker);
       controls = (fun () -> controls);
     }
 end

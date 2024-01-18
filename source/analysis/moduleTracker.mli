@@ -22,14 +22,6 @@ module ReadOnly : sig
 
   val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-  val module_paths : t -> Ast.ModulePath.t list
-
-  val type_check_qualifiers : t -> Ast.Reference.t list
-
-  (* This function returns all explicit modules (i.e. those backed up by a source path) that are
-     tracked *)
-  val explicit_qualifiers : t -> Ast.Reference.t list
-
   val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 
   val code_of_module_path : t -> Ast.ModulePath.t -> Parsing.LoadResult.t
