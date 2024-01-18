@@ -456,7 +456,7 @@ let parse_request query =
   | InvalidQuery reason -> Result.Error reason
 
 
-let rec process_request_exn ~type_environment ~build_system request =
+let rec process_request_exn ~type_environment ~global_module_paths_api ~build_system request =
   let process_request_exn () =
     let configuration =
       TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
@@ -536,7 +536,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     in
     let setup_and_execute_model_queries model_queries =
       let scheduler_wrapper scheduler =
-        let qualifiers = ModuleTracker.ReadOnly.explicit_qualifiers module_tracker in
+        let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
         let initial_callables =
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
@@ -595,7 +595,7 @@ let rec process_request_exn ~type_environment ~build_system request =
         >>| List.fold_left ~init:callgraph_map ~f:callees
         |> Option.value ~default:callgraph_map
       in
-      let qualifiers = ModuleTracker.ReadOnly.explicit_qualifiers module_tracker in
+      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
       List.fold_left qualifiers ~f:get_callgraph ~init:Reference.Map.empty
     in
     match request with
@@ -634,7 +634,10 @@ let rec process_request_exn ~type_environment ~build_system request =
                (Error
                   (Format.sprintf "No class definition found for %s" (Reference.show annotation)))
     | Batch requests ->
-        Batch (List.map ~f:(process_request_exn ~type_environment ~build_system) requests)
+        Batch
+          (List.map
+             ~f:(process_request_exn ~type_environment ~global_module_paths_api ~build_system)
+             requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
         Single
@@ -729,7 +732,7 @@ let rec process_request_exn ~type_environment ~build_system request =
     | TypecheckedPaths ->
         Single
           (Base.TypecheckedPaths
-             (ModuleTracker.ReadOnly.module_paths module_tracker
+             (GlobalModulePathsApi.module_paths global_module_paths_api
              |> List.filter ~f:ModulePath.should_type_check
              |> List.map ~f:(fun { ModulePath.qualifier; _ } ->
                     PathLookup.absolute_source_path_of_qualifier_with_build_system
@@ -1004,7 +1007,7 @@ let rec process_request_exn ~type_environment ~build_system request =
                        ~preferred_chunks_per_worker:5
                        ())
                   ~f:load_modules
-                  ~inputs:(ModuleTracker.ReadOnly.explicit_qualifiers module_tracker)
+                  ~inputs:(GlobalModulePathsApi.explicit_qualifiers global_module_paths_api)
               in
               Scheduler.with_scheduler
                 ~configuration
@@ -1133,8 +1136,8 @@ let rec process_request_exn ~type_environment ~build_system request =
       |> fun message -> Response.Error message
 
 
-let process_request ~type_environment ~build_system request =
-  match process_request_exn ~type_environment ~build_system request with
+let process_request ~type_environment ~global_module_paths_api ~build_system request =
+  match process_request_exn ~type_environment ~global_module_paths_api ~build_system request with
   | exception e ->
       Log.error "Fatal exception in no-daemon query: %s" (Exn.to_string e);
       Response.Error (Exn.to_string e)
@@ -1142,6 +1145,7 @@ let process_request ~type_environment ~build_system request =
 
 
 let parse_and_process_request ~overlaid_environment ~build_system request overlay_id =
+  let global_module_paths_api = OverlaidEnvironment.global_module_paths_api overlaid_environment in
   let type_environment =
     match overlay_id with
     | Some overlay_id -> (
@@ -1160,4 +1164,5 @@ let parse_and_process_request ~overlaid_environment ~build_system request overla
   in
   match parse_request request with
   | Result.Error reason -> Response.Error reason
-  | Result.Ok request -> process_request ~type_environment ~build_system request
+  | Result.Ok request ->
+      process_request ~type_environment ~global_module_paths_api ~build_system request

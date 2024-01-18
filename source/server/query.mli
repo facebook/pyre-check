@@ -185,6 +185,7 @@ val parse_request : string -> (Request.t, string) Core.Result.t
 
 val process_request
   :  type_environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
+  global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
   build_system:BuildSystem.t ->
   Request.t ->
   Response.t
