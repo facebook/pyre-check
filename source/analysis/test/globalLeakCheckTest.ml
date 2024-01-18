@@ -47,13 +47,11 @@ let assert_global_leak_errors
   =
   let source_with_imports = "      from typing import *" ^ source in
   let preliminary_type_check_errors =
-    let environment = List.map ~f:(fun { handle; source } -> handle, source) other_sources in
     let project =
-      ScratchProject.setup ~context ~strict:true (("test.py", source_with_imports) :: environment)
+      let sources = List.map ~f:(fun { handle; source } -> handle, source) other_sources in
+      ScratchProject.setup ~context ~strict:true (("test.py", source_with_imports) :: sources)
     in
-    project
-    |> ScratchProject.errors_environment
-    |> ErrorsEnvironment.ReadOnly.get_all_errors
+    ScratchProject.get_all_errors project
     |> instantiate_and_stringify
          ~lookup:
            (ScratchProject.module_tracker project

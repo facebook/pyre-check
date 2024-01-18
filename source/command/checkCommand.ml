@@ -153,17 +153,25 @@ let do_check configuration =
             Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
             |> Analysis.ErrorsEnvironment.create
           in
-          let () =
-            Analysis.ErrorsEnvironment.type_check_qualifiers read_write_environment
-            |> Analysis.ErrorsEnvironment.check_and_preprocess read_write_environment ~scheduler
+          let type_check_qualifiers =
+            Analysis.ErrorsEnvironment.global_module_paths_api read_write_environment
+            |> Analysis.GlobalModulePathsApi.type_check_qualifiers
           in
-          Analysis.ErrorsEnvironment.read_only read_write_environment))
+          Analysis.ErrorsEnvironment.check_and_preprocess
+            read_write_environment
+            ~scheduler
+            type_check_qualifiers;
+          Analysis.ErrorsEnvironment.read_only read_write_environment, type_check_qualifiers))
 
 
 let compute_errors ~configuration ~build_system () =
-  let environment = do_check configuration in
-  let errors = Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment in
-  let module_tracker = Analysis.ErrorsEnvironment.ReadOnly.module_tracker environment in
+  let errors_environment, type_check_qualifiers = do_check configuration in
+  let errors =
+    Analysis.ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
+      errors_environment
+      type_check_qualifiers
+  in
+  let module_tracker = Analysis.ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
   List.map
     (List.sort ~compare:Analysis.AnalysisError.compare errors)
     ~f:(Server.RequestHandler.instantiate_error_with_build_system ~build_system ~module_tracker)

@@ -24,6 +24,10 @@ let root { root; _ } = ErrorsEnvironment.read_only root
 
 let global_module_paths_api { root; _ } = ErrorsEnvironment.global_module_paths_api root
 
+let type_check_qualifiers environment =
+  global_module_paths_api environment |> GlobalModulePathsApi.type_check_qualifiers
+
+
 let overlay { overlays; _ } identifier =
   Hashtbl.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
@@ -46,14 +50,19 @@ let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment
 
 let configuration environment = controls environment |> EnvironmentControls.configuration
 
-let root_errors { root; _ } =
-  ErrorsEnvironment.read_only root |> ErrorsEnvironment.ReadOnly.get_all_errors
+let root_errors ({ root; _ } as environment) =
+  ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
+    (ErrorsEnvironment.read_only root)
+    (type_check_qualifiers environment)
 
 
 let overlay_errors environment identifier =
-  overlay environment identifier
-  >>| ErrorsEnvironment.ReadOnly.get_all_errors
-  |> Option.value ~default:[]
+  match overlay environment identifier with
+  | Some errors_environment ->
+      ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
+        errors_environment
+        (type_check_qualifiers environment)
+  | None -> []
 
 
 let load controls = ErrorsEnvironment.load controls |> create

@@ -24,8 +24,7 @@ let instantiate_and_stringify ~lookup errors =
 
 let assert_errors ~context ~project expected =
   let actual =
-    ScratchProject.errors_environment project
-    |> ErrorsEnvironment.ReadOnly.get_all_errors
+    ScratchProject.get_all_errors project
     |> instantiate_and_stringify
          ~lookup:
            (ScratchProject.module_tracker project
@@ -45,13 +44,6 @@ let assert_overlay_errors ~context ~project ~overlay qualifier expected =
            |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
-
-
-let populate_errors_environment project =
-  let errors_environment = ScratchProject.ReadWrite.errors_environment project in
-  ErrorsEnvironment.type_check_qualifiers errors_environment
-  |> ErrorsEnvironment.populate_for_modules ~scheduler:(Test.mock_scheduler ()) errors_environment;
-  ()
 
 
 let test_postprocessing context =
@@ -87,7 +79,6 @@ let test_postprocessing context =
         "strict.py", code "# pyre-strict";
       ]
   in
-  populate_errors_environment project;
   (* Note that the output is always sorted, we can depend on this in tests *)
   assert_errors
     ~context
@@ -140,7 +131,6 @@ let test_update_ancestor context =
         );
       ]
   in
-  populate_errors_environment project;
   (* validate initial state *)
   assert_errors
     ~context
@@ -185,7 +175,6 @@ let test_update_mode context =
         |} );
       ]
   in
-  populate_errors_environment project;
   (* validate initial state *)
   assert_errors ~context ~project [];
   (* update and validate new errors *)
@@ -319,19 +308,19 @@ let test_error_filtering context =
         ~source_paths:[SearchPath.Root root]
         ()
     in
-    let scheduler = Test.mock_scheduler () in
     List.iter ~f:File.write files;
-    let environment =
+    let environment, type_check_qualifiers =
       let read_write =
         EnvironmentControls.create ~populate_call_graph:true configuration
         |> ErrorsEnvironment.create
       in
-      ErrorsEnvironment.type_check_qualifiers read_write
-      |> ErrorsEnvironment.check_and_preprocess ~scheduler read_write;
-      ErrorsEnvironment.read_only read_write
+      ( ErrorsEnvironment.read_only read_write,
+        ErrorsEnvironment.global_module_paths_api read_write
+        |> GlobalModulePathsApi.type_check_qualifiers )
     in
     let errors =
-      Analysis.ErrorsEnvironment.ReadOnly.get_all_errors environment
+      type_check_qualifiers
+      |> Analysis.ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers environment
       |> List.map ~f:(fun error ->
              Analysis.AnalysisError.instantiate
                ~show_error_traces:false

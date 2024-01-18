@@ -3266,6 +3266,12 @@ module ScratchProject = struct
       (module TypeCheck.DummyContext)
 
 
+  let get_all_errors project =
+    global_module_paths_api project
+    |> GlobalModulePathsApi.type_check_qualifiers
+    |> ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers (errors_environment project)
+
+
   let update_environment { errors_environment; _ } ?(scheduler = mock_scheduler ()) artifact_paths =
     ErrorsEnvironment.update_this_and_all_preceding_environments
       errors_environment

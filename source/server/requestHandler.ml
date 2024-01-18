@@ -63,13 +63,18 @@ let instantiate_and_create_type_errors_response_for_modules
 let instantiate_and_create_type_errors_response_for_all
     ?build_failure
     ~build_system
-    errors_environment
+    overlaid_environment
   =
+  let errors_environment = OverlaidEnvironment.root overlaid_environment in
+  let type_check_qualifiers =
+    OverlaidEnvironment.global_module_paths_api overlaid_environment
+    |> GlobalModulePathsApi.type_check_qualifiers
+  in
   instantiate_and_create_type_errors_response_for_modules
     errors_environment
     ~build_system
     ?build_failure
-    ~modules:(ErrorsEnvironment.ReadOnly.type_check_qualifiers errors_environment)
+    ~modules:type_check_qualifiers
 
 
 let process_display_type_error_request
@@ -187,9 +192,7 @@ let process_successful_rebuild
     type_error_subscriptions
     ~response:
       (lazy
-        (instantiate_and_create_type_errors_response_for_all
-           ~build_system
-           (OverlaidEnvironment.root overlaid_environment)))
+        (instantiate_and_create_type_errors_response_for_all ~build_system overlaid_environment))
   >>= fun () ->
   Subscription.batch_send
     status_change_subscriptions

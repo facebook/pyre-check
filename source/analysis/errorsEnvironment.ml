@@ -101,14 +101,6 @@ module ReadOnly = struct
 
   let get_errors_for_qualifiers environment qualifiers =
     List.concat_map qualifiers ~f:(get_errors_for_qualifier environment)
-
-
-  let type_check_qualifiers environment =
-    ModuleTracker.ReadOnly.type_check_qualifiers (module_tracker environment)
-
-
-  let get_all_errors environment =
-    type_check_qualifiers environment |> get_errors_for_qualifiers environment
 end
 
 let type_environment = Unsafe.upstream
@@ -120,8 +112,6 @@ let global_module_paths_api errors_environment =
 
 
 module ErrorsEnvironmentReadOnly = ReadOnly
-
-let type_check_qualifiers environment = read_only environment |> ReadOnly.type_check_qualifiers
 
 let populate_for_modules ~scheduler environment qualifiers =
   (* Because of lazy evaluation, we can actually perform this operation using only a read-only
