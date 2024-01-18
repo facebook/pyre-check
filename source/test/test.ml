@@ -3202,8 +3202,12 @@ module ScratchProject = struct
 
   let module_tracker project = ast_environment project |> AstEnvironment.ReadOnly.module_tracker
 
+  let global_module_paths_api { errors_environment; _ } =
+    ErrorsEnvironment.global_module_paths_api errors_environment
+
+
   let type_check_qualifiers project =
-    module_tracker project |> ModuleTracker.ReadOnly.type_check_qualifiers
+    global_module_paths_api project |> GlobalModulePathsApi.type_check_qualifiers
 
 
   let get_project_sources project =
@@ -3222,14 +3226,19 @@ module ScratchProject = struct
     { BuiltGlobalEnvironment.sources; global_environment }
 
 
-  let build_type_environment project =
-    let sources = get_project_sources project in
+  let populate_type_environment project =
     let type_environment = ReadWrite.type_environment project in
-    List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
+    type_check_qualifiers project
     |> TypeEnvironment.populate_for_modules
          ~scheduler:(Scheduler.create_sequential ())
-         type_environment;
-    { BuiltTypeEnvironment.sources; type_environment = TypeEnvironment.read_only type_environment }
+         type_environment
+
+
+  let build_type_environment project =
+    populate_type_environment project;
+    let sources = get_project_sources project in
+    let type_environment = ReadWrite.type_environment project |> TypeEnvironment.read_only in
+    { BuiltTypeEnvironment.sources; type_environment }
 
 
   let build_type_environment_and_postprocess project =
