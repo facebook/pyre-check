@@ -13,6 +13,8 @@ val create : ErrorsEnvironment.t -> t
 
 val root : t -> ErrorsEnvironment.ReadOnly.t
 
+val global_module_paths_api : t -> GlobalModulePathsApi.t
+
 val overlay : t -> overlay_identifier -> ErrorsEnvironment.ReadOnly.t option
 
 val root_errors : t -> AnalysisError.t list

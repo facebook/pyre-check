@@ -35,6 +35,8 @@ val type_environment : t -> TypeEnvironment.t
 
 val module_tracker : t -> ModuleTracker.t
 
+val global_module_paths_api : t -> GlobalModulePathsApi.t
+
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
 val type_check_qualifiers : t -> Ast.Reference.t list

@@ -1020,24 +1020,24 @@ module Base = struct
       { layouts; controls; code_of_module_path = load_raw_code ~configuration }
   end
 
-  let read_only { layouts; controls; code_of_module_path; _ } =
+  let all_module_paths { layouts; _ } = Layouts.Api.all_module_paths layouts
+
+  let module_paths { layouts; _ } = Layouts.Api.module_paths layouts
+
+  let global_module_paths_api tracker = GlobalModulePathsApi.create (fun () -> module_paths tracker)
+
+  let read_only ({ layouts; controls; code_of_module_path; _ } as tracker) =
     let module_path_of_qualifier qualifier =
       Layouts.Api.module_path_of_qualifier layouts ~qualifier
     in
     let is_qualifier_tracked qualifier = Layouts.Api.is_qualifier_tracked layouts ~qualifier in
-    let module_paths () = Layouts.Api.module_paths layouts in
     {
       ReadOnly.module_path_of_qualifier;
       is_qualifier_tracked;
       code_of_module_path;
-      module_paths;
+      module_paths = (fun () -> module_paths tracker);
       controls = (fun () -> controls);
     }
-
-
-  let module_paths tracker = read_only tracker |> ReadOnly.module_paths
-
-  let all_module_paths { layouts; _ } = Layouts.Api.all_module_paths layouts
 end
 
 module Overlay = struct

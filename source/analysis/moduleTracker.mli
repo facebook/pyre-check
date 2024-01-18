@@ -60,6 +60,8 @@ module Serializer : sig
   val from_stored_layouts : controls:EnvironmentControls.t -> unit -> t
 end
 
+val global_module_paths_api : t -> GlobalModulePathsApi.t
+
 val read_only : t -> ReadOnly.t
 
 module Overlay : sig

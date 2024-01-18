@@ -22,6 +22,8 @@ let create root = { root; overlays = String.Table.create () }
 
 let root { root; _ } = ErrorsEnvironment.read_only root
 
+let global_module_paths_api { root; _ } = ErrorsEnvironment.global_module_paths_api root
+
 let overlay { overlays; _ } identifier =
   Hashtbl.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
