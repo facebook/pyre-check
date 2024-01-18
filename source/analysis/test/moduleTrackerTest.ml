@@ -11,6 +11,7 @@ open Ast
 open OUnit2
 module EnvironmentControls = Analysis.EnvironmentControls
 module ModuleTracker = Analysis.ModuleTracker
+module GlobalModulePathsApi = Analysis.GlobalModulePathsApi
 
 let content_on_disk = "# contents on disk"
 
@@ -993,7 +994,7 @@ let test_hidden_files context =
   |> PyrePath.create_directory_recursively
   |> Result.ok_or_failwith;
   List.iter ~f:(create_file local_root) [".a.py"; ".b/c.py"];
-  let module_tracker =
+  let global_module_paths_api =
     Configuration.Analysis.create
       ~local_root
       ~source_paths:[SearchPath.Root local_root]
@@ -1001,13 +1002,13 @@ let test_hidden_files context =
       ()
     |> EnvironmentControls.create
     |> ModuleTracker.create
-    |> ModuleTracker.read_only
+    |> ModuleTracker.global_module_paths_api
   in
   assert_equal
     ~cmp:Int.equal
     ~printer:Int.to_string
     0
-    (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length);
+    (GlobalModulePathsApi.module_paths global_module_paths_api |> List.length);
   ()
 
 
@@ -1026,14 +1027,16 @@ let test_hidden_files2 context =
   in
   let create_exn = create_module_path_exn ~configuration in
   let assert_module_path = assert_module_path ~configuration in
-  let module_tracker =
-    EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+  let global_module_paths_api =
+    EnvironmentControls.create configuration
+    |> ModuleTracker.create
+    |> ModuleTracker.global_module_paths_api
   in
   assert_equal
     ~cmp:Int.equal
     ~printer:Int.to_string
     1
-    (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length);
+    (GlobalModulePathsApi.module_paths global_module_paths_api |> List.length);
   assert_module_path
     (create_exn local_root "b.py")
     ~search_root:local_root
@@ -1061,8 +1064,10 @@ let test_namespace_modules context =
       ~filter_directories:[local_root]
       ()
   in
-  let module_tracker =
-    EnvironmentControls.create configuration |> ModuleTracker.create |> ModuleTracker.read_only
+  let global_module_paths_api =
+    EnvironmentControls.create configuration
+    |> ModuleTracker.create
+    |> ModuleTracker.global_module_paths_api
   in
   (* In CPython, only package0 and package1 would be visible, but Pyre also treats package0.a and
      package1.subpackage.b as valid module paths. *)
@@ -1070,7 +1075,7 @@ let test_namespace_modules context =
     ~cmp:Int.equal
     ~printer:Int.to_string
     4
-    (ModuleTracker.ReadOnly.module_paths module_tracker |> List.length);
+    (GlobalModulePathsApi.module_paths global_module_paths_api |> List.length);
   ()
 
 

@@ -117,17 +117,18 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let ast_environment =
-    ScratchProject.setup
-      ~context
-      ~include_typeshed_stubs:false
-      ["x.py", "def foo()->int:\n    return 1\n"]
-    |> ScratchProject.build_ast_environment
+  let ast_environment, global_module_paths_api =
+    let project =
+      ScratchProject.setup
+        ~context
+        ~include_typeshed_stubs:false
+        ["x.py", "def foo()->int:\n    return 1\n"]
+    in
+    ScratchProject.ast_environment project, ScratchProject.global_module_paths_api project
   in
   let sources =
     List.filter_map
-      (ModuleTracker.ReadOnly.type_check_qualifiers
-         (AstEnvironment.ReadOnly.module_tracker ast_environment))
+      (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
       ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
   in
   let handles =
@@ -189,8 +190,9 @@ let test_parse_sources context =
       EnvironmentControls.create configuration |> Analysis.AstEnvironment.create
     in
     let type_check_qualifiers =
-      let module_tracker = AstEnvironment.module_tracker ast_environment in
-      ModuleTracker.ReadOnly.type_check_qualifiers (ModuleTracker.read_only module_tracker)
+      AstEnvironment.module_tracker ast_environment
+      |> ModuleTracker.global_module_paths_api
+      |> GlobalModulePathsApi.type_check_qualifiers
     in
     let sources =
       List.filter_map
@@ -621,14 +623,13 @@ let test_ast_change _ =
 let test_parse_repository context =
   let assert_repository_parses_to repository ~expected =
     let actual =
+      let ast_environment, global_module_paths_api =
+        let project = ScratchProject.setup ~context ~include_typeshed_stubs:false repository in
+        ScratchProject.ast_environment project, ScratchProject.global_module_paths_api project
+      in
       let sources =
-        let ast_environment =
-          ScratchProject.setup ~context ~include_typeshed_stubs:false repository
-          |> ScratchProject.build_ast_environment
-        in
         List.filter_map
-          (ModuleTracker.ReadOnly.type_check_qualifiers
-             (AstEnvironment.ReadOnly.module_tracker ast_environment))
+          (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
           ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
       in
       List.map sources ~f:(fun ({ Source.module_path; _ } as source) ->
@@ -745,8 +746,8 @@ module IncrementalTest = struct
          List.iter external_setups ~f:load_source);
       if preprocess_all_sources then
         (* Preprocess invalidated modules (which are internal sources) *)
-        ModuleTracker.ReadOnly.type_check_qualifiers
-          (AstEnvironment.ReadOnly.module_tracker ast_environment)
+        ScratchProject.global_module_paths_api project
+        |> GlobalModulePathsApi.type_check_qualifiers
         |> List.iter ~f:(fun qualifier ->
                let dependency =
                  SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
