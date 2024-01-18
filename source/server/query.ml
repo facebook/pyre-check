@@ -1013,7 +1013,8 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
                 ~configuration
                 ~should_log_exception:(fun _ -> true)
                 ~f:load_all_modules;
-              UnannotatedGlobalEnvironment.ReadOnly.all_classes
+              UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+                ~global_module_paths_api
                 (TypeEnvironment.ReadOnly.unannotated_global_environment type_environment)
               |> List.map ~f:Reference.create
           | _ ->

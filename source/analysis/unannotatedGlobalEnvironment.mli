@@ -100,6 +100,22 @@ module ReadOnly : sig
     names:string list ->
     ClassSummary.t Node.t ->
     bool
+
+  (* These functions are not dependency tracked and should only be used:
+   * - in bulk queries (e.g. to help with Pysa analysis)
+   * - for debugging and testing
+   *
+   * They cannot be used in some contexts, e.g. a lazy environment for
+   * powering IDEs.
+   *)
+  module GlobalApis : sig
+    val all_classes : t -> global_module_paths_api:GlobalModulePathsApi.t -> Type.Primitive.t list
+
+    val all_unannotated_globals
+      :  t ->
+      global_module_paths_api:GlobalModulePathsApi.t ->
+      Reference.t list
+  end
 end
 
 module UpdateResult : sig

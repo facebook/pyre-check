@@ -428,6 +428,8 @@ module ReadOnly = struct
   type t = {
     ast_environment: AstEnvironment.ReadOnly.t;
     get_queries: dependency:DependencyKey.registered option -> OutgoingDataComputation.Queries.t;
+    class_names_of_qualifiers__untracked: Reference.t list -> Type.Primitive.t list;
+    unannotated_global_names_of_qualifiers__untracked: Reference.t list -> Reference.t list;
   }
 
   let get_queries ?dependency { get_queries; _ } = get_queries ~dependency
@@ -496,6 +498,28 @@ module ReadOnly = struct
 
   let exists_matching_class_decorator { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.exists_matching_class_decorator
+
+
+  (* These functions are not dependency tracked and should only be used:
+   * - in bulk queries (e.g. to help with Pysa analysis)
+   * - for debugging and testing
+   *
+   * They cannot be used in some contexts, e.g. a lazy environment for
+   * powering IDEs.
+   *)
+  module GlobalApis = struct
+    let all_classes { class_names_of_qualifiers__untracked; _ } ~global_module_paths_api =
+      GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
+      |> class_names_of_qualifiers__untracked
+
+
+    let all_unannotated_globals
+        { unannotated_global_names_of_qualifiers__untracked; _ }
+        ~global_module_paths_api
+      =
+      GlobalModulePathsApi.explicit_qualifiers global_module_paths_api
+      |> unannotated_global_names_of_qualifiers__untracked
+  end
 end
 
 module UpdateResult = struct
@@ -1099,8 +1123,18 @@ module FromReadOnlyUpstream = struct
       }
 
 
-  let read_only ({ ast_environment; _ } as environment) =
-    { ReadOnly.ast_environment; get_queries = outgoing_queries environment }
+  let read_only ({ ast_environment; key_tracker; _ } as environment) =
+    (* Define the bulk key reads - these tell us what's been loaded thus far *)
+    let class_names_of_qualifiers__untracked = KeyTracker.get_class_keys key_tracker in
+    let unannotated_global_names_of_qualifiers__untracked =
+      KeyTracker.get_unannotated_global_keys key_tracker
+    in
+    {
+      ReadOnly.ast_environment;
+      get_queries = outgoing_queries environment;
+      class_names_of_qualifiers__untracked;
+      unannotated_global_names_of_qualifiers__untracked;
+    }
 
 
   let update ({ key_tracker; define_names; _ } as environment) ~scheduler upstream =
@@ -1328,10 +1362,10 @@ module Overlay = struct
       }
 
 
-  let read_only ({ from_read_only_upstream; _ } as environment) =
+  let read_only ({ parent; from_read_only_upstream; _ } as environment) =
     let { FromReadOnlyUpstream.ast_environment; _ } = from_read_only_upstream in
     let get_queries ~dependency = outgoing_queries ?dependency environment in
-    { ReadOnly.ast_environment; get_queries }
+    { parent with ast_environment; get_queries }
 end
 
 include Base

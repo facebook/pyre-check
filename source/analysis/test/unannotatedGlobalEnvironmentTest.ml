@@ -765,6 +765,7 @@ let assert_update
       ~external_sources:original_external_sources
       ~context
   in
+  let global_module_paths_api = ScratchProject.global_module_paths_api project in
   let read_only =
     ScratchProject.errors_environment project
     |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
@@ -808,7 +809,9 @@ let assert_update
             read_only
             (Reference.create "test")
         in
-        UnannotatedGlobalEnvironment.ReadOnly.all_classes read_only
+        UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+          read_only
+          ~global_module_paths_api
         |> assert_equal ~printer:(List.to_string ~f:Fn.id) expectation
     | `Global (global_name, dependency, expectation) ->
         let printer optional =
