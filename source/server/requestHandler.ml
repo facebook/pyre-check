@@ -83,11 +83,15 @@ let process_display_type_error_request
     |> Option.value ~default:(OverlaidEnvironment.root overlaid_environment)
   in
   let modules =
-    let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
     match paths with
-    | [] -> ModuleTracker.ReadOnly.type_check_qualifiers module_tracker
+    | [] ->
+        let global_module_paths_api =
+          OverlaidEnvironment.global_module_paths_api overlaid_environment
+        in
+        GlobalModulePathsApi.type_check_qualifiers global_module_paths_api
     | _ ->
         let get_module_for_source_path path =
+          let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
           PyrePath.create_absolute path
           |> SourcePath.create
           |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~module_tracker

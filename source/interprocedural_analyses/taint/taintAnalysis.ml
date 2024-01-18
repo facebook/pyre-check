@@ -419,12 +419,16 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
+  let qualifiers =
+    environment
+    |> Analysis.TypeEnvironment.global_module_paths_api
+    |> Analysis.GlobalModulePathsApi.explicit_qualifiers
+  in
   let module_tracker =
     environment
     |> Analysis.TypeEnvironment.read_only
     |> Analysis.TypeEnvironment.ReadOnly.module_tracker
   in
-  let qualifiers = Analysis.ModuleTracker.ReadOnly.explicit_qualifiers module_tracker in
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
   let resolve_module_path =
     resolve_module_path ~build_system ~module_tracker ~static_analysis_configuration

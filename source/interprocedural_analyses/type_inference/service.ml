@@ -29,21 +29,18 @@ let build_environment_data
   check_directory_exists project_root;
   search_paths |> List.map ~f:SearchPath.to_path |> List.iter ~f:check_directory_exists;
 
-  let global_environment =
+  let global_environment, qualifiers =
     Log.info "Building type environment...";
-
     let timer = Timer.start () in
     let annotated_global_environment =
       EnvironmentControls.create configuration |> AnnotatedGlobalEnvironment.create
     in
     Statistics.performance ~name:"full environment built" ~timer ();
-    AnnotatedGlobalEnvironment.read_only annotated_global_environment
-  in
-
-  let qualifiers =
-    AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-    |> AstEnvironment.ReadOnly.module_tracker
-    |> ModuleTracker.ReadOnly.type_check_qualifiers
+    ( AnnotatedGlobalEnvironment.read_only annotated_global_environment,
+      AnnotatedGlobalEnvironment.ast_environment annotated_global_environment
+      |> AstEnvironment.module_tracker
+      |> ModuleTracker.global_module_paths_api
+      |> GlobalModulePathsApi.type_check_qualifiers )
   in
   { global_environment; qualifiers }
 
