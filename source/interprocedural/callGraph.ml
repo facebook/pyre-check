@@ -459,8 +459,9 @@ module CallCallees = struct
     }
 
 
-  let default_to_unresolved ?(debug = false) ?(reason = None) =
-    Option.value ~default:(unresolved ~debug ~reason ())
+  let default_to_unresolved ?(debug = false) ?(reason = None) = function
+    | Some value -> value
+    | None -> unresolved ~debug ~reason ()
 
 
   let is_partially_resolved = function
@@ -1156,6 +1157,10 @@ let rec is_all_names = function
   | _ -> false
 
 
+let class_method_decorators = ["classmethod"; "abstractclassmethod"; "abc.abstractclassmethod"]
+
+let static_method_decorators = ["staticmethod"; "abstractstaticmethod"; "abc.abstractstaticmethod"]
+
 module CalleeKind = struct
   type t =
     | Method of {
@@ -1185,8 +1190,8 @@ module CalleeKind = struct
       match get_define ~resolution (callee |> Expression.show |> Reference.create) with
       | Some define_body ->
           let define = Node.value define_body in
-          ( Ast.Statement.Define.has_decorator define "staticmethod",
-            Ast.Statement.Define.has_decorator define "classmethod" )
+          ( List.exists static_method_decorators ~f:(Ast.Statement.Define.has_decorator define),
+            List.exists class_method_decorators ~f:(Ast.Statement.Define.has_decorator define) )
       | None -> false, false
     in
     match callee_type with
@@ -1807,7 +1812,8 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
   in
   let contain_class_method signatures =
     signatures
-    |> List.exists ~f:(fun signature -> Define.Signature.has_decorator signature "classmethod")
+    |> List.exists ~f:(fun signature ->
+           List.exists class_method_decorators ~f:(Define.Signature.has_decorator signature))
   in
   match Node.value callee with
   | Expression.Name name when is_all_names (Node.value callee) -> (
@@ -1856,8 +1862,14 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
       (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
          classes in the Method Resolution Order. *)
       match CallResolution.resolve_ignoring_errors ~resolution base with
+      (* Classes. *)
       | Type.Primitive class_name
-      | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] } -> (
+      (* Types of classes. *)
+      | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+      (* Types of classes that are parametric, such as `class C(Generic[T])` where `T` is a type
+         variable. *)
+      | Type.Parametric
+          { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] } -> (
           let find_attribute element =
             match
               GlobalResolution.get_class_summary global_resolution element

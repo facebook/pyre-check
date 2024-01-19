@@ -838,8 +838,16 @@ let test_call_graph_of_define context =
       [
         ( "11:4-11:11",
           LocationCallees.Singleton
-            (* TODO(T174935624): We would like to get this call resolved. *)
-            (ExpressionCallees.from_call (CallCallees.create ~unresolved:true ())) );
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~is_class_method:true
+                        (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
+                    ]
+                  ())) );
       ]
     ();
   assert_call_graph_of_define
