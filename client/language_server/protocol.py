@@ -839,3 +839,27 @@ class RenameParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
         parameters: json_rpc.Parameters,
     ) -> "RenameParameters":
         return _parse_parameters(parameters, target=RenameParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceSymbolParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    query: str
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "WorkspaceSymbolParameters":
+        return _parse_parameters(parameters, target=WorkspaceSymbolParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
+    name: str
+    kind: SymbolKind
+    containerName: Optional[str]
+    location: LspLocation
+
+
+@dataclasses.dataclass(frozen=True)
+class WorkspaceSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    WorkspaceSymbols: Optional[List[WorkspaceSymbol]]
