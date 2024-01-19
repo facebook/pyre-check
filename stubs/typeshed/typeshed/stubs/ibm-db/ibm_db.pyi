@@ -1,5 +1,5 @@
-from typing import Any, overload
-from typing_extensions import Self, final
+from typing import Any, final, overload
+from typing_extensions import Self
 
 ATTR_CASE: int
 CASE_LOWER: int
@@ -23,6 +23,7 @@ SQL_ATTR_QUERY_TIMEOUT: int
 SQL_ATTR_ROWCOUNT_PREFETCH: int
 SQL_ATTR_TRUSTED_CONTEXT_PASSWORD: int
 SQL_ATTR_TRUSTED_CONTEXT_USERID: int
+SQL_ATTR_TXN_ISOLATION: int
 SQL_ATTR_USE_TRUSTED_CONTEXT: int
 SQL_ATTR_XML_DECLARATION: int
 SQL_AUTOCOMMIT_OFF: int

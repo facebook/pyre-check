@@ -2,8 +2,8 @@ from _typeshed import HasFileno, OptExcInfo, ReadOnlyBuffer
 from _typeshed.wsgi import WSGIApplication
 from collections.abc import Callable
 from types import ModuleType
-from typing import Any, Protocol, overload
-from typing_extensions import Literal, Self, TypeAlias, final
+from typing import Any, Literal, Protocol, final, overload
+from typing_extensions import Self, TypeAlias
 
 import uwsgidecorators
 
@@ -87,7 +87,7 @@ def cache_update(
 def queue_get(__index: int) -> bytes | None: ...
 def queue_set(__index: int, __message: str | bytes | ReadOnlyBuffer) -> _TrueOrNone: ...
 @overload
-def queue_last(__num: Literal[0] = 0) -> bytes | None: ...  # type:ignore[misc]
+def queue_last(__num: Literal[0] = 0) -> bytes | None: ...  # type: ignore[overload-overlap]
 @overload
 def queue_last(__num: int) -> list[bytes | None]: ...
 def queue_push(__message: str | bytes | ReadOnlyBuffer) -> _TrueOrNone: ...

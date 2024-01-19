@@ -6,12 +6,13 @@ from _typeshed import FileDescriptorOrPath, ReadableBuffer, WriteableBuffer
 from collections.abc import Callable, Iterable, Iterator
 from os import _Opener
 from types import TracebackType
-from typing import IO, Any, BinaryIO, TextIO, TypeVar, overload
-from typing_extensions import Literal, Self
+from typing import IO, Any, BinaryIO, Literal, TextIO, TypeVar, overload
+from typing_extensions import Self
 
 __all__ = [
     "BlockingIOError",
     "open",
+    "open_code",
     "IOBase",
     "RawIOBase",
     "FileIO",
@@ -30,8 +31,8 @@ __all__ = [
     "SEEK_END",
 ]
 
-if sys.version_info >= (3, 8):
-    __all__ += ["open_code"]
+if sys.version_info >= (3, 11):
+    __all__ += ["DEFAULT_BUFFER_SIZE", "IncrementalNewlineDecoder", "text_encoding"]
 
 _T = TypeVar("_T")
 
@@ -43,8 +44,7 @@ SEEK_END: Literal[2]
 
 open = builtins.open
 
-if sys.version_info >= (3, 8):
-    def open_code(path: str) -> IO[bytes]: ...
+def open_code(path: str) -> IO[bytes]: ...
 
 BlockingIOError = builtins.BlockingIOError
 
@@ -94,7 +94,7 @@ class BufferedIOBase(IOBase):
 
 class FileIO(RawIOBase, BinaryIO):  # type: ignore[misc]  # incompatible definitions of writelines in the base classes
     mode: str
-    name: FileDescriptorOrPath  # type: ignore[assignment]
+    name: FileDescriptorOrPath
     def __init__(
         self, file: FileDescriptorOrPath, mode: str = ..., closefd: bool = ..., opener: _Opener | None = ...
     ) -> None: ...

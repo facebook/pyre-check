@@ -1,7 +1,6 @@
 # This file does not exist at runtime. It is a helper file to overload imported functions in openpyxl.xml.functions
 
-import sys
-from _typeshed import Incomplete, ReadableBuffer, SupportsIter
+from _typeshed import Incomplete, ReadableBuffer
 from collections.abc import Iterable, Iterator, Mapping, Sequence
 from typing import Any, Protocol, TypeVar, overload
 from typing_extensions import TypeAlias
@@ -30,7 +29,7 @@ class _HasText(Protocol):
 class _HasAttrib(Protocol):
     attrib: Iterable[Any]  # AnyOf[dict[str, str], Iterable[tuple[str, str]]]
 
-class _HasTagAndGet(_HasTag, _HasGet[_T_co], Protocol[_T_co]): ...
+class _HasTagAndGet(_HasTag, _HasGet[_T_co], Protocol[_T_co]): ...  # noqa: Y046
 class _HasTagAndText(_HasTag, _HasText, Protocol): ...  # noqa: Y046
 class _HasTagAndTextAndAttrib(_HasTag, _HasText, _HasAttrib, Protocol): ...  # noqa: Y046
 
@@ -38,11 +37,12 @@ class _SupportsFindChartLines(Protocol):
     def find(self, __path: str) -> ChartLines | None: ...
 
 class _SupportsFindAndIterAndAttribAndText(  # noqa: Y046
-    _SupportsFindChartLines, SupportsIter[Incomplete], _HasAttrib, _HasText, Protocol
+    _SupportsFindChartLines, Iterable[Incomplete], _HasAttrib, _HasText, Protocol
 ): ...
-class _SupportsIterAndAttribAndTextAndTag(SupportsIter[Incomplete], _HasAttrib, _HasText, _HasTag, Protocol): ...  # noqa: Y046
+class _SupportsIterAndAttrib(Iterable[Incomplete], _HasAttrib, Protocol): ...  # noqa: Y046
+class _SupportsIterAndAttribAndTextAndTag(Iterable[Incomplete], _HasAttrib, _HasText, _HasTag, Protocol): ...  # noqa: Y046
 class _SupportsIterAndAttribAndTextAndGet(  # noqa: Y046
-    SupportsIter[Incomplete], _HasAttrib, _HasText, _HasGet[Incomplete], Protocol
+    Iterable[Incomplete], _HasAttrib, _HasText, _HasGet[Incomplete], Protocol
 ): ...
 
 class _ParentElement(Protocol[_T]):
@@ -77,7 +77,7 @@ def fromstring(text: str | ReadableBuffer, parser: XMLParser | None = None) -> E
 # from lxml.etree import fromstring
 # But made partial, removing parser arg
 @overload
-def fromstring(text: str | bytes, *, base_url: str | bytes = ...) -> _lxml_Element: ...  # type: ignore[misc]  # Overlap with incompatible return types
+def fromstring(text: str | bytes, *, base_url: str | bytes = ...) -> _lxml_Element: ...  # type: ignore[overload-overlap]
 
 # from defusedxml.ElementTree import fromstring
 @overload
@@ -85,20 +85,15 @@ def fromstring(text: str, forbid_dtd: bool = False, forbid_entities: bool = True
 
 # from xml.etree.ElementTree import tostring
 # But made partial, removing encoding arg
-if sys.version_info >= (3, 8):
-    @overload
-    def tostring(
-        element: Element,
-        method: str | None = "xml",
-        *,
-        xml_declaration: bool | None = None,
-        default_namespace: str | None = ...,
-        short_empty_elements: bool = ...,
-    ) -> str: ...
-
-else:
-    @overload
-    def tostring(element: Element, method: str | None = ..., *, short_empty_elements: bool = ...) -> str: ...
+@overload
+def tostring(
+    element: Element,
+    method: str | None = "xml",
+    *,
+    xml_declaration: bool | None = None,
+    default_namespace: str | None = ...,
+    short_empty_elements: bool = ...,
+) -> str: ...
 
 # from lxml.etree import Element
 # But made partial, removing encoding arg

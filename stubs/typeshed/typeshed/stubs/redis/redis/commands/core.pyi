@@ -2,8 +2,7 @@ import builtins
 from _typeshed import Incomplete
 from collections.abc import AsyncIterator, Awaitable, Callable, Iterable, Iterator, Mapping, Sequence
 from datetime import datetime, timedelta
-from typing import Any, Generic, TypeVar, overload
-from typing_extensions import Literal
+from typing import Any, Generic, Literal, TypeVar, overload
 
 from ..asyncio.client import Redis as AsyncRedis
 from ..client import _CommandOptions, _Key, _Value
@@ -1490,7 +1489,7 @@ class AsyncScriptCommands(Generic[_StrType]):
     async def script_flush(self, sync_type: Incomplete | None = None): ...
     async def script_kill(self): ...
     async def script_load(self, script): ...
-    def register_script(self, script: ScriptTextT) -> AsyncScript: ...  # type: ignore[override]
+    def register_script(self, script: ScriptTextT) -> AsyncScript: ...
 
 class GeoCommands:
     def geoadd(self, name, values, nx: bool = False, xx: bool = False, ch: bool = False): ...

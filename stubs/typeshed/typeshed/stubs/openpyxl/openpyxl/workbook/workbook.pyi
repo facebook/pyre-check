@@ -1,7 +1,7 @@
-from _typeshed import Incomplete
+from _typeshed import Incomplete, Unused
 from collections.abc import Iterator
 from datetime import datetime
-from typing_extensions import Final
+from typing import Any, Final
 from zipfile import ZipFile
 
 from openpyxl import _Decodable, _ZipFileFileProtocol
@@ -46,7 +46,10 @@ class Workbook:
     def active(self) -> _WorkbookChild | None: ...
     @active.setter
     def active(self, value: _WorkbookChild | int) -> None: ...
-    def create_sheet(self, title: str | _Decodable | None = None, index: int | None = None): ...
+    # Could be generic based on write_only
+    def create_sheet(
+        self, title: str | _Decodable | None = None, index: int | None = None
+    ) -> Any: ...  # AnyOf[WriteOnlyWorksheet, Worksheet]
     def move_sheet(self, sheet: Worksheet | str, offset: int = 0) -> None: ...
     def remove(self, worksheet: Worksheet) -> None: ...
     def remove_sheet(self, worksheet: Worksheet) -> None: ...
@@ -66,11 +69,7 @@ class Workbook:
     @property
     def sheetnames(self) -> list[str]: ...
     def create_named_range(
-        self,
-        name: str,
-        worksheet: Worksheet | None = None,
-        value: str | Incomplete | None = None,
-        scope: Incomplete | None = None,
+        self, name: str, worksheet: Worksheet | None = None, value: str | Incomplete | None = None, scope: Unused = None
     ) -> None: ...
     def add_named_style(self, style: NamedStyle) -> None: ...
     @property

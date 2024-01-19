@@ -1,6 +1,6 @@
 from collections.abc import Iterable, Sequence
-from typing import TypeVar, overload
-from typing_extensions import Literal, Self, TypeAlias
+from typing import Literal, TypeVar, overload
+from typing_extensions import Self, TypeAlias
 
 from matplotlib.colors import Colormap, LinearSegmentedColormap, ListedColormap
 from matplotlib.typing import ColorType
@@ -38,7 +38,7 @@ _SeabornPaletteName: TypeAlias = Literal[
 ]
 
 @overload
-def color_palette(  # type: ignore[misc]
+def color_palette(  # type: ignore[overload-overlap]
     palette: _SeabornPaletteName | None = None, n_colors: int | None = None, desat: float | None = None, *, as_cmap: Literal[True]
 ) -> list[str]: ...  # this might be a bug in seaborn because we expect the return type to be a Colormap instance
 @overload

@@ -2,8 +2,8 @@ import concurrent.futures
 import sys
 from collections.abc import Awaitable, Coroutine, Generator, Iterable, Iterator
 from types import FrameType
-from typing import Any, Protocol, TextIO, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing import Any, Literal, Protocol, TextIO, TypeVar, overload
+from typing_extensions import TypeAlias
 
 from . import _CoroutineLike
 from .events import AbstractEventLoop
@@ -86,7 +86,7 @@ else:
     ) -> Iterator[Future[_T]]: ...
 
 @overload
-def ensure_future(coro_or_future: _FT, *, loop: AbstractEventLoop | None = None) -> _FT: ...  # type: ignore[misc]
+def ensure_future(coro_or_future: _FT, *, loop: AbstractEventLoop | None = None) -> _FT: ...  # type: ignore[overload-overlap]
 @overload
 def ensure_future(coro_or_future: Awaitable[_T], *, loop: AbstractEventLoop | None = None) -> Task[_T]: ...
 if sys.version_info >= (3, 10):
@@ -272,7 +272,9 @@ else:
 
 if sys.version_info >= (3, 11):
     @overload
-    async def wait(fs: Iterable[_FT], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED") -> tuple[set[_FT], set[_FT]]: ...  # type: ignore[misc]
+    async def wait(
+        fs: Iterable[_FT], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED"
+    ) -> tuple[set[_FT], set[_FT]]: ...
     @overload
     async def wait(
         fs: Iterable[Task[_T]], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED"
@@ -280,7 +282,9 @@ if sys.version_info >= (3, 11):
 
 elif sys.version_info >= (3, 10):
     @overload
-    async def wait(fs: Iterable[_FT], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED") -> tuple[set[_FT], set[_FT]]: ...  # type: ignore[misc]
+    async def wait(  # type: ignore[overload-overlap]
+        fs: Iterable[_FT], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED"
+    ) -> tuple[set[_FT], set[_FT]]: ...
     @overload
     async def wait(
         fs: Iterable[Awaitable[_T]], *, timeout: float | None = None, return_when: str = "ALL_COMPLETED"
@@ -288,7 +292,7 @@ elif sys.version_info >= (3, 10):
 
 else:
     @overload
-    async def wait(  # type: ignore[misc]
+    async def wait(  # type: ignore[overload-overlap]
         fs: Iterable[_FT],
         *,
         loop: AbstractEventLoop | None = None,
@@ -333,16 +337,14 @@ class Task(Future[_T_co]):  # type: ignore[type-var]  # pyright: ignore[reportGe
             name: str | None = ...,
             context: Context | None = None,
         ) -> None: ...
-    elif sys.version_info >= (3, 8):
+    else:
         def __init__(
             self, coro: _TaskCompatibleCoro[_T_co], *, loop: AbstractEventLoop = ..., name: str | None = ...
         ) -> None: ...
-    else:
-        def __init__(self, coro: _TaskCompatibleCoro[_T_co], *, loop: AbstractEventLoop = ...) -> None: ...
-    if sys.version_info >= (3, 8):
-        def get_coro(self) -> _TaskCompatibleCoro[_T_co]: ...
-        def get_name(self) -> str: ...
-        def set_name(self, __value: object) -> None: ...
+
+    def get_coro(self) -> _TaskCompatibleCoro[_T_co]: ...
+    def get_name(self) -> str: ...
+    def set_name(self, __value: object) -> None: ...
     if sys.version_info >= (3, 12):
         def get_context(self) -> Context: ...
 
@@ -364,11 +366,8 @@ def all_tasks(loop: AbstractEventLoop | None = None) -> set[Task[Any]]: ...
 if sys.version_info >= (3, 11):
     def create_task(coro: _CoroutineLike[_T], *, name: str | None = None, context: Context | None = None) -> Task[_T]: ...
 
-elif sys.version_info >= (3, 8):
-    def create_task(coro: _CoroutineLike[_T], *, name: str | None = None) -> Task[_T]: ...
-
 else:
-    def create_task(coro: _CoroutineLike[_T]) -> Task[_T]: ...
+    def create_task(coro: _CoroutineLike[_T], *, name: str | None = None) -> Task[_T]: ...
 
 def current_task(loop: AbstractEventLoop | None = None) -> Task[Any] | None: ...
 def _enter_task(loop: AbstractEventLoop, task: Task[Any]) -> None: ...

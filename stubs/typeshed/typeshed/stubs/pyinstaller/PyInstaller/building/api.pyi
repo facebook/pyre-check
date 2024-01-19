@@ -6,8 +6,8 @@ import sys
 from _typeshed import FileDescriptorOrPath, StrOrBytesPath, StrPath, Unused
 from collections.abc import Iterable, Mapping, Sequence
 from types import CodeType
-from typing import ClassVar
-from typing_extensions import Final, Literal, TypeAlias
+from typing import ClassVar, Final, Literal
+from typing_extensions import TypeAlias
 
 from PyInstaller.building import _PyiBlockCipher
 from PyInstaller.building.build_main import Analysis
@@ -52,7 +52,7 @@ _HideConsole: TypeAlias = Literal["hide-early", "minimize-early", "hide-late", "
 class PYZ(Target):
     name: str
     cipher: _PyiBlockCipher
-    dependencies: list[_TOCTuple]  # type: ignore[assignment]
+    dependencies: list[_TOCTuple]
     toc: list[_TOCTuple]
     code_dict: dict[str, CodeType]
     def __init__(self, *tocs: Iterable[_TOCTuple], name: str | None = None, cipher: _PyiBlockCipher = None) -> None: ...

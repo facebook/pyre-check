@@ -1,8 +1,8 @@
 from _typeshed import Incomplete
 from abc import ABC, abstractmethod
 from collections.abc import Callable
-from typing import Any, TypeVar, overload
-from typing_extensions import Final, Literal, Self, TypeAlias, TypeGuard
+from typing import Any, Final, Literal, TypeVar, overload
+from typing_extensions import Self, TypeAlias, TypeGuard
 
 from tensorflow import Tensor, _TensorCompatible
 from tensorflow._aliases import KerasSerializable

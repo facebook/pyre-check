@@ -1,5 +1,6 @@
 from enum import Enum, Flag, IntEnum, IntFlag
-from typing_extensions import Literal, Self
+from typing import Literal
+from typing_extensions import Self
 
 from .syntax import Name
 
@@ -69,6 +70,8 @@ class TableCellFillMode(CoerciveEnum):
     ALL: str
     ROWS: str
     COLUMNS: str
+
+    def should_fill_cell(self, i: int, j: int) -> bool: ...
 
 class RenderStyle(CoerciveEnum):
     D: str

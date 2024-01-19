@@ -1,8 +1,7 @@
 from _typeshed import ReadableBuffer
 from datetime import datetime
 from re import Pattern
-from typing import overload
-from typing_extensions import Final, Literal
+from typing import Final, Literal, overload
 
 from openpyxl.cell import _CellValue, _TimeTypes
 from openpyxl.comments.comments import Comment
@@ -39,11 +38,12 @@ class Cell(StyleableObject):
     row: int
     column: int
     data_type: str
+    # row and column are never meant to be None and would lead to errors
     def __init__(
         self,
         worksheet: Worksheet,
-        row: int | None = None,
-        column: int | None = None,
+        row: int,
+        column: int,
         value: str | float | datetime | None = None,
         style_array: StyleArray | None = None,
     ) -> None: ...

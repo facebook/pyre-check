@@ -3,8 +3,8 @@ from _typeshed.wsgi import WSGIEnvironment
 from collections.abc import Callable, Collection, ItemsView, Iterator, KeysView, MutableMapping, ValuesView
 from datetime import date, datetime, timedelta
 from hashlib import _Hash
-from typing import Any, Protocol, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing import Any, Literal, Protocol, TypeVar, overload
+from typing_extensions import TypeAlias
 
 from webob.descriptors import _AsymmetricProperty
 from webob.request import Request
@@ -13,7 +13,7 @@ from webob.response import Response
 _T = TypeVar("_T")
 # we accept both the official spelling and the one used in the WebOb docs
 # the implementation compares after lower() so technically there are more
-# valid spellings, but it seems mor natural to support these two spellings
+# valid spellings, but it seems more natural to support these two spellings
 _SameSitePolicy: TypeAlias = Literal["Strict", "Lax", "None", "strict", "lax", "none"]
 
 class _Serializer(Protocol):

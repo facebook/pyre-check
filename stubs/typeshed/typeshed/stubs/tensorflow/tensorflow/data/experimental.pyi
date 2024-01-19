@@ -1,7 +1,6 @@
 from _typeshed import Incomplete
 from collections.abc import Callable, Sequence
-from typing import TypeVar
-from typing_extensions import Final
+from typing import Final, TypeVar
 
 from tensorflow import Tensor, _TensorCompatible
 from tensorflow.data import Dataset

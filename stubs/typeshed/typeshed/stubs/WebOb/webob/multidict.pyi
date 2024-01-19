@@ -2,8 +2,8 @@ from _typeshed import SupportsItems, SupportsKeysAndGetItem
 from _typeshed.wsgi import WSGIEnvironment
 from cgi import FieldStorage
 from collections.abc import Collection, Iterable, Iterator, MutableMapping
-from typing import Any, TypeVar, overload
-from typing_extensions import Literal, Self
+from typing import Any, Literal, TypeVar, overload
+from typing_extensions import Self
 
 _T = TypeVar("_T")
 _KT = TypeVar("_KT")
@@ -37,7 +37,7 @@ class MultiDict(MutableMapping[_KT, _VT]):
     def clear(self) -> None: ...
     def copy(self) -> Self: ...
     @overload
-    def setdefault(self, key: _KT, default: None = None) -> _VT | None: ...  # type:ignore[misc]
+    def setdefault(self, key: _KT, default: None = None) -> _VT | None: ...
     @overload
     def setdefault(self, key: _KT, default: _VT) -> _VT: ...
     @overload

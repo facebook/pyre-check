@@ -1,7 +1,7 @@
 from _typeshed import SupportsItems
 from collections.abc import Collection, Iterator, MutableMapping
-from typing import Any, Protocol, TypeVar, overload
-from typing_extensions import Literal, TypeAlias
+from typing import Any, Literal, Protocol, TypeVar, overload
+from typing_extensions import TypeAlias
 
 from markupsafe import Markup
 from wtforms.fields.core import Field, UnboundField
@@ -14,7 +14,7 @@ class _SupportsGettextAndNgettext(Protocol):
     def ngettext(self, __singular: str, __plural: str, __n: int) -> str: ...
 
 # these are the methods WTForms depends on, the dict can either provide
-# a getlist or getall, if it only provies getall, it will wrapped, to
+# a getlist or getall, if it only provides getall, it will wrapped, to
 # provide getlist instead
 class _MultiDictLikeBase(Protocol):
     def __iter__(self) -> Iterator[str]: ...
@@ -50,6 +50,6 @@ class DefaultMeta:
     translations_cache: dict[str, _SupportsGettextAndNgettext]
     def get_translations(self, form: BaseForm) -> _SupportsGettextAndNgettext: ...
     def update_values(self, values: SupportsItems[str, Any]) -> None: ...
-    # since meta can be extended with arbitary data we add a __getattr__
+    # since meta can be extended with arbitrary data we add a __getattr__
     # method that returns Any
     def __getattr__(self, name: str) -> Any: ...

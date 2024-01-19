@@ -1,8 +1,8 @@
 from _typeshed import Incomplete
 from collections.abc import Iterable, Mapping
 from types import TracebackType
-from typing import NamedTuple
-from typing_extensions import Literal, Self, TypeAlias
+from typing import Literal, NamedTuple
+from typing_extensions import Self, TypeAlias
 
 from tensorflow import _DTypeLike, _ShapeLike, _TensorCompatible
 from tensorflow._aliases import TensorLike

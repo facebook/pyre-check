@@ -1,7 +1,7 @@
 import sys
 from collections.abc import Callable, Iterator, Mapping
-from typing import Any, ClassVar, Generic, TypeVar, overload
-from typing_extensions import ParamSpec, final
+from typing import Any, ClassVar, Generic, TypeVar, final, overload
+from typing_extensions import ParamSpec
 
 if sys.version_info >= (3, 9):
     from types import GenericAlias
@@ -50,7 +50,7 @@ def copy_context() -> Context: ...
 class Context(Mapping[ContextVar[Any], Any]):
     def __init__(self) -> None: ...
     @overload
-    def get(self, __key: ContextVar[_T], __default: None = None) -> _T | None: ...  # type: ignore[misc]  # overlapping overloads
+    def get(self, __key: ContextVar[_T], __default: None = None) -> _T | None: ...
     @overload
     def get(self, __key: ContextVar[_T], __default: _T) -> _T: ...
     @overload

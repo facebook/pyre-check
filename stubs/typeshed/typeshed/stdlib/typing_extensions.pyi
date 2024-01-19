@@ -1,5 +1,4 @@
 import abc
-import collections
 import sys
 import typing
 from _collections_abc import dict_items, dict_keys, dict_values
@@ -182,6 +181,7 @@ __all__ = [
     "is_protocol",
     "no_type_check",
     "no_type_check_decorator",
+    "ReadOnly",
 ]
 
 _T = typing.TypeVar("_T")
@@ -220,6 +220,8 @@ def IntVar(name: str) -> Any: ...  # returns a new TypeVar
 class _TypedDict(Mapping[str, object], metaclass=abc.ABCMeta):
     __required_keys__: ClassVar[frozenset[str]]
     __optional_keys__: ClassVar[frozenset[str]]
+    __readonly_keys__: ClassVar[frozenset[str]]
+    __mutable_keys__: ClassVar[frozenset[str]]
     __total__: ClassVar[bool]
     __orig_bases__: ClassVar[tuple[Any, ...]]
     def copy(self) -> Self: ...
@@ -283,7 +285,6 @@ class SupportsIndex(Protocol, metaclass=abc.ABCMeta):
 if sys.version_info >= (3, 10):
     from typing import (
         Concatenate as Concatenate,
-        NewType as NewType,
         ParamSpecArgs as ParamSpecArgs,
         ParamSpecKwargs as ParamSpecKwargs,
         TypeAlias as TypeAlias,
@@ -308,18 +309,13 @@ else:
     TypeGuard: _SpecialForm
     def is_typeddict(tp: object) -> bool: ...
 
-    class NewType:
-        def __init__(self, name: str, tp: Any) -> None: ...
-        def __call__(self, __x: _T) -> _T: ...
-        __supertype__: type
-
-# New things in 3.11
-# NamedTuples are not new, but the ability to create generic NamedTuples is new in 3.11
+# New and changed things in 3.11
 if sys.version_info >= (3, 11):
     from typing import (
         LiteralString as LiteralString,
         NamedTuple as NamedTuple,
         Never as Never,
+        NewType as NewType,
         NotRequired as NotRequired,
         Required as Required,
         Self as Self,
@@ -356,9 +352,7 @@ else:
     ) -> IdentityFunction: ...
 
     class NamedTuple(tuple[Any, ...]):
-        if sys.version_info < (3, 8):
-            _field_types: ClassVar[collections.OrderedDict[str, type]]
-        elif sys.version_info < (3, 9):
+        if sys.version_info < (3, 9):
             _field_types: ClassVar[dict[str, type]]
         _field_defaults: ClassVar[dict[str, Any]]
         _fields: ClassVar[tuple[str, ...]]
@@ -369,12 +363,16 @@ else:
         def __init__(self, typename: str, fields: None = None, **kwargs: Any) -> None: ...
         @classmethod
         def _make(cls, iterable: Iterable[Any]) -> Self: ...
-        if sys.version_info >= (3, 8):
-            def _asdict(self) -> dict[str, Any]: ...
-        else:
-            def _asdict(self) -> collections.OrderedDict[str, Any]: ...
-
+        def _asdict(self) -> dict[str, Any]: ...
         def _replace(self, **kwargs: Any) -> Self: ...
+
+    class NewType:
+        def __init__(self, name: str, tp: Any) -> None: ...
+        def __call__(self, __obj: _T) -> _T: ...
+        __supertype__: type
+        if sys.version_info >= (3, 10):
+            def __or__(self, other: Any) -> _SpecialForm: ...
+            def __ror__(self, other: Any) -> _SpecialForm: ...
 
 # New things in 3.xx
 # The `default` parameter was added to TypeVar, ParamSpec, and TypeVarTuple (PEP 696)
@@ -449,7 +447,12 @@ class TypeVarTuple:
     def __init__(self, name: str, *, default: Any | None = None) -> None: ...
     def __iter__(self) -> Any: ...  # Unpack[Self]
 
-def deprecated(__msg: str, *, category: type[Warning] | None = ..., stacklevel: int = 1) -> Callable[[_T], _T]: ...
+class deprecated:
+    message: str
+    category: type[Warning] | None
+    stacklevel: int
+    def __init__(self, __message: str, *, category: type[Warning] | None = ..., stacklevel: int = 1) -> None: ...
+    def __call__(self, __arg: _T) -> _T: ...
 
 if sys.version_info >= (3, 12):
     from collections.abc import Buffer as Buffer
@@ -496,3 +499,5 @@ class Doc:
     def __init__(self, __documentation: str) -> None: ...
     def __hash__(self) -> int: ...
     def __eq__(self, other: object) -> bool: ...
+
+ReadOnly: _SpecialForm

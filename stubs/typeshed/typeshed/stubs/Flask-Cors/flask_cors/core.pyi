@@ -2,8 +2,8 @@ from collections.abc import Iterable
 from datetime import timedelta
 from logging import Logger
 from re import Pattern
-from typing import Any, TypeVar, overload
-from typing_extensions import TypeAlias, TypedDict
+from typing import Any, TypedDict, TypeVar, overload
+from typing_extensions import TypeAlias
 
 import flask
 
@@ -55,7 +55,7 @@ def get_app_kwarg_dict(appInstance: flask.Flask | None = None) -> _Options: ...
 def flexible_str(obj: object) -> str | None: ...
 def serialize_option(options_dict: _Options, key: str, upper: bool = False) -> None: ...
 @overload
-def ensure_iterable(inst: str) -> list[str]: ...  # type: ignore[misc]
+def ensure_iterable(inst: str) -> list[str]: ...  # type: ignore[overload-overlap]
 @overload
 def ensure_iterable(inst: _IterableT) -> _IterableT: ...
 @overload

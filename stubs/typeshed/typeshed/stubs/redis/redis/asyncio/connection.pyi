@@ -3,8 +3,8 @@ import enum
 import ssl
 from _typeshed import Incomplete
 from collections.abc import Callable, Iterable, Mapping
-from typing import Any, Protocol, overload
-from typing_extensions import Literal, TypeAlias, TypedDict
+from typing import Any, Literal, Protocol, TypedDict, overload
+from typing_extensions import TypeAlias
 
 from redis import RedisError
 from redis.asyncio.retry import Retry
@@ -60,7 +60,7 @@ class HiredisParser(BaseParser):
     def on_connect(self, connection: Connection): ...
     def on_disconnect(self) -> None: ...
     async def read_from_socket(self) -> Literal[True]: ...
-    async def read_response(self, disable_decoding: bool = False) -> EncodableT | list[EncodableT]: ...  # type: ignore[override]
+    async def read_response(self, disable_decoding: bool = False) -> EncodableT | list[EncodableT]: ...
 
 DefaultParser: type[PythonParser | HiredisParser]
 
