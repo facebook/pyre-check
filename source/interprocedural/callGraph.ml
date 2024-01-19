@@ -442,7 +442,7 @@ module CallCallees = struct
 
 
   (* When `debug` is true, log the reason for creating `unresolved`. *)
-  let unresolved ?(debug = false) ?(reason = None) () =
+  let unresolved ?(debug = false) ?reason () =
     let () =
       match reason with
       | Some reason when debug ->
@@ -459,9 +459,9 @@ module CallCallees = struct
     }
 
 
-  let default_to_unresolved ?(debug = false) ?(reason = None) = function
+  let default_to_unresolved ?(debug = false) ?reason = function
     | Some value -> value
-    | None -> unresolved ~debug ~reason ()
+    | None -> unresolved ~debug ?reason ()
 
 
   let is_partially_resolved = function
@@ -1407,7 +1407,7 @@ let rec resolve_callees_from_type
   | Type.Callable { kind = Anonymous; _ } ->
       CallCallees.unresolved
         ~debug
-        ~reason:(Some (Format.asprintf "%s has kind `Anonymous`" callable_type_string))
+        ~reason:(Format.asprintf "%s has kind `Anonymous`" callable_type_string)
         ()
   | Type.Parametric { name = "BoundMethod"; parameters = [Single callable; Single receiver_type] }
     ->
@@ -1448,8 +1448,7 @@ let rec resolve_callees_from_type
       |> CallCallees.default_to_unresolved
            ~debug
            ~reason:
-             (Some
-                (Format.asprintf "Failed to resolve construct callees from %s" callable_type_string))
+             (Format.asprintf "Failed to resolve construct callees from %s" callable_type_string)
   | callable_type -> (
       (* Handle callable classes. `typing.Type` interacts specially with __call__, so we choose to
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
@@ -1464,10 +1463,9 @@ let rec resolve_callees_from_type
           CallCallees.unresolved
             ~debug
             ~reason:
-              (Some
-                 (Format.asprintf
-                    "Resolved `Any` or `Top` when treating %s as callable class"
-                    callable_type_string))
+              (Format.asprintf
+                 "Resolved `Any` or `Top` when treating %s as callable class"
+                 callable_type_string)
             ()
       (* Callable protocol. *)
       | Type.Callable { kind = Anonymous; _ } as resolved_dunder_call ->
@@ -1502,8 +1500,7 @@ let rec resolve_callees_from_type
                   ())
           |> CallCallees.default_to_unresolved
                ~debug
-               ~reason:
-                 (Some (Format.asprintf "Failed to resolve protocol from %s" callable_type_string))
+               ~reason:(Format.asprintf "Failed to resolve protocol from %s" callable_type_string)
       | annotation ->
           if not dunder_call then
             resolve_callees_from_type
@@ -1519,10 +1516,9 @@ let rec resolve_callees_from_type
             CallCallees.unresolved
               ~debug
               ~reason:
-                (Some
-                   (Format.asprintf
-                      "Failed to resolve %s as callable class, protocol, or a non dunder call."
-                      callable_type_string))
+                (Format.asprintf
+                   "Failed to resolve %s as callable class, protocol, or a non dunder call."
+                   callable_type_string)
               ())
 
 
@@ -2188,12 +2184,11 @@ struct
         |> CallCallees.default_to_unresolved
              ~debug:Context.debug
              ~reason:
-               (Some
-                  (Format.asprintf
-                     "Bypassed decorators to resolve callees (using global resolution): Failed to \
-                      resolve callee %a"
-                     Expression.pp
-                     callee))
+               (Format.asprintf
+                  "Bypassed decorators to resolve callees (using global resolution): Failed to \
+                   resolve callee %a"
+                  Expression.pp
+                  callee)
 
 
   let resolve_callees

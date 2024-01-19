@@ -138,7 +138,7 @@ module CallCallees : sig
     t
 
   (* When `debug` is true, log the reason for creating `unresolved`. *)
-  val unresolved : ?debug:bool -> ?reason:string option -> unit -> t
+  val unresolved : ?debug:bool -> ?reason:string -> unit -> t
 
   val is_partially_resolved : t -> bool
 
