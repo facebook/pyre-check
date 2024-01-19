@@ -1,6 +1,12 @@
 @generated
 Call dependencies
-class_methods.$toplevel (fun) -> []
+class_methods.issue_with_abstract_class_method (fun) -> [_test_source (fun) class_methods.C.one_hop_abstract_class_method (method) class_methods.C.one_hop_class_method (method)]
+class_methods.$toplevel (fun) -> [class_methods.TInput (object)]
 class_methods.bar (fun) -> [_test_source (fun) class_methods.Test.foo (method)]
+class_methods.C.one_hop_abstract_class_method (method) -> []
+class_methods.C.$class_toplevel (method) -> []
+class_methods.C.abstract_class_method (method) -> [_test_sink (fun)]
+class_methods.C.class_method (method) -> [_test_sink (fun)]
+class_methods.C.one_hop_class_method (method) -> [class_methods.C.class_method (method)]
 class_methods.Test.$class_toplevel (method) -> []
 class_methods.Test.foo (method) -> [_test_sink (fun)]
