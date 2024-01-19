@@ -235,6 +235,7 @@ module.exports = {
         ],
       },
     ]),
+    ...fbInternalOnly(['fb/pysa-lineage']),
   ],
   ...fbInternalOnly(() => require('./fb/sidebars.js')),
 };
