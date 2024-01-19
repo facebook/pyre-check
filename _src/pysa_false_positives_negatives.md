@@ -4,8 +4,10 @@ title: Debugging False Positives and False Negatives
 sidebar_label: Debugging False Positives and False Negatives
 ---
 
-**False Positives** occur when Pysa finds an issue that is not valid, either because
-the flow cannot actually happen or because it is not a security risk.
+import useBaseUrl from '@docusaurus/useBaseUrl';
+
+**False Positives** occur when Pysa finds an issue that is not valid, either
+because the flow cannot actually happen or because it is not a security risk.
 
 **False Negatives** occur when there is a legitimate flow of tainted data from a
 source to a sink, but Pysa fails to catch it.
@@ -14,16 +16,15 @@ source to a sink, but Pysa fails to catch it.
 
 ### Taint broadening
 
-Pysa uses a set of heuristics in order to make the analysis scale to millions
-of lines of code. The main heuristic is called
+Pysa uses a set of heuristics in order to make the analysis scale to millions of
+lines of code. The main heuristic is called
 [**taint broadening**](pysa_advanced.md#taint-broadening) (also called **taint
 collapsing**), which happens when Pysa is tracking too many attributes of an
 object or keys of a dictionary.
 
 To avoid blowing up, Pysa will collapse taint, and assume the whole object is
-tainted. Pysa will use sane defaults, but heuristics can be [tuned using
-command line options or a taint configuration
-file](pysa_advanced.md##analysis-thresholds).
+tainted. Pysa will use sane defaults, but heuristics can be
+[tuned using command line options or a taint configuration file](pysa_advanced.md##analysis-thresholds).
 
 Taint collapsing also happens when taint flows through a function that Pysa does
 not have the code for. To be sound, it assumes functions without code
@@ -37,12 +38,12 @@ avoided by providing a model for these functions using
 
 Pysa relies on type information from Pyre to identify sources and sinks, and to
 build the call graph needed to follow the propagation of taint between the two.
-Just because type information is available *somewhere* in the code, does not
+Just because type information is available _somewhere_ in the code, does not
 mean Pyre will know the type of an object in the exact place where Pysa needs
-it. See the documentation on [Coverage Increasing
-Strategies](pysa_increasing_coverage.md) for tips on how to increase type
-coverage. The following examples demonstrate how lost type information leads to
-lost flows.
+it. See the documentation on
+[Coverage Increasing Strategies](pysa_increasing_coverage.md) for tips on how to
+increase type coverage. The following examples demonstrate how lost type
+information leads to lost flows.
 
 #### Missing Sources/Sinks
 
@@ -115,15 +116,16 @@ explicitly declare the global tainted in your `.pysa` files.
 
 ## Methodology for Debugging False Positives and False Negatives
 
-There are two recommended ways to debug false positives and false negatives.
+There are three recommended ways to debug false positives and false negatives.
 
 If the analysis is reasonably fast on your code, or that you are able to
 reproduce the false positive or false negative on a smaller code, you can use
 the [reveal_taint](#reveal-taint-approach) approach.
 
 If, instead, the analysis is slow on your code (say, more than 5 minutes) and
-that you are unable to reproduce on a small example, you can use the [model
-explorer](#model-explorer-approach) approach.
+that you are unable to reproduce on a small example, you can use the
+[model explorer](#model-explorer-approach) or
+[SAPP summaries](#sapp-summaries-approach) approach.
 
 In all cases, you should first:
 
@@ -133,9 +135,9 @@ In all cases, you should first:
    - Every function call/return that propagates the tainted data from the source
      to the sink
    - Every variable that the tainted data passes through, within the identified
-     functions. This usually includes the parameter which initially received
-     the taint, and then 0 or more local variables that hold the tainted data
-     as it is transformed in some way.
+     functions. This usually includes the parameter which initially received the
+     taint, and then 0 or more local variables that hold the tainted data as it
+     is transformed in some way.
 
 ### Reveal taint approach
 
@@ -151,23 +153,23 @@ This approach is based on the magic functions
      dump the latest taint information, so **the last instance of `reveal_taint`
      output for a given line will be the most accurate and is the one you should
      look at.**
-   - `reveal_taint` output exposes some of the [implementation
-     details](pysa_implementation_details.md) of Pysa, by giving you `Revealed
-     forward taint` and `Revealed backward taint` messages. Without going into
-     those details, you should expect to see *either* the source name (eg.
-     `UserControlled`) you care about appearing in the `Revealed forward taint`
-     output, or the sink name (eg. `RemoteCodeExecution`) you care about in the
-     `Revealed backward taint` output.
+   - `reveal_taint` output exposes some of the
+     [implementation details](pysa_implementation_details.md) of Pysa, by giving
+     you `Revealed forward taint` and `Revealed backward taint` messages.
+     Without going into those details, you should expect to see _either_ the
+     source name (eg. `UserControlled`) you care about appearing in the
+     `Revealed forward taint` output, or the sink name (eg.
+     `RemoteCodeExecution`) you care about in the `Revealed backward taint`
+     output.
    - For each `reveal_taint`, following the flow of tainted data from source to
-      sink, locate the output in the logs that reveals the taint (eg.
-      `integration_test.reveal_taint:20:4-20:16: Revealed forward taint for
-      ``command``:`).
+     sink, locate the output in the logs that reveals the taint (eg.
+     ` integration_test.reveal_taint:20:4-20:16: Revealed forward taint for ``command``: `).
    - If you see your source or sink name in the output, then go back to 1) and
-      carry on with the next `reveal_taint` statement. If you *do not* see the
-      source or sink name, then that means the cause of the false negative is
-      likely between your previous `reveal_taint` and the one you're currently
-      looking at. Refer to the "Commom Causes of False Negatives" section above
-      for ideas on the cause, and how to fix it.
+     carry on with the next `reveal_taint` statement. If you _do not_ see the
+     source or sink name, then that means the cause of the false negative is
+     likely between your previous `reveal_taint` and the one you're currently
+     looking at. Refer to the "Commom Causes of False Negatives" section above
+     for ideas on the cause, and how to fix it.
 
 ### Model explorer approach
 
@@ -190,10 +192,68 @@ explore the taint output results.
      pysa again. This will produce very verbose logs, which might be hard to
      navigate.
 
+### SAPP summaries approach
+
+This approach uses the
+[SAPP Summaries Explorer](https://www.internalfb.com/intern/wiki/Product_Security/ProdSec_Internal/Tools/Zoncolan/Security_Engineers/SAPP_Summary_Explorer_-_VS_Code_Extension/)
+to interactively explore the taint output results. The approach is the same as
+"Model explorer approach" but can be done in a graphical way.
+
+1. **Upload SAPP Summary for the run which the issue belongs to**: Click on the
+   arrow on the top right of the SAPP UI Run page and click Upload Run.
+
+   <img alt="Upload SAPP summaries"
+   src={useBaseUrl('img/fb/upload_sapp_summaries.png')} />
+
+2. **Open SAPP Summaries Web UI**: After a while refresh the run page and you
+   should see `Available: Load in VS Code or View on Web`. Click on the View on
+   Web link which brings you to a UI where you'll insert the fully qualified
+   domain name of the functions you want to review
+
+3. **Identify the frame/function where the taint flow was interrupted reviewing
+   the sink trace**: Start from the sink (last frame) and use SAPP Summary check
+   if the last frame function has the correct taint associated with the correct
+   parameter (`formal`). For example in
+   (this)[https://fburl.com/security/4dmlih2v] issue check in SAPP Summary if in
+   `weather.service.WeatherAPIService.async_current_weather_api_json` `sinks`
+   list the parameter `self[lng]` is tainted with the sink kind we want to track
+   in the issue (in our example `HTTPClientRequestSchematized_URI`). If this is
+   the case repeat the same process for the next frame
+   (`weather.service.WeatherAPIService._async_get_current_weather_from_api `)
+   until reaching a function which does not propagate the taint correctly (move
+   to point 5) or the Trace Root Callable (move to point 4).
+
+   <img alt="Upload SAPP summaries"
+   src={useBaseUrl('img/fb/sapp_summaries_sink_trace.png')} />
+
+4. **Identify the frame/function where the taint flow was interrupted reviewing
+   the source trace**: Apply the same process starting from the source and
+   checking the correct taint propagation in the `result` value of SAPP summary
+   (value returned by the function). Example
+   (issue)[https://fburl.com/security/dh4wowfm] we start from
+   `users.user_phone_fetcher.UserPhoneFetcher.async_get_phone_number_node`
+   (which is the first frame) and check if SAPP summary is correctly showing the
+   `NodeEdgeGetter` source in the `result` port (which represent the return
+   value of the function). If this is the case repeat the same process for the
+   next frame until reaching a function which does not propagate the taint
+   correctly.
+
+   <img alt="Upload SAPP summaries"
+   src={useBaseUrl('img/fb/sapp_summaries_source_trace.png')} />
+
+5. **Identify the root cause**:
+
+- Check recent changes to the code which may have altered Pysa ability to track
+  the taint or simply deleted the flow
+- Manually review the code and see if there are patterns described in
+  [common causes of false negatives](#common-causes-of-false-negatives) or in
+  open pysa false negatives/false positive tasks (tags `pysa-bug` and
+  `false-negative`/`false-positive` or child tasks of T145051608).
 
 ### Example using `reveal_taint`
 
 Pysa will not be able to detect a vulnerability in the following code:
+
 ```python
 from django.http import HttpRequest, HttpResponse
 
@@ -246,9 +306,12 @@ def start(request: HttpRequest):
     runner = Runner()
     execute_command(runner, command) # 3. User controlled data is passed in here
 ```
-See the appendix for the full output of running `pyre --noninteractive analyze` on this example.
+
+See the appendix for the full output of running `pyre --noninteractive analyze`
+on this example.
 
 Starting at 1), we see this in the output:
+
 ```
 2020-12-28 13:02:36,486 [PID 3382063] WARNING integration_test.reveal_taint:13:4-13:16: Revealed forward taint for `command`: @integration_test.reveal_taint:11:14-11:25 -> UserControlled -> SimpleFeature: [Features.Simple.LeafName {leaf = "Obj{django.http.request.HttpRequest.GET}";
 2020-12-28 13:02:36,486 [PID 3382063] WARNING   port = None}], ComplexFeature: [], TraceLength: 0, FirstIndex: ["command"], FirstField: []
@@ -257,7 +320,9 @@ Starting at 1), we see this in the output:
 2020-12-28 13:02:36,486 [PID 3382063] WARNING
 2020-12-28 13:02:36,486 [PID 3382063] WARNING integration_test.reveal_taint:13:4-13:25: Revealed backward taint for `command`: declaration -> LocalReturn -> SimpleFeature: [], ComplexFeature: [(Features.Complex.ReturnAccessPath [])], TraceLength: 4611686018427387903, FirstIndex: [], FirstField: []
 ```
+
 Removing the timestamps and other noise gives us:
+
 ```
 integration_test.reveal_taint:13:4-13:16:
   Revealed forward taint for `command`:
@@ -291,11 +356,14 @@ integration_test.reveal_taint:13:4-13:25:
     FirstIndex: [],
     FirstField: []
 ```
+
 For debugging false negatives, the only portion we care about is:
+
 ```
   Revealed forward taint for `command`:
     @integration_test.reveal_taint:11:14-11:25 -> UserControlled
 ```
+
 This confirms that on line 11 (characters 14-25), we did indeed detect that
 `command` was tainted as `UserControlled`.
 
@@ -304,12 +372,14 @@ Moving on to 2, the `forward taint` output again tells us that we have
 
 Starting with 4, we notice that we no longer see `UserControlled` or
 `RemoteCodeExecution` in our revealed forward or backwards taint:
+
 ```
 2020-12-28 13:02:35,472 [PID 3382063] WARNING integration_test.reveal_taint:18:4-18:16: Revealed forward taint for `command`:
 2020-12-28 13:02:35,472 [PID 3382063] WARNING
 2020-12-28 13:02:35,472 [PID 3382063] WARNING integration_test.reveal_taint:18:4-18:25: Revealed backward taint for `command`:
 2020-12-28 13:02:35,472 [PID 3382063] WARNING
 ```
+
 This has helped us narrow down the problem to the `execute_command` function. In
 the end, the problem was that we did not have type information on `runner`, so
 Pysa did not know where the definition of `runner.run` was. Without knowing
@@ -317,8 +387,10 @@ where the definition was, Pysa couldn't know that `run` containted a sink and
 thus couldn't know that `command` eventually reached that sink.
 
 ## Appendix
+
 Subset of the output from running `pyre --noninteractive analyze` on the
 example:
+
 ```
 2020-12-28 13:02:31,719 [PID 3382063] PERFORMANCE Overrides recorded: 2.408138s
 2020-12-28 13:02:31,719 [PID 3382063] INFO Building call graph...
