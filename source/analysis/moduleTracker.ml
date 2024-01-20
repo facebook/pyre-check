@@ -40,6 +40,21 @@ open Core
 open Ast
 open Pyre
 
+(* ModuleTracker.t is the underlying raw filesystem access and storage logic
+ * that supports all module-finding in Pyre, including both O(request)
+ * operations such as finding a module path and O(project) operations such
+ * as listing modules.
+ *
+ * But ModuleTracker.ReadOnly.t only exposes the non-global O(request)
+ * operations. Any code needing module listing must instead use a
+ * GlobalModulePathsApi.t constructed directly from the read-write module
+ * tracker.
+ *
+ * We do this to provide more type-safety, guaranteeing that Pyre's core
+ * analysis (which is built out of read-only environments) never relies
+ * on O(project) operations, which in turn is what makes a lazy IDE
+ * that scales well to massive source trees possible.
+ *)
 module ReadOnly = struct
   type t = {
     module_path_of_qualifier: Reference.t -> ModulePath.t option;
