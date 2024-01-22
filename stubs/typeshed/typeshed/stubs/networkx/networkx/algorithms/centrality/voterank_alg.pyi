@@ -1,3 +1,0 @@
-from _typeshed import Incomplete
-
-def voterank(G, number_of_nodes: Incomplete | None = None): ...

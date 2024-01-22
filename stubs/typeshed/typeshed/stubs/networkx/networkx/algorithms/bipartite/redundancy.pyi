@@ -1,3 +1,0 @@
-from _typeshed import Incomplete
-
-def node_redundancy(G, nodes: Incomplete | None = None): ...
