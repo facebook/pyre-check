@@ -25,6 +25,40 @@ from . import typeshed
 LOG: logging.Logger = logging.getLogger(__name__)
 LATEST: str = "LATEST"
 
+# The typeshed repository contains two stub roots, which are different:
+# - The "stdlib" directory contains stubs for the standard library, and
+#   for stdlib typeshed is the correct way to get them.
+# - The "stubs" directory contains stubs for third-party libraries, which
+#   are mirrorored into veriou `xyz-stubs` packages on PyPI.
+#
+# We do not really want to vendor the third-party stubs, but for historical
+# reasons we do currently need a few of them because Pysa, instagram-server, or
+# both are relying on the vendored tyepshed.
+#
+# This allowlist controls which third-party stubs we allow into our
+# vendored typeshed.
+THIRD_PARTY_STUBS_ALLOWLIST: set[str] = {
+    "aiofiles",
+    "boto",
+    "chevron",
+    "colorama",
+    "ExifRead",
+    "ldap3",
+    "mysqlclient",
+    "paramiko",
+    "Pillow",
+    "psycopg2",
+    "pycurl",
+    "PyMySQL",
+    "python-dateutil",
+    "pytz",
+    "PyYAML",
+    "regex",
+    "requests",
+    "retry",
+    "ujson",
+}
+
 
 def get_default_typeshed_url() -> str:
     commit_hash = json.loads(
@@ -71,6 +105,9 @@ def should_include_zipinfo(info: zipfile.ZipInfo) -> bool:
     # typeshed that we don't need - only pull in the directories that
     # actually contain stubs.
     if len(parts) < 2 or parts[1] not in ("stubs", "stdlib"):
+        return False
+
+    if parts[1] == "stubs" and parts[2] not in THIRD_PARTY_STUBS_ALLOWLIST:
         return False
 
     # Bypass txt and toml files - these files just make our vendored directory
