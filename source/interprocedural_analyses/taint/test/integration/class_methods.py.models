@@ -73,9 +73,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_methods.issue_with_abstract_class_method",
-    "callable_line": 82,
+    "callable_line": 100,
     "code": 5002,
-    "line": 87,
+    "line": 107,
     "start": 36,
     "end": 50,
     "filename": "class_methods.py",
@@ -95,7 +95,7 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 87,
+              "line": 107,
               "start": 36,
               "end": 50
             }
@@ -116,7 +116,7 @@
             "call": {
               "position": {
                 "filename": "class_methods.py",
-                "line": 87,
+                "line": 107,
                 "start": 36,
                 "end": 50
               },
@@ -145,9 +145,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_methods.issue_with_abstract_class_method",
-    "callable_line": 82,
+    "callable_line": 100,
     "code": 5002,
-    "line": 84,
+    "line": 102,
     "start": 27,
     "end": 41,
     "filename": "class_methods.py",
@@ -167,7 +167,7 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 84,
+              "line": 102,
               "start": 27,
               "end": 41
             }
@@ -188,7 +188,7 @@
             "call": {
               "position": {
                 "filename": "class_methods.py",
-                "line": 84,
+                "line": 102,
                 "start": 27,
                 "end": 41
               },
@@ -215,9 +215,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_methods.issue_with_abstract_class_method",
-    "callable_line": 82,
+    "callable_line": 100,
     "code": 5002,
-    "line": 86,
+    "line": 106,
     "start": 35,
     "end": 49,
     "filename": "class_methods.py",
@@ -237,7 +237,7 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 86,
+              "line": 106,
               "start": 35,
               "end": 49
             }
@@ -258,7 +258,7 @@
             "call": {
               "position": {
                 "filename": "class_methods.py",
-                "line": 86,
+                "line": 106,
                 "start": 35,
                 "end": 49
               },
@@ -281,6 +281,74 @@
       "parameter": "formal(arg)"
     },
     "master_handle": "class_methods.issue_with_abstract_class_method:5002:0:Call|class_methods.C.one_hop_class_abstractmethod|0|formal(arg):2de3523c97a4f033d1de91a049342341"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "class_methods.issue_with_abstract_property",
+    "callable_line": 110,
+    "code": 5002,
+    "line": 113,
+    "start": 15,
+    "end": 37,
+    "filename": "class_methods.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "tito" } ],
+            "tito_positions": [
+              { "line": 112, "start": 29, "end": 43 },
+              { "line": 113, "start": 15, "end": 16 }
+            ],
+            "origin": {
+              "filename": "class_methods.py",
+              "line": 112,
+              "start": 29,
+              "end": 43
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "class_methods.py",
+              "line": 113,
+              "start": 15,
+              "end": 37
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "tito" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "class_methods.issue_with_abstract_property:5002:0:Call|_test_sink|0|formal(arg):68b5934e085eccc98dee7f4ca2c8bcb9"
   }
 }
 {
@@ -390,6 +458,23 @@
             },
             "caller_interval": [ { "lower": 6, "upper": 9 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_methods.C.my_abstract_property@setter",
+    "tito": [
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
           }
         ]
       }
@@ -524,7 +609,7 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 72,
+              "line": 82,
               "start": 19,
               "end": 22
             },
@@ -553,7 +638,7 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 75,
+              "line": 85,
               "start": 19,
               "end": 22
             },
@@ -582,12 +667,60 @@
             ],
             "origin": {
               "filename": "class_methods.py",
-              "line": 79,
+              "line": 89,
               "start": 19,
               "end": 22
             },
             "caller_interval": [ { "lower": 7, "upper": 8 } ],
             "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_methods.D.my_abstract_property",
+    "tito": [
+      {
+        "port": "formal(self)[_my_abstract_property]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_methods.D.my_abstract_property@setter",
+    "tito": [
+      {
+        "port": "formal(my_abstract_property)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "return_paths": { "[_my_abstract_property]": 3 },
+                "kind": "LocalReturn"
+              }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
           }
         ]
       }
