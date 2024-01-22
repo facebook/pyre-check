@@ -862,4 +862,4 @@ class WorkspaceSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class WorkspaceSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    WorkspaceSymbols: Optional[List[WorkspaceSymbol]]
+    WorkspaceSymbols: List[WorkspaceSymbol]
