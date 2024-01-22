@@ -23,24 +23,28 @@ TInput = TypeVar("TInput")
 
 class C(Generic[TInput]):
     @abstractclassmethod
-    def abstract_class_method(cls, arg):
+    def abstract_class_method(cls, arg: TInput):
+        pass
+
+    @classmethod
+    def one_hop_abstract_class_method(cls, arg: TInput):
+        cls.abstract_class_method(arg)  # Expect sink on `arg`
+
+    @classmethod
+    def class_method(cls, arg: TInput):
         _test_sink(arg)
 
     @classmethod
-    def one_hop_abstract_class_method(cls, arg):
-        # Expect sink on `arg`
-        cls.abstract_class_method(arg)
+    def one_hop_class_method(cls, arg: TInput):
+        cls.class_method(arg)  # Expect sink on `arg`
 
+
+class D(C[str]):
     @classmethod
-    def class_method(cls, arg):
+    def abstract_class_method(cls, arg: str):
         _test_sink(arg)
-
-    @classmethod
-    def one_hop_class_method(cls, arg):
-        # Expect sink on `arg`
-        cls.class_method(arg)
 
 
 def issue_with_abstract_class_method():
-    C.one_hop_abstract_class_method(_test_source())  # Expect an issue
-    C.one_hop_class_method(_test_source())  # Expect an issue
+    D.one_hop_abstract_class_method(_test_source())  # Expect an issue
+    D.one_hop_class_method(_test_source())  # Expect an issue
