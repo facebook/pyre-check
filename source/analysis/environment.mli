@@ -41,7 +41,7 @@ module PreviousEnvironment : sig
 
     val create : EnvironmentControls.t -> t
 
-    val ast_environment : t -> AstEnvironment.t
+    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
     val read_only : t -> ReadOnly.t
 
@@ -175,7 +175,7 @@ module EnvironmentTable : sig
 
     val create : EnvironmentControls.t -> t
 
-    val ast_environment : t -> AstEnvironment.t
+    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
     val read_only : t -> ReadOnly.t
 

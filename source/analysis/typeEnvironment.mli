@@ -16,11 +16,11 @@ module TypeEnvironmentReadOnly : sig
 
   val global_resolution : t -> GlobalResolution.t
 
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
+
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
-
-  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
   val get_errors
     :  t ->

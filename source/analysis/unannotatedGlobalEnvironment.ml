@@ -1227,6 +1227,8 @@ module Base = struct
     FromReadOnlyUpstream.controls from_read_only_upstream
 
 
+  let unannotated_global_environment = Fn.id
+
   let ast_environment { ast_environment; _ } = ast_environment
 
   (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run

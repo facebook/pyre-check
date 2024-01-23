@@ -79,7 +79,7 @@ module PreviousEnvironment = struct
 
     val create : EnvironmentControls.t -> t
 
-    val ast_environment : t -> AstEnvironment.t
+    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
     val read_only : t -> ReadOnly.t
 
@@ -285,7 +285,7 @@ module EnvironmentTable = struct
 
     val create : EnvironmentControls.t -> t
 
-    val ast_environment : t -> AstEnvironment.t
+    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
     val read_only : t -> ReadOnly.t
 
@@ -514,8 +514,8 @@ module EnvironmentTable = struct
 
       let create controls = In.PreviousEnvironment.create controls |> from_upstream_environment
 
-      let ast_environment { upstream_environment; _ } =
-        In.PreviousEnvironment.ast_environment upstream_environment
+      let unannotated_global_environment { upstream_environment; _ } =
+        In.PreviousEnvironment.unannotated_global_environment upstream_environment
 
 
       let read_only { from_read_only_upstream; _ } =

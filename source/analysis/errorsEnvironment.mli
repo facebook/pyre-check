@@ -28,6 +28,8 @@ include
 
 val type_environment : t -> TypeEnvironment.t
 
+val ast_environment : t -> AstEnvironment.t
+
 val module_tracker : t -> ModuleTracker.t
 
 val global_module_paths_api : t -> GlobalModulePathsApi.t

@@ -144,3 +144,6 @@ end
 
 module UpdateResult = GlobalLocationTable.UpdateResult
 module AnnotatedReadOnly = ReadOnly
+
+let ast_environment environment =
+  unannotated_global_environment environment |> UnannotatedGlobalEnvironment.ast_environment

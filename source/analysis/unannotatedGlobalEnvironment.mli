@@ -126,6 +126,10 @@ type t
 
 val create : EnvironmentControls.t -> t
 
+(* This handle to self is needed to fulfill the (recursive) interface used in the Environment.ml
+   functor *)
+val unannotated_global_environment : t -> t
+
 val ast_environment : t -> AstEnvironment.t
 
 val controls : t -> EnvironmentControls.t

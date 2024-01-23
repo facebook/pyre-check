@@ -372,7 +372,7 @@ let store { edges } = Edges.store edges
 
 let load controls = { edges = Edges.load controls }
 
-let ast_environment { edges } = Edges.ast_environment edges
+let unannotated_global_environment { edges } = Edges.unannotated_global_environment edges
 
 let read_only { edges } = Edges.read_only edges
 
