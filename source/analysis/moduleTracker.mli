@@ -25,12 +25,6 @@ module ReadOnly : sig
   val is_qualifier_tracked : t -> Ast.Reference.t -> bool
 
   val code_of_module_path : t -> Ast.ModulePath.t -> Parsing.LoadResult.t
-
-  module ArtifactPaths : sig
-    val artifact_path_of_qualifier : t -> Ast.Reference.t -> ArtifactPath.t option
-
-    val module_path_of_artifact_path : t -> ArtifactPath.t -> Ast.ModulePath.t option
-  end
 end
 
 type t

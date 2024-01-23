@@ -479,7 +479,7 @@ let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~
           | None -> ModuleTracker.Overlay.CodeUpdate.ResetCode
         in
         let to_update module_name =
-          ModuleTracker.ReadOnly.ArtifactPaths.artifact_path_of_qualifier module_tracker module_name
+          ArtifactPaths.artifact_path_of_qualifier ~module_tracker module_name
           |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)
         in
         List.filter_map modules ~f:to_update

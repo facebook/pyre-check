@@ -20,9 +20,7 @@ open Base
 
 let qualifiers_of_source_path ~lookup_artifact ~module_tracker path =
   lookup_artifact path
-  |> List.filter_map
-       ~f:
-         (Analysis.ModuleTracker.ReadOnly.ArtifactPaths.module_path_of_artifact_path module_tracker)
+  |> List.filter_map ~f:(Analysis.ArtifactPaths.module_path_of_artifact_path ~module_tracker)
   |> List.map ~f:Ast.ModulePath.qualifier
 
 
@@ -34,11 +32,7 @@ let qualifiers_of_source_path_with_build_system ~build_system ~module_tracker pa
 
 
 let absolute_source_path_of_qualifier ~lookup_source ~module_tracker qualifier =
-  match
-    Analysis.ModuleTracker.ReadOnly.ArtifactPaths.artifact_path_of_qualifier
-      module_tracker
-      qualifier
-  with
+  match Analysis.ArtifactPaths.artifact_path_of_qualifier ~module_tracker qualifier with
   | None -> None
   | Some analysis_path ->
       let path =

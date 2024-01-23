@@ -74,27 +74,6 @@ module ReadOnly = struct
 
 
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
-
-  (* Pyre analysis code should not generally deal directly with ArtifactPaths, but at the outer
-     layer it is necessary, in order to work with the BuildSystem.
-
-     This module provides a dedicated namespace for ArtifactPath.t conversions. *)
-  module ArtifactPaths = struct
-    let artifact_path_of_qualifier tracker qualifier =
-      let configuration = controls tracker |> EnvironmentControls.configuration in
-      module_path_of_qualifier tracker qualifier
-      |> Option.map ~f:(ModulePath.full_path ~configuration)
-
-
-    let module_path_of_artifact_path tracker path =
-      let configuration = controls tracker |> EnvironmentControls.configuration in
-      let open Option in
-      ModulePath.create ~configuration path
-      >>= fun { ModulePath.raw; qualifier; _ } ->
-      module_path_of_qualifier tracker qualifier
-      >>= fun ({ ModulePath.raw = tracked_raw; _ } as module_path) ->
-      Option.some_if (ModulePath.Raw.equal raw tracked_raw) module_path
-  end
 end
 
 module ModulePaths = struct

@@ -14,6 +14,7 @@ module AnnotatedCall = AnnotatedCall
 module AnnotatedCallable = AnnotatedCallable
 module AnnotatedDefine = AnnotatedDefine
 module AnnotatedGlobalEnvironment = AnnotatedGlobalEnvironment
+module ArtifactPaths = ArtifactPaths
 module AttributeResolution = AttributeResolution
 module AstEnvironment = AstEnvironment
 module Assumptions = Assumptions
