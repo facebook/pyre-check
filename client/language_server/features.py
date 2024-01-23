@@ -105,5 +105,5 @@ class LanguageServerFeatures:
             "completion_provider": not self.completion.is_disabled(),
             "call_hierarchy_provider": not self.call_hierarchy.is_disabled(),
             "rename_provider": not self.rename.is_disabled(),
-            "symbol_search_provider": not self.symbol.is_disabled(),
+            "workspace_symbol_provider": not self.symbol.is_disabled(),
         }
