@@ -61,8 +61,8 @@ module QualifierErrorsTable = Environment.EnvironmentTable.WithCache (struct
 
   let show_key = Reference.show
 
-  let overlay_owns_key module_tracker_overlay =
-    ModuleTracker.Overlay.owns_qualifier module_tracker_overlay
+  let overlay_owns_key unannotated_global_environment_overlay =
+    UnannotatedGlobalEnvironment.Overlay.owns_qualifier unannotated_global_environment_overlay
 
 
   let lazy_incremental = false

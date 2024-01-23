@@ -448,8 +448,8 @@ module Aliases = Environment.EnvironmentTable.NoCache (struct
 
   let show_key = Fn.id
 
-  let overlay_owns_key module_tracker_overlay =
-    ModuleTracker.Overlay.owns_identifier module_tracker_overlay
+  let overlay_owns_key unannotated_global_environment_overlay =
+    UnannotatedGlobalEnvironment.Overlay.owns_identifier unannotated_global_environment_overlay
 
 
   let equal_value = Option.equal Type.equal_alias

@@ -76,8 +76,8 @@ module EmptyStubCache = ManagedCache.Make (struct
 
   let trigger_to_dependency reference = SharedMemoryKeys.FromEmptyStub reference
 
-  let overlay_owns_key module_tracker_overlay key =
-    ModuleTracker.Overlay.owns_reference module_tracker_overlay key
+  let overlay_owns_key unannotated_global_environment_overlay key =
+    UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay key
 end)
 
 include EmptyStubCache

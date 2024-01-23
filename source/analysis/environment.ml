@@ -98,7 +98,7 @@ module PreviousEnvironment = struct
 
       val create : ReadOnly.t -> t
 
-      val module_tracker : t -> ModuleTracker.Overlay.t
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -213,7 +213,7 @@ module EnvironmentTable = struct
      * overlay owns a given key. We prevent incremental updates for
      * keys that are not owned.
      *)
-    val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
+    val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
 
     (* In a nonlazy environment table, incremental updates lead to us:
      * - recomputing values for all invalidated keys
@@ -269,7 +269,7 @@ module EnvironmentTable = struct
 
       val create : ReadOnly.t -> t
 
-      val module_tracker : t -> ModuleTracker.Overlay.t
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -572,11 +572,13 @@ module EnvironmentTable = struct
         { parent; upstream_environment; from_read_only_upstream }
 
 
-      let module_tracker { upstream_environment; _ } =
-        In.PreviousEnvironment.Overlay.module_tracker upstream_environment
+      let unannotated_global_environment { upstream_environment; _ } =
+        In.PreviousEnvironment.Overlay.unannotated_global_environment upstream_environment
 
 
-      let overlay_owns_key environment = module_tracker environment |> In.overlay_owns_key
+      let overlay_owns_key environment =
+        unannotated_global_environment environment |> In.overlay_owns_key
+
 
       let owns_trigger environment trigger =
         In.convert_trigger trigger |> overlay_owns_key environment

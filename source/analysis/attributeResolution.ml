@@ -5045,8 +5045,8 @@ module MetaclassCache = struct
 
     let trigger_to_dependency key = SharedMemoryKeys.Metaclass key
 
-    let overlay_owns_key module_tracker_overlay =
-      ModuleTracker.Overlay.owns_identifier module_tracker_overlay
+    let overlay_owns_key unannotated_global_environment_overlay =
+      UnannotatedGlobalEnvironment.Overlay.owns_identifier unannotated_global_environment_overlay
   end)
 
   include Cache
@@ -5114,8 +5114,13 @@ module AttributeCache = struct
 
     let trigger_to_dependency key = SharedMemoryKeys.AttributeTable key
 
-    let overlay_owns_key module_tracker_overlay { SharedMemoryKeys.AttributeTableKey.name; _ } =
-      ModuleTracker.Overlay.owns_identifier module_tracker_overlay name
+    let overlay_owns_key
+        unannotated_global_environment_overlay
+        { SharedMemoryKeys.AttributeTableKey.name; _ }
+      =
+      UnannotatedGlobalEnvironment.Overlay.owns_identifier
+        unannotated_global_environment_overlay
+        name
   end)
 
   include Cache
@@ -5159,8 +5164,8 @@ module GlobalAnnotationCache = struct
   module Cache = Environment.EnvironmentTable.WithCache (struct
     let show_key = Reference.show
 
-    let overlay_owns_key module_tracker_overlay =
-      ModuleTracker.Overlay.owns_reference module_tracker_overlay
+    let overlay_owns_key unannotated_global_environment_overlay =
+      UnannotatedGlobalEnvironment.Overlay.owns_reference unannotated_global_environment_overlay
 
 
     module PreviousEnvironment = AttributeCache

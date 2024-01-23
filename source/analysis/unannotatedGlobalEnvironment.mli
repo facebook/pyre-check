@@ -151,7 +151,14 @@ module Overlay : sig
 
   val create : ReadOnly.t -> t
 
-  val module_tracker : t -> ModuleTracker.Overlay.t
+  (* This handle to self is needed to fulfill the recursive interface of the Environment functor *)
+  val unannotated_global_environment : t -> t
+
+  val owns_qualifier : t -> Ast.Reference.t -> bool
+
+  val owns_reference : t -> Ast.Reference.t -> bool
+
+  val owns_identifier : t -> Ast.Identifier.t -> bool
 
   val update_overlaid_code
     :  t ->

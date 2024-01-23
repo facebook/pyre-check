@@ -52,7 +52,7 @@ module type In = sig
 
   val trigger_to_dependency : Key.t -> SharedMemoryKeys.dependency
 
-  val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
+  val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
 end
 
 module Make (In : In) = struct

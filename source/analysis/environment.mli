@@ -60,7 +60,7 @@ module PreviousEnvironment : sig
 
       val create : ReadOnly.t -> t
 
-      val module_tracker : t -> ModuleTracker.Overlay.t
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
       val update_overlaid_code
         :  t ->
@@ -132,7 +132,7 @@ module EnvironmentTable : sig
       dependency:SharedMemoryKeys.DependencyKey.registered option ->
       Value.t
 
-    val overlay_owns_key : ModuleTracker.Overlay.t -> Key.t -> bool
+    val overlay_owns_key : UnannotatedGlobalEnvironment.Overlay.t -> Key.t -> bool
 
     val lazy_incremental : bool
   end
@@ -159,7 +159,7 @@ module EnvironmentTable : sig
 
       val create : ReadOnly.t -> t
 
-      val module_tracker : t -> ModuleTracker.Overlay.t
+      val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
       val update_overlaid_code
         :  t ->

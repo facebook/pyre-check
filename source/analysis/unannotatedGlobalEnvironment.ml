@@ -1262,6 +1262,20 @@ module Overlay = struct
 
   let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
 
+  let unannotated_global_environment = Fn.id
+
+  let owns_qualifier environment =
+    module_tracker environment |> ModuleTracker.Overlay.owns_qualifier
+
+
+  let owns_reference environment =
+    module_tracker environment |> ModuleTracker.Overlay.owns_reference
+
+
+  let owns_identifier environment =
+    module_tracker environment |> ModuleTracker.Overlay.owns_identifier
+
+
   let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
     let filtered_update_result =
       let filtered_invalidated_modules =
