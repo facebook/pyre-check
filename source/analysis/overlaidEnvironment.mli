@@ -21,12 +21,6 @@ val root_errors : t -> AnalysisError.t list
 
 val overlay_errors : t -> overlay_identifier -> AnalysisError.t list
 
-val update_root
-  :  t ->
-  scheduler:Scheduler.t ->
-  ArtifactPath.Event.t list ->
-  ErrorsEnvironment.UpdateResult.t
-
 val get_or_create_overlay : t -> overlay_identifier -> ErrorsEnvironment.Overlay.t
 
 val remove_overlay : t -> overlay_identifier -> unit
@@ -50,3 +44,9 @@ val run_update_overlay_with_code
   code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
   overlay_identifier ->
   unit
+
+val update_only_root_for_testing
+  :  t ->
+  scheduler:Scheduler.t ->
+  ArtifactPath.Event.t list ->
+  ErrorsEnvironment.UpdateResult.t

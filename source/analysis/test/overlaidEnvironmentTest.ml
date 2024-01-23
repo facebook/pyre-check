@@ -89,7 +89,7 @@ let test_update_root context =
     def foo(x: int) -> int:
         return 1.0 * x
   |};
-  OverlaidEnvironment.update_root
+  OverlaidEnvironment.update_only_root_for_testing
     overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
     [
@@ -132,7 +132,7 @@ let test_update_lazy_root context =
     def foo(x: int) -> int:
         return 1.0 * x
   |};
-  OverlaidEnvironment.update_root
+  OverlaidEnvironment.update_only_root_for_testing
     overlaid_environment
     ~scheduler:(Test.mock_scheduler ())
     [

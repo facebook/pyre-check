@@ -69,9 +69,6 @@ let load controls = ErrorsEnvironment.load controls |> create
 
 let store { root; _ } = ErrorsEnvironment.store root
 
-(* TODO (T124332093): To make overlays consistent, we need to propagate parent environment updates.
-   This is deferred until we can get overlays working end-to-end *)
-
 let prepare_for_update overlaid_environment ~scheduler =
   let configuration = configuration overlaid_environment in
   Scheduler.once_per_worker scheduler ~configuration ~f:SharedMemory.invalidate_caches;
@@ -149,3 +146,8 @@ let run_update_overlay_with_code overlaid_environment ~code_updates identifier =
   let update_result = update_overlay_with_code overlaid_environment identifier ~code_updates in
   (* Log updates *)
   log_update_stats UpdateType.Overlay ~timer ~update_result ~updated_paths_count
+
+
+(* The update_root function is private, because it does not propagate to overlays, but it is useful
+   for testing because we can inspect the result. *)
+let update_only_root_for_testing = update_root
