@@ -79,6 +79,12 @@ class GetHoverResponse:
 
 
 @dataclasses.dataclass(frozen=True)
+class GetSymbolSearchResponse:
+    source: DaemonQuerierSource
+    data: Optional[lsp.WorkspaceSymbolResponse]
+
+
+@dataclasses.dataclass(frozen=True)
 class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
     error_message: str
     error_source: Optional[Exception] = None
@@ -163,6 +169,13 @@ class AbstractDaemonQuerier(abc.ABC):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetHoverResponse]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -257,6 +270,12 @@ class EmptyQuerier(AbstractDaemonQuerier):
         self,
         path: Path,
     ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
+        raise NotImplementedError()
+
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
         raise NotImplementedError()
 
     async def get_hover(
@@ -459,6 +478,14 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
                     for response in daemon_response.response
                 ],
             )
+
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+        return DaemonQueryFailure(
+            "Symbol Search is not supported in the pyre persistent client. Please use code-navigation. "
+        )
 
     async def get_completions(
         self,
@@ -723,6 +750,12 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
         return await self.base_querier.handle_dispose_client()
 
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+        return await self.base_querier.get_symbol_search(query)
+
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
@@ -803,6 +836,13 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
                 for definition_location in response.definitions
             ],
         )
+
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+        # Note: it is okay to return None here because there is currently no plan to support symbol search using the backend.
+        return None
 
     async def get_completions(
         self,
@@ -949,6 +989,15 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
                 source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
             )
         return await self.base_querier.get_hover(path, position)
+
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+        index_result = await self.index.symbol_search(query)
+        LOG.info(f"Processing symbol search request for {index_result}")
+        # TODO: Implement this method using a direct call from glass to get symbol search
+        return None
 
     async def get_definition_locations_from_glean(
         self,

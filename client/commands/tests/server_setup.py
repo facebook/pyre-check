@@ -136,6 +136,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         mock_call_hierarchy_response: Optional[List[lsp.CallHierarchyItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
         mock_rename_response: Optional[lsp.WorkspaceEdit] = None,
+        mock_symbol_search_response: Optional[lsp.WorkspaceSymbolResponse] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_errors = mock_type_errors
@@ -146,6 +147,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self.mock_call_hierarchy_response = mock_call_hierarchy_response
         self.mock_references_response = mock_references_response
         self.mock_rename_response = mock_rename_response
+        self.mock_symbol_search_response = mock_symbol_search_response
 
     async def get_type_errors(
         self,
@@ -249,6 +251,17 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
             )
         else:
             return self.mock_call_hierarchy_response
+
+    async def get_symbol_search(
+        self,
+        query: str,
+    ) -> Union[querier.DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+        if self.mock_symbol_search_response is None:
+            raise ValueError(
+                "You need to set the get symbol search response in the mock querier"
+            )
+        else:
+            return self.mock_symbol_search_response
 
     async def get_rename(
         self,

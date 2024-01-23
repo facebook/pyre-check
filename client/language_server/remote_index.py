@@ -34,6 +34,10 @@ class AbstractRemoteIndex(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def symbol_search(self, query: str) -> Optional[lsp.WorkspaceSymbolResponse]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def references(
         self, path: Path, position: lsp.PyrePosition
     ) -> List[lsp.LspLocation]:
@@ -72,6 +76,9 @@ class EmptyRemoteIndex(AbstractRemoteIndex):
     async def hover(
         self, path: Path, position: lsp.PyrePosition
     ) -> Optional[lsp.LspHoverResponse]:
+        return None
+
+    async def symbol_search(self, query: str) -> Optional[lsp.WorkspaceSymbolResponse]:
         return None
 
     async def prepare_call_hierarchy(

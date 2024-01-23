@@ -263,6 +263,15 @@ class PyreLanguageServerApi(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def process_symbol_search_request(
+        self,
+        parameters: lsp.WorkspaceSymbolParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def process_rename_request(
         self,
         parameters: lsp.RenameParameters,
@@ -903,6 +912,34 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
         return error_source
+
+    async def process_symbol_search_request(
+        self,
+        parameters: lsp.WorkspaceSymbolParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+
+        # Extract query from parameters
+        # query = parameters.query
+        LOG.info(f"Processing symbol search request for {parameters}")
+        # await lsp.write_json_rpc(
+        #     self.output_channel,
+        #     json_rpc.SuccessResponse(
+        #         id=request_id,
+        #         activity_key=activity_key,
+        #         result=None,
+        #     ),
+        # )
+
+        # symbol_search_response = await self.index_querier.get_symbol_search(
+        #     query,
+        # )
+        # TODO: implement the logic for the symbol search
+        symbol_search_response = None
+        LOG.info(
+            f"Got the following response for symbol search {symbol_search_response}"
+        )
 
     async def process_completion_request(
         self,
@@ -1623,6 +1660,16 @@ class PyreLanguageServerDispatcher:
                 request.id,
                 request.activity_key,
             )
+
+        elif request.method == "workspace/symbol":
+            await self.api.process_symbol_search_request(
+                lsp.WorkspaceSymbolParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
+                request.id,
+                request.activity_key,
+            )
+
         elif request.method == "textDocument/rename":
             await self.api.process_rename_request(
                 lsp.RenameParameters.from_json_rpc_parameters(
