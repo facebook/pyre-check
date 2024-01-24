@@ -1824,7 +1824,7 @@ let resolve_callee_ignoring_decorators
     else
       Format.ifprintf Format.err_formatter format
   in
-  let target =
+  let targets =
     match Node.value callee with
     | Expression.Name name when is_all_names (Node.value callee) -> (
         (* Resolving expressions that do not reference local variables or parameters. *)
@@ -1837,12 +1837,13 @@ let resolve_callee_ignoring_decorators
                 remaining = [];
                 _;
               }) ->
-            Some
-              (CallTargetIndexer.create_target
-                 call_indexer
-                 ~implicit_dunder_call:false
-                 ~return_type:(Some (return_type ()))
-                 (Target.Function { name = Reference.show name; kind = Normal }))
+            [
+              CallTargetIndexer.create_target
+                call_indexer
+                ~implicit_dunder_call:false
+                ~return_type:(Some (return_type ()))
+                (Target.Function { name = Reference.show name; kind = Normal });
+            ]
         | Some
             (ResolvedReference.ModuleAttribute
               {
@@ -1858,32 +1859,41 @@ let resolve_callee_ignoring_decorators
             >>| ClassSummary.attributes
             >>= Identifier.SerializableMap.find_opt attribute
             >>| Node.value
-            >>= function
-            | { kind = Method { static; signatures; _ }; _ } ->
+            |> function
+            | Some { kind = Method { static; signatures; _ }; _ } ->
                 let is_class_method = contain_class_method signatures in
-                Some
-                  (CallTargetIndexer.create_target
-                     call_indexer
-                     ~implicit_dunder_call:false
-                     ~return_type:(Some (return_type ()))
-                     ~is_class_method
-                     ~is_static_method:static
-                     (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
-            | attribute ->
+                [
+                  CallTargetIndexer.create_target
+                    call_indexer
+                    ~implicit_dunder_call:false
+                    ~return_type:(Some (return_type ()))
+                    ~is_class_method
+                    ~is_static_method:static
+                    (Target.Method { Target.class_name; method_name = attribute; kind = Normal });
+                ]
+            | Some attribute ->
                 let () =
                   log
                     "Bypassing decorators - Non-method attribute `%s` for callee `%s`"
                     (ClassSummary.Attribute.show_attribute attribute)
                     (Expression.show callee)
                 in
-                None)
+                []
+            | None ->
+                let () =
+                  log
+                    "Bypassing decorators - Failed to find attribute `%s` for callee `%s`"
+                    attribute
+                    (Expression.show callee)
+                in
+                [])
         | _ ->
             let () =
               log
                 "Bypassing decorators - Failed to resolve exports for callee `%s`"
                 (Expression.show callee)
             in
-            None)
+            [])
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
            classes in the Method Resolution Order. *)
@@ -1921,22 +1931,19 @@ let resolve_callee_ignoring_decorators
                   Type.Parametric
                     { name = "type"; parameters = [Single (Type.Primitive class_name)] }
                 in
-                let target =
-                  Target.Method
-                    { Target.class_name = base_class; method_name = attribute; kind = Normal }
-                  (* Over-approximately consider that any overriding method might be called. We
-                     prioritize reducing false negatives than reducing false positives. *)
-                  |> compute_indirect_targets ~resolution ~override_graph ~receiver_type
-                  |> List.hd_exn
-                in
-                Some
-                  (CallTargetIndexer.create_target
-                     call_indexer
-                     ~implicit_dunder_call:false
-                     ~return_type:(Some (return_type ()))
-                     ~is_class_method
-                     ~is_static_method
-                     target)
+                Target.Method
+                  { Target.class_name = base_class; method_name = attribute; kind = Normal }
+                (* Over-approximately consider that any overriding method might be called. We
+                   prioritize reducing false negatives than reducing false positives. *)
+                |> compute_indirect_targets ~resolution ~override_graph ~receiver_type
+                |> List.map
+                     ~f:
+                       (CallTargetIndexer.create_target
+                          call_indexer
+                          ~implicit_dunder_call:false
+                          ~return_type:(Some (return_type ()))
+                          ~is_class_method
+                          ~is_static_method)
             | None ->
                 let () =
                   log
@@ -1945,7 +1952,7 @@ let resolve_callee_ignoring_decorators
                     class_name
                     attribute
                 in
-                None)
+                [])
         | _type ->
             let () =
               log
@@ -1954,27 +1961,26 @@ let resolve_callee_ignoring_decorators
                 Expression.pp
                 callee
             in
-            None)
+            [])
     | _ ->
         let () = log "Bypassing decorators - Unknown callee `%a`" Expression.pp callee in
-        None
+        []
   in
   let () =
-    match target with
-    | Some target when debug ->
-        Log.dump
-          "Bypassed decorators to resolve callees (using global resolution): `%a`"
-          CallTarget.pp
-          target
-    | None when debug ->
+    match targets with
+    | [] when debug ->
         Log.dump
           "Bypassed decorators to resolve callees (using global resolution): Failed to resolve \
            callee %a"
           Expression.pp
           callee
+    | targets when debug ->
+        Log.dump
+          "Bypassed decorators to resolve callees (using global resolution): `%s`"
+          (targets |> List.map ~f:CallTarget.show |> String.concat ~sep:",")
     | _ -> ()
   in
-  target
+  targets
 
 
 let get_defining_attributes ~resolution ~base_annotation ~attribute =
@@ -2261,8 +2267,9 @@ struct
           ~override_graph
           ~return_type
           callee
-        >>| (fun target -> CallCallees.create ~call_targets:[target] ())
-        |> CallCallees.default_to_unresolved
+        |> function
+        | [] -> CallCallees.unresolved ()
+        | call_targets -> CallCallees.create ~call_targets ()
 
 
   let resolve_callees

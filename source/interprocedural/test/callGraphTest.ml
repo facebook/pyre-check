@@ -4277,6 +4277,14 @@ let test_call_graph_of_define context =
                         ~index:1
                         (Target.Method
                            { Target.class_name = "test.Base"; method_name = "query"; kind = Normal });
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        (Target.Method
+                           {
+                             Target.class_name = "test.SubChild";
+                             method_name = "query";
+                             kind = Normal;
+                           });
                     ]
                   ())) );
       ]
@@ -4434,6 +4442,11 @@ let test_call_graph_of_define context =
                         ~index:1
                         (Target.Method
                            { Target.class_name = "test.A"; method_name = "query"; kind = Normal });
+                      CallTarget.create
+                      (* TODO(T118125320): Return type is None, which is incorrect *)
+                        ~implicit_receiver:true
+                        (Target.Method
+                           { Target.class_name = "test.D"; method_name = "query"; kind = Normal });
                     ]
                   ())) );
         ( "24:4-24:20",
@@ -4460,6 +4473,7 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         ~return_type:(Some ReturnType.integer)
                         ~receiver_class:"test.D"
+                        ~index:1
                         (Target.Method
                            { Target.class_name = "test.D"; method_name = "query"; kind = Normal });
                     ]
