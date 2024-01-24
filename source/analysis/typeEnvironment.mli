@@ -50,6 +50,10 @@ val module_tracker : t -> ModuleTracker.t
 
 val global_module_paths_api : t -> GlobalModulePathsApi.t
 
+val collect_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> Ast.Reference.t list
+
+val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
 val store_without_dependency_keys : t -> unit

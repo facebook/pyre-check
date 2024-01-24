@@ -144,44 +144,46 @@ let populate_for_definitions ~scheduler environment defines =
   Statistics.performance ~name:"check_TypeCheck" ~phase_name:CheckResultValue.description ~timer ()
 
 
+let collect_definitions ~scheduler environment qualifiers =
+  let timer = Timer.start () in
+  Log.info "Collecting all definitions...";
+  let unannotated_global_environment =
+    global_environment environment
+    |> AnnotatedGlobalEnvironment.read_only
+    |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
+  in
+  let map qualifiers =
+    List.concat_map qualifiers ~f:(fun qualifier ->
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+          unannotated_global_environment
+          qualifier)
+  in
+  let defines =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_count
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:100
+           ~preferred_chunks_per_worker:1
+           ())
+      ~initial:[]
+      ~map
+      ~reduce:List.append
+      ~inputs:qualifiers
+      ()
+  in
+  Statistics.performance
+    ~name:"collected definitions"
+    ~timer
+    ~integers:["defines", List.length defines]
+    ();
+  defines
+
+
 let populate_for_modules ~scheduler environment qualifiers =
   PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-  let all_defines =
-    let timer = Timer.start () in
-    Log.info "Collecting all definitions...";
-    let unannotated_global_environment =
-      global_environment environment
-      |> AnnotatedGlobalEnvironment.read_only
-      |> AnnotatedGlobalEnvironment.ReadOnly.unannotated_global_environment
-    in
-    let map qualifiers =
-      List.concat_map qualifiers ~f:(fun qualifier ->
-          UnannotatedGlobalEnvironment.ReadOnly.get_define_names
-            unannotated_global_environment
-            qualifier)
-    in
-    let defines =
-      Scheduler.map_reduce
-        scheduler
-        ~policy:
-          (Scheduler.Policy.fixed_chunk_count
-             ~minimum_chunks_per_worker:1
-             ~minimum_chunk_size:100
-             ~preferred_chunks_per_worker:1
-             ())
-        ~initial:[]
-        ~map
-        ~reduce:List.append
-        ~inputs:qualifiers
-        ()
-    in
-    Statistics.performance
-      ~name:"collected definitions"
-      ~timer
-      ~integers:["defines", List.length defines]
-      ();
-    defines
-  in
+  let all_defines = collect_definitions ~scheduler environment qualifiers in
   populate_for_definitions ~scheduler environment all_defines;
   Statistics.event
     ~section:`Memory

@@ -192,6 +192,28 @@ let write_modules_to_file
     qualifiers
 
 
+let write_functions_to_file
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.configuration = { local_root; _ }; _ }
+    ~path
+    definitions
+  =
+  Log.info "Writing functions to `%s`" (PyrePath.absolute path);
+  let to_json_lines definition =
+    [
+      {
+        Interprocedural.NewlineDelimitedJson.Line.kind = Function;
+        data = `Assoc ["name", `String (Ast.Reference.show definition)];
+      };
+    ]
+  in
+  Interprocedural.NewlineDelimitedJson.write_file
+    ~path
+    ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
+    ~to_json_lines
+    definitions
+
+
 (** Perform a full type check and build a type environment. *)
 let type_check
     ~scheduler
@@ -231,9 +253,29 @@ let type_check
               qualifiers
         | None -> ()
       in
-      let () =
-        Analysis.TypeEnvironment.populate_for_modules ~scheduler type_environment qualifiers
+      PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
+      let definitions =
+        Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
       in
+      Log.info "Found %d functions" (List.length definitions);
+      let () =
+        match save_results_to with
+        | Some directory ->
+            write_functions_to_file
+              ~static_analysis_configuration
+              ~path:(PyrePath.append directory ~element:"functions.json")
+              definitions
+        | None -> ()
+      in
+      let () =
+        Analysis.TypeEnvironment.populate_for_definitions ~scheduler type_environment definitions
+      in
+      Statistics.event
+        ~section:`Memory
+        ~name:"shared memory size post-typecheck"
+        ~integers:["size", Memory.heap_size ()]
+        ();
+      PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ();
       type_environment)
 
 

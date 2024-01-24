@@ -11,6 +11,7 @@ module Kind : sig
     | Issue
     | CallGraph
     | Module
+    | Function
 
   val show : t -> string
 end
