@@ -1888,14 +1888,18 @@ let resolve_callee_ignoring_decorators
         (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
            classes in the Method Resolution Order. *)
         match CallResolution.resolve_ignoring_errors ~resolution base with
-        (* Classes. *)
-        | Type.Primitive class_name
-        (* Types of classes. *)
+        (* The base expression is a class. *)
         | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
-        (* Types of classes that are parametric, such as `class C(Generic[T])` where `T` is a type
-           variable. *)
+        (* The base expression is a class that has type parameters, such as `class A(Generic[T])`
+           where `T` is a type variable. *)
         | Type.Parametric
-            { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] } -> (
+            { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] }
+        (* The base expression is an object (but not a class, since classes are technically objects
+           as well). *)
+        | Type.Primitive class_name
+        (* The base expression is an object that has type parameters. For example, the base
+           expression is an instance of class `class. A(Generic[T])`. *)
+        | Type.Parametric { name = class_name; parameters = _ } -> (
             let find_attribute element =
               match
                 GlobalResolution.get_class_summary global_resolution element

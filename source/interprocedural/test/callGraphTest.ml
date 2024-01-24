@@ -4412,7 +4412,16 @@ let test_call_graph_of_define context =
       [
         ( "22:4-22:17",
           LocationCallees.Singleton
-            (ExpressionCallees.from_call (CallCallees.create ~unresolved:true ())) );
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        (Target.Override
+                           { Target.class_name = "test.A"; method_name = "query"; kind = Normal });
+                    ]
+                  ())) );
         ( "23:4-23:20",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
@@ -4422,6 +4431,7 @@ let test_call_graph_of_define context =
                       CallTarget.create
                       (* TODO(T118125320): Return type is None, which is incorrect *)
                         ~implicit_receiver:true
+                        ~index:1
                         (Target.Method
                            { Target.class_name = "test.A"; method_name = "query"; kind = Normal });
                     ]
@@ -4452,6 +4462,42 @@ let test_call_graph_of_define context =
                         ~receiver_class:"test.D"
                         (Target.Method
                            { Target.class_name = "test.D"; method_name = "query"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Generic, TypeVar
+
+      T = TypeVar("T")
+      def decorator(function):
+          return function
+
+      class A(Generic[T]):
+          @decorator
+          def query(self, arg: T) -> None:
+              pass
+      class B(A[int]):
+          pass
+
+      def foo(base: A[T], arg: T) -> None:
+          base.query(arg)
+      |}
+    ~define_name:"test.foo"
+    ~expected:
+      [
+        ( "16:4-16:19",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        (Target.Method
+                           { Target.class_name = "test.A"; method_name = "query"; kind = Normal });
                     ]
                   ())) );
       ]
