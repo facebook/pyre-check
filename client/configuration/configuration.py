@@ -179,6 +179,7 @@ class PartialConfiguration:
             "taint_models_path",
             "unstable_client",
             "vscode_project_identifier",
+            "vscode_excluded_directories",
         }
 
     @staticmethod
