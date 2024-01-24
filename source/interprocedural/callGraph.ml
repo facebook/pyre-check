@@ -1799,7 +1799,13 @@ let resolve_recognized_callees
   | _ -> None
 
 
-let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~override_graph ~return_type callee
+let resolve_callee_ignoring_decorators
+    ~debug
+    ~resolution
+    ~call_indexer
+    ~override_graph
+    ~return_type
+    callee
   =
   let global_resolution = Resolution.global_resolution resolution in
   let return_type () =
@@ -1812,100 +1818,159 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~override_graph
     |> List.exists ~f:(fun signature ->
            List.exists class_method_decorators ~f:(Define.Signature.has_decorator signature))
   in
-  match Node.value callee with
-  | Expression.Name name when is_all_names (Node.value callee) -> (
-      (* Resolving expressions that do not reference local variables or parameters. *)
-      let name = Ast.Expression.name_to_reference_exn name in
-      match GlobalResolution.resolve_exports global_resolution name with
-      | Some
-          (ResolvedReference.ModuleAttribute
-            { export = ResolvedReference.Exported (Module.Export.Name.Define _); remaining = []; _ })
-        ->
-          Some
-            (CallTargetIndexer.create_target
-               call_indexer
-               ~implicit_dunder_call:false
-               ~return_type:(Some (return_type ()))
-               (Target.Function { name = Reference.show name; kind = Normal }))
-      | Some
-          (ResolvedReference.ModuleAttribute
-            {
-              from;
-              name;
-              export = ResolvedReference.Exported Module.Export.Name.Class;
-              remaining = [attribute];
-              _;
-            }) -> (
-          let class_name = Reference.create ~prefix:from name |> Reference.show in
-          GlobalResolution.get_class_summary global_resolution class_name
-          >>| Node.value
-          >>| ClassSummary.attributes
-          >>= Identifier.SerializableMap.find_opt attribute
-          >>| Node.value
-          >>= function
-          | { kind = Method { static; signatures; _ }; _ } ->
-              let is_class_method = contain_class_method signatures in
-              Some
-                (CallTargetIndexer.create_target
-                   call_indexer
-                   ~implicit_dunder_call:false
-                   ~return_type:(Some (return_type ()))
-                   ~is_class_method
-                   ~is_static_method:static
-                   (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
-          | _ -> None)
-      | _ -> None)
-  | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
-      (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
-         classes in the Method Resolution Order. *)
-      match CallResolution.resolve_ignoring_errors ~resolution base with
-      (* Classes. *)
-      | Type.Primitive class_name
-      (* Types of classes. *)
-      | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
-      (* Types of classes that are parametric, such as `class C(Generic[T])` where `T` is a type
-         variable. *)
-      | Type.Parametric
-          { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] } -> (
-          let find_attribute element =
-            match
-              GlobalResolution.get_class_summary global_resolution element
-              >>| Node.value
-              >>| ClassSummary.attributes
-              >>= Identifier.SerializableMap.find_opt attribute
-              >>| Node.value
-            with
-            | Some { ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ } ->
-                Some (element, contain_class_method signatures, static)
-            | _ -> None
-          in
-          let parent_classes_in_mro = GlobalResolution.successors global_resolution class_name in
-          match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
-          | Some (base_class, is_class_method, is_static_method) ->
-              let receiver_type =
-                (* Discard the type parameters, assuming they do not affect finding the actual
-                   callee. *)
-                Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
-              in
-              let target =
-                Target.Method
-                  { Target.class_name = base_class; method_name = attribute; kind = Normal }
-                (* Over-approximately consider that any overriding method might be called. We
-                   prioritize reducing false negatives than reducing false positives. *)
-                |> compute_indirect_targets ~resolution ~override_graph ~receiver_type
-                |> List.hd_exn
-              in
-              Some
-                (CallTargetIndexer.create_target
-                   call_indexer
-                   ~implicit_dunder_call:false
-                   ~return_type:(Some (return_type ()))
-                   ~is_class_method
-                   ~is_static_method
-                   target)
-          | None -> None)
-      | _ -> None)
-  | _ -> None
+  let log format =
+    if debug then
+      Log.dump format
+    else
+      Format.ifprintf Format.err_formatter format
+  in
+  let target =
+    match Node.value callee with
+    | Expression.Name name when is_all_names (Node.value callee) -> (
+        (* Resolving expressions that do not reference local variables or parameters. *)
+        let name = Ast.Expression.name_to_reference_exn name in
+        match GlobalResolution.resolve_exports global_resolution name with
+        | Some
+            (ResolvedReference.ModuleAttribute
+              {
+                export = ResolvedReference.Exported (Module.Export.Name.Define _);
+                remaining = [];
+                _;
+              }) ->
+            Some
+              (CallTargetIndexer.create_target
+                 call_indexer
+                 ~implicit_dunder_call:false
+                 ~return_type:(Some (return_type ()))
+                 (Target.Function { name = Reference.show name; kind = Normal }))
+        | Some
+            (ResolvedReference.ModuleAttribute
+              {
+                from;
+                name;
+                export = ResolvedReference.Exported Module.Export.Name.Class;
+                remaining = [attribute];
+                _;
+              }) -> (
+            let class_name = Reference.create ~prefix:from name |> Reference.show in
+            GlobalResolution.get_class_summary global_resolution class_name
+            >>| Node.value
+            >>| ClassSummary.attributes
+            >>= Identifier.SerializableMap.find_opt attribute
+            >>| Node.value
+            >>= function
+            | { kind = Method { static; signatures; _ }; _ } ->
+                let is_class_method = contain_class_method signatures in
+                Some
+                  (CallTargetIndexer.create_target
+                     call_indexer
+                     ~implicit_dunder_call:false
+                     ~return_type:(Some (return_type ()))
+                     ~is_class_method
+                     ~is_static_method:static
+                     (Target.Method { Target.class_name; method_name = attribute; kind = Normal }))
+            | attribute ->
+                let () =
+                  log
+                    "Bypassing decorators - Non-method attribute `%s` for callee `%s`"
+                    (ClassSummary.Attribute.show_attribute attribute)
+                    (Expression.show callee)
+                in
+                None)
+        | _ ->
+            let () =
+              log
+                "Bypassing decorators - Failed to resolve exports for callee `%s`"
+                (Expression.show callee)
+            in
+            None)
+    | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
+        (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
+           classes in the Method Resolution Order. *)
+        match CallResolution.resolve_ignoring_errors ~resolution base with
+        (* Classes. *)
+        | Type.Primitive class_name
+        (* Types of classes. *)
+        | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+        (* Types of classes that are parametric, such as `class C(Generic[T])` where `T` is a type
+           variable. *)
+        | Type.Parametric
+            { name = "type"; parameters = [Single (Type.Parametric { name = class_name; _ })] } -> (
+            let find_attribute element =
+              match
+                GlobalResolution.get_class_summary global_resolution element
+                >>| Node.value
+                >>| ClassSummary.attributes
+                >>= Identifier.SerializableMap.find_opt attribute
+                >>| Node.value
+              with
+              | Some { ClassSummary.Attribute.kind = Method { static; signatures; _ }; _ } ->
+                  Some (element, contain_class_method signatures, static)
+              | _ -> None
+            in
+            let parent_classes_in_mro = GlobalResolution.successors global_resolution class_name in
+            match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
+            | Some (base_class, is_class_method, is_static_method) ->
+                let receiver_type =
+                  (* Discard the type parameters, assuming they do not affect finding the actual
+                     callee. *)
+                  Type.Parametric
+                    { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+                in
+                let target =
+                  Target.Method
+                    { Target.class_name = base_class; method_name = attribute; kind = Normal }
+                  (* Over-approximately consider that any overriding method might be called. We
+                     prioritize reducing false negatives than reducing false positives. *)
+                  |> compute_indirect_targets ~resolution ~override_graph ~receiver_type
+                  |> List.hd_exn
+                in
+                Some
+                  (CallTargetIndexer.create_target
+                     call_indexer
+                     ~implicit_dunder_call:false
+                     ~return_type:(Some (return_type ()))
+                     ~is_class_method
+                     ~is_static_method
+                     target)
+            | None ->
+                let () =
+                  log
+                    "Bypassing decorators - Failed to find parent class of `%s` that defines \
+                     method `%s`"
+                    class_name
+                    attribute
+                in
+                None)
+        | _type ->
+            let () =
+              log
+                "Bypassing decorators - Unknown base type `%s` in callee `%a`"
+                (Type.show_type_t _type)
+                Expression.pp
+                callee
+            in
+            None)
+    | _ ->
+        let () = log "Bypassing decorators - Unknown callee `%a`" Expression.pp callee in
+        None
+  in
+  let () =
+    match target with
+    | Some target when debug ->
+        Log.dump
+          "Bypassed decorators to resolve callees (using global resolution): `%a`"
+          CallTarget.pp
+          target
+    | None when debug ->
+        Log.dump
+          "Bypassed decorators to resolve callees (using global resolution): Failed to resolve \
+           callee %a"
+          Expression.pp
+          callee
+    | _ -> ()
+  in
+  target
 
 
 let get_defining_attributes ~resolution ~base_annotation ~attribute =
@@ -2186,27 +2251,14 @@ struct
         callees_from_type
       else
         resolve_callee_ignoring_decorators
+          ~debug:Context.debug
           ~resolution
           ~call_indexer
           ~override_graph
           ~return_type
           callee
-        >>| (fun target ->
-              let () =
-                log
-                  "Bypassed decorators to resolve callees (using global resolution): `%a`"
-                  CallTarget.pp
-                  target
-              in
-              CallCallees.create ~call_targets:[target] ())
+        >>| (fun target -> CallCallees.create ~call_targets:[target] ())
         |> CallCallees.default_to_unresolved
-             ~debug:Context.debug
-             ~reason:
-               (Format.asprintf
-                  "Bypassed decorators to resolve callees (using global resolution): Failed to \
-                   resolve callee %a"
-                  Expression.pp
-                  callee)
 
 
   let resolve_callees
