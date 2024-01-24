@@ -10,6 +10,7 @@ module Kind : sig
     | Model
     | Issue
     | CallGraph
+    | Module
 
   val show : t -> string
 end
