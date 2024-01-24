@@ -434,6 +434,10 @@ module Make (Analysis : ANALYSIS) = struct
       match State.get_old_model shared_models_handle callable with
       | Some model -> model
       | None ->
+          (* We need to ensure the all models are properly initialized before doing the global
+             fixpoint analysis. That is, if the global fixpoint analysis discovers any model is not
+             initialized, then it is better to be warned that something is wrong with the model
+             initialization. *)
           Format.asprintf "No initial model found for `%a`" Target.pp_pretty callable |> failwith
     in
     let result, new_model =

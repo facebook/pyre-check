@@ -822,37 +822,6 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
-      from abc import abstractclassmethod
-      from typing import TypeVar, Generic
-      TInput = TypeVar("TInput")
-      class C(Generic[TInput]):
-        @abstractclassmethod
-        def f(cls):
-          raise NotImplementedError()
-        @classmethod
-        def g(cls):
-          cls.f()
-      |}
-    ~define_name:"test.C.g"
-    ~expected:
-      [
-        ( "11:4-11:11",
-          LocationCallees.Singleton
-            (ExpressionCallees.from_call
-               (CallCallees.create
-                  ~call_targets:
-                    [
-                      CallTarget.create
-                        ~implicit_receiver:true
-                        ~is_class_method:true
-                        (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
-                    ]
-                  ())) );
-      ]
-    ();
-  assert_call_graph_of_define
-    ~source:
-      {|
       from abc import abstractmethod
       class A:
         def f(self):
@@ -4280,7 +4249,7 @@ let test_call_graph_of_define context =
 
        def foo(base: Base, child: Child):
            base.query(1)
-           child.query(1)  # TODO(T118151013): Should be an Override target
+           child.query(1)
       |}
     ~define_name:"test.foo"
     ~expected:
@@ -4293,7 +4262,7 @@ let test_call_graph_of_define context =
                     [
                       CallTarget.create
                         ~implicit_receiver:true
-                        (Target.Method
+                        (Target.Override
                            { Target.class_name = "test.Base"; method_name = "query"; kind = Normal });
                     ]
                   ())) );
@@ -4326,7 +4295,12 @@ let test_call_graph_of_define context =
        class BaseB:
            pass
 
-       class Child(BaseB, BaseA):
+       class BaseC:
+           @decorator
+           def query(self, arg):
+               return arg
+
+       class Child(BaseB, BaseA, BaseC):
            pass
 
        def foo(base: BaseA, child: Child):
@@ -4336,7 +4310,7 @@ let test_call_graph_of_define context =
     ~define_name:"test.foo"
     ~expected:
       [
-        ( "17:4-17:17",
+        ( "22:4-22:17",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
@@ -4352,7 +4326,7 @@ let test_call_graph_of_define context =
                            });
                     ]
                   ())) );
-        ( "18:4-18:18",
+        ( "23:4-23:18",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
@@ -4363,6 +4337,8 @@ let test_call_graph_of_define context =
                         ~index:1
                         (Target.Method
                            {
+                             (* Not `test.BaseC`, because `A` is the first parent class of
+                                `Child`. *)
                              Target.class_name = "test.BaseA";
                              method_name = "query";
                              kind = Normal;
@@ -4374,31 +4350,70 @@ let test_call_graph_of_define context =
   assert_call_graph_of_define
     ~source:
       {|
-       from typing import Generic, TypeVar
+      from abc import abstractclassmethod
+      from typing import TypeVar, Generic
+      TInput = TypeVar("TInput")
 
-       T = TypeVar("T")
-       def decorator(function):
-           return function
+      class C(Generic[TInput]):
+        @abstractclassmethod
+        def f(cls, arg: TInput) -> TInput:
+          raise NotImplementedError()
+        @classmethod
+        def g(cls, arg: TInput):
+          cls.f(arg)
+      |}
+    ~define_name:"test.C.g"
+    ~expected:
+      [
+        ( "12:4-12:14",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~is_class_method:true
+                        (Target.Method { class_name = "test.C"; method_name = "f"; kind = Normal });
+                    ]
+                  ())) );
+      ]
+    ();
+  assert_call_graph_of_define
+    ~source:
+      {|
+      from typing import Generic, TypeVar
 
-       class A(Generic[T]):
-           @decorator
-           def query(self, arg: T) -> T:
-               pass
+      T = TypeVar("T")
+      def decorator(function):
+          return function
 
-       class B(A[int]):
-           pass
+      class A(Generic[T]):
+          @decorator
+          def query(self, arg: T) -> T:
+              pass
+      class B(A[int]):
+          pass
+      class C(A[int]):
+          def query(self, arg: int) -> int:
+              return arg
+      class D(B):
+          def query(self, arg: int) -> int:
+              pass
 
-       def foo(base: A, child: B):
-           base.query(1)
-           child.query(1)
+      def foo(base: A[int], child_b: B, child_c: C, child_d: D):
+          base.query(1)
+          child_b.query(1)
+          child_c.query(1)
+          child_d.query(1)
       |}
     ~define_name:"test.foo"
     ~expected:
       [
-        ( "17:4-17:17",
+        ( "22:4-22:17",
           LocationCallees.Singleton
             (ExpressionCallees.from_call (CallCallees.create ~unresolved:true ())) );
-        ( "18:4-18:18",
+        ( "23:4-23:20",
           LocationCallees.Singleton
             (ExpressionCallees.from_call
                (CallCallees.create
@@ -4409,6 +4424,34 @@ let test_call_graph_of_define context =
                         ~implicit_receiver:true
                         (Target.Method
                            { Target.class_name = "test.A"; method_name = "query"; kind = Normal });
+                    ]
+                  ())) );
+        ( "24:4-24:20",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~return_type:(Some ReturnType.integer)
+                        ~receiver_class:"test.C"
+                        (Target.Method
+                           { Target.class_name = "test.C"; method_name = "query"; kind = Normal });
+                    ]
+                  ())) );
+        ( "25:4-25:20",
+          LocationCallees.Singleton
+            (ExpressionCallees.from_call
+               (CallCallees.create
+                  ~call_targets:
+                    [
+                      CallTarget.create
+                        ~implicit_receiver:true
+                        ~return_type:(Some ReturnType.integer)
+                        ~receiver_class:"test.D"
+                        (Target.Method
+                           { Target.class_name = "test.D"; method_name = "query"; kind = Normal });
                     ]
                   ())) );
       ]

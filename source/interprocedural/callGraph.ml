@@ -1799,7 +1799,8 @@ let resolve_recognized_callees
   | _ -> None
 
 
-let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee =
+let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~override_graph ~return_type callee
+  =
   let global_resolution = Resolution.global_resolution resolution in
   let return_type () =
     ReturnType.from_annotation
@@ -1881,6 +1882,19 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
           let parent_classes_in_mro = GlobalResolution.successors global_resolution class_name in
           match List.find_map (class_name :: parent_classes_in_mro) ~f:find_attribute with
           | Some (base_class, is_class_method, is_static_method) ->
+              let receiver_type =
+                (* Discard the type parameters, assuming they do not affect finding the actual
+                   callee. *)
+                Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
+              in
+              let target =
+                Target.Method
+                  { Target.class_name = base_class; method_name = attribute; kind = Normal }
+                (* Over-approximately consider that any overriding method might be called. We
+                   prioritize reducing false negatives than reducing false positives. *)
+                |> compute_indirect_targets ~resolution ~override_graph ~receiver_type
+                |> List.hd_exn
+              in
               Some
                 (CallTargetIndexer.create_target
                    call_indexer
@@ -1888,8 +1902,7 @@ let resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type ca
                    ~return_type:(Some (return_type ()))
                    ~is_class_method
                    ~is_static_method
-                   (Target.Method
-                      { Target.class_name = base_class; method_name = attribute; kind = Normal }))
+                   target)
           | None -> None)
       | _ -> None)
   | _ -> None
@@ -2172,7 +2185,12 @@ struct
         in
         callees_from_type
       else
-        resolve_callee_ignoring_decorators ~resolution ~call_indexer ~return_type callee
+        resolve_callee_ignoring_decorators
+          ~resolution
+          ~call_indexer
+          ~override_graph
+          ~return_type
+          callee
         >>| (fun target ->
               let () =
                 log
