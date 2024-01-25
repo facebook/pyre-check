@@ -12,8 +12,6 @@ open SharedMemoryKeys
 module ReadOnly : sig
   type t
 
-  val ast_environment : t -> AstEnvironment.ReadOnly.t
-
   val get_tracked_source_code_api
     :  t ->
     dependency:SharedMemoryKeys.DependencyKey.registered ->

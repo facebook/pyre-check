@@ -56,29 +56,30 @@ let unannotated_global_environment resolution =
   alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment
 
 
-let ast_environment resolution =
-  unannotated_global_environment resolution |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+let source_code_api ({ dependency; _ } as resolution) =
+  match dependency with
+  | Some dependency ->
+      unannotated_global_environment resolution
+      |> UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api ~dependency
+  | None ->
+      unannotated_global_environment resolution
+      |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
 
-
-let module_tracker resolution = ast_environment resolution |> AstEnvironment.ReadOnly.module_tracker
 
 (* Note that both of the path lookups are not dependency tracked! It turns out they are only used
    for special things like error messages where it winds up not mattering, but this is a very sharp
    edge in our incremental system. *)
 
 let module_path_of_qualifier resolution =
-  ModuleTracker.ReadOnly.module_path_of_qualifier (module_tracker resolution)
+  source_code_api resolution |> SourceCodeApi.module_path_of_qualifier
 
 
 let relative_path_of_qualifier resolution =
-  ModuleTracker.ReadOnly.relative_path_of_qualifier (module_tracker resolution)
+  source_code_api resolution |> SourceCodeApi.relative_path_of_qualifier
 
 
-let processed_source_of_qualifier ({ dependency; _ } as resolution) qualifier =
-  AstEnvironment.ReadOnly.processed_source_of_qualifier
-    (ast_environment resolution)
-    ?dependency
-    qualifier
+let processed_source_of_qualifier resolution =
+  source_code_api resolution |> SourceCodeApi.processed_source_of_qualifier
 
 
 let is_protocol ({ dependency; _ } as resolution) annotation =
