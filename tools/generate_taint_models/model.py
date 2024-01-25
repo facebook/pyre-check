@@ -42,6 +42,10 @@ class Model(abc.ABC):
     def __hash__(self) -> int:
         ...
 
+    @abc.abstractmethod
+    def __str__(self) -> str:
+        ...
+
 
 class RawCallableModel(Model):
     callable_name: str

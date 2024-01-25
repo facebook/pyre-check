@@ -22,6 +22,9 @@ class TestModel(Model):
         # pyre-fixme[7]: Expected `int` but got implicit return value of `None`.
         pass
 
+    def __str__(self) -> str:
+        return f"TestModel({self.index})"
+
 
 class TestModelGenerator(ModelGenerator[TestModel]):
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
