@@ -175,7 +175,7 @@ class AbstractDaemonQuerier(abc.ABC):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -275,7 +275,7 @@ class EmptyQuerier(AbstractDaemonQuerier):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         raise NotImplementedError()
 
     async def get_hover(
@@ -482,7 +482,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         return DaemonQueryFailure(
             "Symbol Search is not supported in the pyre persistent client. Please use code-navigation. "
         )
@@ -753,7 +753,7 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         return await self.base_querier.get_symbol_search(query)
 
 
@@ -840,9 +840,9 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         # Note: it is okay to return None here because there is currently no plan to support symbol search using the backend.
-        return None
+        raise NotImplementedError("Method not yet implemented")
 
     async def get_completions(
         self,
@@ -993,11 +993,12 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
     async def get_symbol_search(
         self,
         query: str,
-    ) -> Union[DaemonQueryFailure, Optional[lsp.WorkspaceSymbolResponse]]:
+    ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
+        LOG.info(f"Processing symbol search request for {query}")
         index_result = await self.index.symbol_search(query)
-        LOG.info(f"Processing symbol search request for {index_result}")
-        # TODO: Implement this method using a direct call from glass to get symbol search
-        return None
+        return GetSymbolSearchResponse(
+            source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
+        )
 
     async def get_definition_locations_from_glean(
         self,

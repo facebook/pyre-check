@@ -920,25 +920,63 @@ class PyreLanguageServer(PyreLanguageServerApi):
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
 
-        # Extract query from parameters
-        # query = parameters.query
-        LOG.info(f"Processing symbol search request for {parameters}")
-        # await lsp.write_json_rpc(
-        #     self.output_channel,
-        #     json_rpc.SuccessResponse(
-        #         id=request_id,
-        #         activity_key=activity_key,
-        #         result=None,
-        #     ),
-        # )
+        query = parameters.query
+        symbol_search_response = await self.index_querier.get_symbol_search(query)
 
-        # symbol_search_response = await self.index_querier.get_symbol_search(
-        #     query,
-        # )
-        # TODO: implement the logic for the symbol search
-        symbol_search_response = None
-        LOG.info(
-            f"Got the following response for symbol search {symbol_search_response}"
+        if isinstance(symbol_search_response, DaemonQueryFailure):
+            error_message = symbol_search_response.error_message
+            raw_results = (
+                symbol_search_response.fallback_result.data
+                if symbol_search_response.fallback_result is not None
+                else []
+            )
+            error_source = symbol_search_response.error_source
+        else:
+            error_message = None
+            error_source = None
+            raw_results = []
+            if symbol_search_response.data is not None:
+                for symbol in symbol_search_response.data.WorkspaceSymbols:
+                    raw_results.append(
+                        {
+                            "name": symbol.name,
+                            "kind": symbol.kind,
+                            "location": {
+                                "uri": symbol.location.uri,
+                                "range": {
+                                    "start": {
+                                        "line": symbol.location.range.start.line,
+                                        "character": symbol.location.range.start.character,
+                                    },
+                                    "end": {
+                                        "line": symbol.location.range.end.line,
+                                        "character": symbol.location.range.end.character,
+                                    },
+                                },
+                            },
+                        }
+                    )
+
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=raw_results,
+            ),
+        ),
+
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "symbol_search",
+                "query": query
+                if not isinstance(symbol_search_response, DaemonQueryFailure)
+                else None,
+                "error_message": error_message,
+                "error_source": error_source,
+            },
+            activity_key,
         )
 
     async def process_completion_request(
