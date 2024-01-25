@@ -3177,9 +3177,10 @@ module ScratchProject = struct
       errors_environment |> ErrorsEnvironment.type_environment
 
 
-    (* Because module tracker updates aren't exposed directly through UpdateResult, grey-box tests
-       of ModuleTracker updates require access to the read-write tracker. We put this in a ReadWrite
-       module to emphasize that it would be easy to make mistakes using it. *)
+    let ast_environment { errors_environment; _ } =
+      ErrorsEnvironment.ast_environment errors_environment
+
+
     let module_tracker { errors_environment; _ } =
       ErrorsEnvironment.ast_environment errors_environment |> AstEnvironment.module_tracker
   end
@@ -3192,15 +3193,13 @@ module ScratchProject = struct
     errors_environment project |> ErrorsEnvironment.ReadOnly.type_environment
 
 
+  let get_untracked_source_code_api project =
+    errors_environment project |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api
+
+
   let global_environment project =
     type_environment project |> TypeEnvironment.ReadOnly.global_environment
 
-
-  let ast_environment project =
-    global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
-
-
-  let module_tracker project = ast_environment project |> AstEnvironment.ReadOnly.module_tracker
 
   let global_module_paths_api { errors_environment; _ } =
     ErrorsEnvironment.global_module_paths_api errors_environment
@@ -3211,14 +3210,10 @@ module ScratchProject = struct
 
 
   let get_project_sources project =
-    let ast_environment =
-      global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
-    in
+    let source_code_api = get_untracked_source_code_api project in
     type_check_qualifiers project
-    |> List.filter_map ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
+    |> List.filter_map ~f:(SourceCodeApi.processed_source_of_qualifier source_code_api)
 
-
-  let build_ast_environment = ast_environment
 
   let build_global_environment project =
     let global_environment = global_environment project in

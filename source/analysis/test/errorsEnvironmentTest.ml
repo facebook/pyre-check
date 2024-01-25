@@ -27,8 +27,8 @@ let assert_errors ~context ~project expected =
     ScratchProject.get_all_errors project
     |> instantiate_and_stringify
          ~lookup:
-           (ScratchProject.module_tracker project
-           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+           (ScratchProject.get_untracked_source_code_api project
+           |> SourceCodeApi.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -40,8 +40,8 @@ let assert_overlay_errors ~context ~project ~overlay qualifier expected =
       qualifier
     |> instantiate_and_stringify
          ~lookup:
-           (ScratchProject.module_tracker project
-           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+           (ScratchProject.get_untracked_source_code_api project
+           |> SourceCodeApi.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 

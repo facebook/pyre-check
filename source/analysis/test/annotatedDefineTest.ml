@@ -80,14 +80,12 @@ let test_parent_definition context =
 let test_decorate context =
   let assert_decorated source ~expected_parameters ~expected_return_annotation =
     let source, environment =
-      let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-        ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
-      in
+      let project = ScratchProject.setup ~context ["test.py", source] in
       ( Option.value_exn
-          (AstEnvironment.ReadOnly.processed_source_of_qualifier
-             (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+          (SourceCodeApi.processed_source_of_qualifier
+             (Test.ScratchProject.get_untracked_source_code_api project)
              (Reference.create "test")),
-        global_environment )
+        Test.ScratchProject.global_environment project )
     in
     let resolution = GlobalResolution.create environment in
     let take_define = function

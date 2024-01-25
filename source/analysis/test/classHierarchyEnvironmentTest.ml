@@ -528,12 +528,10 @@ let ( !! ) concretes = List.map concretes ~f:(fun single -> Type.Parameter.Singl
 let test_compute_inferred_generic_base context =
   let assert_inferred_generic ~target source expected =
     let qualifier = Reference.create "test" in
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
-    in
+    let project = ScratchProject.setup ~context ["test.py", source] in
     let source =
-      AstEnvironment.ReadOnly.processed_source_of_qualifier
-        (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+      SourceCodeApi.processed_source_of_qualifier
+        (Test.ScratchProject.get_untracked_source_code_api project)
         qualifier
     in
     let source = Option.value_exn source in
@@ -552,7 +550,7 @@ let test_compute_inferred_generic_base context =
       |> Option.value_exn
       |> fun { Node.value; _ } -> ClassSummary.create ~qualifier value
     in
-    let resolution = GlobalResolution.create global_environment in
+    let resolution = Test.ScratchProject.build_global_resolution project in
     let parse_annotation =
       GlobalResolution.parse_annotation ~validation:ValidatePrimitives resolution
     in

@@ -60,7 +60,9 @@ let run_infer
   let open Option in
   Log.info "Running inference...";
   let timer = Timer.start () in
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment in
+  let source_code_api =
+    AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api global_environment
+  in
   let global_resolution = GlobalResolution.create global_environment in
   let should_analyze_qualifier =
     match paths_to_modify with
@@ -83,9 +85,7 @@ let run_infer
           ~filename_lookup
           source
       in
-      qualifier
-      |> AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment
-      >>| analyze_source
+      qualifier |> SourceCodeApi.processed_source_of_qualifier source_code_api >>| analyze_source
     in
     qualifiers |> List.filter_map ~f:analyze_qualifier |> List.concat
   in

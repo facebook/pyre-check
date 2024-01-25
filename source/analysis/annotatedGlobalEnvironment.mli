@@ -21,8 +21,12 @@ module AnnotatedReadOnly : sig
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.ReadOnly.t
 
-  (* Shortcut for walking through all of the environments *)
-  val ast_environment : t -> AstEnvironment.ReadOnly.t
+  val get_tracked_source_code_api
+    :  t ->
+    dependency:SharedMemoryKeys.DependencyKey.registered ->
+    SourceCodeApi.t
+
+  val get_untracked_source_code_api : t -> SourceCodeApi.t
 end
 
 include

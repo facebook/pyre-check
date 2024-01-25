@@ -119,8 +119,8 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
         in
         let filename_lookup qualifier =
           let source_code_api =
-            Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-            |> Analysis.AstEnvironment.ReadOnly.get_untracked_source_code_api
+            Analysis.AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
+              global_environment
           in
           Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
             ~build_system

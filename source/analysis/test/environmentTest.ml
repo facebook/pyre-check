@@ -398,11 +398,13 @@ let test_register_aliases context =
 
 let test_register_implicit_namespace_modules context =
   let environment = create_environment ~context ~additional_sources:["a/b/c.py", ""] () in
-  let ast_environment = AnnotatedGlobalEnvironment.ReadOnly.ast_environment environment in
+  let source_code_api =
+    AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api environment
+  in
   let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    (AstEnvironment.ReadOnly.raw_source_of_qualifier ast_environment (Reference.create "a.b.c")
+    (SourceCodeApi.raw_source_of_qualifier source_code_api (Reference.create "a.b.c")
     |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"

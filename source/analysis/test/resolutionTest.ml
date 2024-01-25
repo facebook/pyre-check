@@ -446,17 +446,14 @@ let test_get_typed_dictionary context =
 
 let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) ?(extra_sources = []) source =
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context (["test.py", source] @ extra_sources)
-      |> ScratchProject.build_global_environment
-    in
-    let resolution = GlobalResolution.create global_environment in
+    let project = ScratchProject.setup ~context (["test.py", source] @ extra_sources) in
     let source =
-      AstEnvironment.ReadOnly.processed_source_of_qualifier
-        (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+      SourceCodeApi.processed_source_of_qualifier
+        (Test.ScratchProject.get_untracked_source_code_api project)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
+    let resolution = Test.ScratchProject.build_global_resolution project in
     assert_equal expected (GlobalResolution.source_is_unit_test resolution ~source)
   in
   let assert_not_unit_test = assert_is_unit_test ~expected:false in
@@ -482,17 +479,15 @@ let test_source_is_unit_test context =
 
 let test_fallback_attribute context =
   let assert_fallback_attribute ?(instantiated = None) ~name source annotation =
-    let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_global_environment
-    in
-    let global_resolution = GlobalResolution.create global_environment in
+    let project = ScratchProject.setup ~context ["test.py", source] in
+    let global_resolution = Test.ScratchProject.build_global_resolution project in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
 
     let attribute =
       let qualifier = Reference.create "test" in
       let source =
-        AstEnvironment.ReadOnly.processed_source_of_qualifier
-          (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+        SourceCodeApi.processed_source_of_qualifier
+          (Test.ScratchProject.get_untracked_source_code_api project)
           qualifier
       in
       let last_statement_exn = function

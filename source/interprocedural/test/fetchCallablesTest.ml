@@ -11,21 +11,17 @@ open Interprocedural
 
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
-    let configuration, ast_environment, resolution =
+    let configuration, source_code_api, resolution =
       let scratch_project =
         Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
       in
-      let { Test.ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-        Test.ScratchProject.build_global_environment scratch_project
-      in
       ( Test.ScratchProject.configuration_of scratch_project,
-        Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment,
-        Analysis.GlobalResolution.create global_environment )
+        Test.ScratchProject.get_untracked_source_code_api scratch_project,
+        Test.ScratchProject.build_global_resolution scratch_project )
     in
     let source =
-      Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier
-        ast_environment
-        ?dependency:None
+      Analysis.SourceCodeApi.processed_source_of_qualifier
+        source_code_api
         (Ast.Reference.create "test")
       |> Option.value_exn
     in

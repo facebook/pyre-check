@@ -135,8 +135,8 @@ let test_unresolved_select context =
       let callable, signature =
         let arguments, expression =
           match
-            AstEnvironment.ReadOnly.processed_source_of_qualifier
-              (AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment)
+            SourceCodeApi.processed_source_of_qualifier
+              (AnnotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api global_environment)
               (Reference.create "test")
             >>| Source.statements
             >>| List.rev

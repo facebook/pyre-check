@@ -134,12 +134,14 @@ module ReadOnly = struct
     attribute_resolution read_only |> AttributeResolution.ReadOnly.class_metadata_environment
 
 
-  let ast_environment environment =
-    class_metadata_environment environment
-    |> ClassSuccessorMetadataEnvironment.ReadOnly.class_hierarchy_environment
-    |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-    |> AliasEnvironment.ReadOnly.unannotated_global_environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
+  let get_tracked_source_code_api environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api
+
+
+  let get_untracked_source_code_api environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
 end
 
 module UpdateResult = GlobalLocationTable.UpdateResult

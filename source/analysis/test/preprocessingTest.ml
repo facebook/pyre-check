@@ -3084,17 +3084,16 @@ let test_expand_type_checking_imports _ =
 
 let test_expand_wildcard_imports context =
   let assert_expanded external_sources check_source expected =
-    let ast_environment =
+    let source_code_api =
       ScratchProject.setup ~context ~external_sources ["test.py", check_source]
-      |> ScratchProject.build_ast_environment
+      |> ScratchProject.get_untracked_source_code_api
     in
     assert_equal
       ~cmp:(List.equal (fun left right -> Statement.location_insensitive_compare left right = 0))
       ~printer:(fun statement_list -> List.map statement_list ~f:show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements
-         (Option.value_exn
-            (AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment !&"test")))
+         (Option.value_exn (SourceCodeApi.processed_source_of_qualifier source_code_api !&"test")))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

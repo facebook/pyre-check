@@ -34,11 +34,7 @@ let test_basic context =
     ScratchProject.setup ~context [handle_a, source_a; handle_b, source_b; handle_c, source_c]
   in
   let configuration = ScratchProject.configuration_of project in
-  let module_tracker =
-    ScratchProject.global_environment project
-    |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
-    |> AstEnvironment.ReadOnly.module_tracker
-  in
+  let module_tracker = ScratchProject.ReadWrite.module_tracker project |> ModuleTracker.read_only in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_module_path ~module_tracker ~expected reference =
     match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker reference with
@@ -82,7 +78,8 @@ let test_parse_stubs_modules_list context =
         "2/modc.py", source_content;
         "2and3/modd.py", source_content;
       ]
-    |> ScratchProject.build_ast_environment
+    |> ScratchProject.ReadWrite.ast_environment
+    |> AstEnvironment.read_only
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
@@ -124,7 +121,8 @@ let test_parse_source context =
         ~include_typeshed_stubs:false
         ["x.py", "def foo()->int:\n    return 1\n"]
     in
-    ScratchProject.ast_environment project, ScratchProject.global_module_paths_api project
+    ( ScratchProject.ReadWrite.ast_environment project |> AstEnvironment.read_only,
+      ScratchProject.global_module_paths_api project )
   in
   let sources =
     List.filter_map
@@ -625,7 +623,9 @@ let test_parse_repository context =
     let actual =
       let ast_environment, global_module_paths_api =
         let project = ScratchProject.setup ~context ~include_typeshed_stubs:false repository in
-        ScratchProject.ast_environment project, ScratchProject.global_module_paths_api project
+
+        ( ScratchProject.ReadWrite.ast_environment project |> AstEnvironment.read_only,
+          ScratchProject.global_module_paths_api project )
       in
       let sources =
         List.filter_map
@@ -735,7 +735,9 @@ module IncrementalTest = struct
     in
     let configuration = ScratchProject.configuration_of project in
     let () =
-      let ast_environment = ScratchProject.build_ast_environment project in
+      let ast_environment =
+        ScratchProject.ReadWrite.ast_environment project |> AstEnvironment.read_only
+      in
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
@@ -1040,7 +1042,7 @@ let make_overlay_testing_functions ~context ~test_sources =
   let project = ScratchProject.setup ~context test_sources in
   let local_root = ScratchProject.local_root_of project in
   let parent_read_only =
-    ScratchProject.global_environment project |> AnnotatedGlobalEnvironment.ReadOnly.ast_environment
+    ScratchProject.ReadWrite.ast_environment project |> AstEnvironment.read_only
   in
   let overlay_environment = AstEnvironment.Overlay.create parent_read_only in
   let read_only = AstEnvironment.Overlay.read_only overlay_environment in
