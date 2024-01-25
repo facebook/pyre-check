@@ -86,13 +86,9 @@ module ReadOnly = struct
 
   let type_environment environment = upstream_environment environment
 
-  let ast_environment environment =
+  let get_untracked_source_code_api environment =
     unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-
-
-  let module_tracker environment =
-    ast_environment environment |> AstEnvironment.ReadOnly.module_tracker
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
 
 
   let controls environment = type_environment environment |> TypeEnvironment.ReadOnly.controls

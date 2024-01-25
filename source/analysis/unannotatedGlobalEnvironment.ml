@@ -430,6 +430,14 @@ module ReadOnly = struct
 
   let ast_environment { ast_environment; _ } = ast_environment
 
+  let get_untracked_source_code_api environment =
+    ast_environment environment |> AstEnvironment.ReadOnly.get_untracked_source_code_api
+
+
+  let get_tracked_source_code_api environment =
+    ast_environment environment |> AstEnvironment.ReadOnly.get_tracked_source_code_api
+
+
   let controls { ast_environment; _ } = AstEnvironment.ReadOnly.controls ast_environment
 
   let unannotated_global_environment = Fn.id

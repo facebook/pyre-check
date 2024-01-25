@@ -10,9 +10,7 @@ module ErrorsEnvironmentReadOnly : sig
 
   val type_environment : t -> TypeEnvironment.ReadOnly.t
 
-  val ast_environment : t -> AstEnvironment.ReadOnly.t
-
-  val module_tracker : t -> ModuleTracker.ReadOnly.t
+  val get_untracked_source_code_api : t -> SourceCodeApi.t
 
   val controls : t -> EnvironmentControls.t
 

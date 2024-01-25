@@ -134,7 +134,7 @@ let parse_decorator_preprocessing_configuration
 
 let resolve_module_path
     ~build_system
-    ~module_tracker
+    ~source_code_api
     ~static_analysis_configuration:
       { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
     qualifier
@@ -142,7 +142,7 @@ let resolve_module_path
   match
     Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
       ~build_system
-      ~module_tracker
+      ~source_code_api
       qualifier
   with
   | None -> None
@@ -166,14 +166,14 @@ let write_modules_to_file
     qualifiers
   =
   Log.info "Writing modules to `%s`" (PyrePath.absolute path);
-  let module_tracker =
+  let source_code_api =
     type_environment
     |> Analysis.TypeEnvironment.read_only
-    |> Analysis.TypeEnvironment.ReadOnly.module_tracker
+    |> Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api
   in
   let to_json_lines qualifier =
     let path =
-      resolve_module_path ~build_system ~module_tracker ~static_analysis_configuration qualifier
+      resolve_module_path ~build_system ~source_code_api ~static_analysis_configuration qualifier
       |> function
       | Some { path; _ } -> `String (PyrePath.absolute path)
       | None -> `Null
@@ -474,6 +474,30 @@ let compact_ocaml_heap ~name =
   Statistics.performance ~name ~phase_name:name ~timer ()
 
 
+let resolve_module_path
+    ~build_system
+    ~source_code_api
+    ~static_analysis_configuration:
+      { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
+    qualifier
+  =
+  match
+    Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
+      ~build_system
+      ~source_code_api
+      qualifier
+  with
+  | None -> None
+  | Some path ->
+      let root = Option.value repository_root ~default:local_root in
+      let path = PyrePath.create_absolute path in
+      Some
+        {
+          Interprocedural.RepositoryPath.filename = PyrePath.get_relative_to_root ~root ~path;
+          path;
+        }
+
+
 let run_taint_analysis
     ~static_analysis_configuration:
       ({
@@ -530,14 +554,14 @@ let run_taint_analysis
 
   let global_module_paths_api = environment |> Analysis.TypeEnvironment.global_module_paths_api in
   let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-  let module_tracker =
+  let source_code_api =
     environment
     |> Analysis.TypeEnvironment.read_only
-    |> Analysis.TypeEnvironment.ReadOnly.module_tracker
+    |> Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api
   in
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
   let resolve_module_path =
-    resolve_module_path ~build_system ~module_tracker ~static_analysis_configuration
+    resolve_module_path ~build_system ~source_code_api ~static_analysis_configuration
   in
 
   let class_hierarchy_graph, cache =

@@ -25,6 +25,13 @@ module ReadOnly : sig
     Parsing.ParseResult.t option
 
   val module_tracker : t -> ModuleTracker.ReadOnly.t
+
+  val get_tracked_source_code_api
+    :  t ->
+    dependency:SharedMemoryKeys.DependencyKey.registered ->
+    SourceCodeApi.t
+
+  val get_untracked_source_code_api : t -> SourceCodeApi.t
 end
 
 module UpdateResult : sig

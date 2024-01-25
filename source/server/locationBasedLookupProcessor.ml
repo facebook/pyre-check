@@ -32,8 +32,10 @@ let get_module_path ~type_environment ~build_system path =
   | analysis_path :: _ -> (
       (* If a source path corresponds to multiple artifacts, randomly pick an artifact and compute
          results for it. *)
-      let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
-      match ArtifactPaths.module_path_of_artifact_path ~module_tracker analysis_path with
+      let source_code_api =
+        TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
+      in
+      match ArtifactPaths.module_path_of_artifact_path ~source_code_api analysis_path with
       | Some module_path -> Result.Ok module_path
       | None -> Result.Error FileNotFound)
 

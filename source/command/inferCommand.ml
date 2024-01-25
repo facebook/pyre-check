@@ -118,13 +118,13 @@ let run_infer_local ~configuration ~build_system ~paths_to_modify () =
           TypeInference.Service.build_environment_data ~configuration ()
         in
         let filename_lookup qualifier =
-          let module_tracker =
+          let source_code_api =
             Analysis.AnnotatedGlobalEnvironment.ReadOnly.ast_environment global_environment
-            |> Analysis.AstEnvironment.ReadOnly.module_tracker
+            |> Analysis.AstEnvironment.ReadOnly.get_untracked_source_code_api
           in
           Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
             ~build_system
-            ~module_tracker
+            ~source_code_api
             qualifier
         in
         TypeInference.Service.run_infer

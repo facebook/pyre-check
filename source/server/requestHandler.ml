@@ -12,26 +12,26 @@ open Core
 open Pyre
 open Analysis
 
-let instantiate_error ~lookup_source ~show_error_traces ~module_tracker error =
+let instantiate_error ~lookup_source ~show_error_traces ~source_code_api error =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(PathLookup.absolute_source_path_of_qualifier ~lookup_source ~module_tracker)
+    ~lookup:(PathLookup.absolute_source_path_of_qualifier ~lookup_source ~source_code_api)
     error
 
 
-let instantiate_error_with_build_system ~build_system ~module_tracker error =
+let instantiate_error_with_build_system ~build_system ~source_code_api error =
   let { Configuration.Analysis.show_error_traces; _ } =
-    ModuleTracker.ReadOnly.controls module_tracker |> EnvironmentControls.configuration
+    SourceCodeApi.controls source_code_api |> EnvironmentControls.configuration
   in
   instantiate_error
     ~lookup_source:(BuildSystem.lookup_source build_system)
     ~show_error_traces
-    ~module_tracker
+    ~source_code_api
     error
 
 
-let instantiate_errors_with_build_system ~build_system ~module_tracker errors =
-  List.map errors ~f:(instantiate_error_with_build_system ~build_system ~module_tracker)
+let instantiate_errors_with_build_system ~build_system ~source_code_api errors =
+  List.map errors ~f:(instantiate_error_with_build_system ~build_system ~source_code_api)
 
 
 let create_type_errors_response ?build_failure instantiated_errors =
@@ -41,10 +41,10 @@ let create_type_errors_response ?build_failure instantiated_errors =
 let instantiate_and_create_type_errors_response
     ?build_failure
     ~build_system
-    ~module_tracker
+    ~source_code_api
     raw_errors
   =
-  instantiate_errors_with_build_system ~build_system ~module_tracker raw_errors
+  instantiate_errors_with_build_system ~build_system ~source_code_api raw_errors
   |> create_type_errors_response ?build_failure
 
 
@@ -54,10 +54,12 @@ let instantiate_and_create_type_errors_response_for_modules
     ~modules
     errors_environment
   =
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
+  let source_code_api =
+    ErrorsEnvironment.ReadOnly.get_untracked_source_code_api errors_environment
+  in
   ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers errors_environment modules
   |> List.sort ~compare:AnalysisError.compare
-  |> instantiate_and_create_type_errors_response ~build_system ~module_tracker ?build_failure
+  |> instantiate_and_create_type_errors_response ~build_system ~source_code_api ?build_failure
 
 
 let instantiate_and_create_type_errors_response_for_all
@@ -96,10 +98,12 @@ let process_display_type_error_request
         GlobalModulePathsApi.type_check_qualifiers global_module_paths_api
     | _ ->
         let get_module_for_source_path path =
-          let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
+          let source_code_api =
+            ErrorsEnvironment.ReadOnly.get_untracked_source_code_api errors_environment
+          in
           PyrePath.create_absolute path
           |> SourcePath.create
-          |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~module_tracker
+          |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~source_code_api
         in
         List.concat_map paths ~f:get_module_for_source_path
   in

@@ -8,13 +8,13 @@
 val instantiate_error
   :  lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
   show_error_traces:bool ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   Analysis.AnalysisError.t ->
   Analysis.AnalysisError.Instantiated.t
 
 val instantiate_error_with_build_system
   :  build_system:BuildSystem.t ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   Analysis.AnalysisError.t ->
   Analysis.AnalysisError.Instantiated.t
 

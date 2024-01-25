@@ -6,11 +6,11 @@
  *)
 
 val artifact_path_of_qualifier
-  :  module_tracker:ModuleTracker.ReadOnly.t ->
+  :  source_code_api:SourceCodeApi.t ->
   Ast.Reference.t ->
   ArtifactPath.t option
 
 val module_path_of_artifact_path
-  :  module_tracker:ModuleTracker.ReadOnly.t ->
+  :  source_code_api:SourceCodeApi.t ->
   ArtifactPath.t ->
   Ast.ModulePath.t option

@@ -461,6 +461,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
     let configuration =
       TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
     in
+    let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
     let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
     let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
     let order = GlobalResolution.class_hierarchy global_resolution in
@@ -719,7 +720,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
               ~lookup:
                 (PathLookup.absolute_source_path_of_qualifier_with_build_system
                    ~build_system
-                   ~module_tracker)
+                   ~source_code_api)
           in
           List.map
             ~f:(fun { Callgraph.callee; locations } ->
@@ -738,7 +739,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
              |> List.map ~f:(fun { ModulePath.qualifier; _ } ->
                     PathLookup.absolute_source_path_of_qualifier_with_build_system
                       ~build_system
-                      ~module_tracker
+                      ~source_code_api
                       qualifier)
              |> List.filter ~f:Option.is_some
              |> List.map ~f:(function
@@ -804,10 +805,9 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         Single (Base.ExpressionLevelCoverageResponse results)
     | GlobalLeaks { qualifiers; parse_errors } ->
         let lookup =
-          let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
           PathLookup.absolute_source_path_of_qualifier_with_build_system
             ~build_system
-            ~module_tracker
+            ~source_code_api
         in
         let find_leak_errors_for_qualifier qualifier =
           Analysis.GlobalLeakCheck.check_qualifier ~type_environment qualifier
@@ -925,8 +925,9 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         Single
           (Base.FoundModules
              (SourcePath.create path
-             |> PathLookup.qualifiers_of_source_path_with_build_system ~build_system ~module_tracker
-             ))
+             |> PathLookup.qualifiers_of_source_path_with_build_system
+                  ~build_system
+                  ~source_code_api))
     | LessOrEqual (left, right) ->
         let left = parse_and_validate left in
         let right = parse_and_validate right in

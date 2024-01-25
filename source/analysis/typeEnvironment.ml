@@ -209,6 +209,16 @@ module ReadOnly = struct
     ast_environment environment |> AstEnvironment.ReadOnly.module_tracker
 
 
+  let get_tracked_source_code_api environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api
+
+
+  let get_untracked_source_code_api environment =
+    unannotated_global_environment environment
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
+
+
   let get_errors environment ?dependency reference =
     get ?dependency environment reference
     >>= TypeCheck.CheckResult.errors

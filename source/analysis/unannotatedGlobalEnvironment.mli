@@ -14,6 +14,13 @@ module ReadOnly : sig
 
   val ast_environment : t -> AstEnvironment.ReadOnly.t
 
+  val get_tracked_source_code_api
+    :  t ->
+    dependency:SharedMemoryKeys.DependencyKey.registered ->
+    SourceCodeApi.t
+
+  val get_untracked_source_code_api : t -> SourceCodeApi.t
+
   val controls : t -> EnvironmentControls.t
 
   val unannotated_global_environment : t -> t

@@ -28,8 +28,8 @@ let assert_root_errors ~context ~overlaid_environment expected =
     |> instantiate_and_stringify
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
-           |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+           |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api
+           |> SourceCodeApi.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -42,8 +42,8 @@ let assert_root_errors_for_qualifier ~context ~overlaid_environment ~qualifier e
     |> instantiate_and_stringify
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
-           |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+           |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api
+           |> SourceCodeApi.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 
@@ -54,8 +54,8 @@ let assert_overlay_errors ~context ~overlaid_environment ~overlay_identifier exp
     |> instantiate_and_stringify
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
-           |> ErrorsEnvironment.ReadOnly.module_tracker
-           |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+           |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api
+           |> SourceCodeApi.relative_path_of_qualifier)
   in
   assert_equal ~ctxt:context ~printer:[%show: string list] expected actual
 

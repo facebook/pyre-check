@@ -171,10 +171,12 @@ let compute_errors ~configuration ~build_system () =
       errors_environment
       type_check_qualifiers
   in
-  let module_tracker = Analysis.ErrorsEnvironment.ReadOnly.module_tracker errors_environment in
+  let source_code_api =
+    Analysis.ErrorsEnvironment.ReadOnly.get_untracked_source_code_api errors_environment
+  in
   List.map
     (List.sort ~compare:Analysis.AnalysisError.compare errors)
-    ~f:(Server.RequestHandler.instantiate_error_with_build_system ~build_system ~module_tracker)
+    ~f:(Server.RequestHandler.instantiate_error_with_build_system ~build_system ~source_code_api)
 
 
 let print_errors errors =

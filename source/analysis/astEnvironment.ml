@@ -54,6 +54,21 @@ module ReadOnly = struct
     AstProcessing.processed_source_of_qualifier
       ~raw_source_of_qualifier:raw_source_of_qualifier_and_maybe_track
       qualifier
+
+
+  let source_code_api_impl environment ~dependency =
+    SourceCodeApi.create
+      ~controls:(controls environment)
+      ~module_path_of_qualifier:
+        (module_tracker environment |> ModuleTracker.ReadOnly.module_path_of_qualifier)
+      ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
+
+
+  let get_tracked_source_code_api environment ~dependency =
+    source_code_api_impl environment ~dependency:(Some dependency)
+
+
+  let get_untracked_source_code_api environment = source_code_api_impl environment ~dependency:None
 end
 
 module UpdateResult = struct

@@ -9,7 +9,7 @@
     into account any potential path translation done by [lookup_artifact].*)
 val qualifiers_of_source_path
   :  lookup_artifact:(SourcePath.t -> ArtifactPath.t list) ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   SourcePath.t ->
   Ast.Reference.t list
 
@@ -17,7 +17,7 @@ val qualifiers_of_source_path
     into account any potential path translation done by the {!BuildSystem.t}.*)
 val qualifiers_of_source_path_with_build_system
   :  build_system:BuildSystem.t ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   SourcePath.t ->
   Ast.Reference.t list
 
@@ -25,7 +25,7 @@ val qualifiers_of_source_path_with_build_system
     This API will take into account any potential path translation done by [lookup_source]. *)
 val absolute_source_path_of_qualifier
   :  lookup_source:(ArtifactPath.t -> SourcePath.t option) ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   Ast.Reference.t ->
   string option
 
@@ -33,6 +33,6 @@ val absolute_source_path_of_qualifier
     This API will take into account any potential path translation done by the {!BuildSystem.t}. *)
 val absolute_source_path_of_qualifier_with_build_system
   :  build_system:BuildSystem.t ->
-  module_tracker:Analysis.ModuleTracker.ReadOnly.t ->
+  source_code_api:Analysis.SourceCodeApi.t ->
   Ast.Reference.t ->
   string option

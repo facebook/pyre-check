@@ -325,8 +325,8 @@ let test_error_filtering context =
              Analysis.AnalysisError.instantiate
                ~show_error_traces:false
                ~lookup:
-                 (ModuleTracker.ReadOnly.relative_path_of_qualifier
-                    (ErrorsEnvironment.ReadOnly.module_tracker environment))
+                 (SourceCodeApi.relative_path_of_qualifier
+                    (ErrorsEnvironment.ReadOnly.get_untracked_source_code_api environment))
                error
              |> Analysis.AnalysisError.Instantiated.description)
     in

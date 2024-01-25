@@ -53,13 +53,13 @@ let get_overlay ~environment overlay_id =
        ~message:(Stdlib.Format.sprintf "Unexpected overlay lookup failure with id `%s`" overlay_id)
 
 
-let get_modules ~module_tracker ~build_system path =
+let get_modules ~source_code_api ~build_system path =
   let modules =
     let source_path = PyrePath.create_absolute path |> SourcePath.create in
     match
       Server.PathLookup.qualifiers_of_source_path
         source_path
-        ~module_tracker
+        ~source_code_api
         ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
     with
     (* In case there's no build system artifacts for this source, lookup the module as if it's built
@@ -67,7 +67,7 @@ let get_modules ~module_tracker ~build_system path =
     | [] ->
         Server.PathLookup.qualifiers_of_source_path
           source_path
-          ~module_tracker
+          ~source_code_api
           ~lookup_artifact:BuildSystem.default_lookup_artifact
     | _ as modules -> modules
   in
@@ -78,8 +78,8 @@ let get_modules ~module_tracker ~build_system path =
 
 let get_type_errors_in_overlay ~overlay ~build_system path =
   let open Result in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker ~build_system path
+  let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
+  get_modules ~source_code_api ~build_system path
   >>| fun modules ->
   ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers overlay modules
   |> List.sort ~compare:AnalysisError.compare
@@ -88,7 +88,7 @@ let get_type_errors_in_overlay ~overlay ~build_system path =
          (Server.RequestHandler.instantiate_error
             ~lookup_source:(BuildSystem.lookup_source build_system)
             ~show_error_traces:false
-            ~module_tracker)
+            ~source_code_api)
 
 
 let handle_get_type_errors ~paths ~client_id { State.environment; build_system; client_states; _ } =
@@ -111,8 +111,8 @@ let get_hover_content_for_module ~overlay ~position module_reference =
 
 let get_hover_in_overlay ~overlay ~build_system ~position module_ =
   let open Result in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker ~build_system module_
+  let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
+  get_modules ~source_code_api ~build_system module_
   >>| List.map ~f:(get_hover_content_for_module ~overlay ~position)
 
 
@@ -134,20 +134,20 @@ let handle_hover ~path ~position ~client_id { State.environment; build_system; c
 let get_location_of_definition_for_module ~overlay ~build_system ~position module_reference =
   let open Option in
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
-  let module_tracker = TypeEnvironment.ReadOnly.module_tracker type_environment in
+  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   LocationBasedLookup.location_of_definition ~type_environment ~module_reference position
   >>= fun { Ast.Location.WithModule.module_reference; start; stop } ->
   Server.PathLookup.absolute_source_path_of_qualifier
     ~lookup_source:(BuildSystem.lookup_source build_system)
-    ~module_tracker
+    ~source_code_api
     module_reference
   >>| fun path -> { Response.DefinitionLocation.path; range = { Ast.Location.start; stop } }
 
 
 let get_location_of_definition_in_overlay ~overlay ~build_system ~position path =
   let open Result in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker ~build_system path
+  let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
+  get_modules ~source_code_api ~build_system path
   >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~build_system ~position)
 
 
@@ -181,8 +181,8 @@ let get_completion_for_module ~overlay ~position module_reference =
 
 let get_completion_in_overlay ~overlay ~build_system ~position path =
   let open Result in
-  let module_tracker = ErrorsEnvironment.ReadOnly.module_tracker overlay in
-  get_modules ~module_tracker ~build_system path
+  let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
+  get_modules ~source_code_api ~build_system path
   >>| List.map ~f:(get_completion_for_module ~overlay ~position)
 
 
@@ -466,10 +466,11 @@ let handle_working_set_update
 
 
 let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~client_id overlay =
-  let module_tracker =
-    ErrorsEnvironment.Overlay.read_only overlay |> ErrorsEnvironment.ReadOnly.module_tracker
+  let source_code_api =
+    ErrorsEnvironment.Overlay.read_only overlay
+    |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api
   in
-  match get_modules ~module_tracker ~build_system path with
+  match get_modules ~source_code_api ~build_system path with
   | Result.Error kind -> Lwt.return (Response.Error kind)
   | Result.Ok modules ->
       let code_updates =
@@ -479,7 +480,7 @@ let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~
           | None -> ModuleTracker.Overlay.CodeUpdate.ResetCode
         in
         let to_update module_name =
-          ArtifactPaths.artifact_path_of_qualifier ~module_tracker module_name
+          ArtifactPaths.artifact_path_of_qualifier ~source_code_api module_name
           |> Option.map ~f:(fun artifact_path -> artifact_path, code_update)
         in
         List.filter_map modules ~f:to_update
