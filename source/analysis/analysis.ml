@@ -53,6 +53,7 @@ module ResolvedReference = ResolvedReference
 module Scope = Scope
 module SharedMemoryKeys = SharedMemoryKeys
 module SignatureSelectionTypes = SignatureSelectionTypes
+module SourceCodeApi = SourceCodeApi
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeEnvironment = TypeEnvironment
