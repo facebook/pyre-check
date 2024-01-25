@@ -5,21 +5,29 @@
 
 # pyre-strict
 
-from typing import Any, Callable, Iterable, List, Optional, Type
+from typing import Any, Callable, Iterable, List, Optional, Set, Type
 
 try:
     from graphql3 import GraphQLSchema
 except ModuleNotFoundError:
     from graphql import GraphQLSchema
 
-from .function_tainter import taint_callable_functions
-from .generator_specifications import AllParametersAnnotation, AnnotationSpecification
-from .model import CallableModel
-from .model_generator import ModelGenerator
+from .generator_specifications import AnnotationSpecification
+from .model import CallableModel, UnsupportedCallable
+from .model_generator import ModelGenerator, ModelGenerationException
 
 
 # pyre-ignore: Too dynamic.
 GraphQLObjectType = Type[Any]
+
+class DynamicGraphQLFormattableSpecification():
+    def __init__(self, template_str: str) -> None:
+        if not template_str or '{gql_type_name}' not in template_str or '{gql_field}' not in template_str:
+            raise ModelGenerationException("Template string must be provided and contain '{gql_type_name}' and '{gql_field}'")
+        self.template_str = template_str
+
+    def format(self, gql_type_name: str, gql_field: str) -> str:
+        return self.template_str.format(gql_type_name=gql_type_name, gql_field=gql_field)
 
 
 class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
@@ -27,29 +35,29 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
         self,
         graphql_schema: GraphQLSchema,
         graphql_object_type: GraphQLObjectType,
-        annotations: Optional[AnnotationSpecification] = None,
+        annotations: AnnotationSpecification,
+        formattable_return: Optional[DynamicGraphQLFormattableSpecification] = None,
         resolvers_to_exclude: Optional[List[str]] = None,
     ) -> None:
         super().__init__()
         self.graphql_schema: GraphQLSchema = graphql_schema
         self.graphql_object_type: GraphQLObjectType = graphql_object_type
-        self.annotations: AnnotationSpecification = (
-            annotations
-            or AnnotationSpecification(
-                parameter_annotation=AllParametersAnnotation(
-                    vararg="TaintSource[UserControlled]",
-                    kwarg="TaintSource[UserControlled]",
-                ),
-                returns="TaintSink[ReturnedToUser]",
-            )
-        )
+        if formattable_return and annotations.returns:
+            raise ModelGenerationException("Setting a returns in annotations will be overwritten when specifying a formattable_return")
+        self.annotations: AnnotationSpecification = annotations
+        self.formattable_return: Optional[DynamicGraphQLFormattableSpecification] = formattable_return
         self.resolvers_to_exclude: List[str] = resolvers_to_exclude or []
 
     def gather_functions_to_model(self) -> Iterable[Callable[..., object]]:
+        return []
+
+    def compute_models(
+        self, functions_to_model: Iterable[Callable[..., object]]
+    ) -> Iterable[CallableModel]:
         type_map = self.graphql_schema.type_map
 
         # Get all graphql resolver functions.
-        resolvers: List[Callable[..., object]] = []
+        entry_points: Set[CallableModel] = set()
 
         for element in type_map.values():
             if not isinstance(element, self.graphql_object_type):
@@ -58,6 +66,7 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
             try:
                 # pyre-fixme[16]: `GraphQLNamedType` has no attribute `fields`.
                 fields = element.fields
+                gql_object_name = element.name
             except AssertionError:
                 # GraphQL throws an exception when a GraphQL object is created
                 # with 0 fields. Since we don't control the library, we need to
@@ -72,13 +81,17 @@ class DynamicGraphQLSourceGenerator(ModelGenerator[CallableModel]):
                     and f"{resolver.__module__}.{resolver.__name__}"
                     not in self.resolvers_to_exclude
                 ):
-                    resolvers.append(resolver)
+                    annotation = self.annotations
+                    if self.formattable_return:
+                        formatted_return = self.formattable_return.format(gql_object_name, field)
+                        annotation = self.annotations._replace(returns=formatted_return)
 
-        return resolvers
+                    try:
+                        model = CallableModel(
+                            callable_object=resolver, annotations=annotation
+                        )
+                        entry_points.add(model)
+                    except UnsupportedCallable:
+                        pass
 
-    def compute_models(
-        self, functions_to_model: Iterable[Callable[..., object]]
-    ) -> Iterable[CallableModel]:
-        return taint_callable_functions(
-            functions_to_model, annotations=self.annotations
-        )
+        return sorted(entry_points)

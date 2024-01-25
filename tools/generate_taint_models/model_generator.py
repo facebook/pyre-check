@@ -16,6 +16,14 @@ from .model import Model
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class ModelGenerationException(Exception):
+    """
+    Custom Exception to raise when the model generator errors out
+    """
+
+    pass
+
+
 def qualifier(root: str, path: str) -> str:
     path = os.path.relpath(path, root)
     if path.endswith(".pyi"):

@@ -30,6 +30,14 @@ FunctionDefinition = Union[ast.FunctionDef, ast.AsyncFunctionDef]
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
+class UnsupportedCallable(ValueError):
+    """
+    Custom Exception to raise when a callable is not supported by the model generator
+    """
+
+    pass
+
+
 class Model(abc.ABC):
     def __lt__(self, other: "Model") -> bool:
         return str(self) < str(other)
@@ -83,7 +91,7 @@ class RawCallableModel(Model):
         callable_name = self._get_fully_qualified_callable_name()
         # Object construction should fail if any child class passes in a None.
         if not callable_name or "-" in callable_name:
-            raise ValueError("The callable is not supported")
+            raise UnsupportedCallable("The callable is not supported")
 
         self.callable_name = callable_name
         self.parameters = self._generate_parameters()
