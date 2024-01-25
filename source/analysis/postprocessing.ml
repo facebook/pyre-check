@@ -161,8 +161,13 @@ let run_on_source
 
 
 let run_on_qualifier environment ~dependency qualifier =
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  match AstEnvironment.ReadOnly.raw_source_of_qualifier ?dependency ast_environment qualifier with
+  let source_code_api =
+    match dependency with
+    | Some dependency ->
+        TypeEnvironment.ReadOnly.get_tracked_source_code_api environment ~dependency
+    | None -> TypeEnvironment.ReadOnly.get_untracked_source_code_api environment
+  in
+  match SourceCodeApi.raw_source_of_qualifier source_code_api qualifier with
   | None -> []
   | Some
       ( Result.Ok { Source.module_path; _ }

@@ -338,8 +338,8 @@ let check_expectation
       Error.instantiate
         ~show_error_traces:true
         ~lookup:
-          (TypeEnvironment.ReadOnly.module_tracker type_environment
-          |> ModuleTracker.ReadOnly.relative_path_of_qualifier)
+          (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
+          |> SourceCodeApi.relative_path_of_qualifier)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -460,10 +460,10 @@ let initialize
   let static_analysis_configuration =
     Configuration.StaticAnalysis.create configuration ?find_missing_flows ()
   in
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment type_environment in
+  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source =
-    AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
+    SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
     |> fun option -> Option.value_exn option
   in
   (if not (List.is_empty errors) then
@@ -473,9 +473,7 @@ let initialize
               let error =
                 AnalysisError.instantiate
                   ~show_error_traces:false
-                  ~lookup:
-                    (ModuleTracker.ReadOnly.relative_path_of_qualifier
-                       (AstEnvironment.ReadOnly.module_tracker ast_environment))
+                  ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api)
                   error
               in
               Format.asprintf
@@ -824,8 +822,8 @@ let end_to_end_integration_test path context =
         ~shared_models
     in
     let resolve_module_path qualifier =
-      ModuleTracker.ReadOnly.relative_path_of_qualifier
-        (TypeEnvironment.ReadOnly.module_tracker type_environment)
+      SourceCodeApi.relative_path_of_qualifier
+        (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment)
         qualifier
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }

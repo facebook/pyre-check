@@ -200,15 +200,6 @@ module ReadOnly = struct
 
   let global_resolution environment = global_environment environment |> GlobalResolution.create
 
-  let ast_environment environment =
-    unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.ast_environment
-
-
-  let module_tracker environment =
-    ast_environment environment |> AstEnvironment.ReadOnly.module_tracker
-
-
   let get_tracked_source_code_api environment =
     unannotated_global_environment environment
     |> UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api

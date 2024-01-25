@@ -15,7 +15,6 @@ open Ast
 open Statement
 module GlobalResolution = Analysis.GlobalResolution
 module TypeEnvironment = Analysis.TypeEnvironment
-module AstEnvironment = Analysis.AstEnvironment
 
 type t = {
   (* All callables:
@@ -151,8 +150,8 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
 
 
 let get_source ~environment qualifier =
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
+  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
+  Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
 
 
 let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =

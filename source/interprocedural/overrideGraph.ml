@@ -17,7 +17,6 @@ open Ast
 open Statement
 module GlobalResolution = Analysis.GlobalResolution
 module TypeEnvironment = Analysis.TypeEnvironment
-module AstEnvironment = Analysis.AstEnvironment
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
@@ -242,8 +241,8 @@ module SharedMemory = struct
 end
 
 let get_source ~environment qualifier =
-  let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
-  AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
+  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
+  Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
 
 
 type skipped_overrides = Target.t list

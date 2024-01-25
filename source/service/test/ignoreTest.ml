@@ -13,18 +13,18 @@ open TypeCheck
 
 let assert_errors ?(show_error_traces = false) ~context input_source expected_errors =
   Memory.reset_shared_memory ();
-  let module_tracker, type_errors =
+  let source_code_api, type_errors =
     let project = ScratchProject.setup ~context ["test.py", input_source] in
     let { ScratchProject.BuiltTypeEnvironment.type_environment; _ }, type_errors =
       ScratchProject.build_type_environment_and_postprocess project
     in
-    TypeEnvironment.ReadOnly.module_tracker type_environment, type_errors
+    TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment, type_errors
   in
   let descriptions =
     List.map type_errors ~f:(fun error ->
         Error.instantiate
           ~show_error_traces
-          ~lookup:(ModuleTracker.ReadOnly.relative_path_of_qualifier module_tracker)
+          ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api)
           error
         |> Error.Instantiated.description)
   in

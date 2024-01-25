@@ -66,11 +66,11 @@ module Heap = struct
 
 
   let from_qualifiers ~environment ~qualifiers =
-    let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment environment in
+    let source_code_api =
+      Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api environment
+    in
     let build_per_qualifier qualifier =
-      match
-        Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
-      with
+      match Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier with
       | None -> empty
       | Some source -> from_source ~qualifier source
     in

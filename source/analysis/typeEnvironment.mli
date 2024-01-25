@@ -18,10 +18,6 @@ module TypeEnvironmentReadOnly : sig
 
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.ReadOnly.t
 
-  val ast_environment : t -> AstEnvironment.ReadOnly.t
-
-  val module_tracker : t -> ModuleTracker.ReadOnly.t
-
   val get_tracked_source_code_api
     :  t ->
     dependency:SharedMemoryKeys.DependencyKey.registered ->

@@ -17,10 +17,12 @@ let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
   let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, _ =
     Test.ScratchProject.build_type_environment_and_postprocess project
   in
-  let ast_environment = Analysis.TypeEnvironment.ReadOnly.ast_environment type_environment in
+  let source_code_api =
+    Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
+  in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let ast_source =
-    Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
+    Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_callables =

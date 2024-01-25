@@ -198,16 +198,11 @@ module Setup = struct
 
   let get_environment_data ~context code =
     let environment, configuration = set_up_project ~context code in
-    let ast_environment = TypeEnvironment.ReadOnly.ast_environment environment in
+    let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
-    let filename_lookup =
-      ModuleTracker.ReadOnly.relative_path_of_qualifier
-        (AstEnvironment.ReadOnly.module_tracker ast_environment)
-    in
+    let filename_lookup = SourceCodeApi.relative_path_of_qualifier source_code_api in
     let source =
-      AstEnvironment.ReadOnly.processed_source_of_qualifier
-        ast_environment
-        (Reference.create "test")
+      SourceCodeApi.processed_source_of_qualifier source_code_api (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     configuration, global_resolution, filename_lookup, source
