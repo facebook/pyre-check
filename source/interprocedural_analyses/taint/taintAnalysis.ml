@@ -457,7 +457,10 @@ let initialize_models
 
 (** Aggressively remove things we do not need anymore from the shared memory. *)
 let purge_shared_memory ~environment ~qualifiers =
-  let ast_environment = Analysis.TypeEnvironment.ast_environment environment in
+  let ast_environment =
+    Analysis.TypeEnvironment.unannotated_global_environment environment
+    |> Analysis.UnannotatedGlobalEnvironment.ast_environment
+  in
   Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
   Memory.SharedMemory.collect `aggressive;
   ()

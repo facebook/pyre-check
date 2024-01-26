@@ -3113,7 +3113,10 @@ module ScratchProject = struct
            but it cuts down on RAM use. Skip it if we are testing the lazy module tracker; we don't
            need to clean up in that case, and the cleanup relies on APIs that are only available
            using nonlazy module tracking *)
-        let ast_environment = ErrorsEnvironment.ast_environment errors_environment in
+        let ast_environment =
+          ErrorsEnvironment.unannotated_global_environment errors_environment
+          |> UnannotatedGlobalEnvironment.ast_environment
+        in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
         let tear_down_shared_memory () _ =
@@ -3178,11 +3181,11 @@ module ScratchProject = struct
 
 
     let ast_environment { errors_environment; _ } =
-      ErrorsEnvironment.ast_environment errors_environment
+      ErrorsEnvironment.unannotated_global_environment errors_environment
+      |> UnannotatedGlobalEnvironment.ast_environment
 
 
-    let module_tracker { errors_environment; _ } =
-      ErrorsEnvironment.ast_environment errors_environment |> AstEnvironment.module_tracker
+    let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
   end
 
   let errors_environment { errors_environment; _ } =

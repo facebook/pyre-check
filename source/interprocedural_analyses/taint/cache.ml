@@ -145,7 +145,10 @@ module ChangedFiles = struct
 
   let from_type_environment ~scheduler ~configuration old_type_environment =
     let old_module_tracker =
-      old_type_environment |> TypeEnvironment.ast_environment |> AstEnvironment.module_tracker
+      old_type_environment
+      |> TypeEnvironment.unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.ast_environment
+      |> AstEnvironment.module_tracker
     in
     let new_module_tracker =
       configuration |> Analysis.EnvironmentControls.create |> Analysis.ModuleTracker.create

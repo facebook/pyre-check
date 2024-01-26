@@ -33,5 +33,3 @@ include
   Environment.S
     with module ReadOnly = AnnotatedReadOnly
      and module PreviousEnvironment = AttributeResolution
-
-val ast_environment : t -> AstEnvironment.t
