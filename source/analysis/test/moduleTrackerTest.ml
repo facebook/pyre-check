@@ -12,6 +12,7 @@ open OUnit2
 module EnvironmentControls = Analysis.EnvironmentControls
 module ModuleTracker = Analysis.ModuleTracker
 module GlobalModulePathsApi = Analysis.GlobalModulePathsApi
+module SourceCodeIncrementalApi = Analysis.SourceCodeIncrementalApi
 
 let content_on_disk = "# contents on disk"
 
@@ -1248,12 +1249,12 @@ module IncrementalTest = struct
     let updates = ModuleTracker.update ~events module_tracker in
     let actual =
       let create_event = function
-        | ModuleTracker.IncrementalUpdate.NewExplicit
+        | SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit
             { ModulePath.raw = { relative; _ }; should_type_check; _ } ->
             Event.NewExplicit { relative; should_type_check }
-        | ModuleTracker.IncrementalUpdate.NewImplicit qualifier ->
+        | SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewImplicit qualifier ->
             Event.NewImplicit (Reference.show qualifier)
-        | ModuleTracker.IncrementalUpdate.Delete qualifier ->
+        | SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.Delete qualifier ->
             Event.Delete (Reference.show qualifier)
       in
       List.map updates ~f:create_event
@@ -1750,8 +1751,8 @@ let test_invalidate_lazy_tracker_cache__removal context =
   let updates = ModuleTracker.update tracker ~events in
   assert_equal
     ~ctxt:context
-    ~printer:[%show: ModuleTracker.IncrementalUpdate.t list]
-    [ModuleTracker.IncrementalUpdate.Delete !&"package.a"]
+    ~printer:[%show: SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list]
+    [SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.Delete !&"package.a"]
     updates;
   (* Verify that both the previously-read and non-previously-read modules no longer exist if we
      remove the entire directory. *)
@@ -1797,7 +1798,11 @@ let test_invalidate_lazy_tracker_cache__add context =
   in
   (* Verify that the lazy tracker does not update anything *)
   let updates = ModuleTracker.update tracker ~events in
-  assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list]
+    []
+    updates;
   (* Verify that both the previously-read and non-previously-read modules no longer exist if we
      remove the entire directory. *)
   assert_equal
@@ -1835,7 +1840,11 @@ let test_invalidate_lazy_tracker_cache__add context =
   in
   (* Verify that the lazy tracker does not update anything *)
   let updates = ModuleTracker.update tracker ~events in
-  assert_equal ~ctxt:context ~printer:[%show: ModuleTracker.IncrementalUpdate.t list] [] updates;
+  assert_equal
+    ~ctxt:context
+    ~printer:[%show: SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list]
+    []
+    updates;
   (* Verify that both the previously-read and non-previously-read modules no longer exist if we
      remove the entire directory. *)
   assert_equal
@@ -1875,20 +1884,20 @@ let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_t
     in
     let incremental_updates =
       ModuleTracker.Overlay.update_overlaid_code tracker ~code_updates
-      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+      |> List.sort ~compare:SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.compare
     in
     let expected_incremental_updates =
       let relative_to_incremental_update relative =
-        ModuleTracker.IncrementalUpdate.NewExplicit
+        SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit
           (create_module_path_exn ~configuration local_root relative)
       in
       List.map expected ~f:relative_to_incremental_update
-      |> List.sort ~compare:ModuleTracker.IncrementalUpdate.compare
+      |> List.sort ~compare:SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.compare
     in
     assert_equal
       ~ctxt:context
-      ~cmp:[%equal: ModuleTracker.IncrementalUpdate.t list]
-      ~printer:[%show: ModuleTracker.IncrementalUpdate.t list]
+      ~cmp:[%equal: SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list]
+      ~printer:[%show: SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list]
       expected_incremental_updates
       incremental_updates
   in
@@ -1918,8 +1927,8 @@ let test_overlay_basic context =
   update_overlay_and_assert_result
     ~code_updates:
       [
-        "code.py", ModuleTracker.Overlay.CodeUpdate.NewCode unsaved_content;
-        "has_stub.py", ModuleTracker.Overlay.CodeUpdate.NewCode unsaved_content;
+        "code.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode unsaved_content;
+        "has_stub.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode unsaved_content;
       ]
     ~expected:["code.py"; "has_stub.py"];
   (* Check read-only behavior after update; the "has_stub.py" file should be masked by its stub *)
@@ -1930,7 +1939,7 @@ let test_overlay_basic context =
   (* Run an update where we reset code.py to read from disk. It stays owned by the overlay because
      we have no efficient way to clear ownership should match the parent environment *)
   update_overlay_and_assert_result
-    ~code_updates:["code.py", ModuleTracker.Overlay.CodeUpdate.ResetCode]
+    ~code_updates:["code.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode]
     ~expected:["code.py"];
   overlay_owns !&"code" |> assert_true;
   assert_raw_code !&"code" content_on_disk;
@@ -1973,7 +1982,7 @@ let test_overlay_code_hiding context =
   assert_raw_code !&"code" content_on_disk;
   (* Add "code.py" to the overlay, and make sure we pick it up *)
   update_overlay_and_assert_result
-    ~code_updates:["code.py", ModuleTracker.Overlay.CodeUpdate.NewCode unsaved_content_0]
+    ~code_updates:["code.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode unsaved_content_0]
     ~expected:["code.py"];
   overlay_owns !&"code" |> assert_true;
   assert_raw_code !&"code" unsaved_content_0;
@@ -1986,7 +1995,7 @@ let test_overlay_code_hiding context =
   assert_raw_code !&"code" content_on_disk;
   (* Update the overlaid code. It should still be shadowed by the parent *)
   update_overlay_and_assert_result
-    ~code_updates:["code.py", ModuleTracker.Overlay.CodeUpdate.NewCode unsaved_content_1]
+    ~code_updates:["code.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode unsaved_content_1]
     ~expected:["code.py"];
   overlay_owns !&"code" |> assert_true;
   assert_raw_code !&"code" content_on_disk;

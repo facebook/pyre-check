@@ -29,7 +29,7 @@ val remove_overlay : t -> overlay_identifier -> unit
     {!ErrorsEnvironment.Overlay.update_overlaid_code}. *)
 val update_overlay_with_code
   :  t ->
-  code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+  code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
   overlay_identifier ->
   ErrorsEnvironment.UpdateResult.t
 
@@ -41,7 +41,7 @@ val run_update_root : t -> scheduler:Scheduler.t -> ArtifactPath.Event.t list ->
 
 val run_update_overlay_with_code
   :  t ->
-  code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+  code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
   overlay_identifier ->
   unit
 

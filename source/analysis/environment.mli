@@ -64,7 +64,7 @@ module PreviousEnvironment : sig
 
       val update_overlaid_code
         :  t ->
-        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
         UpdateResult.t
 
       val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
@@ -163,7 +163,7 @@ module EnvironmentTable : sig
 
       val update_overlaid_code
         :  t ->
-        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
         UpdateResult.t
 
       val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t

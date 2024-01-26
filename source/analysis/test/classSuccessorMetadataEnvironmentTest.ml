@@ -755,7 +755,7 @@ let test_overlay_dependency_filtering context =
     ~code_updates:
       [
         ( Test.relative_artifact_path ~root:local_root ~relative:"a.py",
-          ModuleTracker.Overlay.CodeUpdate.NewCode (a_code_with_A_base "Base1") );
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode (a_code_with_A_base "Base1") );
       ]
   |> ignore;
   (* After updating just a.py, we should see the type error from int-vs-float mismatch. The overlay
@@ -777,7 +777,7 @@ let test_overlay_dependency_filtering context =
     ~code_updates:
       [
         ( Test.relative_artifact_path ~root:local_root ~relative:"c.py",
-          ModuleTracker.Overlay.CodeUpdate.NewCode c_code );
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode c_code );
       ]
   |> ignore;
   assert_overlay_state
@@ -794,7 +794,7 @@ let test_overlay_dependency_filtering context =
     ~code_updates:
       [
         ( Test.relative_artifact_path ~root:local_root ~relative:"b.py",
-          ModuleTracker.Overlay.CodeUpdate.NewCode b_code );
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode b_code );
       ]
   |> ignore;
   assert_overlay_state
@@ -849,7 +849,7 @@ let test_overlay_propagation context =
     ~code_updates:
       [
         ( Test.relative_artifact_path ~root:local_root ~relative:"in_overlay.py",
-          ModuleTracker.Overlay.CodeUpdate.NewCode
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode
             (trim_extra_indentation
                {|
                  import on_filesystem

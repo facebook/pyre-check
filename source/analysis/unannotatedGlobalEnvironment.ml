@@ -527,18 +527,20 @@ end
 module UpdateResult = struct
   type t = {
     triggered_dependencies: DependencyKey.RegisteredSet.t;
-    upstream: AstEnvironment.UpdateResult.t;
+    upstream: SourceCodeIncrementalApi.UpdateResult.t;
   }
 
   let locally_triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
 
   let all_triggered_dependencies { triggered_dependencies; upstream; _ } =
-    [triggered_dependencies; AstEnvironment.UpdateResult.triggered_dependencies upstream]
+    [triggered_dependencies; SourceCodeIncrementalApi.UpdateResult.triggered_dependencies upstream]
 
 
-  let invalidated_modules { upstream; _ } = AstEnvironment.UpdateResult.invalidated_modules upstream
+  let invalidated_modules { upstream; _ } =
+    SourceCodeIncrementalApi.UpdateResult.invalidated_modules upstream
 
-  let module_updates { upstream; _ } = AstEnvironment.UpdateResult.module_updates upstream
+
+  let module_updates { upstream; _ } = SourceCodeIncrementalApi.UpdateResult.module_updates upstream
 
   let unannotated_global_environment_update_result = Fn.id
 end
@@ -1127,7 +1129,7 @@ module FromReadOnlyUpstream = struct
 
 
   let update ({ key_tracker; define_names; _ } as environment) ~scheduler upstream =
-    let invalidated_modules = AstEnvironment.UpdateResult.invalidated_modules upstream in
+    let invalidated_modules = SourceCodeIncrementalApi.UpdateResult.invalidated_modules upstream in
     let map sources =
       let loader = LazyLoader.{ environment; queries = incoming_queries environment } in
       let register qualifier = LazyLoader.try_load_module loader qualifier in
@@ -1295,12 +1297,12 @@ module Overlay = struct
   let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
     let filtered_update_result =
       let filtered_invalidated_modules =
-        AstEnvironment.UpdateResult.invalidated_modules update_result
+        SourceCodeIncrementalApi.UpdateResult.invalidated_modules update_result
         |> List.filter ~f:(module_tracker environment |> ModuleTracker.Overlay.owns_qualifier)
       in
       {
         update_result with
-        AstEnvironment.UpdateResult.invalidated_modules = filtered_invalidated_modules;
+        SourceCodeIncrementalApi.UpdateResult.invalidated_modules = filtered_invalidated_modules;
       }
     in
     FromReadOnlyUpstream.update

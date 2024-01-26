@@ -75,20 +75,6 @@ module ReadOnly = struct
     SourceCodeIncrementalApi.ReadOnly.create ~get_tracked_api ~get_untracked_api
 end
 
-module UpdateResult = struct
-  type t = {
-    triggered_dependencies: SharedMemoryKeys.DependencyKey.RegisteredSet.t;
-    invalidated_modules: Reference.t list;
-    module_updates: ModuleTracker.IncrementalUpdate.t list;
-  }
-
-  let triggered_dependencies { triggered_dependencies; _ } = triggered_dependencies
-
-  let invalidated_modules { invalidated_modules; _ } = invalidated_modules
-
-  let module_updates { module_updates; _ } = module_updates
-end
-
 module FromReadOnlyUpstream = struct
   module RawSourceValue = struct
     type t = Parsing.ParseResult.t option
@@ -179,14 +165,15 @@ module FromReadOnlyUpstream = struct
   end
 
   (* This code is factored out so that in tests we can use it as a hack to free up memory *)
-  let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_updates =
+  let process_module_updates ~scheduler ({ raw_sources; _ } as ast_environment) module_update_list =
     let changed_module_paths, removed_modules, new_implicits =
+      let open SourceCodeIncrementalApi.UpdateResult in
       let categorize = function
-        | ModuleTracker.IncrementalUpdate.NewExplicit module_path -> `Fst module_path
-        | ModuleTracker.IncrementalUpdate.Delete qualifier -> `Snd qualifier
-        | ModuleTracker.IncrementalUpdate.NewImplicit qualifier -> `Trd qualifier
+        | ModuleUpdate.NewExplicit module_path -> `Fst module_path
+        | ModuleUpdate.Delete qualifier -> `Snd qualifier
+        | ModuleUpdate.NewImplicit qualifier -> `Trd qualifier
       in
-      List.partition3_map module_updates ~f:categorize
+      List.partition3_map module_update_list ~f:categorize
     in
     (* We only want to eagerly reparse sources that have been cached. We have to also invalidate
        sources that are now deleted or changed from explicit to implicit. *)
@@ -200,10 +187,10 @@ module FromReadOnlyUpstream = struct
     let modules_with_invalidated_raw_source =
       List.concat [removed_modules; new_implicits; reparse_modules]
     in
-    (* Because type checking relies on AstEnvironment.UpdateResult.invalidated_modules to determine
-       which files require re-type-checking, we have to include all new non-external modules, even
-       though they don't really require us to update data in the push phase, or else they'll never
-       be checked. *)
+    (* Because type checking relies on SourceCodeIncrementalApi.UpdateResult.invalidated_modules to
+       determine which files require re-type-checking, we have to include all new non-external
+       modules, even though they don't really require us to update data in the push phase, or else
+       they'll never be checked. *)
     let reparse_modules_union_in_project_modules =
       let fold qualifiers { ModulePath.qualifier; _ } = Set.add qualifiers qualifier in
       List.filter changed_module_paths ~f:ModulePath.should_type_check
@@ -245,11 +232,10 @@ module FromReadOnlyUpstream = struct
         ( SharedMemoryKeys.DependencyKey.RegisteredSet.empty,
           RawSources.KeySet.of_list invalidated_modules_before_preprocessing )
     in
-    {
-      UpdateResult.triggered_dependencies;
-      invalidated_modules = RawSources.KeySet.elements invalidated_modules;
-      module_updates;
-    }
+    SourceCodeIncrementalApi.UpdateResult.create
+      ~triggered_dependencies
+      ~invalidated_modules:(RawSources.KeySet.elements invalidated_modules)
+      ~module_updates:module_update_list
 
 
   let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
@@ -292,7 +278,8 @@ module Base = struct
     let _ =
       ModuleTracker.module_paths module_tracker
       |> List.map ~f:ModulePath.qualifier
-      |> List.map ~f:(fun qualifier -> ModuleTracker.IncrementalUpdate.Delete qualifier)
+      |> List.map ~f:(fun qualifier ->
+             SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.Delete qualifier)
       |> FromReadOnlyUpstream.process_module_updates ~scheduler from_read_only_upstream
     in
     ()

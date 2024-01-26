@@ -120,7 +120,7 @@ module UpdateResult : sig
 
   val invalidated_modules : t -> Reference.t list
 
-  val module_updates : t -> ModuleTracker.IncrementalUpdate.t list
+  val module_updates : t -> SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
 
   val all_triggered_dependencies : t -> DependencyKey.RegisteredSet.t list
 
@@ -167,7 +167,7 @@ module Overlay : sig
 
   val update_overlaid_code
     :  t ->
-    code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
     UpdateResult.t
 
   val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t

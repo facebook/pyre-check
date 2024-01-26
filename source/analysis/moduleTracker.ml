@@ -732,48 +732,6 @@ module ImplicitModules = struct
   end
 end
 
-module IncrementalUpdate = struct
-  type t =
-    | NewExplicit of Ast.ModulePath.t
-    | NewImplicit of Ast.Reference.t
-    | Delete of Reference.t
-  [@@deriving show, sexp, compare]
-
-  let equal = [%compare.equal: t]
-
-  let combine_explicits_and_implicits explicit_updates implicit_updates =
-    (* Explicit updates should shadow implicit updates *)
-    let explicitly_modified_qualifiers = Reference.Hash_set.create () in
-    let explicits =
-      let process_explicit_update = function
-        | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path)
-        | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
-            Hash_set.add explicitly_modified_qualifiers qualifier;
-            NewExplicit module_path
-        | ExplicitModules.Update.Delete qualifier ->
-            Hash_set.add explicitly_modified_qualifiers qualifier;
-            Delete qualifier
-      in
-      List.map explicit_updates ~f:process_explicit_update
-    in
-    let implicits =
-      let process_implicit_update = function
-        | ImplicitModules.Update.New qualifier ->
-            if Hash_set.mem explicitly_modified_qualifiers qualifier then
-              None
-            else
-              Some (NewImplicit qualifier)
-        | ImplicitModules.Update.Delete qualifier ->
-            if Hash_set.mem explicitly_modified_qualifiers qualifier then
-              None
-            else
-              Some (Delete qualifier)
-      in
-      List.filter_map implicit_updates ~f:process_implicit_update
-    in
-    List.append explicits implicits
-end
-
 module Layouts = struct
   module Api = struct
     type t = {
@@ -782,6 +740,39 @@ module Layouts = struct
       process_module_path_updates: ModulePaths.Update.t list -> unit;
       store: unit -> unit;
     }
+
+    let combine_explicits_and_implicit_module_updates explicit_updates implicit_updates =
+      (* Explicit updates should shadow implicit updates *)
+      let explicitly_modified_qualifiers = Reference.Hash_set.create () in
+      let explicits =
+        let process_explicit_update = function
+          | ExplicitModules.Update.New ({ ModulePath.qualifier; _ } as module_path)
+          | ExplicitModules.Update.Changed ({ ModulePath.qualifier; _ } as module_path) ->
+              Hash_set.add explicitly_modified_qualifiers qualifier;
+              SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit module_path
+          | ExplicitModules.Update.Delete qualifier ->
+              Hash_set.add explicitly_modified_qualifiers qualifier;
+              SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.Delete qualifier
+        in
+        List.map explicit_updates ~f:process_explicit_update
+      in
+      let implicits =
+        let process_implicit_update = function
+          | ImplicitModules.Update.New qualifier ->
+              if Hash_set.mem explicitly_modified_qualifiers qualifier then
+                None
+              else
+                Some (SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewImplicit qualifier)
+          | ImplicitModules.Update.Delete qualifier ->
+              if Hash_set.mem explicitly_modified_qualifiers qualifier then
+                None
+              else
+                Some (SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.Delete qualifier)
+        in
+        List.filter_map implicit_updates ~f:process_implicit_update
+      in
+      List.append explicits implicits
+
 
     let update
         ~configuration
@@ -800,7 +791,7 @@ module Layouts = struct
         ImplicitModules.Table.Api.update_module_paths ~module_path_updates implicit_modules
       in
       let updates =
-        IncrementalUpdate.combine_explicits_and_implicits explicit_updates implicit_updates
+        combine_explicits_and_implicit_module_updates explicit_updates implicit_updates
       in
       Log.log
         ~section:`Server
@@ -1023,12 +1014,6 @@ module Base = struct
 end
 
 module Overlay = struct
-  module CodeUpdate = struct
-    type t =
-      | NewCode of string
-      | ResetCode
-  end
-
   type t = {
     parent: ReadOnly.t;
     overlaid_code: string ModulePath.Table.t;
@@ -1059,11 +1044,13 @@ module Overlay = struct
       let qualifier = ModulePath.qualifier module_path in
       let () =
         match code_update with
-        | CodeUpdate.NewCode new_code -> Hashtbl.set overlaid_code ~key:module_path ~data:new_code
-        | CodeUpdate.ResetCode -> Hashtbl.remove overlaid_code module_path
+        | SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode new_code ->
+            Hashtbl.set overlaid_code ~key:module_path ~data:new_code
+        | SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode ->
+            Hashtbl.remove overlaid_code module_path
       in
       let () = Hash_set.add overlaid_qualifiers qualifier in
-      IncrementalUpdate.NewExplicit module_path
+      SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit module_path
     in
     let process_code_update (artifact_path, code_update) =
       let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in

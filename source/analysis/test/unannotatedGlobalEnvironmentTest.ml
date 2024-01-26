@@ -2744,8 +2744,8 @@ let test_overlay_basic context =
   (* Run the update *)
   update_and_assert_invalidated_modules
     [
-      "in_overlay.py", ModuleTracker.Overlay.CodeUpdate.NewCode source_in_overlay;
-      "shadowed_by_stub.py", ModuleTracker.Overlay.CodeUpdate.NewCode source_in_overlay;
+      "in_overlay.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode source_in_overlay;
+      "shadowed_by_stub.py", SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode source_in_overlay;
     ]
     ~expected:[!&"in_overlay"; !&"shadowed_by_stub"];
   (* Validate behavior after to update *)
@@ -2789,9 +2789,11 @@ let test_overlay_update_filters context =
   (* Run the initial update *)
   update_and_assert_invalidated_modules
     [
-      "in_overlay_and_imported.py", ModuleTracker.Overlay.CodeUpdate.NewCode "y: float = 10.0";
+      ( "in_overlay_and_imported.py",
+        SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode "y: float = 10.0" );
       ( "in_overlay_dependent.py",
-        ModuleTracker.Overlay.CodeUpdate.NewCode "from in_overlay_and_imported import *" );
+        SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode "from in_overlay_and_imported import *"
+      );
     ]
     ~expected:[!&"in_overlay_and_imported"; !&"in_overlay_dependent"];
   (* Validate behavior of wildcard import after the first update
@@ -2805,7 +2807,10 @@ let test_overlay_update_filters context =
   assert_global ~exists:false !&"not_in_overlay.y";
   (* Run the second update *)
   update_and_assert_invalidated_modules
-    ["in_overlay_and_imported.py", ModuleTracker.Overlay.CodeUpdate.NewCode "z: float = 10.0"]
+    [
+      ( "in_overlay_and_imported.py",
+        SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode "z: float = 10.0" );
+    ]
     ~expected:[!&"in_overlay_and_imported"; !&"in_overlay_dependent"];
   (* Validate behavior after update *)
   assert_global ~exists:false !&"in_overlay_dependent.x";
@@ -2854,7 +2859,7 @@ let test_overlay_propagation context =
   update_and_assert_invalidated_modules
     [
       ( "in_overlay.py",
-        ModuleTracker.Overlay.CodeUpdate.NewCode
+        SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode
           (trim_extra_indentation
              {|
                from on_filesystem import *

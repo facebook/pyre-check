@@ -223,7 +223,7 @@ let test_parse_sources context =
         (Test.relative_artifact_path ~root:local_root ~relative:"c.py"
         |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
       ]
-    |> AstEnvironment.UpdateResult.triggered_dependencies
+    |> SourceCodeIncrementalApi.UpdateResult.triggered_dependencies
     |> SharedMemoryKeys.DependencyKey.RegisteredSet.to_seq
     |> Seq.fold_left
          (fun sofar registered -> SharedMemoryKeys.DependencyKey.get_key registered :: sofar)
@@ -255,7 +255,7 @@ let test_parse_sources context =
           (Test.relative_artifact_path ~root:stub_root ~relative:"new_stub.pyi"
           |> ArtifactPath.Event.(create ~kind:Kind.CreatedOrChanged));
         ]
-      |> AstEnvironment.UpdateResult.invalidated_modules
+      |> SourceCodeIncrementalApi.UpdateResult.invalidated_modules
     in
     let sources =
       List.filter_map
@@ -1072,11 +1072,11 @@ let make_overlay_testing_functions ~context ~test_sources =
       let code_updates =
         [
           ( Test.relative_artifact_path ~root:local_root ~relative,
-            ModuleTracker.Overlay.CodeUpdate.NewCode (trim_extra_indentation code) );
+            SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode (trim_extra_indentation code) );
         ]
       in
       AstEnvironment.Overlay.update_overlaid_code overlay_environment ~code_updates
-      |> AstEnvironment.UpdateResult.invalidated_modules
+      |> SourceCodeIncrementalApi.UpdateResult.invalidated_modules
       |> List.sort ~compare:Reference.compare
     in
     assert_equal ~ctxt:context ~printer:[%show: Reference.t list] expected invalidated_modules

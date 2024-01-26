@@ -476,8 +476,8 @@ let handle_local_update_in_overlay ~path ~content ~subscriptions ~build_system ~
       let code_updates =
         let code_update =
           match content with
-          | Some content -> ModuleTracker.Overlay.CodeUpdate.NewCode content
-          | None -> ModuleTracker.Overlay.CodeUpdate.ResetCode
+          | Some content -> SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode content
+          | None -> SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode
         in
         let to_update module_name =
           ArtifactPaths.artifact_path_of_qualifier ~source_code_api module_name

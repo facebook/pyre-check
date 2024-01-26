@@ -5,14 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-module IncrementalUpdate : sig
-  type t =
-    | NewExplicit of Ast.ModulePath.t
-    | NewImplicit of Ast.Reference.t
-    | Delete of Ast.Reference.t
-  [@@deriving show, sexp, compare, eq]
-end
-
 module ReadOnly : sig
   type t
 
@@ -38,7 +30,10 @@ val module_paths : t -> Ast.ModulePath.t list
 
 val controls : t -> EnvironmentControls.t
 
-val update : t -> events:ArtifactPath.Event.t list -> IncrementalUpdate.t list
+val update
+  :  t ->
+  events:ArtifactPath.Event.t list ->
+  SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
 
 module Serializer : sig
   val store_layouts : t -> unit
@@ -51,12 +46,6 @@ val global_module_paths_api : t -> GlobalModulePathsApi.t
 val read_only : t -> ReadOnly.t
 
 module Overlay : sig
-  module CodeUpdate : sig
-    type t =
-      | NewCode of string
-      | ResetCode
-  end
-
   type t
 
   val create : ReadOnly.t -> t
@@ -69,8 +58,8 @@ module Overlay : sig
 
   val update_overlaid_code
     :  t ->
-    code_updates:(ArtifactPath.t * CodeUpdate.t) list ->
-    IncrementalUpdate.t list
+    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
+    SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
 
   val read_only : t -> ReadOnly.t
 end

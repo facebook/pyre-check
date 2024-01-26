@@ -102,7 +102,7 @@ module PreviousEnvironment = struct
 
       val update_overlaid_code
         :  t ->
-        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
         UpdateResult.t
 
       val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
@@ -273,7 +273,7 @@ module EnvironmentTable = struct
 
       val update_overlaid_code
         :  t ->
-        code_updates:(ArtifactPath.t * ModuleTracker.Overlay.CodeUpdate.t) list ->
+        code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
         UpdateResult.t
 
       val propagate_parent_update : t -> UpdateResult.t -> UpdateResult.t
@@ -523,7 +523,8 @@ module EnvironmentTable = struct
 
 
       (* Update an environment layer (which wraps all lower layers) by passing filesystem events
-         down to ModuleTracker and recursively pushing updates, invalidating data as needed *)
+         down to SourceCodeIncrementalApi and recursively pushing updates, invalidating data as
+         needed *)
       let update_this_and_all_preceding_environments
           { upstream_environment; from_read_only_upstream }
           ~scheduler

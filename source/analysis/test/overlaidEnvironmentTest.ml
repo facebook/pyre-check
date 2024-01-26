@@ -175,12 +175,14 @@ let test_update_overlays context =
   (* Create two overlays *)
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
-    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
+    ~code_updates:
+      [artifact_path, SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
-    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
+    ~code_updates:
+      [artifact_path, SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_1"
   |> ignore;
   (* Validate that each overlay produces the expected errors, and there is no interference *)
@@ -197,12 +199,14 @@ let test_update_overlays context =
   (* Update the overlays - swap the code *)
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
-    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_float_error]
+    ~code_updates:
+      [artifact_path, SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode foo_has_float_error]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
-    ~code_updates:[artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode foo_has_str_error]
+    ~code_updates:
+      [artifact_path, SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode foo_has_str_error]
     "overlay_1"
   |> ignore;
   (* Validate that the errors reflect the update *)
@@ -253,13 +257,19 @@ let test_overlay_propagation context =
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
     ~code_updates:
-      [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"y")]
+      [
+        ( artifact_path,
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"y") );
+      ]
     "overlay_0"
   |> ignore;
   OverlaidEnvironment.update_overlay_with_code
     overlaid_environment
     ~code_updates:
-      [artifact_path, ModuleTracker.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"z")]
+      [
+        ( artifact_path,
+          SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode (in_overlay_code ~varname:"z") );
+      ]
     "overlay_1"
   |> ignore;
   assert_overlay_errors

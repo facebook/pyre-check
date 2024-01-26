@@ -354,7 +354,8 @@ let process_request
           ~code_update:
             (match code_update with
             | Request.OverlayCodeUpdate.NewCode code ->
-                ModuleTracker.Overlay.CodeUpdate.NewCode code
-            | Request.OverlayCodeUpdate.ResetCode -> ModuleTracker.Overlay.CodeUpdate.ResetCode)
+                SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode code
+            | Request.OverlayCodeUpdate.ResetCode ->
+                SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode)
       in
       Lwt.return (state, response)
