@@ -1286,13 +1286,12 @@ module Overlay = struct
     module_tracker environment |> ModuleTracker.Overlay.owns_qualifier
 
 
-  let owns_reference environment =
-    module_tracker environment |> ModuleTracker.Overlay.owns_reference
+  let owns_reference environment reference =
+    Reference.possible_qualifiers_after_delocalize reference
+    |> List.exists ~f:(owns_qualifier environment)
 
 
-  let owns_identifier environment =
-    module_tracker environment |> ModuleTracker.Overlay.owns_identifier
-
+  let owns_identifier environment name = Reference.create name |> owns_reference environment
 
   let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
     let filtered_update_result =
@@ -1342,10 +1341,7 @@ module Overlay = struct
         f parent_queries key
     in
     let owns_qualifier, owns_reference, owns_qualified_class_name =
-      let module_tracker = module_tracker environment in
-      ( ModuleTracker.Overlay.owns_qualifier module_tracker,
-        ModuleTracker.Overlay.owns_reference module_tracker,
-        ModuleTracker.Overlay.owns_identifier module_tracker )
+      owns_qualifier environment, owns_reference environment, owns_identifier environment
     in
     OutgoingDataComputation.Queries.
       {

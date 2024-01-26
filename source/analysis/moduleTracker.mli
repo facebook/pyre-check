@@ -52,10 +52,6 @@ module Overlay : sig
 
   val owns_qualifier : t -> Ast.Reference.t -> bool
 
-  val owns_reference : t -> Ast.Reference.t -> bool
-
-  val owns_identifier : t -> Ast.Identifier.t -> bool
-
   val update_overlaid_code
     :  t ->
     code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
