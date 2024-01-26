@@ -3180,12 +3180,18 @@ module ScratchProject = struct
       errors_environment |> ErrorsEnvironment.type_environment
 
 
-    let ast_environment { errors_environment; _ } =
-      ErrorsEnvironment.unannotated_global_environment errors_environment
-      |> UnannotatedGlobalEnvironment.ast_environment
+    (* The names of these hooks are specific because it is important that tests of layers above
+       AstEnvironment shouldn't be trying to access the raw environment; we've designed our system
+       to allow alternative implementations of the bottom layers, so in general it is incorrect to
+       assume there is an underlying AstEnvironment or ModuleTracker. *)
+    module AssumeBackedByAstEnvironment = struct
+      let ast_environment { errors_environment; _ } =
+        ErrorsEnvironment.unannotated_global_environment errors_environment
+        |> UnannotatedGlobalEnvironment.ast_environment
 
 
-    let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
+      let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
+    end
   end
 
   let errors_environment { errors_environment; _ } =

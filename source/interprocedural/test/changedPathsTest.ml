@@ -27,7 +27,9 @@ let test_compute_locally_changed_files context =
       in
       let project = ScratchProject.setup ~context ~in_memory:false sources in
       let configuration = ScratchProject.configuration_of project in
-      let module_tracker = ScratchProject.ReadWrite.module_tracker project in
+      let module_tracker =
+        ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.module_tracker project
+      in
       let () =
         Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker
       in

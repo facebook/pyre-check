@@ -1232,7 +1232,9 @@ module IncrementalTest = struct
           old_sources
       in
       let configuration = ScratchProject.configuration_of project in
-      let module_tracker = ScratchProject.ReadWrite.module_tracker project in
+      let module_tracker =
+        ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.module_tracker project
+      in
       (* For lazy module tracker tests, we have to populate tables by looking up qualifiers
          explicitly *)
       let () =
