@@ -685,7 +685,7 @@ else:
     ) -> Future[list[Any]]: ...
 '''
 
-# random.pyi contains a bunch of unannotated top-level definitions aliased to attributes in the `random.Random` class. 
+# random.pyi contains a bunch of unannotated top-level definitions aliased to attributes in the `random.Random` class.
 # Pyre does not really like that.
 
 [["stdlib/random.pyi"]]
@@ -745,11 +745,13 @@ action = "replace"
 name = "sample"
 content = '''
 if sys.version_info >= (3, 11):
-    def sample(self, population: Sequence[_T], k: int, *, counts: Iterable[int] | None = None) -> list[_T]: ...
+    def sample(population: Sequence[_T], k: int, *, counts: Iterable[int] | None = None) -> list[_T]: ...
 elif sys.version_info >= (3, 9):
     def sample(
         population: Sequence[_T] | AbstractSet[_T], k: int, *, counts: Iterable[int] | None = None
     ) -> list[_T]: ...
+else:
+    def sample(population: Sequence[_T] | AbstractSet[_T], k: int) -> list[_T]: ...
 '''
 
 [["stdlib/random.pyi"]]
@@ -883,5 +885,3 @@ content = '''
 if sys.version_info >= (3, 9):
     def randbytes(n: int) -> bytes: ...
 '''
-
-
