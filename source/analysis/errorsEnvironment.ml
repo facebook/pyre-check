@@ -108,7 +108,8 @@ let ast_environment environment =
 let module_tracker environment = ast_environment environment |> AstEnvironment.module_tracker
 
 let global_module_paths_api errors_environment =
-  module_tracker errors_environment |> ModuleTracker.global_module_paths_api
+  unannotated_global_environment errors_environment
+  |> UnannotatedGlobalEnvironment.global_module_paths_api
 
 
 module ErrorsEnvironmentReadOnly = ReadOnly

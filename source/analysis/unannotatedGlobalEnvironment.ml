@@ -1249,6 +1249,10 @@ module Base = struct
 
   let ast_environment { ast_environment; _ } = ast_environment
 
+  let global_module_paths_api environment =
+    ast_environment environment |> AstEnvironment.global_module_paths_api
+
+
   (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
      before loading / after storing. These functions only handle serializing and deserializing the
      non-SharedMemory data *)

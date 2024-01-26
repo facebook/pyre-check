@@ -31,6 +31,8 @@ end
 
 type t
 
+val global_module_paths_api : t -> GlobalModulePathsApi.t
+
 val module_tracker : t -> ModuleTracker.t
 
 val controls : t -> EnvironmentControls.t

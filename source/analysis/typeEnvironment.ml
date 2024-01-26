@@ -104,7 +104,8 @@ let module_tracker type_environment =
 
 
 let global_module_paths_api type_environment =
-  module_tracker type_environment |> ModuleTracker.global_module_paths_api
+  unannotated_global_environment type_environment
+  |> UnannotatedGlobalEnvironment.global_module_paths_api
 
 
 let populate_for_definitions ~scheduler environment defines =

@@ -287,6 +287,10 @@ module Base = struct
 
   let module_tracker { module_tracker; _ } = module_tracker
 
+  let global_module_paths_api environment =
+    module_tracker environment |> ModuleTracker.global_module_paths_api
+
+
   let controls { from_read_only_upstream; _ } =
     FromReadOnlyUpstream.controls from_read_only_upstream
 

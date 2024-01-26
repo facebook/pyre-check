@@ -135,6 +135,8 @@ val create : EnvironmentControls.t -> t
    functor *)
 val unannotated_global_environment : t -> t
 
+val global_module_paths_api : t -> GlobalModulePathsApi.t
+
 val ast_environment : t -> AstEnvironment.t
 
 val controls : t -> EnvironmentControls.t
