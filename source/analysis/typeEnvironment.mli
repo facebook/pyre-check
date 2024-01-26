@@ -49,8 +49,6 @@ val global_environment : t -> AnnotatedGlobalEnvironment.t
 
 val ast_environment : t -> AstEnvironment.t
 
-val module_tracker : t -> ModuleTracker.t
-
 val global_module_paths_api : t -> GlobalModulePathsApi.t
 
 val collect_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> Ast.Reference.t list

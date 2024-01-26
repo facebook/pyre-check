@@ -99,10 +99,6 @@ let ast_environment type_environment =
   unannotated_global_environment type_environment |> UnannotatedGlobalEnvironment.ast_environment
 
 
-let module_tracker type_environment =
-  ast_environment type_environment |> AstEnvironment.module_tracker
-
-
 let global_module_paths_api type_environment =
   unannotated_global_environment type_environment
   |> UnannotatedGlobalEnvironment.global_module_paths_api

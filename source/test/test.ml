@@ -3308,7 +3308,7 @@ let assert_errors
 
   let descriptions =
     let errors =
-      let sources, environment =
+      let sources, type_environment, source_code_api =
         let project =
           let external_sources =
             List.map other_sources ~f:(fun { handle; source } -> handle, source)
@@ -3328,21 +3328,22 @@ let assert_errors
         let { ScratchProject.BuiltGlobalEnvironment.sources; _ } =
           ScratchProject.build_global_environment project
         in
-        let type_environment = ScratchProject.ReadWrite.type_environment project in
-        sources, type_environment
+        let errors_environment = ScratchProject.ReadWrite.errors_environment project in
+        ( sources,
+          ErrorsEnvironment.type_environment errors_environment,
+          ErrorsEnvironment.read_only errors_environment
+          |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api )
       in
       let source =
         List.find_exn sources ~f:(fun { Source.module_path; _ } ->
             String.equal handle (ModulePath.relative module_path))
       in
-      check ~environment ~source
+      check ~environment:type_environment ~source
       |> List.map
            ~f:
              (AnalysisError.instantiate
                 ~show_error_traces
-                ~lookup:
-                  (ModuleTracker.ReadOnly.relative_path_of_qualifier
-                     (TypeEnvironment.module_tracker environment |> ModuleTracker.read_only)))
+                ~lookup:(SourceCodeApi.relative_path_of_qualifier source_code_api))
     in
     let errors_with_any_location =
       List.filter_map errors ~f:(fun error ->

@@ -14,6 +14,7 @@ module CamlUnix = Unix
 open Core
 open Pyre
 module TypeEnvironment = Analysis.TypeEnvironment
+module UnannotatedGlobalEnvironment = Analysis.UnannotatedGlobalEnvironment
 module AstEnvironment = Analysis.AstEnvironment
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
@@ -382,7 +383,11 @@ let save_type_environment ~scheduler ~configuration ~environment =
     ~message:"saving type environment to cache"
     ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
-      let module_tracker = TypeEnvironment.module_tracker environment in
+      let module_tracker =
+        TypeEnvironment.unannotated_global_environment environment
+        |> UnannotatedGlobalEnvironment.ast_environment
+        |> AstEnvironment.module_tracker
+      in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
       TypeEnvironment.store_without_dependency_keys environment;
       Log.info "Saved type environment to cache shared memory.";
