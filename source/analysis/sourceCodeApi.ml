@@ -8,7 +8,7 @@
 (* SourceCodeApi represents the bottom layer of Pyre: navigating
  * source trees and parsing code.
  *
- * This module represents only an abstract API and some convenience functions
+ * The core of this module represents an abstract API and some convenience functions
  * that can be defined in terms of the primitive functions; in practice Pyre
  * needs cached tables backing this so it is expected that concrete
  * implementations (for example classic dependency-tracked shared memory

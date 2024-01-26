@@ -56,19 +56,23 @@ module ReadOnly = struct
       qualifier
 
 
-  let source_code_api_impl environment ~dependency =
-    SourceCodeApi.create
-      ~controls:(controls environment)
-      ~module_path_of_qualifier:
-        (module_tracker environment |> ModuleTracker.ReadOnly.module_path_of_qualifier)
-      ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
-
-
-  let get_tracked_source_code_api environment ~dependency =
-    source_code_api_impl environment ~dependency:(Some dependency)
-
-
-  let get_untracked_source_code_api environment = source_code_api_impl environment ~dependency:None
+  let as_source_code_incremental_read_only environment =
+    let controls = controls environment in
+    let get_source_code_api dependency =
+      SourceCodeApi.create
+        ~controls
+        ~module_path_of_qualifier:
+          (module_tracker environment |> ModuleTracker.ReadOnly.module_path_of_qualifier)
+        ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
+    in
+    let get_untracked_api () = get_source_code_api None in
+    let get_tracked_api ~dependency =
+      if EnvironmentControls.track_dependencies controls then
+        get_source_code_api (Some dependency)
+      else
+        get_untracked_api ()
+    in
+    SourceCodeIncrementalApi.ReadOnly.create ~get_tracked_api ~get_untracked_api
 end
 
 module UpdateResult = struct
