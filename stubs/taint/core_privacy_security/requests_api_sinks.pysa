@@ -340,10 +340,13 @@ def http.client.HTTPConnection.__init__(self,
 def http.client.HTTPSConnection.__init__(self,
                                          host: TaintSink[HTTPClientRequest_URI],
                                          port: TaintSink[HTTPClientRequest_METADATA],
+                                         key_file: TaintSink[HTTPClientRequest_METADATA],
+                                         cert_file: TaintSink[HTTPClientRequest_METADATA],
                                          timeout: TaintSink[HTTPClientRequest_METADATA],
                                          source_address,
                                          *,
                                          context,
+                                         check_hostname
                                         ): ...
 
 def http.client.HTTPConnection.request(self,
