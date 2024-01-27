@@ -147,7 +147,7 @@ module ChangedFiles = struct
     let old_module_tracker =
       old_type_environment
       |> TypeEnvironment.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.ast_environment
+      |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
       |> AstEnvironment.module_tracker
     in
     let new_module_tracker =
@@ -388,7 +388,7 @@ let save_type_environment ~scheduler ~configuration ~environment =
       Memory.SharedMemory.collect `aggressive;
       let module_tracker =
         TypeEnvironment.unannotated_global_environment environment
-        |> UnannotatedGlobalEnvironment.ast_environment
+        |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
         |> AstEnvironment.module_tracker
       in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;

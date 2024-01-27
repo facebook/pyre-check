@@ -3115,7 +3115,7 @@ module ScratchProject = struct
            using nonlazy module tracking *)
         let ast_environment =
           ErrorsEnvironment.unannotated_global_environment errors_environment
-          |> UnannotatedGlobalEnvironment.ast_environment
+          |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
         in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
@@ -3187,7 +3187,7 @@ module ScratchProject = struct
     module AssumeBackedByAstEnvironment = struct
       let ast_environment { errors_environment; _ } =
         ErrorsEnvironment.unannotated_global_environment errors_environment
-        |> UnannotatedGlobalEnvironment.ast_environment
+        |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
 
 
       let module_tracker project = ast_environment project |> AstEnvironment.module_tracker

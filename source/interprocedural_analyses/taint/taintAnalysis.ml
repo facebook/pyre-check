@@ -459,7 +459,7 @@ let initialize_models
 let purge_shared_memory ~environment ~qualifiers =
   let ast_environment =
     Analysis.TypeEnvironment.unannotated_global_environment environment
-    |> Analysis.UnannotatedGlobalEnvironment.ast_environment
+    |> Analysis.UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
   in
   Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
   Memory.SharedMemory.collect `aggressive;

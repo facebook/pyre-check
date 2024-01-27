@@ -1247,11 +1247,13 @@ module Base = struct
 
   let unannotated_global_environment = Fn.id
 
-  let ast_environment { ast_environment; _ } = ast_environment
+  let global_module_paths_api { ast_environment; _ } =
+    AstEnvironment.global_module_paths_api ast_environment
 
-  let global_module_paths_api environment =
-    ast_environment environment |> AstEnvironment.global_module_paths_api
 
+  module UnsafeAssumeClassic = struct
+    let ast_environment { ast_environment; _ } = ast_environment
+  end
 
   (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
      before loading / after storing. These functions only handle serializing and deserializing the

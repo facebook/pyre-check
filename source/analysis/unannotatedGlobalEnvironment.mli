@@ -137,8 +137,6 @@ val unannotated_global_environment : t -> t
 
 val global_module_paths_api : t -> GlobalModulePathsApi.t
 
-val ast_environment : t -> AstEnvironment.t
-
 val controls : t -> EnvironmentControls.t
 
 val read_only : t -> ReadOnly.t
@@ -148,6 +146,10 @@ val update_this_and_all_preceding_environments
   scheduler:Scheduler.t ->
   ArtifactPath.Event.t list ->
   UpdateResult.t
+
+module UnsafeAssumeClassic : sig
+  val ast_environment : t -> AstEnvironment.t
+end
 
 val store : t -> unit
 
