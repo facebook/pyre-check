@@ -936,7 +936,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             error_source = None
             raw_results = []
             if symbol_search_response.data is not None:
-                for symbol in symbol_search_response.data.WorkspaceSymbols:
+                for symbol in symbol_search_response.data.workspace_symbols:
                     raw_results.append(
                         {
                             "name": symbol.name,

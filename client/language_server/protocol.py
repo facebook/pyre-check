@@ -856,10 +856,10 @@ class WorkspaceSymbolParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 class WorkspaceSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     kind: SymbolKind
-    containerName: Optional[str]
+    container_name: Optional[str]
     location: LspLocation
 
 
 @dataclasses.dataclass(frozen=True)
 class WorkspaceSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    WorkspaceSymbols: List[WorkspaceSymbol]
+    workspace_symbols: List[WorkspaceSymbol]
