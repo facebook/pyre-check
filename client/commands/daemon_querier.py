@@ -994,7 +994,6 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         self,
         query: str,
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
-        LOG.info(f"Processing symbol search request for {query}")
         index_result = await self.index.symbol_search(query)
         return GetSymbolSearchResponse(
             source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
