@@ -303,7 +303,8 @@ let rec parse_annotations
   let rec extract_breadcrumbs ?(is_dynamic = false) expression =
     let open TaintConfiguration.Heap in
     match expression.Node.value with
-    | Expression.Name (Name.Identifier breadcrumb) ->
+    | Expression.Name (Name.Identifier breadcrumb)
+    | Expression.Constant (Constant.String { value = breadcrumb; kind = String }) ->
         if is_dynamic then
           Ok [Features.Breadcrumb.SimpleVia breadcrumb]
         else

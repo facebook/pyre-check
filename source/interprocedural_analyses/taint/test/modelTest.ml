@@ -2819,6 +2819,31 @@ let test_source_breadcrumbs context =
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.source";
       ]
+    ();
+  assert_model
+    ~context
+    ~model_source:
+      "def test.source() -> TaintSource[Test, ViaDynamicFeature[\"NotSpecifiedInConfig\"]]: ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
+    ();
+  assert_model
+    ~context
+    ~model_source:"def test.source() -> TaintSource[Test, ViaDynamicFeature[\"a-b\"]]: ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~returns:[Sources.NamedSource "Test"]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.source";
+      ]
     ()
 
 
@@ -2834,6 +2859,18 @@ let test_sink_breadcrumbs context =
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
+    ();
+  assert_model
+    ~context
+    ~model_source:"def test.sink(parameter: TaintSink[Test, Via[\"special\"]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.sink";
+      ]
     ()
 
 
@@ -2841,6 +2878,18 @@ let test_tito_breadcrumbs context =
   assert_model
     ~context
     ~model_source:"def test.tito(parameter: TaintInTaintOut[Via[special]]): ..."
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~analysis_modes:(Model.ModeSet.singleton Obscure)
+          "test.tito";
+      ]
+    ();
+  assert_model
+    ~context
+    ~model_source:"def test.tito(parameter: TaintInTaintOut[Via[\"special\"]]): ..."
     ~expect:
       [
         outcome
