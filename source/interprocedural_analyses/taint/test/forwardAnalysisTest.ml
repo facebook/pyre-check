@@ -28,7 +28,7 @@ let assert_taint ?models ?models_source ~context source expect =
     Test.ScratchProject.build_type_environment project
   in
   let source =
-    SourceCodeApi.processed_source_of_qualifier
+    SourceCodeApi.source_of_qualifier
       (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment)
       qualifier
     |> fun option -> Option.value_exn option

@@ -202,7 +202,7 @@ module Setup = struct
     let global_resolution = environment |> TypeEnvironment.ReadOnly.global_resolution in
     let filename_lookup = SourceCodeApi.relative_path_of_qualifier source_code_api in
     let source =
-      SourceCodeApi.processed_source_of_qualifier source_code_api (Reference.create "test")
+      SourceCodeApi.source_of_qualifier source_code_api (Reference.create "test")
       |> fun option -> Option.value_exn option
     in
     configuration, global_resolution, filename_lookup, source

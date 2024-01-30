@@ -51,7 +51,7 @@ let test_find_decorator_body context =
       ScratchProject.setup ~context ~external_sources:additional_sources [handle, ""]
       |> ScratchProject.get_untracked_source_code_api
     in
-    let get_source = SourceCodeApi.processed_source_of_qualifier source_code_api in
+    let get_source = SourceCodeApi.source_of_qualifier source_code_api in
     let get_expected_define expected =
       let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
         ScratchProject.setup ~context ~external_sources:[] [expected_handle, expected]
@@ -114,7 +114,7 @@ let get_expected_actual_sources ~context ~additional_sources ~handle source expe
     ScratchProject.setup ~context ~external_sources:additional_sources [handle, source]
     |> ScratchProject.get_untracked_source_code_api
   in
-  let get_source = SourceCodeApi.processed_source_of_qualifier source_code_api in
+  let get_source = SourceCodeApi.source_of_qualifier source_code_api in
   let actual =
     get_source !&"test"
     >>| (fun source -> DecoratorPreprocessing.preprocess_source ~get_source source)

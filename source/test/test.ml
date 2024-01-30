@@ -3221,7 +3221,7 @@ module ScratchProject = struct
   let get_project_sources project =
     let source_code_api = get_untracked_source_code_api project in
     type_check_qualifiers project
-    |> List.filter_map ~f:(SourceCodeApi.processed_source_of_qualifier source_code_api)
+    |> List.filter_map ~f:(SourceCodeApi.source_of_qualifier source_code_api)
 
 
   let build_global_environment project =

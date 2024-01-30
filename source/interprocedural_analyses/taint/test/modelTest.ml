@@ -22,7 +22,7 @@ let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
   in
   let qualifier = Ast.Reference.create (String.chop_suffix_exn source_file_name ~suffix:".py") in
   let ast_source =
-    Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
+    Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier
     |> fun option -> Option.value_exn option
   in
   let initial_callables =

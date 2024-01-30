@@ -876,7 +876,7 @@ let assert_update
         |> List.length
         |> assert_equal ~printer expected_number_of_names
     | `GetRawSource (qualifier, dependency) ->
-        SourceCodeApi.raw_source_of_qualifier
+        SourceCodeApi.parse_result_of_qualifier
           (UnannotatedGlobalEnvironment.ReadOnly.get_tracked_source_code_api read_only ~dependency)
           qualifier
         |> ignore

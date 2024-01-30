@@ -590,7 +590,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
           Map.change callgraph_map (Reference.delocalize caller) ~f:(fun old_callees ->
               Option.value ~default:[] old_callees |> fun old_callees -> Some (old_callees @ callees))
         in
-        SourceCodeApi.processed_source_of_qualifier source_code_api module_qualifier
+        SourceCodeApi.source_of_qualifier source_code_api module_qualifier
         >>| Preprocessing.defines ~include_toplevels:false ~include_stubs:false ~include_nested:true
         >>| List.fold_left ~init:callgraph_map ~f:callees
         |> Option.value ~default:callgraph_map
@@ -680,7 +680,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
               TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
             in
             module_name
-            >>= SourceCodeApi.processed_source_of_qualifier source_code_api
+            >>= SourceCodeApi.source_of_qualifier source_code_api
             >>| Analysis.FunctionDefinition.collect_defines
             >>| List.map ~f:snd
             >>| List.concat_map ~f:Analysis.FunctionDefinition.all_bodies

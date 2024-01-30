@@ -408,7 +408,7 @@ let test_type_collection context =
         ScratchProject.build_type_environment project
       in
       let source =
-        SourceCodeApi.processed_source_of_qualifier
+        SourceCodeApi.source_of_qualifier
           (TypeEnvironment.ReadOnly.get_untracked_source_code_api environment)
           (Reference.create (String.chop_suffix_exn handle ~suffix:".py"))
         |> fun option -> Option.value_exn option

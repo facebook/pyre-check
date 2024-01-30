@@ -530,7 +530,7 @@ let test_compute_inferred_generic_base context =
     let qualifier = Reference.create "test" in
     let project = ScratchProject.setup ~context ["test.py", source] in
     let source =
-      SourceCodeApi.processed_source_of_qualifier
+      SourceCodeApi.source_of_qualifier
         (Test.ScratchProject.get_untracked_source_code_api project)
         qualifier
     in

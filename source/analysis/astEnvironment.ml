@@ -47,25 +47,25 @@ module ReadOnly = struct
 
   let source_code_api_of_optional_dependency
       ~module_tracker
-      ~get_raw_source_of_qualifier
+      ~get_parse_result_of_qualifier
       ~dependency
     =
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let track_dependencies = EnvironmentControls.track_dependencies controls in
     let dependency = if track_dependencies then dependency else None in
-    let raw_source_of_qualifier qualifier =
+    let parse_result_of_qualifier qualifier =
       let dependency = filter_dependency ~track_dependencies ~qualifier ~dependency in
-      get_raw_source_of_qualifier ?dependency qualifier
+      get_parse_result_of_qualifier ?dependency qualifier
     in
     SourceCodeApi.create
       ~controls
       ~look_up_qualifier:(ModuleTracker.ReadOnly.look_up_qualifier module_tracker)
-      ~raw_source_of_qualifier
+      ~parse_result_of_qualifier
 
 
-  let from_module_tracker_and_getter ~module_tracker ~get_raw_source_of_qualifier =
+  let from_module_tracker_and_getter ~module_tracker ~get_parse_result_of_qualifier =
     let get_source_code_api =
-      source_code_api_of_optional_dependency ~module_tracker ~get_raw_source_of_qualifier
+      source_code_api_of_optional_dependency ~module_tracker ~get_parse_result_of_qualifier
     in
     let get_untracked_api () = get_source_code_api ~dependency:None in
     let get_tracked_api ~dependency = get_source_code_api ~dependency:(Some dependency) in
@@ -243,7 +243,7 @@ module FromReadOnlyUpstream = struct
   let read_only ({ module_tracker; _ } as ast_environment) =
     ReadOnly.from_module_tracker_and_getter
       ~module_tracker
-      ~get_raw_source_of_qualifier:(LazyRawSources.get ~ast_environment)
+      ~get_parse_result_of_qualifier:(LazyRawSources.get ~ast_environment)
 
 
   let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
@@ -268,7 +268,7 @@ module OverlayImplementation = struct
 
   let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
     let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
-    let raw_source_of_qualifier source_code_incremental_read_only ?dependency qualifier =
+    let parse_result_of_qualifier source_code_incremental_read_only ?dependency qualifier =
       let source_code_api =
         match dependency with
         | None ->
@@ -278,17 +278,17 @@ module OverlayImplementation = struct
               source_code_incremental_read_only
               ~dependency
       in
-      SourceCodeApi.raw_source_of_qualifier source_code_api qualifier
+      SourceCodeApi.parse_result_of_qualifier source_code_api qualifier
     in
-    let get_raw_source_of_qualifier ?dependency qualifier =
+    let get_parse_result_of_qualifier ?dependency qualifier =
       if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
-        raw_source_of_qualifier this_read_only ?dependency qualifier
+        parse_result_of_qualifier this_read_only ?dependency qualifier
       else
-        raw_source_of_qualifier parent ?dependency qualifier
+        parse_result_of_qualifier parent ?dependency qualifier
     in
     ReadOnly.from_module_tracker_and_getter
       ~module_tracker:(ModuleTracker.Overlay.read_only overlay_tracker)
-      ~get_raw_source_of_qualifier
+      ~get_parse_result_of_qualifier
 
 
   let as_source_code_incremental_overlay implementation =

@@ -151,7 +151,7 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
 
 let get_source ~environment qualifier =
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
-  Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
+  Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier
 
 
 let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =

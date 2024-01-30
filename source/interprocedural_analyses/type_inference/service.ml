@@ -84,7 +84,7 @@ let run_infer
           ~filename_lookup
           source
       in
-      qualifier |> SourceCodeApi.processed_source_of_qualifier source_code_api >>| analyze_source
+      qualifier |> SourceCodeApi.source_of_qualifier source_code_api >>| analyze_source
     in
     qualifiers |> List.filter_map ~f:analyze_qualifier |> List.concat
   in

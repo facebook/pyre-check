@@ -28,11 +28,11 @@ end
 type t = {
   controls: EnvironmentControls.t;
   look_up_qualifier: Ast.Reference.t -> ModuleLookup.t;
-  raw_source_of_qualifier: Ast.Reference.t -> Parsing.ParseResult.t option;
+  parse_result_of_qualifier: Ast.Reference.t -> Parsing.ParseResult.t option;
 }
 
-let create ~controls ~look_up_qualifier ~raw_source_of_qualifier =
-  { controls; look_up_qualifier; raw_source_of_qualifier }
+let create ~controls ~look_up_qualifier ~parse_result_of_qualifier =
+  { controls; look_up_qualifier; parse_result_of_qualifier }
 
 
 let controls { controls; _ } = controls
@@ -57,7 +57,7 @@ let relative_path_of_qualifier api qualifier =
   module_path_of_qualifier api qualifier |> Option.map ~f:Ast.ModulePath.relative
 
 
-let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier
+let parse_result_of_qualifier { parse_result_of_qualifier; _ } = parse_result_of_qualifier
 
-let processed_source_of_qualifier { raw_source_of_qualifier; _ } =
-  AstProcessing.processed_source_of_qualifier ~raw_source_of_qualifier
+let source_of_qualifier { parse_result_of_qualifier; _ } =
+  AstProcessing.source_of_qualifier ~parse_result_of_qualifier

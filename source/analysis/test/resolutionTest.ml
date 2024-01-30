@@ -448,7 +448,7 @@ let test_source_is_unit_test context =
   let assert_is_unit_test ?(expected = true) ?(extra_sources = []) source =
     let project = ScratchProject.setup ~context (["test.py", source] @ extra_sources) in
     let source =
-      SourceCodeApi.processed_source_of_qualifier
+      SourceCodeApi.source_of_qualifier
         (Test.ScratchProject.get_untracked_source_code_api project)
         (Reference.create "test")
       |> fun option -> Option.value_exn option
@@ -486,7 +486,7 @@ let test_fallback_attribute context =
     let attribute =
       let qualifier = Reference.create "test" in
       let source =
-        SourceCodeApi.processed_source_of_qualifier
+        SourceCodeApi.source_of_qualifier
           (Test.ScratchProject.get_untracked_source_code_api project)
           qualifier
       in

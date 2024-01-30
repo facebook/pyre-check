@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val processed_source_of_qualifier
-  :  raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
+val source_of_qualifier
+  :  parse_result_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
   Ast.Reference.t ->
   Ast.Source.t option

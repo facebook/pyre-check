@@ -3093,7 +3093,7 @@ let test_expand_wildcard_imports context =
       ~printer:(fun statement_list -> List.map statement_list ~f:show |> String.concat ~sep:", ")
       (Source.statements (parse expected))
       (Source.statements
-         (Option.value_exn (SourceCodeApi.processed_source_of_qualifier source_code_api !&"test")))
+         (Option.value_exn (SourceCodeApi.source_of_qualifier source_code_api !&"test")))
   in
   assert_expanded
     ["a.py", "def foo(): pass"]

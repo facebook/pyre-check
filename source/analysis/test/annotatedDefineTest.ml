@@ -82,7 +82,7 @@ let test_decorate context =
     let source, environment =
       let project = ScratchProject.setup ~context ["test.py", source] in
       ( Option.value_exn
-          (SourceCodeApi.processed_source_of_qualifier
+          (SourceCodeApi.source_of_qualifier
              (Test.ScratchProject.get_untracked_source_code_api project)
              (Reference.create "test")),
         Test.ScratchProject.global_environment project )

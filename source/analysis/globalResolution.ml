@@ -78,9 +78,7 @@ let relative_path_of_qualifier resolution =
   source_code_api resolution |> SourceCodeApi.relative_path_of_qualifier
 
 
-let processed_source_of_qualifier resolution =
-  source_code_api resolution |> SourceCodeApi.processed_source_of_qualifier
-
+let source_of_qualifier resolution = source_code_api resolution |> SourceCodeApi.source_of_qualifier
 
 let is_protocol ({ dependency; _ } as resolution) annotation =
   UnannotatedGlobalEnvironment.ReadOnly.is_protocol

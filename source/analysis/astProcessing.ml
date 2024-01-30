@@ -71,7 +71,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
       |> List.dedup_and_sort ~compare:Identifier.compare
 
 
-let expand_wildcard_imports ~raw_source_of_qualifier source =
+let expand_wildcard_imports ~parse_result_of_qualifier source =
   let open Statement in
   let module Transform = Transform.MakeStatementTransformer (struct
     include Transform.Identity
@@ -104,7 +104,7 @@ let expand_wildcard_imports ~raw_source_of_qualifier source =
               match Hash_set.strict_add visited_modules qualifier with
               | Error _ -> ()
               | Ok () -> (
-                  match raw_source_of_qualifier qualifier with
+                  match parse_result_of_qualifier qualifier with
                   | None
                   | Some (Result.Error _) ->
                       ()
@@ -148,16 +148,16 @@ let expand_wildcard_imports ~raw_source_of_qualifier source =
   Transform.transform () source |> Transform.source
 
 
-let processed_source_of_qualifier ~raw_source_of_qualifier qualifier =
+let source_of_qualifier ~parse_result_of_qualifier qualifier =
   (* Preprocessing a module depends on the module itself is implicitly assumed in `update`. No need
      to explicitly record the dependency. *)
-  raw_source_of_qualifier qualifier
+  parse_result_of_qualifier qualifier
   >>| function
   | Result.Ok source ->
-      expand_wildcard_imports ~raw_source_of_qualifier source
+      expand_wildcard_imports ~parse_result_of_qualifier source
       |> Preprocessing.preprocess_after_wildcards
       |> DecoratorPreprocessing.preprocess_source ~get_source:(fun qualifier ->
-             raw_source_of_qualifier qualifier >>= Result.ok)
+             parse_result_of_qualifier qualifier >>= Result.ok)
   | Result.Error
       {
         Parsing.ParseResult.Error.module_path =

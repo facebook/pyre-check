@@ -19,7 +19,7 @@ val module_path_of_qualifier : t -> Ast.Reference.t -> Ast.ModulePath.t option
 
 val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
 
-val processed_source_of_qualifier : t -> Reference.t -> Source.t option
+val source_of_qualifier : t -> Reference.t -> Source.t option
 
 val is_protocol : t -> Type.t -> bool
 

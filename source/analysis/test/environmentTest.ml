@@ -404,7 +404,7 @@ let test_register_implicit_namespace_modules context =
   let global_resolution = GlobalResolution.create environment in
   assert_bool
     "Can get the source of a/b/c.py"
-    (SourceCodeApi.raw_source_of_qualifier source_code_api (Reference.create "a.b.c")
+    (SourceCodeApi.parse_result_of_qualifier source_code_api (Reference.create "a.b.c")
     |> Option.is_some);
   assert_bool
     "Can get the module definition of a/b/c.py"

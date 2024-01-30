@@ -20,9 +20,7 @@ let test_callables context =
         Test.ScratchProject.build_global_resolution scratch_project )
     in
     let source =
-      Analysis.SourceCodeApi.processed_source_of_qualifier
-        source_code_api
-        (Ast.Reference.create "test")
+      Analysis.SourceCodeApi.source_of_qualifier source_code_api (Ast.Reference.create "test")
       |> Option.value_exn
     in
     FetchCallables.from_source ~configuration ~resolution ~include_unit_tests:false ~source

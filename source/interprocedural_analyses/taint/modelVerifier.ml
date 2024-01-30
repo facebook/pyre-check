@@ -42,7 +42,7 @@ let containing_source ~resolution reference =
     | _ -> found
   in
   qualifier ~found:Reference.empty ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> GlobalResolution.processed_source_of_qualifier resolution
+  |> GlobalResolution.source_of_qualifier resolution
 
 
 let class_summaries ~resolution reference =

@@ -463,7 +463,7 @@ let initialize
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   let qualifier = Reference.create (String.chop_suffix_exn handle ~suffix:".py") in
   let source =
-    SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
+    SourceCodeApi.source_of_qualifier source_code_api qualifier
     |> fun option -> Option.value_exn option
   in
   (if not (List.is_empty errors) then

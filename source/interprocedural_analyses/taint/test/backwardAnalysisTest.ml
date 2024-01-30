@@ -23,7 +23,7 @@ let assert_taint ~context source expected =
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
   let source =
-    SourceCodeApi.processed_source_of_qualifier
+    SourceCodeApi.source_of_qualifier
       (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment)
       qualifier
     |> fun option -> Option.value_exn option

@@ -70,7 +70,7 @@ module Heap = struct
       Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api environment
     in
     let build_per_qualifier qualifier =
-      match Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier with
+      match Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier with
       | None -> empty
       | Some source -> from_source ~qualifier source
     in

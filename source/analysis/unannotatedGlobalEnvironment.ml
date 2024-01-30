@@ -173,12 +173,12 @@ module IncomingDataComputation = struct
   module Queries = struct
     type t = {
       is_qualifier_tracked: Ast.Reference.t -> bool;
-      processed_source_of_qualifier: Ast.Reference.t -> Ast.Source.t option;
+      source_of_qualifier: Ast.Reference.t -> Ast.Source.t option;
     }
   end
 
-  let module_components Queries.{ is_qualifier_tracked; processed_source_of_qualifier } qualifier =
-    match processed_source_of_qualifier qualifier with
+  let module_components Queries.{ is_qualifier_tracked; source_of_qualifier } qualifier =
+    match source_of_qualifier qualifier with
     | Some source -> Some (ModuleComponents.of_source source)
     | None ->
         if is_qualifier_tracked qualifier then
@@ -1021,7 +1021,7 @@ module FromReadOnlyUpstream = struct
       SourceCodeIncrementalApi.ReadOnly.get_untracked_api source_code_incremental_read_only
       |> SourceCodeApi.is_qualifier_tracked
     in
-    let processed_source_of_qualifier qualifier =
+    let source_of_qualifier qualifier =
       let dependency =
         WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register
       in
@@ -1030,9 +1030,9 @@ module FromReadOnlyUpstream = struct
           source_code_incremental_read_only
           ~dependency
       in
-      SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
+      SourceCodeApi.source_of_qualifier source_code_api qualifier
     in
-    IncomingDataComputation.Queries.{ is_qualifier_tracked; processed_source_of_qualifier }
+    IncomingDataComputation.Queries.{ is_qualifier_tracked; source_of_qualifier }
 
 
   let cold_start environment =

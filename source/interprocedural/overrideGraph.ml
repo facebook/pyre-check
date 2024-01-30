@@ -242,7 +242,7 @@ end
 
 let get_source ~environment qualifier =
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
-  Analysis.SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
+  Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier
 
 
 type skipped_overrides = Target.t list
