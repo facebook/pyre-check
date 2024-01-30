@@ -64,6 +64,7 @@ module ReadOnly = struct
         ~module_path_of_qualifier:
           (module_tracker environment |> ModuleTracker.ReadOnly.module_path_of_qualifier)
         ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
+        ~processed_source_of_qualifier:(processed_source_of_qualifier environment ?dependency)
     in
     let get_untracked_api () = get_source_code_api None in
     let get_tracked_api ~dependency =

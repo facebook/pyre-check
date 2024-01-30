@@ -22,10 +22,16 @@ type t = {
   controls: EnvironmentControls.t;
   module_path_of_qualifier: Ast.Reference.t -> Ast.ModulePath.t option;
   raw_source_of_qualifier: Ast.Reference.t -> Parsing.ParseResult.t option;
+  processed_source_of_qualifier: Ast.Reference.t -> Ast.Source.t option;
 }
 
-let create ~controls ~module_path_of_qualifier ~raw_source_of_qualifier =
-  { controls; module_path_of_qualifier; raw_source_of_qualifier }
+let create
+    ~controls
+    ~module_path_of_qualifier
+    ~raw_source_of_qualifier
+    ~processed_source_of_qualifier
+  =
+  { controls; module_path_of_qualifier; raw_source_of_qualifier; processed_source_of_qualifier }
 
 
 let controls { controls; _ } = controls
@@ -42,5 +48,5 @@ let is_qualifier_tracked { module_path_of_qualifier; _ } qualifier =
 
 let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier
 
-let processed_source_of_qualifier api =
-  AstProcessing.processed_source_of_qualifier ~raw_source_of_qualifier:(raw_source_of_qualifier api)
+let processed_source_of_qualifier { processed_source_of_qualifier; _ } =
+  processed_source_of_qualifier

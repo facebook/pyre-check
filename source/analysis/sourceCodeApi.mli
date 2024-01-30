@@ -11,6 +11,7 @@ val create
   :  controls:EnvironmentControls.t ->
   module_path_of_qualifier:(Ast.Reference.t -> Ast.ModulePath.t option) ->
   raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
+  processed_source_of_qualifier:(Ast.Reference.t -> Ast.Source.t option) ->
   t
 
 val controls : t -> EnvironmentControls.t
