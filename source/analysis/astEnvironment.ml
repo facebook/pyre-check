@@ -58,11 +58,12 @@ module ReadOnly = struct
 
   let as_source_code_incremental_read_only environment =
     let controls = controls environment in
+    let module_tracker = module_tracker environment in
     let get_source_code_api dependency =
       SourceCodeApi.create
         ~controls
-        ~module_path_of_qualifier:
-          (module_tracker environment |> ModuleTracker.ReadOnly.module_path_of_qualifier)
+        ~module_path_of_qualifier:(ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker)
+        ~is_qualifier_tracked:(ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker)
         ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
         ~processed_source_of_qualifier:(processed_source_of_qualifier environment ?dependency)
     in

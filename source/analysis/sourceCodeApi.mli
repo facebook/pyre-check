@@ -9,6 +9,7 @@ type t
 
 val create
   :  controls:EnvironmentControls.t ->
+  is_qualifier_tracked:(Ast.Reference.t -> bool) ->
   module_path_of_qualifier:(Ast.Reference.t -> Ast.ModulePath.t option) ->
   raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
   processed_source_of_qualifier:(Ast.Reference.t -> Ast.Source.t option) ->
