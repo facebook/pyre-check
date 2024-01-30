@@ -1214,13 +1214,15 @@ end
 module Overlay = struct
   type t = {
     parent: ReadOnly.t;
-    ast_environment: AstEnvironment.Overlay.t;
+    source_code_incremental_overlay: SourceCodeIncrementalApi.Overlay.t;
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
   let unannotated_global_environment = Fn.id
 
-  let owns_qualifier { ast_environment; _ } = AstEnvironment.Overlay.owns_qualifier ast_environment
+  let owns_qualifier { source_code_incremental_overlay; _ } =
+    SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_incremental_overlay
+
 
   let owns_reference environment reference =
     Reference.possible_qualifiers_after_delocalize reference
@@ -1229,11 +1231,15 @@ module Overlay = struct
 
   let owns_identifier environment name = Reference.create name |> owns_reference environment
 
-  let consume_upstream_update { from_read_only_upstream; ast_environment; _ } update_result =
+  let consume_upstream_update
+      { from_read_only_upstream; source_code_incremental_overlay; _ }
+      update_result
+    =
     let filtered_update_result =
       let filtered_invalidated_modules =
         SourceCodeIncrementalApi.UpdateResult.invalidated_modules update_result
-        |> List.filter ~f:(AstEnvironment.Overlay.owns_qualifier ast_environment)
+        |> List.filter
+             ~f:(SourceCodeIncrementalApi.Overlay.owns_qualifier source_code_incremental_overlay)
       in
       {
         update_result with
@@ -1246,8 +1252,10 @@ module Overlay = struct
       filtered_update_result
 
 
-  let update_overlaid_code ({ ast_environment; _ } as environment) ~code_updates =
-    AstEnvironment.Overlay.update_overlaid_code ast_environment ~code_updates
+  let update_overlaid_code ({ source_code_incremental_overlay; _ } as environment) ~code_updates =
+    SourceCodeIncrementalApi.Overlay.update_overlaid_code
+      source_code_incremental_overlay
+      ~code_updates
     |> consume_upstream_update environment
 
 
@@ -1331,11 +1339,16 @@ module Base = struct
 
 
   let overlay ({ ast_environment; _ } as environment) =
-    let ast_environment = AstEnvironment.overlay ast_environment in
+    let source_code_incremental_overlay = AstEnvironment.overlay ast_environment in
     let from_read_only_upstream =
-      AstEnvironment.Overlay.read_only ast_environment |> FromReadOnlyUpstream.create
+      SourceCodeIncrementalApi.Overlay.read_only source_code_incremental_overlay
+      |> FromReadOnlyUpstream.create
     in
-    { Overlay.parent = read_only environment; ast_environment; from_read_only_upstream }
+    {
+      Overlay.parent = read_only environment;
+      source_code_incremental_overlay;
+      from_read_only_upstream;
+    }
 
 
   let controls { from_read_only_upstream; _ } =

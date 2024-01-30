@@ -1064,7 +1064,7 @@ let make_overlay_testing_functions ~context ~test_sources =
   let parent = ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project in
   let parent_read_only = AstEnvironment.read_only parent in
   let overlay_environment = AstEnvironment.overlay parent in
-  let read_only = AstEnvironment.Overlay.read_only overlay_environment in
+  let read_only = SourceCodeIncrementalApi.Overlay.read_only overlay_environment in
   let source_of_module_paths qualifier =
     let unpack_result = function
       (* Getting good failure errors here is important because it is easy to mess up indentation *)
@@ -1094,7 +1094,7 @@ let make_overlay_testing_functions ~context ~test_sources =
             SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode (trim_extra_indentation code) );
         ]
       in
-      AstEnvironment.Overlay.update_overlaid_code overlay_environment ~code_updates
+      SourceCodeIncrementalApi.Overlay.update_overlaid_code overlay_environment ~code_updates
       |> SourceCodeIncrementalApi.UpdateResult.invalidated_modules
       |> List.sort ~compare:Reference.compare
     in

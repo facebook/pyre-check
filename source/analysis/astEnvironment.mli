@@ -7,19 +7,6 @@
 
 open Ast
 
-module Overlay : sig
-  type t
-
-  val owns_qualifier : t -> Reference.t -> bool
-
-  val update_overlaid_code
-    :  t ->
-    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
-    SourceCodeIncrementalApi.UpdateResult.t
-
-  val read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
-end
-
 type t
 
 val module_tracker : t -> ModuleTracker.t
@@ -46,7 +33,7 @@ val remove_sources : t -> Reference.t list -> unit
 
 val read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
-val overlay : t -> Overlay.t
+val overlay : t -> SourceCodeIncrementalApi.Overlay.t
 
 module AssumeGlobalModuleListing : sig
   val global_module_paths_api : t -> GlobalModulePathsApi.t

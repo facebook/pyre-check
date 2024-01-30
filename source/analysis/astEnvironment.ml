@@ -255,7 +255,7 @@ module FromReadOnlyUpstream = struct
   let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
 end
 
-module Overlay = struct
+module OverlayImplementation = struct
   type t = {
     parent: SourceCodeIncrementalApi.ReadOnly.t;
     module_tracker: ModuleTracker.Overlay.t;
@@ -295,6 +295,14 @@ module Overlay = struct
     ReadOnly.from_module_tracker_and_getter
       ~module_tracker:(ModuleTracker.Overlay.read_only overlay_tracker)
       ~get_raw_source_of_qualifier
+
+
+  let as_source_code_incremental_overlay implementation =
+    {
+      SourceCodeIncrementalApi.Overlay.read_only = read_only implementation;
+      SourceCodeIncrementalApi.Overlay.owns_qualifier = owns_qualifier implementation;
+      SourceCodeIncrementalApi.Overlay.update_overlaid_code = update_overlaid_code implementation;
+    }
 end
 
 module Base = struct
@@ -354,7 +362,12 @@ module Base = struct
     let from_read_only_upstream =
       ModuleTracker.Overlay.read_only module_tracker |> FromReadOnlyUpstream.create
     in
-    { Overlay.parent = read_only environment; module_tracker; from_read_only_upstream }
+    {
+      OverlayImplementation.parent = read_only environment;
+      module_tracker;
+      from_read_only_upstream;
+    }
+    |> OverlayImplementation.as_source_code_incremental_overlay
 
 
   module AssumeGlobalModuleListing = struct
