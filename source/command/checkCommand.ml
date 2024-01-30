@@ -154,7 +154,8 @@ let do_check configuration =
             |> Analysis.ErrorsEnvironment.create
           in
           let type_check_qualifiers =
-            Analysis.ErrorsEnvironment.global_module_paths_api read_write_environment
+            Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+              read_write_environment
             |> Analysis.GlobalModulePathsApi.type_check_qualifiers
           in
           Analysis.ErrorsEnvironment.check_and_preprocess

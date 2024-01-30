@@ -88,7 +88,7 @@ let load_stored_configuration = StoredConfiguration.load
 let load ~configuration ~build_system () =
   let overlaid_environment =
     EnvironmentControls.create configuration
-    |> Analysis.ErrorsEnvironment.UnsafeAssumeClassic.load
+    |> Analysis.ErrorsEnvironment.AssumeAstEnvironment.load
     |> OverlaidEnvironment.create
   in
   create ~build_system ~overlaid_environment ()

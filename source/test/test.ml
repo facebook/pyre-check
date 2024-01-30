@@ -3115,7 +3115,7 @@ module ScratchProject = struct
            using nonlazy module tracking *)
         let ast_environment =
           ErrorsEnvironment.unannotated_global_environment errors_environment
-          |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
+          |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
         in
         AstEnvironment.clear_memory_for_tests ~scheduler:(mock_scheduler ()) ast_environment;
         let set_up_shared_memory _ = () in
@@ -3177,7 +3177,7 @@ module ScratchProject = struct
     let errors_environment { errors_environment; _ } = errors_environment
 
     let type_environment { errors_environment; _ } =
-      errors_environment |> ErrorsEnvironment.Unsafe.type_environment
+      errors_environment |> ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment
 
 
     (* The names of these hooks are specific because it is important that tests of layers above
@@ -3187,7 +3187,7 @@ module ScratchProject = struct
     module AssumeBackedByAstEnvironment = struct
       let ast_environment { errors_environment; _ } =
         ErrorsEnvironment.unannotated_global_environment errors_environment
-        |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
+        |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
 
 
       let module_tracker project = ast_environment project |> AstEnvironment.module_tracker
@@ -3211,7 +3211,7 @@ module ScratchProject = struct
 
 
   let global_module_paths_api { errors_environment; _ } =
-    ErrorsEnvironment.global_module_paths_api errors_environment
+    ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api errors_environment
 
 
   let type_check_qualifiers project =
@@ -3339,7 +3339,7 @@ let assert_errors
         in
         let errors_environment = ScratchProject.ReadWrite.errors_environment project in
         ( sources,
-          ErrorsEnvironment.Unsafe.type_environment errors_environment,
+          ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment,
           ErrorsEnvironment.read_only errors_environment
           |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api )
       in

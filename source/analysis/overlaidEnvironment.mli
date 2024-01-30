@@ -13,13 +13,7 @@ val create : ErrorsEnvironment.t -> t
 
 val root : t -> ErrorsEnvironment.ReadOnly.t
 
-val global_module_paths_api : t -> GlobalModulePathsApi.t
-
 val overlay : t -> overlay_identifier -> ErrorsEnvironment.ReadOnly.t option
-
-val root_errors : t -> AnalysisError.t list
-
-val overlay_errors : t -> overlay_identifier -> AnalysisError.t list
 
 val get_or_create_overlay : t -> overlay_identifier -> ErrorsEnvironment.Overlay.t
 
@@ -50,3 +44,11 @@ val update_only_root_for_testing
   scheduler:Scheduler.t ->
   ArtifactPath.Event.t list ->
   ErrorsEnvironment.UpdateResult.t
+
+module AssumeGlobalModuleListing : sig
+  val global_module_paths_api : t -> GlobalModulePathsApi.t
+
+  val root_errors : t -> AnalysisError.t list
+
+  val overlay_errors : t -> overlay_identifier -> AnalysisError.t list
+end

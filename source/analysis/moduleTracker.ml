@@ -1046,8 +1046,6 @@ module Base = struct
 
   let module_paths { layouts; _ } = Layouts.Api.module_paths layouts
 
-  let global_module_paths_api tracker = GlobalModulePathsApi.create (fun () -> module_paths tracker)
-
   let read_only { layouts; controls; code_of_module_path; _ } =
     let module_path_of_qualifier qualifier =
       Layouts.Api.module_path_of_qualifier layouts ~qualifier
@@ -1062,6 +1060,11 @@ module Base = struct
 
 
   let overlay tracker = read_only tracker |> Overlay.from_read_only
+
+  module AssumeGlobalModuleListing = struct
+    let global_module_paths_api tracker =
+      GlobalModulePathsApi.create (fun () -> module_paths tracker)
+  end
 end
 
 include Base

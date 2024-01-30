@@ -68,7 +68,7 @@ module PreviousEnvironment : sig
       ArtifactPath.Event.t list ->
       UpdateResult.t
 
-    module UnsafeAssumeClassic : sig
+    module AssumeAstEnvironment : sig
       val store : t -> unit
 
       val load : EnvironmentControls.t -> t
@@ -81,7 +81,7 @@ module type S = sig
 
   module PreviousEnvironment : PreviousEnvironment.S
 
-  module Unsafe : sig
+  module AssumeDownstreamNeverNeedsUpdates : sig
     val upstream : t -> PreviousEnvironment.t
   end
 
@@ -191,13 +191,13 @@ module EnvironmentTable : sig
       ArtifactPath.Event.t list ->
       UpdateResult.t
 
-    module UnsafeAssumeClassic : sig
+    module AssumeAstEnvironment : sig
       val store : t -> unit
 
       val load : EnvironmentControls.t -> t
     end
 
-    module Unsafe : sig
+    module AssumeDownstreamNeverNeedsUpdates : sig
       val upstream : t -> In.PreviousEnvironment.t
     end
 

@@ -237,10 +237,12 @@ let type_check
         |> Analysis.ErrorsEnvironment.create
       in
       let type_environment =
-        Analysis.ErrorsEnvironment.Unsafe.type_environment errors_environment
+        Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment
+          errors_environment
       in
       let qualifiers =
-        Analysis.ErrorsEnvironment.global_module_paths_api errors_environment
+        Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+          errors_environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers
       in
       Log.info "Found %d modules" (List.length qualifiers);
@@ -461,7 +463,7 @@ let initialize_models
 let purge_shared_memory ~environment ~qualifiers =
   let ast_environment =
     Analysis.TypeEnvironment.unannotated_global_environment environment
-    |> Analysis.UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
+    |> Analysis.UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
   in
   Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
   Memory.SharedMemory.collect `aggressive;
@@ -557,7 +559,9 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let global_module_paths_api = environment |> Analysis.TypeEnvironment.global_module_paths_api in
+  let global_module_paths_api =
+    environment |> Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+  in
   let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
   let source_code_api =
     environment

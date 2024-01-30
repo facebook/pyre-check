@@ -315,7 +315,7 @@ let test_error_filtering context =
         |> ErrorsEnvironment.create
       in
       ( ErrorsEnvironment.read_only read_write,
-        ErrorsEnvironment.global_module_paths_api read_write
+        ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api read_write
         |> GlobalModulePathsApi.type_check_qualifiers )
     in
     let errors =

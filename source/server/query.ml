@@ -1148,7 +1148,9 @@ let process_request ~type_environment ~global_module_paths_api ~build_system req
 
 
 let parse_and_process_request ~overlaid_environment ~build_system request overlay_id =
-  let global_module_paths_api = OverlaidEnvironment.global_module_paths_api overlaid_environment in
+  let global_module_paths_api =
+    OverlaidEnvironment.AssumeGlobalModuleListing.global_module_paths_api overlaid_environment
+  in
   let type_environment =
     match overlay_id with
     | Some overlay_id -> (

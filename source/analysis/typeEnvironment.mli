@@ -47,15 +47,17 @@ include
 
 val global_environment : t -> AnnotatedGlobalEnvironment.t
 
-val global_module_paths_api : t -> GlobalModulePathsApi.t
-
 val collect_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> Ast.Reference.t list
 
 val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
-module UnsafeAssumeClassic : sig
+module AssumeGlobalModuleListing : sig
+  val global_module_paths_api : t -> GlobalModulePathsApi.t
+end
+
+module AssumeAstEnvironment : sig
   val store : t -> unit
 
   val load : EnvironmentControls.t -> t

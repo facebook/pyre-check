@@ -227,7 +227,8 @@ let initialize_server_state
             if skip_initial_type_check then
               ()
             else
-              Analysis.ErrorsEnvironment.global_module_paths_api environment
+              Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+                environment
               |> Analysis.GlobalModulePathsApi.type_check_qualifiers
               |> Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
           in

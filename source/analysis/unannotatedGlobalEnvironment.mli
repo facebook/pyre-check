@@ -157,8 +157,6 @@ val create : EnvironmentControls.t -> t
    functor *)
 val unannotated_global_environment : t -> t
 
-val global_module_paths_api : t -> GlobalModulePathsApi.t
-
 val controls : t -> EnvironmentControls.t
 
 val read_only : t -> ReadOnly.t
@@ -171,7 +169,11 @@ val update_this_and_all_preceding_environments
   ArtifactPath.Event.t list ->
   UpdateResult.t
 
-module UnsafeAssumeClassic : sig
+module AssumeGlobalModuleListing : sig
+  val global_module_paths_api : t -> GlobalModulePathsApi.t
+end
+
+module AssumeAstEnvironment : sig
   val ast_environment : t -> AstEnvironment.t
 
   val store : t -> unit

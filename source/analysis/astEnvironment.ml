@@ -333,10 +333,6 @@ module Base = struct
 
   let module_tracker { module_tracker; _ } = module_tracker
 
-  let global_module_paths_api environment =
-    module_tracker environment |> ModuleTracker.global_module_paths_api
-
-
   let controls { from_read_only_upstream; _ } =
     FromReadOnlyUpstream.controls from_read_only_upstream
 
@@ -355,6 +351,12 @@ module Base = struct
       ModuleTracker.Overlay.read_only module_tracker |> FromReadOnlyUpstream.create
     in
     { Overlay.parent = read_only environment; module_tracker; from_read_only_upstream }
+
+
+  module AssumeGlobalModuleListing = struct
+    let global_module_paths_api environment =
+      module_tracker environment |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
+  end
 end
 
 include Base

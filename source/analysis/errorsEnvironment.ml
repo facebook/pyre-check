@@ -99,30 +99,31 @@ module ReadOnly = struct
     List.concat_map qualifiers ~f:(get_errors_for_qualifier environment)
 end
 
-module Unsafe = struct
-  let upstream = Unsafe.upstream
+module AssumeDownstreamNeverNeedsUpdates = struct
+  let upstream = AssumeDownstreamNeverNeedsUpdates.upstream
 
   let type_environment = upstream
 
   let class_metadata_environment environment =
     type_environment environment
-    |> TypeEnvironment.Unsafe.upstream
-    |> AnnotatedGlobalEnvironment.Unsafe.upstream
-    |> AttributeResolution.Unsafe.upstream
+    |> TypeEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> AnnotatedGlobalEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> AttributeResolution.AssumeDownstreamNeverNeedsUpdates.upstream
 
 
   let unannotated_global_environment environment =
     class_metadata_environment environment
-    |> ClassSuccessorMetadataEnvironment.Unsafe.upstream
-    |> ClassHierarchyEnvironment.Unsafe.upstream
-    |> AliasEnvironment.Unsafe.upstream
-    |> EmptyStubEnvironment.Unsafe.upstream
+    |> ClassSuccessorMetadataEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> ClassHierarchyEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> AliasEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> EmptyStubEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
 end
 
-let global_module_paths_api errors_environment =
-  unannotated_global_environment errors_environment
-  |> UnannotatedGlobalEnvironment.global_module_paths_api
-
+module AssumeGlobalModuleListing = struct
+  let global_module_paths_api errors_environment =
+    unannotated_global_environment errors_environment
+    |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+end
 
 module ErrorsEnvironmentReadOnly = ReadOnly
 
@@ -301,7 +302,8 @@ let create controls =
 
 
 let check_and_preprocess ~scheduler environment qualifiers =
-  (Unsafe.type_environment environment |> TypeEnvironment.populate_for_modules ~scheduler)
+  (AssumeDownstreamNeverNeedsUpdates.type_environment environment
+  |> TypeEnvironment.populate_for_modules ~scheduler)
     qualifiers;
   populate_for_modules ~scheduler environment qualifiers;
   PyreProfiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();

@@ -69,7 +69,7 @@ let instantiate_and_create_type_errors_response_for_all
   =
   let errors_environment = OverlaidEnvironment.root overlaid_environment in
   let type_check_qualifiers =
-    OverlaidEnvironment.global_module_paths_api overlaid_environment
+    OverlaidEnvironment.AssumeGlobalModuleListing.global_module_paths_api overlaid_environment
     |> GlobalModulePathsApi.type_check_qualifiers
   in
   instantiate_and_create_type_errors_response_for_modules
@@ -93,7 +93,7 @@ let process_display_type_error_request
     match paths with
     | [] ->
         let global_module_paths_api =
-          OverlaidEnvironment.global_module_paths_api overlaid_environment
+          OverlaidEnvironment.AssumeGlobalModuleListing.global_module_paths_api overlaid_environment
         in
         GlobalModulePathsApi.type_check_qualifiers global_module_paths_api
     | _ ->

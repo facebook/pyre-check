@@ -24,7 +24,7 @@ include
     with module ReadOnly = ErrorsEnvironmentReadOnly
      and module PreviousEnvironment = TypeEnvironment
 
-module Unsafe : sig
+module AssumeDownstreamNeverNeedsUpdates : sig
   val type_environment : t -> TypeEnvironment.t
 
   val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.t
@@ -32,7 +32,9 @@ module Unsafe : sig
   val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 end
 
-val global_module_paths_api : t -> GlobalModulePathsApi.t
+module AssumeGlobalModuleListing : sig
+  val global_module_paths_api : t -> GlobalModulePathsApi.t
+end
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 

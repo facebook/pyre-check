@@ -210,7 +210,7 @@ let test_parse_sources context =
     in
     let type_check_qualifiers =
       AstEnvironment.module_tracker ast_environment
-      |> ModuleTracker.global_module_paths_api
+      |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
       |> GlobalModulePathsApi.type_check_qualifiers
     in
     let sources =

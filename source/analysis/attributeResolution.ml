@@ -5337,12 +5337,12 @@ end
 module AttributeReadOnly = ReadOnly
 include TypeParameterValidationTypes
 
-module Unsafe = struct
+module AssumeDownstreamNeverNeedsUpdates = struct
   let upstream environment =
-    GlobalAnnotationCache.Unsafe.upstream environment
-    |> AttributeCache.Unsafe.upstream
-    |> MetaclassCache.Unsafe.upstream
-    |> ParseAnnotationCache.Unsafe.upstream
+    GlobalAnnotationCache.AssumeDownstreamNeverNeedsUpdates.upstream environment
+    |> AttributeCache.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> MetaclassCache.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> ParseAnnotationCache.AssumeDownstreamNeverNeedsUpdates.upstream
 end
 
 module Testing = struct

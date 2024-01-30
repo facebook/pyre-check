@@ -22,12 +22,6 @@ let create root = { root; overlays = String.Table.create () }
 
 let root { root; _ } = ErrorsEnvironment.read_only root
 
-let global_module_paths_api { root; _ } = ErrorsEnvironment.global_module_paths_api root
-
-let type_check_qualifiers environment =
-  global_module_paths_api environment |> GlobalModulePathsApi.type_check_qualifiers
-
-
 let overlay { overlays; _ } identifier =
   Hashtbl.find overlays identifier >>| ErrorsEnvironment.Overlay.read_only
 
@@ -50,24 +44,9 @@ let controls { root; _ } = ErrorsEnvironment.read_only root |> ErrorsEnvironment
 
 let configuration environment = controls environment |> EnvironmentControls.configuration
 
-let root_errors ({ root; _ } as environment) =
-  ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
-    (ErrorsEnvironment.read_only root)
-    (type_check_qualifiers environment)
+let load controls = ErrorsEnvironment.AssumeAstEnvironment.load controls |> create
 
-
-let overlay_errors environment identifier =
-  match overlay environment identifier with
-  | Some errors_environment ->
-      ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
-        errors_environment
-        (type_check_qualifiers environment)
-  | None -> []
-
-
-let load controls = ErrorsEnvironment.UnsafeAssumeClassic.load controls |> create
-
-let store { root; _ } = ErrorsEnvironment.UnsafeAssumeClassic.store root
+let store { root; _ } = ErrorsEnvironment.AssumeAstEnvironment.store root
 
 let prepare_for_update overlaid_environment ~scheduler =
   let configuration = configuration overlaid_environment in
@@ -151,3 +130,27 @@ let run_update_overlay_with_code overlaid_environment ~code_updates identifier =
 (* The update_root function is private, because it does not propagate to overlays, but it is useful
    for testing because we can inspect the result. *)
 let update_only_root_for_testing = update_root
+
+module AssumeGlobalModuleListing = struct
+  let global_module_paths_api { root; _ } =
+    ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api root
+
+
+  let type_check_qualifiers environment =
+    global_module_paths_api environment |> GlobalModulePathsApi.type_check_qualifiers
+
+
+  let root_errors ({ root; _ } as environment) =
+    ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
+      (ErrorsEnvironment.read_only root)
+      (type_check_qualifiers environment)
+
+
+  let overlay_errors environment identifier =
+    match overlay environment identifier with
+    | Some errors_environment ->
+        ErrorsEnvironment.ReadOnly.get_errors_for_qualifiers
+          errors_environment
+          (type_check_qualifiers environment)
+    | None -> []
+end

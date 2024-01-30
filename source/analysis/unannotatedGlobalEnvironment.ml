@@ -1348,11 +1348,12 @@ module Base = struct
 
   let unannotated_global_environment = Fn.id
 
-  let global_module_paths_api { ast_environment; _ } =
-    AstEnvironment.global_module_paths_api ast_environment
+  module AssumeGlobalModuleListing = struct
+    let global_module_paths_api { ast_environment; _ } =
+      AstEnvironment.AssumeGlobalModuleListing.global_module_paths_api ast_environment
+  end
 
-
-  module UnsafeAssumeClassic = struct
+  module AssumeAstEnvironment = struct
     let ast_environment { ast_environment; _ } = ast_environment
 
     (* All SharedMemory tables are populated and stored in separate, imperative steps that must be

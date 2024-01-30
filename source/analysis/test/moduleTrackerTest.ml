@@ -1003,7 +1003,7 @@ let test_hidden_files context =
       ()
     |> EnvironmentControls.create
     |> ModuleTracker.create
-    |> ModuleTracker.global_module_paths_api
+    |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
   in
   assert_equal
     ~cmp:Int.equal
@@ -1031,7 +1031,7 @@ let test_hidden_files2 context =
   let global_module_paths_api =
     EnvironmentControls.create configuration
     |> ModuleTracker.create
-    |> ModuleTracker.global_module_paths_api
+    |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
   in
   assert_equal
     ~cmp:Int.equal
@@ -1068,7 +1068,7 @@ let test_namespace_modules context =
   let global_module_paths_api =
     EnvironmentControls.create configuration
     |> ModuleTracker.create
-    |> ModuleTracker.global_module_paths_api
+    |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
   in
   (* In CPython, only package0 and package1 would be visible, but Pyre also treats package0.a and
      package1.subpackage.b as valid module paths. *)

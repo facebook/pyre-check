@@ -124,7 +124,7 @@ module type S = sig
      an overlay) but is generally unsafe because attempting to update an upstream directly will
      break dependency tracking. As a result, we provide this handle for pragmatism, but namespace it
      as Unsafe to discourage use that isn't carefully thought through. *)
-  module Unsafe : sig
+  module AssumeDownstreamNeverNeedsUpdates : sig
     val upstream : t -> PreviousEnvironment.t
   end
 
@@ -310,7 +310,7 @@ module EnvironmentTable = struct
 
     val load : EnvironmentControls.t -> t
 
-    module Unsafe : sig
+    module AssumeDownstreamNeverNeedsUpdates : sig
       val upstream : t -> In.PreviousEnvironment.t
     end
 
@@ -671,7 +671,7 @@ module EnvironmentTable = struct
 
     include Base
 
-    module Unsafe = struct
+    module AssumeDownstreamNeverNeedsUpdates = struct
       let upstream { Base.upstream_environment; _ } = upstream_environment
     end
 

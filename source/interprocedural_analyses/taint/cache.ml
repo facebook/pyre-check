@@ -147,7 +147,7 @@ module ChangedFiles = struct
     let old_module_tracker =
       old_type_environment
       |> TypeEnvironment.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
+      |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
       |> AstEnvironment.module_tracker
     in
     let new_module_tracker =
@@ -377,7 +377,7 @@ let load_type_environment ~configuration =
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
-    ~f:(fun () -> Ok (TypeEnvironment.UnsafeAssumeClassic.load_without_dependency_keys controls))
+    ~f:(fun () -> Ok (TypeEnvironment.AssumeAstEnvironment.load_without_dependency_keys controls))
 
 
 let save_type_environment ~scheduler ~configuration ~environment =
@@ -388,11 +388,11 @@ let save_type_environment ~scheduler ~configuration ~environment =
       Memory.SharedMemory.collect `aggressive;
       let module_tracker =
         TypeEnvironment.unannotated_global_environment environment
-        |> UnannotatedGlobalEnvironment.UnsafeAssumeClassic.ast_environment
+        |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
         |> AstEnvironment.module_tracker
       in
       Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
-      TypeEnvironment.UnsafeAssumeClassic.store_without_dependency_keys environment;
+      TypeEnvironment.AssumeAstEnvironment.store_without_dependency_keys environment;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 

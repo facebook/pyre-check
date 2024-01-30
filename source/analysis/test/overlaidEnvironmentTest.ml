@@ -24,7 +24,7 @@ let instantiate_and_stringify ~lookup errors =
 
 let assert_root_errors ~context ~overlaid_environment expected =
   let actual =
-    OverlaidEnvironment.root_errors overlaid_environment
+    OverlaidEnvironment.AssumeGlobalModuleListing.root_errors overlaid_environment
     |> instantiate_and_stringify
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
@@ -50,7 +50,9 @@ let assert_root_errors_for_qualifier ~context ~overlaid_environment ~qualifier e
 
 let assert_overlay_errors ~context ~overlaid_environment ~overlay_identifier expected =
   let actual =
-    OverlaidEnvironment.overlay_errors overlaid_environment overlay_identifier
+    OverlaidEnvironment.AssumeGlobalModuleListing.overlay_errors
+      overlaid_environment
+      overlay_identifier
     |> instantiate_and_stringify
          ~lookup:
            (OverlaidEnvironment.root overlaid_environment
@@ -72,7 +74,7 @@ let test_update_root context =
   in
   let local_root = ScratchProject.local_root_of project in
   let errors_environment = ScratchProject.ReadWrite.errors_environment project in
-  ErrorsEnvironment.global_module_paths_api errors_environment
+  ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api errors_environment
   |> GlobalModulePathsApi.type_check_qualifiers
   |> ErrorsEnvironment.populate_for_modules errors_environment ~scheduler:(Test.mock_scheduler ());
   let overlaid_environment = OverlaidEnvironment.create errors_environment in

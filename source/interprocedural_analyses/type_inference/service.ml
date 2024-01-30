@@ -38,7 +38,7 @@ let build_environment_data
     Statistics.performance ~name:"full environment built" ~timer ();
     ( AnnotatedGlobalEnvironment.read_only annotated_global_environment,
       AnnotatedGlobalEnvironment.unannotated_global_environment annotated_global_environment
-      |> UnannotatedGlobalEnvironment.global_module_paths_api
+      |> UnannotatedGlobalEnvironment.AssumeGlobalModuleListing.global_module_paths_api
       |> GlobalModulePathsApi.type_check_qualifiers )
   in
   { global_environment; qualifiers }

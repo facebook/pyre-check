@@ -734,7 +734,7 @@ let test_overlay_dependency_filtering context =
   in
   let read_write_parent =
     ScratchProject.ReadWrite.errors_environment project
-    |> ErrorsEnvironment.Unsafe.class_metadata_environment
+    |> ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.class_metadata_environment
   in
   let overlay = ClassSuccessorMetadataEnvironment.overlay read_write_parent in
   (* Initially, nothing inherits from Base1 *)
@@ -829,7 +829,7 @@ let test_overlay_propagation context =
   let project = ScratchProject.setup ~context ~in_memory:false sources in
   let read_write_parent =
     ScratchProject.ReadWrite.errors_environment project
-    |> ErrorsEnvironment.Unsafe.class_metadata_environment
+    |> ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.class_metadata_environment
   in
   let overlay = ClassSuccessorMetadataEnvironment.overlay read_write_parent in
   (* Initially all metadata is from disk *)
