@@ -57,21 +57,14 @@ open Pyre
  *)
 module ReadOnly = struct
   type t = {
-    module_path_of_qualifier: Reference.t -> ModulePath.t option;
-    is_qualifier_tracked: Reference.t -> bool;
+    look_up_qualifier: Reference.t -> SourceCodeApi.ModuleLookup.t;
     code_of_module_path: ModulePath.t -> Parsing.LoadResult.t;
     controls: unit -> EnvironmentControls.t;
   }
 
   let controls { controls; _ } = controls ()
 
-  let module_path_of_qualifier { module_path_of_qualifier; _ } = module_path_of_qualifier
-
-  let is_qualifier_tracked { is_qualifier_tracked; _ } = is_qualifier_tracked
-
-  let relative_path_of_qualifier tracker qualifier =
-    module_path_of_qualifier tracker qualifier |> Option.map ~f:ModulePath.relative
-
+  let look_up_qualifier { look_up_qualifier; _ } = look_up_qualifier
 
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
 end
@@ -858,18 +851,20 @@ module Layouts = struct
       find qualifier >>= ExplicitModules.Value.module_path
 
 
-    let is_explicit_module layouts ~qualifier =
-      module_path_of_qualifier layouts ~qualifier |> Option.is_some
-
-
     let is_implicit_module { implicit_modules = { find; _ }; _ } ~qualifier =
       find qualifier
       >>| ImplicitModules.Value.should_treat_as_importable
       |> Option.value ~default:false
 
 
-    let is_qualifier_tracked layouts ~qualifier =
-      is_explicit_module layouts ~qualifier || is_implicit_module layouts ~qualifier
+    let look_up_qualifier layouts ~qualifier =
+      match module_path_of_qualifier layouts ~qualifier with
+      | Some module_path -> SourceCodeApi.ModuleLookup.Explicit module_path
+      | None ->
+          if is_implicit_module layouts ~qualifier then
+            SourceCodeApi.ModuleLookup.Implicit
+          else
+            SourceCodeApi.ModuleLookup.NotFound
 
 
     let all_module_paths { explicit_modules = { data; _ }; _ } = data () |> List.concat
@@ -1047,16 +1042,8 @@ module Base = struct
   let module_paths { layouts; _ } = Layouts.Api.module_paths layouts
 
   let read_only { layouts; controls; code_of_module_path; _ } =
-    let module_path_of_qualifier qualifier =
-      Layouts.Api.module_path_of_qualifier layouts ~qualifier
-    in
-    let is_qualifier_tracked qualifier = Layouts.Api.is_qualifier_tracked layouts ~qualifier in
-    {
-      ReadOnly.module_path_of_qualifier;
-      is_qualifier_tracked;
-      code_of_module_path;
-      controls = (fun () -> controls);
-    }
+    let look_up_qualifier qualifier = Layouts.Api.look_up_qualifier layouts ~qualifier in
+    { ReadOnly.look_up_qualifier; code_of_module_path; controls = (fun () -> controls) }
 
 
   let overlay tracker = read_only tracker |> Overlay.from_read_only

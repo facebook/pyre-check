@@ -20,46 +20,48 @@
  *   in terms of Parsing logic and raw_source_of_qualifier is simply because existing
  *   dependency tracking logic requires this in order to skip some dependencies we know
  *   don't have to be tracked.
- * - Pyre only defines `ModulePath` for "explicit" qualifiers, i.e. Python modules that
- *   have an implementation file. As a result, `is_qualifier_tracked`, which should also
- *   support "implicit" qualifiers (i.e. namespace packages with no __init__ file), is
- *   required; it cannot be derived from `module_path_of_qualifier`.
  *)
 
 open Core
 
+module ModuleLookup = struct
+  type t =
+    | NotFound
+    | Implicit
+    | Explicit of Ast.ModulePath.t
+end
+
 type t = {
   controls: EnvironmentControls.t;
-  is_qualifier_tracked: Ast.Reference.t -> bool;
-  module_path_of_qualifier: Ast.Reference.t -> Ast.ModulePath.t option;
+  look_up_qualifier: Ast.Reference.t -> ModuleLookup.t;
   raw_source_of_qualifier: Ast.Reference.t -> Parsing.ParseResult.t option;
   processed_source_of_qualifier: Ast.Reference.t -> Ast.Source.t option;
 }
 
-let create
-    ~controls
-    ~is_qualifier_tracked
-    ~module_path_of_qualifier
-    ~raw_source_of_qualifier
-    ~processed_source_of_qualifier
-  =
-  {
-    controls;
-    is_qualifier_tracked;
-    module_path_of_qualifier;
-    raw_source_of_qualifier;
-    processed_source_of_qualifier;
-  }
+let create ~controls ~look_up_qualifier ~raw_source_of_qualifier ~processed_source_of_qualifier =
+  { controls; look_up_qualifier; raw_source_of_qualifier; processed_source_of_qualifier }
 
 
 let controls { controls; _ } = controls
 
-let is_qualifier_tracked { is_qualifier_tracked; _ } = is_qualifier_tracked
+let is_qualifier_tracked { look_up_qualifier; _ } qualifier =
+  match look_up_qualifier qualifier with
+  | ModuleLookup.NotFound -> false
+  | ModuleLookup.Implicit
+  | ModuleLookup.Explicit _ ->
+      true
 
-let module_path_of_qualifier { module_path_of_qualifier; _ } = module_path_of_qualifier
 
-let relative_path_of_qualifier { module_path_of_qualifier; _ } qualifier =
-  module_path_of_qualifier qualifier |> Option.map ~f:Ast.ModulePath.relative
+let module_path_of_qualifier { look_up_qualifier; _ } qualifier =
+  match look_up_qualifier qualifier with
+  | ModuleLookup.Explicit module_path -> Some module_path
+  | ModuleLookup.NotFound
+  | ModuleLookup.Implicit ->
+      None
+
+
+let relative_path_of_qualifier api qualifier =
+  module_path_of_qualifier api qualifier |> Option.map ~f:Ast.ModulePath.relative
 
 
 let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier

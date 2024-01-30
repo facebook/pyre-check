@@ -10,11 +10,7 @@ module ReadOnly : sig
 
   val controls : t -> EnvironmentControls.t
 
-  val module_path_of_qualifier : t -> Ast.Reference.t -> Ast.ModulePath.t option
-
-  val relative_path_of_qualifier : t -> Ast.Reference.t -> string option
-
-  val is_qualifier_tracked : t -> Ast.Reference.t -> bool
+  val look_up_qualifier : t -> Ast.Reference.t -> SourceCodeApi.ModuleLookup.t
 
   val code_of_module_path : t -> Ast.ModulePath.t -> Parsing.LoadResult.t
 end

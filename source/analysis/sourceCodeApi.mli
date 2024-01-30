@@ -5,12 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module ModuleLookup : sig
+  type t =
+    | NotFound
+    | Implicit
+    | Explicit of Ast.ModulePath.t
+end
+
 type t
 
 val create
   :  controls:EnvironmentControls.t ->
-  is_qualifier_tracked:(Ast.Reference.t -> bool) ->
-  module_path_of_qualifier:(Ast.Reference.t -> Ast.ModulePath.t option) ->
+  look_up_qualifier:(Ast.Reference.t -> ModuleLookup.t) ->
   raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
   processed_source_of_qualifier:(Ast.Reference.t -> Ast.Source.t option) ->
   t

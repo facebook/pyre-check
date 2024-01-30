@@ -10,9 +10,34 @@ open Core
 open Ast
 open OUnit2
 module EnvironmentControls = Analysis.EnvironmentControls
+module SourceCodeApi = Analysis.SourceCodeApi
 module ModuleTracker = Analysis.ModuleTracker
 module GlobalModulePathsApi = Analysis.GlobalModulePathsApi
 module SourceCodeIncrementalApi = Analysis.SourceCodeIncrementalApi
+
+module ReadOnlyHelpers = struct
+  let is_qualifier_tracked tracker qualifier =
+    match ModuleTracker.ReadOnly.look_up_qualifier tracker qualifier with
+    | SourceCodeApi.ModuleLookup.Implicit
+    | SourceCodeApi.ModuleLookup.Explicit _ ->
+        true
+    | SourceCodeApi.ModuleLookup.NotFound -> false
+
+
+  let module_path_of_qualifier tracker qualifier =
+    match ModuleTracker.ReadOnly.look_up_qualifier tracker qualifier with
+    | SourceCodeApi.ModuleLookup.Explicit module_path -> Some module_path
+    | SourceCodeApi.ModuleLookup.Implicit
+    | SourceCodeApi.ModuleLookup.NotFound ->
+        None
+
+
+  let module_path_of_qualifier_exn tracker qualifier =
+    module_path_of_qualifier tracker qualifier
+    |> Option.value_exn
+         ~message:
+           (Format.asprintf "Cannot find module %a in the module tracker" Reference.pp qualifier)
+end
 
 let content_on_disk = "# contents on disk"
 
@@ -31,16 +56,6 @@ let create_module_path_exn ~configuration root relative =
       in
       assert_failure message
   | Some result -> result
-
-
-let lookup_exn tracker reference =
-  match ModuleTracker.ReadOnly.module_path_of_qualifier tracker reference with
-  | Some module_path -> module_path
-  | None ->
-      let message =
-        Format.asprintf "Cannot find module %a in the module tracker" Reference.pp reference
-      in
-      assert_failure message
 
 
 let create_file root relative = create_file (PyrePath.create_relative ~root ~relative)
@@ -727,42 +742,42 @@ let test_initialization context =
       |> ModuleTracker.read_only
     in
     assert_module_path
-      (lookup_exn tracker (Reference.create "a"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "a"))
       ~search_root:external_root
       ~relative:"a.py"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "b"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "b"))
       ~search_root:external_root
       ~relative:"b.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "c"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "c"))
       ~search_root:external_root
       ~relative:"c.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "d"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "d"))
       ~search_root:local_root
       ~relative:"d/__init__.py"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "e"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "e"))
       ~search_root:local_root
       ~relative:"e.py"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "f"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "f"))
       ~search_root:local_root
       ~relative:"f.first"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "a.special"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "a.special"))
       ~search_root:local_root
       ~relative:"a.special"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "a.b.special"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "a.b.special"))
       ~search_root:local_root
       ~relative:"a/b.special"
       ~should_type_check:true;
@@ -824,38 +839,38 @@ let test_priority context =
       |> ModuleTracker.read_only
     in
     assert_module_path
-      (lookup_exn tracker (Reference.create "a"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "a"))
       ~search_root:external_root0
       ~relative:"a.py"
       ~priority:0
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "b"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "b"))
       ~search_root:local_root
       ~relative:"b.pyi"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "c"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "c"))
       ~search_root:external_root0
       ~relative:"c.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "d"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "d"))
       ~search_root:external_root1
       ~relative:"d.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "e"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "e"))
       ~search_root:external_root0
       ~relative:"e.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "f"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "f"))
       ~search_root:external_root0
       ~relative:"f.pyi"
       ~should_type_check:false;
     assert_module_path
-      (lookup_exn tracker (Reference.create "g"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "g"))
       ~search_root:external_root0
       ~relative:"g.pyi"
       ~should_type_check:false;
@@ -907,33 +922,33 @@ let test_priority_multi_source_paths context =
       |> ModuleTracker.read_only
     in
     assert_module_path
-      (lookup_exn tracker (Reference.create "a"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "a"))
       ~search_root:source_root0
       ~relative:"a.py"
       ~priority:0
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "c"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "c"))
       ~search_root:source_root0
       ~relative:"c.pyi"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "d"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "d"))
       ~search_root:source_root1
       ~relative:"d.pyi"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "e"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "e"))
       ~search_root:source_root0
       ~relative:"e.pyi"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "f"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "f"))
       ~search_root:source_root0
       ~relative:"f.pyi"
       ~should_type_check:true;
     assert_module_path
-      (lookup_exn tracker (Reference.create "g"))
+      (ReadOnlyHelpers.module_path_of_qualifier_exn tracker (Reference.create "g"))
       ~search_root:source_root0
       ~relative:"g.pyi"
       ~should_type_check:true;
@@ -1105,13 +1120,15 @@ let test_stub_package_priority context =
   (* TODO(T150247738): This is a bug where the lazy tracker doesn't search for paths in the stub
      package directory. *)
   assert_module_path
-    (lookup_exn lazy_module_tracker (Reference.create "foo.my_stub"))
+    (ReadOnlyHelpers.module_path_of_qualifier_exn
+       lazy_module_tracker
+       (Reference.create "foo.my_stub"))
     ~search_root:local_root
     ~relative:"foo/my_stub.pyi"
     ~priority:1
     ~should_type_check:true;
   assert_module_path
-    (lookup_exn lazy_module_tracker (Reference.create "foo.bar"))
+    (ReadOnlyHelpers.module_path_of_qualifier_exn lazy_module_tracker (Reference.create "foo.bar"))
     ~search_root:local_root
     ~relative:"foo/bar.py"
     ~priority:1
@@ -1122,13 +1139,15 @@ let test_stub_package_priority context =
     |> ModuleTracker.read_only
   in
   assert_module_path
-    (lookup_exn eager_module_tracker (Reference.create "foo.my_stub"))
+    (ReadOnlyHelpers.module_path_of_qualifier_exn
+       eager_module_tracker
+       (Reference.create "foo.my_stub"))
     ~search_root:local_root
     ~relative:"foo-stubs/my_stub.pyi"
     ~priority:1
     ~should_type_check:true;
   assert_module_path
-    (lookup_exn eager_module_tracker (Reference.create "foo.bar"))
+    (ReadOnlyHelpers.module_path_of_qualifier_exn eager_module_tracker (Reference.create "foo.bar"))
     ~search_root:local_root
     ~relative:"foo-stubs/bar.py"
     ~priority:1
@@ -1241,7 +1260,7 @@ module IncrementalTest = struct
         let read_only = ModuleTracker.read_only module_tracker in
         List.map
           (LoadingStyle.look_up_qualifiers loading_style)
-          ~f:(ModuleTracker.ReadOnly.is_qualifier_tracked read_only)
+          ~f:(ReadOnlyHelpers.is_qualifier_tracked read_only)
         |> ignore
       in
       configuration, module_tracker
@@ -1736,8 +1755,7 @@ let test_invalidate_lazy_tracker_cache__removal context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.a" >>| ModulePath.qualifier)
     (Some !&"package.a");
   (* Remove the entire directory *)
   PyrePath.create_relative ~root:local_root ~relative:"package"
@@ -1761,14 +1779,12 @@ let test_invalidate_lazy_tracker_cache__removal context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.a" >>| ModulePath.qualifier)
     None;
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.b"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.b" >>| ModulePath.qualifier)
     None;
   ()
 
@@ -1789,8 +1805,7 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.a" >>| ModulePath.qualifier)
     (Some !&"package.a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
   let events =
@@ -1810,14 +1825,12 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.a"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.a" >>| ModulePath.qualifier)
     (Some !&"package.a");
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"package.b"
-    >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"package.b" >>| ModulePath.qualifier)
     (Some !&"package.b");
   (*
    * Case 2: modules in the project top-level
@@ -1832,7 +1845,7 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
     (Some !&"a");
   (* Add a second file next to a.py - the cached directory reads won't know about this *)
   let events =
@@ -1852,13 +1865,13 @@ let test_invalidate_lazy_tracker_cache__add context =
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"a" >>| ModulePath.qualifier)
     (Some !&"a");
   (* TODO(T130802871): this is a bug! We should have gotten a result here. *)
   assert_equal
     ~ctxt:context
     ~printer:[%show: Reference.t option]
-    (ModuleTracker.ReadOnly.module_path_of_qualifier read_only !&"b" >>| ModulePath.qualifier)
+    (ReadOnlyHelpers.module_path_of_qualifier read_only !&"b" >>| ModulePath.qualifier)
     (Some !&"b");
   ()
 
@@ -1869,7 +1882,7 @@ let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_t
   let overlay_owns qualifier = ModuleTracker.Overlay.owns_qualifier tracker qualifier in
   let assert_raw_code qualifier expected =
     let actual =
-      Option.value_exn (ModuleTracker.ReadOnly.module_path_of_qualifier read_only qualifier)
+      Option.value_exn (ReadOnlyHelpers.module_path_of_qualifier read_only qualifier)
       |> ModuleTracker.ReadOnly.code_of_module_path read_only
       |> Result.ok
       |> Option.value ~default:"Error loading code!"

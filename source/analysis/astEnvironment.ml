@@ -62,8 +62,7 @@ module ReadOnly = struct
     let dependency = if track_dependencies then dependency else None in
     SourceCodeApi.create
       ~controls
-      ~module_path_of_qualifier:(ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker)
-      ~is_qualifier_tracked:(ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker)
+      ~look_up_qualifier:(ModuleTracker.ReadOnly.look_up_qualifier module_tracker)
       ~raw_source_of_qualifier:(get_raw_source_of_qualifier ?dependency)
       ~processed_source_of_qualifier:
         (get_processed_source_of_qualifier
@@ -155,9 +154,12 @@ module FromReadOnlyUpstream = struct
 
   module LazyRawSources = struct
     let load ~ast_environment:({ module_tracker; raw_sources; _ } as ast_environment) qualifier =
-      match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker qualifier with
-      | Some module_path -> source_of_module_path ~ast_environment module_path
-      | None -> RawSources.add raw_sources qualifier None
+      match ModuleTracker.ReadOnly.look_up_qualifier module_tracker qualifier with
+      | SourceCodeApi.ModuleLookup.Explicit module_path ->
+          source_of_module_path ~ast_environment module_path
+      | SourceCodeApi.ModuleLookup.Implicit
+      | SourceCodeApi.ModuleLookup.NotFound ->
+          RawSources.add raw_sources qualifier None
 
 
     let get ~ast_environment:({ raw_sources; _ } as ast_environment) ?dependency qualifier =

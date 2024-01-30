@@ -74,19 +74,20 @@ let test_basic context =
   in
   let { Configuration.Analysis.local_root; _ } = configuration in
   let assert_module_path ~module_tracker ~expected reference =
-    match ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker reference with
-    | None ->
-        let message =
-          Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
-        in
-        assert_failure message
-    | Some module_path ->
+    match ModuleTracker.ReadOnly.look_up_qualifier module_tracker reference with
+    | SourceCodeApi.ModuleLookup.Explicit module_path ->
         let actual = ModulePath.full_path ~configuration module_path in
         assert_equal
           ~cmp:[%compare.equal: ArtifactPath.t]
           ~printer:ArtifactPath.show
           expected
           actual
+    | SourceCodeApi.ModuleLookup.Implicit
+    | SourceCodeApi.ModuleLookup.NotFound ->
+        let message =
+          Format.asprintf "Cannot find reference %a in the AST environment" Reference.pp reference
+        in
+        assert_failure message
   in
   assert_module_path
     !&"a"
