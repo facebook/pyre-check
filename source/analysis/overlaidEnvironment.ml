@@ -65,9 +65,9 @@ let overlay_errors environment identifier =
   | None -> []
 
 
-let load controls = ErrorsEnvironment.load controls |> create
+let load controls = ErrorsEnvironment.UnsafeAssumeClassic.load controls |> create
 
-let store { root; _ } = ErrorsEnvironment.store root
+let store { root; _ } = ErrorsEnvironment.UnsafeAssumeClassic.store root
 
 let prepare_for_update overlaid_environment ~scheduler =
   let configuration = configuration overlaid_environment in

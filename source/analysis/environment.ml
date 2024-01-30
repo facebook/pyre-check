@@ -106,9 +106,11 @@ module PreviousEnvironment = struct
       ArtifactPath.Event.t list ->
       UpdateResult.t
 
-    val store : t -> unit
+    module UnsafeAssumeClassic : sig
+      val store : t -> unit
 
-    val load : EnvironmentControls.t -> t
+      val load : EnvironmentControls.t -> t
+    end
   end
 end
 
@@ -306,9 +308,11 @@ module EnvironmentTable = struct
       ArtifactPath.Event.t list ->
       UpdateResult.t
 
-    val store : t -> unit
+    module UnsafeAssumeClassic : sig
+      val store : t -> unit
 
-    val load : EnvironmentControls.t -> t
+      val load : EnvironmentControls.t -> t
+    end
 
     module Unsafe : sig
       val upstream : t -> In.PreviousEnvironment.t
@@ -664,9 +668,14 @@ module EnvironmentTable = struct
          run after storing / before loading These functions only handle serializing and
          deserializing the non-SharedMemory data *)
 
-      let store { upstream_environment; _ } = In.PreviousEnvironment.store upstream_environment
+      module UnsafeAssumeClassic = struct
+        let store { upstream_environment; _ } =
+          In.PreviousEnvironment.UnsafeAssumeClassic.store upstream_environment
 
-      let load controls = In.PreviousEnvironment.load controls |> from_upstream_environment
+
+        let load controls =
+          In.PreviousEnvironment.UnsafeAssumeClassic.load controls |> from_upstream_environment
+      end
     end
 
     include Base

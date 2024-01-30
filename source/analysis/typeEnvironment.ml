@@ -229,20 +229,22 @@ end
    before loading / after storing. These functions only handle serializing and deserializing the
    non-SharedMemory data *)
 
-let store environment =
-  CheckResultsTable.store environment;
-  SharedMemoryKeys.DependencyKey.Registry.store ()
+module UnsafeAssumeClassic = struct
+  let store environment =
+    CheckResultsTable.UnsafeAssumeClassic.store environment;
+    SharedMemoryKeys.DependencyKey.Registry.store ()
 
 
-let load configuration =
-  (* Loading the dependency keys needs to happen exactly once in the environment stack; we do it
-     here, at the very top. *)
-  SharedMemoryKeys.DependencyKey.Registry.load ();
-  CheckResultsTable.load configuration
+  let load configuration =
+    (* Loading the dependency keys needs to happen exactly once in the environment stack; we do it
+       here, at the very top. *)
+    SharedMemoryKeys.DependencyKey.Registry.load ();
+    CheckResultsTable.UnsafeAssumeClassic.load configuration
 
 
-let store_without_dependency_keys = CheckResultsTable.store
+  let store_without_dependency_keys = CheckResultsTable.UnsafeAssumeClassic.store
 
-let load_without_dependency_keys = CheckResultsTable.load
+  let load_without_dependency_keys = CheckResultsTable.UnsafeAssumeClassic.load
+end
 
 module TypeEnvironmentReadOnly = ReadOnly

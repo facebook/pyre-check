@@ -27,49 +27,45 @@ open Ast
 open Core
 
 module ReadOnly = struct
-  type t = {
-    module_tracker: ModuleTracker.ReadOnly.t;
-    raw_source_of_qualifier:
-      ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-      Reference.t ->
-      Parsing.ParseResult.t option;
-  }
+  include SourceCodeIncrementalApi.ReadOnly
 
-  let module_tracker { module_tracker; _ } = module_tracker
-
-  let controls environment = module_tracker environment |> ModuleTracker.ReadOnly.controls
-
-  let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier
-
-  let processed_source_of_qualifier environment ?dependency qualifier =
+  let get_processed_source_of_qualifier
+      ~track_dependencies
+      ~get_raw_source_of_qualifier
+      ?dependency
+      qualifier
+    =
     (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
        `update`. No need to explicitly record the dependency. But we do need to record all other
        modules used *)
     let raw_source_of_qualifier_and_maybe_track qualifier_to_load =
-      let track_dependencies = controls environment |> EnvironmentControls.track_dependencies in
       let maybe_dependency =
         if (not track_dependencies) || Reference.equal qualifier_to_load qualifier then
           None
         else
           dependency
       in
-      raw_source_of_qualifier environment ?dependency:maybe_dependency qualifier_to_load
+      get_raw_source_of_qualifier ?dependency:maybe_dependency qualifier_to_load
     in
     AstProcessing.processed_source_of_qualifier
       ~raw_source_of_qualifier:raw_source_of_qualifier_and_maybe_track
       qualifier
 
 
-  let as_source_code_incremental_read_only environment =
-    let controls = controls environment in
-    let module_tracker = module_tracker environment in
+  let from_module_tracker_and_getter ~module_tracker ~get_raw_source_of_qualifier =
+    let controls = ModuleTracker.ReadOnly.controls module_tracker in
+    let track_dependencies = EnvironmentControls.track_dependencies controls in
     let get_source_code_api dependency =
       SourceCodeApi.create
         ~controls
         ~module_path_of_qualifier:(ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker)
         ~is_qualifier_tracked:(ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker)
-        ~raw_source_of_qualifier:(raw_source_of_qualifier environment ?dependency)
-        ~processed_source_of_qualifier:(processed_source_of_qualifier environment ?dependency)
+        ~raw_source_of_qualifier:(get_raw_source_of_qualifier ?dependency)
+        ~processed_source_of_qualifier:
+          (get_processed_source_of_qualifier
+             ~track_dependencies
+             ~get_raw_source_of_qualifier
+             ?dependency)
     in
     let get_untracked_api () = get_source_code_api None in
     let get_tracked_api ~dependency =
@@ -247,7 +243,9 @@ module FromReadOnlyUpstream = struct
   let remove_sources { raw_sources; _ } = RawSources.remove_sources raw_sources
 
   let read_only ({ module_tracker; _ } as ast_environment) =
-    { ReadOnly.module_tracker; raw_source_of_qualifier = LazyRawSources.get ~ast_environment }
+    ReadOnly.from_module_tracker_and_getter
+      ~module_tracker
+      ~get_raw_source_of_qualifier:(LazyRawSources.get ~ast_environment)
 
 
   let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
@@ -255,7 +253,7 @@ end
 
 module Overlay = struct
   type t = {
-    parent: ReadOnly.t;
+    parent: SourceCodeIncrementalApi.ReadOnly.t;
     module_tracker: ModuleTracker.Overlay.t;
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
@@ -272,13 +270,27 @@ module Overlay = struct
 
   let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
     let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
-    let raw_source_of_qualifier ?dependency qualifier =
-      if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
-        ReadOnly.raw_source_of_qualifier this_read_only ?dependency qualifier
-      else
-        ReadOnly.raw_source_of_qualifier parent ?dependency qualifier
+    let raw_source_of_qualifier source_code_incremental_read_only ?dependency qualifier =
+      let source_code_api =
+        match dependency with
+        | None ->
+            SourceCodeIncrementalApi.ReadOnly.get_untracked_api source_code_incremental_read_only
+        | Some dependency ->
+            SourceCodeIncrementalApi.ReadOnly.get_tracked_api
+              source_code_incremental_read_only
+              ~dependency
+      in
+      SourceCodeApi.raw_source_of_qualifier source_code_api qualifier
     in
-    { this_read_only with raw_source_of_qualifier }
+    let get_raw_source_of_qualifier ?dependency qualifier =
+      if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
+        raw_source_of_qualifier this_read_only ?dependency qualifier
+      else
+        raw_source_of_qualifier parent ?dependency qualifier
+    in
+    ReadOnly.from_module_tracker_and_getter
+      ~module_tracker:(ModuleTracker.Overlay.read_only overlay_tracker)
+      ~get_raw_source_of_qualifier
 end
 
 module Base = struct

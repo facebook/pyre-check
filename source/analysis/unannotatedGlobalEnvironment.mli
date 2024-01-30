@@ -173,8 +173,8 @@ val update_this_and_all_preceding_environments
 
 module UnsafeAssumeClassic : sig
   val ast_environment : t -> AstEnvironment.t
+
+  val store : t -> unit
+
+  val load : EnvironmentControls.t -> t
 end
-
-val store : t -> unit
-
-val load : EnvironmentControls.t -> t

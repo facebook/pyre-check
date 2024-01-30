@@ -7,12 +7,6 @@
 
 open Ast
 
-module ReadOnly : sig
-  type t
-
-  val as_source_code_incremental_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
-end
-
 module Overlay : sig
   type t
 
@@ -23,7 +17,7 @@ module Overlay : sig
     code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
     SourceCodeIncrementalApi.UpdateResult.t
 
-  val read_only : t -> ReadOnly.t
+  val read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 end
 
 type t
@@ -52,6 +46,6 @@ val clear_memory_for_tests : scheduler:Scheduler.t -> t -> unit
 
 val remove_sources : t -> Reference.t list -> unit
 
-val read_only : t -> ReadOnly.t
+val read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 
 val overlay : t -> Overlay.t

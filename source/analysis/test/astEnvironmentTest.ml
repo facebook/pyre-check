@@ -13,27 +13,23 @@ open OUnit2
 open Pyre
 
 module ReadOnlyHelpers = struct
-  let processed_source_of_qualifier_tracked ast_environment ~dependency =
-    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
-    |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
+  let processed_source_of_qualifier_tracked read_only ~dependency =
+    SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency read_only
     |> SourceCodeApi.processed_source_of_qualifier
 
 
-  let raw_source_of_qualifier_tracked ast_environment ~dependency =
-    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
-    |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
+  let raw_source_of_qualifier_tracked read_only ~dependency =
+    SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency read_only
     |> SourceCodeApi.raw_source_of_qualifier
 
 
-  let processed_source_of_qualifier_untracked ast_environment =
-    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
-    |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
+  let processed_source_of_qualifier_untracked read_only =
+    SourceCodeIncrementalApi.ReadOnly.get_untracked_api read_only
     |> SourceCodeApi.processed_source_of_qualifier
 
 
-  let raw_source_of_qualifier_untracked ast_environment =
-    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
-    |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
+  let raw_source_of_qualifier_untracked read_only =
+    SourceCodeIncrementalApi.ReadOnly.get_untracked_api read_only
     |> SourceCodeApi.raw_source_of_qualifier
 end
 
@@ -91,7 +87,7 @@ let test_basic context =
 
 
 let test_parse_stubs_modules_list context =
-  let ast_environment =
+  let read_only =
     let stub_content = "def f()->int: ...\n" in
     let source_content = "def f()->int:\n    return 1\n" in
     ScratchProject.setup
@@ -111,7 +107,7 @@ let test_parse_stubs_modules_list context =
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment qualifier with
+      match ReadOnlyHelpers.processed_source_of_qualifier_untracked read_only qualifier with
       | Some
           {
             Source.statements =
@@ -140,7 +136,7 @@ let test_parse_stubs_modules_list context =
 
 
 let test_parse_source context =
-  let ast_environment, global_module_paths_api =
+  let read_only, global_module_paths_api =
     let project =
       ScratchProject.setup
         ~context
@@ -154,13 +150,13 @@ let test_parse_source context =
   let sources =
     List.filter_map
       (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
-      ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment)
+      ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked read_only)
   in
   let handles =
     List.map sources ~f:(fun { Source.module_path; _ } -> ModulePath.relative module_path)
   in
   assert_equal handles ["x.py"];
-  let source = ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment !&"x" in
+  let source = ReadOnlyHelpers.processed_source_of_qualifier_untracked read_only !&"x" in
   assert_equal (Option.is_some source) true;
   let { Source.module_path; statements; _ } = Option.value_exn source in
   assert_equal (ModulePath.relative module_path) "x.py";
@@ -646,7 +642,7 @@ let test_ast_change _ =
 let test_parse_repository context =
   let assert_repository_parses_to repository ~expected =
     let actual =
-      let ast_environment, global_module_paths_api =
+      let read_only, global_module_paths_api =
         let project = ScratchProject.setup ~context ~include_typeshed_stubs:false repository in
 
         ( ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
@@ -656,7 +652,7 @@ let test_parse_repository context =
       let sources =
         List.filter_map
           (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
-          ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment)
+          ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked read_only)
       in
       List.map sources ~f:(fun ({ Source.module_path; _ } as source) ->
           ModulePath.relative module_path, source)
@@ -761,7 +757,7 @@ module IncrementalTest = struct
     in
     let configuration = ScratchProject.configuration_of project in
     let () =
-      let ast_environment =
+      let read_only =
         ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
         |> AstEnvironment.read_only
       in
@@ -769,7 +765,7 @@ module IncrementalTest = struct
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
            let qualifier = ModulePath.qualifier_from_relative_path handle in
-           let _ = ReadOnlyHelpers.raw_source_of_qualifier_untracked ast_environment qualifier in
+           let _ = ReadOnlyHelpers.raw_source_of_qualifier_untracked read_only qualifier in
            ()
          in
          List.iter external_setups ~f:load_source);
@@ -781,10 +777,7 @@ module IncrementalTest = struct
                let dependency =
                  SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
                in
-               ReadOnlyHelpers.processed_source_of_qualifier_tracked
-                 ast_environment
-                 ~dependency
-                 qualifier
+               ReadOnlyHelpers.processed_source_of_qualifier_tracked read_only ~dependency qualifier
                |> ignore)
     in
     (* Update filesystem *)

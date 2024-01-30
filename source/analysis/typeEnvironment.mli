@@ -55,6 +55,12 @@ val populate_for_definitions : scheduler:Scheduler.t -> t -> Ast.Reference.t lis
 
 val populate_for_modules : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
 
-val store_without_dependency_keys : t -> unit
+module UnsafeAssumeClassic : sig
+  val store : t -> unit
 
-val load_without_dependency_keys : EnvironmentControls.t -> t
+  val load : EnvironmentControls.t -> t
+
+  val store_without_dependency_keys : t -> unit
+
+  val load_without_dependency_keys : EnvironmentControls.t -> t
+end
