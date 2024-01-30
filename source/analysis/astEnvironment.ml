@@ -262,7 +262,7 @@ module Overlay = struct
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
-  let module_tracker { module_tracker; _ } = module_tracker
+  let owns_qualifier { module_tracker; _ } = ModuleTracker.Overlay.owns_qualifier module_tracker
 
   let update_overlaid_code { module_tracker; from_read_only_upstream; _ } ~code_updates =
     (* No ownership filtering is needed, since raw sources correspond 1:1 with raw code. *)

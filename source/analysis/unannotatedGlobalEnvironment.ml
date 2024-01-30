@@ -1218,13 +1218,9 @@ module Overlay = struct
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
 
-  let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
-
   let unannotated_global_environment = Fn.id
 
-  let owns_qualifier environment =
-    module_tracker environment |> ModuleTracker.Overlay.owns_qualifier
-
+  let owns_qualifier { ast_environment; _ } = AstEnvironment.Overlay.owns_qualifier ast_environment
 
   let owns_reference environment reference =
     Reference.possible_qualifiers_after_delocalize reference
@@ -1233,11 +1229,11 @@ module Overlay = struct
 
   let owns_identifier environment name = Reference.create name |> owns_reference environment
 
-  let consume_upstream_update ({ from_read_only_upstream; _ } as environment) update_result =
+  let consume_upstream_update { from_read_only_upstream; ast_environment; _ } update_result =
     let filtered_update_result =
       let filtered_invalidated_modules =
         SourceCodeIncrementalApi.UpdateResult.invalidated_modules update_result
-        |> List.filter ~f:(module_tracker environment |> ModuleTracker.Overlay.owns_qualifier)
+        |> List.filter ~f:(AstEnvironment.Overlay.owns_qualifier ast_environment)
       in
       {
         update_result with

@@ -10,7 +10,7 @@ open Ast
 module Overlay : sig
   type t
 
-  val module_tracker : t -> ModuleTracker.Overlay.t
+  val owns_qualifier : t -> Reference.t -> bool
 
   val update_overlaid_code
     :  t ->
