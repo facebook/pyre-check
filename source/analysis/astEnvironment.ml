@@ -52,28 +52,32 @@ module ReadOnly = struct
       qualifier
 
 
-  let from_module_tracker_and_getter ~module_tracker ~get_raw_source_of_qualifier =
+  let source_code_api_of_optional_dependency
+      ~module_tracker
+      ~get_raw_source_of_qualifier
+      ~dependency
+    =
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let track_dependencies = EnvironmentControls.track_dependencies controls in
-    let get_source_code_api dependency =
-      SourceCodeApi.create
-        ~controls
-        ~module_path_of_qualifier:(ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker)
-        ~is_qualifier_tracked:(ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker)
-        ~raw_source_of_qualifier:(get_raw_source_of_qualifier ?dependency)
-        ~processed_source_of_qualifier:
-          (get_processed_source_of_qualifier
-             ~track_dependencies
-             ~get_raw_source_of_qualifier
-             ?dependency)
+    let dependency = if track_dependencies then dependency else None in
+    SourceCodeApi.create
+      ~controls
+      ~module_path_of_qualifier:(ModuleTracker.ReadOnly.module_path_of_qualifier module_tracker)
+      ~is_qualifier_tracked:(ModuleTracker.ReadOnly.is_qualifier_tracked module_tracker)
+      ~raw_source_of_qualifier:(get_raw_source_of_qualifier ?dependency)
+      ~processed_source_of_qualifier:
+        (get_processed_source_of_qualifier
+           ~track_dependencies
+           ~get_raw_source_of_qualifier
+           ?dependency)
+
+
+  let from_module_tracker_and_getter ~module_tracker ~get_raw_source_of_qualifier =
+    let get_source_code_api =
+      source_code_api_of_optional_dependency ~module_tracker ~get_raw_source_of_qualifier
     in
-    let get_untracked_api () = get_source_code_api None in
-    let get_tracked_api ~dependency =
-      if EnvironmentControls.track_dependencies controls then
-        get_source_code_api (Some dependency)
-      else
-        get_untracked_api ()
-    in
+    let get_untracked_api () = get_source_code_api ~dependency:None in
+    let get_tracked_api ~dependency = get_source_code_api ~dependency:(Some dependency) in
     SourceCodeIncrementalApi.ReadOnly.create ~get_tracked_api ~get_untracked_api
 end
 
