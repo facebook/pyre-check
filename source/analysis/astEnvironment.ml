@@ -46,8 +46,12 @@ module ReadOnly = struct
        `update`. No need to explicitly record the dependency. But we do need to record all other
        modules used *)
     let raw_source_of_qualifier_and_maybe_track qualifier_to_load =
+      let track_dependencies = controls environment |> EnvironmentControls.track_dependencies in
       let maybe_dependency =
-        if Reference.equal qualifier_to_load qualifier then None else dependency
+        if (not track_dependencies) || Reference.equal qualifier_to_load qualifier then
+          None
+        else
+          dependency
       in
       raw_source_of_qualifier environment ?dependency:maybe_dependency qualifier_to_load
     in

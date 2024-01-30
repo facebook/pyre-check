@@ -1018,19 +1018,13 @@ module FromReadOnlyUpstream = struct
   end
 
   let incoming_queries { ast_environment; _ } =
-    let track_dependencies =
-      AstEnvironment.ReadOnly.controls ast_environment |> EnvironmentControls.track_dependencies
-    in
     let is_qualifier_tracked =
       AstEnvironment.ReadOnly.module_tracker ast_environment
       |> ModuleTracker.ReadOnly.is_qualifier_tracked
     in
     let processed_source_of_qualifier qualifier =
       let dependency =
-        if track_dependencies then
-          Some (WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register)
-        else
-          None
+        Some (WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register)
       in
       AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment ?dependency qualifier
     in
