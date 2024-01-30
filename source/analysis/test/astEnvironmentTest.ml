@@ -12,6 +12,19 @@ open Test
 open OUnit2
 open Pyre
 
+module ReadWriteHelpers = struct
+  let read_only environment =
+    AstEnvironment.as_source_code_incremental environment |> SourceCodeIncrementalApi.Base.read_only
+
+
+  let overlay environment =
+    AstEnvironment.as_source_code_incremental environment |> SourceCodeIncrementalApi.Base.overlay
+
+
+  let update environment =
+    AstEnvironment.as_source_code_incremental environment |> SourceCodeIncrementalApi.Base.update
+end
+
 module ReadOnlyHelpers = struct
   let processed_source_of_qualifier_tracked read_only ~dependency =
     SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency read_only
@@ -103,7 +116,7 @@ let test_parse_stubs_modules_list context =
         "2and3/modd.py", source_content;
       ]
     |> ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment
-    |> AstEnvironment.read_only
+    |> ReadWriteHelpers.read_only
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
@@ -144,7 +157,7 @@ let test_parse_source context =
         ["x.py", "def foo()->int:\n    return 1\n"]
     in
     ( ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
-      |> AstEnvironment.read_only,
+      |> ReadWriteHelpers.read_only,
       ScratchProject.global_module_paths_api project )
   in
   let sources =
@@ -218,7 +231,7 @@ let test_parse_sources context =
         type_check_qualifiers
         ~f:
           (ReadOnlyHelpers.processed_source_of_qualifier_untracked
-             (AstEnvironment.read_only ast_environment))
+             (ReadWriteHelpers.read_only ast_environment))
     in
     let sorted_handles =
       List.map sources ~f:(fun { Source.module_path; _ } -> ModulePath.relative module_path)
@@ -230,14 +243,14 @@ let test_parse_sources context =
      after an update. *)
   let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "foo") in
   ReadOnlyHelpers.raw_source_of_qualifier_tracked
-    (AstEnvironment.read_only ast_environment)
+    (ReadWriteHelpers.read_only ast_environment)
     ~dependency:(SharedMemoryKeys.DependencyKey.Registry.register dependency)
     (Reference.create "c")
   |> ignore;
   let triggered_dependencies =
     (* Re-write the file, otherwise RawSources won't trigger dependencies *)
     write_file ~content:"def foo() -> int: ...  # pyre-ignore" local_root "c.py";
-    AstEnvironment.update
+    ReadWriteHelpers.update
       ~scheduler:(mock_scheduler ())
       ast_environment
       [
@@ -267,7 +280,7 @@ let test_parse_sources context =
     write_file local_root "new_local.py";
     write_file stub_root "new_stub.pyi";
     let invalidated_modules =
-      AstEnvironment.update
+      ReadWriteHelpers.update
         ~scheduler:(mock_scheduler ())
         ast_environment
         [
@@ -283,7 +296,7 @@ let test_parse_sources context =
         invalidated_modules
         ~f:
           (ReadOnlyHelpers.processed_source_of_qualifier_untracked
-             (AstEnvironment.read_only ast_environment))
+             (ReadWriteHelpers.read_only ast_environment))
     in
     List.map sources ~f:(fun { Source.module_path; _ } -> ModulePath.relative module_path)
   in
@@ -646,7 +659,7 @@ let test_parse_repository context =
         let project = ScratchProject.setup ~context ~include_typeshed_stubs:false repository in
 
         ( ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
-          |> AstEnvironment.read_only,
+          |> ReadWriteHelpers.read_only,
           ScratchProject.global_module_paths_api project )
       in
       let sources =
@@ -759,7 +772,7 @@ module IncrementalTest = struct
     let () =
       let read_only =
         ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
-        |> AstEnvironment.read_only
+        |> ReadWriteHelpers.read_only
       in
       (if force_load_external_sources then
          (* If we don't do this, external sources are ignored due to lazy loading *)
@@ -1062,8 +1075,8 @@ let make_overlay_testing_functions ~context ~test_sources =
   let project = ScratchProject.setup ~context test_sources in
   let local_root = ScratchProject.local_root_of project in
   let parent = ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project in
-  let parent_read_only = AstEnvironment.read_only parent in
-  let overlay_environment = AstEnvironment.overlay parent in
+  let parent_read_only = ReadWriteHelpers.read_only parent in
+  let overlay_environment = ReadWriteHelpers.overlay parent in
   let read_only = SourceCodeIncrementalApi.Overlay.read_only overlay_environment in
   let source_of_module_paths qualifier =
     let unpack_result = function

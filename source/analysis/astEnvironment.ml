@@ -374,6 +374,13 @@ module Base = struct
     let global_module_paths_api environment =
       module_tracker environment |> ModuleTracker.AssumeGlobalModuleListing.global_module_paths_api
   end
+
+  let as_source_code_incremental environment =
+    SourceCodeIncrementalApi.Base.create
+      ~read_only:(read_only environment)
+      ~overlay:(fun () -> overlay environment)
+      ~update:(update environment)
+      ~global_module_paths_api:(AssumeGlobalModuleListing.global_module_paths_api environment)
 end
 
 include Base

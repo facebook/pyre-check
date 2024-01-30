@@ -87,5 +87,25 @@ module Overlay = struct
   let update_overlaid_code { update_overlaid_code; _ } = update_overlaid_code
 end
 
-(* TODO(T175599570) Fill this out *)
-module Base = struct end
+module Base = struct
+  type t = {
+    read_only: ReadOnly.t;
+    overlay: unit -> Overlay.t;
+    update: scheduler:Scheduler.t -> ArtifactPath.Event.t list -> UpdateResult.t;
+    global_module_paths_api: GlobalModulePathsApi.t;
+  }
+
+  let create ~read_only ~overlay ~update ~global_module_paths_api =
+    { read_only; overlay; update; global_module_paths_api }
+
+
+  let read_only { read_only; _ } = read_only
+
+  let overlay { overlay; _ } = overlay ()
+
+  let update { update; _ } = update
+
+  module AssumeGlobalModuleListing = struct
+    let global_module_paths_api { global_module_paths_api; _ } = global_module_paths_api
+  end
+end

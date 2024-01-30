@@ -1312,25 +1312,35 @@ end
 
 module Base = struct
   type t = {
-    ast_environment: AstEnvironment.t;
+    source_code_incremental_base: SourceCodeIncrementalApi.Base.t;
     from_read_only_upstream: FromReadOnlyUpstream.t;
+    maybe_ast_environment: AstEnvironment.t option;
   }
 
-  let create controls =
-    let ast_environment = AstEnvironment.create controls in
+  let construct ~source_code_incremental_base ~maybe_ast_environment =
     let from_read_only_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
+      SourceCodeIncrementalApi.Base.read_only source_code_incremental_base
+      |> FromReadOnlyUpstream.create
     in
     FromReadOnlyUpstream.cold_start from_read_only_upstream;
-    { ast_environment; from_read_only_upstream }
+    { source_code_incremental_base; from_read_only_upstream; maybe_ast_environment }
 
+
+  let construct_from_ast_environment ast_environment =
+    let source_code_incremental_base = AstEnvironment.as_source_code_incremental ast_environment in
+    construct ~source_code_incremental_base ~maybe_ast_environment:(Some ast_environment)
+
+
+  let create controls = AstEnvironment.create controls |> construct_from_ast_environment
 
   let update_this_and_all_preceding_environments
-      { ast_environment; from_read_only_upstream }
+      { source_code_incremental_base; from_read_only_upstream; _ }
       ~scheduler
       events
     =
-    let update_result = AstEnvironment.update ~scheduler ast_environment events in
+    let update_result =
+      SourceCodeIncrementalApi.Base.update ~scheduler source_code_incremental_base events
+    in
     FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
 
 
@@ -1338,8 +1348,10 @@ module Base = struct
     FromReadOnlyUpstream.read_only from_read_only_upstream
 
 
-  let overlay ({ ast_environment; _ } as environment) =
-    let source_code_incremental_overlay = AstEnvironment.overlay ast_environment in
+  let overlay ({ source_code_incremental_base; _ } as environment) =
+    let source_code_incremental_overlay =
+      SourceCodeIncrementalApi.Base.overlay source_code_incremental_base
+    in
     let from_read_only_upstream =
       SourceCodeIncrementalApi.Overlay.read_only source_code_incremental_overlay
       |> FromReadOnlyUpstream.create
@@ -1358,25 +1370,30 @@ module Base = struct
   let unannotated_global_environment = Fn.id
 
   module AssumeGlobalModuleListing = struct
-    let global_module_paths_api { ast_environment; _ } =
-      AstEnvironment.AssumeGlobalModuleListing.global_module_paths_api ast_environment
+    let global_module_paths_api { source_code_incremental_base; _ } =
+      SourceCodeIncrementalApi.Base.AssumeGlobalModuleListing.global_module_paths_api
+        source_code_incremental_base
   end
 
   module AssumeAstEnvironment = struct
-    let ast_environment { ast_environment; _ } = ast_environment
+    let ast_environment { maybe_ast_environment; _ } =
+      Option.value_exn
+        maybe_ast_environment
+        ~message:"This environment is not backed by an AstEnvironment"
+
 
     (* All SharedMemory tables are populated and stored in separate, imperative steps that must be
        run before loading / after storing. These functions only handle serializing and deserializing
        the non-SharedMemory data *)
     let load controls =
       let ast_environment = AstEnvironment.load controls in
-      let from_read_only_upstream =
-        AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
-      in
-      { ast_environment; from_read_only_upstream }
+      construct_from_ast_environment ast_environment
 
 
-    let store { ast_environment; _ } = AstEnvironment.store ast_environment
+    let store { maybe_ast_environment; _ } =
+      match maybe_ast_environment with
+      | Some ast_environment -> AstEnvironment.store ast_environment
+      | None -> failwith "Cannot store environment not backed by AstEnvironment"
   end
 end
 

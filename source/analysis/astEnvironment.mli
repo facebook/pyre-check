@@ -15,26 +15,14 @@ val controls : t -> EnvironmentControls.t
 
 val create : EnvironmentControls.t -> t
 
+val as_source_code_incremental : t -> SourceCodeIncrementalApi.Base.t
+
 (* Load and store the environment to and from saved-state *)
 
 val load : EnvironmentControls.t -> t
 
 val store : t -> unit
 
-val update
-  :  scheduler:Scheduler.t ->
-  t ->
-  ArtifactPath.Event.t list ->
-  SourceCodeIncrementalApi.UpdateResult.t
-
 val clear_memory_for_tests : scheduler:Scheduler.t -> t -> unit
 
 val remove_sources : t -> Reference.t list -> unit
-
-val read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
-
-val overlay : t -> SourceCodeIncrementalApi.Overlay.t
-
-module AssumeGlobalModuleListing : sig
-  val global_module_paths_api : t -> GlobalModulePathsApi.t
-end
