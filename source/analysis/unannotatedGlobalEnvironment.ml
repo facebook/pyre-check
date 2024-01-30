@@ -789,7 +789,9 @@ module FromReadOnlyUpstream = struct
       }
 
 
-    let controls { ast_environment; _ } = AstEnvironment.ReadOnly.controls ast_environment
+    let controls { ast_environment; _ } =
+      AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+      |> SourceCodeIncrementalApi.ReadOnly.controls
   end
 
   include ReadWrite
@@ -1018,15 +1020,23 @@ module FromReadOnlyUpstream = struct
   end
 
   let incoming_queries { ast_environment; _ } =
+    let source_code_incremental_read_only =
+      AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+    in
     let is_qualifier_tracked =
-      AstEnvironment.ReadOnly.module_tracker ast_environment
-      |> ModuleTracker.ReadOnly.is_qualifier_tracked
+      SourceCodeIncrementalApi.ReadOnly.get_untracked_api source_code_incremental_read_only
+      |> SourceCodeApi.is_qualifier_tracked
     in
     let processed_source_of_qualifier qualifier =
       let dependency =
-        Some (WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register)
+        WildcardImport qualifier |> SharedMemoryKeys.DependencyKey.Registry.register
       in
-      AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment ?dependency qualifier
+      let source_code_api =
+        SourceCodeIncrementalApi.ReadOnly.get_tracked_api
+          source_code_incremental_read_only
+          ~dependency
+      in
+      SourceCodeApi.processed_source_of_qualifier source_code_api qualifier
     in
     IncomingDataComputation.Queries.{ is_qualifier_tracked; processed_source_of_qualifier }
 

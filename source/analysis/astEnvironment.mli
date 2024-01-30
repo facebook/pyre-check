@@ -10,22 +10,6 @@ open Ast
 module ReadOnly : sig
   type t
 
-  val processed_source_of_qualifier
-    :  t ->
-    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Reference.t ->
-    Source.t option
-
-  val controls : t -> EnvironmentControls.t
-
-  val raw_source_of_qualifier
-    :  t ->
-    ?dependency:SharedMemoryKeys.DependencyKey.registered ->
-    Reference.t ->
-    Parsing.ParseResult.t option
-
-  val module_tracker : t -> ModuleTracker.ReadOnly.t
-
   val as_source_code_incremental_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 end
 

@@ -12,6 +12,31 @@ open Test
 open OUnit2
 open Pyre
 
+module ReadOnlyHelpers = struct
+  let processed_source_of_qualifier_tracked ast_environment ~dependency =
+    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+    |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
+    |> SourceCodeApi.processed_source_of_qualifier
+
+
+  let raw_source_of_qualifier_tracked ast_environment ~dependency =
+    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+    |> SourceCodeIncrementalApi.ReadOnly.get_tracked_api ~dependency
+    |> SourceCodeApi.raw_source_of_qualifier
+
+
+  let processed_source_of_qualifier_untracked ast_environment =
+    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+    |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
+    |> SourceCodeApi.processed_source_of_qualifier
+
+
+  let raw_source_of_qualifier_untracked ast_environment =
+    AstEnvironment.ReadOnly.as_source_code_incremental_read_only ast_environment
+    |> SourceCodeIncrementalApi.ReadOnly.get_untracked_api
+    |> SourceCodeApi.raw_source_of_qualifier
+end
+
 let test_basic context =
   let handle_a = "a.py" in
   let source_a = trim_extra_indentation {|
@@ -86,9 +111,7 @@ let test_parse_stubs_modules_list context =
   in
   let assert_function_matches_name ~qualifier ?(is_stub = false) define =
     let name =
-      match
-        Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment qualifier
-      with
+      match ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment qualifier with
       | Some
           {
             Source.statements =
@@ -131,15 +154,13 @@ let test_parse_source context =
   let sources =
     List.filter_map
       (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
-      ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
+      ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment)
   in
   let handles =
     List.map sources ~f:(fun { Source.module_path; _ } -> ModulePath.relative module_path)
   in
   assert_equal handles ["x.py"];
-  let source =
-    Analysis.AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment !&"x"
-  in
+  let source = ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment !&"x" in
   assert_equal (Option.is_some source) true;
   let { Source.module_path; statements; _ } = Option.value_exn source in
   assert_equal (ModulePath.relative module_path) "x.py";
@@ -200,7 +221,7 @@ let test_parse_sources context =
       List.filter_map
         type_check_qualifiers
         ~f:
-          (AstEnvironment.ReadOnly.processed_source_of_qualifier
+          (ReadOnlyHelpers.processed_source_of_qualifier_untracked
              (AstEnvironment.read_only ast_environment))
     in
     let sorted_handles =
@@ -212,7 +233,7 @@ let test_parse_sources context =
   (* Load a raw source with a dependency and verify that it appears in `triggered_dependencies`
      after an update. *)
   let dependency = SharedMemoryKeys.TypeCheckDefine (Reference.create "foo") in
-  AstEnvironment.ReadOnly.raw_source_of_qualifier
+  ReadOnlyHelpers.raw_source_of_qualifier_tracked
     (AstEnvironment.read_only ast_environment)
     ~dependency:(SharedMemoryKeys.DependencyKey.Registry.register dependency)
     (Reference.create "c")
@@ -265,7 +286,7 @@ let test_parse_sources context =
       List.filter_map
         invalidated_modules
         ~f:
-          (AstEnvironment.ReadOnly.processed_source_of_qualifier
+          (ReadOnlyHelpers.processed_source_of_qualifier_untracked
              (AstEnvironment.read_only ast_environment))
     in
     List.map sources ~f:(fun { Source.module_path; _ } -> ModulePath.relative module_path)
@@ -635,7 +656,7 @@ let test_parse_repository context =
       let sources =
         List.filter_map
           (GlobalModulePathsApi.type_check_qualifiers global_module_paths_api)
-          ~f:(AstEnvironment.ReadOnly.processed_source_of_qualifier ast_environment)
+          ~f:(ReadOnlyHelpers.processed_source_of_qualifier_untracked ast_environment)
       in
       List.map sources ~f:(fun ({ Source.module_path; _ } as source) ->
           ModulePath.relative module_path, source)
@@ -748,7 +769,7 @@ module IncrementalTest = struct
          (* If we don't do this, external sources are ignored due to lazy loading *)
          let load_source { handle; _ } =
            let qualifier = ModulePath.qualifier_from_relative_path handle in
-           let _ = AstEnvironment.ReadOnly.raw_source_of_qualifier ast_environment qualifier in
+           let _ = ReadOnlyHelpers.raw_source_of_qualifier_untracked ast_environment qualifier in
            ()
          in
          List.iter external_setups ~f:load_source);
@@ -760,7 +781,7 @@ module IncrementalTest = struct
                let dependency =
                  SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport qualifier)
                in
-               AstEnvironment.ReadOnly.processed_source_of_qualifier
+               ReadOnlyHelpers.processed_source_of_qualifier_tracked
                  ast_environment
                  ~dependency
                  qualifier
@@ -1061,8 +1082,8 @@ let make_overlay_testing_functions ~context ~test_sources =
           failwith ("Loading source failed with message: " ^ message)
       | None -> failwith "Loading source produced None"
     in
-    ( AstEnvironment.ReadOnly.raw_source_of_qualifier parent_read_only qualifier |> unpack_result,
-      AstEnvironment.ReadOnly.raw_source_of_qualifier read_only qualifier |> unpack_result )
+    ( ReadOnlyHelpers.raw_source_of_qualifier_untracked parent_read_only qualifier |> unpack_result,
+      ReadOnlyHelpers.raw_source_of_qualifier_untracked read_only qualifier |> unpack_result )
   in
   let assert_not_overlaid qualifier =
     let from_parent, from_overlay = source_of_module_paths qualifier in
@@ -1140,7 +1161,7 @@ let test_overlay context =
      trigger dependencies, because lazy loading means dependencies are not registered until they are
      used. *)
   let () =
-    AstEnvironment.ReadOnly.processed_source_of_qualifier
+    ReadOnlyHelpers.processed_source_of_qualifier_tracked
       read_only
       ~dependency:
         (SharedMemoryKeys.DependencyKey.Registry.register (WildcardImport !&"depends_on_module"))
