@@ -13,6 +13,19 @@ module ReadOnly : sig
   val as_source_code_incremental_read_only : t -> SourceCodeIncrementalApi.ReadOnly.t
 end
 
+module Overlay : sig
+  type t
+
+  val module_tracker : t -> ModuleTracker.Overlay.t
+
+  val update_overlaid_code
+    :  t ->
+    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
+    SourceCodeIncrementalApi.UpdateResult.t
+
+  val read_only : t -> ReadOnly.t
+end
+
 type t
 
 val global_module_paths_api : t -> GlobalModulePathsApi.t
@@ -41,17 +54,4 @@ val remove_sources : t -> Reference.t list -> unit
 
 val read_only : t -> ReadOnly.t
 
-module Overlay : sig
-  type t
-
-  val create : ReadOnly.t -> t
-
-  val module_tracker : t -> ModuleTracker.Overlay.t
-
-  val update_overlaid_code
-    :  t ->
-    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
-    SourceCodeIncrementalApi.UpdateResult.t
-
-  val read_only : t -> ReadOnly.t
-end
+val overlay : t -> Overlay.t

@@ -1864,7 +1864,7 @@ let test_invalidate_lazy_tracker_cache__add context =
 
 
 let make_overlay_testing_functions ~context ~configuration ~local_root ~parent_tracker =
-  let tracker = ModuleTracker.read_only parent_tracker |> ModuleTracker.Overlay.create in
+  let tracker = parent_tracker |> ModuleTracker.overlay in
   let read_only = ModuleTracker.Overlay.read_only tracker in
   let overlay_owns qualifier = ModuleTracker.Overlay.owns_qualifier tracker qualifier in
   let assert_raw_code qualifier expected =

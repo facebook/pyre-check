@@ -3177,7 +3177,7 @@ module ScratchProject = struct
     let errors_environment { errors_environment; _ } = errors_environment
 
     let type_environment { errors_environment; _ } =
-      errors_environment |> ErrorsEnvironment.type_environment
+      errors_environment |> ErrorsEnvironment.Unsafe.type_environment
 
 
     (* The names of these hooks are specific because it is important that tests of layers above
@@ -3339,7 +3339,7 @@ let assert_errors
         in
         let errors_environment = ScratchProject.ReadWrite.errors_environment project in
         ( sources,
-          ErrorsEnvironment.type_environment errors_environment,
+          ErrorsEnvironment.Unsafe.type_environment errors_environment,
           ErrorsEnvironment.read_only errors_environment
           |> ErrorsEnvironment.ReadOnly.get_untracked_source_code_api )
       in

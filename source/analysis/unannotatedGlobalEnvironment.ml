@@ -1217,76 +1217,12 @@ module FromReadOnlyUpstream = struct
     { UpdateResult.triggered_dependencies; upstream }
 end
 
-module Base = struct
-  type t = {
-    ast_environment: AstEnvironment.t;
-    from_read_only_upstream: FromReadOnlyUpstream.t;
-  }
-
-  let create controls =
-    let ast_environment = AstEnvironment.create controls in
-    let from_read_only_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
-    in
-    FromReadOnlyUpstream.cold_start from_read_only_upstream;
-    { ast_environment; from_read_only_upstream }
-
-
-  let update_this_and_all_preceding_environments
-      { ast_environment; from_read_only_upstream }
-      ~scheduler
-      events
-    =
-    let update_result = AstEnvironment.update ~scheduler ast_environment events in
-    FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
-
-
-  let read_only { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.read_only from_read_only_upstream
-
-
-  let controls { from_read_only_upstream; _ } =
-    FromReadOnlyUpstream.controls from_read_only_upstream
-
-
-  let unannotated_global_environment = Fn.id
-
-  let global_module_paths_api { ast_environment; _ } =
-    AstEnvironment.global_module_paths_api ast_environment
-
-
-  module UnsafeAssumeClassic = struct
-    let ast_environment { ast_environment; _ } = ast_environment
-  end
-
-  (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
-     before loading / after storing. These functions only handle serializing and deserializing the
-     non-SharedMemory data *)
-  let load controls =
-    let ast_environment = AstEnvironment.load controls in
-    let from_read_only_upstream =
-      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
-    in
-    { ast_environment; from_read_only_upstream }
-
-
-  let store { ast_environment; _ } = AstEnvironment.store ast_environment
-end
-
 module Overlay = struct
   type t = {
     parent: ReadOnly.t;
     ast_environment: AstEnvironment.Overlay.t;
     from_read_only_upstream: FromReadOnlyUpstream.t;
   }
-
-  let create parent =
-    let ast_environment = ReadOnly.ast_environment parent |> AstEnvironment.Overlay.create in
-    let from_read_only_upstream =
-      AstEnvironment.Overlay.read_only ast_environment |> FromReadOnlyUpstream.create
-    in
-    { parent; ast_environment; from_read_only_upstream }
-
 
   let module_tracker { ast_environment; _ } = AstEnvironment.Overlay.module_tracker ast_environment
 
@@ -1374,6 +1310,70 @@ module Overlay = struct
     let { FromReadOnlyUpstream.ast_environment; _ } = from_read_only_upstream in
     let get_queries ~dependency = outgoing_queries ?dependency environment in
     { parent with ast_environment; get_queries }
+end
+
+module Base = struct
+  type t = {
+    ast_environment: AstEnvironment.t;
+    from_read_only_upstream: FromReadOnlyUpstream.t;
+  }
+
+  let create controls =
+    let ast_environment = AstEnvironment.create controls in
+    let from_read_only_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
+    in
+    FromReadOnlyUpstream.cold_start from_read_only_upstream;
+    { ast_environment; from_read_only_upstream }
+
+
+  let update_this_and_all_preceding_environments
+      { ast_environment; from_read_only_upstream }
+      ~scheduler
+      events
+    =
+    let update_result = AstEnvironment.update ~scheduler ast_environment events in
+    FromReadOnlyUpstream.update from_read_only_upstream ~scheduler update_result
+
+
+  let read_only { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.read_only from_read_only_upstream
+
+
+  let overlay ({ ast_environment; _ } as environment) =
+    let ast_environment = AstEnvironment.overlay ast_environment in
+    let from_read_only_upstream =
+      AstEnvironment.Overlay.read_only ast_environment |> FromReadOnlyUpstream.create
+    in
+    { Overlay.parent = read_only environment; ast_environment; from_read_only_upstream }
+
+
+  let controls { from_read_only_upstream; _ } =
+    FromReadOnlyUpstream.controls from_read_only_upstream
+
+
+  let unannotated_global_environment = Fn.id
+
+  module UnsafeAssumeClassic = struct
+    let ast_environment { ast_environment; _ } = ast_environment
+  end
+
+  let global_module_paths_api { ast_environment; _ } =
+    AstEnvironment.global_module_paths_api ast_environment
+
+
+  (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
+     before loading / after storing. These functions only handle serializing and deserializing the
+     non-SharedMemory data *)
+  let load controls =
+    let ast_environment = AstEnvironment.load controls in
+    let from_read_only_upstream =
+      AstEnvironment.read_only ast_environment |> FromReadOnlyUpstream.create
+    in
+    { ast_environment; from_read_only_upstream }
+
+
+  let store { ast_environment; _ } = AstEnvironment.store ast_environment
 end
 
 include Base

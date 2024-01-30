@@ -323,6 +323,8 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
   let equal_value = [%compare.equal: ClassHierarchy.Edges.t option]
 end)
 
+include Edges
+
 module ReadOnly = struct
   include Edges.ReadOnly
 
@@ -365,26 +367,7 @@ module ReadOnly = struct
     ClassHierarchy.check_integrity (class_hierarchy read_only) ~class_names
 end
 
-type t = { edges: Edges.t }
-
-let create controls = { edges = Edges.create controls }
-
-let store { edges } = Edges.store edges
-
-let load controls = { edges = Edges.load controls }
-
-let unannotated_global_environment { edges } = Edges.unannotated_global_environment edges
-
-let read_only { edges } = Edges.read_only edges
-
-let update_this_and_all_preceding_environments { edges } ~scheduler ast_environment_trigger =
-  Edges.update_this_and_all_preceding_environments edges ~scheduler ast_environment_trigger
-
-
 module HierarchyReadOnly = ReadOnly
-module UpdateResult = Edges.UpdateResult
-module Overlay = Edges.Overlay
-module Testing = Edges.Testing
 
 (* Exposed for unit testing only *)
 let compute_generic_base = IncomingDataComputation.compute_generic_base

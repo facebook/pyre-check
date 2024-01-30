@@ -24,7 +24,13 @@ include
     with module ReadOnly = ErrorsEnvironmentReadOnly
      and module PreviousEnvironment = TypeEnvironment
 
-val type_environment : t -> TypeEnvironment.t
+module Unsafe : sig
+  val type_environment : t -> TypeEnvironment.t
+
+  val class_metadata_environment : t -> ClassSuccessorMetadataEnvironment.t
+
+  val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+end
 
 val global_module_paths_api : t -> GlobalModulePathsApi.t
 

@@ -37,28 +37,8 @@ module PreviousEnvironment : sig
 
     module UpdateResult : UpdateResult.S
 
-    type t
-
-    val create : EnvironmentControls.t -> t
-
-    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
-
-    val read_only : t -> ReadOnly.t
-
-    val update_this_and_all_preceding_environments
-      :  t ->
-      scheduler:Scheduler.t ->
-      ArtifactPath.Event.t list ->
-      UpdateResult.t
-
-    val store : t -> unit
-
-    val load : EnvironmentControls.t -> t
-
     module Overlay : sig
       type t
-
-      val create : ReadOnly.t -> t
 
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
@@ -71,6 +51,26 @@ module PreviousEnvironment : sig
 
       val read_only : t -> ReadOnly.t
     end
+
+    type t
+
+    val create : EnvironmentControls.t -> t
+
+    val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
+
+    val read_only : t -> ReadOnly.t
+
+    val overlay : t -> Overlay.t
+
+    val update_this_and_all_preceding_environments
+      :  t ->
+      scheduler:Scheduler.t ->
+      ArtifactPath.Event.t list ->
+      UpdateResult.t
+
+    val store : t -> unit
+
+    val load : EnvironmentControls.t -> t
   end
 end
 
@@ -78,6 +78,10 @@ module type S = sig
   include PreviousEnvironment.S
 
   module PreviousEnvironment : PreviousEnvironment.S
+
+  module Unsafe : sig
+    val upstream : t -> PreviousEnvironment.t
+  end
 
   module Testing : sig
     module ReadOnly : sig
@@ -157,8 +161,6 @@ module EnvironmentTable : sig
     module Overlay : sig
       type t
 
-      val create : ReadOnly.t -> t
-
       val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.Overlay.t
 
       val update_overlaid_code
@@ -178,6 +180,8 @@ module EnvironmentTable : sig
     val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
     val read_only : t -> ReadOnly.t
+
+    val overlay : t -> Overlay.t
 
     val update_this_and_all_preceding_environments
       :  t ->

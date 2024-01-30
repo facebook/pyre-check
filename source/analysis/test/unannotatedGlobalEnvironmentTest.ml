@@ -2609,12 +2609,12 @@ let create_overlay_test_data ~context ?(updatable = false) sources =
       sources
       ~context
   in
-  let parent =
-    ScratchProject.errors_environment project
-    |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
+  let read_write_parent =
+    ScratchProject.ReadWrite.errors_environment project
+    |> ErrorsEnvironment.Unsafe.unannotated_global_environment
   in
-  let environment = UnannotatedGlobalEnvironment.Overlay.create parent in
-  project, parent, environment
+  let environment = UnannotatedGlobalEnvironment.overlay read_write_parent in
+  project, UnannotatedGlobalEnvironment.read_only read_write_parent, environment
 
 
 let create_overlay_test_functions ~project ~parent ~environment =

@@ -99,7 +99,25 @@ module ReadOnly = struct
     List.concat_map qualifiers ~f:(get_errors_for_qualifier environment)
 end
 
-let type_environment = Unsafe.upstream
+module Unsafe = struct
+  let upstream = Unsafe.upstream
+
+  let type_environment = upstream
+
+  let class_metadata_environment environment =
+    type_environment environment
+    |> TypeEnvironment.Unsafe.upstream
+    |> AnnotatedGlobalEnvironment.Unsafe.upstream
+    |> AttributeResolution.Unsafe.upstream
+
+
+  let unannotated_global_environment environment =
+    class_metadata_environment environment
+    |> ClassSuccessorMetadataEnvironment.Unsafe.upstream
+    |> ClassHierarchyEnvironment.Unsafe.upstream
+    |> AliasEnvironment.Unsafe.upstream
+    |> EmptyStubEnvironment.Unsafe.upstream
+end
 
 let global_module_paths_api errors_environment =
   unannotated_global_environment errors_environment
@@ -283,7 +301,8 @@ let create controls =
 
 
 let check_and_preprocess ~scheduler environment qualifiers =
-  (type_environment environment |> TypeEnvironment.populate_for_modules ~scheduler) qualifiers;
+  (Unsafe.type_environment environment |> TypeEnvironment.populate_for_modules ~scheduler)
+    qualifiers;
   populate_for_modules ~scheduler environment qualifiers;
   PyreProfiling.track_shared_memory_usage ~name:"After checking and preprocessing" ();
   ()

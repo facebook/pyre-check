@@ -228,8 +228,8 @@ let test_overlay context =
         |};
       ]
   in
-  let parent = ScratchProject.errors_environment project in
-  let overlay = ErrorsEnvironment.Overlay.create parent in
+  let parent = ScratchProject.ReadWrite.errors_environment project in
+  let overlay = ErrorsEnvironment.overlay parent in
   assert_overlay_errors
     ~context
     ~project

@@ -19,6 +19,19 @@ module ReadOnly : sig
   val code_of_module_path : t -> Ast.ModulePath.t -> Parsing.LoadResult.t
 end
 
+module Overlay : sig
+  type t
+
+  val owns_qualifier : t -> Ast.Reference.t -> bool
+
+  val update_overlaid_code
+    :  t ->
+    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
+    SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
+
+  val read_only : t -> ReadOnly.t
+end
+
 type t
 
 val create : EnvironmentControls.t -> t
@@ -45,17 +58,4 @@ val global_module_paths_api : t -> GlobalModulePathsApi.t
 
 val read_only : t -> ReadOnly.t
 
-module Overlay : sig
-  type t
-
-  val create : ReadOnly.t -> t
-
-  val owns_qualifier : t -> Ast.Reference.t -> bool
-
-  val update_overlaid_code
-    :  t ->
-    code_updates:SourceCodeIncrementalApi.Overlay.CodeUpdates.t ->
-    SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.t list
-
-  val read_only : t -> ReadOnly.t
-end
+val overlay : t -> Overlay.t

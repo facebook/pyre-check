@@ -76,6 +76,54 @@ module ReadOnly = struct
   let code_of_module_path { code_of_module_path; _ } = code_of_module_path
 end
 
+module Overlay = struct
+  type t = {
+    parent: ReadOnly.t;
+    overlaid_code: string ModulePath.Table.t;
+    overlaid_qualifiers: Reference.Hash_set.t;
+  }
+
+  let owns_qualifier { overlaid_qualifiers; _ } qualifier =
+    Hash_set.mem overlaid_qualifiers qualifier
+
+
+  let from_read_only parent =
+    {
+      parent;
+      overlaid_code = ModulePath.Table.create ();
+      overlaid_qualifiers = Reference.Hash_set.create ();
+    }
+
+
+  let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers; _ } ~code_updates =
+    let add_or_update_code ~code_update module_path =
+      let qualifier = ModulePath.qualifier module_path in
+      let () =
+        match code_update with
+        | SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode new_code ->
+            Hashtbl.set overlaid_code ~key:module_path ~data:new_code
+        | SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode ->
+            Hashtbl.remove overlaid_code module_path
+      in
+      let () = Hash_set.add overlaid_qualifiers qualifier in
+      SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit module_path
+    in
+    let process_code_update (artifact_path, code_update) =
+      let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in
+      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code_update
+    in
+    List.filter_map code_updates ~f:process_code_update
+
+
+  let read_only { parent; overlaid_code; _ } =
+    let code_of_module_path module_path =
+      match Hashtbl.find overlaid_code module_path with
+      | Some code -> Result.Ok code
+      | _ -> ReadOnly.code_of_module_path parent module_path
+    in
+    { parent with code_of_module_path }
+end
+
 module ModulePaths = struct
   module Finder = struct
     type t = {
@@ -1011,54 +1059,9 @@ module Base = struct
       code_of_module_path;
       controls = (fun () -> controls);
     }
-end
-
-module Overlay = struct
-  type t = {
-    parent: ReadOnly.t;
-    overlaid_code: string ModulePath.Table.t;
-    overlaid_qualifiers: Reference.Hash_set.t;
-  }
-
-  let owns_qualifier { overlaid_qualifiers; _ } qualifier =
-    Hash_set.mem overlaid_qualifiers qualifier
 
 
-  let create parent =
-    {
-      parent;
-      overlaid_code = ModulePath.Table.create ();
-      overlaid_qualifiers = Reference.Hash_set.create ();
-    }
-
-
-  let update_overlaid_code { parent; overlaid_code; overlaid_qualifiers; _ } ~code_updates =
-    let add_or_update_code ~code_update module_path =
-      let qualifier = ModulePath.qualifier module_path in
-      let () =
-        match code_update with
-        | SourceCodeIncrementalApi.Overlay.CodeUpdate.NewCode new_code ->
-            Hashtbl.set overlaid_code ~key:module_path ~data:new_code
-        | SourceCodeIncrementalApi.Overlay.CodeUpdate.ResetCode ->
-            Hashtbl.remove overlaid_code module_path
-      in
-      let () = Hash_set.add overlaid_qualifiers qualifier in
-      SourceCodeIncrementalApi.UpdateResult.ModuleUpdate.NewExplicit module_path
-    in
-    let process_code_update (artifact_path, code_update) =
-      let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in
-      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code_update
-    in
-    List.filter_map code_updates ~f:process_code_update
-
-
-  let read_only { parent; overlaid_code; _ } =
-    let code_of_module_path module_path =
-      match Hashtbl.find overlaid_code module_path with
-      | Some code -> Result.Ok code
-      | _ -> ReadOnly.code_of_module_path parent module_path
-    in
-    { parent with code_of_module_path }
+  let overlay tracker = read_only tracker |> Overlay.from_read_only
 end
 
 include Base

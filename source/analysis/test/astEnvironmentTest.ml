@@ -1068,11 +1068,9 @@ let test_parser_update context =
 let make_overlay_testing_functions ~context ~test_sources =
   let project = ScratchProject.setup ~context test_sources in
   let local_root = ScratchProject.local_root_of project in
-  let parent_read_only =
-    ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project
-    |> AstEnvironment.read_only
-  in
-  let overlay_environment = AstEnvironment.Overlay.create parent_read_only in
+  let parent = ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.ast_environment project in
+  let parent_read_only = AstEnvironment.read_only parent in
+  let overlay_environment = AstEnvironment.overlay parent in
   let read_only = AstEnvironment.Overlay.read_only overlay_environment in
   let source_of_module_paths qualifier =
     let unpack_result = function

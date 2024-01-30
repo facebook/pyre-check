@@ -236,7 +236,9 @@ let type_check
         Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
         |> Analysis.ErrorsEnvironment.create
       in
-      let type_environment = Analysis.ErrorsEnvironment.type_environment errors_environment in
+      let type_environment =
+        Analysis.ErrorsEnvironment.Unsafe.type_environment errors_environment
+      in
       let qualifiers =
         Analysis.ErrorsEnvironment.global_module_paths_api errors_environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers

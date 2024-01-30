@@ -253,6 +253,34 @@ module FromReadOnlyUpstream = struct
   let controls { module_tracker; _ } = ModuleTracker.ReadOnly.controls module_tracker
 end
 
+module Overlay = struct
+  type t = {
+    parent: ReadOnly.t;
+    module_tracker: ModuleTracker.Overlay.t;
+    from_read_only_upstream: FromReadOnlyUpstream.t;
+  }
+
+  let module_tracker { module_tracker; _ } = module_tracker
+
+  let update_overlaid_code { module_tracker; from_read_only_upstream; _ } ~code_updates =
+    (* No ownership filtering is needed, since raw sources correspond 1:1 with raw code. *)
+    ModuleTracker.Overlay.update_overlaid_code module_tracker ~code_updates
+    |> FromReadOnlyUpstream.process_module_updates
+         ~scheduler:(Scheduler.create_sequential ())
+         from_read_only_upstream
+
+
+  let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
+    let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
+    let raw_source_of_qualifier ?dependency qualifier =
+      if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
+        ReadOnly.raw_source_of_qualifier this_read_only ?dependency qualifier
+      else
+        ReadOnly.raw_source_of_qualifier parent ?dependency qualifier
+    in
+    { this_read_only with raw_source_of_qualifier }
+end
+
 module Base = struct
   type t = {
     module_tracker: ModuleTracker.t;
@@ -307,42 +335,14 @@ module Base = struct
 
   let read_only { from_read_only_upstream; _ } =
     FromReadOnlyUpstream.read_only from_read_only_upstream
-end
 
-module Overlay = struct
-  type t = {
-    parent: ReadOnly.t;
-    module_tracker: ModuleTracker.Overlay.t;
-    from_read_only_upstream: FromReadOnlyUpstream.t;
-  }
 
-  let create parent =
-    let module_tracker = ReadOnly.module_tracker parent |> ModuleTracker.Overlay.create in
+  let overlay environment =
+    let module_tracker = module_tracker environment |> ModuleTracker.overlay in
     let from_read_only_upstream =
       ModuleTracker.Overlay.read_only module_tracker |> FromReadOnlyUpstream.create
     in
-    { parent; module_tracker; from_read_only_upstream }
-
-
-  let module_tracker { module_tracker; _ } = module_tracker
-
-  let update_overlaid_code { module_tracker; from_read_only_upstream; _ } ~code_updates =
-    (* No ownership filtering is needed, since raw sources correspond 1:1 with raw code. *)
-    ModuleTracker.Overlay.update_overlaid_code module_tracker ~code_updates
-    |> FromReadOnlyUpstream.process_module_updates
-         ~scheduler:(Scheduler.create_sequential ())
-         from_read_only_upstream
-
-
-  let read_only { module_tracker = overlay_tracker; parent; from_read_only_upstream } =
-    let this_read_only = FromReadOnlyUpstream.read_only from_read_only_upstream in
-    let raw_source_of_qualifier ?dependency qualifier =
-      if ModuleTracker.Overlay.owns_qualifier overlay_tracker qualifier then
-        ReadOnly.raw_source_of_qualifier this_read_only ?dependency qualifier
-      else
-        ReadOnly.raw_source_of_qualifier parent ?dependency qualifier
-    in
-    { this_read_only with raw_source_of_qualifier }
+    { Overlay.parent = read_only environment; module_tracker; from_read_only_upstream }
 end
 
 include Base

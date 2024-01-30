@@ -36,7 +36,7 @@ let get_or_create_overlay { root; overlays } identifier =
   match Hashtbl.find overlays identifier with
   | Some overlay -> overlay
   | None ->
-      let new_overlay = ErrorsEnvironment.read_only root |> ErrorsEnvironment.Overlay.create in
+      let new_overlay = ErrorsEnvironment.overlay root in
       let () = Hashtbl.add overlays ~key:identifier ~data:new_overlay |> ignore in
       new_overlay
 

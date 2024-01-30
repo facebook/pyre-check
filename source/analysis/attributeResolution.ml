@@ -5337,6 +5337,14 @@ end
 module AttributeReadOnly = ReadOnly
 include TypeParameterValidationTypes
 
+module Unsafe = struct
+  let upstream environment =
+    GlobalAnnotationCache.Unsafe.upstream environment
+    |> AttributeCache.Unsafe.upstream
+    |> MetaclassCache.Unsafe.upstream
+    |> ParseAnnotationCache.Unsafe.upstream
+end
+
 module Testing = struct
   module ReadOnly = struct
     let upstream environment =

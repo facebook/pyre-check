@@ -732,11 +732,11 @@ let test_overlay_dependency_filtering context =
       ~context
       ["a.py", a_code_with_A_base "Base0"; "b.py", b_code; "c.py", c_code]
   in
-  let parent =
-    ScratchProject.errors_environment project
-    |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+  let read_write_parent =
+    ScratchProject.ReadWrite.errors_environment project
+    |> ErrorsEnvironment.Unsafe.class_metadata_environment
   in
-  let overlay = ClassSuccessorMetadataEnvironment.Overlay.create parent in
+  let overlay = ClassSuccessorMetadataEnvironment.overlay read_write_parent in
   (* Initially, nothing inherits from Base1 *)
   assert_overlay_state
     ~context
@@ -827,11 +827,11 @@ let test_overlay_propagation context =
     ]
   in
   let project = ScratchProject.setup ~context ~in_memory:false sources in
-  let parent =
-    ScratchProject.errors_environment project
-    |> ErrorsEnvironment.Testing.ReadOnly.class_metadata_environment
+  let read_write_parent =
+    ScratchProject.ReadWrite.errors_environment project
+    |> ErrorsEnvironment.Unsafe.class_metadata_environment
   in
-  let overlay = ClassSuccessorMetadataEnvironment.Overlay.create parent in
+  let overlay = ClassSuccessorMetadataEnvironment.overlay read_write_parent in
   (* Initially all metadata is from disk *)
   assert_overlay_state
     ~context
