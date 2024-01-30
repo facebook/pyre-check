@@ -859,7 +859,19 @@ class WorkspaceSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     container_name: Optional[str]
     location: LspLocation
 
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "WorkspaceSymbol":
+        return _parse_parameters(parameters, target=WorkspaceSymbol)
+
 
 @dataclasses.dataclass(frozen=True)
 class WorkspaceSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     workspace_symbols: List[WorkspaceSymbol]
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "WorkspaceSymbolResponse":
+        return _parse_parameters(parameters, target=WorkspaceSymbolResponse)

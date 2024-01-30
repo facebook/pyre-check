@@ -29,7 +29,6 @@ from .. import (
     subscription,
     type_error_handler,
 )
-from ..daemon_querier import GetSymbolSearchResponse
 
 from ..tests import server_setup
 
@@ -2373,72 +2372,58 @@ class DefinitionTest(ApiTestCase):
 class SymbolSearchTest(ApiTestCase):
     @setup.async_test
     async def test_symbol_search(self) -> None:
-        self.maxDiff = None
+        test_path = Path("/foo.py")
 
-        with tempfile.NamedTemporaryFile(suffix=".py") as temporary_file:
-            temporary_file.write(b'def foo(x):\n  "foo" \n')
-            temporary_file.flush()
-            test_path = Path(temporary_file.name)
-            expected_response = GetSymbolSearchResponse(
-                source=daemon_querier.DaemonQuerierSource.GLEAN_INDEXER,
-                data=lsp.WorkspaceSymbolResponse(
-                    [
-                        lsp.WorkspaceSymbol(
-                            name="foo",
-                            kind=lsp.SymbolKind.VARIABLE,
-                            container_name=None,
-                            location=lsp.LspLocation(
-                                uri=test_path.as_uri(),
-                                range=lsp.LspRange(
-                                    start=lsp.LspPosition(line=0, character=1),
-                                    end=lsp.LspPosition(line=1, character=1),
-                                ),
-                            ),
-                        )
-                    ]
-                ),
-            )
-
-            querier = server_setup.MockDaemonQuerier(
-                mock_symbol_search_response=expected_response,
-            )
-            setup = server_setup.create_pyre_language_server_api_setup(
-                opened_documents={
-                    test_path: state.OpenedDocumentState(
-                        code=server_setup.DEFAULT_FILE_CONTENTS
-                    )
-                },
-                querier=querier,
-                index_querier=querier,
-            )
-            api = setup.api
-            output_writer = setup.output_writer
-
-            await api.process_symbol_search_request(
-                lsp.WorkspaceSymbolParameters(query="foo"),
-                request_id=server_setup.DEFAULT_REQUEST_ID,
-            )
-
-            self._assert_output_messages(
-                output_writer,
+        expected_response = daemon_querier.GetSymbolSearchResponse(
+            source=daemon_querier.DaemonQuerierSource.GLEAN_INDEXER,
+            data=lsp.WorkspaceSymbolResponse(
                 [
-                    self._expect_success_message(
-                        result=[
-                            {
-                                "name": "foo",
-                                "kind": 13,
-                                "location": {
-                                    "range": {
-                                        "start": {"line": 0, "character": 1},
-                                        "end": {"line": 1, "character": 1},
-                                    },
-                                    "uri": "file://" + str(test_path),
-                                },
-                            }
-                        ]
+                    lsp.WorkspaceSymbol(
+                        name="foo",
+                        kind=lsp.SymbolKind.VARIABLE,
+                        container_name=None,
+                        location=lsp.LspLocation(
+                            uri=test_path.as_uri(),
+                            range=lsp.LspRange(
+                                start=lsp.LspPosition(line=0, character=1),
+                                end=lsp.LspPosition(line=1, character=1),
+                            ),
+                        ),
                     )
-                ],
-            )
+                ]
+            ),
+        )
+
+        querier = server_setup.MockDaemonQuerier(
+            mock_symbol_search_response=expected_response,
+        )
+        setup = server_setup.create_pyre_language_server_api_setup(
+            opened_documents={
+                test_path: state.OpenedDocumentState(
+                    code=server_setup.DEFAULT_FILE_CONTENTS
+                )
+            },
+            querier=querier,
+            index_querier=querier,
+        )
+        api = setup.api
+        output_writer = setup.output_writer
+
+        await api.process_symbol_search_request(
+            lsp.WorkspaceSymbolParameters(query="foo"),
+            request_id=server_setup.DEFAULT_REQUEST_ID,
+        )
+
+        self._assert_output_messages(
+            output_writer,
+            [
+                self._expect_success_message(
+                    result=lsp.WorkspaceSymbolResponse.cached_schema().dump(
+                        expected_response.data, many=False
+                    )["workspaceSymbols"]
+                )
+            ],
+        )
 
 
 class ReferencesTest(ApiTestCase):

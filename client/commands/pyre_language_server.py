@@ -935,27 +935,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
             error_message = None
             error_source = None
             raw_results = []
+
             if symbol_search_response.data is not None:
-                for symbol in symbol_search_response.data.workspace_symbols:
-                    raw_results.append(
-                        {
-                            "name": symbol.name,
-                            "kind": symbol.kind,
-                            "location": {
-                                "uri": symbol.location.uri,
-                                "range": {
-                                    "start": {
-                                        "line": symbol.location.range.start.line,
-                                        "character": symbol.location.range.start.character,
-                                    },
-                                    "end": {
-                                        "line": symbol.location.range.end.line,
-                                        "character": symbol.location.range.end.character,
-                                    },
-                                },
-                            },
-                        }
-                    )
+                raw_results = lsp.WorkspaceSymbolResponse.cached_schema().dump(
+                    symbol_search_response.data
+                )["workspaceSymbols"]
 
         await lsp.write_json_rpc(
             self.output_channel,
