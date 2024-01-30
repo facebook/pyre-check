@@ -180,7 +180,7 @@ let write_modules_to_file
     in
     [
       {
-        Interprocedural.NewlineDelimitedJson.Line.kind = CallGraph;
+        Interprocedural.NewlineDelimitedJson.Line.kind = Module;
         data = `Assoc ["name", `String (Ast.Reference.show qualifier); "path", path];
       };
     ]
