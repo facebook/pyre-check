@@ -29,27 +29,20 @@ open Core
 module ReadOnly = struct
   include SourceCodeIncrementalApi.ReadOnly
 
-  let get_processed_source_of_qualifier
-      ~track_dependencies
-      ~get_raw_source_of_qualifier
-      ?dependency
-      qualifier
-    =
-    (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
-       `update`. No need to explicitly record the dependency. But we do need to record all other
-       modules used *)
-    let raw_source_of_qualifier_and_maybe_track qualifier_to_load =
-      let maybe_dependency =
-        if (not track_dependencies) || Reference.equal qualifier_to_load qualifier then
+  (* The fact that preprocessing a module depends on the module itself is implicitly assumed in
+     `update`. No need to explicitly record the dependency. But we do need to record all other
+     modules used *)
+  let filter_dependency ~track_dependencies ~qualifier ~dependency =
+    if not track_dependencies then
+      None
+    else
+      match Option.map dependency ~f:SharedMemoryKeys.DependencyKey.get_key with
+      | Some (SharedMemoryKeys.WildcardImport wildcard_qualifier)
+        when Reference.equal qualifier wildcard_qualifier ->
           None
-        else
+      | Some _
+      | None ->
           dependency
-      in
-      get_raw_source_of_qualifier ?dependency:maybe_dependency qualifier_to_load
-    in
-    AstProcessing.processed_source_of_qualifier
-      ~raw_source_of_qualifier:raw_source_of_qualifier_and_maybe_track
-      qualifier
 
 
   let source_code_api_of_optional_dependency
@@ -60,15 +53,14 @@ module ReadOnly = struct
     let controls = ModuleTracker.ReadOnly.controls module_tracker in
     let track_dependencies = EnvironmentControls.track_dependencies controls in
     let dependency = if track_dependencies then dependency else None in
+    let raw_source_of_qualifier qualifier =
+      let dependency = filter_dependency ~track_dependencies ~qualifier ~dependency in
+      get_raw_source_of_qualifier ?dependency qualifier
+    in
     SourceCodeApi.create
       ~controls
       ~look_up_qualifier:(ModuleTracker.ReadOnly.look_up_qualifier module_tracker)
-      ~raw_source_of_qualifier:(get_raw_source_of_qualifier ?dependency)
-      ~processed_source_of_qualifier:
-        (get_processed_source_of_qualifier
-           ~track_dependencies
-           ~get_raw_source_of_qualifier
-           ?dependency)
+      ~raw_source_of_qualifier
 
 
   let from_module_tracker_and_getter ~module_tracker ~get_raw_source_of_qualifier =

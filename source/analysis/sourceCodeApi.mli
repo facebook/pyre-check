@@ -18,7 +18,6 @@ val create
   :  controls:EnvironmentControls.t ->
   look_up_qualifier:(Ast.Reference.t -> ModuleLookup.t) ->
   raw_source_of_qualifier:(Ast.Reference.t -> Parsing.ParseResult.t option) ->
-  processed_source_of_qualifier:(Ast.Reference.t -> Ast.Source.t option) ->
   t
 
 val controls : t -> EnvironmentControls.t

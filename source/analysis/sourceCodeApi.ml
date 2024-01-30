@@ -14,12 +14,6 @@
  * implementations (for example classic dependency-tracked shared memory
  * tables with incremental update) will provide values of this abstract API
  * for downstream use.
- *
- * Implementation notes:
- * - The only reason processed_source_of_qualifier is injected rather than being defined
- *   in terms of Parsing logic and raw_source_of_qualifier is simply because existing
- *   dependency tracking logic requires this in order to skip some dependencies we know
- *   don't have to be tracked.
  *)
 
 open Core
@@ -35,11 +29,10 @@ type t = {
   controls: EnvironmentControls.t;
   look_up_qualifier: Ast.Reference.t -> ModuleLookup.t;
   raw_source_of_qualifier: Ast.Reference.t -> Parsing.ParseResult.t option;
-  processed_source_of_qualifier: Ast.Reference.t -> Ast.Source.t option;
 }
 
-let create ~controls ~look_up_qualifier ~raw_source_of_qualifier ~processed_source_of_qualifier =
-  { controls; look_up_qualifier; raw_source_of_qualifier; processed_source_of_qualifier }
+let create ~controls ~look_up_qualifier ~raw_source_of_qualifier =
+  { controls; look_up_qualifier; raw_source_of_qualifier }
 
 
 let controls { controls; _ } = controls
@@ -66,5 +59,5 @@ let relative_path_of_qualifier api qualifier =
 
 let raw_source_of_qualifier { raw_source_of_qualifier; _ } = raw_source_of_qualifier
 
-let processed_source_of_qualifier { processed_source_of_qualifier; _ } =
-  processed_source_of_qualifier
+let processed_source_of_qualifier { raw_source_of_qualifier; _ } =
+  AstProcessing.processed_source_of_qualifier ~raw_source_of_qualifier
