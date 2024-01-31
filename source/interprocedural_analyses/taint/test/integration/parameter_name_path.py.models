@@ -99,6 +99,250 @@
 {
   "kind": "model",
   "data": {
+    "callable": "parameter_name_path.test_tito_mix1",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*rest5)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix2",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(d)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[d]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(c)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[c]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "parameter_name_path.test_tito_mix3",
+    "tito": [
+      {
+        "port": "formal(**kw)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(g)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[g]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(f)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[f]": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(b)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(a)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "": 999999 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "parameter_name_path.test_tito_mix_positional_and_named_parameters",
     "tito": [
       {

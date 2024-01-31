@@ -33,3 +33,18 @@ def indexes_are_attributes_for___dict__():
     o = object()
     o.attribute = _test_source()
     _test_sink(o.__dict__["attribute"])
+
+
+def positional_and_variadic1(x, /, y, *z):
+    _test_sink(z)
+
+
+def positional_and_variadic2(x, /, y, *z):
+    _test_sink(y)
+
+
+def issue_positional_and_variadic():
+    positional_and_variadic1(1, 2, _test_source()) # TODO(afk): False negative
+    positional_and_variadic2(1, 2, _test_source()) # TODO(afk): False positive
+    positional_and_variadic2(1, _test_source()) # TODO(afk): False negative
+    positional_and_variadic2(1, y=_test_source())

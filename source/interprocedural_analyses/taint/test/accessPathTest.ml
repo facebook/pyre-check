@@ -212,6 +212,15 @@ let test_match_actuals_to_formals _ =
     ~signature:"def foo(x, /): ..."
     ~call:"foo(1)"
     ~expected:["1", [positional ~positional_only:true (0, "x")]];
+  assert_match
+    ~signature:"def foo(x, /, y, *z): ..."
+    ~call:"foo(5, 6, 7)" (* TODO(afk): fix parameter matching *)
+    ~expected:
+      [
+        "5", [positional ~positional_only:true (0, "x")];
+        "6", [];
+        "7", [positional ~positional_only:false (2, "y")];
+      ];
   ()
 
 

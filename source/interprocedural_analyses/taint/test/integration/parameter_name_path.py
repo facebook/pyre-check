@@ -24,3 +24,15 @@ def test_tito_keyword_only_parameter(x, *, y):
 
 def test_tito_mix_positional_and_named_parameters(__x, /, y, *, z):
     pass
+
+
+def test_tito_mix1(a, b, /, c, d, *arg, f, g, **kwargs):
+    pass
+
+
+def test_tito_mix2(a, b, /, c, d, *, f, g, **kwargs):
+    pass
+
+
+def test_tito_mix3(a, b, /, *, f, g, **kwargs):
+    pass

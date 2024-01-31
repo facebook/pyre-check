@@ -219,6 +219,150 @@
   }
 }
 {
+  "kind": "issue",
+  "data": {
+    "callable": "access_path.issue_positional_and_variadic",
+    "callable_line": 46,
+    "code": 5002,
+    "line": 50,
+    "start": 34,
+    "end": 48,
+    "filename": "access_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 50,
+              "start": 34,
+              "end": 48
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "access_path.py",
+                "line": 50,
+                "start": 34,
+                "end": 48
+              },
+              "resolves_to": [ "access_path.positional_and_variadic2" ],
+              "port": "formal(y)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "access_path.positional_and_variadic2",
+      "index": 2,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic2|2|formal(y):4092eea5e137be9e36c8f876dc240855"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "access_path.issue_positional_and_variadic",
+    "callable_line": 46,
+    "code": 5002,
+    "line": 48,
+    "start": 35,
+    "end": 49,
+    "filename": "access_path.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 48,
+              "start": 35,
+              "end": 49
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "access_path.py",
+                "line": 48,
+                "start": 35,
+                "end": 49
+              },
+              "resolves_to": [ "access_path.positional_and_variadic2" ],
+              "port": "formal(y)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "access_path.positional_and_variadic2",
+      "index": 0,
+      "parameter": "formal(y)"
+    },
+    "master_handle": "access_path.issue_positional_and_variadic:5002:0:Call|access_path.positional_and_variadic2|0|formal(y):654581acd1ad7982dc6e71e7477c52d5"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
@@ -439,6 +583,62 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "access_path.positional_and_variadic1",
+    "sinks": [
+      {
+        "port": "formal(*rest3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 39,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "access_path.positional_and_variadic2",
+    "sinks": [
+      {
+        "port": "formal(y)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "access_path.py",
+              "line": 43,
+              "start": 15,
+              "end": 16
+            }
           }
         ]
       }
