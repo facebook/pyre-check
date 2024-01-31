@@ -186,7 +186,6 @@ type t = {
 let show_type_for_error annotation =
   match annotation with
   | Type.Callable { kind = Named reference; _ } ->
-      (* add def [function name] : ... to provide better syntax highlighting for hover *)
       Format.asprintf "def %s%s: ..." (Reference.last reference) (Type.show_concise annotation)
   | _ -> Type.show_concise annotation
 
