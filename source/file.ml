@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
 
@@ -27,7 +28,9 @@ let content { path; content } =
   | Some content -> Some content
   | None -> (
       try Some (In_channel.read_all (PyrePath.absolute path)) with
-      | Sys_error _ -> None)
+      | Sys_error error ->
+          Log.warning "Error while loading file contents for %s: %s" (PyrePath.absolute path) error;
+          None)
 
 
 let content_exn { path; content } =
