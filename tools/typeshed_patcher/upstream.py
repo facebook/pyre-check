@@ -56,6 +56,7 @@ THIRD_PARTY_STUBS_ALLOWLIST: set[str] = {
     "regex",
     "requests",
     "retry",
+    "tqdm",
     "ujson",
 }
 
