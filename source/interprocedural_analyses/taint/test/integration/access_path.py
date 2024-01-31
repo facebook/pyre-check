@@ -44,7 +44,7 @@ def positional_and_variadic2(x, /, y, *z):
 
 
 def issue_positional_and_variadic():
-    positional_and_variadic1(1, 2, _test_source()) # TODO(afk): False negative
-    positional_and_variadic2(1, 2, _test_source()) # TODO(afk): False positive
-    positional_and_variadic2(1, _test_source()) # TODO(afk): False negative
+    positional_and_variadic1(1, 2, _test_source())
+    positional_and_variadic2(1, 2, _test_source())
+    positional_and_variadic2(1, _test_source())
     positional_and_variadic2(1, y=_test_source())

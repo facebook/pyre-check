@@ -99,8 +99,7 @@ end
 
 let normalize_parameters parameters =
   let normalize_parameters
-      position
-      (seen_star, excluded, normalized)
+      (position, seen_star, excluded, normalized)
       ({ Node.value = { Parameter.name = qualified_name; _ }; _ } as original)
     =
     if Identifier.equal (Identifier.sanitized qualified_name) "/" then
@@ -113,26 +112,29 @@ let normalize_parameters parameters =
         in
         { parameter with root }
       in
-      seen_star, excluded, List.map ~f:mark_as_positional_only normalized
+      position, seen_star, excluded, List.map ~f:mark_as_positional_only normalized
     else if String.is_prefix ~prefix:"**" qualified_name then
       let qualified_name = String.chop_prefix_exn qualified_name ~prefix:"**" in
-      ( true,
+      ( position + 1,
+        true,
         excluded,
         { NormalizedParameter.root = Root.StarStarParameter { excluded }; qualified_name; original }
         :: normalized )
     else if Identifier.equal (Identifier.sanitized qualified_name) "*" then
       (* This is not a real starred argument, but instead is just the indicator for the beginning
        * of the keyword only arguments *)
-      true, excluded, normalized
+      position, true, excluded, normalized
     else if String.is_prefix ~prefix:"*" qualified_name then
       let qualified_name = String.chop_prefix_exn qualified_name ~prefix:"*" in
-      ( true,
+      ( position + 1,
+        true,
         excluded,
         { NormalizedParameter.root = Root.StarParameter { position }; qualified_name; original }
         :: normalized )
     else if seen_star then
       let unqualified_name = Root.chop_parameter_prefix qualified_name in
-      ( true,
+      ( position + 1,
+        true,
         unqualified_name :: excluded,
         {
           NormalizedParameter.root = Root.NamedParameter { name = unqualified_name };
@@ -142,7 +144,8 @@ let normalize_parameters parameters =
         :: normalized )
     else
       let unqualified_name = Root.chop_parameter_prefix qualified_name in
-      ( false,
+      ( position + 1,
+        false,
         unqualified_name :: excluded,
         {
           NormalizedParameter.root =
@@ -152,8 +155,8 @@ let normalize_parameters parameters =
         }
         :: normalized )
   in
-  List.foldi parameters ~f:normalize_parameters ~init:(false, [], [])
-  |> fun (_, _, parameters) -> List.rev parameters
+  List.fold parameters ~f:normalize_parameters ~init:(0, false, [], [])
+  |> fun (_, _, _, parameters) -> List.rev parameters
 
 
 module Path = struct
