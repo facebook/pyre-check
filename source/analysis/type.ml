@@ -2659,7 +2659,8 @@ let rec create_readonly = function
   | ReadOnly _ as type_ -> type_
   | NoneType -> NoneType
   | Union elements -> Union (List.map ~f:create_readonly elements)
-  | Primitive class_name as type_
+  | (Primitive class_name as type_)
+  | (Parametric { name = class_name; _ } as type_)
     when Core.Set.mem Recognized.classes_safe_to_coerce_readonly_to_mutable class_name ->
       (* We trust that it is safe to ignore the `ReadOnly` wrapper on these classes. This helps
          reduce noisy errors on classes that are never mutated and reduces the adoption burden on

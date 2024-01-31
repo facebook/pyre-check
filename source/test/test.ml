@@ -1166,14 +1166,21 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     [
       ( "readonly_stubs_for_testing.pyi",
         {|
-          from typing import Callable, TypeVar
+          from typing import Callable, TypeVar, Generic
 
           F = TypeVar("F", bound=Callable[..., object])
+          T = TypeVar("T")
 
           def readonly_entrypoint(f: F) -> F: ...
 
           class MySafeReadOnlyClass:
             some_attribute: str
+
+          class MySafeReadOnlyInt(int):
+            pass
+
+          class MySafeReadOnlyIdType(MySafeReadOnlyInt, Generic[T]):
+            pass
 |}
       );
       ( "readonly_module_to_ignore.pyi",

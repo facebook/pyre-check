@@ -1739,6 +1739,28 @@ let test_allowlisted_classes_are_not_readonly context =
   ()
 
 
+let test_allowlisted_generic_integer_classes context =
+  (* This tests the allowlist behavior on specific unusual pattern used for id types. *)
+  let assert_type_errors = assert_type_errors ~context in
+  assert_type_errors
+    {|
+      from pyre_extensions import ReadOnly
+      from readonly_stubs_for_testing import MySafeReadOnlyIdType
+
+      def takes_default_visibility(not_read_only: MySafeReadOnlyIdType[int]) -> None:
+        reveal_type(not_read_only)
+
+      def main(read_only: ReadOnly[MySafeReadOnlyIdType[int]]) -> None:
+        takes_default_visibility(read_only)
+        reveal_type(read_only)
+    |}
+    [
+      "Revealed type [-1]: Revealed type for `not_read_only` is `MySafeReadOnlyIdType[int]`.";
+      "Revealed type [-1]: Revealed type for `read_only` is `MySafeReadOnlyIdType[int]`.";
+    ];
+  ()
+
+
 let () =
   "readOnly"
   >::: [
@@ -1760,5 +1782,6 @@ let () =
          "weaken_readonly_literals" >:: test_weaken_readonly_literals;
          "error_message_has_non_any_location" >:: test_error_message_has_non_any_location;
          "allowlisted_classes_are_not_readonly" >:: test_allowlisted_classes_are_not_readonly;
+         "allowlisted_generic_integer_classes" >:: test_allowlisted_generic_integer_classes;
        ]
   |> Test.run
