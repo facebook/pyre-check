@@ -121,6 +121,10 @@ def should_include_zipinfo(info: zipfile.ZipInfo) -> bool:
     if "@python2" in parts:
         return False
 
+    # Skip stub tests
+    if "@tests" in parts:
+        return False
+
     return True
 
 
