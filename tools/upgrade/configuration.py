@@ -53,6 +53,7 @@ class Configuration:
         self.ignore_all_errors: Optional[List[str]] = json_contents.get(
             "ignore_all_errors"
         )
+        self.exclude: Optional[List[str]] = json_contents.get("exclude")
         self.use_buck2: Optional[bool] = json_contents.get("use_buck2")
 
     def get_contents(self) -> Dict[str, Any]:
