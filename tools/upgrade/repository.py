@@ -49,8 +49,7 @@ class Repository:
         pass
 
     def format(self) -> bool:
-        # pyre-fixme[7]: Expected `bool` but got implicit return value of `None`.
-        pass
+        return False
 
     def force_format(self, paths: List[str]) -> None:
         subprocess.check_call(["pyfmt", *paths])
