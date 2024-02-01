@@ -3871,7 +3871,7 @@ let test_hover_info_for_position context =
       test
       # ^- cursor
   |}
-    { value = Some "() -> None"; docstring = Some "docstring" };
+    { value = Some "def test() -> None: ..."; docstring = Some "docstring" };
   assert_hover_info_for_position
     {|
       class Foo:
@@ -3881,7 +3881,7 @@ let test_hover_info_for_position context =
       Foo.test
       #     ^- cursor
   |}
-    { value = Some "() -> None"; docstring = Some "docstring" };
+    { value = Some "def test() -> None: ..."; docstring = Some "docstring" };
   assert_hover_info_for_position
     {|
       class Foo:
@@ -3891,7 +3891,7 @@ let test_hover_info_for_position context =
       Foo.test()
       #     ^- cursor
   |}
-    { value = Some "() -> None"; docstring = Some "docstring" };
+    { value = Some "def test() -> None: ..."; docstring = Some "docstring" };
   assert_hover_info_for_position
     {|
       class Foo:
@@ -3900,7 +3900,7 @@ let test_hover_info_for_position context =
               """docstring"""
               x = 5
   |}
-    { value = Some "() -> None"; docstring = Some "docstring" };
+    { value = Some "def test() -> None: ..."; docstring = Some "docstring" };
   assert_hover_info_for_position
     {|
       def test() -> None:
@@ -3908,14 +3908,14 @@ let test_hover_info_for_position context =
           """docstring"""
           x = 5
   |}
-    { value = Some "() -> None"; docstring = Some "docstring" };
+    { value = Some "def test() -> None: ..."; docstring = Some "docstring" };
   assert_hover_info_for_position
     {|
       def test() -> None:
       #    ^- cursor
           x = 5
   |}
-    { value = Some "() -> None"; docstring = None };
+    { value = Some "def test() -> None: ..."; docstring = None };
   (* TODO(T139775850) support complex hover *)
   assert_hover_info_for_position
     {|
@@ -3923,7 +3923,7 @@ let test_hover_info_for_position context =
       library.Base.return_str()
       #             ^- cursor
   |}
-    { value = Some "() -> str"; docstring = None };
+    { value = Some "def return_str() -> str: ..."; docstring = None };
   (* TODO(T139776124) support module docstrings *)
   assert_hover_info_for_position
     {|
@@ -3959,7 +3959,7 @@ let test_hover_info_for_position context =
       # ^- cursor
   |}
     {
-      value = Some "() -> None";
+      value = Some "def test() -> None: ...";
       docstring = Some "docstring 'using single-quotes' rest of docstring";
     };
   assert_hover_info_for_position
@@ -3970,7 +3970,23 @@ let test_hover_info_for_position context =
           self.foo()
               # ^- cursor
   |}
-    { value = Some "() -> None"; docstring = None };
+    { value = Some "def foo() -> None: ..."; docstring = None };
+  assert_hover_info_for_position
+    {|
+    f = lambda x : x
+    # ^- cursor
+  |}
+    { value = None; docstring = None };
+  assert_hover_info_for_position
+    {|
+      def test() -> None:
+          """docstring 'using single-quotes' rest of docstring"""
+          x = 5
+      test1 = test
+      # ^- cursor
+  |}
+    { value = Some "def test() -> None: ..."; docstring = None };
+
   ()
 
 

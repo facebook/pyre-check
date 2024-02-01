@@ -1059,12 +1059,28 @@ let resolve_type_for_symbol
   type_
 
 
+let format_method_name name annotation =
+  Format.asprintf "def %s%s: ..." (Reference.last name) (Type.show_concise annotation)
+
+
+let show_type_for_hover annotation =
+  match annotation with
+  | Type.Callable { kind = Named reference; _ } -> format_method_name reference annotation
+  | Type.Parametric
+      {
+        name = "BoundMethod";
+        parameters = [Single (Callable { kind = Named reference; _ }); Single _];
+      } ->
+      format_method_name reference annotation
+  | _ -> Type.show_concise annotation
+
+
 let hover_info_for_position ~type_environment ~module_reference position =
   let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   let type_ =
     symbol_data
     >>= resolve_type_for_symbol ~type_environment
-    >>| fun type_ -> Format.asprintf "%s" (Type.show_concise type_)
+    >>| fun type_ -> show_type_for_hover type_
   in
   let docstring = symbol_data >>= find_docstring_for_symbol ~type_environment in
   Log.log
