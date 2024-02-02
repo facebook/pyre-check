@@ -8,6 +8,8 @@ import logging
 from pathlib import Path
 from typing import List
 
+from .. import filesystem
+from ..configuration import Configuration
 from ..repository import Repository
 from .command import Command
 
@@ -55,4 +57,19 @@ class Configurationless(Command):
             type=str,
             default=["**.py"],
             help="The suffixes to search for and include in the codemod. Default is '**.py'.",
+        )
+
+    @staticmethod
+    def get_default_global_mode(
+        global_configuration: Configuration,
+    ) -> filesystem.LocalMode:
+        global_is_strict = (
+            global_configuration.strict
+            if global_configuration.strict is not None
+            else True  # set default configuration strictness to STRICT
+        )
+        return (
+            filesystem.LocalMode.STRICT
+            if global_is_strict
+            else filesystem.LocalMode.UNSAFE
         )

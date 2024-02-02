@@ -9,6 +9,7 @@ from typing import Any, List, Optional
 
 from ...configuration import Configuration
 
+from ...filesystem import LocalMode
 from ...repository import Repository
 from ..configurationless import Configurationless
 
@@ -52,3 +53,33 @@ class TestConfigurationless(unittest.TestCase):
         }
 
         return Configuration(path, configuration_json)
+
+    def test_get_default_global_mode_no_configuration(self) -> None:
+        global_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=None
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_global_mode(global_configuration),
+            LocalMode.STRICT,
+        )
+
+    def test_get_default_global_mode_strict_configuration(self) -> None:
+        global_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."]
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_global_mode(global_configuration),
+            LocalMode.STRICT,
+        )
+
+    def test_get_default_global_mode_unsafe_configuration(self) -> None:
+        global_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=False
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_global_mode(global_configuration),
+            LocalMode.UNSAFE,
+        )
