@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -51,7 +51,7 @@
     "callable": "breadcrumbs.TpmRequest.__init__",
     "tito": [
       {
-        "port": "formal(ids_list)",
+        "port": "formal(ids_list, position=2)",
         "taint": [
           {
             "kinds": [
@@ -62,7 +62,7 @@
         ]
       },
       {
-        "port": "formal(id_float)",
+        "port": "formal(id_float, position=1)",
         "taint": [
           {
             "kinds": [
@@ -74,7 +74,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -91,7 +91,7 @@
     "callable": "breadcrumbs.bool_parameter",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -155,7 +155,7 @@
     "callable": "breadcrumbs.float_parameter",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -215,7 +215,7 @@
     "callable": "breadcrumbs.int_parameter",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -279,7 +279,7 @@
     "callable": "breadcrumbs.scalar_attribute_backward",
     "sinks": [
       {
-        "port": "formal(request)[id_float]",
+        "port": "formal(request, position=0)[id_float]",
         "taint": [
           {
             "kinds": [
@@ -299,7 +299,7 @@
         ]
       },
       {
-        "port": "formal(request)[ids_list]",
+        "port": "formal(request, position=0)[ids_list]",
         "taint": [
           {
             "kinds": [
@@ -349,7 +349,7 @@
     ],
     "tito": [
       {
-        "port": "formal(request)[id_float]",
+        "port": "formal(request, position=0)[id_float]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

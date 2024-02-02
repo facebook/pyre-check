@@ -57,7 +57,7 @@
                 "end": 40
               },
               "resolves_to": [ "dataclass_taint.DataClassWIthInit.__init__" ],
-              "port": "formal(bad)"
+              "port": "formal(bad, position=1)"
             }
           }
         ]
@@ -381,7 +381,7 @@
     "callable": "Obj{dataclass_taint.DataClassWithClassAttributeTaintedDirectly.bad}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -417,7 +417,7 @@
     "callable": "Obj{dataclass_taint.WeirdDataClass.bad_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -429,7 +429,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -475,7 +475,7 @@
     "callable": "dataclass_taint.DataClass.__init__",
     "tito": [
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=2)",
         "taint": [
           {
             "kinds": [
@@ -489,7 +489,7 @@
         ]
       },
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -508,7 +508,7 @@
     "callable": "dataclass_taint.DataClassSwapArguments.__init__",
     "tito": [
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [
           {
             "kinds": [
@@ -522,7 +522,7 @@
         ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [
           {
             "kinds": [
@@ -536,7 +536,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -553,7 +553,7 @@
     "callable": "dataclass_taint.DataClassWIthInit.__init__",
     "sinks": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -580,7 +580,7 @@
     ],
     "tito": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -592,7 +592,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -609,13 +609,13 @@
     "callable": "dataclass_taint.DataClassWithClassAttributeTaintedDirectly.__init__",
     "sinks": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=2)",
         "taint": [
           {
             "kinds": [
@@ -629,7 +629,7 @@
         ]
       },
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -648,7 +648,7 @@
     "callable": "dataclass_taint.DataClassWithClassAttributeTaintedInConstructor.__init__",
     "sinks": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -666,7 +666,7 @@
     ],
     "tito": [
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=2)",
         "taint": [
           {
             "kinds": [
@@ -680,7 +680,7 @@
         ]
       },
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -700,7 +700,7 @@
     "callable": "dataclass_taint.DataClassWithOtherSource.__init__",
     "tito": [
       {
-        "port": "formal(not_tainted)",
+        "port": "formal(not_tainted, position=2)",
         "taint": [
           {
             "kinds": [
@@ -714,7 +714,7 @@
         ]
       },
       {
-        "port": "formal(tainted)",
+        "port": "formal(tainted, position=1)",
         "taint": [
           {
             "kinds": [
@@ -736,7 +736,7 @@
     "callable": "dataclass_taint.DataClassWithSource.__init__",
     "tito": [
       {
-        "port": "formal(not_tainted)",
+        "port": "formal(not_tainted, position=2)",
         "taint": [
           {
             "kinds": [
@@ -750,7 +750,7 @@
         ]
       },
       {
-        "port": "formal(tainted)",
+        "port": "formal(tainted, position=1)",
         "taint": [
           {
             "kinds": [
@@ -772,7 +772,7 @@
     "callable": "dataclass_taint.WeirdDataClass.__init__",
     "sources": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -822,11 +822,11 @@
     ],
     "sinks": [
       {
-        "port": "formal(bad_sink)",
+        "port": "formal(bad_sink, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(another)",
+        "port": "formal(another, position=2)",
         "taint": [
           {
             "kinds": [
@@ -857,7 +857,7 @@
     ],
     "tito": [
       {
-        "port": "formal(bad_sink)",
+        "port": "formal(bad_sink, position=2)",
         "taint": [
           {
             "kinds": [
@@ -871,7 +871,7 @@
         ]
       },
       {
-        "port": "formal(another)",
+        "port": "formal(another, position=2)",
         "taint": [
           {
             "kinds": [
@@ -885,7 +885,7 @@
         ]
       },
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=1)",
         "taint": [
           {
             "kinds": [
@@ -897,7 +897,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1055,7 +1055,7 @@
     "callable": "dataclass_taint.test_constructor_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1072,7 +1072,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1101,7 +1101,7 @@
     "callable": "dataclass_taint.test_dataclass_parameter_path",
     "sources": [
       {
-        "port": "formal(dc)[*]",
+        "port": "formal(dc, position=0)[*]",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
@@ -1109,7 +1109,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(dc)[bad]",
+        "port": "formal(dc, position=0)[bad]",
         "taint": [
           {
             "kinds": [
@@ -1211,7 +1211,7 @@
     "callable": "dataclass_taint.test_dataclass_positional_parameter",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1233,7 +1233,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1267,7 +1267,7 @@
     "callable": "dataclass_taint.test_dataclass_with_other_source",
     "sinks": [
       {
-        "port": "formal(context)[not_tainted]",
+        "port": "formal(context, position=0)[not_tainted]",
         "taint": [
           {
             "kinds": [
@@ -1287,7 +1287,7 @@
         ]
       },
       {
-        "port": "formal(context)[tainted]",
+        "port": "formal(context, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -1382,7 +1382,7 @@
     "callable": "dataclass_taint.test_dataclass_with_source",
     "sinks": [
       {
-        "port": "formal(context)[not_tainted]",
+        "port": "formal(context, position=0)[not_tainted]",
         "taint": [
           {
             "kinds": [
@@ -1402,7 +1402,7 @@
         ]
       },
       {
-        "port": "formal(context)[tainted]",
+        "port": "formal(context, position=0)[tainted]",
         "taint": [
           {
             "kinds": [

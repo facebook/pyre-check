@@ -115,7 +115,7 @@
     "callable": "implicit_sources.string_literal_arguments_source",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -134,7 +134,7 @@
         ]
       },
       {
-        "port": "formal(template)",
+        "port": "formal(template, position=0)",
         "taint": [
           {
             "kinds": [

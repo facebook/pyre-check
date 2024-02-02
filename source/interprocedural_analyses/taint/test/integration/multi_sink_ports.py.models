@@ -88,7 +88,7 @@
                 "end": 13
               },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           },
           {
@@ -110,7 +110,7 @@
                 "end": 13
               },
               "resolves_to": [ "multi_sink_ports.wrapper" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             }
           }
         ]
@@ -231,7 +231,7 @@
                 "end": 18
               },
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           },
           {
@@ -253,7 +253,7 @@
                 "end": 18
               },
               "resolves_to": [ "multi_sink_ports.wrapper2" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             }
           }
         ]
@@ -286,7 +286,7 @@
     "callable": "multi_sink_ports.Query.params",
     "tito": [
       {
-        "port": "formal(data)",
+        "port": "formal(data, position=1)",
         "taint": [
           {
             "kinds": [
@@ -297,7 +297,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -314,7 +314,7 @@
     "callable": "multi_sink_ports.Query.send",
     "sinks": [
       {
-        "port": "formal(self)[_params]",
+        "port": "formal(self, position=0)[_params]",
         "taint": [
           {
             "kinds": [
@@ -346,7 +346,7 @@
                 "end": 32
               },
               "resolves_to": [ "multi_sink_ports.splitwrapper" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             },
             "caller_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
@@ -356,7 +356,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -383,7 +383,7 @@
     "callable": "multi_sink_ports.log_call",
     "sinks": [
       {
-        "port": "formal(response)",
+        "port": "formal(response, position=1)",
         "taint": [
           {
             "kinds": [
@@ -412,7 +412,7 @@
         ]
       },
       {
-        "port": "formal(params)",
+        "port": "formal(params, position=0)",
         "taint": [
           {
             "kinds": [
@@ -449,7 +449,7 @@
     "callable": "multi_sink_ports.sinkA",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -475,7 +475,7 @@
     "callable": "multi_sink_ports.sinkB",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -501,7 +501,7 @@
     "callable": "multi_sink_ports.sinkC",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -527,7 +527,7 @@
     "callable": "multi_sink_ports.sinkD",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -571,7 +571,7 @@
     "callable": "multi_sink_ports.split",
     "sinks": [
       {
-        "port": "formal(x)[_params]",
+        "port": "formal(x, position=0)[_params]",
         "taint": [
           {
             "kinds": [
@@ -643,7 +643,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -666,7 +666,7 @@
     "callable": "multi_sink_ports.splitwrapper",
     "sinks": [
       {
-        "port": "formal(x)[_params]",
+        "port": "formal(x, position=0)[_params]",
         "taint": [
           {
             "kinds": [
@@ -698,7 +698,7 @@
                 "end": 18
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             }
           }
         ]
@@ -706,7 +706,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -733,7 +733,7 @@
     "callable": "multi_sink_ports.wrapper",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -793,13 +793,13 @@
                 "end": 15
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             }
           }
         ]
       },
       {
-        "port": "formal(x)[_params]",
+        "port": "formal(x, position=0)[_params]",
         "taint": [
           {
             "kinds": [
@@ -817,7 +817,7 @@
                 "end": 15
               },
               "resolves_to": [ "multi_sink_ports.split" ],
-              "port": "formal(x)[_params]"
+              "port": "formal(x, position=0)[_params]"
             }
           }
         ]
@@ -831,7 +831,7 @@
     "callable": "multi_sink_ports.wrapper2",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -859,7 +859,7 @@
                 "end": 19
               },
               "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(params)"
+              "port": "formal(params, position=0)"
             }
           },
           {
@@ -892,7 +892,7 @@
                 "end": 20
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
-              "port": "formal(self)[_params]"
+              "port": "formal(self, position=0)[_params]"
             },
             "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
@@ -922,13 +922,13 @@
                 "end": 29
               },
               "resolves_to": [ "multi_sink_ports.log_call" ],
-              "port": "formal(response)"
+              "port": "formal(response, position=1)"
             }
           }
         ]
       },
       {
-        "port": "formal(x)[_params]",
+        "port": "formal(x, position=0)[_params]",
         "taint": [
           {
             "kinds": [
@@ -946,7 +946,7 @@
                 "end": 20
               },
               "resolves_to": [ "multi_sink_ports.Query.send" ],
-              "port": "formal(self)[_params]"
+              "port": "formal(self, position=0)[_params]"
             },
             "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false

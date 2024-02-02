@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -31,7 +31,7 @@
     "callable": "parameter_name_path.test_tito_args_kwargs",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[x])",
         "taint": [
           {
             "kinds": [
@@ -42,7 +42,7 @@
         ]
       },
       {
-        "port": "formal(*rest1)",
+        "port": "formal(*args, position=1)",
         "taint": [
           {
             "kinds": [
@@ -53,7 +53,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -83,7 +83,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -102,7 +102,7 @@
     "callable": "parameter_name_path.test_tito_mix1",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
         "taint": [
           {
             "kinds": [
@@ -113,7 +113,7 @@
         ]
       },
       {
-        "port": "formal(*rest4)",
+        "port": "formal(*args, position=4)",
         "taint": [
           {
             "kinds": [
@@ -146,7 +146,7 @@
         ]
       },
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=3)",
         "taint": [
           {
             "kinds": [
@@ -157,7 +157,7 @@
         ]
       },
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -168,7 +168,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -179,7 +179,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -198,7 +198,7 @@
     "callable": "parameter_name_path.test_tito_mix2",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[g,f,d,c,b,a])",
         "taint": [
           {
             "kinds": [
@@ -231,7 +231,7 @@
         ]
       },
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=3)",
         "taint": [
           {
             "kinds": [
@@ -242,7 +242,7 @@
         ]
       },
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -253,7 +253,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -264,7 +264,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -283,7 +283,7 @@
     "callable": "parameter_name_path.test_tito_mix3",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[g,f,b,a])",
         "taint": [
           {
             "kinds": [
@@ -316,7 +316,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -327,7 +327,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -357,7 +357,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -368,7 +368,7 @@
         ]
       },
       {
-        "port": "formal(__x)",
+        "port": "formal(__x, position=0, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -387,7 +387,7 @@
     "callable": "parameter_name_path.test_tito_positional_only_parameter",
     "tito": [
       {
-        "port": "formal(__x)",
+        "port": "formal(__x, position=0, positional_only)",
         "taint": [
           {
             "kinds": [
@@ -406,7 +406,7 @@
     "callable": "parameter_name_path.test_tito_regular_parameters",
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [
           {
             "kinds": [
@@ -417,7 +417,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -428,7 +428,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

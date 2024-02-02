@@ -478,7 +478,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -524,7 +524,7 @@
     "callable": "features.SetItemClass.__setitem__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=2)",
         "taint": [
           {
             "kinds": [
@@ -539,7 +539,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -556,7 +556,7 @@
     "callable": "features.always_feature_for_duplicate_models",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -640,7 +640,7 @@
     "callable": "features.dynamic_feature_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -663,7 +663,7 @@
     "callable": "features.len",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -688,7 +688,7 @@
     "callable": "features.min",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -697,7 +697,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -869,7 +869,7 @@
     "callable": "features.tito_via_constructor",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -899,7 +899,7 @@
     "callable": "features.tito_via_len",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -928,7 +928,7 @@
     "callable": "features.tito_via_min_left",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -957,7 +957,7 @@
     "callable": "features.tito_via_min_or_not",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -978,7 +978,7 @@
     "callable": "features.tito_via_min_right",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1003,7 +1003,7 @@
     "callable": "features.tito_via_named",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1032,7 +1032,7 @@
     "callable": "features.tito_with_tuple",
     "tito": [
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [

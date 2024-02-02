@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -57,7 +57,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -80,7 +80,7 @@
     "callable": "always_in_none.test",
     "sinks": [
       {
-        "port": "formal(complicated_service)",
+        "port": "formal(complicated_service, position=0)",
         "taint": [
           {
             "kinds": [

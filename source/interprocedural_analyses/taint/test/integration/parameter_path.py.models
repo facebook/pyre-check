@@ -1082,7 +1082,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1128,7 +1128,7 @@
     "callable": "parameter_path.complex_tito",
     "tito": [
       {
-        "port": "formal(arg)[a][*].**keys",
+        "port": "formal(arg, position=0)[a][*].**keys",
         "taint": [
           {
             "kinds": [
@@ -1246,7 +1246,7 @@
     "callable": "parameter_path.sink_on_0_1",
     "sinks": [
       {
-        "port": "formal(arg)[0][1]",
+        "port": "formal(arg, position=0)[0][1]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -1258,7 +1258,7 @@
     "callable": "parameter_path.sink_on_first",
     "sinks": [
       {
-        "port": "formal(arg)[0]",
+        "port": "formal(arg, position=0)[0]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -1270,7 +1270,7 @@
     "callable": "parameter_path.sink_on_key_a",
     "sinks": [
       {
-        "port": "formal(arg)[a]",
+        "port": "formal(arg, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -1282,7 +1282,7 @@
     "callable": "parameter_path.sink_on_member_a",
     "sinks": [
       {
-        "port": "formal(arg)[a]",
+        "port": "formal(arg, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -1294,7 +1294,7 @@
     "callable": "parameter_path.sink_on_second",
     "sinks": [
       {
-        "port": "formal(arg)[1]",
+        "port": "formal(arg, position=0)[1]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -1367,7 +1367,7 @@
     "callable": "parameter_path.tito_from_a_to_self_b",
     "tito": [
       {
-        "port": "formal(arg)[a]",
+        "port": "formal(arg, position=1)[a]",
         "taint": [
           {
             "kinds": [
@@ -1386,7 +1386,7 @@
     "callable": "parameter_path.tito_from_b_to_a",
     "tito": [
       {
-        "port": "formal(arg)[b]",
+        "port": "formal(arg, position=0)[b]",
         "taint": [
           {
             "kinds": [
@@ -1405,7 +1405,7 @@
     "callable": "parameter_path.tito_from_first",
     "tito": [
       {
-        "port": "formal(arg)[0]",
+        "port": "formal(arg, position=0)[0]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1422,7 +1422,7 @@
     "callable": "parameter_path.tito_from_first_to_second",
     "tito": [
       {
-        "port": "formal(arg)[0]",
+        "port": "formal(arg, position=0)[0]",
         "taint": [
           {
             "kinds": [
@@ -1441,7 +1441,7 @@
     "callable": "parameter_path.tito_from_second",
     "tito": [
       {
-        "port": "formal(arg)[1]",
+        "port": "formal(arg, position=0)[1]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

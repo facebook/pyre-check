@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -28,7 +28,7 @@
     "callable": "return_sinks.propagate_returned_sink_to_arg",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -46,7 +46,7 @@
                 "end": 31
               },
               "resolves_to": [ "return_sinks.sink_on_return_and_tito" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -72,7 +72,7 @@
     "callable": "return_sinks.sink_on_return_and_tito",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -103,7 +103,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

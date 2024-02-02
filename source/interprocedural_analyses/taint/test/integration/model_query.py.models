@@ -195,7 +195,7 @@
     "callable": "Obj{model_query.AttributeTestClass3.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "SinkA" }, { "kind": "SinkB" } ],
@@ -212,7 +212,7 @@
     "callable": "Obj{model_query.AttributeTestClass3.instance}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "SinkA" }, { "kind": "SinkC" } ],
@@ -319,7 +319,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -345,7 +345,7 @@
     "callable": "model_query.AttributeTestClass1.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -362,7 +362,7 @@
     "callable": "model_query.AttributeTestClass2.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -379,7 +379,7 @@
     "callable": "model_query.AttributeTestClass3.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -396,7 +396,7 @@
     "callable": "model_query.AttributeTestClass4.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -413,7 +413,7 @@
     "callable": "model_query.AttributeTestClass5.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -430,7 +430,7 @@
     "callable": "model_query.AttributeTestClass6.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -447,7 +447,7 @@
     "callable": "model_query.AttributeTestClass7.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -464,7 +464,7 @@
     "callable": "model_query.AttributeTestClass8.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -481,11 +481,11 @@
     "callable": "model_query.Base.foo",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -533,7 +533,7 @@
     "callable": "model_query.C.positional_method",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -547,7 +547,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -559,7 +559,7 @@
     "callable": "model_query.Child.bar",
     "sources": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -663,7 +663,7 @@
     "callable": "model_query.alarm_1",
     "sinks": [
       {
-        "port": "formal(x)[attribute]",
+        "port": "formal(x, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -756,7 +756,7 @@
     "callable": "model_query.alarm_10",
     "sinks": [
       {
-        "port": "formal(x)[foo_instance]",
+        "port": "formal(x, position=0)[foo_instance]",
         "taint": [
           {
             "kinds": [
@@ -849,7 +849,7 @@
     "callable": "model_query.alarm_11",
     "sinks": [
       {
-        "port": "formal(x)[foo_attribute]",
+        "port": "formal(x, position=0)[foo_attribute]",
         "taint": [
           {
             "kinds": [
@@ -942,7 +942,7 @@
     "callable": "model_query.alarm_12",
     "sinks": [
       {
-        "port": "formal(x)[foo_instance]",
+        "port": "formal(x, position=0)[foo_instance]",
         "taint": [
           {
             "kinds": [
@@ -1035,7 +1035,7 @@
     "callable": "model_query.alarm_2",
     "sinks": [
       {
-        "port": "formal(x)[instance]",
+        "port": "formal(x, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -1128,7 +1128,7 @@
     "callable": "model_query.alarm_3",
     "sinks": [
       {
-        "port": "formal(x)[attribute]",
+        "port": "formal(x, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -1221,7 +1221,7 @@
     "callable": "model_query.alarm_4",
     "sinks": [
       {
-        "port": "formal(x)[instance]",
+        "port": "formal(x, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -1314,13 +1314,13 @@
     "callable": "model_query.alarm_5",
     "sources": [
       {
-        "port": "formal(source)",
+        "port": "formal(source, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(source)",
+        "port": "formal(source, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1530,7 +1530,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(x)[attribute]",
+        "port": "formal(x, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -1558,7 +1558,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)[attribute]",
+        "port": "formal(x, position=0)[attribute]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1701,7 +1701,7 @@
     "callable": "model_query.alarm_8",
     "sinks": [
       {
-        "port": "formal(x)[instance]",
+        "port": "formal(x, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -1860,7 +1860,7 @@
     "callable": "model_query.alarm_9",
     "sinks": [
       {
-        "port": "formal(x)[foo_attribute]",
+        "port": "formal(x, position=0)[foo_attribute]",
         "taint": [
           {
             "kinds": [
@@ -2025,7 +2025,7 @@
     "callable": "model_query.no_alarm_1",
     "sinks": [
       {
-        "port": "formal(x)[nomatch_attribute1]",
+        "port": "formal(x, position=0)[nomatch_attribute1]",
         "taint": [
           {
             "kinds": [
@@ -2044,7 +2044,7 @@
         ]
       },
       {
-        "port": "formal(x)[nomatch_instance1]",
+        "port": "formal(x, position=0)[nomatch_instance1]",
         "taint": [
           {
             "kinds": [
@@ -2071,7 +2071,7 @@
     "callable": "model_query.no_alarm_2",
     "sinks": [
       {
-        "port": "formal(x)[nomatch_instance2]",
+        "port": "formal(x, position=0)[nomatch_instance2]",
         "taint": [
           {
             "kinds": [
@@ -2112,7 +2112,7 @@
     "callable": "model_query.positional_a",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -2124,7 +2124,7 @@
     "callable": "model_query.positional_b",
     "sources": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -2136,7 +2136,7 @@
     "callable": "model_query.positional_decorated",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -2149,7 +2149,7 @@
     "callable": "model_query.three_parameters",
     "sources": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2163,7 +2163,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -2175,7 +2175,7 @@
     "callable": "model_query.two_parameters",
     "sources": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2189,7 +2189,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

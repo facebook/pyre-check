@@ -136,7 +136,7 @@
                 "end": 24
               },
               "resolves_to": [ "nested_callables.outer" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -283,7 +283,7 @@
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -464,7 +464,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -476,7 +476,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -503,7 +503,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -521,7 +521,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -534,7 +534,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -580,7 +580,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -589,7 +589,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -622,7 +622,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -646,7 +646,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -664,7 +664,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -672,7 +672,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -687,7 +687,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -711,7 +711,7 @@
     "callable": "nested_callables.access_parameter_in_inner_scope_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -777,7 +777,7 @@
     "callable": "nested_callables.access_parameter_in_inner_scope_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -933,7 +933,7 @@
     "callable": "nested_callables.g",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -950,7 +950,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -975,7 +975,7 @@
     "callable": "nested_callables.nested_global_function",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1000,7 +1000,7 @@
     "callable": "nested_callables.outer",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1025,7 +1025,7 @@
                 "end": 18
               },
               "resolves_to": [ "nested_callables.outer.inner" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1039,7 +1039,7 @@
     "callable": "nested_callables.outer.inner",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1070,7 +1070,7 @@
     "callable": "nested_callables.outer_calling_other_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1097,7 +1097,7 @@
               "resolves_to": [
                 "nested_callables.outer_calling_other_function.inner_calling_other_function"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1111,7 +1111,7 @@
     "callable": "nested_callables.outer_calling_other_function.inner_calling_other_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1136,7 +1136,7 @@
                 "end": 19
               },
               "resolves_to": [ "nested_callables.some_sink" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1150,7 +1150,7 @@
     "callable": "nested_callables.parameter_function",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1161,7 +1161,7 @@
         ]
       },
       {
-        "port": "formal(add)",
+        "port": "formal(add, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1179,7 +1179,7 @@
     "callable": "nested_callables.some_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

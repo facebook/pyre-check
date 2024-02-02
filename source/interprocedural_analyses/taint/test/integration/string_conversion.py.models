@@ -1007,7 +1007,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1053,7 +1053,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -1071,7 +1071,7 @@
     "callable": "string_conversion.A.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1082,7 +1082,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1099,7 +1099,7 @@
     "callable": "string_conversion.A.__str__",
     "tito": [
       {
-        "port": "formal(self)[value]",
+        "port": "formal(self, position=0)[value]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1116,7 +1116,7 @@
     "callable": "string_conversion.B.__str__",
     "tito": [
       {
-        "port": "formal(self)[f]",
+        "port": "formal(self, position=0)[f]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1161,7 +1161,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)[g]",
+        "port": "formal(self, position=0)[g]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1288,7 +1288,7 @@
     "callable": "string_conversion.any_type",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1309,7 +1309,7 @@
     "callable": "string_conversion.backward_unioned_callees",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1332,7 +1332,7 @@
     "callable": "string_conversion.backward_unioned_callees_2",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1353,7 +1353,7 @@
     "callable": "string_conversion.base_exception",
     "tito": [
       {
-        "port": "formal(e)",
+        "port": "formal(e, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1385,7 +1385,7 @@
     "callable": "string_conversion.compute_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1407,7 +1407,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1547,7 +1547,7 @@
     "callable": "string_conversion.multiple_targets_for_single_expression",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1659,7 +1659,7 @@
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1789,7 +1789,7 @@
     ],
     "tito": [
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1806,7 +1806,7 @@
         ]
       },
       {
-        "port": "formal(b_or_c)",
+        "port": "formal(b_or_c, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1858,7 +1858,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1879,7 +1879,7 @@
     "callable": "string_conversion.tito_f",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1896,7 +1896,7 @@
     "callable": "string_conversion.tito_g",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

@@ -68,7 +68,7 @@
     "callable": "rule.sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "MyTestSink" } ], "declaration": null }
         ]

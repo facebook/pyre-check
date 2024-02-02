@@ -36,7 +36,7 @@ module Root = struct
       | StarStarParameter of { excluded: Identifier.t list }
       | Variable of Identifier.t
       | CapturedVariable of Identifier.t
-    [@@deriving compare, eq, hash, sexp, show { with_path = false }]
+    [@@deriving compare, eq, hash, sexp]
 
     let chop_parameter_prefix name =
       match String.chop_prefix ~prefix:"$parameter$" name with
@@ -53,9 +53,33 @@ module Root = struct
       | _ -> None
 
 
-    let pp_external formatter = function
+    let pp formatter = function
       | LocalResult -> Format.fprintf formatter "result"
-      | PositionalParameter { position = _; name; _ } -> Format.fprintf formatter "formal(%s)" name
+      | PositionalParameter { position; name; positional_only } ->
+          Format.fprintf
+            formatter
+            "formal(%s, position=%d%s)"
+            name
+            position
+            (if positional_only then ", positional_only" else "")
+      | NamedParameter { name } -> Format.fprintf formatter "formal(%s)" name
+      | StarParameter { position } -> Format.fprintf formatter "formal(*args, position=%d)" position
+      | StarStarParameter { excluded = [] } -> Format.fprintf formatter "formal(**kwargs)"
+      | StarStarParameter { excluded } ->
+          Format.fprintf
+            formatter
+            "formal(**kwargs, excluded=[%s])"
+            (String.concat ~sep:"," excluded)
+      | Variable name -> Format.fprintf formatter "local(%s)" name
+      | CapturedVariable name -> Format.fprintf formatter "captured_variable(%s)" name
+
+
+    let show = Format.asprintf "%a" pp
+
+    (* Export for issue handles. This must be stable so handles are consistent between runs. *)
+    let pp_for_issue_handle formatter = function
+      | LocalResult -> Format.fprintf formatter "result"
+      | PositionalParameter { name; _ } -> Format.fprintf formatter "formal(%s)" name
       | NamedParameter { name } -> Format.fprintf formatter "formal(%s)" name
       | StarParameter { position } -> Format.fprintf formatter "formal(*rest%d)" position
       | StarStarParameter _ -> Format.fprintf formatter "formal(**kw)"
@@ -63,11 +87,12 @@ module Root = struct
       | CapturedVariable name -> Format.fprintf formatter "captured_variable(%s)" name
 
 
-    let show_external = Format.asprintf "%a" pp_external
+    let show_for_issue_handle = Format.asprintf "%a" pp_for_issue_handle
 
-    let pp_internal = pp
+    (* For backward compatibility, use the issue handle ports *)
+    let pp_for_via_breadcrumb = pp_for_issue_handle
 
-    let show_internal = Format.asprintf "%a" pp_internal
+    let show_for_via_breadcrumb = Format.asprintf "%a" pp_for_via_breadcrumb
 
     let variable_to_captured_variable = function
       | Variable name -> CapturedVariable name
@@ -321,7 +346,7 @@ type t = {
 }
 [@@deriving compare]
 
-let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp_external root Path.pp path
+let pp formatter { root; path } = Format.fprintf formatter "%a%a" Root.pp root Path.pp path
 
 let show access_path = Format.asprintf "%a" pp access_path
 
@@ -336,8 +361,6 @@ let get_index expression =
   | Some name -> Abstract.TreeDomain.Label.Index name
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
-
-let to_json { root; path } = `String (Format.asprintf "%a%a" Root.pp_external root Path.pp path)
 
 let of_expression expression =
   let rec of_expression path = function

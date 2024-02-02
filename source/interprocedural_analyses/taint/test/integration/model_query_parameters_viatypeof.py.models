@@ -917,7 +917,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -963,7 +963,7 @@
     "callable": "model_query_parameters_viatypeof.Test2_C.f1",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=3)",
         "taint": [
           {
             "kinds": [
@@ -979,7 +979,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -995,7 +995,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1019,7 +1019,7 @@
     "callable": "model_query_parameters_viatypeof.Test2_C.f2",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1035,7 +1035,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1051,7 +1051,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1075,7 +1075,7 @@
     "callable": "model_query_parameters_viatypeof.test1_f1",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1091,7 +1091,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1107,7 +1107,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1131,7 +1131,7 @@
     "callable": "model_query_parameters_viatypeof.test3_f1",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1151,7 +1151,7 @@
         ]
       },
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1171,7 +1171,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [

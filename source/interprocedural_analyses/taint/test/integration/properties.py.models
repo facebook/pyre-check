@@ -57,7 +57,7 @@
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
-              "port": "formal(value)"
+              "port": "formal(value, position=1)"
             },
             "caller_interval": [ { "lower": 25, "upper": 28 } ],
             "is_self_call": true
@@ -290,7 +290,7 @@
               "resolves_to": [
                 "properties.DerivedTaintedSetter.my_property@setter"
               ],
-              "port": "formal(value)"
+              "port": "formal(value, position=1)"
             }
           }
         ]
@@ -506,7 +506,7 @@
                 "end": 39
               },
               "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
-              "port": "formal(y)"
+              "port": "formal(y, position=1)"
             },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
@@ -588,7 +588,7 @@
                 "end": 24
               },
               "resolves_to": [ "properties.PropertyCallableReturn.__call__" ],
-              "port": "formal(self)[x]"
+              "port": "formal(self, position=0)[x]"
             },
             "receiver_interval": [ { "lower": 16, "upper": 17 } ],
             "is_self_call": false
@@ -666,7 +666,7 @@
                 "end": 14
               },
               "resolves_to": [ "properties.PropertyCallable.attribute" ],
-              "port": "formal(self)[z]"
+              "port": "formal(self, position=0)[z]"
             }
           }
         ]
@@ -718,7 +718,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)[tainted]",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -735,7 +735,7 @@
     "callable": "Ovr{properties.DerivedTaintedSetter.my_property@setter}",
     "sinks": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -759,7 +759,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -776,7 +776,7 @@
     "callable": "Ovr{properties.GrandDerived.my_property@setter}",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -825,7 +825,7 @@
     "callable": "Ovr{properties.TaintedGetterAndSetter.my_property@setter}",
     "sources": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -857,7 +857,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -881,7 +881,7 @@
     ],
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -896,7 +896,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -919,7 +919,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -949,7 +949,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -995,7 +995,7 @@
     "callable": "properties.Class.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1012,7 +1012,7 @@
     "callable": "properties.Class.my_property",
     "tito": [
       {
-        "port": "formal(self)[tainted]",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1057,7 +1057,7 @@
     ],
     "tito": [
       {
-        "port": "formal(other)[tainted]",
+        "port": "formal(other, position=1)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -1165,7 +1165,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)[tainted]",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -1212,7 +1212,7 @@
     "callable": "properties.CollidePropertySetterName.collided_property@setter",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1263,7 +1263,7 @@
     "callable": "properties.Derived.uses_property_but_no_tito_taint",
     "tito": [
       {
-        "port": "formal(self)[tainted]",
+        "port": "formal(self, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -1288,7 +1288,7 @@
     "callable": "properties.DerivedTaintedSetter.my_property@setter",
     "sinks": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1312,7 +1312,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1329,7 +1329,7 @@
     "callable": "properties.GrandDerived.my_property@setter",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1412,7 +1412,7 @@
     "callable": "properties.PropertyCallable.__init__",
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1423,7 +1423,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1468,7 +1468,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(self)[z]",
+        "port": "formal(self, position=0)[z]",
         "taint": [
           {
             "kinds": [
@@ -1498,7 +1498,7 @@
     "callable": "properties.PropertyCallableReturn.__call__",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1520,7 +1520,7 @@
         ]
       },
       {
-        "port": "formal(self)[x]",
+        "port": "formal(self, position=0)[x]",
         "taint": [
           {
             "kinds": [
@@ -1550,7 +1550,7 @@
     "callable": "properties.PropertyCallableReturn.__init__",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1561,7 +1561,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1578,7 +1578,7 @@
     "callable": "properties.PropertySetterInConstructor.__init__",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1595,7 +1595,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1614,7 +1614,7 @@
     "callable": "properties.PropertySetterInConstructor.x",
     "tito": [
       {
-        "port": "formal(self)[underlying]",
+        "port": "formal(self, position=0)[underlying]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1631,7 +1631,7 @@
     "callable": "properties.PropertySetterInConstructor.x@setter",
     "tito": [
       {
-        "port": "formal(x_value)",
+        "port": "formal(x_value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1645,7 +1645,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1662,7 +1662,7 @@
     "callable": "properties.RegularAttribute.__init__",
     "tito": [
       {
-        "port": "formal(my_property)",
+        "port": "formal(my_property, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1676,7 +1676,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1693,7 +1693,7 @@
     "callable": "properties.SetterMutatesValue.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1710,7 +1710,7 @@
     "callable": "properties.SetterMutatesValue.p",
     "tito": [
       {
-        "port": "formal(self)[_p]",
+        "port": "formal(self, position=0)[_p]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1727,7 +1727,7 @@
     "callable": "properties.SetterMutatesValue.p@setter",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1738,7 +1738,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1761,7 +1761,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1791,7 +1791,7 @@
     "callable": "properties.TaintedGetterAndSetter.my_property@setter",
     "sources": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -1823,7 +1823,7 @@
     ],
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1838,7 +1838,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1883,7 +1883,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1903,7 +1903,7 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self)"
+              "port": "formal(self, position=0)"
             },
             "caller_interval": [ { "lower": 24, "upper": 29 } ],
             "is_self_call": true
@@ -1919,7 +1919,7 @@
     "callable": "properties.function_with_nested_properties.my_property@setter",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2003,7 +2003,7 @@
     "callable": "properties.test_getattr_on_property",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2023,7 +2023,7 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self)"
+              "port": "formal(self, position=0)"
             }
           }
         ]
@@ -2104,7 +2104,7 @@
     "callable": "properties.test_type_variable_properties_are_resolved",
     "tito": [
       {
-        "port": "formal(x)[tainted]",
+        "port": "formal(x, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -2129,7 +2129,7 @@
     "callable": "properties.test_union_property_attribute_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2168,7 +2168,7 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self)"
+              "port": "formal(self, position=0)"
             }
           }
         ]
@@ -2360,7 +2360,7 @@
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property"
               ],
-              "port": "formal(self)"
+              "port": "formal(self, position=0)"
             }
           }
         ]

@@ -22,26 +22,23 @@ module Root : sig
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
     | CapturedVariable of Identifier.t
-  [@@deriving compare, eq, hash, sexp]
+  [@@deriving compare, eq, hash, sexp, show]
 
   val parameter_name : t -> string option
 
-  val pp_external : Format.formatter -> t -> unit
+  val pp_for_issue_handle : Format.formatter -> t -> unit
 
-  val show_external : t -> string
+  val show_for_issue_handle : t -> string
 
-  val pp_internal : Format.formatter -> t -> unit
+  val pp_for_via_breadcrumb : Format.formatter -> t -> unit
 
-  val show_internal : t -> string
+  val show_for_via_breadcrumb : t -> string
 
   val variable_to_captured_variable : t -> t
 
   val captured_variable_to_variable : t -> t
 
   val is_captured_variable : t -> bool
-
-  (* Equivalent to pp_internal. Required by @@deriving. *)
-  val pp : Format.formatter -> t -> unit
 
   module Set : Stdlib.Set.S with type elt = t
 end
@@ -69,7 +66,11 @@ type t = {
   root: Root.t;
   path: Path.t;
 }
-[@@deriving show, compare]
+[@@deriving compare]
+
+val pp : Format.formatter -> t -> unit
+
+val show : t -> string
 
 val create : Root.t -> Path.t -> t
 
@@ -78,8 +79,6 @@ val extend : t -> path:Path.t -> t
 val of_expression : Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
-
-val to_json : t -> Yojson.Safe.t
 
 type argument_match = {
   root: Root.t;

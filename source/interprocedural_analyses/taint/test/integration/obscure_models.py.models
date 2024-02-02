@@ -84,7 +84,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -110,7 +110,7 @@
     "callable": "obscure_models.C.obscure_with_multiple_models",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -128,7 +128,7 @@
     "callable": "obscure_models.C.obscure_with_skip_obscure_and_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -161,7 +161,7 @@
     "callable": "obscure_models.C.obscure_with_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -185,7 +185,7 @@
     "callable": "obscure_models.should_collapse_depth_zero",
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=1)",
         "taint": [
           {
             "kinds": [
@@ -204,7 +204,7 @@
         ]
       },
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -231,7 +231,7 @@
     "callable": "obscure_models.test_collapse_source",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -346,7 +346,7 @@
     "callable": "obscure_models.test_issue",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -473,7 +473,7 @@
     ],
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -558,7 +558,7 @@
     ],
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -643,7 +643,7 @@
     ],
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -718,7 +718,7 @@
     ],
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -745,7 +745,7 @@
     "callable": "obscure_models.test_obscure_with_tito",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=0)",
         "taint": [
           {
             "kinds": [
@@ -849,7 +849,7 @@
     "callable": "obscure_models.test_sink_collapse",
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=1)",
         "taint": [
           {
             "kinds": [
@@ -877,7 +877,7 @@
         ]
       },
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -913,7 +913,7 @@
     "callable": "obscure_models.test_skip_obscure_via_model_query",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

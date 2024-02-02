@@ -53,7 +53,7 @@
                 "end": 25
               },
               "resolves_to": [ "locals.named_sink" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -150,7 +150,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -196,7 +196,7 @@
     "callable": "locals.named_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -224,7 +224,7 @@
     "callable": "locals.source_parameter_to_sink",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

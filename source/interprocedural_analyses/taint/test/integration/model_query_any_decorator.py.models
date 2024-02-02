@@ -5,7 +5,7 @@
     "callable": "model_query_any_decorator.decorator_ignored",
     "tito": [
       {
-        "port": "formal(f)",
+        "port": "formal(f, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -29,7 +29,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

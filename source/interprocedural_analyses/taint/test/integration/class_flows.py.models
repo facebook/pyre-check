@@ -463,7 +463,7 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db"
               ],
-              "port": "formal(locale)"
+              "port": "formal(locale, position=1)"
             },
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
             "is_self_call": false
@@ -539,7 +539,7 @@
               "resolves_to": [
                 "class_flows.HasDecoratedClassmethod.to_sink"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=1)"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -565,7 +565,7 @@
     "callable": "Obj{class_flows.C.__class__.tainted_class_attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -577,7 +577,7 @@
     "callable": "Obj{class_flows.C.tainted_attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -589,7 +589,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -635,7 +635,7 @@
     "callable": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
     "sinks": [
       {
-        "port": "formal(locale)",
+        "port": "formal(locale, position=1)",
         "taint": [
           {
             "kinds": [
@@ -655,7 +655,7 @@
               "resolves_to": [
                 "class_flows.HasClassmethods._get_multi_word_results"
               ],
-              "port": "formal(locale)"
+              "port": "formal(locale, position=1)"
             },
             "caller_interval": [ { "lower": 6, "upper": 7 } ],
             "receiver_interval": [ { "lower": 6, "upper": 7 } ],
@@ -672,7 +672,7 @@
     "callable": "class_flows.HasClassmethods._get_multi_word_results",
     "sinks": [
       {
-        "port": "formal(locale)",
+        "port": "formal(locale, position=1)",
         "taint": [
           {
             "kinds": [
@@ -702,7 +702,7 @@
     "callable": "class_flows.HasDecoratedClassmethod.to_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -732,7 +732,7 @@
     "callable": "list.append",
     "tito": [
       {
-        "port": "formal(__element)",
+        "port": "formal(__element, position=1)",
         "taint": [
           {
             "kinds": [

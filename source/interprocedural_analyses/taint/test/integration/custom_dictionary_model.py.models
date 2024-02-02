@@ -289,7 +289,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -349,13 +349,13 @@
     "callable": "dict.__setitem__",
     "sinks": [
       {
-        "port": "formal(__value)",
+        "port": "formal(__value, position=2)",
         "taint": [
           { "kinds": [ { "kind": "SinkValue" } ], "declaration": null }
         ]
       },
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "taint": [
           { "kinds": [ { "kind": "SinkKey" } ], "declaration": null }
         ]
@@ -363,7 +363,7 @@
     ],
     "tito": [
       {
-        "port": "formal(__value)",
+        "port": "formal(__value, position=2)",
         "taint": [
           {
             "kinds": [
@@ -378,7 +378,7 @@
         ]
       },
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "taint": [
           {
             "kinds": [
@@ -393,7 +393,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [

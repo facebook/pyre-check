@@ -420,7 +420,7 @@
               "resolves_to": [
                 "multiple_sources.demonstrate_triggered_input"
               ],
-              "port": "formal(id)"
+              "port": "formal(id, position=0)"
             }
           }
         ]
@@ -605,7 +605,7 @@
     "callable": "multiple_sources.A.multi_sink",
     "sinks": [
       {
-        "port": "formal(permissive_context)",
+        "port": "formal(permissive_context, position=2)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
@@ -614,7 +614,7 @@
         ]
       },
       {
-        "port": "formal(user_controlled)",
+        "port": "formal(user_controlled, position=1)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
@@ -631,7 +631,7 @@
     "callable": "multiple_sources.B.multi_sink",
     "sinks": [
       {
-        "port": "formal(permissive_context)",
+        "port": "formal(permissive_context, position=2)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
@@ -640,7 +640,7 @@
         ]
       },
       {
-        "port": "formal(user_controlled)",
+        "port": "formal(user_controlled, position=1)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
@@ -657,7 +657,7 @@
     "callable": "multiple_sources.Node.__init__",
     "tito": [
       {
-        "port": "formal(id)",
+        "port": "formal(id, position=1)",
         "taint": [
           {
             "kinds": [
@@ -668,7 +668,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -685,7 +685,7 @@
     "callable": "multiple_sources.Node.get",
     "tito": [
       {
-        "port": "formal(id)",
+        "port": "formal(id, position=1)",
         "taint": [
           {
             "kinds": [
@@ -710,7 +710,7 @@
     "callable": "multiple_sources.Node.send",
     "sinks": [
       {
-        "port": "formal(vc)",
+        "port": "formal(vc, position=1)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[vc]]" } ],
@@ -719,7 +719,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[UserControlledAndVC[id]]" } ],
@@ -737,7 +737,7 @@
     "callable": "multiple_sources.a_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA" } ], "declaration": null }
         ]
@@ -779,7 +779,7 @@
     "callable": "multiple_sources.combines_tests_and_context",
     "sinks": [
       {
-        "port": "formal(vc)",
+        "port": "formal(vc, position=1)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[b]]" } ],
@@ -788,7 +788,7 @@
         ]
       },
       {
-        "port": "formal(test)",
+        "port": "formal(test, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "PartialSink[ExpectsEitherTest[a]]" } ],
@@ -805,7 +805,7 @@
     "callable": "multiple_sources.demonstrate_triggered_context",
     "sinks": [
       {
-        "port": "formal(vc)",
+        "port": "formal(vc, position=0)",
         "taint": [
           {
             "kinds": [
@@ -895,7 +895,7 @@
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context"
                   ],
-                  "port": "formal(vc)"
+                  "port": "formal(vc, position=0)"
                 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
@@ -936,7 +936,7 @@
     "callable": "multiple_sources.demonstrate_triggered_context_more_hops",
     "sinks": [
       {
-        "port": "formal(vc)",
+        "port": "formal(vc, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1033,7 +1033,7 @@
                   "resolves_to": [
                     "multiple_sources.demonstrate_triggered_context_more_hops"
                   ],
-                  "port": "formal(vc)"
+                  "port": "formal(vc, position=0)"
                 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
@@ -1074,7 +1074,7 @@
     "callable": "multiple_sources.demonstrate_triggered_input",
     "sinks": [
       {
-        "port": "formal(id)",
+        "port": "formal(id, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1117,7 +1117,7 @@
     "callable": "multiple_sources.multiple_triggered_context",
     "sinks": [
       {
-        "port": "formal(vc)",
+        "port": "formal(vc, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1228,7 +1228,7 @@
                   "resolves_to": [
                     "multiple_sources.multiple_triggered_context"
                   ],
-                  "port": "formal(vc)"
+                  "port": "formal(vc, position=0)"
                 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
@@ -1325,7 +1325,7 @@
                   "resolves_to": [
                     "multiple_sources.multiple_triggered_context"
                   ],
-                  "port": "formal(vc)"
+                  "port": "formal(vc, position=0)"
                 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledAndVC[vc]]",
                 "trace_kind": "sink"
@@ -1383,7 +1383,7 @@
     "callable": "multiple_sources.sanitize_sink_a_tito",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1397,7 +1397,9 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(arg)", "sinks": [ "TestA" ] } ]
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sinks": [ "TestA" ] }
+    ]
   }
 }
 {
@@ -1406,7 +1408,7 @@
     "callable": "multiple_sources.sanitize_source_a_tito",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1420,7 +1422,9 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(arg)", "sources": [ "TestA" ] } ]
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sources": [ "TestA" ] }
+    ]
   }
 }
 {
@@ -1429,7 +1433,7 @@
     "callable": "multiple_sources.sanitize_source_b_tito",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1443,7 +1447,9 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(arg)", "sources": [ "TestB" ] } ]
+    "sanitizers": [
+      { "port": "formal(arg, position=0)", "sources": [ "TestB" ] }
+    ]
   }
 }
 {
@@ -1452,7 +1458,7 @@
     "callable": "multiple_sources.transform_t",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "TransformT@ExtraTraceSink" } ],
@@ -1463,7 +1469,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [

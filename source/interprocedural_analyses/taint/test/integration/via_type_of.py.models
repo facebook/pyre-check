@@ -918,7 +918,7 @@
     "callable": "Obj{via_type_of.Test1_C.x}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -943,7 +943,7 @@
     "callable": "Obj{via_type_of.Test1_C.y}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -968,7 +968,7 @@
     "callable": "Obj{via_type_of.Test1_C.z}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -997,7 +997,7 @@
     "callable": "Obj{via_type_of.Test2_C.x}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1022,7 +1022,7 @@
     "callable": "Obj{via_type_of.Test2_C.y}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1047,7 +1047,7 @@
     "callable": "Obj{via_type_of.Test2_C.z}",
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1152,7 +1152,7 @@
     "callable": "Obj{via_type_of.Test4_C.x}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1176,7 +1176,7 @@
     "callable": "Obj{via_type_of.Test4_C.y}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1200,7 +1200,7 @@
     "callable": "Obj{via_type_of.Test4_C.z}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1228,7 +1228,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1254,7 +1254,7 @@
     "callable": "via_type_of.Test1_C.__init__",
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1265,7 +1265,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1276,7 +1276,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1290,7 +1290,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1307,7 +1307,7 @@
     "callable": "via_type_of.Test2_C.__init__",
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1328,7 +1328,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1345,7 +1345,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1370,7 +1370,7 @@
     "callable": "via_type_of.Test3_C.__init__",
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1381,7 +1381,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1392,7 +1392,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1411,7 +1411,7 @@
     "callable": "via_type_of.Test4_C.__init__",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1431,7 +1431,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1447,7 +1447,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1465,7 +1465,7 @@
     ],
     "tito": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=3)",
         "taint": [
           {
             "kinds": [
@@ -1476,7 +1476,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1487,7 +1487,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1563,7 +1563,7 @@
     "callable": "via_type_of.sink_via_type_of",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1591,7 +1591,7 @@
     "callable": "via_type_of.test3_alarm1",
     "sinks": [
       {
-        "port": "formal(c)[x]",
+        "port": "formal(c, position=0)[x]",
         "taint": [
           {
             "kinds": [
@@ -1689,7 +1689,7 @@
     "callable": "via_type_of.test3_alarm2",
     "sinks": [
       {
-        "port": "formal(c)[y]",
+        "port": "formal(c, position=0)[y]",
         "taint": [
           {
             "kinds": [
@@ -1785,7 +1785,7 @@
     "callable": "via_type_of.test3_alarm3",
     "sinks": [
       {
-        "port": "formal(c)[z]",
+        "port": "formal(c, position=0)[z]",
         "taint": [
           {
             "kinds": [
@@ -1883,7 +1883,7 @@
     "callable": "via_type_of.test3_alarm4",
     "sinks": [
       {
-        "port": "formal(c)[x]",
+        "port": "formal(c, position=0)[x]",
         "taint": [
           {
             "kinds": [
@@ -1902,7 +1902,7 @@
         ]
       },
       {
-        "port": "formal(c)[y]",
+        "port": "formal(c, position=0)[y]",
         "taint": [
           {
             "kinds": [
@@ -1921,7 +1921,7 @@
         ]
       },
       {
-        "port": "formal(c)[z]",
+        "port": "formal(c, position=0)[z]",
         "taint": [
           {
             "kinds": [
@@ -2065,7 +2065,7 @@
     "callable": "via_type_of.test_backwards_tito",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2158,7 +2158,7 @@
     "callable": "via_type_of.test_sink",
     "sinks": [
       {
-        "port": "formal(element)",
+        "port": "formal(element, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2290,7 +2290,7 @@
     "callable": "via_type_of.tito",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [

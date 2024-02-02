@@ -1075,7 +1075,7 @@
                 "end": 54
               },
               "resolves_to": [ "dictionary.update_dictionary_indirectly" ],
-              "port": "formal(arg)[*]"
+              "port": "formal(arg, position=0)[*]"
             }
           }
         ]
@@ -1147,7 +1147,7 @@
                 "end": 26
               },
               "resolves_to": [ "dictionary.backward_weak_update" ],
-              "port": "formal(d).**keys"
+              "port": "formal(d, position=0).**keys"
             }
           }
         ]
@@ -2181,7 +2181,7 @@
     "callable": "Obj{dictionary.tainted_dictionary}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -2193,7 +2193,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2239,7 +2239,7 @@
     "callable": "dict.__getitem__",
     "tito": [
       {
-        "port": "formal(self)[*]",
+        "port": "formal(self, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -2252,7 +2252,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -2265,7 +2265,7 @@
     "callable": "dict.get",
     "tito": [
       {
-        "port": "formal(__default)",
+        "port": "formal(__default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2276,7 +2276,7 @@
         ]
       },
       {
-        "port": "formal(self)[*]",
+        "port": "formal(self, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -2289,7 +2289,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -2302,7 +2302,7 @@
     "callable": "dictionary.MyDict.__setitem__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2313,7 +2313,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2330,7 +2330,7 @@
     "callable": "dictionary.Service.async_get_dict",
     "tito": [
       {
-        "port": "formal(key)",
+        "port": "formal(key, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2363,7 +2363,7 @@
     "callable": "dictionary.Service.async_get_many_dict",
     "tito": [
       {
-        "port": "formal(keys)[*]",
+        "port": "formal(keys, position=1)[*]",
         "taint": [
           {
             "kinds": [
@@ -2389,7 +2389,7 @@
     "callable": "dictionary.Service.async_get_mapping",
     "tito": [
       {
-        "port": "formal(key)",
+        "port": "formal(key, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2423,7 +2423,7 @@
     "callable": "dictionary.SpecialSetitemDict.__setitem__",
     "sinks": [
       {
-        "port": "formal(key)",
+        "port": "formal(key, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2447,7 +2447,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2464,7 +2464,7 @@
     "callable": "dictionary.analyze_getitem_index_backward",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2492,7 +2492,7 @@
     "callable": "dictionary.backward_weak_update",
     "sinks": [
       {
-        "port": "formal(d).**keys",
+        "port": "formal(d, position=0).**keys",
         "taint": [
           {
             "kinds": [
@@ -2520,7 +2520,7 @@
     "callable": "dictionary.backwards_field_assignment",
     "tito": [
       {
-        "port": "formal(external)",
+        "port": "formal(external, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2539,7 +2539,7 @@
     "callable": "dictionary.backwards_model_for_dictionary_comprehension",
     "sinks": [
       {
-        "port": "formal(d)[*]",
+        "port": "formal(d, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -2557,7 +2557,7 @@
                 "end": 41
               },
               "resolves_to": [ "dictionary.sink_dictionary_through_keys" ],
-              "port": "formal(d).**keys"
+              "port": "formal(d, position=0).**keys"
             }
           }
         ]
@@ -2601,7 +2601,7 @@
     "callable": "dictionary.dict_get_foo",
     "tito": [
       {
-        "port": "formal(d)[foo]",
+        "port": "formal(d, position=0)[foo]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2622,7 +2622,7 @@
     "callable": "dictionary.dict_get_foo_with_default",
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2632,7 +2632,7 @@
         ]
       },
       {
-        "port": "formal(d)[foo]",
+        "port": "formal(d, position=0)[foo]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2653,7 +2653,7 @@
     "callable": "dictionary.dict_only_key_of_parameter_sink",
     "sinks": [
       {
-        "port": "formal(x)[A]",
+        "port": "formal(x, position=0)[A]",
         "taint": [
           {
             "kinds": [
@@ -2738,7 +2738,7 @@
     "callable": "dictionary.dict_update_keys",
     "tito": [
       {
-        "port": "formal(arg)[*]",
+        "port": "formal(arg, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -2833,7 +2833,7 @@
     "callable": "dictionary.dict_update_sinks",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2857,7 +2857,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2982,7 +2982,7 @@
     "callable": "dictionary.dictionary_entry_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3010,7 +3010,7 @@
     "callable": "dictionary.dictionary_keys_and_any_index_bug",
     "tito": [
       {
-        "port": "formal(arg)[*]",
+        "port": "formal(arg, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3131,7 +3131,7 @@
     "callable": "dictionary.dictionary_tito",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3150,7 +3150,7 @@
     "callable": "dictionary.dictionary_tito_any_index",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3169,7 +3169,7 @@
     "callable": "dictionary.forward_comprehension_key_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3227,7 +3227,7 @@
     "callable": "dictionary.forward_comprehension_value_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3315,7 +3315,7 @@
     "callable": "dictionary.get_keys",
     "tito": [
       {
-        "port": "formal(d).**keys",
+        "port": "formal(d, position=0).**keys",
         "taint": [
           {
             "kinds": [
@@ -3364,7 +3364,7 @@
     "callable": "dictionary.return_tito_literally",
     "tito": [
       {
-        "port": "formal(external)",
+        "port": "formal(external, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3383,7 +3383,7 @@
     "callable": "dictionary.setitem_models",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3399,7 +3399,7 @@
         ]
       },
       {
-        "port": "formal(d3)",
+        "port": "formal(d3, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3418,7 +3418,7 @@
     "callable": "dictionary.sink_dictionary_through_keys",
     "sinks": [
       {
-        "port": "formal(d).**keys",
+        "port": "formal(d, position=0).**keys",
         "taint": [
           {
             "kinds": [
@@ -3446,7 +3446,7 @@
     "callable": "dictionary.tainted_setitem",
     "tito": [
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3513,7 +3513,7 @@
                 "end": 20
               },
               "resolves_to": [ "dictionary.SpecialSetitemDict.__setitem__" ],
-              "port": "formal(key)"
+              "port": "formal(key, position=1)"
             },
             "receiver_interval": [ { "lower": 4, "upper": 5 } ],
             "is_self_call": false
@@ -3539,7 +3539,7 @@
     "callable": "dictionary.test_dict_sanitize_get",
     "sinks": [
       {
-        "port": "formal(d)[*]",
+        "port": "formal(d, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3573,7 +3573,7 @@
     "callable": "dictionary.test_dict_sanitize_getitem",
     "sinks": [
       {
-        "port": "formal(d)[*]",
+        "port": "formal(d, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3604,7 +3604,7 @@
     "callable": "dictionary.test_items_backward_keys",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3632,7 +3632,7 @@
     "callable": "dictionary.test_items_backward_values",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3660,7 +3660,7 @@
     "callable": "dictionary.test_mapping_sanitize_get",
     "sinks": [
       {
-        "port": "formal(d)[*]",
+        "port": "formal(d, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3694,7 +3694,7 @@
     "callable": "dictionary.test_mapping_sanitize_getitem",
     "sinks": [
       {
-        "port": "formal(d)[*]",
+        "port": "formal(d, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3755,7 +3755,7 @@
     "callable": "dictionary.tito_with_index",
     "tito": [
       {
-        "port": "formal(d)[a]",
+        "port": "formal(d, position=0)[a]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3775,7 +3775,7 @@
     "callable": "dictionary.to_map",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3792,7 +3792,7 @@
     "callable": "dictionary.update_dictionary_indirectly",
     "sinks": [
       {
-        "port": "formal(arg)[*]",
+        "port": "formal(arg, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3818,7 +3818,7 @@
         ]
       },
       {
-        "port": "formal(arg).**keys",
+        "port": "formal(arg, position=0).**keys",
         "taint": [
           {
             "kinds": [
@@ -3852,7 +3852,7 @@
     "callable": "dictionary.update_tainted_dictionary_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3947,7 +3947,7 @@
     ],
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3969,7 +3969,7 @@
     "callable": "typing.Mapping.__getitem__",
     "tito": [
       {
-        "port": "formal(self)[*]",
+        "port": "formal(self, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -3982,7 +3982,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -3995,7 +3995,7 @@
     "callable": "typing.Mapping.get",
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -4006,7 +4006,7 @@
         ]
       },
       {
-        "port": "formal(self)[*]",
+        "port": "formal(self, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -4019,7 +4019,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(__key)",
+        "port": "formal(__key, position=1)",
         "tito": { "sources": "All", "sinks": "All" }
       }
     ],
@@ -4032,7 +4032,7 @@
     "callable": "typing.MutableMapping.update",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[self])",
         "taint": [
           {
             "kinds": [
@@ -4046,7 +4046,7 @@
         ]
       },
       {
-        "port": "formal(__m)[*]",
+        "port": "formal(__m, position=1)[*]",
         "taint": [
           {
             "kinds": [
@@ -4057,7 +4057,7 @@
         ]
       },
       {
-        "port": "formal(__m).**keys",
+        "port": "formal(__m, position=1).**keys",
         "taint": [
           {
             "kinds": [

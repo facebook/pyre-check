@@ -59,7 +59,7 @@
                 "end": 16
               },
               "resolves_to": [ "issue_grouping.multi_sink" ],
-              "port": "formal(d)[b]"
+              "port": "formal(d, position=0)[b]"
             }
           }
         ]
@@ -135,7 +135,7 @@
                 "end": 16
               },
               "resolves_to": [ "issue_grouping.multi_sink" ],
-              "port": "formal(d)[a]"
+              "port": "formal(d, position=0)[a]"
             }
           }
         ]
@@ -157,7 +157,7 @@
     "callable": "issue_grouping.multi_sink",
     "sinks": [
       {
-        "port": "formal(d)[a]",
+        "port": "formal(d, position=0)[a]",
         "taint": [
           {
             "kinds": [
@@ -181,7 +181,7 @@
         ]
       },
       {
-        "port": "formal(d)[b]",
+        "port": "formal(d, position=0)[b]",
         "taint": [
           {
             "kinds": [
@@ -213,7 +213,7 @@
     "callable": "issue_grouping.sink_a",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           { "kinds": [ { "kind": "SinkA" } ], "declaration": null }
         ]
@@ -227,7 +227,7 @@
     "callable": "issue_grouping.sink_b",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           { "kinds": [ { "kind": "SinkB" } ], "declaration": null }
         ]

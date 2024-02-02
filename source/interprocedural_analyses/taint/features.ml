@@ -393,9 +393,15 @@ module ViaFeature = struct
       | None, None -> Format.fprintf formatter "%s" header
       | None, Some tag -> Format.fprintf formatter "%s[tag=%s]" header tag
       | Some parameter, None ->
-          Format.fprintf formatter "%s[%a]" header AccessPath.Root.pp_external parameter
+          Format.fprintf formatter "%s[%a]" header AccessPath.Root.pp_for_via_breadcrumb parameter
       | Some parameter, Some tag ->
-          Format.fprintf formatter "%s[%a, tag=%s]" header AccessPath.Root.pp_external parameter tag
+          Format.fprintf
+            formatter
+            "%s[%a, tag=%s]"
+            header
+            AccessPath.Root.pp_for_via_breadcrumb
+            parameter
+            tag
     in
     match simple with
     | ViaValueOf { parameter; tag } -> pp_via "ViaValueOf" (Some parameter) tag
@@ -466,7 +472,8 @@ module ViaFeature = struct
       let json = ["kind", `String kind] in
       let json =
         match parameter with
-        | Some parameter -> ("parameter", `String (AccessPath.Root.show_external parameter)) :: json
+        | Some parameter ->
+            ("parameter", `String (AccessPath.Root.show_for_via_breadcrumb parameter)) :: json
         | None -> json
       in
       let json =

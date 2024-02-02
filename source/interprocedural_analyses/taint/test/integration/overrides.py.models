@@ -60,7 +60,7 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
@@ -141,7 +141,7 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
@@ -223,7 +223,7 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.A.methodA", "overrides.D.methodA" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 10, "upper": 21 } ],
             "is_self_call": false
@@ -304,7 +304,7 @@
                 "end": 21
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "caller_interval": [ { "lower": 13, "upper": 20 } ],
             "receiver_interval": [ { "lower": 10, "upper": 21 } ],
@@ -410,7 +410,7 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 14, "upper": 19 } ],
             "is_self_call": false
@@ -491,7 +491,7 @@
                 "end": 15
               },
               "resolves_to": [ "overrides.D.methodA" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 15, "upper": 18 } ],
             "is_self_call": false
@@ -572,7 +572,7 @@
                 "end": 19
               },
               "resolves_to": [ "overrides.B.classMethod" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 13, "upper": 20 } ],
             "is_self_call": false
@@ -598,7 +598,7 @@
     "callable": "Ovr{overrides.A.methodA}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -693,7 +693,7 @@
     "callable": "Ovr{overrides.B.classMethod}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -774,7 +774,7 @@
     "callable": "Ovr{overrides.Base.classMethod}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -804,7 +804,7 @@
     "callable": "Ovr{overrides.Base.methodA}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -845,7 +845,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -913,7 +913,7 @@
     "callable": "Ovr{overrides.C.methodA}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -937,7 +937,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -954,7 +954,7 @@
     "callable": "Ovr{overrides.D.methodA}",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -978,7 +978,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1027,7 +1027,7 @@
     "callable": "Ovr{overrides.OverloadedOverride.methodA}",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1044,7 +1044,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1090,7 +1090,7 @@
     "callable": "overrides.A.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1107,7 +1107,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1126,7 +1126,7 @@
     "callable": "overrides.A.methodA",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1188,7 +1188,7 @@
     "callable": "overrides.B.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1205,7 +1205,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1224,7 +1224,7 @@
     "callable": "overrides.B.classMethod",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1286,7 +1286,7 @@
     "callable": "overrides.Base.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1297,7 +1297,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1314,7 +1314,7 @@
     "callable": "overrides.C.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1331,7 +1331,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1350,7 +1350,7 @@
     "callable": "overrides.D.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1367,7 +1367,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1386,7 +1386,7 @@
     "callable": "overrides.D.methodA",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1448,7 +1448,7 @@
     "callable": "overrides.ExtendsSkipped.method",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1478,7 +1478,7 @@
     "callable": "overrides.OverloadedOverride.methodA",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1495,7 +1495,7 @@
     "callable": "overrides.SkippedOverrides.method",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

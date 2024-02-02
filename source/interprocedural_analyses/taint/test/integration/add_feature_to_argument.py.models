@@ -81,7 +81,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -127,7 +127,7 @@
     "callable": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -166,7 +166,7 @@
     "callable": "add_feature_to_argument.add_feature_to_first",
     "sinks": [
       {
-        "port": "formal(first)",
+        "port": "formal(first, position=0)",
         "taint": [
           {
             "kinds": [
@@ -188,7 +188,7 @@
     "callable": "add_feature_to_argument.add_feature_to_second",
     "sinks": [
       {
-        "port": "formal(second)",
+        "port": "formal(second, position=1)",
         "taint": [
           {
             "kinds": [
@@ -210,7 +210,7 @@
     "callable": "add_feature_to_argument.add_via_value_of",
     "sinks": [
       {
-        "port": "formal(first)",
+        "port": "formal(first, position=0)",
         "taint": [
           {
             "kinds": [
@@ -301,7 +301,7 @@
     "callable": "add_feature_to_argument.propagate_add_feature",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -334,7 +334,7 @@
     "callable": "add_feature_to_argument.propagate_multiple_add_feature",
     "sinks": [
       {
-        "port": "formal(parameter)[bar]",
+        "port": "formal(parameter, position=0)[bar]",
         "taint": [
           {
             "kinds": [
@@ -359,7 +359,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[foo]",
+        "port": "formal(parameter, position=0)[foo]",
         "taint": [
           {
             "kinds": [
@@ -428,7 +428,7 @@
     "callable": "add_feature_to_argument.test_add_feature_to_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -477,7 +477,7 @@
     "callable": "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -526,7 +526,7 @@
     "callable": "add_feature_to_argument.test_add_multiple_feature",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -549,7 +549,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[bar]",
+        "port": "formal(parameter, position=0)[bar]",
         "taint": [
           {
             "kinds": [
@@ -569,13 +569,13 @@
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
-              "port": "formal(parameter)[bar]"
+              "port": "formal(parameter, position=0)[bar]"
             }
           }
         ]
       },
       {
-        "port": "formal(parameter)[foo]",
+        "port": "formal(parameter, position=0)[foo]",
         "taint": [
           {
             "kinds": [
@@ -595,7 +595,7 @@
               "resolves_to": [
                 "add_feature_to_argument.propagate_multiple_add_feature"
               ],
-              "port": "formal(parameter)[foo]"
+              "port": "formal(parameter, position=0)[foo]"
             }
           }
         ]
@@ -640,7 +640,7 @@
     "callable": "add_feature_to_argument.tito_with_feature",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

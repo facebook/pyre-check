@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -31,7 +31,7 @@
     "callable": "via_value_of.attach_to_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -183,7 +183,7 @@
     "callable": "via_value_of.meta_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -218,7 +218,7 @@
     "callable": "via_value_of.meta_sink_args",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -251,7 +251,7 @@
     "callable": "via_value_of.meta_sink_kwargs",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -360,7 +360,7 @@
     "callable": "via_value_of.sink_via_value_of",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -452,7 +452,7 @@
     "callable": "via_value_of.test_attach_to_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -465,7 +465,7 @@
                 "end": 28
               },
               "resolves_to": [ "via_value_of.attach_to_sink" ],
-              "port": "formal(parameter)"
+              "port": "formal(parameter, position=0)"
             }
           }
         ]
@@ -508,7 +508,7 @@
     "callable": "via_value_of.test_backwards_tito",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -868,7 +868,7 @@
     "callable": "via_value_of.test_sink",
     "sinks": [
       {
-        "port": "formal(element)",
+        "port": "formal(element, position=0)",
         "taint": [
           {
             "kinds": [
@@ -901,7 +901,7 @@
     "callable": "via_value_of.test_sinks_do_not_propagate",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -921,7 +921,7 @@
                 "end": 23
               },
               "resolves_to": [ "via_value_of.meta_sink" ],
-              "port": "formal(parameter)"
+              "port": "formal(parameter, position=0)"
             }
           }
         ]
@@ -1381,7 +1381,7 @@
     "callable": "via_value_of.tito",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [

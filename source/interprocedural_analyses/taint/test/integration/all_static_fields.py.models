@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -51,7 +51,7 @@
     "callable": "all_static_fields.A.__init__",
     "tito": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -65,7 +65,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -82,7 +82,7 @@
     "callable": "all_static_fields.C.__init__",
     "tito": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -96,7 +96,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -117,7 +117,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -136,7 +136,7 @@
     "callable": "all_static_fields.D.__init__",
     "tito": [
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=2)",
         "taint": [
           {
             "kinds": [
@@ -150,7 +150,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -171,7 +171,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -190,7 +190,7 @@
     "callable": "all_static_fields.Dataclass.__init__",
     "tito": [
       {
-        "port": "formal(d)",
+        "port": "formal(d, position=2)",
         "taint": [
           {
             "kinds": [
@@ -201,7 +201,7 @@
         ]
       },
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=1)",
         "taint": [
           {
             "kinds": [
@@ -220,7 +220,7 @@
     "callable": "all_static_fields.Empty.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -237,7 +237,7 @@
     "callable": "all_static_fields.RegularClass.__init__",
     "tito": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -248,7 +248,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -262,7 +262,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -279,7 +279,7 @@
     "callable": "all_static_fields.parameter_sink_b",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -291,7 +291,7 @@
     "callable": "all_static_fields.parameter_sink_builtin_parameters",
     "sinks": [
       {
-        "port": "formal(t)",
+        "port": "formal(t, position=3)",
         "taint": [
           {
             "kinds": [
@@ -307,15 +307,15 @@
         ]
       },
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -339,11 +339,11 @@
     "callable": "all_static_fields.parameter_sink_c",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[c]",
+        "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -355,11 +355,11 @@
     "callable": "all_static_fields.parameter_sink_d",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[d]",
+        "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -371,11 +371,11 @@
     "callable": "all_static_fields.parameter_sink_dataclass",
     "sinks": [
       {
-        "port": "formal(parameter)[c]",
+        "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[d]",
+        "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -387,7 +387,7 @@
     "callable": "all_static_fields.parameter_sink_empty",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -399,11 +399,11 @@
     "callable": "all_static_fields.parameter_sink_optional_dataclass",
     "sinks": [
       {
-        "port": "formal(parameter)[c]",
+        "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[d]",
+        "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -415,11 +415,11 @@
     "callable": "all_static_fields.parameter_sink_optional_regular_class",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[b]",
+        "port": "formal(parameter, position=0)[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -431,11 +431,11 @@
     "callable": "all_static_fields.parameter_sink_regular_class",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[b]",
+        "port": "formal(parameter, position=0)[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -447,7 +447,7 @@
     "callable": "all_static_fields.parameter_sink_type",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -459,15 +459,15 @@
     "callable": "all_static_fields.parameter_sink_union_c_d",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[c]",
+        "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[d]",
+        "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -479,19 +479,19 @@
     "callable": "all_static_fields.parameter_sink_union_dataclass_regular",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[b]",
+        "port": "formal(parameter, position=0)[b]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[c]",
+        "port": "formal(parameter, position=0)[c]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(parameter)[d]",
+        "port": "formal(parameter, position=0)[d]",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -503,7 +503,7 @@
     "callable": "all_static_fields.parameter_sink_unnannotated",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

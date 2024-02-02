@@ -376,7 +376,7 @@
               "resolves_to": [
                 "entrypoint.transitive_call_with_globals_passed_in"
               ],
-              "port": "formal(local_list)"
+              "port": "formal(local_list, position=0)"
             }
           }
         ]
@@ -538,7 +538,7 @@
     "callable": "entrypoint.transitive_call_with_globals_passed_in",
     "sinks": [
       {
-        "port": "formal(local_list)",
+        "port": "formal(local_list, position=0)",
         "taint": [
           {
             "kinds": [
@@ -565,7 +565,7 @@
     "callable": "list.append",
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           { "kinds": [ { "kind": "MutationSink" } ], "declaration": null }
         ]

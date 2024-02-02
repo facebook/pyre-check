@@ -124,7 +124,7 @@
                 "end": 34
               },
               "resolves_to": [ "global_flows.append_argument" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -403,7 +403,7 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg1" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -477,7 +477,7 @@
                 "end": 43
               },
               "resolves_to": [ "global_flows.indirectly_update_x_arg2" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -501,7 +501,7 @@
     "callable": "Obj{global_flows.l}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -525,7 +525,7 @@
     "callable": "Obj{global_flows.x}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -537,7 +537,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -583,7 +583,7 @@
     "callable": "global_flows.MyList.append",
     "tito": [
       {
-        "port": "formal(item)",
+        "port": "formal(item, position=1)",
         "taint": [
           {
             "kinds": [
@@ -603,7 +603,7 @@
     "callable": "global_flows.append_argument",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -634,7 +634,7 @@
     "callable": "global_flows.indirectly_update_x_arg1",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -665,7 +665,7 @@
     "callable": "global_flows.indirectly_update_x_arg2",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -696,7 +696,7 @@
     "callable": "global_flows.update_arg1",
     "tito": [
       {
-        "port": "formal(arg2)",
+        "port": "formal(arg2, position=1)",
         "taint": [
           {
             "kinds": [
@@ -716,7 +716,7 @@
     "callable": "global_flows.update_arg2",
     "tito": [
       {
-        "port": "formal(arg1)",
+        "port": "formal(arg1, position=0)",
         "taint": [
           {
             "kinds": [

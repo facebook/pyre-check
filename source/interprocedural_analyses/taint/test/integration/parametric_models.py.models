@@ -147,7 +147,7 @@
                 "end": 19
               },
               "resolves_to": [ "parametric_models.inferred_sink" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -212,7 +212,7 @@
     "callable": "parametric_models.inferred_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -263,7 +263,7 @@
     "callable": "parametric_models.sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "ExpectsSubkind" } ], "declaration": null }
         ]
@@ -278,7 +278,7 @@
     "callable": "parametric_models.sink_subkind_a",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "SinkWithSubkind[SinkA]" } ],
@@ -296,7 +296,7 @@
     "callable": "parametric_models.sink_subkind_b",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "SinkWithSubkind[SinkB]" } ],

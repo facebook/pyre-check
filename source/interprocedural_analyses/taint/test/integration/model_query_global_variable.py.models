@@ -293,7 +293,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -319,7 +319,7 @@
     "callable": "list.append",
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           { "kinds": [ { "kind": "Test1" } ], "declaration": null }
         ]
@@ -334,7 +334,7 @@
     "callable": "model_query_global_variable.fun",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -359,7 +359,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

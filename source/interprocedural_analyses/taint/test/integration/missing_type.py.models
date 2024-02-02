@@ -5,7 +5,7 @@
     "callable": "Obj{missing_type.UnknownSinkAttribute.unknown}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -29,7 +29,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -75,7 +75,7 @@
     "callable": "missing_type.UnknownSinkDef.unknown",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -101,7 +101,7 @@
     "callable": "missing_type.test_unknown_source_attribute",
     "sinks": [
       {
-        "port": "formal(x)[unknown]",
+        "port": "formal(x, position=0)[unknown]",
         "taint": [
           {
             "kinds": [
@@ -202,7 +202,7 @@
     "callable": "missing_type.test_unknown_source_def",
     "sinks": [
       {
-        "port": "formal(x)[unknown]",
+        "port": "formal(x, position=0)[unknown]",
         "taint": [
           {
             "kinds": [

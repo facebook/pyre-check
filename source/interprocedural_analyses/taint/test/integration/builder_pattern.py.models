@@ -55,7 +55,7 @@
                 "end": 61
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]"
+              "port": "formal(self, position=0)[_saved]"
             },
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false
@@ -133,7 +133,7 @@
                 "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]"
+              "port": "formal(self, position=0)[_saved]"
             },
             "receiver_interval": [ { "lower": 3, "upper": 4 } ],
             "is_self_call": false
@@ -211,7 +211,7 @@
                 "end": 4
               },
               "resolves_to": [ "builder_pattern.Builder.async_save" ],
-              "port": "formal(self)[_saved]"
+              "port": "formal(self, position=0)[_saved]"
             },
             "receiver_interval": [ { "lower": 2, "upper": 5 } ],
             "is_self_call": false
@@ -239,7 +239,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -251,7 +251,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -278,7 +278,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -296,7 +296,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -309,7 +309,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -355,7 +355,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -364,7 +364,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -397,7 +397,7 @@
     "callable": "builder_pattern.Builder.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -414,7 +414,7 @@
     "callable": "builder_pattern.Builder.async_save",
     "sinks": [
       {
-        "port": "formal(self)[_saved]",
+        "port": "formal(self, position=0)[_saved]",
         "taint": [
           {
             "kinds": [
@@ -444,7 +444,7 @@
     "callable": "builder_pattern.Builder.return_self",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -461,7 +461,7 @@
     "callable": "builder_pattern.Builder.set_not_saved",
     "tito": [
       {
-        "port": "formal(not_saved)",
+        "port": "formal(not_saved, position=1)",
         "taint": [
           {
             "kinds": [
@@ -475,7 +475,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -492,7 +492,7 @@
     "callable": "builder_pattern.Builder.set_not_saved_through_typevar",
     "tito": [
       {
-        "port": "formal(not_saved)",
+        "port": "formal(not_saved, position=1)",
         "taint": [
           {
             "kinds": [
@@ -506,7 +506,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -523,7 +523,7 @@
     "callable": "builder_pattern.Builder.set_saved",
     "tito": [
       {
-        "port": "formal(saved)",
+        "port": "formal(saved, position=1)",
         "taint": [
           {
             "kinds": [
@@ -534,7 +534,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -551,7 +551,7 @@
     "callable": "builder_pattern.Builder.set_saved_through_typevar",
     "tito": [
       {
-        "port": "formal(saved)",
+        "port": "formal(saved, position=1)",
         "taint": [
           {
             "kinds": [
@@ -562,7 +562,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -579,7 +579,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -603,7 +603,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -621,7 +621,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -629,7 +629,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -644,7 +644,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [

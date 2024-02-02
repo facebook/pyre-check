@@ -58,7 +58,7 @@
                 "end": 16
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]"
+              "port": "formal(arg, position=0)[a]"
             }
           }
         ]
@@ -139,7 +139,7 @@
                 "end": 45
               },
               "resolves_to": [ "port.star_arg_wrapper" ],
-              "port": "formal(*rest1)[1][a]"
+              "port": "formal(*args, position=1)[1][a]"
             }
           }
         ]
@@ -223,7 +223,7 @@
                 "end": 31
               },
               "resolves_to": [ "port.star_arg_wrapper" ],
-              "port": "formal(*rest1)[1][a]"
+              "port": "formal(*args, position=1)[1][a]"
             }
           }
         ]
@@ -307,7 +307,7 @@
                 "end": 54
               },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
-              "port": "formal(**kw)[arg][a]"
+              "port": "formal(**kwargs, excluded=[x])[arg][a]"
             }
           }
         ]
@@ -391,7 +391,7 @@
                 "end": 37
               },
               "resolves_to": [ "port.star_star_arg_wrapper" ],
-              "port": "formal(**kw)[arg][a]"
+              "port": "formal(**kwargs, excluded=[x])[arg][a]"
             }
           }
         ]
@@ -490,7 +490,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -502,7 +502,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -529,7 +529,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -547,7 +547,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -560,7 +560,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -606,7 +606,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -615,7 +615,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -648,7 +648,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -672,7 +672,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -690,7 +690,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -698,7 +698,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -713,7 +713,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -769,7 +769,7 @@
     "callable": "port.sink_field",
     "sinks": [
       {
-        "port": "formal(arg)[a]",
+        "port": "formal(arg, position=0)[a]",
         "taint": [
           {
             "kinds": [
@@ -827,7 +827,7 @@
     "callable": "port.star_arg",
     "sinks": [
       {
-        "port": "formal(*rest1)[1][a]",
+        "port": "formal(*args, position=1)[1][a]",
         "taint": [
           {
             "kinds": [
@@ -848,7 +848,7 @@
                 "end": 22
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]"
+              "port": "formal(arg, position=0)[a]"
             }
           }
         ]
@@ -862,7 +862,7 @@
     "callable": "port.star_arg_wrapper",
     "sinks": [
       {
-        "port": "formal(*rest1)[1][a]",
+        "port": "formal(*args, position=1)[1][a]",
         "taint": [
           {
             "kinds": [
@@ -884,7 +884,7 @@
                 "end": 21
               },
               "resolves_to": [ "port.star_arg" ],
-              "port": "formal(*rest1)[1][a]"
+              "port": "formal(*args, position=1)[1][a]"
             }
           }
         ]
@@ -898,7 +898,7 @@
     "callable": "port.star_star_arg",
     "sinks": [
       {
-        "port": "formal(**kw)[arg][a]",
+        "port": "formal(**kwargs, excluded=[x])[arg][a]",
         "taint": [
           {
             "kinds": [
@@ -919,7 +919,7 @@
                 "end": 28
               },
               "resolves_to": [ "port.sink_field" ],
-              "port": "formal(arg)[a]"
+              "port": "formal(arg, position=0)[a]"
             }
           }
         ]
@@ -933,7 +933,7 @@
     "callable": "port.star_star_arg_wrapper",
     "sinks": [
       {
-        "port": "formal(**kw)[arg][a]",
+        "port": "formal(**kwargs, excluded=[x])[arg][a]",
         "taint": [
           {
             "kinds": [
@@ -955,7 +955,7 @@
                 "end": 29
               },
               "resolves_to": [ "port.star_star_arg" ],
-              "port": "formal(**kw)[arg][a]"
+              "port": "formal(**kwargs, excluded=[x])[arg][a]"
             }
           }
         ]

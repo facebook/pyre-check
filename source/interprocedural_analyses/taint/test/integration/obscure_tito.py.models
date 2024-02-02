@@ -5,7 +5,7 @@
     "callable": "Ovr{obscure_tito.C.taint_parameter}",
     "sinks": [
       {
-        "port": "formal(tainted_parameter)",
+        "port": "formal(tainted_parameter, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -18,7 +18,7 @@
     "callable": "Ovr{obscure_tito.C.update}",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=1)",
         "taint": [
           {
             "kinds": [
@@ -38,7 +38,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -84,7 +84,7 @@
     "callable": "obscure_tito.C.taint_parameter",
     "sinks": [
       {
-        "port": "formal(tainted_parameter)",
+        "port": "formal(tainted_parameter, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -97,7 +97,7 @@
     "callable": "obscure_tito.C.update",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=1)",
         "taint": [
           {
             "kinds": [
@@ -151,7 +151,7 @@
     "callable": "obscure_tito.test_obscure_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [

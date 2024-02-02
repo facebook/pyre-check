@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -31,7 +31,7 @@
     "callable": "sanitize_obscure.a_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA" } ], "declaration": null }
         ]
@@ -59,7 +59,7 @@
     "callable": "sanitize_obscure.b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestB" } ], "declaration": null }
         ]
@@ -87,7 +87,7 @@
     "callable": "sanitize_obscure.propagation_of_a_sink_via_other_parameter_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -156,7 +156,7 @@
     "callable": "sanitize_obscure.propagation_of_b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -189,7 +189,7 @@
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -222,7 +222,7 @@
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -255,7 +255,7 @@
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -288,7 +288,7 @@
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -573,7 +573,7 @@
     "callable": "sanitize_obscure.sanitize_obscure_single_argument",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -582,7 +582,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -592,7 +592,7 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sinks": [ "Test" ] } }
+      { "port": "formal(x, position=0)", "tito": { "sinks": [ "Test" ] } }
     ],
     "modes": [ "Obscure" ]
   }
@@ -603,7 +603,7 @@
     "callable": "sanitize_obscure.sanitize_obscure_single_argument_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -622,7 +622,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -647,7 +647,9 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a",
-    "sanitizers": [ { "port": "formal(x)", "sinks": [ "TestA" ] } ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sinks": [ "TestA" ] }
+    ],
     "modes": [ "Obscure" ]
   }
 }
@@ -656,7 +658,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a_tito",
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sinks": [ "TestA" ] } }
+      { "port": "formal(x, position=0)", "tito": { "sinks": [ "TestA" ] } }
     ],
     "modes": [ "Obscure" ]
   }
@@ -665,7 +667,9 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a",
-    "sanitizers": [ { "port": "formal(x)", "sources": [ "TestA" ] } ],
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sources": [ "TestA" ] }
+    ],
     "modes": [ "Obscure" ]
   }
 }
@@ -674,7 +678,7 @@
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a_tito",
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sources": [ "TestA" ] } }
+      { "port": "formal(x, position=0)", "tito": { "sources": [ "TestA" ] } }
     ],
     "modes": [ "Obscure" ]
   }

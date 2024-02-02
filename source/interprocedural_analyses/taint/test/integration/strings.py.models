@@ -505,7 +505,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -551,7 +551,7 @@
     "callable": "str.__add__",
     "tito": [
       {
-        "port": "formal(other)",
+        "port": "formal(other, position=1)",
         "taint": [
           {
             "kinds": [
@@ -566,7 +566,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -590,7 +590,7 @@
     "callable": "strings.concatenate_lhs",
     "tito": [
       {
-        "port": "formal(source)",
+        "port": "formal(source, position=0)",
         "taint": [
           {
             "kinds": [
@@ -617,7 +617,7 @@
     "callable": "strings.concatenate_rhs",
     "tito": [
       {
-        "port": "formal(source)",
+        "port": "formal(source, position=0)",
         "taint": [
           {
             "kinds": [
@@ -644,7 +644,7 @@
     "callable": "strings.format_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -711,7 +711,7 @@
     "callable": "strings.format_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

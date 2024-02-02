@@ -19,7 +19,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -65,7 +65,7 @@
     "callable": "dict.get",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -83,7 +83,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -230,7 +230,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(request)[GET][payload]",
+        "port": "formal(request, position=0)[GET][payload]",
         "taint": [
           {
             "kinds": [
@@ -268,7 +268,7 @@
     ],
     "tito": [
       {
-        "port": "formal(request)[GET][payload]",
+        "port": "formal(request, position=0)[GET][payload]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -356,7 +356,7 @@
     "callable": "select.view_entry_field",
     "sources": [
       {
-        "port": "formal(request)",
+        "port": "formal(request, position=0)",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
@@ -364,7 +364,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(request)[payload]",
+        "port": "formal(request, position=0)[payload]",
         "taint": [
           {
             "kinds": [
@@ -460,7 +460,7 @@
     "callable": "select.view_entry_get",
     "sinks": [
       {
-        "port": "formal(request)[GET][payload]",
+        "port": "formal(request, position=0)[GET][payload]",
         "taint": [
           {
             "kinds": [
@@ -561,7 +561,7 @@
     "callable": "select.view_entry_index",
     "sources": [
       {
-        "port": "formal(request)",
+        "port": "formal(request, position=0)",
         "taint": [
           { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
@@ -569,7 +569,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(request)[GET][payload]",
+        "port": "formal(request, position=0)[GET][payload]",
         "taint": [
           {
             "kinds": [

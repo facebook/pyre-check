@@ -57,7 +57,7 @@
                 "end": 23
               },
               "resolves_to": [ "functions_as_locals.barB" ],
-              "port": "formal(arg2)"
+              "port": "formal(arg2, position=1)"
             }
           }
         ]
@@ -132,7 +132,7 @@
                 "end": 20
               },
               "resolves_to": [ "functions_as_locals.barA" ],
-              "port": "formal(arg1)"
+              "port": "formal(arg1, position=0)"
             }
           }
         ]
@@ -204,7 +204,7 @@
                 "end": 7
               },
               "resolves_to": [ "functions_as_locals.foo" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -276,7 +276,7 @@
                 "end": 9
               },
               "resolves_to": [ "functions_as_locals.foo" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -348,7 +348,7 @@
                 "end": 7
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -422,7 +422,7 @@
                 "end": 9
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -448,7 +448,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -460,7 +460,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -487,7 +487,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -505,7 +505,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -518,7 +518,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -564,7 +564,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -573,7 +573,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -606,7 +606,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -630,7 +630,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -648,7 +648,7 @@
     "callable": "functions_as_locals.C.m",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -678,7 +678,7 @@
     "callable": "functions_as_locals.barA",
     "sinks": [
       {
-        "port": "formal(arg1)",
+        "port": "formal(arg1, position=0)",
         "taint": [
           {
             "kinds": [
@@ -706,7 +706,7 @@
     "callable": "functions_as_locals.barB",
     "sinks": [
       {
-        "port": "formal(arg2)",
+        "port": "formal(arg2, position=1)",
         "taint": [
           {
             "kinds": [
@@ -737,7 +737,7 @@
     "callable": "functions_as_locals.foo",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -765,7 +765,7 @@
     "callable": "functions_as_locals.local_tito",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -783,7 +783,7 @@
                 "end": 9
               },
               "resolves_to": [ "functions_as_locals.foo" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -797,7 +797,7 @@
     "callable": "functions_as_locals.method_tito",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -815,7 +815,7 @@
                 "end": 9
               },
               "resolves_to": [ "functions_as_locals.C.m" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=1)"
             },
             "receiver_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": false
@@ -831,7 +831,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -839,7 +839,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -854,7 +854,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [

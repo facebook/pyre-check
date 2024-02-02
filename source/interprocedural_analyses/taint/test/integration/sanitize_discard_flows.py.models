@@ -5,7 +5,7 @@
     "callable": "sanitize_discard_flows.a_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA" } ], "declaration": null }
         ]
@@ -35,7 +35,7 @@
     "callable": "sanitize_discard_flows.b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestB" } ], "declaration": null }
         ]
@@ -50,7 +50,7 @@
     "callable": "sanitize_discard_flows.sanitize_a_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -73,7 +73,7 @@
     "callable": "sanitize_discard_flows.sanitize_a_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -96,7 +96,7 @@
     "callable": "sanitize_discard_flows.sanitize_b_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

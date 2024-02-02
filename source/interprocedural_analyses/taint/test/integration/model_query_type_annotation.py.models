@@ -77,11 +77,11 @@
     "callable": "model_query_type_annotation.Test2_C.test2_f1",
     "sources": [
       {
-        "port": "formal(taint_2)",
+        "port": "formal(taint_2, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(taint_1)",
+        "port": "formal(taint_1, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -93,7 +93,7 @@
     "callable": "model_query_type_annotation.Test2_C.test2_f2",
     "sources": [
       {
-        "port": "formal(taint_1)",
+        "port": "formal(taint_1, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -129,7 +129,7 @@
     "callable": "model_query_type_annotation.test1_f1",
     "sources": [
       {
-        "port": "formal(taint_3)",
+        "port": "formal(taint_3, position=2)",
         "taint": [
           {
             "kinds": [
@@ -140,11 +140,11 @@
         ]
       },
       {
-        "port": "formal(taint_2)",
+        "port": "formal(taint_2, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(taint_1)",
+        "port": "formal(taint_1, position=0)",
         "taint": [
           {
             "kinds": [
@@ -168,7 +168,7 @@
     "callable": "model_query_type_annotation.test3_f1",
     "sources": [
       {
-        "port": "formal(taint_2)",
+        "port": "formal(taint_2, position=2)",
         "taint": [
           {
             "kinds": [
@@ -184,7 +184,7 @@
         ]
       },
       {
-        "port": "formal(taint_1)",
+        "port": "formal(taint_1, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

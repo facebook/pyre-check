@@ -5,11 +5,11 @@
     "callable": "class_level_taint.ClassSink.sink",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -33,7 +33,7 @@
     "callable": "class_level_taint.test",
     "sinks": [
       {
-        "port": "formal(class_sink)",
+        "port": "formal(class_sink, position=0)",
         "taint": [
           {
             "kinds": [

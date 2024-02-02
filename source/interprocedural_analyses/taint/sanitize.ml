@@ -145,7 +145,6 @@ module RootMap = struct
     |> to_alist
     |> List.map ~f:(fun (root, sanitize) ->
            let (`Assoc fields) = T.to_json sanitize in
-           let port = AccessPath.create root [] |> AccessPath.to_json in
-           `Assoc (("port", port) :: fields))
+           `Assoc (("port", `String (AccessPath.Root.show root)) :: fields))
     |> fun elements -> `List elements
 end

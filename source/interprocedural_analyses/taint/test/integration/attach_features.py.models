@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -51,7 +51,7 @@
     "callable": "attach_features.HasMethods.method_with_optionals",
     "sinks": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -266,7 +266,7 @@
     "callable": "attach_features.attach_without_tito",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -320,7 +320,7 @@
     "callable": "attach_features.inferred_sink",
     "sinks": [
       {
-        "port": "formal(taint_without_feature)",
+        "port": "formal(taint_without_feature, position=2)",
         "taint": [
           {
             "kinds": [
@@ -340,7 +340,7 @@
         ]
       },
       {
-        "port": "formal(taint_right)",
+        "port": "formal(taint_right, position=1)",
         "taint": [
           {
             "kinds": [
@@ -370,7 +370,7 @@
         ]
       },
       {
-        "port": "formal(taint_left)",
+        "port": "formal(taint_left, position=0)",
         "taint": [
           {
             "kinds": [
@@ -408,7 +408,7 @@
     "callable": "attach_features.modeled_sink_with_optionals",
     "sinks": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -454,7 +454,7 @@
     "callable": "attach_features.sink_is_propagated",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [
@@ -475,7 +475,7 @@
                 "end": 26
               },
               "resolves_to": [ "attach_features.inferred_sink" ],
-              "port": "formal(taint_left)"
+              "port": "formal(taint_left, position=0)"
             }
           }
         ]
@@ -540,7 +540,7 @@
     "callable": "attach_features.taint_in_taint_out",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -567,7 +567,7 @@
     "callable": "attach_features.tito_and_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -599,7 +599,7 @@
     ],
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -626,7 +626,7 @@
     "callable": "attach_features.tito_is_propagated",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [

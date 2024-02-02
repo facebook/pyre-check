@@ -168,7 +168,7 @@ let test_dump_model_query_results context =
         "callable": "test.Base.baz",
         "sources": [
           {
-            "port": "formal(self)",
+            "port": "formal(self, position=0)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -179,7 +179,7 @@ let test_dump_model_query_results context =
         "callable": "test.Base.foo",
         "sources": [
           {
-            "port": "formal(self)",
+            "port": "formal(self, position=0)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -294,7 +294,7 @@ let test_dump_model_query_results context =
         "callable": "test.Bar.__init__",
         "sources": [
           {
-            "port": "formal(b)",
+            "port": "formal(b, position=2)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -306,7 +306,7 @@ let test_dump_model_query_results context =
         "callable": "test.Baz.__init__",
         "sources": [
           {
-            "port": "formal(b)",
+            "port": "formal(b, position=2)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -368,7 +368,7 @@ let test_dump_model_query_results context =
         "callable": "test.Bar.__init__",
         "sources": [
           {
-            "port": "formal(b)",
+            "port": "formal(b, position=2)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -380,7 +380,7 @@ let test_dump_model_query_results context =
         "callable": "test.Baz.__init__",
         "sources": [
           {
-            "port": "formal(b)",
+            "port": "formal(b, position=2)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]
@@ -392,7 +392,7 @@ let test_dump_model_query_results context =
         "callable": "test.Foo.__init__",
         "sources": [
           {
-            "port": "formal(b)",
+            "port": "formal(b, position=2)",
             "taint": [
               { "kinds": [ { "kind": "Test" } ], "declaration": null }
             ]

@@ -137,7 +137,7 @@
                 "end": 33
               },
               "resolves_to": [ "decorator_location.handle_request" ],
-              "port": "formal(request)"
+              "port": "formal(request, position=0)"
             }
           }
         ]
@@ -215,7 +215,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -296,7 +296,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -377,7 +377,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -458,7 +458,7 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_factory"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -539,7 +539,7 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator_class"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -620,7 +620,7 @@
               "resolves_to": [
                 "decorator_location.decorated_ignore_this_decorator"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -647,7 +647,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -728,7 +728,7 @@
     "callable": "decorator_location.decorated_ignore_this_decorator",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -759,7 +759,7 @@
     "callable": "decorator_location.decorated_ignore_this_decorator_class",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -790,7 +790,7 @@
     "callable": "decorator_location.decorated_ignore_this_decorator_factory",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -821,7 +821,7 @@
     "callable": "decorator_location.decorated_logging2_skip_this_decorator",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -848,7 +848,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator._inlined_with_logging2"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -862,7 +862,7 @@
     "callable": "decorator_location.decorated_logging2_skip_this_decorator._inlined_with_logging2",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -907,7 +907,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging2_skip_this_decorator._original_function"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -921,7 +921,7 @@
     "callable": "decorator_location.decorated_logging2_skip_this_decorator._original_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -952,7 +952,7 @@
     "callable": "decorator_location.decorated_logging_ignore_this_decorator",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -979,7 +979,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -993,7 +993,7 @@
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1038,7 +1038,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._original_function"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           },
           {
@@ -1066,7 +1066,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging.some_helper"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1080,7 +1080,7 @@
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging.some_helper",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1111,7 +1111,7 @@
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._original_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1142,7 +1142,7 @@
     "callable": "decorator_location.decorated_logging_logging2",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1169,7 +1169,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1183,7 +1183,7 @@
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1228,7 +1228,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging2"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           },
           {
@@ -1256,7 +1256,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._inlined_with_logging.some_helper"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1270,7 +1270,7 @@
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging.some_helper",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1301,7 +1301,7 @@
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging2",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1346,7 +1346,7 @@
               "resolves_to": [
                 "decorator_location.decorated_logging_logging2._original_function"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1360,7 +1360,7 @@
     "callable": "decorator_location.decorated_logging_logging2._original_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1391,7 +1391,7 @@
     "callable": "decorator_location.handle_request",
     "sinks": [
       {
-        "port": "formal(request)",
+        "port": "formal(request, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1411,7 +1411,7 @@
               "resolves_to": [
                 "decorator_location.handle_request._inlined_pass_local_variable_to_x"
               ],
-              "port": "formal(request)"
+              "port": "formal(request, position=0)"
             }
           }
         ]
@@ -1425,7 +1425,7 @@
     "callable": "decorator_location.handle_request._inlined_pass_local_variable_to_x",
     "sinks": [
       {
-        "port": "formal(request)",
+        "port": "formal(request, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1453,7 +1453,7 @@
     "callable": "decorator_location.handle_request._original_function",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1497,7 +1497,7 @@
         ]
       },
       {
-        "port": "formal(**kw)[*]",
+        "port": "formal(**kwargs)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1508,7 +1508,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)[*]",
+        "port": "formal(*args, position=0)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1527,7 +1527,7 @@
     "callable": "decorator_location.ignore_this_decorator",
     "tito": [
       {
-        "port": "formal(f)",
+        "port": "formal(f, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1545,7 +1545,7 @@
     "callable": "decorator_location.ignore_this_decorator_class.__call__",
     "tito": [
       {
-        "port": "formal(f)",
+        "port": "formal(f, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1563,7 +1563,7 @@
     "callable": "decorator_location.pass_local_variable_to_x.inner",
     "sinks": [
       {
-        "port": "formal(request)",
+        "port": "formal(request, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1591,7 +1591,7 @@
     "callable": "decorator_location.skip_this_decorator.inner",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1622,7 +1622,7 @@
     "callable": "decorator_location.with_logging.inner",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1667,7 +1667,7 @@
               "resolves_to": [
                 "decorator_location.with_logging.some_helper"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1681,7 +1681,7 @@
     "callable": "decorator_location.with_logging.some_helper",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1712,7 +1712,7 @@
     "callable": "decorator_location.with_logging2.inner",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

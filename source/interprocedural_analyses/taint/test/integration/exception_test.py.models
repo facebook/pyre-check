@@ -98,7 +98,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -144,7 +144,7 @@
     "callable": "exception_test.none_throws",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -341,7 +341,7 @@
     ],
     "tito": [
       {
-        "port": "formal(ex)",
+        "port": "formal(ex, position=0)",
         "taint": [
           {
             "kinds": [
@@ -458,7 +458,7 @@
     "callable": "exception_test.test_sink_in_finally",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -480,7 +480,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

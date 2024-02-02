@@ -56,7 +56,7 @@
                 "end": 43
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_one" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -129,7 +129,7 @@
                 "end": 44
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -202,7 +202,7 @@
                 "end": 45
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -224,7 +224,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -250,7 +250,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -259,7 +259,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -277,7 +277,7 @@
     "callable": "maximum_trace_length.sink_distance_one",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -289,7 +289,7 @@
                 "end": 24
               },
               "resolves_to": [ "maximum_trace_length.sink_distance_zero" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -303,7 +303,7 @@
     "callable": "maximum_trace_length.sink_distance_zero",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

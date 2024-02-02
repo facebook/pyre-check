@@ -201,14 +201,14 @@ module CallInfo = struct
           ClassIntervals.pp
           class_intervals
     | CallSite { location; callees; port; path; class_intervals } ->
-        let port = AccessPath.create port path |> AccessPath.show in
         Format.fprintf
           formatter
-          "CallSite(callees=[%s], location=%a, port=%s, class_intervals=%a)"
+          "CallSite(callees=[%s], location=%a, port=%a, class_intervals=%a)"
           (String.concat ~sep:", " (List.map ~f:Target.external_name callees))
           Location.WithModule.pp
           location
-          port
+          AccessPath.pp
+          (AccessPath.create port path)
           ClassIntervals.pp
           class_intervals
 
@@ -257,9 +257,14 @@ module CallInfo = struct
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
         in
         let location_json = location_with_module_to_json ~resolve_module_path location in
-        let port_json = AccessPath.create port path |> AccessPath.to_json in
+        let full_port = AccessPath.create port path in
         let call_json =
-          `Assoc ["position", location_json; "resolves_to", `List callee_json; "port", port_json]
+          `Assoc
+            [
+              "position", location_json;
+              "resolves_to", `List callee_json;
+              "port", `String (AccessPath.show full_port);
+            ]
         in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
         ("call", call_json) :: class_intervals_json_list
@@ -1579,10 +1584,10 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
     =
     let element_to_json json_list (root, tree) =
       let path_to_json (path, tip) json_list =
-        let port = AccessPath.create root path |> AccessPath.to_json in
+        let port = AccessPath.create root path in
         ( path,
           [
-            "port", port;
+            "port", `String (AccessPath.show port);
             ( "taint",
               Taint.to_json
                 ~expand_overrides

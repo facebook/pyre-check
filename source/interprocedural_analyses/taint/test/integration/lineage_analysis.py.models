@@ -699,7 +699,7 @@
     "callable": "lineage_analysis.DataFrame.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -716,7 +716,7 @@
     "callable": "lineage_analysis.DataFrame.__setitem__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -733,7 +733,7 @@
     "callable": "lineage_analysis.Series.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -750,13 +750,13 @@
     "callable": "lineage_analysis.sink",
     "sinks": [
       {
-        "port": "formal(arg)[a]",
+        "port": "formal(arg, position=0)[a]",
         "taint": [
           { "kinds": [ { "kind": "SinkA[KindA]" } ], "declaration": null }
         ]
       },
       {
-        "port": "formal(arg)[b]",
+        "port": "formal(arg, position=0)[b]",
         "taint": [
           { "kinds": [ { "kind": "SinkA[KindB]" } ], "declaration": null }
         ]

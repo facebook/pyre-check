@@ -587,7 +587,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -633,17 +633,17 @@
     "callable": "model_query_annotated.test3_alarm1",
     "sources": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -738,17 +738,17 @@
     "callable": "model_query_annotated.test3_alarm2",
     "sources": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [
           {
             "kinds": [
@@ -843,7 +843,7 @@
     "callable": "model_query_annotated.test3_noalarm1",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -871,7 +871,7 @@
     "callable": "model_query_annotated.test3_noalarm2",
     "sinks": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -902,17 +902,17 @@
     "callable": "model_query_annotated.test3_noalarm3",
     "sources": [
       {
-        "port": "formal(c)",
+        "port": "formal(c, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [

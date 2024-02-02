@@ -78,7 +78,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -124,7 +124,7 @@
     "callable": "list.append",
     "tito": [
       {
-        "port": "formal(__element)",
+        "port": "formal(__element, position=1)",
         "taint": [
           {
             "kinds": [
@@ -312,7 +312,7 @@
     "callable": "lists.zipped_element_to_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

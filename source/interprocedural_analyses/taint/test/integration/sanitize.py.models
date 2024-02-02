@@ -51,7 +51,7 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -190,7 +190,7 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(b)"
+              "port": "formal(b, position=1)"
             }
           }
         ]
@@ -259,7 +259,7 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -550,7 +550,7 @@
               "resolves_to": [
                 "sanitize.sanitize_test_a_source_attribute_in_sink_trace"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -623,7 +623,7 @@
                 "end": 25
               },
               "resolves_to": [ "sanitize.partial_issue_sinks" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -691,7 +691,7 @@
                 "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_attribute" ],
-              "port": "formal(c)[attribute]"
+              "port": "formal(c, position=0)[attribute]"
             }
           }
         ]
@@ -759,7 +759,7 @@
                 "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_a_sink_instance" ],
-              "port": "formal(c)[instance]"
+              "port": "formal(c, position=0)[instance]"
             }
           }
         ]
@@ -1239,7 +1239,7 @@
                 "end": 44
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_attribute" ],
-              "port": "formal(c)[attribute]"
+              "port": "formal(c, position=0)[attribute]"
             }
           }
         ]
@@ -1307,7 +1307,7 @@
                 "end": 43
               },
               "resolves_to": [ "sanitize.sanitize_b_sink_instance" ],
-              "port": "formal(c)[instance]"
+              "port": "formal(c, position=0)[instance]"
             }
           }
         ]
@@ -1521,7 +1521,7 @@
                 "end": 42
               },
               "resolves_to": [ "sanitize.sanitize_a_source_tito_with_sink" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1611,7 +1611,7 @@
     "callable": "Obj{sanitize.C_sanitized_all_sinks.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1624,7 +1624,7 @@
     "callable": "Obj{sanitize.C_sanitized_all_sinks.instance}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1694,7 +1694,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -1712,7 +1712,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -1725,7 +1725,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -1766,7 +1766,7 @@
     "callable": "sanitize.C_sanitized_a_sink.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1780,7 +1780,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1797,7 +1797,7 @@
     "callable": "sanitize.C_sanitized_a_source.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1811,7 +1811,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1828,7 +1828,7 @@
     "callable": "sanitize.C_sanitized_ab_sinks.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1842,7 +1842,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1859,7 +1859,7 @@
     "callable": "sanitize.C_sanitized_ab_sources.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1873,7 +1873,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1890,7 +1890,7 @@
     "callable": "sanitize.C_sanitized_all_sinks.__init__",
     "sinks": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1939,7 +1939,7 @@
     ],
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1953,7 +1953,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1970,7 +1970,7 @@
     "callable": "sanitize.C_sanitized_all_sources.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1984,7 +1984,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2001,7 +2001,7 @@
     "callable": "sanitize.C_sanitized_b_sink.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2015,7 +2015,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2032,7 +2032,7 @@
     "callable": "sanitize.C_sanitized_b_source.__init__",
     "tito": [
       {
-        "port": "formal(value)",
+        "port": "formal(value, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2046,7 +2046,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2063,7 +2063,7 @@
     "callable": "sanitize.a_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA" } ], "declaration": null }
         ]
@@ -2093,7 +2093,7 @@
     "callable": "sanitize.b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestB" } ], "declaration": null }
         ]
@@ -2159,7 +2159,7 @@
     "callable": "sanitize.combine_sanitize_a_source_a_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2187,7 +2187,7 @@
     "callable": "sanitize.combine_sanitize_a_source_b_source_in_sink_trace",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2209,7 +2209,7 @@
               "resolves_to": [
                 "sanitize.propagation_of_sanitize_a_source_in_sink_trace"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -2223,7 +2223,7 @@
     "callable": "sanitize.no_issue_fixpoint_sanitize_sinks",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2318,7 +2318,7 @@
     "callable": "sanitize.partial_issue_sinks",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2408,7 +2408,7 @@
     "callable": "sanitize.propagation_of_b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2526,7 +2526,7 @@
     "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_cookies_sql_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2555,7 +2555,7 @@
     "callable": "sanitize.propagation_of_rce_with_sanitize_all_parameters_no_sql_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2584,7 +2584,7 @@
     "callable": "sanitize.propagation_of_rce_with_sanitize_parameter_no_sql_tito",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2644,7 +2644,7 @@
     "callable": "sanitize.propagation_of_sanitize_a_source_in_sink_trace",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2673,7 +2673,7 @@
     "callable": "sanitize.propagation_of_sanitize_a_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2698,7 +2698,7 @@
     "callable": "sanitize.propagation_of_sanitize_all_parameters_no_user_controlled",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2714,7 +2714,7 @@
               "resolves_to": [
                 "sanitize.sanitize_all_parameters_no_user_controlled"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -2728,7 +2728,7 @@
     "callable": "sanitize.propagation_of_sanitize_parameter_no_sql_tito",
     "tito": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2745,7 +2745,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2801,7 +2801,7 @@
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled",
     "sinks": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2817,13 +2817,13 @@
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "RemoteCodeExecution" } ],
@@ -2837,7 +2837,7 @@
               "resolves_to": [
                 "sanitize.sanitize_parameter_no_user_controlled"
               ],
-              "port": "formal(y)"
+              "port": "formal(y, position=1)"
             }
           }
         ]
@@ -2851,7 +2851,7 @@
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito",
     "tito": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2868,7 +2868,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2893,7 +2893,7 @@
     "callable": "sanitize.propagation_of_sanitize_parameter_no_user_controlled_tito_in_sink_trace",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2953,7 +2953,7 @@
     "callable": "sanitize.propagation_of_sanitize_return_no_sql",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3040,7 +3040,7 @@
     "callable": "sanitize.propagation_of_sanitize_user_controlled_tito_in_sink_trace",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3125,7 +3125,7 @@
     "callable": "sanitize.sanitize_a_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3153,7 +3153,7 @@
     "callable": "sanitize.sanitize_a_sink_attribute",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -3215,7 +3215,7 @@
     "callable": "sanitize.sanitize_a_sink_instance",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -3242,7 +3242,7 @@
     "callable": "sanitize.sanitize_a_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3265,7 +3265,7 @@
     "callable": "sanitize.sanitize_a_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3288,7 +3288,7 @@
     "callable": "sanitize.sanitize_a_source_tito_with_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3309,7 +3309,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3449,7 +3449,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3468,7 +3468,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3496,7 +3496,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_cookies_sql_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3521,7 +3521,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_rce",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3542,7 +3542,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3565,7 +3565,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_sql",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3586,7 +3586,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3609,7 +3609,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_sql_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3632,7 +3632,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_user_controlled",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3653,7 +3653,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3676,7 +3676,7 @@
     "callable": "sanitize.sanitize_all_parameters_no_user_controlled_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3699,13 +3699,13 @@
     "callable": "sanitize.sanitize_all_parameters_with_user_declared_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3728,7 +3728,7 @@
     "callable": "sanitize.sanitize_b_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3756,7 +3756,7 @@
     "callable": "sanitize.sanitize_b_sink_attribute",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -3783,7 +3783,7 @@
     "callable": "sanitize.sanitize_b_sink_instance",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -3810,7 +3810,7 @@
     "callable": "sanitize.sanitize_b_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3833,7 +3833,7 @@
     "callable": "sanitize.sanitize_b_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3909,7 +3909,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3930,7 +3930,7 @@
     ],
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3955,7 +3955,7 @@
     ],
     "sanitizers": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "sources": "All",
         "sinks": "All",
         "tito": { "sources": "All", "sinks": "All" }
@@ -4022,7 +4022,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -4041,7 +4041,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4062,7 +4062,7 @@
     ],
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -4086,7 +4086,10 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sources": "All", "sinks": "All" } }
+      {
+        "port": "formal(x, position=0)",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
     ]
   }
 }
@@ -4096,7 +4099,7 @@
     "callable": "sanitize.sanitize_parameter_no_rce",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4117,7 +4120,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4132,7 +4135,7 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "sinks": [ "RemoteCodeExecution" ] }
+      { "port": "formal(x, position=0)", "sinks": [ "RemoteCodeExecution" ] }
     ]
   }
 }
@@ -4142,7 +4145,7 @@
     "callable": "sanitize.sanitize_parameter_no_sql",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4163,7 +4166,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4177,7 +4180,7 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(x)", "sinks": [ "SQL" ] } ]
+    "sanitizers": [ { "port": "formal(x, position=0)", "sinks": [ "SQL" ] } ]
   }
 }
 {
@@ -4186,7 +4189,7 @@
     "callable": "sanitize.sanitize_parameter_no_sql_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -4195,7 +4198,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4209,7 +4212,9 @@
         ]
       }
     ],
-    "sanitizers": [ { "port": "formal(x)", "tito": { "sinks": [ "SQL" ] } } ]
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "tito": { "sinks": [ "SQL" ] } }
+    ]
   }
 }
 {
@@ -4218,7 +4223,7 @@
     "callable": "sanitize.sanitize_parameter_no_user_controlled",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -4237,7 +4242,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4258,7 +4263,7 @@
     ],
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -4267,7 +4272,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4282,7 +4287,7 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "sources": [ "UserControlled" ] }
+      { "port": "formal(x, position=0)", "sources": [ "UserControlled" ] }
     ]
   }
 }
@@ -4292,7 +4297,7 @@
     "callable": "sanitize.sanitize_parameter_no_user_controlled_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -4301,7 +4306,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4316,7 +4321,10 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sources": [ "UserControlled" ] } }
+      {
+        "port": "formal(x, position=0)",
+        "tito": { "sources": [ "UserControlled" ] }
+      }
     ]
   }
 }
@@ -4326,11 +4334,13 @@
     "callable": "sanitize.sanitize_parameter_with_user_declared_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
-    "sanitizers": [ { "port": "formal(x)", "sinks": [ "Test" ] } ]
+    "sanitizers": [
+      { "port": "formal(x, position=0)", "sinks": [ "Test" ] }
+    ]
   }
 }
 {
@@ -4339,7 +4349,7 @@
     "callable": "sanitize.sanitize_return",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4436,7 +4446,7 @@
     "callable": "sanitize.sanitize_return_no_sql",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4480,7 +4490,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4525,7 +4535,7 @@
     "callable": "sanitize.sanitize_single_argument_tito",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -4534,7 +4544,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4549,7 +4559,7 @@
       }
     ],
     "sanitizers": [
-      { "port": "formal(x)", "tito": { "sinks": [ "Test" ] } }
+      { "port": "formal(x, position=0)", "tito": { "sinks": [ "Test" ] } }
     ]
   }
 }
@@ -4585,7 +4595,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4611,7 +4621,7 @@
     "callable": "sanitize.sanitize_sources",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4632,7 +4642,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4688,7 +4698,7 @@
     "callable": "sanitize.sanitize_test_a_source_attribute_in_sink_trace",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4717,7 +4727,7 @@
     "callable": "sanitize.sanitize_test_a_source_attribute_in_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4772,7 +4782,7 @@
     "callable": "sanitize.sanitize_test_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4821,7 +4831,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4849,7 +4859,7 @@
     "callable": "sanitize.sanitize_with_user_declared_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -4875,7 +4885,7 @@
     "callable": "sanitize.sink_taint_sanitize_a",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4904,7 +4914,7 @@
     "callable": "sanitize.sink_taint_sanitize_a_sanitize_b",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4924,7 +4934,7 @@
                 "end": 29
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -4938,7 +4948,7 @@
     "callable": "sanitize.sink_taint_sanitize_a_sanitize_b_santize_test",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4958,7 +4968,7 @@
                 "end": 40
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_a_sanitize_b" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -4972,7 +4982,7 @@
     "callable": "sanitize.sink_taint_sanitize_b",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -5001,7 +5011,7 @@
     "callable": "sanitize.sink_taint_sanitize_b_sanitize_a",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -5021,7 +5031,7 @@
                 "end": 29
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -5035,7 +5045,7 @@
     "callable": "sanitize.sink_taint_sanitize_b_sanitize_a_santize_test",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -5055,7 +5065,7 @@
                 "end": 40
               },
               "resolves_to": [ "sanitize.sink_taint_sanitize_b_sanitize_a" ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -5075,7 +5085,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

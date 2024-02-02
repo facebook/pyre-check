@@ -644,7 +644,7 @@
               "resolves_to": [
                 "closure.nonlocal_closure_read_reduction.inner"
               ],
-              "port": "formal(z)"
+              "port": "formal(z, position=0)"
             }
           }
         ]
@@ -883,7 +883,7 @@
                 "end": 13
               },
               "resolves_to": [ "closure.nonlocal_closure_reduction.sink" ],
-              "port": "formal(obj2)"
+              "port": "formal(obj2, position=0)"
             }
           }
         ]
@@ -1245,7 +1245,7 @@
                 "end": 38
               },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
-              "port": "formal(z)"
+              "port": "formal(z, position=1)"
             }
           }
         ]
@@ -1320,7 +1320,7 @@
                 "end": 35
               },
               "resolves_to": [ "closure.wrapper_for_taint_propagation" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1397,7 +1397,7 @@
                 "end": 42
               },
               "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
-              "port": "formal(z)"
+              "port": "formal(z, position=1)"
             }
           }
         ]
@@ -1474,7 +1474,7 @@
                 "end": 39
               },
               "resolves_to": [ "closure.wrapper_for_taint_propagation_hof" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1552,7 +1552,7 @@
                 "end": 47
               },
               "resolves_to": [ "closure.wrapper_for_tito_propagation" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1632,7 +1632,7 @@
                 "end": 51
               },
               "resolves_to": [ "closure.wrapper_for_tito_propagation_hof" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -1660,7 +1660,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1721,7 +1721,7 @@
     "callable": "closure.async_nonlocal_closure_tito_ignore_decorator",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1747,7 +1747,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1908,7 +1908,7 @@
     "callable": "closure.async_tito",
     "tito": [
       {
-        "port": "formal(function)",
+        "port": "formal(function, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1968,7 +1968,7 @@
         ]
       },
       {
-        "port": "formal(**kw)[*]",
+        "port": "formal(**kwargs)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1979,7 +1979,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)[*]",
+        "port": "formal(*args, position=0)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -2011,7 +2011,7 @@
         ]
       },
       {
-        "port": "formal(**kw)[*]",
+        "port": "formal(**kwargs)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -2022,7 +2022,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)[*]",
+        "port": "formal(*args, position=0)[*]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -2686,7 +2686,7 @@
         ]
       },
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2756,7 +2756,7 @@
         ]
       },
       {
-        "port": "formal(obj2)",
+        "port": "formal(obj2, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2849,7 +2849,7 @@
         ]
       },
       {
-        "port": "formal(obj2)",
+        "port": "formal(obj2, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3001,7 +3001,7 @@
     "callable": "closure.parameter_order_swap",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [
           {
             "kinds": [
@@ -3028,7 +3028,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3055,7 +3055,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3161,7 +3161,7 @@
     "callable": "closure.parameter_order_swap_different_variable_names",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [
           {
             "kinds": [
@@ -3190,7 +3190,7 @@
         ]
       },
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3219,7 +3219,7 @@
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3327,7 +3327,7 @@
     "callable": "closure.parameter_order_swap_tito",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=2)",
         "taint": [
           {
             "kinds": [
@@ -3406,7 +3406,7 @@
     "callable": "closure.tito_hof",
     "sinks": [
       {
-        "port": "formal(f)",
+        "port": "formal(f, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3435,7 +3435,7 @@
     "callable": "closure.wrapper_for_taint_propagation",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3455,13 +3455,13 @@
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation.inner"
               ],
-              "port": "formal(z)"
+              "port": "formal(z, position=0)"
             }
           }
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3519,7 +3519,7 @@
         ]
       },
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3547,7 +3547,7 @@
     "callable": "closure.wrapper_for_taint_propagation_hof",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=1)",
         "taint": [
           {
             "kinds": [
@@ -3568,13 +3568,13 @@
               "resolves_to": [
                 "closure.wrapper_for_taint_propagation_hof.inner"
               ],
-              "port": "formal(z)"
+              "port": "formal(z, position=0)"
             }
           }
         ]
       },
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3632,7 +3632,7 @@
         ]
       },
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3660,7 +3660,7 @@
     "callable": "closure.wrapper_for_tito_propagation",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3710,7 +3710,7 @@
     "callable": "closure.wrapper_for_tito_propagation_hof",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3735,7 +3735,7 @@
                 "end": 18
               },
               "resolves_to": [ "closure.tito_hof" ],
-              "port": "formal(f)"
+              "port": "formal(f, position=0)"
             }
           }
         ]

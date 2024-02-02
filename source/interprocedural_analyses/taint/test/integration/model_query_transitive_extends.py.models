@@ -148,7 +148,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -194,7 +194,7 @@
     "callable": "model_query_transitive_extends.Test1_C.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -211,7 +211,7 @@
     "callable": "model_query_transitive_extends.Test1_C1.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -228,7 +228,7 @@
     "callable": "model_query_transitive_extends.Test1_C2.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -245,7 +245,7 @@
     "callable": "model_query_transitive_extends.Test1_D.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -262,7 +262,7 @@
     "callable": "model_query_transitive_extends.Test2_D.foo",
     "sinks": [
       {
-        "port": "formal(attribute)",
+        "port": "formal(attribute, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -275,7 +275,7 @@
     "callable": "model_query_transitive_extends.UnrelatedClass.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -292,7 +292,7 @@
     "callable": "model_query_transitive_extends.misc_noalarm1",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -320,7 +320,7 @@
     "callable": "model_query_transitive_extends.misc_noalarm2",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -348,7 +348,7 @@
     "callable": "model_query_transitive_extends.test1_alarm1",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -447,7 +447,7 @@
     "callable": "model_query_transitive_extends.test1_alarm2",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -546,7 +546,7 @@
     "callable": "model_query_transitive_extends.test1_alarm3",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -649,7 +649,7 @@
     "callable": "model_query_transitive_extends.test1_alarm4",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -752,7 +752,7 @@
     "callable": "model_query_transitive_extends.test1_alarm5",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -847,7 +847,7 @@
     "callable": "model_query_transitive_extends.test1_alarm6",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [
@@ -942,7 +942,7 @@
     "callable": "model_query_transitive_extends.test1_noalarm1",
     "sinks": [
       {
-        "port": "formal(c)[attribute]",
+        "port": "formal(c, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -970,7 +970,7 @@
     "callable": "model_query_transitive_extends.test1_noalarm2",
     "sinks": [
       {
-        "port": "formal(c)[instance]",
+        "port": "formal(c, position=0)[instance]",
         "taint": [
           {
             "kinds": [

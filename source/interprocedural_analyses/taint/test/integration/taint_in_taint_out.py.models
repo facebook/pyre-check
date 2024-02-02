@@ -386,7 +386,7 @@
               "resolves_to": [
                 "taint_in_taint_out.adds_tito_with_indirect_sink"
               ],
-              "port": "formal(src)[add_tito]"
+              "port": "formal(src, position=0)[add_tito]"
             }
           }
         ]
@@ -889,13 +889,13 @@
     "callable": "Obj{taint_in_taint_out.FieldIsTITO.add_tito}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "tito": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [
           {
             "kinds": [
@@ -918,7 +918,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -964,7 +964,7 @@
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
     "tito": [
       {
-        "port": "formal(field)",
+        "port": "formal(field, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -982,7 +982,7 @@
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
     "tito": [
       {
-        "port": "formal(payload)[items]",
+        "port": "formal(payload, position=1)[items]",
         "taint": [
           {
             "kinds": [
@@ -1013,7 +1013,7 @@
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
     "tito": [
       {
-        "port": "formal(field)",
+        "port": "formal(field, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1048,7 +1048,7 @@
     "callable": "taint_in_taint_out.Data.__init__",
     "tito": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -1059,7 +1059,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1070,7 +1070,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1087,7 +1087,7 @@
     "callable": "taint_in_taint_out.GetQuery.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1098,7 +1098,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1115,7 +1115,7 @@
     "callable": "taint_in_taint_out.GetUser.__init__",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1132,7 +1132,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1151,7 +1151,7 @@
     "callable": "taint_in_taint_out.Recursive.__init__",
     "tito": [
       {
-        "port": "formal(select)[*][*][0][target]",
+        "port": "formal(select, position=1)[*][*][0][target]",
         "taint": [
           {
             "kinds": [
@@ -1179,7 +1179,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1196,7 +1196,7 @@
     "callable": "taint_in_taint_out.add_feature",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1223,7 +1223,7 @@
     "callable": "taint_in_taint_out.adds_tito",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -1260,7 +1260,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)[add_tito]",
+        "port": "formal(x, position=0)[add_tito]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1278,7 +1278,7 @@
     "callable": "taint_in_taint_out.adds_tito_inherited",
     "sources": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -1315,7 +1315,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)[add_tito]",
+        "port": "formal(x, position=0)[add_tito]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1333,7 +1333,7 @@
     "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
     "sinks": [
       {
-        "port": "formal(src)[add_tito]",
+        "port": "formal(src, position=0)[add_tito]",
         "taint": [
           {
             "kinds": [
@@ -1354,7 +1354,7 @@
                 "end": 21
               },
               "resolves_to": [ "taint_in_taint_out.indirect_sink" ],
-              "port": "formal(x)[add_tito]"
+              "port": "formal(x, position=0)[add_tito]"
             }
           }
         ]
@@ -1368,7 +1368,7 @@
     "callable": "taint_in_taint_out.approximate_return_access_paths",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -1390,7 +1390,7 @@
     "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1415,7 +1415,7 @@
     "callable": "taint_in_taint_out.collapse_two_then_into_dict",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1440,7 +1440,7 @@
     "callable": "taint_in_taint_out.combine_collapse_one",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1468,7 +1468,7 @@
     "callable": "taint_in_taint_out.combine_collapse_one_and_two",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1496,7 +1496,7 @@
     "callable": "taint_in_taint_out.combine_collapse_three",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1524,7 +1524,7 @@
     "callable": "taint_in_taint_out.combine_collapse_two",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1552,7 +1552,7 @@
     "callable": "taint_in_taint_out.combine_collapse_two_and_one",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1580,7 +1580,7 @@
     "callable": "taint_in_taint_out.evaluate_lazy",
     "tito": [
       {
-        "port": "formal(payload)[*]",
+        "port": "formal(payload, position=0)[*]",
         "taint": [
           {
             "kinds": [
@@ -1591,7 +1591,7 @@
         ]
       },
       {
-        "port": "formal(payload).**keys",
+        "port": "formal(payload, position=0).**keys",
         "taint": [
           {
             "kinds": [
@@ -1610,7 +1610,7 @@
     "callable": "taint_in_taint_out.get_data",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1632,7 +1632,7 @@
     "callable": "taint_in_taint_out.get_related",
     "tito": [
       {
-        "port": "formal(select)[*][*][0][target]",
+        "port": "formal(select, position=0)[*][*][0][target]",
         "taint": [
           {
             "kinds": [
@@ -1667,7 +1667,7 @@
     "callable": "taint_in_taint_out.indirect_sink",
     "sinks": [
       {
-        "port": "formal(x)[add_tito]",
+        "port": "formal(x, position=0)[add_tito]",
         "taint": [
           {
             "kinds": [
@@ -1696,7 +1696,7 @@
     "callable": "taint_in_taint_out.into_dict_then_collapse_two",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1721,7 +1721,7 @@
     "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1746,7 +1746,7 @@
     "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1773,7 +1773,7 @@
     "callable": "taint_in_taint_out.join_tito_collapse_test_1",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1801,7 +1801,7 @@
     "callable": "taint_in_taint_out.join_tito_collapse_test_2",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1829,7 +1829,7 @@
     "callable": "taint_in_taint_out.join_tito_collapse_test_3",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1857,7 +1857,7 @@
     "callable": "taint_in_taint_out.loop_perfect_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1887,7 +1887,7 @@
     "callable": "taint_in_taint_out.loop_tito_collapse_one",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1908,7 +1908,7 @@
     "callable": "taint_in_taint_out.loop_tito_collapse_two",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1932,7 +1932,7 @@
     "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1951,7 +1951,7 @@
     "callable": "taint_in_taint_out.perfect_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -1968,7 +1968,7 @@
     "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1993,7 +1993,7 @@
     "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2018,7 +2018,7 @@
     "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2038,7 +2038,7 @@
     "callable": "taint_in_taint_out.product_data",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2088,7 +2088,7 @@
     "callable": "taint_in_taint_out.product_data_wrapper",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2130,7 +2130,7 @@
     "callable": "taint_in_taint_out.return_taint",
     "tito": [
       {
-        "port": "formal(b2)",
+        "port": "formal(b2, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2141,7 +2141,7 @@
         ]
       },
       {
-        "port": "formal(b1)",
+        "port": "formal(b1, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2152,7 +2152,7 @@
         ]
       },
       {
-        "port": "formal(tainted)",
+        "port": "formal(tainted, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2171,7 +2171,7 @@
     "callable": "taint_in_taint_out.return_taint_in_list",
     "tito": [
       {
-        "port": "formal(b)",
+        "port": "formal(b, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2182,7 +2182,7 @@
         ]
       },
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2193,7 +2193,7 @@
         ]
       },
       {
-        "port": "formal(tainted)",
+        "port": "formal(tainted, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2520,7 +2520,7 @@
     "callable": "taint_in_taint_out.tito_collapse_one",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2549,7 +2549,7 @@
     "callable": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2568,7 +2568,7 @@
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
     "tito": [
       {
-        "port": "formal(x)[a][b]",
+        "port": "formal(x, position=0)[a][b]",
         "taint": [
           {
             "kinds": [
@@ -2597,7 +2597,7 @@
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path_with_hop",
     "tito": [
       {
-        "port": "formal(x)[a][b]",
+        "port": "formal(x, position=0)[a][b]",
         "taint": [
           {
             "kinds": [
@@ -2622,7 +2622,7 @@
     "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2649,7 +2649,7 @@
     "callable": "taint_in_taint_out.tito_collapse_three",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2678,7 +2678,7 @@
     "callable": "taint_in_taint_out.tito_collapse_three_append_a",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2697,7 +2697,7 @@
     "callable": "taint_in_taint_out.tito_collapse_two",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2726,7 +2726,7 @@
     "callable": "taint_in_taint_out.tito_collapse_two_append_a_b",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2745,7 +2745,7 @@
     "callable": "taint_in_taint_out.tito_with_feature",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2775,7 +2775,7 @@
     "callable": "taint_in_taint_out.tito_with_sink",
     "sinks": [
       {
-        "port": "formal(d)[a]",
+        "port": "formal(d, position=0)[a]",
         "taint": [
           {
             "kinds": [
@@ -2800,7 +2800,7 @@
     ],
     "tito": [
       {
-        "port": "formal(d)[a]",
+        "port": "formal(d, position=0)[a]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2820,7 +2820,7 @@
     "callable": "taint_in_taint_out.user_declared_tito_collapse_one",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 1 }, "kind": "LocalReturn" } ],
@@ -2837,7 +2837,7 @@
     "callable": "taint_in_taint_out.user_declared_tito_no_collapse",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2856,7 +2856,7 @@
     "callable": "taint_in_taint_out.via_getattr",
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2865,7 +2865,7 @@
         ]
       },
       {
-        "port": "formal(x)[foo]",
+        "port": "formal(x, position=0)[foo]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

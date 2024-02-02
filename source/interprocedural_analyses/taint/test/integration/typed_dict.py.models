@@ -811,7 +811,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -837,7 +837,7 @@
     "callable": "typed_dict.NestedTypedDict.__init__",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[genuine,nested])",
         "taint": [
           {
             "kinds": [
@@ -876,7 +876,7 @@
         ]
       },
       {
-        "port": "formal(__iterable)[*]",
+        "port": "formal(__iterable, position=1, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -887,7 +887,7 @@
         ]
       },
       {
-        "port": "formal(__iterable).**keys",
+        "port": "formal(__iterable, position=1, positional_only).**keys",
         "taint": [
           {
             "kinds": [
@@ -909,7 +909,7 @@
     "callable": "typed_dict.SanitizedFieldTypedDict.__init__",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[safe,sanitized])",
         "taint": [
           {
             "kinds": [
@@ -945,7 +945,7 @@
         ]
       },
       {
-        "port": "formal(__iterable)[*]",
+        "port": "formal(__iterable, position=1, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -956,7 +956,7 @@
         ]
       },
       {
-        "port": "formal(__iterable).**keys",
+        "port": "formal(__iterable, position=1, positional_only).**keys",
         "taint": [
           {
             "kinds": [
@@ -978,7 +978,7 @@
     "callable": "typed_dict.SimpleTypedDict.__init__",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs, excluded=[bar,foo])",
         "taint": [
           {
             "kinds": [
@@ -1011,7 +1011,7 @@
         ]
       },
       {
-        "port": "formal(__iterable)[*]",
+        "port": "formal(__iterable, position=1, positional_only)[*]",
         "taint": [
           {
             "kinds": [
@@ -1022,7 +1022,7 @@
         ]
       },
       {
-        "port": "formal(__iterable).**keys",
+        "port": "formal(__iterable, position=1, positional_only).**keys",
         "taint": [
           {
             "kinds": [

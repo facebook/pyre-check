@@ -435,7 +435,7 @@
               "resolves_to": [
                 "implicit_sinks.string_literal_arguments_sink"
               ],
-              "port": "formal(template)"
+              "port": "formal(template, position=0)"
             }
           }
         ]
@@ -459,7 +459,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -485,7 +485,7 @@
     "callable": "implicit_sinks.propagate_sink_add_global",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -509,7 +509,7 @@
     "callable": "implicit_sinks.propagate_sink_dot_format",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -535,7 +535,7 @@
     "callable": "implicit_sinks.propagate_sink_format_string",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "Test" } ],
@@ -561,7 +561,7 @@
     "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -587,7 +587,7 @@
     "callable": "implicit_sinks.propagate_sink_percent_format",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -613,7 +613,7 @@
     "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
     "sinks": [
       {
-        "port": "formal(a)",
+        "port": "formal(a, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],
@@ -639,7 +639,7 @@
     "callable": "implicit_sinks.string_literal_arguments_sink",
     "sinks": [
       {
-        "port": "formal(template)",
+        "port": "formal(template, position=0)",
         "taint": [
           {
             "kinds": [ { "length": 1, "kind": "Test" } ],

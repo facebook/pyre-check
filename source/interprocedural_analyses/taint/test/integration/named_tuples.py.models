@@ -310,7 +310,7 @@
               "resolves_to": [
                 "named_tuples.NamedTupleWithTaintedAttribute.__init__"
               ],
-              "port": "formal(bad)"
+              "port": "formal(bad, position=2)"
             }
           }
         ]
@@ -414,7 +414,7 @@
     "callable": "Obj{named_tuples.NamedTupleWithTaintedAttribute.bad}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -426,7 +426,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -472,7 +472,7 @@
     "callable": "named_tuples.MyNamedTuple.__init__",
     "tito": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
@@ -483,7 +483,7 @@
         ]
       },
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=1)",
         "taint": [
           {
             "kinds": [
@@ -497,7 +497,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -514,7 +514,7 @@
     "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
     "sinks": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
@@ -542,7 +542,7 @@
     ],
     "tito": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
@@ -553,7 +553,7 @@
         ]
       },
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=1)",
         "taint": [
           {
             "kinds": [
@@ -567,7 +567,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -584,7 +584,7 @@
     "callable": "named_tuples.OldSchoolNamedTuple.__init__",
     "tito": [
       {
-        "port": "formal(bad)",
+        "port": "formal(bad, position=2)",
         "taint": [
           {
             "kinds": [
@@ -595,7 +595,7 @@
         ]
       },
       {
-        "port": "formal(benign)",
+        "port": "formal(benign, position=1)",
         "taint": [
           {
             "kinds": [
@@ -606,7 +606,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -623,7 +623,7 @@
     "callable": "named_tuples.aliased_indicies_backward",
     "sinks": [
       {
-        "port": "formal(a)[bad]",
+        "port": "formal(a, position=0)[bad]",
         "taint": [
           {
             "kinds": [
@@ -643,7 +643,7 @@
         ]
       },
       {
-        "port": "formal(a)[benign]",
+        "port": "formal(a, position=0)[benign]",
         "taint": [
           {
             "kinds": [
@@ -671,7 +671,7 @@
     "callable": "named_tuples.aliased_indicies_backward_unknown_attribute",
     "sinks": [
       {
-        "port": "formal(a)[*]",
+        "port": "formal(a, position=0)[*]",
         "taint": [
           {
             "kinds": [

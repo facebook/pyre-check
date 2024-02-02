@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -51,17 +51,17 @@
     "callable": "model_query_parent_decorator.TestC_1.__init__",
     "sources": [
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(baz)",
+        "port": "formal(baz, position=3)",
         "taint": [
           {
             "kinds": [
@@ -83,7 +83,7 @@
         ]
       },
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [
           {
             "kinds": [
@@ -105,7 +105,7 @@
         ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [
           {
             "kinds": [
@@ -129,7 +129,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -288,7 +288,7 @@
     "callable": "model_query_parent_decorator.TestC_2.__init__",
     "sinks": [
       {
-        "port": "formal(baz)",
+        "port": "formal(baz, position=3)",
         "taint": [
           {
             "kinds": [
@@ -310,7 +310,7 @@
         ]
       },
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [
           {
             "kinds": [
@@ -332,7 +332,7 @@
         ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [
           {
             "kinds": [
@@ -356,7 +356,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -373,17 +373,17 @@
     "callable": "model_query_parent_decorator.TestC_3.__init__",
     "sources": [
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
     "sinks": [
       {
-        "port": "formal(baz)",
+        "port": "formal(baz, position=3)",
         "taint": [
           {
             "kinds": [
@@ -405,7 +405,7 @@
         ]
       },
       {
-        "port": "formal(bar)",
+        "port": "formal(bar, position=2)",
         "taint": [
           {
             "kinds": [
@@ -427,7 +427,7 @@
         ]
       },
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=1)",
         "taint": [
           {
             "kinds": [
@@ -451,7 +451,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

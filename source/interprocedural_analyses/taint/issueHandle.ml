@@ -57,7 +57,7 @@ module Sink = struct
             "kind", `String "Call";
             "callee", `String (Target.external_name callee);
             "index", `Int index;
-            "parameter", `String (AccessPath.Root.show_external parameter);
+            "parameter", `String (AccessPath.Root.show_for_issue_handle parameter);
           ]
     | Global { callee; index } ->
         `Assoc
@@ -98,7 +98,7 @@ module T = struct
             "Call|%s|%d|%s"
             (Target.external_name callee)
             index
-            (AccessPath.Root.show_external parameter)
+            (AccessPath.Root.show_for_issue_handle parameter)
       | Global { callee; index } ->
           Format.asprintf "Global|%s|%d" (Target.external_name callee) index
       | Return -> "Return"

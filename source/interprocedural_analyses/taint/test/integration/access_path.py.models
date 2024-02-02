@@ -272,7 +272,7 @@
                 "end": 48
               },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
-              "port": "formal(y)"
+              "port": "formal(y, position=1)"
             }
           }
         ]
@@ -344,7 +344,7 @@
                 "end": 46
               },
               "resolves_to": [ "access_path.positional_and_variadic2" ],
-              "port": "formal(y)"
+              "port": "formal(y, position=1)"
             }
           }
         ]
@@ -416,7 +416,7 @@
                 "end": 49
               },
               "resolves_to": [ "access_path.positional_and_variadic1" ],
-              "port": "formal(*rest2)"
+              "port": "formal(*args, position=2)"
             }
           }
         ]
@@ -440,7 +440,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -452,7 +452,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -479,7 +479,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -497,7 +497,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -510,7 +510,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -556,7 +556,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -565,7 +565,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -598,7 +598,7 @@
     "callable": "access_path.SpecialDict.__getitem__",
     "tito": [
       {
-        "port": "formal(key)",
+        "port": "formal(key, position=1)",
         "taint": [
           {
             "kinds": [
@@ -620,7 +620,7 @@
         ]
       },
       {
-        "port": "formal(self)[dict]",
+        "port": "formal(self, position=0)[dict]",
         "taint": [
           {
             "kinds": [
@@ -650,7 +650,7 @@
     "callable": "access_path.SpecialDict.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -667,7 +667,7 @@
     "callable": "access_path.positional_and_variadic1",
     "sinks": [
       {
-        "port": "formal(*rest2)",
+        "port": "formal(*args, position=2)",
         "taint": [
           {
             "kinds": [
@@ -695,7 +695,7 @@
     "callable": "access_path.positional_and_variadic2",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -723,7 +723,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -747,7 +747,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -765,7 +765,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -773,7 +773,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -788,7 +788,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [

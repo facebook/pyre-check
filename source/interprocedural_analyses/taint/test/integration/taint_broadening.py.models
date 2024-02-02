@@ -251,7 +251,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -297,7 +297,7 @@
     "callable": "taint_broadening.model_broadening_collapse_sink_width",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1643,7 +1643,7 @@
     "callable": "taint_broadening.model_broadening_no_collapse_sink_width",
     "sinks": [
       {
-        "port": "formal(parameter)['i1.1']",
+        "port": "formal(parameter, position=0)['i1.1']",
         "taint": [
           {
             "kinds": [
@@ -1666,7 +1666,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.10']",
+        "port": "formal(parameter, position=0)['i1.10']",
         "taint": [
           {
             "kinds": [
@@ -1689,7 +1689,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.11']",
+        "port": "formal(parameter, position=0)['i1.11']",
         "taint": [
           {
             "kinds": [
@@ -1712,7 +1712,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.12']",
+        "port": "formal(parameter, position=0)['i1.12']",
         "taint": [
           {
             "kinds": [
@@ -1735,7 +1735,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.13']",
+        "port": "formal(parameter, position=0)['i1.13']",
         "taint": [
           {
             "kinds": [
@@ -1758,7 +1758,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.14']",
+        "port": "formal(parameter, position=0)['i1.14']",
         "taint": [
           {
             "kinds": [
@@ -1781,7 +1781,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.15']",
+        "port": "formal(parameter, position=0)['i1.15']",
         "taint": [
           {
             "kinds": [
@@ -1804,7 +1804,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.2']",
+        "port": "formal(parameter, position=0)['i1.2']",
         "taint": [
           {
             "kinds": [
@@ -1827,7 +1827,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.3']",
+        "port": "formal(parameter, position=0)['i1.3']",
         "taint": [
           {
             "kinds": [
@@ -1850,7 +1850,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.4']",
+        "port": "formal(parameter, position=0)['i1.4']",
         "taint": [
           {
             "kinds": [
@@ -1873,7 +1873,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.5']",
+        "port": "formal(parameter, position=0)['i1.5']",
         "taint": [
           {
             "kinds": [
@@ -1896,7 +1896,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.6']",
+        "port": "formal(parameter, position=0)['i1.6']",
         "taint": [
           {
             "kinds": [
@@ -1919,7 +1919,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.7']",
+        "port": "formal(parameter, position=0)['i1.7']",
         "taint": [
           {
             "kinds": [
@@ -1942,7 +1942,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.8']",
+        "port": "formal(parameter, position=0)['i1.8']",
         "taint": [
           {
             "kinds": [
@@ -1965,7 +1965,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i1.9']",
+        "port": "formal(parameter, position=0)['i1.9']",
         "taint": [
           {
             "kinds": [
@@ -1988,7 +1988,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.1']",
+        "port": "formal(parameter, position=0)['i2.1']",
         "taint": [
           {
             "kinds": [
@@ -2011,7 +2011,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.10']",
+        "port": "formal(parameter, position=0)['i2.10']",
         "taint": [
           {
             "kinds": [
@@ -2034,7 +2034,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.11']",
+        "port": "formal(parameter, position=0)['i2.11']",
         "taint": [
           {
             "kinds": [
@@ -2057,7 +2057,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.12']",
+        "port": "formal(parameter, position=0)['i2.12']",
         "taint": [
           {
             "kinds": [
@@ -2080,7 +2080,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.13']",
+        "port": "formal(parameter, position=0)['i2.13']",
         "taint": [
           {
             "kinds": [
@@ -2103,7 +2103,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.14']",
+        "port": "formal(parameter, position=0)['i2.14']",
         "taint": [
           {
             "kinds": [
@@ -2126,7 +2126,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.15']",
+        "port": "formal(parameter, position=0)['i2.15']",
         "taint": [
           {
             "kinds": [
@@ -2149,7 +2149,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.2']",
+        "port": "formal(parameter, position=0)['i2.2']",
         "taint": [
           {
             "kinds": [
@@ -2172,7 +2172,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.3']",
+        "port": "formal(parameter, position=0)['i2.3']",
         "taint": [
           {
             "kinds": [
@@ -2195,7 +2195,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.4']",
+        "port": "formal(parameter, position=0)['i2.4']",
         "taint": [
           {
             "kinds": [
@@ -2218,7 +2218,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.5']",
+        "port": "formal(parameter, position=0)['i2.5']",
         "taint": [
           {
             "kinds": [
@@ -2241,7 +2241,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.6']",
+        "port": "formal(parameter, position=0)['i2.6']",
         "taint": [
           {
             "kinds": [
@@ -2264,7 +2264,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.7']",
+        "port": "formal(parameter, position=0)['i2.7']",
         "taint": [
           {
             "kinds": [
@@ -2287,7 +2287,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.8']",
+        "port": "formal(parameter, position=0)['i2.8']",
         "taint": [
           {
             "kinds": [
@@ -2310,7 +2310,7 @@
         ]
       },
       {
-        "port": "formal(parameter)['i2.9']",
+        "port": "formal(parameter, position=0)['i2.9']",
         "taint": [
           {
             "kinds": [
@@ -3011,7 +3011,7 @@
     "callable": "taint_broadening.model_broadening_sink_no_collapse_depth",
     "sinks": [
       {
-        "port": "formal(parameter)[a][a][a][a][1]",
+        "port": "formal(parameter, position=1)[a][a][a][a][1]",
         "taint": [
           {
             "kinds": [
@@ -3034,7 +3034,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[a][a][a][a][2]",
+        "port": "formal(parameter, position=1)[a][a][a][a][2]",
         "taint": [
           {
             "kinds": [
@@ -3117,7 +3117,7 @@
     "callable": "taint_broadening.random_tito",
     "tito": [
       {
-        "port": "formal(parameter)[i1]",
+        "port": "formal(parameter, position=0)[i1]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3126,7 +3126,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i2]",
+        "port": "formal(parameter, position=0)[i2]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3135,7 +3135,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i3]",
+        "port": "formal(parameter, position=0)[i3]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3144,7 +3144,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i4]",
+        "port": "formal(parameter, position=0)[i4]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3161,7 +3161,7 @@
     "callable": "taint_broadening.recursive_sink_parent",
     "sinks": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3204,7 +3204,7 @@
                 "end": 40
               },
               "resolves_to": [ "taint_broadening.recursive_sink_parent" ],
-              "port": "formal(obj)"
+              "port": "formal(obj, position=0)"
             }
           }
         ]
@@ -3218,7 +3218,7 @@
     "callable": "taint_broadening.recursive_sink_parent_attribute",
     "sinks": [
       {
-        "port": "formal(obj)[attribute]",
+        "port": "formal(obj, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -3238,7 +3238,7 @@
         ]
       },
       {
-        "port": "formal(obj)[parent][attribute]",
+        "port": "formal(obj, position=0)[parent][attribute]",
         "taint": [
           {
             "kinds": [
@@ -3258,13 +3258,13 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj)[attribute]"
+              "port": "formal(obj, position=0)[attribute]"
             }
           }
         ]
       },
       {
-        "port": "formal(obj)[parent][parent][attribute]",
+        "port": "formal(obj, position=0)[parent][parent][attribute]",
         "taint": [
           {
             "kinds": [
@@ -3284,13 +3284,13 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj)[parent][attribute]"
+              "port": "formal(obj, position=0)[parent][attribute]"
             }
           }
         ]
       },
       {
-        "port": "formal(obj)[parent][parent][parent][attribute]",
+        "port": "formal(obj, position=0)[parent][parent][parent][attribute]",
         "taint": [
           {
             "kinds": [
@@ -3310,13 +3310,13 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj)[parent][parent][attribute]"
+              "port": "formal(obj, position=0)[parent][parent][attribute]"
             }
           }
         ]
       },
       {
-        "port": "formal(obj)[parent][parent][parent][parent]",
+        "port": "formal(obj, position=0)[parent][parent][parent][parent]",
         "taint": [
           {
             "kinds": [
@@ -3339,7 +3339,7 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj)[parent][parent][parent][attribute]"
+              "port": "formal(obj, position=0)[parent][parent][parent][attribute]"
             }
           },
           {
@@ -3367,7 +3367,7 @@
               "resolves_to": [
                 "taint_broadening.recursive_sink_parent_attribute"
               ],
-              "port": "formal(obj)[parent][parent][parent][parent]"
+              "port": "formal(obj, position=0)[parent][parent][parent][parent]"
             }
           }
         ]
@@ -3381,7 +3381,7 @@
     "callable": "taint_broadening.sink_a",
     "sinks": [
       {
-        "port": "formal(parameter)[a]",
+        "port": "formal(parameter, position=0)[a]",
         "taint": [
           {
             "kinds": [
@@ -3412,7 +3412,7 @@
     "callable": "taint_broadening.sink_taint_widening_collapse_depth",
     "sinks": [
       {
-        "port": "formal(parameter)[a][a][a][a]",
+        "port": "formal(parameter, position=0)[a][a][a][a]",
         "taint": [
           {
             "kinds": [
@@ -3438,7 +3438,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[a][a][a][b]",
+        "port": "formal(parameter, position=0)[a][a][a][b]",
         "taint": [
           {
             "kinds": [
@@ -3461,7 +3461,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[a][a][b]",
+        "port": "formal(parameter, position=0)[a][a][b]",
         "taint": [
           {
             "kinds": [
@@ -3484,7 +3484,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[a][b]",
+        "port": "formal(parameter, position=0)[a][b]",
         "taint": [
           {
             "kinds": [
@@ -3507,7 +3507,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[b]",
+        "port": "formal(parameter, position=0)[b]",
         "taint": [
           {
             "kinds": [
@@ -3538,7 +3538,7 @@
     "callable": "taint_broadening.skip_model_broadening",
     "tito": [
       {
-        "port": "formal(f)",
+        "port": "formal(f, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3676,7 +3676,7 @@
     "callable": "taint_broadening.tito_broaden_input_and_output_paths",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -3698,7 +3698,7 @@
     "callable": "taint_broadening.tito_broaden_input_and_output_paths_single_statement",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -3720,7 +3720,7 @@
     "callable": "taint_broadening.tito_broaden_input_path_common_prefix",
     "tito": [
       {
-        "port": "formal(x)[y]",
+        "port": "formal(x, position=0)[y]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -3742,7 +3742,7 @@
     "callable": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
     "tito": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3780,7 +3780,7 @@
     "callable": "taint_broadening.tito_broaden_output_path_common_prefix",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3804,7 +3804,7 @@
     "callable": "taint_broadening.tito_broaden_output_paths_but_not_input_path",
     "tito": [
       {
-        "port": "formal(parameter)[i1]",
+        "port": "formal(parameter, position=0)[i1]",
         "taint": [
           {
             "kinds": [
@@ -3837,7 +3837,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i2]",
+        "port": "formal(parameter, position=0)[i2]",
         "taint": [
           {
             "kinds": [
@@ -3870,7 +3870,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i3]",
+        "port": "formal(parameter, position=0)[i3]",
         "taint": [
           {
             "kinds": [
@@ -3903,7 +3903,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i4]",
+        "port": "formal(parameter, position=0)[i4]",
         "taint": [
           {
             "kinds": [
@@ -3944,7 +3944,7 @@
     "callable": "taint_broadening.tito_collapse_sink",
     "sinks": [
       {
-        "port": "formal(parameter)",
+        "port": "formal(parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -4018,7 +4018,7 @@
     "callable": "taint_broadening.tito_no_broadening_input_and_output_paths",
     "tito": [
       {
-        "port": "formal(parameter)[i1]",
+        "port": "formal(parameter, position=0)[i1]",
         "taint": [
           {
             "kinds": [
@@ -4029,7 +4029,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i10]",
+        "port": "formal(parameter, position=0)[i10]",
         "taint": [
           {
             "kinds": [
@@ -4040,7 +4040,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i11]",
+        "port": "formal(parameter, position=0)[i11]",
         "taint": [
           {
             "kinds": [
@@ -4051,7 +4051,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i2]",
+        "port": "formal(parameter, position=0)[i2]",
         "taint": [
           {
             "kinds": [
@@ -4062,7 +4062,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i3]",
+        "port": "formal(parameter, position=0)[i3]",
         "taint": [
           {
             "kinds": [
@@ -4073,7 +4073,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i4]",
+        "port": "formal(parameter, position=0)[i4]",
         "taint": [
           {
             "kinds": [
@@ -4084,7 +4084,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i5]",
+        "port": "formal(parameter, position=0)[i5]",
         "taint": [
           {
             "kinds": [
@@ -4095,7 +4095,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i6]",
+        "port": "formal(parameter, position=0)[i6]",
         "taint": [
           {
             "kinds": [
@@ -4106,7 +4106,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i7]",
+        "port": "formal(parameter, position=0)[i7]",
         "taint": [
           {
             "kinds": [
@@ -4117,7 +4117,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i8]",
+        "port": "formal(parameter, position=0)[i8]",
         "taint": [
           {
             "kinds": [
@@ -4128,7 +4128,7 @@
         ]
       },
       {
-        "port": "formal(parameter)[i9]",
+        "port": "formal(parameter, position=0)[i9]",
         "taint": [
           {
             "kinds": [

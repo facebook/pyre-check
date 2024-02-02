@@ -1565,7 +1565,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1611,7 +1611,7 @@
     "callable": "filter.__init__",
     "tito": [
       {
-        "port": "formal(__iterable)[*]",
+        "port": "formal(__iterable, position=2)[*]",
         "taint": [
           {
             "kinds": [
@@ -1622,7 +1622,7 @@
         ]
       },
       {
-        "port": "formal(__iterable).**keys",
+        "port": "formal(__iterable, position=2).**keys",
         "taint": [
           {
             "kinds": [
@@ -1642,7 +1642,7 @@
     "callable": "list.__init__",
     "tito": [
       {
-        "port": "formal(__iterable)[*]",
+        "port": "formal(__iterable, position=1)[*]",
         "taint": [
           {
             "kinds": [
@@ -1653,7 +1653,7 @@
         ]
       },
       {
-        "port": "formal(__iterable).**keys",
+        "port": "formal(__iterable, position=1).**keys",
         "taint": [
           {
             "kinds": [

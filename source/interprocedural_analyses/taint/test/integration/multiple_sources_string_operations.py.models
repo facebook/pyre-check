@@ -327,7 +327,7 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
-              "port": "formal(arg2)"
+              "port": "formal(arg2, position=1)"
             }
           }
         ]
@@ -419,7 +419,7 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled"
               ],
-              "port": "formal(arg1)"
+              "port": "formal(arg1, position=0)"
             }
           }
         ]
@@ -511,7 +511,7 @@
               "resolves_to": [
                 "multiple_sources_string_operations.format_string_triggered_user_controlled"
               ],
-              "port": "formal(arg)"
+              "port": "formal(arg, position=0)"
             }
           }
         ]
@@ -1202,7 +1202,7 @@
     "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
     "sinks": [
       {
-        "port": "formal(self)[attribute_query]",
+        "port": "formal(self, position=0)[attribute_query]",
         "taint": [
           {
             "kinds": [
@@ -1232,7 +1232,7 @@
     "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
     "sinks": [
       {
-        "port": "formal(arg2)",
+        "port": "formal(arg2, position=1)",
         "taint": [
           {
             "kinds": [
@@ -1256,7 +1256,7 @@
         ]
       },
       {
-        "port": "formal(arg1)",
+        "port": "formal(arg1, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1288,7 +1288,7 @@
     "callable": "multiple_sources_string_operations.format_string_triggered_sql",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1370,7 +1370,7 @@
                   "resolves_to": [
                     "multiple_sources_string_operations.format_string_triggered_sql"
                   ],
-                  "port": "formal(arg)"
+                  "port": "formal(arg, position=0)"
                 },
                 "leaf_kind": "TriggeredPartialSink[UserControlledDataAndStringMayBeSQL[secondary]]",
                 "trace_kind": "sink"
@@ -1407,7 +1407,7 @@
     "callable": "multiple_sources_string_operations.format_string_triggered_user_controlled",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -1482,7 +1482,7 @@
     "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
     "sinks": [
       {
-        "port": "formal(arg)[f]",
+        "port": "formal(arg, position=0)[f]",
         "taint": [
           {
             "kinds": [

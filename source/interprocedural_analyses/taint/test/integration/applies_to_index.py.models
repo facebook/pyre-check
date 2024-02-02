@@ -287,7 +287,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -493,7 +493,7 @@
     "callable": "applies_to_index.tito",
     "tito": [
       {
-        "port": "formal(x)[a]",
+        "port": "formal(x, position=0)[a]",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],

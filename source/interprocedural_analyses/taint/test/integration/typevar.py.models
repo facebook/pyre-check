@@ -17,7 +17,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -63,7 +63,7 @@
     "callable": "typevar.Foo.__init__",
     "tito": [
       {
-        "port": "formal(tainted)",
+        "port": "formal(tainted, position=1)",
         "taint": [
           {
             "kinds": [
@@ -74,7 +74,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -91,7 +91,7 @@
     "callable": "typevar.issue",
     "sinks": [
       {
-        "port": "formal(foo)[tainted]",
+        "port": "formal(foo, position=0)[tainted]",
         "taint": [
           {
             "kinds": [
@@ -113,7 +113,7 @@
     ],
     "tito": [
       {
-        "port": "formal(foo)",
+        "port": "formal(foo, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

@@ -70,7 +70,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
@@ -96,7 +96,7 @@
     "callable": "maximum_tito_depth.tito_max_consecutive",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -125,7 +125,7 @@
     "callable": "maximum_tito_depth.tito_min_disjoint",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -153,7 +153,7 @@
     "callable": "maximum_tito_depth.tito_min_disjoint_max_consecutive",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -183,7 +183,7 @@
     "callable": "maximum_tito_depth.tito_obscure",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -210,7 +210,7 @@
     "callable": "maximum_tito_depth.tito_one",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -235,7 +235,7 @@
     "callable": "maximum_tito_depth.tito_three",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -260,7 +260,7 @@
     "callable": "maximum_tito_depth.tito_two",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -285,7 +285,7 @@
     "callable": "maximum_tito_depth.tito_zero",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

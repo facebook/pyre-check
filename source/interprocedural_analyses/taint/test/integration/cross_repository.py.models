@@ -145,7 +145,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -191,7 +191,7 @@
     "callable": "cross_repository.cross_repository_anchor_sink",
     "sinks": [
       {
-        "port": "formal(sink_parameter)",
+        "port": "formal(sink_parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -218,7 +218,7 @@
     "callable": "cross_repository.cross_repository_source",
     "sources": [
       {
-        "port": "formal(source_parameter)",
+        "port": "formal(source_parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -241,7 +241,7 @@
     ],
     "sinks": [
       {
-        "port": "formal(source_parameter)",
+        "port": "formal(source_parameter, position=0)",
         "taint": [
           {
             "kinds": [
@@ -340,7 +340,7 @@
     "callable": "cross_repository.reaches_crtex_sink",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -398,7 +398,7 @@
     "callable": "cross_repository.test_propagate_cross_repository_sink_once",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [
@@ -432,7 +432,7 @@
     "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
     "sinks": [
       {
-        "port": "formal(z)",
+        "port": "formal(z, position=0)",
         "taint": [
           {
             "kinds": [
@@ -452,7 +452,7 @@
               "resolves_to": [
                 "cross_repository.test_propagate_cross_repository_sink_once"
               ],
-              "port": "formal(y)"
+              "port": "formal(y, position=0)"
             }
           }
         ]

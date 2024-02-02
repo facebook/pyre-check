@@ -2203,7 +2203,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2249,7 +2249,7 @@
     "callable": "self.Foo.__init__",
     "sources": [
       {
-        "port": "formal(tainted_instance)",
+        "port": "formal(tainted_instance, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       },
       {
@@ -2305,7 +2305,7 @@
     ],
     "tito": [
       {
-        "port": "formal(not_tainted_instance)",
+        "port": "formal(not_tainted_instance, position=2)",
         "taint": [
           {
             "kinds": [
@@ -2319,7 +2319,7 @@
         ]
       },
       {
-        "port": "formal(tainted_instance)",
+        "port": "formal(tainted_instance, position=1)",
         "taint": [
           {
             "kinds": [
@@ -2333,7 +2333,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2350,7 +2350,7 @@
     "callable": "self.Foo.selftype_access_other",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2367,7 +2367,7 @@
     "callable": "self.Foo.selftype_access_self",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2384,7 +2384,7 @@
     "callable": "self.Foo.selftype_access_untyped_self",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2401,7 +2401,7 @@
     "callable": "self.Foo.selftype_self_class",
     "sinks": [
       {
-        "port": "formal(self)[tainted_class]",
+        "port": "formal(self, position=0)[tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -2425,7 +2425,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2442,7 +2442,7 @@
     "callable": "self.Foo.selftype_self_class_direct",
     "sinks": [
       {
-        "port": "formal(self)[__class__][tainted_class]",
+        "port": "formal(self, position=0)[__class__][tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -2466,7 +2466,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2483,7 +2483,7 @@
     "callable": "self.Foo.selftype_self_extra_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_extra_instance]",
+        "port": "formal(self, position=0)[tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -2507,7 +2507,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2524,7 +2524,7 @@
     "callable": "self.Foo.selftype_self_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_instance]",
+        "port": "formal(self, position=0)[tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -2548,7 +2548,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2565,7 +2565,7 @@
     "callable": "self.Foo.selftype_self_not_tainted",
     "sinks": [
       {
-        "port": "formal(self)[not_tainted_class]",
+        "port": "formal(self, position=0)[not_tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -2587,7 +2587,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_extra_instance]",
+        "port": "formal(self, position=0)[not_tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -2609,7 +2609,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_instance]",
+        "port": "formal(self, position=0)[not_tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -2633,7 +2633,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2650,7 +2650,7 @@
     "callable": "self.Foo.typevar_access_other",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2667,7 +2667,7 @@
     "callable": "self.Foo.typevar_access_self",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2684,7 +2684,7 @@
     "callable": "self.Foo.typevar_self_class",
     "sinks": [
       {
-        "port": "formal(self)[tainted_class]",
+        "port": "formal(self, position=0)[tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -2708,7 +2708,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2725,7 +2725,7 @@
     "callable": "self.Foo.typevar_self_class_direct",
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2756,7 +2756,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2844,7 +2844,7 @@
     "callable": "self.Foo.typevar_self_extra_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_extra_instance]",
+        "port": "formal(self, position=0)[tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -2868,7 +2868,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2885,7 +2885,7 @@
     "callable": "self.Foo.typevar_self_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_instance]",
+        "port": "formal(self, position=0)[tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -2909,7 +2909,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -2926,7 +2926,7 @@
     "callable": "self.Foo.typevar_self_not_tainted",
     "sinks": [
       {
-        "port": "formal(self)[not_tainted_class]",
+        "port": "formal(self, position=0)[not_tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -2948,7 +2948,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_extra_instance]",
+        "port": "formal(self, position=0)[not_tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -2970,7 +2970,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_instance]",
+        "port": "formal(self, position=0)[not_tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -2994,7 +2994,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3011,7 +3011,7 @@
     "callable": "self.Foo.untyped_access_self",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -3028,7 +3028,7 @@
     "callable": "self.Foo.untyped_self_class",
     "sinks": [
       {
-        "port": "formal(self)[tainted_class]",
+        "port": "formal(self, position=0)[tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -3058,7 +3058,7 @@
     "callable": "self.Foo.untyped_self_class_direct",
     "sinks": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -3166,7 +3166,7 @@
     "callable": "self.Foo.untyped_self_extra_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_extra_instance]",
+        "port": "formal(self, position=0)[tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -3196,7 +3196,7 @@
     "callable": "self.Foo.untyped_self_instance",
     "sinks": [
       {
-        "port": "formal(self)[tainted_instance]",
+        "port": "formal(self, position=0)[tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -3226,7 +3226,7 @@
     "callable": "self.Foo.untyped_self_not_tainted",
     "sinks": [
       {
-        "port": "formal(self)[not_tainted_class]",
+        "port": "formal(self, position=0)[not_tainted_class]",
         "taint": [
           {
             "kinds": [
@@ -3248,7 +3248,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_extra_instance]",
+        "port": "formal(self, position=0)[not_tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -3270,7 +3270,7 @@
         ]
       },
       {
-        "port": "formal(self)[not_tainted_instance]",
+        "port": "formal(self, position=0)[not_tainted_instance]",
         "taint": [
           {
             "kinds": [

@@ -61,7 +61,7 @@
                 "end": 25
               },
               "resolves_to": [ "supers.B.f5" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=1)"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
@@ -141,7 +141,7 @@
                 "end": 7
               },
               "resolves_to": [ "supers.B.g1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "receiver_interval": [ { "lower": 3, "upper": 6 } ],
             "is_self_call": false
@@ -220,7 +220,7 @@
                 "end": 7
               },
               "resolves_to": [ "supers.C.g1", "supers.D.g1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
             "is_self_call": false
@@ -299,7 +299,7 @@
                 "end": 5
               },
               "resolves_to": [ "supers.D.g1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "receiver_interval": [ { "lower": 8, "upper": 9 } ],
             "is_self_call": false
@@ -325,7 +325,7 @@
     "callable": "Obj{ClassWithSinkAttribute.attribute}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -337,7 +337,7 @@
     "callable": "Obj{taint._global_sink}",
     "sinks": [
       {
-        "port": "formal($global)",
+        "port": "formal($global, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
@@ -349,7 +349,7 @@
     "callable": "Ovr{supers.B.g1}",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -367,7 +367,7 @@
                 "end": -1
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -384,7 +384,7 @@
     "callable": "Ovr{supers.C.g1}",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -402,7 +402,7 @@
                 "end": -1
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -424,7 +424,7 @@
                 "end": -1
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
@@ -441,7 +441,7 @@
     "callable": "Ovr{supers.D.g1}",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -459,7 +459,7 @@
                 "end": -1
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],
@@ -491,7 +491,7 @@
     "callable": "_rce",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -509,7 +509,7 @@
     "callable": "_sql",
     "sinks": [
       {
-        "port": "formal(argument)",
+        "port": "formal(argument, position=0)",
         "taint": [ { "kinds": [ { "kind": "SQL" } ], "declaration": null } ]
       }
     ],
@@ -522,7 +522,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -568,7 +568,7 @@
     "callable": "_tito",
     "tito": [
       {
-        "port": "formal(**kw)",
+        "port": "formal(**kwargs)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -577,7 +577,7 @@
         ]
       },
       {
-        "port": "formal(*rest0)",
+        "port": "formal(*args, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -610,7 +610,7 @@
     "callable": "copy",
     "tito": [
       {
-        "port": "formal(obj)",
+        "port": "formal(obj, position=0)",
         "taint": [
           {
             "kinds": [
@@ -634,7 +634,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
@@ -652,7 +652,7 @@
     "callable": "getattr",
     "sinks": [
       {
-        "port": "formal(name)",
+        "port": "formal(name, position=1)",
         "taint": [
           { "kinds": [ { "kind": "GetAttr" } ], "declaration": null }
         ]
@@ -660,7 +660,7 @@
     ],
     "tito": [
       {
-        "port": "formal(default)",
+        "port": "formal(default, position=2)",
         "taint": [
           {
             "kinds": [
@@ -675,7 +675,7 @@
         ]
       },
       {
-        "port": "formal(o)",
+        "port": "formal(o, position=0)",
         "taint": [
           {
             "kinds": [
@@ -725,7 +725,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -742,7 +742,7 @@
     "callable": "supers.A.f1",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -772,7 +772,7 @@
     "callable": "supers.A.f2",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -866,7 +866,7 @@
     "callable": "supers.B.f5",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -890,7 +890,7 @@
     ],
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=1)",
         "taint": [
           {
             "kinds": [
@@ -917,7 +917,7 @@
     "callable": "supers.B.g1",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -935,7 +935,7 @@
                 "end": 22
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -957,7 +957,7 @@
                 "end": 15
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1030,7 +1030,7 @@
                 "end": 31
               },
               "resolves_to": [ "supers.A.f2" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=1)"
             },
             "caller_interval": [ { "lower": 3, "upper": 6 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1057,7 +1057,7 @@
     "callable": "supers.C.g1",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -1075,7 +1075,7 @@
                 "end": 22
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 7, "upper": 10 } ],
             "receiver_interval": [ { "lower": 2, "upper": 11 } ],
@@ -1092,7 +1092,7 @@
     "callable": "supers.D.g1",
     "sinks": [
       {
-        "port": "formal(self)[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -1110,7 +1110,7 @@
                 "end": 15
               },
               "resolves_to": [ "supers.A.f1" ],
-              "port": "formal(self)[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             },
             "caller_interval": [ { "lower": 8, "upper": 9 } ],
             "receiver_interval": [ { "lower": 7, "upper": 10 } ],

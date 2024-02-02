@@ -64,7 +64,7 @@
                 "end": 25
               },
               "resolves_to": [ "sanitize_parametric.partial_issue_sinks" ],
-              "port": "formal(x)"
+              "port": "formal(x, position=0)"
             }
           }
         ]
@@ -86,7 +86,7 @@
     "callable": "sanitize_parametric.a_sink_x",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA[X]" } ], "declaration": null }
         ]
@@ -101,7 +101,7 @@
     "callable": "sanitize_parametric.a_sink_y",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           { "kinds": [ { "kind": "TestA[Y]" } ], "declaration": null }
         ]
@@ -146,7 +146,7 @@
     "callable": "sanitize_parametric.partial_issue_sinks",
     "sinks": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -252,7 +252,7 @@
     "callable": "sanitize_parametric.sanitize_a_sink_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [
@@ -275,7 +275,7 @@
     "callable": "sanitize_parametric.sanitize_a_source_tito",
     "tito": [
       {
-        "port": "formal(x)",
+        "port": "formal(x, position=0)",
         "taint": [
           {
             "kinds": [

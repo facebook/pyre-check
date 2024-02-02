@@ -5,7 +5,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -51,7 +51,7 @@
     "callable": "side_effects.MyList.append",
     "tito": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=1)",
         "taint": [
           {
             "kinds": [
@@ -70,7 +70,7 @@
     "callable": "side_effects.change_arg0",
     "tito": [
       {
-        "port": "formal(arg1)",
+        "port": "formal(arg1, position=1)",
         "taint": [
           {
             "kinds": [
@@ -90,7 +90,7 @@
     "callable": "side_effects.change_arg1",
     "tito": [
       {
-        "port": "formal(arg0)",
+        "port": "formal(arg0, position=0)",
         "taint": [
           {
             "kinds": [
@@ -110,7 +110,7 @@
     "callable": "side_effects.dict_to_sink_via_side_effect",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [
@@ -280,7 +280,7 @@
     "callable": "side_effects.to_sink_via_side_effect",
     "sinks": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=0)",
         "taint": [
           {
             "kinds": [

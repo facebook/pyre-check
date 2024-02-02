@@ -58,7 +58,7 @@
                 "end": 20
               },
               "resolves_to": [ "constructors.BothNewAndInit.__init__" ],
-              "port": "formal(self)[foo]"
+              "port": "formal(self, position=0)[foo]"
             }
           }
         ]
@@ -346,7 +346,7 @@
                 "end": 35
               },
               "resolves_to": [ "constructors.ChildWithNew.__new__" ],
-              "port": "formal(input)"
+              "port": "formal(input, position=1)"
             }
           }
         ]
@@ -448,7 +448,7 @@
     "callable": "_test_sink",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [
@@ -520,7 +520,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -537,7 +537,7 @@
     "callable": "constructors.BothNewAndInit.__init__",
     "sinks": [
       {
-        "port": "formal(self)[foo]",
+        "port": "formal(self, position=0)[foo]",
         "taint": [
           {
             "kinds": [
@@ -561,7 +561,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -608,7 +608,7 @@
     "callable": "constructors.ChildWithNew.__new__",
     "sinks": [
       {
-        "port": "formal(input)",
+        "port": "formal(input, position=1)",
         "taint": [
           {
             "kinds": [
@@ -630,7 +630,7 @@
     ],
     "tito": [
       {
-        "port": "formal(cls)",
+        "port": "formal(cls, position=0)",
         "taint": [
           {
             "kinds": [
@@ -686,7 +686,7 @@
     ],
     "tito": [
       {
-        "port": "formal(y)",
+        "port": "formal(y, position=1)",
         "taint": [
           {
             "kinds": [
@@ -700,7 +700,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -719,7 +719,7 @@
     "callable": "constructors.InitWithModel.__init__",
     "tito": [
       {
-        "port": "formal(tito)",
+        "port": "formal(tito, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -737,7 +737,7 @@
     "callable": "constructors.NewWithModel.__new__",
     "tito": [
       {
-        "port": "formal(tito)",
+        "port": "formal(tito, position=1)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
@@ -755,7 +755,7 @@
     "callable": "constructors.ParentWithInit.__init__",
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -772,7 +772,7 @@
     "callable": "constructors.SomeAPI.__init__",
     "tito": [
       {
-        "port": "formal(oauth_token_secret)",
+        "port": "formal(oauth_token_secret, position=2)",
         "taint": [
           {
             "kinds": [
@@ -786,7 +786,7 @@
         ]
       },
       {
-        "port": "formal(oauth_token)",
+        "port": "formal(oauth_token, position=1)",
         "taint": [
           {
             "kinds": [
@@ -800,7 +800,7 @@
         ]
       },
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -817,7 +817,7 @@
     "callable": "constructors.SomeAPI.async_get_authenticated_user",
     "sinks": [
       {
-        "port": "formal(self)[AUTHENTICATE_URL]",
+        "port": "formal(self, position=0)[AUTHENTICATE_URL]",
         "taint": [
           {
             "kinds": [
@@ -846,7 +846,7 @@
     "callable": "constructors.SomeAPI.from_default_keys",
     "tito": [
       {
-        "port": "formal(oauth_token_secret)",
+        "port": "formal(oauth_token_secret, position=2)",
         "taint": [
           {
             "kinds": [
@@ -863,7 +863,7 @@
         ]
       },
       {
-        "port": "formal(oauth_token)",
+        "port": "formal(oauth_token, position=1)",
         "taint": [
           {
             "kinds": [
@@ -914,7 +914,7 @@
     ],
     "tito": [
       {
-        "port": "formal(self)",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -931,7 +931,7 @@
     "callable": "constructors.test_construction",
     "tito": [
       {
-        "port": "formal(request)[POST][1]",
+        "port": "formal(request, position=0)[POST][1]",
         "taint": [
           {
             "kinds": [
@@ -952,7 +952,7 @@
         ]
       },
       {
-        "port": "formal(request)[POST][2]",
+        "port": "formal(request, position=0)[POST][2]",
         "taint": [
           {
             "kinds": [
@@ -981,7 +981,7 @@
     "callable": "eval",
     "sinks": [
       {
-        "port": "formal(arg)",
+        "port": "formal(arg, position=0)",
         "taint": [
           {
             "kinds": [ { "kind": "RemoteCodeExecution" } ],
