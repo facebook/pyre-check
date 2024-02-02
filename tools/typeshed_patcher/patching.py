@@ -16,7 +16,7 @@ import logging
 import pathlib
 import sys
 
-from . import patch_specs, transforms, typeshed
+from . import buck, patch_specs, transforms, typeshed
 
 logger: logging.Logger = logging.getLogger(__name__)
 
@@ -149,6 +149,11 @@ def patch_typeshed_directory(
     )
     typeshed.write_to_directory(result.patched_typeshed, destination_root)
     logger.info(f"Wrote patched typeshed to {destination_root}")
+    buck.write_buck_file_to_directory(
+        buck.generate_buck_file(result.patched_typeshed),
+        destination_root,
+    )
+    logger.info(f"Wrote Buck file to {destination_root}")
     if diffs_directory is not None:
         typeshed.write_content_map_to_directory(result.patch_diffs, diffs_directory)
         logger.info(f"Wrote diffs of all patched stubs to {diffs_directory}")
