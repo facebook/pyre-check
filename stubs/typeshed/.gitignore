@@ -1,0 +1,2 @@
+# We want to keep every file under this repository checked into source control.
+!**/*
