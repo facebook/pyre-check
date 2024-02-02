@@ -73,3 +73,17 @@ class Configurationless(Command):
             if global_is_strict
             else filesystem.LocalMode.UNSAFE
         )
+
+    @staticmethod
+    def get_default_local_mode(
+        local_configuration: Configuration,
+        default_global_mode: filesystem.LocalMode,
+    ) -> filesystem.LocalMode:
+        default_project_strictness_setting = local_configuration.strict
+
+        if default_project_strictness_setting is None:
+            return default_global_mode
+        elif default_project_strictness_setting:
+            return filesystem.LocalMode.STRICT
+        else:
+            return filesystem.LocalMode.UNSAFE

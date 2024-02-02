@@ -83,3 +83,51 @@ class TestConfigurationless(unittest.TestCase):
             self.configurationless.get_default_global_mode(global_configuration),
             LocalMode.UNSAFE,
         )
+
+    def test_get_default_mode_local_strict(self) -> None:
+        local_configuration = self.get_configuration(
+            Path("./local_configuration.json"), targets=["..."]
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_local_mode(
+                local_configuration, LocalMode.UNSAFE
+            ),
+            LocalMode.STRICT,
+        )
+
+    def test_get_default_mode_local_empty_global_strict(self) -> None:
+        local_configuration = self.get_configuration(
+            Path("./local_configuration.json"), targets=["..."], strict=None
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_local_mode(
+                local_configuration, LocalMode.STRICT
+            ),
+            LocalMode.STRICT,
+        )
+
+    def test_get_default_mode_local_empty_global_unsafe(self) -> None:
+        local_configuration = self.get_configuration(
+            Path("./local_configuration.json"), targets=["..."], strict=None
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_local_mode(
+                local_configuration, LocalMode.UNSAFE
+            ),
+            LocalMode.UNSAFE,
+        )
+
+    def test_get_default_mode_local_unsafe_global_strict(self) -> None:
+        local_configuration = self.get_configuration(
+            Path("./local_configuration.json"), targets=["..."], strict=False
+        )
+
+        self.assertEqual(
+            self.configurationless.get_default_local_mode(
+                local_configuration, LocalMode.STRICT
+            ),
+            LocalMode.UNSAFE,
+        )
