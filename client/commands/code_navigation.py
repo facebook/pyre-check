@@ -17,7 +17,7 @@ import json
 import logging
 import traceback
 
-from typing import Callable, List, Optional
+from typing import List, Optional
 
 from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
 from ..language_server import connections, features, protocol as lsp, remote_index
