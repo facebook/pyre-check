@@ -919,9 +919,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-
+        completion_timer = timer.Timer()
         query = parameters.query
         symbol_search_response = await self.index_querier.get_symbol_search(query)
+        len_res = 0
 
         if isinstance(symbol_search_response, DaemonQueryFailure):
             error_message = symbol_search_response.error_message
@@ -937,6 +938,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raw_results = []
 
             if symbol_search_response.data is not None:
+                len_res = len(symbol_search_response.data.workspace_symbols)
                 raw_results = lsp.WorkspaceSymbolResponse.cached_schema().dump(
                     symbol_search_response.data
                 )["workspaceSymbols"]
@@ -957,6 +959,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "query": query
                 if not isinstance(symbol_search_response, DaemonQueryFailure)
                 else None,
+                "response": raw_results,
+                "response length": len_res,
+                "duration_ms": completion_timer.stop_in_millisecond(),
                 "error_message": error_message,
                 "error_source": error_source,
             },
