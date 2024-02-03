@@ -33,8 +33,6 @@ from . import (
     type_error_handler,
 )
 
-from .daemon_query_failer import AbstractDaemonQueryFailer
-
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -208,9 +206,6 @@ async def async_run_code_navigation_client(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     index: remote_index.AbstractRemoteIndex,
-    daemon_query_failer_provider: Callable[
-        [pyre_server_options.PyreServerOptions], AbstractDaemonQueryFailer
-    ],
 ) -> int:
     initial_server_options = pyre_server_options.read_server_options(
         server_options_reader, remote_logging
@@ -248,13 +243,8 @@ async def async_run_code_navigation_client(
         server_options=initial_server_options,
     )
 
-    daemon_query_failer = daemon_query_failer_provider(initial_server_options)
-
-    codenav_querier = daemon_querier.FailableDaemonQuerier(
-        base_querier=daemon_querier.CodeNavigationDaemonQuerier(
-            server_state=server_state
-        ),
-        daemon_query_failer=daemon_query_failer,
+    codenav_querier = daemon_querier.CodeNavigationDaemonQuerier(
+        server_state=server_state
     )
 
     index_querier = daemon_querier.RemoteIndexBackedQuerier(codenav_querier, index)
@@ -295,9 +285,6 @@ def run(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     index: remote_index.AbstractRemoteIndex,
-    daemon_query_failer_provider: Callable[
-        [pyre_server_options.PyreServerOptions], AbstractDaemonQueryFailer
-    ],
 ) -> int:
     command_timer = timer.Timer()
     error_message: Optional[str] = None
@@ -307,7 +294,6 @@ def run(
                 server_options_reader,
                 remote_logging,
                 index,
-                daemon_query_failer_provider,
             )
         )
     except Exception:
