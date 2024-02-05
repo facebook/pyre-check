@@ -69,14 +69,14 @@ class BuildType(Enum):
 
 def detect_opam_version() -> Tuple[int]:
     LOG.info(["opam", "--version"])
-    version = subprocess.check_output(["opam", "--version"], universal_newlines=True)
+    version = subprocess.check_output(["opam", "--version"], universal_newlines=True).strip()
 
     try:
-        version_semver = version.strip().split('~')[0]
+        version_semver = version.split('~')[0]
         version = tuple(map(int, version_semver.split(".")))
-    except ValueError:
-        LOG.error("Failed to parse output of `opam --version`: `{}`", version.strip())
-        raise OpamVersionParseError
+    except ValueError as error:
+        message = f"Failed to parse output of `opam --version`: `{version}`"
+        raise OpamVersionParseError(message) from error
 
     LOG.info(f"Found opam version {'.'.join(map(str, version))}")
 
@@ -138,7 +138,9 @@ class Setup(NamedTuple):
                 build_type = BuildType.FACEBOOK
             else:
                 build_type = BuildType.EXTERNAL
+        # lint-ignore: NoUnsafeFilesystemRule
         with open(pyre_directory / "source" / "dune.in") as dune_in:
+            # lint-ignore: NoUnsafeFilesystemRule
             with open(pyre_directory / "source" / "dune", "w") as dune:
                 dune_data = dune_in.read()
                 dune.write(dune_data.replace("%VERSION%", build_type.value))
@@ -185,7 +187,7 @@ class Setup(NamedTuple):
             if not line.startswith(":"):
                 environment_variable, quoted_value = line.split(";")[0].split("=")
                 value = quoted_value[1:-1]
-                LOG.info(f'{environment_variable}="{value}"')
+                LOG.info(f'{environment_variable}="{value}"')  # noqa: B907
                 opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
@@ -366,6 +368,7 @@ def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) 
 
 
 def setup(runner_type: Type[Setup]) -> None:
+    # lint-ignore: NoCustomLogRule
     logging.basicConfig(
         level=logging.INFO, format="[%(asctime)s] [%(levelname)s] %(message)s"
     )
