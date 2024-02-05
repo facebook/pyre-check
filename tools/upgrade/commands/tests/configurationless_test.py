@@ -168,3 +168,67 @@ class TestConfigurationless(unittest.TestCase):
             ),
             LocalMode.UNSAFE,
         )
+
+    def test_get_mode_to_apply_file_in_exclude(self) -> None:
+        options = self.get_options(
+            ignore_all_errors_prefixes=["path/to/ignore"],
+            exclude_patterns=[r".*/exclude/.*"],
+        )
+        self.assertIsNone(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/exclude/file.py"),
+                options,
+            )
+        )
+
+    def test_get_mode_to_apply_file_in_ignore(self) -> None:
+        options = self.get_options(
+            ignore_all_errors_prefixes=["path/to/ignore"],
+            exclude_patterns=[r".*/exclude/.*"],
+        )
+        self.assertEqual(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/ignore/file.py"),
+                options,
+            ),
+            LocalMode.IGNORE,
+        )
+
+    def test_get_mode_to_apply_file_ignore_exclude_precedence(self) -> None:
+        options = self.get_options(
+            ignore_all_errors_prefixes=["path/to/regex"],
+            exclude_patterns=[r".*/regex/.*"],
+        )
+        self.assertIsNone(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/regex/file.py"), options
+            ),
+        )
+
+    def test_get_mode_to_apply_file_project_mode_same_as_global(self) -> None:
+        options = self.get_options()
+        self.assertIsNone(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/file.py"),
+                options,
+            ),
+        )
+
+    def test_get_mode_to_apply_file_project_mode_local_unsafe(self) -> None:
+        options = self.get_options(default_project_mode=LocalMode.UNSAFE)
+        self.assertEqual(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/file.py"),
+                options,
+            ),
+            LocalMode.UNSAFE,
+        )
+
+    def test_get_mode_to_apply_file_project_mode_local_strict(self) -> None:
+        options = self.get_options(default_global_mode=LocalMode.UNSAFE)
+        self.assertEqual(
+            self.configurationless.get_file_mode_to_apply(
+                Path("path/to/file.py"), options
+            ),
+            LocalMode.STRICT,
+        )

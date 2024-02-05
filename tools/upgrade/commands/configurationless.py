@@ -8,7 +8,7 @@ import logging
 import re
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Collection, List
+from typing import Collection, List, Optional
 
 from .. import filesystem
 from ..configuration import Configuration
@@ -111,3 +111,23 @@ class Configurationless(Command):
             return filesystem.LocalMode.STRICT
         else:
             return filesystem.LocalMode.UNSAFE
+
+    def get_file_mode_to_apply(
+        self, file: Path, options: ConfigurationlessOptions
+    ) -> Optional[filesystem.LocalMode]:
+        file = (self._path / file).absolute()
+        if any(
+            exclude_pattern.search(str(file)) is not None
+            for exclude_pattern in options.exclude_patterns
+        ):
+            # TODO(T174803521): implement `EXCLUDE` LocalMode and return here
+            return None
+        elif any(
+            file.is_relative_to(ignore_prefix)
+            for ignore_prefix in options.ignore_all_errors_prefixes
+        ):
+            return filesystem.LocalMode.IGNORE
+        elif options.default_project_mode == options.default_global_mode:
+            return None
+        else:
+            return options.default_project_mode
