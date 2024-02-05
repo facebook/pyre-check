@@ -20,7 +20,6 @@ import sys
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
-from tempfile import mkdtemp
 from typing import Dict, List, Mapping, NamedTuple, Tuple, Optional, Type
 
 
@@ -331,7 +330,7 @@ class Setup(NamedTuple):
             return output
 
 
-def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) -> Path:
+def _make_opam_root(local: bool, default: Optional[Path]) -> Path:
     home = Path.home()
     home_opam = home / ".opam"
     if local:
@@ -340,8 +339,6 @@ def _make_opam_root(local: bool, temporary_root: bool, default: Optional[Path]) 
             local_opam.parent.mkdir(parents=True, exist_ok=True)
             local_opam.symlink_to(home_opam, target_is_directory=True)
         return home_opam
-    if temporary_root:
-        return Path(mkdtemp())
     return default or home_opam
 
 
@@ -356,7 +353,6 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--pyre-directory", type=Path)
 
     parser.add_argument("--local", action="store_true")
-    parser.add_argument("--temporary_root", action="store_true")
     parser.add_argument("--opam-root", type=Path)
     parser.add_argument("--configure", action="store_true")
     parser.add_argument("--release", action="store_true")
@@ -370,7 +366,7 @@ def setup(runner_type: Type[Setup]) -> None:
     if not pyre_directory:
         pyre_directory = Path(__file__).parent.parent.absolute()
 
-    opam_root = _make_opam_root(parsed.local, parsed.temporary_root, parsed.opam_root)
+    opam_root = _make_opam_root(parsed.local, parsed.opam_root)
 
     runner = runner_type(
         opam_root=opam_root, opam_version=detect_opam_version(), release=parsed.release
