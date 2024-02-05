@@ -125,13 +125,8 @@ class Setup(NamedTuple):
         return os.environ
 
     def produce_dune_file(
-        self, pyre_directory: Path, build_type: Optional[BuildType] = None
+        self, pyre_directory: Path, build_type: BuildType
     ) -> None:
-        if not build_type:
-            if (pyre_directory / "facebook").is_dir():
-                build_type = BuildType.FACEBOOK
-            else:
-                build_type = BuildType.EXTERNAL
         # lint-ignore: NoUnsafeFilesystemRule
         with open(pyre_directory / "source" / "dune.in") as dune_in:
             # lint-ignore: NoUnsafeFilesystemRule
@@ -264,7 +259,7 @@ class Setup(NamedTuple):
         *,
         run_tests: bool = False,
         run_clean: bool = False,
-        build_type_override: Optional[BuildType] = None,
+        build_type: BuildType,
         rust_path: Optional[Path] = None,
     ) -> None:
         opam_environment_variables: Mapping[
@@ -278,7 +273,7 @@ class Setup(NamedTuple):
                 add_environment_variables=opam_environment_variables,
             )
 
-        self.produce_dune_file(pyre_directory, build_type_override)
+        self.produce_dune_file(pyre_directory, build_type)
         if run_clean:
             # Note: we do not run `make clean` because we want the result of the
             # explicit `produce_dune_file` to remain.
@@ -339,6 +334,12 @@ def _make_opam_root(local: bool) -> Path:
         local_opam.symlink_to(home_opam, target_is_directory=True)
     return home_opam
 
+def _infer_build_type_from_filesystem(pyre_directory: Path) -> BuildType:
+    if (pyre_directory / "facebook").is_dir():
+        return BuildType.FACEBOOK
+    else:
+        return BuildType.EXTERNAL
+
 
 def setup(runner_type: Type[Setup]) -> None:
     # lint-ignore: NoCustomLogRule
@@ -378,7 +379,7 @@ def setup(runner_type: Type[Setup]) -> None:
         runner.full_setup(
             pyre_directory,
             run_tests=not parsed.no_tests,
-            build_type_override=parsed.build_type,
+            build_type=parsed.build_type or _infer_build_type_from_filesystem(pyre_directory),
             rust_path=parsed.rust_path,
         )
 
