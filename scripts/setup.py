@@ -381,7 +381,6 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--temporary_root", action="store_true")
     parser.add_argument("--opam-root", type=Path)
     parser.add_argument("--configure", action="store_true")
-    parser.add_argument("--environment-only", action="store_true")
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
     parser.add_argument("--no-tests", action="store_true")
@@ -400,10 +399,6 @@ def setup(runner_type: Type[Setup]) -> None:
     )
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, parsed.build_type)
-    elif parsed.environment_only:
-        runner.produce_dune_file(pyre_directory, parsed.build_type)
-        runner.initialize_opam_switch()
-        LOG.info("Environment built successfully, stopping here as requested.")
     else:
         if not runner.already_initialized():
             runner.initialize_opam_switch()
