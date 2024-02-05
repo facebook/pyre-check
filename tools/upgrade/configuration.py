@@ -10,10 +10,11 @@ TODO(T132414938) Add a module-level docstring
 
 import json
 import logging
+import re
 import subprocess
 from logging import Logger
 from pathlib import Path
-from typing import Any, Dict, Generator, List, Optional, Sequence
+from typing import Any, Dict, Generator, List, Optional, Sequence, Set
 
 from . import UserError
 from .errors import Errors
@@ -147,6 +148,19 @@ class Configuration:
     def get_source_paths(self) -> Generator[Path, None, None]:
         # This is an approximation
         return Path(self.root).glob("**/*.py")
+
+    def get_exclude_as_patterns(self) -> Set[re.Pattern[str]]:
+        if self.exclude is not None:
+            return {re.compile(pattern) for pattern in self.exclude}
+        else:
+            return set()
+
+    def get_ignore_path_prefixes(self) -> Set[Path]:
+        root = Path(self.root)
+        if self.ignore_all_errors is not None:
+            return {(root / prefix).absolute() for prefix in self.ignore_all_errors}
+        else:
+            return set()
 
     def get_directory(self) -> Path:
         return self._path.parent

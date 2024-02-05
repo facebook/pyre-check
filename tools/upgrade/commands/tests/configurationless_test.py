@@ -5,13 +5,13 @@
 
 import unittest
 from pathlib import Path
-from typing import Any, List, Optional
+from typing import Any, Iterable, List, Optional
 
 from ...configuration import Configuration
 
 from ...filesystem import LocalMode
 from ...repository import Repository
-from ..configurationless import Configurationless
+from ..configurationless import Configurationless, ConfigurationlessOptions
 
 
 class TestConfigurationless(unittest.TestCase):
@@ -53,6 +53,43 @@ class TestConfigurationless(unittest.TestCase):
         }
 
         return Configuration(path, configuration_json)
+
+    @classmethod
+    def get_options(
+        cls,
+        *,
+        global_configuration: Optional[Configuration] = None,
+        local_configuration: Optional[Configuration] = None,
+        default_project_mode: LocalMode = LocalMode.STRICT,
+        default_global_mode: LocalMode = LocalMode.STRICT,
+        ignore_all_errors_prefixes: Optional[Iterable[str]] = None,
+        exclude_patterns: Optional[Iterable[str]] = None,
+    ) -> ConfigurationlessOptions:
+        if global_configuration is None:
+            global_configuration = cls.get_configuration(
+                Path("../.pyre_configuration"),
+                source_directories=["."],
+                ignore_all_errors=None,
+                exclude=None,
+            )
+        if local_configuration is None:
+            local_configuration = cls.get_configuration(
+                Path(".pyre_configuration.local"),
+                targets=["//path/to/my:target"],
+                ignore_all_errors=list(ignore_all_errors_prefixes)
+                if ignore_all_errors_prefixes is not None
+                else None,
+                exclude=list(exclude_patterns)
+                if exclude_patterns is not None
+                else None,
+            )
+
+        return ConfigurationlessOptions(
+            global_configuration=global_configuration,
+            local_configuration=local_configuration,
+            default_project_mode=default_project_mode,
+            default_global_mode=default_global_mode,
+        )
 
     def test_get_default_global_mode_no_configuration(self) -> None:
         global_configuration = self.get_configuration(

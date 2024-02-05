@@ -5,8 +5,10 @@
 
 import argparse
 import logging
+import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import List
+from typing import Collection, List
 
 from .. import filesystem
 from ..configuration import Configuration
@@ -14,6 +16,28 @@ from ..repository import Repository
 from .command import Command
 
 LOG: logging.Logger = logging.getLogger(__name__)
+
+
+@dataclass(frozen=True)
+class ConfigurationlessOptions:
+    global_configuration: Configuration
+    local_configuration: Configuration
+    default_project_mode: filesystem.LocalMode
+    default_global_mode: filesystem.LocalMode
+
+    @property
+    def ignore_all_errors_prefixes(self) -> Collection[Path]:
+        return (
+            self.global_configuration.get_ignore_path_prefixes()
+            | self.local_configuration.get_ignore_path_prefixes()
+        )
+
+    @property
+    def exclude_patterns(self) -> Collection[re.Pattern[str]]:
+        return (
+            self.global_configuration.get_exclude_as_patterns()
+            | self.local_configuration.get_exclude_as_patterns()
+        )
 
 
 class Configurationless(Command):
