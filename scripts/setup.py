@@ -15,7 +15,6 @@ of builds.
 import argparse
 import logging
 import os
-import shutil
 import subprocess
 import sys
 from enum import Enum
@@ -48,10 +47,6 @@ DEPENDENCIES = [
     "mtime.1.4.0",
     "errpy.0.0.9",
 ]
-
-
-class OCamlbuildAlreadyInstalled(Exception):
-    pass
 
 
 class OldOpam(Exception):
@@ -145,21 +140,6 @@ class Setup(NamedTuple):
                 dune_data = dune_in.read()
                 dune.write(dune_data.replace("%VERSION%", build_type.value))
 
-    def check_if_preinstalled(self) -> None:
-        if self.environment_variables.get(
-            "CHECK_IF_PREINSTALLED"
-        ) != "false" and shutil.which("ocamlc"):
-            ocamlc_location = self.run(["ocamlc", "-where"])
-            test_ocamlbuild_location = Path(ocamlc_location) / "ocamlbuild"
-            if test_ocamlbuild_location.is_dir():
-                LOG.error(
-                    "OCamlbuild will refuse to install since it is already "
-                    + f"present at {test_ocamlbuild_location}."
-                )
-                LOG.error("If you want to bypass this safety check, run:")
-                LOG.error("CHECK_IF_PREINSTALLED=false ./scripts/setup.sh")
-                raise OCamlbuildAlreadyInstalled
-
     def already_initialized(self) -> bool:
         return Path(self.opam_root.as_posix()).is_dir()
 
@@ -202,8 +182,6 @@ class Setup(NamedTuple):
         )
 
     def initialize_opam_switch(self) -> Mapping[str, str]:
-        self.check_if_preinstalled()
-
         self.run(
             self.opam_command()
             + [
