@@ -330,16 +330,14 @@ class Setup(NamedTuple):
             return output
 
 
-def _make_opam_root(local: bool, default: Optional[Path]) -> Path:
+def _make_opam_root(local: bool) -> Path:
     home = Path.home()
     home_opam = home / ".opam"
-    if local:
-        if not home_opam.is_dir():
-            local_opam = home / "local" / "opam"
-            local_opam.parent.mkdir(parents=True, exist_ok=True)
-            local_opam.symlink_to(home_opam, target_is_directory=True)
-        return home_opam
-    return default or home_opam
+    if local and not home_opam.is_dir():
+        local_opam = home / "local" / "opam"
+        local_opam.parent.mkdir(parents=True, exist_ok=True)
+        local_opam.symlink_to(home_opam, target_is_directory=True)
+    return home_opam
 
 
 def setup(runner_type: Type[Setup]) -> None:
@@ -353,7 +351,6 @@ def setup(runner_type: Type[Setup]) -> None:
     parser.add_argument("--pyre-directory", type=Path)
 
     parser.add_argument("--local", action="store_true")
-    parser.add_argument("--opam-root", type=Path)
     parser.add_argument("--configure", action="store_true")
     parser.add_argument("--release", action="store_true")
     parser.add_argument("--build-type", type=BuildType)
@@ -366,7 +363,7 @@ def setup(runner_type: Type[Setup]) -> None:
     if not pyre_directory:
         pyre_directory = Path(__file__).parent.parent.absolute()
 
-    opam_root = _make_opam_root(parsed.local, parsed.opam_root)
+    opam_root = _make_opam_root(parsed.local)
 
     runner = runner_type(
         opam_root=opam_root, opam_version=detect_opam_version(), release=parsed.release
