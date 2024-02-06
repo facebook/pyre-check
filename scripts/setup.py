@@ -63,10 +63,12 @@ class BuildType(Enum):
 
 def detect_opam_version() -> Tuple[int]:
     LOG.info(["opam", "--version"])
-    version = subprocess.check_output(["opam", "--version"], universal_newlines=True).strip()
+    version = subprocess.check_output(
+        ["opam", "--version"], universal_newlines=True
+    ).strip()
 
     try:
-        version_semver = version.split('~')[0]
+        version_semver = version.split("~")[0]
         version = tuple(map(int, version_semver.split(".")))
     except ValueError as error:
         message = f"Failed to parse output of `opam --version`: `{version}`"
@@ -124,9 +126,7 @@ class Setup(NamedTuple):
     def environment_variables(self) -> Mapping[str, str]:
         return os.environ
 
-    def produce_dune_file(
-        self, pyre_directory: Path, build_type: BuildType
-    ) -> None:
+    def produce_dune_file(self, pyre_directory: Path, build_type: BuildType) -> None:
         # lint-ignore: NoUnsafeFilesystemRule
         with open(pyre_directory / "source" / "dune.in") as dune_in:
             # lint-ignore: NoUnsafeFilesystemRule
@@ -334,6 +334,7 @@ def _make_opam_root(local: bool) -> Path:
         local_opam.symlink_to(home_opam, target_is_directory=True)
     return home_opam
 
+
 def _infer_build_type_from_filesystem(pyre_directory: Path) -> BuildType:
     if (pyre_directory / "facebook").is_dir():
         return BuildType.FACEBOOK
@@ -365,12 +366,13 @@ def setup(runner_type: Type[Setup]) -> None:
         pyre_directory = Path(__file__).parent.parent.absolute()
 
     opam_root = _make_opam_root(parsed.local)
+    build_type = parsed.build_type or _infer_build_type_from_filesystem(pyre_directory)
 
     runner = runner_type(
         opam_root=opam_root, opam_version=detect_opam_version(), release=parsed.release
     )
     if parsed.configure:
-        runner.produce_dune_file(pyre_directory, parsed.build_type)
+        runner.produce_dune_file(pyre_directory, build_type)
     else:
         if not runner.already_initialized():
             runner.initialize_opam_switch()
@@ -379,7 +381,7 @@ def setup(runner_type: Type[Setup]) -> None:
         runner.full_setup(
             pyre_directory,
             run_tests=not parsed.no_tests,
-            build_type=parsed.build_type or _infer_build_type_from_filesystem(pyre_directory),
+            build_type=build_type,
             rust_path=parsed.rust_path,
         )
 
