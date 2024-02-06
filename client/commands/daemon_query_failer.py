@@ -5,9 +5,7 @@
 
 import abc
 import dataclasses
-import re
 
-from re import Pattern
 from typing import Optional
 
 from ..language_server import daemon_connection
@@ -42,25 +40,3 @@ class DaemonQueryNoOpFailer(AbstractDaemonQueryFailer):
         self, path: str
     ) -> Optional[daemon_connection.DaemonConnectionFailure]:
         return None
-
-
-class RegexDaemonQueryFailer(AbstractDaemonQueryFailer):
-    """Fails daemon queries matching a specified regex pattern"""
-
-    def __init__(self, reject_regex: str) -> None:
-        self.reject_regex = reject_regex
-        self.compiled_reject_regex: Pattern[str] = re.compile(reject_regex)
-
-    def _matches_regex(self, path: str) -> Optional[str]:
-        if self.compiled_reject_regex.match(path):
-            return f"Not querying daemon for path: {path} as matches regex: {self.reject_regex}"
-
-    def query_failure(self, path: str) -> Optional[DaemonFailerFailure]:
-        if (fail_message := self._matches_regex(path)) is not None:
-            return DaemonFailerFailure(fail_message)
-
-    def query_connection_failure(
-        self, path: str
-    ) -> Optional[daemon_connection.DaemonConnectionFailure]:
-        if (fail_message := self._matches_regex(path)) is not None:
-            return daemon_connection.DaemonConnectionFailure(fail_message)
