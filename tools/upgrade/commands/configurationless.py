@@ -222,3 +222,18 @@ class Configurationless(Command):
             for source_directory in source_directories
             for file in file_system.list(source_directory, patterns=self._includes)
         }
+
+    def get_files_to_migrate(
+        self, local_configuration: Configuration
+    ) -> Collection[Path]:
+        if local_configuration.targets is not None:
+            files = self._get_files_to_migrate_from_targets(local_configuration.targets)
+        elif local_configuration.source_directories is not None:
+            files = self._get_files_to_migrate_from_source_directories(
+                local_configuration.source_directories
+            )
+        else:
+            raise ValueError(
+                "Could not find `targets` or `source_directories` keys in local configuration"
+            )
+        return files
