@@ -22,6 +22,7 @@ from .commands.codemods import (
     MissingOverrideReturnAnnotations,
     SetUseBuck1,
 )
+from .commands.configurationless import Configurationless
 from .commands.consolidate_nested_configurations import ConsolidateNestedConfigurations
 from .commands.expand_target_coverage import ExpandTargetCoverage
 from .commands.fix_configuration import FixConfiguration
@@ -74,6 +75,13 @@ def run(repository: Repository) -> None:
     # Subcommand: Changes .pyre_configuration strictness and adds overrides to maintain current strictness for sub-configurations.
     update_global_strictness = commands.add_parser("update-global-strictness")
     GlobalStrictness.add_arguments(update_global_strictness)
+
+    # Subcommand: Helper functionality for Pyre local configuration migration
+    configurationless = commands.add_parser(
+        "configurationless",
+        help="Migrate local configurations to the format required by upcoming Pyre changes.",
+    )
+    Configurationless.add_arguments(configurationless)
 
     # Subcommand: Set global configuration to given hash, and add version override
     # to all local configurations to run previous version.
