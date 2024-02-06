@@ -287,6 +287,7 @@ class TargetsToConfiguration(ErrorSuppressingCommand):
                 fixme_threshold=0,
                 remove_unsafe_headers=False,
                 remove_strict_flag=False,
+                paths=None,
             )
             strict_codemod.run()
         else:

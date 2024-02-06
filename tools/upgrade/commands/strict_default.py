@@ -11,7 +11,7 @@ strict_default contains a library for running a codemod across a codebase that t
 import argparse
 import logging
 from pathlib import Path
-from typing import Optional
+from typing import List, Optional
 
 from pyre_extensions import override
 
@@ -54,6 +54,7 @@ class StrictDefault(ErrorSuppressingCommand):
         fixme_threshold: int,
         remove_unsafe_headers: bool,
         remove_strict_flag: bool,
+        paths: List[str] | None,
     ) -> None:
         super().__init__(command_arguments, repository)
         self._local_configuration: Path = local_configuration
@@ -61,6 +62,7 @@ class StrictDefault(ErrorSuppressingCommand):
         self._fixme_threshold: int = fixme_threshold
         self._remove_unsafe_headers: bool = remove_unsafe_headers
         self._remove_strict_flag: bool = remove_strict_flag
+        self._paths: List[str] | None = paths
 
     @staticmethod
     def from_arguments(
@@ -75,6 +77,7 @@ class StrictDefault(ErrorSuppressingCommand):
             fixme_threshold=arguments.fixme_threshold,
             remove_unsafe_headers=arguments.remove_unsafe_headers,
             remove_strict_flag=arguments.remove_strict_flag,
+            paths=arguments.paths,
         )
 
     @classmethod
@@ -108,6 +111,12 @@ class StrictDefault(ErrorSuppressingCommand):
             action="store_true",
             help="Remove the strict flag completely. Useful for repositories where configurations are strict by default.",
         )
+        parser.add_argument(
+            "--paths",
+            default=None,
+            nargs="+",
+            help="Paths to convert to strict default. Defaults to all paths in the current directory.",
+        )
 
     def _commit_changes(self) -> None:
         title = f"Convert {self._local_configuration} to use strict default"
@@ -135,7 +144,13 @@ class StrictDefault(ErrorSuppressingCommand):
             configuration.add_strict()
         configuration.write()
 
-        source_paths = configuration.get_source_paths()
+        argument_paths = self._paths
+        if argument_paths is None or len(argument_paths) == 0:
+            source_paths = configuration.get_source_paths()
+        else:
+            LOG.info("Running on specific paths: %s", ", ".join(argument_paths))
+            source_paths = (Path(path) for path in argument_paths)
+
         modes = [
             *([LocalMode.STRICT] if self._remove_strict_headers else []),
             *([LocalMode.UNSAFE] if self._remove_unsafe_headers else []),
