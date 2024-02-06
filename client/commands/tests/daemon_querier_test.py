@@ -42,7 +42,6 @@ from ..daemon_querier import (
     PersistentDaemonQuerier,
     RemoteIndexBackedQuerier,
 )
-from ..daemon_query_failer import AbstractDaemonQueryFailer, DaemonFailerFailure
 
 from ..server_state import ConnectionStatus
 
@@ -671,114 +670,6 @@ class GoToDefinitionExceptionDaemonQuerier(CodeNavigationDaemonQuerier):
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
         return DaemonQueryFailure(_DaemonQuerier_Failure_Message)
-
-
-class MockDaemonQueryFailer(AbstractDaemonQueryFailer):
-    query_failures: List[str]
-    query_connection_failures: List[str]
-
-    def __init__(self) -> None:
-        self.query_failures = []
-        self.query_connection_failures = []
-
-    def query_failure(self, path: str) -> Optional[DaemonFailerFailure]:
-        self.query_failures.append(path)
-        return None
-
-    def query_connection_failure(
-        self, path: str
-    ) -> Optional[daemon_connection.DaemonConnectionFailure]:
-        self.query_connection_failures.append(path)
-        return None
-
-
-class FailableDaemonQuerierTest(testslide.TestCase):
-    @setup.async_test
-    async def test_AbstractDaemonQueryFailer_invoked(self) -> None:
-        mock_daemon_query_failer = MockDaemonQueryFailer()
-
-        codenav_querier = FailableDaemonQuerier(
-            base_querier=CodeNavigationDaemonQuerier(
-                server_state=server_setup.create_server_state_with_options(
-                    language_server_features=LanguageServerFeatures(),
-                ),
-            ),
-            daemon_query_failer=mock_daemon_query_failer,
-        )
-
-        await codenav_querier.get_hover(
-            path=Path("bar1.py"), position=lsp.PyrePosition(line=42, character=10)
-        )
-        await codenav_querier.get_type_errors(paths=[Path("bar2.py")])
-        await codenav_querier.get_definition_locations(
-            path=Path("bar3.py"), position=lsp.PyrePosition(line=42, character=10)
-        )
-        await codenav_querier.get_completions(
-            path=Path("bar4.py"), position=lsp.PyrePosition(line=42, character=10)
-        )
-        await codenav_querier.get_reference_locations(
-            path=Path("bar5.py"), position=lsp.PyrePosition(line=42, character=10)
-        )
-        await codenav_querier.get_init_call_hierarchy(
-            path=Path("bar6.py"),
-            position=lsp.PyrePosition(line=42, character=10),
-            relation_direction=lsp.PyreCallHierarchyRelationDirection.CHILD,
-        )
-
-        call_hierarchy_item = lsp.CallHierarchyItem(
-            name="protocol",
-            kind=lsp.SymbolKind.MODULE,
-            uri="file:///.",
-            range=lsp.LspRange(
-                start=lsp.LspPosition(line=37, character=4),
-                end=lsp.LspPosition(line=39, character=2),
-            ),
-            selection_range=lsp.LspRange(
-                start=lsp.LspPosition(line=37, character=4),
-                end=lsp.LspPosition(line=39, character=2),
-            ),
-        )
-
-        await codenav_querier.get_call_hierarchy_from_item(
-            path=Path("bar7.py"),
-            call_hierarchy_item=call_hierarchy_item,
-            relation_direction=lsp.PyreCallHierarchyRelationDirection.CHILD,
-        )
-
-        await codenav_querier.handle_file_opened(
-            path=Path("bar8.py"),
-            code="",
-        )
-
-        await codenav_querier.handle_file_closed(
-            path=Path("bar9.py"),
-        )
-
-        await codenav_querier.update_overlay(
-            path=Path("bar10.py"),
-            code="",
-        )
-
-        self.assertEqual(
-            mock_daemon_query_failer.query_failures,
-            [
-                "bar1.py",
-                "bar2.py",
-                "bar3.py",
-                "bar4.py",
-                "bar5.py",
-                "bar6.py",
-                "bar7.py",
-            ],
-        )
-        self.assertEqual(
-            mock_daemon_query_failer.query_connection_failures,
-            [
-                "bar8.py",
-                "bar9.py",
-                "bar10.py",
-            ],
-        )
 
 
 class MockGleanRemoteIndex(remote_index.AbstractRemoteIndex):

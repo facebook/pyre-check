@@ -36,7 +36,6 @@ from . import (
     libcst_util,
     server_state as state,
 )
-from .daemon_query_failer import AbstractDaemonQueryFailer, DaemonFailerFailure
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -602,36 +601,21 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
     def __init__(
         self,
         base_querier: AbstractDaemonQuerier,
-        daemon_query_failer: AbstractDaemonQueryFailer,
     ) -> None:
         super().__init__(base_querier.server_state)
         self.base_querier: AbstractDaemonQuerier = base_querier
-        self.get_query_failure: Callable[
-            [str], Optional[DaemonFailerFailure]
-        ] = daemon_query_failer.query_failure
-        self.get_connection_failure: Callable[
-            [str], Optional[daemon_connection.DaemonConnectionFailure]
-        ] = daemon_query_failer.query_connection_failure
 
     async def get_hover(
         self,
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetHoverResponse]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_hover(path, position)
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_hover(path, position)
 
     async def get_type_errors(
         self,
         paths: List[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
-        for path in paths:
-            failure = self.get_query_failure(str(path))
-            if failure is not None:
-                return DaemonQueryFailure(failure.message)
         return await self.base_querier.get_type_errors(paths)
 
     async def get_definition_locations(
@@ -639,33 +623,21 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_definition_locations(path, position)
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_definition_locations(path, position)
 
     async def get_completions(
         self,
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, List[lsp.CompletionItem]]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_completions(path, position)
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_completions(path, position)
 
     async def get_reference_locations(
         self,
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, List[lsp.LspLocation]]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_reference_locations(path, position)
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_reference_locations(path, position)
 
     async def get_init_call_hierarchy(
         self,
@@ -673,13 +645,9 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
         position: lsp.PyrePosition,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_init_call_hierarchy(
-                path, position, relation_direction
-            )
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_init_call_hierarchy(
+            path, position, relation_direction
+        )
 
     async def get_call_hierarchy_from_item(
         self,
@@ -687,58 +655,35 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
         call_hierarchy_item: lsp.CallHierarchyItem,
         relation_direction: lsp.PyreCallHierarchyRelationDirection,
     ) -> Union[DaemonQueryFailure, List[lsp.CallHierarchyItem]]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_call_hierarchy_from_item(
-                path, call_hierarchy_item, relation_direction
-            )
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_call_hierarchy_from_item(
+            path, call_hierarchy_item, relation_direction
+        )
 
     async def get_type_coverage(
         self,
         path: Path,
     ) -> Union[DaemonQueryFailure, Optional[lsp.TypeCoverageResponse]]:
-        failure = self.get_query_failure(str(path))
-        if failure is None:
-            return await self.base_querier.get_type_coverage(path)
-        else:
-            return DaemonQueryFailure(failure.message)
+        return await self.base_querier.get_type_coverage(path)
 
     async def handle_file_opened(
         self,
         path: Path,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        failure = self.get_connection_failure(str(path))
-        return (
-            await self.base_querier.handle_file_opened(path, code)
-            if failure is None
-            else failure
-        )
+        return await self.base_querier.handle_file_opened(path, code)
 
     async def handle_file_closed(
         self,
         path: Path,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        failure = self.get_connection_failure(str(path))
-        return (
-            await self.base_querier.handle_file_closed(path)
-            if failure is None
-            else failure
-        )
+        return await self.base_querier.handle_file_closed(path)
 
     async def update_overlay(
         self,
         path: Path,
         code: str,
     ) -> Union[daemon_connection.DaemonConnectionFailure, str]:
-        failure = self.get_connection_failure(str(path))
-        return (
-            await self.base_querier.update_overlay(path, code)
-            if failure is None
-            else failure
-        )
+        return await self.base_querier.update_overlay(path, code)
 
     async def handle_register_client(
         self,
