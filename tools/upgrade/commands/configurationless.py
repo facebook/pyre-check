@@ -6,9 +6,10 @@
 import argparse
 import logging
 import re
+import subprocess
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Collection, List, Optional
+from typing import Collection, List, Optional, Set
 
 from .. import filesystem
 from ..configuration import Configuration
@@ -131,3 +132,81 @@ class Configurationless(Command):
             return None
         else:
             return options.default_project_mode
+
+    def _get_buck_root(self) -> Path:
+        try:
+            root = Path(
+                subprocess.check_output(
+                    ["buck2", "root"],
+                    text=True,
+                    cwd=self._path,
+                ).strip()
+            ).parent
+        except FileNotFoundError as e:
+            raise ValueError(
+                "Could not find `buck2` executable when `targets` were specified in local configuration."
+            ) from e
+        return root
+
+    def _get_applicable_targets_from_buck(
+        self, targets: Collection[str]
+    ) -> Collection[str]:
+        targets = [
+            target_expression
+            for target in targets
+            for target_expression in ["--target", target]
+        ]
+        buck_command = [
+            "buck2",
+            "bxl",
+            "prelude//python/sourcedb/query.bxl:query",
+            "--",
+            *targets,
+        ]
+
+        LOG.info(f"Finding included targets with buck2 command: `{buck_command}`")
+
+        result = subprocess.check_output(
+            buck_command,
+            text=True,
+            cwd=self._path,
+            shell=True,
+        )
+
+        return set(result.split("\n"))
+
+    def _get_files_to_process_from_applicable_targets(
+        self, applicable_targets: Collection[str], buck_root: Path
+    ) -> Collection[Path]:
+        formatted_targets = " ".join([f"{target!r}" for target in applicable_targets])
+        buck_command = ["buck2", "uquery", f'"inputs( set( {formatted_targets} ) )"']
+
+        LOG.info(f"Finding included files with buck2 command: `{buck_command}`")
+
+        result = subprocess.check_output(
+            buck_command,
+            text=True,
+            cwd=self._path,
+            shell=True,
+        )
+
+        return {(buck_root / file.strip()).absolute() for file in result.split("\n")}
+
+    def _get_files_to_migrate_from_targets(
+        self, configuration_targets: List[str]
+    ) -> Set[Path]:
+        buck_root = self._get_buck_root()
+
+        applicable_targets = self._get_applicable_targets_from_buck(
+            configuration_targets
+        )
+        files = self._get_files_to_process_from_applicable_targets(
+            applicable_targets, buck_root
+        )
+
+        return {
+            file
+            for file in files
+            if file.is_relative_to(self._path)
+            and any(file.match(pattern) for pattern in self._includes)
+        }
