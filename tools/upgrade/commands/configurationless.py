@@ -23,8 +23,6 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class ConfigurationlessOptions:
     global_configuration: Configuration
     local_configuration: Configuration
-    default_project_mode: filesystem.LocalMode
-    default_global_mode: filesystem.LocalMode
 
     @property
     def ignore_all_errors_prefixes(self) -> Collection[Path]:
@@ -39,6 +37,30 @@ class ConfigurationlessOptions:
             self.global_configuration.get_exclude_as_patterns()
             | self.local_configuration.get_exclude_as_patterns()
         )
+
+    @property
+    def default_global_mode(self) -> filesystem.LocalMode:
+        global_is_strict = (
+            self.global_configuration.strict
+            if self.global_configuration.strict is not None
+            else True  # set default configuration strictness to STRICT
+        )
+        return (
+            filesystem.LocalMode.STRICT
+            if global_is_strict
+            else filesystem.LocalMode.UNSAFE
+        )
+
+    @property
+    def default_local_mode(self) -> filesystem.LocalMode:
+        default_project_strictness_setting = self.local_configuration.strict
+
+        if default_project_strictness_setting is None:
+            return self.default_global_mode
+        elif default_project_strictness_setting:
+            return filesystem.LocalMode.STRICT
+        else:
+            return filesystem.LocalMode.UNSAFE
 
 
 class Configurationless(Command):
@@ -84,39 +106,11 @@ class Configurationless(Command):
             help="The suffixes to search for and include in the codemod. Default is '**.py'.",
         )
 
-    @staticmethod
-    def get_default_global_mode(
-        global_configuration: Configuration,
-    ) -> filesystem.LocalMode:
-        global_is_strict = (
-            global_configuration.strict
-            if global_configuration.strict is not None
-            else True  # set default configuration strictness to STRICT
-        )
-        return (
-            filesystem.LocalMode.STRICT
-            if global_is_strict
-            else filesystem.LocalMode.UNSAFE
-        )
-
-    @staticmethod
-    def get_default_local_mode(
-        local_configuration: Configuration,
-        default_global_mode: filesystem.LocalMode,
-    ) -> filesystem.LocalMode:
-        default_project_strictness_setting = local_configuration.strict
-
-        if default_project_strictness_setting is None:
-            return default_global_mode
-        elif default_project_strictness_setting:
-            return filesystem.LocalMode.STRICT
-        else:
-            return filesystem.LocalMode.UNSAFE
-
     def get_file_mode_to_apply(
         self, file: Path, options: ConfigurationlessOptions
     ) -> Optional[filesystem.LocalMode]:
         file = (self._path / file).absolute()
+        default_local_mode = options.default_local_mode
         if any(
             exclude_pattern.search(str(file)) is not None
             for exclude_pattern in options.exclude_patterns
@@ -128,10 +122,10 @@ class Configurationless(Command):
             for ignore_prefix in options.ignore_all_errors_prefixes
         ):
             return filesystem.LocalMode.IGNORE
-        elif options.default_project_mode == options.default_global_mode:
+        elif default_local_mode == options.default_global_mode:
             return None
         else:
-            return options.default_project_mode
+            return default_local_mode
 
     def _get_buck_root(self) -> Path:
         try:
@@ -237,3 +231,28 @@ class Configurationless(Command):
                 "Could not find `targets` or `source_directories` keys in local configuration"
             )
         return files
+
+    def get_options(
+        self,
+    ) -> ConfigurationlessOptions:
+        global_configuration = Configuration(Configuration.find_project_configuration())
+        configuration_path = self._path / ".pyre_configuration.local"
+        local_configuration = Configuration(configuration_path)
+
+        if not global_configuration.get_path().exists():
+            raise ValueError(
+                f"Global configuration found at {str(global_configuration.get_path())}, but path doesn't exist"
+            )
+        if not local_configuration.get_path().exists():
+            raise ValueError(
+                f"Local configuration found at {str(local_configuration.get_path())}, but path doesn't exist"
+            )
+
+        options = ConfigurationlessOptions(
+            global_configuration=global_configuration,
+            local_configuration=local_configuration,
+        )
+
+        LOG.info(f"Configurationless options:\n{str(options)}")
+
+        return options

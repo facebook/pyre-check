@@ -60,8 +60,6 @@ class TestConfigurationless(unittest.TestCase):
         *,
         global_configuration: Optional[Configuration] = None,
         local_configuration: Optional[Configuration] = None,
-        default_project_mode: LocalMode = LocalMode.STRICT,
-        default_global_mode: LocalMode = LocalMode.STRICT,
         ignore_all_errors_prefixes: Optional[Iterable[str]] = None,
         exclude_patterns: Optional[Iterable[str]] = None,
     ) -> ConfigurationlessOptions:
@@ -87,27 +85,26 @@ class TestConfigurationless(unittest.TestCase):
         return ConfigurationlessOptions(
             global_configuration=global_configuration,
             local_configuration=local_configuration,
-            default_project_mode=default_project_mode,
-            default_global_mode=default_global_mode,
         )
 
     def test_get_default_global_mode_no_configuration(self) -> None:
         global_configuration = self.get_configuration(
-            Path("../.pyre_configuration.json"), source_directories=["."], strict=None
+            Path("../.pyre_configuration.json"),
+            source_directories=["."],
+            strict=None,
         )
+        options = self.get_options(global_configuration=global_configuration)
 
         self.assertEqual(
-            self.configurationless.get_default_global_mode(global_configuration),
+            options.default_global_mode,
             LocalMode.STRICT,
         )
 
     def test_get_default_global_mode_strict_configuration(self) -> None:
-        global_configuration = self.get_configuration(
-            Path("../.pyre_configuration.json"), source_directories=["."]
-        )
+        options = self.get_options()
 
         self.assertEqual(
-            self.configurationless.get_default_global_mode(global_configuration),
+            options.default_global_mode,
             LocalMode.STRICT,
         )
 
@@ -115,21 +112,27 @@ class TestConfigurationless(unittest.TestCase):
         global_configuration = self.get_configuration(
             Path("../.pyre_configuration.json"), source_directories=["."], strict=False
         )
+        options = self.get_options(global_configuration=global_configuration)
 
         self.assertEqual(
-            self.configurationless.get_default_global_mode(global_configuration),
+            options.default_global_mode,
             LocalMode.UNSAFE,
         )
 
     def test_get_default_mode_local_strict(self) -> None:
+        global_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=False
+        )
         local_configuration = self.get_configuration(
             Path("./local_configuration.json"), targets=["..."]
         )
+        options = self.get_options(
+            local_configuration=local_configuration,
+            global_configuration=global_configuration,
+        )
 
         self.assertEqual(
-            self.configurationless.get_default_local_mode(
-                local_configuration, LocalMode.UNSAFE
-            ),
+            options.default_local_mode,
             LocalMode.STRICT,
         )
 
@@ -137,23 +140,27 @@ class TestConfigurationless(unittest.TestCase):
         local_configuration = self.get_configuration(
             Path("./local_configuration.json"), targets=["..."], strict=None
         )
+        options = self.get_options(local_configuration=local_configuration)
 
         self.assertEqual(
-            self.configurationless.get_default_local_mode(
-                local_configuration, LocalMode.STRICT
-            ),
+            options.default_local_mode,
             LocalMode.STRICT,
         )
 
     def test_get_default_mode_local_empty_global_unsafe(self) -> None:
+        global_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=False
+        )
         local_configuration = self.get_configuration(
             Path("./local_configuration.json"), targets=["..."], strict=None
         )
+        options = self.get_options(
+            global_configuration=global_configuration,
+            local_configuration=local_configuration,
+        )
 
         self.assertEqual(
-            self.configurationless.get_default_local_mode(
-                local_configuration, LocalMode.UNSAFE
-            ),
+            options.default_local_mode,
             LocalMode.UNSAFE,
         )
 
@@ -161,11 +168,10 @@ class TestConfigurationless(unittest.TestCase):
         local_configuration = self.get_configuration(
             Path("./local_configuration.json"), targets=["..."], strict=False
         )
+        options = self.get_options(local_configuration=local_configuration)
 
         self.assertEqual(
-            self.configurationless.get_default_local_mode(
-                local_configuration, LocalMode.STRICT
-            ),
+            options.default_local_mode,
             LocalMode.UNSAFE,
         )
 
@@ -215,7 +221,11 @@ class TestConfigurationless(unittest.TestCase):
         )
 
     def test_get_mode_to_apply_file_project_mode_local_unsafe(self) -> None:
-        options = self.get_options(default_project_mode=LocalMode.UNSAFE)
+        local_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=False
+        )
+        options = self.get_options(local_configuration=local_configuration)
+
         self.assertEqual(
             self.configurationless.get_file_mode_to_apply(
                 Path("path/to/file.py"),
@@ -225,7 +235,18 @@ class TestConfigurationless(unittest.TestCase):
         )
 
     def test_get_mode_to_apply_file_project_mode_local_strict(self) -> None:
-        options = self.get_options(default_global_mode=LocalMode.UNSAFE)
+        global_configuration = self.get_configuration(
+            Path(".pyre_configuration.json"),
+            source_directories=["."],
+            strict=False,
+        )
+        local_configuration = self.get_configuration(
+            Path("../.pyre_configuration.json"), source_directories=["."], strict=True
+        )
+        options = self.get_options(
+            global_configuration=global_configuration,
+            local_configuration=local_configuration,
+        )
         self.assertEqual(
             self.configurationless.get_file_mode_to_apply(
                 Path("path/to/file.py"), options
