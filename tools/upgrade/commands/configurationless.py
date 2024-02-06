@@ -256,3 +256,25 @@ class Configurationless(Command):
         LOG.info(f"Configurationless options:\n{str(options)}")
 
         return options
+
+    def run(self) -> None:
+        options = self.get_options()
+        files_to_migrate = self.get_files_to_migrate(options.local_configuration)
+
+        for file in files_to_migrate:
+            file_mode = self.get_file_mode_to_apply(file, options)
+            if file_mode is not None:
+                filesystem.add_local_mode(str(file), file_mode)
+
+        self._repository.commit_changes(
+            commit=self._commit,
+            title=f"Configurationless migration for {str(options.local_configuration.get_path())}",
+            summary="""
+            We are migrating local configurations to work with
+            upcoming changes we'll be making to how Pyre will do type checking
+            on the CLI and in the IDE. Part of this migration requires pushing
+            the type checker mode into each file that gets type checked if it's
+            Pyre mode differs from the strict default in FBCode
+            (i.e. `# pyre-unsafe` and `# pyre-ignore-all-errors`).
+            """,
+        )
