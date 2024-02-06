@@ -210,3 +210,15 @@ class Configurationless(Command):
             if file.is_relative_to(self._path)
             and any(file.match(pattern) for pattern in self._includes)
         }
+
+    def _get_files_to_migrate_from_source_directories(
+        self, source_directories: List[str]
+    ) -> Collection[Path]:
+        LOG.info("Finding files with filesystem")
+        file_system = filesystem.get_filesystem()
+
+        return {
+            Path(file)
+            for source_directory in source_directories
+            for file in file_system.list(source_directory, patterns=self._includes)
+        }
