@@ -20,7 +20,7 @@ import sys
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Dict, List, Mapping, NamedTuple, Tuple, Optional, Type
+from typing import Dict, List, Mapping, NamedTuple, Optional, Tuple, Type
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -91,6 +91,40 @@ class Setup(NamedTuple):
     opam_version: Tuple[int]
     release: bool
 
+    def _run_command(
+        self,
+        command: List[str],
+        current_working_directory: Optional[Path] = None,
+        add_environment_variables: Optional[Mapping[str, str]] = None,
+    ) -> str:
+        if add_environment_variables:
+            environment_variables = {
+                **self.environment_variables,
+                **add_environment_variables,
+            }
+        else:
+            environment_variables = self.environment_variables
+        LOG.info(command)
+        try:
+            output = subprocess.check_output(
+                command,
+                universal_newlines=True,
+                cwd=current_working_directory,
+                env=environment_variables,
+            )
+        except CalledProcessError as called_process_error:
+            LOG.info(
+                f"Command: {command} returned non zero exit code.\n"
+                f"stdout: {called_process_error.stdout}\n"
+                f"stderr: {called_process_error.stderr}"
+            )
+            raise called_process_error
+
+        if output.endswith("\n"):
+            return output[:-1]
+        else:
+            return output
+
     def switch_name(self) -> str:
         return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
 
@@ -139,7 +173,7 @@ class Setup(NamedTuple):
 
     def opam_environment_variables(self) -> Dict[str, str]:
         LOG.info("Activating opam")
-        opam_env_result = self.run(
+        opam_env_result = self._run_command(
             self.opam_command()
             + [
                 "env",
@@ -166,7 +200,7 @@ class Setup(NamedTuple):
         return opam_environment_variables
 
     def opam_update(self) -> None:
-        self.run(
+        self._run_command(
             self.opam_command()
             + [
                 "update",
@@ -176,7 +210,7 @@ class Setup(NamedTuple):
         )
 
     def initialize_opam_switch(self) -> Mapping[str, str]:
-        self.run(
+        self._run_command(
             self.opam_command()
             + [
                 "init",
@@ -192,7 +226,7 @@ class Setup(NamedTuple):
 
         self.opam_update()
 
-        self.run(
+        self._run_command(
             self.opam_command()
             + [
                 "switch",
@@ -214,7 +248,7 @@ class Setup(NamedTuple):
             # accept a version referenced on the system `$PATH`
             opam_install_command.append("--assume-depexts")
 
-        self.run(
+        self._run_command(
             opam_install_command + DEPENDENCIES,
             add_environment_variables=opam_environment_variables,
         )
@@ -224,7 +258,7 @@ class Setup(NamedTuple):
     def set_opam_switch_and_install_dependencies(
         self, rust_path: Optional[Path]
     ) -> Mapping[str, str]:
-        self.run(
+        self._run_command(
             self.opam_command()
             + [
                 "switch",
@@ -250,7 +284,9 @@ class Setup(NamedTuple):
 
         opam_install_command += DEPENDENCIES
 
-        self.run(opam_install_command, add_environment_variables=environment_variables)
+        self._run_command(
+            opam_install_command, add_environment_variables=environment_variables
+        )
         return environment_variables
 
     def full_setup(
@@ -267,7 +303,7 @@ class Setup(NamedTuple):
         ] = self.set_opam_switch_and_install_dependencies(rust_path=rust_path)
 
         def run_in_opam_environment(command: List[str]) -> None:
-            self.run(
+            self._run_command(
                 command,
                 current_working_directory=pyre_directory / "source",
                 add_environment_variables=opam_environment_variables,
@@ -289,40 +325,6 @@ class Setup(NamedTuple):
             run_in_opam_environment(["make", "dev"])
             if run_tests:
                 run_in_opam_environment(["make", "test"])
-
-    def run(
-        self,
-        command: List[str],
-        current_working_directory: Optional[Path] = None,
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-    ) -> str:
-        if add_environment_variables:
-            environment_variables = {
-                **self.environment_variables,
-                **add_environment_variables,
-            }
-        else:
-            environment_variables = self.environment_variables
-        LOG.info(command)
-        try:
-            output = subprocess.check_output(
-                command,
-                universal_newlines=True,
-                cwd=current_working_directory,
-                env=environment_variables,
-            )
-        except CalledProcessError as called_process_error:
-            LOG.info(
-                f"Command: {command} returned non zero exit code.\n"
-                f"stdout: {called_process_error.stdout}\n"
-                f"stderr: {called_process_error.stderr}"
-            )
-            raise called_process_error
-
-        if output.endswith("\n"):
-            return output[:-1]
-        else:
-            return output
 
 
 def _make_opam_root(local: bool) -> Path:
