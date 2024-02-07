@@ -89,7 +89,6 @@ def detect_opam_version() -> Tuple[int]:
 class Setup(NamedTuple):
     opam_root: Path
     opam_version: Tuple[int]
-    release: bool
 
     def _run_command(
         self,
@@ -125,17 +124,17 @@ class Setup(NamedTuple):
         else:
             return output
 
-    def switch_name(self) -> str:
-        return f"{COMPILER_VERSION}+flambda" if self.release else COMPILER_VERSION
+    def switch_name(self, release: bool) -> str:
+        return f"{COMPILER_VERSION}+flambda" if release else COMPILER_VERSION
 
-    def compiler_specification(self) -> str:
+    def compiler_specification(self, release: bool) -> str:
         """
         Command-line argument to set the compiler version in `opam switch create ...`
 
         The format for how to specify this changed in 4.12.0, see
         https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
         """
-        if not self.release:
+        if not release:
             return COMPILER_VERSION
         else:
             return ",".join(
@@ -171,7 +170,7 @@ class Setup(NamedTuple):
     def already_initialized(self) -> bool:
         return Path(self.opam_root.as_posix()).is_dir()
 
-    def opam_environment_variables(self) -> Dict[str, str]:
+    def opam_environment_variables(self, release: bool) -> Dict[str, str]:
         LOG.info("Activating opam")
         opam_env_result = self._run_command(
             self.opam_command()
@@ -179,7 +178,7 @@ class Setup(NamedTuple):
                 "env",
                 "--yes",
                 "--switch",
-                self.switch_name(),
+                self.switch_name(release),
                 "--root",
                 self.opam_root.as_posix(),
                 "--set-root",
@@ -209,7 +208,7 @@ class Setup(NamedTuple):
             ]
         )
 
-    def initialize_opam_switch(self) -> Mapping[str, str]:
+    def initialize_opam_switch(self, release: bool) -> Mapping[str, str]:
         self._run_command(
             self.opam_command()
             + [
@@ -231,14 +230,14 @@ class Setup(NamedTuple):
             + [
                 "switch",
                 "create",
-                self.switch_name(),
-                self.compiler_specification(),
+                self.switch_name(release),
+                self.compiler_specification(release),
                 "--yes",
                 "--root",
                 self.opam_root.as_posix(),
             ]
         )
-        opam_environment_variables = self.opam_environment_variables()
+        opam_environment_variables = self.opam_environment_variables(release)
 
         opam_install_command = self.opam_command() + ["install", "--yes"]
 
@@ -256,20 +255,20 @@ class Setup(NamedTuple):
         return opam_environment_variables
 
     def set_opam_switch_and_install_dependencies(
-        self, rust_path: Optional[Path]
+        self, release: bool, rust_path: Optional[Path]
     ) -> Mapping[str, str]:
         self._run_command(
             self.opam_command()
             + [
                 "switch",
                 "set",
-                self.switch_name(),
+                self.switch_name(release),
                 "--root",
                 self.opam_root.as_posix(),
             ]
         )
 
-        environment_variables = self.opam_environment_variables()
+        environment_variables = self.opam_environment_variables(release)
         if rust_path is not None:
             environment_variables["PATH"] = (
                 str(rust_path) + ":" + environment_variables["PATH"]
@@ -293,6 +292,7 @@ class Setup(NamedTuple):
         self,
         pyre_directory: Path,
         *,
+        release: bool = False,
         run_tests: bool = False,
         run_clean: bool = False,
         build_type: BuildType,
@@ -300,7 +300,9 @@ class Setup(NamedTuple):
     ) -> None:
         opam_environment_variables: Mapping[
             str, str
-        ] = self.set_opam_switch_and_install_dependencies(rust_path=rust_path)
+        ] = self.set_opam_switch_and_install_dependencies(
+            release=release, rust_path=rust_path
+        )
 
         def run_in_opam_environment(command: List[str]) -> None:
             self._run_command(
@@ -316,7 +318,7 @@ class Setup(NamedTuple):
             # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
             # for some reason. Manually clean the dir to work around the issue.
             run_in_opam_environment(["rm", "-rf", "_build"])
-        if self.release:
+        if release:
             LOG.info("Running a release build. This may take a while.")
             run_in_opam_environment(["make", "release"])
             if run_tests:
@@ -369,19 +371,19 @@ def setup(runner_type: Type[Setup]) -> None:
 
     opam_root = _make_opam_root(parsed.local)
     build_type = parsed.build_type or _infer_build_type_from_filesystem(pyre_directory)
+    release = parsed.release
 
-    runner = runner_type(
-        opam_root=opam_root, opam_version=detect_opam_version(), release=parsed.release
-    )
+    runner = runner_type(opam_root=opam_root, opam_version=detect_opam_version())
     if parsed.configure:
         runner.produce_dune_file(pyre_directory, build_type)
     else:
         if not runner.already_initialized():
-            runner.initialize_opam_switch()
+            runner.initialize_opam_switch(release)
         else:
             runner.opam_update()
         runner.full_setup(
             pyre_directory,
+            release=release,
             run_tests=not parsed.no_tests,
             build_type=build_type,
             rust_path=parsed.rust_path,
