@@ -95,11 +95,11 @@ class Setup(NamedTuple):
     ) -> str:
         if add_environment_variables:
             environment_variables = {
-                **self.environment_variables,
+                **os.environ,
                 **add_environment_variables,
             }
         else:
-            environment_variables = self.environment_variables
+            environment_variables = None
         LOG.info(command)
         try:
             output = subprocess.check_output(
@@ -152,10 +152,6 @@ class Setup(NamedTuple):
 
         return command
 
-    @property
-    def environment_variables(self) -> Mapping[str, str]:
-        return os.environ
-
     def produce_dune_file(self, pyre_directory: Path, build_type: BuildType) -> None:
         # lint-ignore: NoUnsafeFilesystemRule
         with open(pyre_directory / "source" / "dune.in") as dune_in:
@@ -197,18 +193,28 @@ class Setup(NamedTuple):
                 opam_environment_variables[environment_variable] = value
         return opam_environment_variables
 
-    def opam_update(self, opam_root: Path, opam_version: Tuple[int, ...]) -> None:
+    def opam_update(
+        self,
+        opam_root: Path,
+        opam_version: Tuple[int, ...],
+        add_environment_variables: Optional[Mapping[str, str]] = None,
+    ) -> None:
         self._run_command(
             self.opam_command(opam_version)
             + [
                 "update",
                 "--root",
                 opam_root.as_posix(),
-            ]
+            ],
+            add_environment_variables=add_environment_variables,
         )
 
     def initialize_opam_switch(
-        self, opam_root: Path, opam_version: Tuple[int, ...], release: bool
+        self,
+        opam_root: Path,
+        opam_version: Tuple[int, ...],
+        release: bool,
+        add_environment_variables: Optional[Mapping[str, str]] = None,
     ) -> Mapping[str, str]:
         self._run_command(
             self.opam_command(opam_version)
@@ -221,10 +227,11 @@ class Setup(NamedTuple):
                 opam_root.as_posix(),
                 "default",
                 "https://opam.ocaml.org",
-            ]
+            ],
+            add_environment_variables=add_environment_variables,
         )
 
-        self.opam_update(opam_root, opam_version)
+        self.opam_update(opam_root, opam_version, add_environment_variables)
 
         self._run_command(
             self.opam_command(opam_version)
@@ -236,7 +243,8 @@ class Setup(NamedTuple):
                 "--yes",
                 "--root",
                 opam_root.as_posix(),
-            ]
+            ],
+            add_environment_variables=add_environment_variables,
         )
         opam_environment_variables = self.opam_environment_variables(
             opam_root, opam_version, release
@@ -252,7 +260,14 @@ class Setup(NamedTuple):
 
         self._run_command(
             opam_install_command + DEPENDENCIES,
-            add_environment_variables=opam_environment_variables,
+            add_environment_variables={
+                **(
+                    {}
+                    if add_environment_variables is None
+                    else add_environment_variables
+                ),
+                **opam_environment_variables,
+            },
         )
 
         return opam_environment_variables
@@ -262,7 +277,8 @@ class Setup(NamedTuple):
         opam_root: Path,
         opam_version: Tuple[int, ...],
         release: bool,
-        rust_path: Optional[Path],
+        add_environment_variables: Optional[Mapping[str, str]] = None,
+        rust_path: Optional[Path] = None,
     ) -> Mapping[str, str]:
         self._run_command(
             self.opam_command(opam_version)
@@ -275,9 +291,10 @@ class Setup(NamedTuple):
             ]
         )
 
-        environment_variables = self.opam_environment_variables(
-            opam_root, opam_version, release
-        )
+        environment_variables = {
+            **({} if add_environment_variables is None else add_environment_variables),
+            **self.opam_environment_variables(opam_root, opam_version, release),
+        }
         if rust_path is not None:
             environment_variables["PATH"] = (
                 str(rust_path) + ":" + environment_variables["PATH"]
@@ -307,12 +324,17 @@ class Setup(NamedTuple):
         run_tests: bool = False,
         run_clean: bool = False,
         build_type: BuildType,
+        add_environment_variables: Optional[Mapping[str, str]] = None,
         rust_path: Optional[Path] = None,
     ) -> None:
         opam_environment_variables: Mapping[
             str, str
         ] = self.set_opam_switch_and_install_dependencies(
-            opam_root, opam_version, release=release, rust_path=rust_path
+            opam_root,
+            opam_version,
+            release=release,
+            add_environment_variables=add_environment_variables,
+            rust_path=rust_path,
         )
 
         def run_in_opam_environment(command: List[str]) -> None:
@@ -357,7 +379,10 @@ def _infer_build_type_from_filesystem(pyre_directory: Path) -> BuildType:
         return BuildType.EXTERNAL
 
 
-def setup(runner_type: Type[Setup]) -> None:
+def setup(
+    runner_type: Type[Setup],
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+) -> None:
     # lint-ignore: NoCustomLogRule
     logging.basicConfig(
         level=logging.INFO, format="[%(asctime)s] [%(levelname)s] %(message)s"
@@ -390,9 +415,11 @@ def setup(runner_type: Type[Setup]) -> None:
         runner.produce_dune_file(pyre_directory, build_type)
     else:
         if not runner.already_initialized(opam_root):
-            runner.initialize_opam_switch(opam_root, opam_version, release)
+            runner.initialize_opam_switch(
+                opam_root, opam_version, release, add_environment_variables
+            )
         else:
-            runner.opam_update(opam_root, opam_version)
+            runner.opam_update(opam_root, opam_version, add_environment_variables)
         runner.full_setup(
             opam_root,
             opam_version,
@@ -400,6 +427,7 @@ def setup(runner_type: Type[Setup]) -> None:
             release=release,
             run_tests=not parsed.no_tests,
             build_type=build_type,
+            add_environment_variables=add_environment_variables,
             rust_path=parsed.rust_path,
         )
 
