@@ -68,6 +68,13 @@ class ConfigurationlessOptions:
         global_path = str(self.global_configuration.get_path())
         return f"ConfigurationlessOptions(local={local_path}, global={global_path})"
 
+    def no_changes_to_make(self) -> bool:
+        return (
+            self.default_global_mode == self.default_local_mode
+            and len(self.ignore_all_errors_prefixes) == 0
+            and len(self.exclude_patterns) == 0
+        )
+
 
 class Configurationless(Command):
     def __init__(
@@ -265,6 +272,9 @@ class Configurationless(Command):
 
     def run(self) -> None:
         options = self.get_options()
+        if options.no_changes_to_make():
+            return
+
         files_to_migrate = self.get_files_to_migrate(options.local_configuration)
 
         for file in files_to_migrate:
