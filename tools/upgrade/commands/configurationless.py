@@ -188,7 +188,7 @@ class Configurationless(Command):
         self, applicable_targets: Collection[str], buck_root: Path
     ) -> Collection[Path]:
         formatted_targets = " ".join([f"{target!r}" for target in applicable_targets])
-        buck_command = ["buck2", "uquery", f'"inputs( set( {formatted_targets} ) )"']
+        buck_command = ["buck2", "uquery", f"inputs( set( {formatted_targets} ) )"]
 
         LOG.info(f"Finding included files with buck2 command: `{buck_command}`")
 
@@ -196,8 +196,9 @@ class Configurationless(Command):
             buck_command,
             text=True,
             cwd=self._path,
-            shell=True,
-        )
+        ).strip()
+
+        LOG.info(f"Found files:\n`{result}`")
 
         return {(buck_root / file.strip()).absolute() for file in result.split("\n")}
 
@@ -244,6 +245,7 @@ class Configurationless(Command):
             raise ValueError(
                 "Could not find `targets` or `source_directories` keys in local configuration"
             )
+        LOG.info(f"Found {len(files)} files to migrate")
         return files
 
     def get_options(
