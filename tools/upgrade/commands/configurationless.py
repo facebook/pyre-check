@@ -4,6 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 import argparse
+import json
 import logging
 import re
 import subprocess
@@ -166,21 +167,22 @@ class Configurationless(Command):
         buck_command = [
             "buck2",
             "bxl",
-            "prelude//python/sourcedb/query.bxl:query",
+            "prelude//python/sourcedb/filter.bxl:filter",
             "--",
             *targets,
         ]
 
         LOG.info(f"Finding included targets with buck2 command: `{buck_command}`")
 
-        result = subprocess.check_output(
+        raw_result = subprocess.check_output(
             buck_command,
             text=True,
             cwd=self._path,
-            shell=True,
         )
+        LOG.info(f"Found targets:\n{raw_result}")
+        result = json.loads(raw_result)
 
-        return set(result.split("\n"))
+        return set(result)
 
     def _get_files_to_process_from_applicable_targets(
         self, applicable_targets: Collection[str], buck_root: Path
@@ -214,8 +216,7 @@ class Configurationless(Command):
         return {
             file
             for file in files
-            if file.is_relative_to(self._path)
-            and any(file.match(pattern) for pattern in self._includes)
+            if any(file.match(pattern) for pattern in self._includes)
         }
 
     def _get_files_to_migrate_from_source_directories(
