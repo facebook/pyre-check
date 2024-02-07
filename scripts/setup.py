@@ -20,7 +20,7 @@ import sys
 from enum import Enum
 from pathlib import Path
 from subprocess import CalledProcessError
-from typing import Dict, List, Mapping, NamedTuple, Optional, Tuple, Type
+from typing import Dict, List, Mapping, Optional, Tuple
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -86,280 +86,278 @@ def detect_opam_version() -> Tuple[int, ...]:
     return version
 
 
-class Setup(NamedTuple):
-    def _run_command(
-        self,
-        command: List[str],
-        current_working_directory: Optional[Path] = None,
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-    ) -> str:
-        if add_environment_variables:
-            environment_variables = {
-                **os.environ,
-                **add_environment_variables,
-            }
-        else:
-            environment_variables = None
-        LOG.info(command)
-        try:
-            output = subprocess.check_output(
-                command,
-                universal_newlines=True,
-                cwd=current_working_directory,
-                env=environment_variables,
-            )
-        except CalledProcessError as called_process_error:
-            LOG.info(
-                f"Command: {command} returned non zero exit code.\n"
-                f"stdout: {called_process_error.stdout}\n"
-                f"stderr: {called_process_error.stderr}"
-            )
-            raise called_process_error
-
-        if output.endswith("\n"):
-            return output[:-1]
-        else:
-            return output
-
-    def switch_name(self, release: bool) -> str:
-        return f"{COMPILER_VERSION}+flambda" if release else COMPILER_VERSION
-
-    def compiler_specification(self, release: bool) -> str:
-        """
-        Command-line argument to set the compiler version in `opam switch create ...`
-
-        The format for how to specify this changed in 4.12.0, see
-        https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
-        """
-        if not release:
-            return COMPILER_VERSION
-        else:
-            return ",".join(
-                [
-                    f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
-                    "ocaml-options-only-flambda",
-                ]
-            )
-
-    def opam_command(self, opam_version: Tuple[int, ...]) -> List[str]:
-        command = ["opam"]
-
-        # We need to explicitly set the opam cli version we are using,
-        # otherwise it automatically uses `2.0` which means we can't use
-        # some options from 2.1 such as `--assume-depexts`.
-        if opam_version >= (2, 1):
-            command.append("--cli=2.1")
-
-        return command
-
-    def produce_dune_file(self, pyre_directory: Path, build_type: BuildType) -> None:
-        # lint-ignore: NoUnsafeFilesystemRule
-        with open(pyre_directory / "source" / "dune.in") as dune_in:
-            # lint-ignore: NoUnsafeFilesystemRule
-            with open(pyre_directory / "source" / "dune", "w") as dune:
-                dune_data = dune_in.read()
-                dune.write(dune_data.replace("%VERSION%", build_type.value))
-
-    def already_initialized(self, opam_root: Path) -> bool:
-        return opam_root.is_dir()
-
-    def opam_environment_variables(
-        self, opam_root: Path, opam_version: Tuple[int, ...], release: bool
-    ) -> Dict[str, str]:
-        LOG.info("Activating opam")
-        opam_env_result = self._run_command(
-            self.opam_command(opam_version)
-            + [
-                "env",
-                "--yes",
-                "--switch",
-                self.switch_name(release),
-                "--root",
-                opam_root.as_posix(),
-                "--set-root",
-                "--set-switch",
-                "--shell=bash",
-            ]
-        )
-        opam_environment_variables: Dict[str, str] = {}
-        # `opam env` produces lines of two forms:
-        # - comments like ": this comment, starts with a colon;"
-        # - lines defining and exporting env vars like "ENV_VAR=value; export ENV_VAR;"
-        for line in opam_env_result.split("\n"):
-            if not line.startswith(":"):
-                environment_variable, quoted_value = line.split(";")[0].split("=")
-                value = quoted_value[1:-1]
-                LOG.info(f'{environment_variable}="{value}"')  # noqa: B907
-                opam_environment_variables[environment_variable] = value
-        return opam_environment_variables
-
-    def opam_update(
-        self,
-        opam_root: Path,
-        opam_version: Tuple[int, ...],
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-    ) -> None:
-        self._run_command(
-            self.opam_command(opam_version)
-            + [
-                "update",
-                "--root",
-                opam_root.as_posix(),
-            ],
-            add_environment_variables=add_environment_variables,
-        )
-
-    def initialize_opam_switch(
-        self,
-        opam_root: Path,
-        opam_version: Tuple[int, ...],
-        release: bool,
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-    ) -> Mapping[str, str]:
-        self._run_command(
-            self.opam_command(opam_version)
-            + [
-                "init",
-                "--bare",
-                "--yes",
-                "--disable-sandboxing",
-                "--root",
-                opam_root.as_posix(),
-                "default",
-                "https://opam.ocaml.org",
-            ],
-            add_environment_variables=add_environment_variables,
-        )
-
-        self.opam_update(opam_root, opam_version, add_environment_variables)
-
-        self._run_command(
-            self.opam_command(opam_version)
-            + [
-                "switch",
-                "create",
-                self.switch_name(release),
-                self.compiler_specification(release),
-                "--yes",
-                "--root",
-                opam_root.as_posix(),
-            ],
-            add_environment_variables=add_environment_variables,
-        )
-        opam_environment_variables = self.opam_environment_variables(
-            opam_root, opam_version, release
-        )
-
-        opam_install_command = self.opam_command(opam_version) + ["install", "--yes"]
-
-        if sys.platform == "linux" and opam_version >= (2, 1):
-            # setting `--assume-depexts` means that opam will not require a "system"
-            # installed version of Rust (e.g. via `dnf`` or `yum`) but will instead
-            # accept a version referenced on the system `$PATH`
-            opam_install_command.append("--assume-depexts")
-
-        self._run_command(
-            opam_install_command + DEPENDENCIES,
-            add_environment_variables={
-                **(
-                    {}
-                    if add_environment_variables is None
-                    else add_environment_variables
-                ),
-                **opam_environment_variables,
-            },
-        )
-
-        return opam_environment_variables
-
-    def set_opam_switch_and_install_dependencies(
-        self,
-        opam_root: Path,
-        opam_version: Tuple[int, ...],
-        release: bool,
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-        rust_path: Optional[Path] = None,
-    ) -> Mapping[str, str]:
-        self._run_command(
-            self.opam_command(opam_version)
-            + [
-                "switch",
-                "set",
-                self.switch_name(release),
-                "--root",
-                opam_root.as_posix(),
-            ]
-        )
-
+def _run_command(
+    command: List[str],
+    current_working_directory: Optional[Path] = None,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+) -> str:
+    if add_environment_variables:
         environment_variables = {
-            **({} if add_environment_variables is None else add_environment_variables),
-            **self.opam_environment_variables(opam_root, opam_version, release),
+            **os.environ,
+            **add_environment_variables,
         }
-        if rust_path is not None:
-            environment_variables["PATH"] = (
-                str(rust_path) + ":" + environment_variables["PATH"]
-            )
-
-        opam_install_command = self.opam_command(opam_version) + ["install", "--yes"]
-
-        if sys.platform == "linux":
-            # osx fails on sandcastle with exit status 2 (illegal argument) with this.
-            # unable to repro locally on osx.
-            opam_install_command.append("--assume-depexts")
-
-        opam_install_command += DEPENDENCIES
-
-        self._run_command(
-            opam_install_command, add_environment_variables=environment_variables
+    else:
+        environment_variables = None
+    LOG.info(command)
+    try:
+        output = subprocess.check_output(
+            command,
+            universal_newlines=True,
+            cwd=current_working_directory,
+            env=environment_variables,
         )
-        return environment_variables
+    except CalledProcessError as called_process_error:
+        LOG.info(
+            f"Command: {command} returned non zero exit code.\n"
+            f"stdout: {called_process_error.stdout}\n"
+            f"stderr: {called_process_error.stderr}"
+        )
+        raise called_process_error
 
-    def full_setup(
-        self,
-        opam_root: Path,
-        opam_version: Tuple[int, ...],
-        pyre_directory: Path,
-        *,
-        release: bool = False,
-        run_tests: bool = False,
-        run_clean: bool = False,
-        build_type: BuildType,
-        add_environment_variables: Optional[Mapping[str, str]] = None,
-        rust_path: Optional[Path] = None,
-    ) -> None:
-        opam_environment_variables: Mapping[
-            str, str
-        ] = self.set_opam_switch_and_install_dependencies(
-            opam_root,
-            opam_version,
-            release=release,
-            add_environment_variables=add_environment_variables,
-            rust_path=rust_path,
+    if output.endswith("\n"):
+        return output[:-1]
+    else:
+        return output
+
+
+def _switch_name(release: bool) -> str:
+    return f"{COMPILER_VERSION}+flambda" if release else COMPILER_VERSION
+
+
+def _compiler_specification(release: bool) -> str:
+    """
+    Command-line argument to set the compiler version in `opam switch create ...`
+
+    The format for how to specify this changed in 4.12.0, see
+    https://discuss.ocaml.org/t/experimental-new-layout-for-the-ocaml-variants-packages-in-opam-repository/6779
+    """
+    if not release:
+        return COMPILER_VERSION
+    else:
+        return ",".join(
+            [
+                f"--packages=ocaml-variants.{COMPILER_VERSION}+options",
+                "ocaml-options-only-flambda",
+            ]
         )
 
-        def run_in_opam_environment(command: List[str]) -> None:
-            self._run_command(
-                command,
-                current_working_directory=pyre_directory / "source",
-                add_environment_variables=opam_environment_variables,
-            )
 
-        self.produce_dune_file(pyre_directory, build_type)
-        if run_clean:
-            # Note: we do not run `make clean` because we want the result of the
-            # explicit `produce_dune_file` to remain.
-            # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
-            # for some reason. Manually clean the dir to work around the issue.
-            run_in_opam_environment(["rm", "-rf", "_build"])
-        if release:
-            LOG.info("Running a release build. This may take a while.")
-            run_in_opam_environment(["make", "release"])
-            if run_tests:
-                run_in_opam_environment(["make", "release_test"])
-        else:
-            run_in_opam_environment(["make", "dev"])
-            if run_tests:
-                run_in_opam_environment(["make", "test"])
+def _opam_command(opam_version: Tuple[int, ...]) -> List[str]:
+    command = ["opam"]
+
+    # We need to explicitly set the opam cli version we are using,
+    # otherwise it automatically uses `2.0` which means we can't use
+    # some options from 2.1 such as `--assume-depexts`.
+    if opam_version >= (2, 1):
+        command.append("--cli=2.1")
+
+    return command
+
+
+def produce_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
+    # lint-ignore: NoUnsafeFilesystemRule
+    with open(pyre_directory / "source" / "dune.in") as dune_in:
+        # lint-ignore: NoUnsafeFilesystemRule
+        with open(pyre_directory / "source" / "dune", "w") as dune:
+            dune_data = dune_in.read()
+            dune.write(dune_data.replace("%VERSION%", build_type.value))
+
+
+def _opam_already_initialized(opam_root: Path) -> bool:
+    return opam_root.is_dir()
+
+
+def _get_opam_environment_variables(
+    opam_root: Path, opam_version: Tuple[int, ...], release: bool
+) -> Dict[str, str]:
+    LOG.info("Activating opam")
+    opam_env_result = _run_command(
+        _opam_command(opam_version)
+        + [
+            "env",
+            "--yes",
+            "--switch",
+            _switch_name(release),
+            "--root",
+            opam_root.as_posix(),
+            "--set-root",
+            "--set-switch",
+            "--shell=bash",
+        ]
+    )
+    opam_environment_variables: Dict[str, str] = {}
+    # `opam env` produces lines of two forms:
+    # - comments like ": this comment, starts with a colon;"
+    # - lines defining and exporting env vars like "ENV_VAR=value; export ENV_VAR;"
+    for line in opam_env_result.split("\n"):
+        if not line.startswith(":"):
+            environment_variable, quoted_value = line.split(";")[0].split("=")
+            value = quoted_value[1:-1]
+            LOG.info(f'{environment_variable}="{value}"')  # noqa: B907
+            opam_environment_variables[environment_variable] = value
+    return opam_environment_variables
+
+
+def opam_update(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+) -> None:
+    _run_command(
+        _opam_command(opam_version)
+        + [
+            "update",
+            "--root",
+            opam_root.as_posix(),
+        ],
+        add_environment_variables=add_environment_variables,
+    )
+
+
+def initialize_opam_switch(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
+    release: bool,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+) -> Mapping[str, str]:
+    _run_command(
+        _opam_command(opam_version)
+        + [
+            "init",
+            "--bare",
+            "--yes",
+            "--disable-sandboxing",
+            "--root",
+            opam_root.as_posix(),
+            "default",
+            "https://opam.ocaml.org",
+        ],
+        add_environment_variables=add_environment_variables,
+    )
+
+    opam_update(opam_root, opam_version, add_environment_variables)
+
+    _run_command(
+        _opam_command(opam_version)
+        + [
+            "switch",
+            "create",
+            _switch_name(release),
+            _compiler_specification(release),
+            "--yes",
+            "--root",
+            opam_root.as_posix(),
+        ],
+        add_environment_variables=add_environment_variables,
+    )
+    opam_environment_variables = _get_opam_environment_variables(
+        opam_root, opam_version, release
+    )
+
+    opam_install_command = _opam_command(opam_version) + ["install", "--yes"]
+
+    if sys.platform == "linux" and opam_version >= (2, 1):
+        # setting `--assume-depexts` means that opam will not require a "system"
+        # installed version of Rust (e.g. via `dnf`` or `yum`) but will instead
+        # accept a version referenced on the system `$PATH`
+        opam_install_command.append("--assume-depexts")
+
+    _run_command(
+        opam_install_command + DEPENDENCIES,
+        add_environment_variables={
+            **({} if add_environment_variables is None else add_environment_variables),
+            **opam_environment_variables,
+        },
+    )
+
+    return opam_environment_variables
+
+
+def set_opam_switch_and_install_dependencies(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
+    release: bool,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+    rust_path: Optional[Path] = None,
+) -> Mapping[str, str]:
+    _run_command(
+        _opam_command(opam_version)
+        + [
+            "switch",
+            "set",
+            _switch_name(release),
+            "--root",
+            opam_root.as_posix(),
+        ]
+    )
+
+    environment_variables = {
+        **({} if add_environment_variables is None else add_environment_variables),
+        **_get_opam_environment_variables(opam_root, opam_version, release),
+    }
+    if rust_path is not None:
+        environment_variables["PATH"] = (
+            str(rust_path) + ":" + environment_variables["PATH"]
+        )
+
+    opam_install_command = _opam_command(opam_version) + ["install", "--yes"]
+
+    if sys.platform == "linux":
+        # osx fails on sandcastle with exit status 2 (illegal argument) with this.
+        # unable to repro locally on osx.
+        opam_install_command.append("--assume-depexts")
+
+    opam_install_command += DEPENDENCIES
+
+    _run_command(opam_install_command, add_environment_variables=environment_variables)
+    return environment_variables
+
+
+def full_setup(
+    opam_root: Path,
+    opam_version: Tuple[int, ...],
+    pyre_directory: Path,
+    *,
+    release: bool = False,
+    run_tests: bool = False,
+    run_clean: bool = False,
+    build_type: BuildType,
+    add_environment_variables: Optional[Mapping[str, str]] = None,
+    rust_path: Optional[Path] = None,
+) -> None:
+    opam_environment_variables: Mapping[
+        str, str
+    ] = set_opam_switch_and_install_dependencies(
+        opam_root,
+        opam_version,
+        release=release,
+        add_environment_variables=add_environment_variables,
+        rust_path=rust_path,
+    )
+
+    def run_in_opam_environment(command: List[str]) -> None:
+        _run_command(
+            command,
+            current_working_directory=pyre_directory / "source",
+            add_environment_variables=opam_environment_variables,
+        )
+
+    produce_dune_file(pyre_directory, build_type)
+    if run_clean:
+        # Note: we do not run `make clean` because we want the result of the
+        # explicit `produce_dune_file` to remain.
+        # Dune 3.7 runs into `rmdir` failure when cleaning the `_build` directory
+        # for some reason. Manually clean the dir to work around the issue.
+        run_in_opam_environment(["rm", "-rf", "_build"])
+    if release:
+        LOG.info("Running a release build. This may take a while.")
+        run_in_opam_environment(["make", "release"])
+        if run_tests:
+            run_in_opam_environment(["make", "release_test"])
+    else:
+        run_in_opam_environment(["make", "dev"])
+        if run_tests:
+            run_in_opam_environment(["make", "test"])
 
 
 def _make_opam_root(local: bool) -> Path:
@@ -380,7 +378,6 @@ def _infer_build_type_from_filesystem(pyre_directory: Path) -> BuildType:
 
 
 def setup(
-    runner_type: Type[Setup],
     add_environment_variables: Optional[Mapping[str, str]] = None,
 ) -> None:
     # lint-ignore: NoCustomLogRule
@@ -410,17 +407,16 @@ def setup(
     opam_version = detect_opam_version()
     release = parsed.release
 
-    runner = runner_type()
     if parsed.configure:
-        runner.produce_dune_file(pyre_directory, build_type)
+        produce_dune_file(pyre_directory, build_type)
     else:
-        if not runner.already_initialized(opam_root):
-            runner.initialize_opam_switch(
+        if not _opam_already_initialized(opam_root):
+            initialize_opam_switch(
                 opam_root, opam_version, release, add_environment_variables
             )
         else:
-            runner.opam_update(opam_root, opam_version, add_environment_variables)
-        runner.full_setup(
+            opam_update(opam_root, opam_version, add_environment_variables)
+        full_setup(
             opam_root,
             opam_version,
             pyre_directory,
@@ -433,4 +429,4 @@ def setup(
 
 
 if __name__ == "__main__":
-    setup(Setup)
+    setup(add_environment_variables=None)
