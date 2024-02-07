@@ -6,17 +6,12 @@
 import tempfile
 from contextlib import contextmanager
 from pathlib import Path
-from typing import Iterator, List, Optional, Union
+from typing import Iterator, List, Union
 from unittest.mock import CallableMixin, patch
 
 import testslide
 
-from ...language_server import (
-    connections,
-    daemon_connection,
-    protocol as lsp,
-    remote_index,
-)
+from ...language_server import connections, protocol as lsp, remote_index
 from ...language_server.connections import (
     AsyncTextReader,
     AsyncTextWriter,
@@ -36,7 +31,6 @@ from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
     DaemonQueryFailure,
-    FailableDaemonQuerier,
     GetDefinitionLocationsResponse,
     GetHoverResponse,
     PersistentDaemonQuerier,

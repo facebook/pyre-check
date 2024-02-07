@@ -19,7 +19,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Callable, Dict, List, Optional, Union
+from typing import Dict, List, Optional, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
 
