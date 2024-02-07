@@ -8,6 +8,7 @@ import logging
 import re
 import subprocess
 from dataclasses import dataclass
+from functools import cached_property
 from pathlib import Path
 from typing import Collection, List, Optional, Set
 
@@ -24,21 +25,21 @@ class ConfigurationlessOptions:
     global_configuration: Configuration
     local_configuration: Configuration
 
-    @property
+    @cached_property
     def ignore_all_errors_prefixes(self) -> Collection[Path]:
         return (
             self.global_configuration.get_ignore_path_prefixes()
             | self.local_configuration.get_ignore_path_prefixes()
         )
 
-    @property
+    @cached_property
     def exclude_patterns(self) -> Collection[re.Pattern[str]]:
         return (
             self.global_configuration.get_exclude_as_patterns()
             | self.local_configuration.get_exclude_as_patterns()
         )
 
-    @property
+    @cached_property
     def default_global_mode(self) -> filesystem.LocalMode:
         global_is_strict = (
             self.global_configuration.strict
@@ -51,7 +52,7 @@ class ConfigurationlessOptions:
             else filesystem.LocalMode.UNSAFE
         )
 
-    @property
+    @cached_property
     def default_local_mode(self) -> filesystem.LocalMode:
         default_project_strictness_setting = self.local_configuration.strict
 
@@ -61,6 +62,11 @@ class ConfigurationlessOptions:
             return filesystem.LocalMode.STRICT
         else:
             return filesystem.LocalMode.UNSAFE
+
+    def __str__(self) -> str:
+        local_path = str(self.local_configuration.get_path())
+        global_path = str(self.global_configuration.get_path())
+        return f"ConfigurationlessOptions(local={local_path}, global={global_path})"
 
 
 class Configurationless(Command):
