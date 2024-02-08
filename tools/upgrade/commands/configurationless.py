@@ -129,7 +129,6 @@ class Configurationless(Command):
             exclude_pattern.search(str(file)) is not None
             for exclude_pattern in options.exclude_patterns
         ):
-            # TODO(T174803521): implement `EXCLUDE` LocalMode and return here
             return None
         elif any(
             file.is_relative_to(ignore_prefix)
