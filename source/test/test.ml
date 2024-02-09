@@ -10,7 +10,6 @@
 (* `open Core` hides this module, and does not provide a replacement for `open_process_args_in`. *)
 module CamlUnix = Unix
 open Core
-open OUnit2
 open Analysis
 open Ast
 open Pyre
@@ -90,7 +89,7 @@ let run tests =
     | OUnitTest.TestList tests -> OUnitTest.TestList (List.map tests ~f:bracket)
     | OUnitTest.TestCase (length, f) -> OUnitTest.TestCase (length, bracket_test f)
   in
-  tests |> bracket |> run_test_tt_main
+  tests |> bracket |> OUnit2.run_test_tt_main
 
 
 let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
@@ -282,7 +281,7 @@ let assert_source_equal ?(location_insensitive = false) left right =
     else
       diff ~print:Source.pp_all format (left, right)
   in
-  assert_equal
+  OUnit2.assert_equal
     ~cmp
     ~printer:(fun source -> Format.asprintf "%a" Source.pp source)
     ~pp_diff:print_difference
@@ -382,7 +381,7 @@ let assert_source_equal_with_locations expected actual =
     |> String.concat ~sep:"\n"
     |> Format.fprintf format "%s"
   in
-  assert_equal
+  OUnit2.assert_equal
     ~cmp:compare_sources
     ~printer:(fun source -> Format.asprintf "\n%a" pp_with_locations source)
     ~pp_diff:pp_diff_with_locations
@@ -390,7 +389,7 @@ let assert_source_equal_with_locations expected actual =
     actual
 
 
-let assert_type_equal = assert_equal ~printer:Type.show ~cmp:Type.equal
+let assert_type_equal = OUnit2.assert_equal ~printer:Type.show ~cmp:Type.equal
 
 (* Expression helpers. *)
 let ( ~+ ) value = Node.create_with_default_location value
@@ -405,9 +404,9 @@ let ( !! ) name =
 let ( !& ) name = Reference.create name
 
 (* Assertion helpers. *)
-let assert_true = assert_bool ""
+let assert_true = OUnit2.assert_bool ""
 
-let assert_false test = assert_bool "" (not test)
+let assert_false test = OUnit2.assert_bool "" (not test)
 
 let assert_bool_equals ~expected = if expected then assert_true else assert_false
 
@@ -418,10 +417,11 @@ let assert_is_none test = assert_true (Option.is_none test)
 let assert_unreached () = assert_true false
 
 (* Override `OUnit`s functions the return absolute paths. *)
-let bracket_tmpdir ?suffix context = bracket_tmpdir ?suffix context |> CamlUnix.realpath
+let bracket_tmpdir ?suffix context = OUnit2.bracket_tmpdir ?suffix context |> CamlUnix.realpath
 
 let bracket_tmpfile ?suffix context =
-  bracket_tmpfile ?suffix context |> fun (filename, channel) -> CamlUnix.realpath filename, channel
+  OUnit2.bracket_tmpfile ?suffix context
+  |> fun (filename, channel) -> CamlUnix.realpath filename, channel
 
 
 let typeshed_stubs ?(include_helper_builtins = true) () =
@@ -2998,7 +2998,7 @@ let mock_scheduler () = Scheduler.create_sequential ()
 
 module ScratchProject = struct
   type t = {
-    context: test_ctxt;
+    context: OUnit2.test_ctxt;
     controls: EnvironmentControls.t;
     errors_environment: ErrorsEnvironment.t;
   }
@@ -3390,7 +3390,11 @@ let assert_errors
     List.map ~f:to_string errors
   in
   Memory.reset_shared_memory ();
-  assert_equal ~cmp:(List.equal String.equal) ~printer:(String.concat ~sep:"\n") errors descriptions
+  OUnit2.assert_equal
+    ~cmp:(List.equal String.equal)
+    ~printer:(String.concat ~sep:"\n")
+    errors
+    descriptions
 
 
 let assert_instantiated_attribute_equal expected actual =
@@ -3408,7 +3412,7 @@ let assert_instantiated_attribute_equal expected actual =
     in
     List.map l ~f:simple |> String.concat ~sep:"\n"
   in
-  assert_equal
+  OUnit2.assert_equal
     ~cmp:[%compare.equal: AnnotatedAttribute.instantiated list]
     ~printer:simple_print
     ~pp_diff:(diff ~print:pp_as_sexps)
