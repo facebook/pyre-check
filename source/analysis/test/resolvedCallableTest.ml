@@ -50,13 +50,16 @@ let create_define ~decorators ~parameters ~return_annotation =
   }
 
 
-let test_apply_decorators context =
+let test_resolve_return_annotation context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-  (* Contextlib related tests *)
   assert_resolved_return_annotation_equal
     resolution
     (create_define ~decorators:[] ~parameters:[] ~return_annotation:(Some !"str"))
-    Type.string;
+    Type.string
+
+
+let test_resolve_contextmanager_iterator context =
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   assert_resolved_return_annotation_equal
     resolution
     (create_define
@@ -65,7 +68,11 @@ let test_apply_decorators context =
        ~return_annotation:
          (Some
             (+Expression.Constant (Constant.String (StringLiteral.create "typing.Iterator[str]")))))
-    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string])
+
+
+let test_resolve_contextmanager_generator context =
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   assert_resolved_return_annotation_equal
     resolution
     (create_define
@@ -75,10 +82,12 @@ let test_apply_decorators context =
          (Some
             (+Expression.Constant
                 (Constant.String (StringLiteral.create "typing.Generator[str, None, None]")))))
-    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
+    (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string])
 
+
+let test_strip_first_parameter context =
+  let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
   let create_parameter ~name = Parameter.create ~location:Location.any ~name () in
-  (* Custom decorators. *)
   assert_resolved_parameters_equal
     resolution
     (create_define
@@ -89,4 +98,12 @@ let test_apply_decorators context =
        [Type.Callable.Parameter.Named { name = "other"; annotation = Type.Top; default = false }])
 
 
-let () = "resolvedCallable" >::: ["apply_decorators" >:: test_apply_decorators] |> Test.run
+let () =
+  "resolvedCallable"
+  >::: [
+         "resolve_return_annotation" >:: test_resolve_return_annotation;
+         "resolve_contextmanager_iterator" >:: test_resolve_contextmanager_iterator;
+         "resolve_contextmanager_generator" >:: test_resolve_contextmanager_generator;
+         "strip_first_parameter" >:: test_strip_first_parameter;
+       ]
+  |> Test.run
