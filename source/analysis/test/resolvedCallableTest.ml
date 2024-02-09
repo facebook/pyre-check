@@ -13,39 +13,43 @@ open Expression
 open Statement
 open Test
 
+let assert_apply_contextlib_decorators resolution define expected_return_annotation =
+  let applied_return_annotation =
+    GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[]
+    |> function
+    | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
+        annotation
+    | _ -> failwith "impossible"
+  in
+  assert_equal
+    ~cmp:Type.equal
+    ~printer:Type.show
+    expected_return_annotation
+    applied_return_annotation
+
+
+let create_define ~decorators ~parameters ~return_annotation =
+  {
+    Define.Signature.name = !&"define";
+    parameters;
+    decorators;
+    return_annotation;
+    async = false;
+    generator = false;
+    parent = None;
+    nesting_define = None;
+  }
+
+
 let test_apply_decorators context =
   let resolution = ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution in
-  let create_define ~decorators ~parameters ~return_annotation =
-    {
-      Define.Signature.name = !&"define";
-      parameters;
-      decorators;
-      return_annotation;
-      async = false;
-      generator = false;
-      parent = None;
-      nesting_define = None;
-    }
-  in
   (* Contextlib related tests *)
-  let assert_apply_contextlib_decorators define expected_return_annotation =
-    let applied_return_annotation =
-      GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[]
-      |> function
-      | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
-          annotation
-      | _ -> failwith "impossible"
-    in
-    assert_equal
-      ~cmp:Type.equal
-      ~printer:Type.show
-      expected_return_annotation
-      applied_return_annotation
-  in
   assert_apply_contextlib_decorators
+    resolution
     (create_define ~decorators:[] ~parameters:[] ~return_annotation:(Some !"str"))
     Type.string;
   assert_apply_contextlib_decorators
+    resolution
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
@@ -54,6 +58,7 @@ let test_apply_decorators context =
             (+Expression.Constant (Constant.String (StringLiteral.create "typing.Iterator[str]")))))
     (Type.parametric "contextlib._GeneratorContextManager" [Single Type.string]);
   assert_apply_contextlib_decorators
+    resolution
     (create_define
        ~decorators:[!"contextlib.contextmanager"]
        ~parameters:[]
