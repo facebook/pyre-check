@@ -40,20 +40,6 @@ let test_apply_decorators context =
       ~cmp:Type.equal
       ~printer:Type.show
       expected_return_annotation
-      applied_return_annotation;
-
-    (* Test decorators with old AST. *)
-    let applied_return_annotation =
-      GlobalResolution.resolve_define resolution ~implementation:(Some define) ~overloads:[]
-      |> function
-      | { decorated = Ok (Callable { implementation = { Type.Callable.annotation; _ }; _ }); _ } ->
-          annotation
-      | _ -> failwith "impossible"
-    in
-    assert_equal
-      ~cmp:Type.equal
-      ~printer:Type.show
-      expected_return_annotation
       applied_return_annotation
   in
   assert_apply_contextlib_decorators
