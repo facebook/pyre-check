@@ -9,7 +9,6 @@ open OUnit2
 open IntegrationTest
 
 let test_final_methods context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
         from typing import final
@@ -21,7 +20,8 @@ let test_final_methods context =
           def bar(self) -> None:
             pass
       |}
-    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."];
+    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."]
+    context;
   assert_type_errors
     {|
      from typing import final
@@ -33,7 +33,8 @@ let test_final_methods context =
        def bar(self) -> None:
          pass
    |}
-    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."];
+    ["Invalid override [40]: `test.Bar.bar` cannot override final method defined in `Foo`."]
+    context;
   assert_type_errors
     {|
         from typing import final
@@ -42,7 +43,8 @@ let test_final_methods context =
         def foo() -> None:
           pass
       |}
-    ["Invalid inheritance [39]: `final` cannot be used with non-method functions."];
+    ["Invalid inheritance [39]: `final` cannot be used with non-method functions."]
+    context;
   assert_type_errors
     {|
         from typing import final
@@ -53,11 +55,12 @@ let test_final_methods context =
             pass
       |}
     []
+    context;
+  ()
 
 
-let test_final_class context =
+let test_final_class =
   assert_type_errors
-    ~context
     {|
     from typing import final
     @final
@@ -70,7 +73,6 @@ let test_final_class context =
 
 
 let test_final_attributes context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Final
@@ -79,7 +81,8 @@ let test_final_attributes context =
       class B(A):
         x = 200
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."]
+    context;
   assert_type_errors
     {|
       from typing import List, Final
@@ -87,7 +90,8 @@ let test_final_attributes context =
     |}
     [
       "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -96,7 +100,8 @@ let test_final_attributes context =
         def foo(self, x: Final[int]) -> None:
           pass
     |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -104,7 +109,8 @@ let test_final_attributes context =
       def foo(x: Final[int]) -> None:
           pass
     |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
+    context;
   assert_type_errors
     ~concise:true
     {|
@@ -113,7 +119,8 @@ let test_final_attributes context =
     |}
     [
       "Invalid type [31]: Expression `List[Final[int]]` is not a valid type. Final cannot be nested.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~concise:true
     {|
@@ -122,7 +129,8 @@ let test_final_attributes context =
           def foo(self, x:Final[int]) -> None:
               pass
     |}
-    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."];
+    ["Invalid type [31]: Parameter `x` cannot be annotated with Final."]
+    context;
   assert_type_errors
     {|
       from typing_extensions import Final
@@ -133,7 +141,8 @@ let test_final_attributes context =
           def foo(self) -> None:
               self.x = 100
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `self.x`."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `self.x`."]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -143,7 +152,8 @@ let test_final_attributes context =
 
       C.x = 100
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `C.x`."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `C.x`."]
+    context;
   assert_type_errors
     {|
       from typing import ClassVar
@@ -159,7 +169,8 @@ let test_final_attributes context =
     [
       "Revealed type [-1]: Revealed type for `test.x.y.a` is `str`.";
       "Invalid assignment [41]: Cannot reassign final attribute `x.y`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -167,7 +178,8 @@ let test_final_attributes context =
         x: Final[int] = 1
         x = 2
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -179,7 +191,8 @@ let test_final_attributes context =
     [
       "Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]` (final).";
       "Invalid assignment [41]: Cannot reassign final attribute `x`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -190,7 +203,8 @@ let test_final_attributes context =
           x: Final[int] = 8
         x = 9
     |}
-    ["Invalid assignment [41]: Cannot reassign final attribute `x`."];
+    ["Invalid assignment [41]: Cannot reassign final attribute `x`."]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -204,7 +218,8 @@ let test_final_attributes context =
     [
       "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` but \
        is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -219,7 +234,8 @@ let test_final_attributes context =
       "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` but \
        is never initialized.";
       "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -236,7 +252,8 @@ let test_final_attributes context =
       "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type `int` but \
        is never initialized.";
       "Invalid assignment [41]: Cannot reassign final attribute `self.x`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -249,7 +266,8 @@ let test_final_attributes context =
           self.x = 1
           self.x = 2
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -259,7 +277,8 @@ let test_final_attributes context =
     [
       "Incompatible attribute type [8]: Attribute `x` declared in class `A` has type `int` but is \
        used as type `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Final
@@ -267,7 +286,8 @@ let test_final_attributes context =
       def foo() -> str:
         return x
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    context;
   ()
 
 

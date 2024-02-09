@@ -10,7 +10,7 @@ open IntegrationTest
 open Test
 
 let test_check_with_qualification context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors {|
       x: int = 1
       def foo(x: str) -> str:
@@ -147,8 +147,12 @@ let test_check_with_qualification context =
 
 
 let test_check_globals context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
+  let assert_default_type_errors ?other_sources source errors =
+    assert_default_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
       constant: int = 1
@@ -424,17 +428,18 @@ let test_check_globals context =
 
 
 let test_check_builtin_globals context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       reveal_type(...)
     |}
-    ["Revealed type [-1]: Revealed type for `...` is `typing.Any`."];
+    ["Revealed type [-1]: Revealed type for `...` is `typing.Any`."]
+    context;
   assert_type_errors
     {|
       reveal_type(__debug__)
     |}
-    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."];
+    ["Revealed type [-1]: Revealed type for `__debug__` is `bool`."]
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -453,6 +458,8 @@ let test_check_builtin_globals context =
       bar()
     |}
     ["Unbound name [10]: Name `foo` is used but not defined in the current scope."]
+    context;
+  ()
 
 
 let () =

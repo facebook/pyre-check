@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_scoping context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors {|
       def foo(foo: str) -> str:
         return foo
@@ -26,7 +26,7 @@ let test_check_scoping context =
 
 
 let test_uninitialized context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def f() -> None:

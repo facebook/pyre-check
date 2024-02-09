@@ -9,8 +9,8 @@ open OUnit2
 open IntegrationTest
 
 let test_check_return context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors "def foo() -> None: pass" [];
   assert_type_errors "def foo() -> None: return" [];
   assert_type_errors "def foo() -> float: return 1.0" [];
@@ -256,8 +256,8 @@ let test_check_return context =
 
 
 let test_check_return_control_flow context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       def x() -> int:
@@ -515,7 +515,7 @@ let test_check_return_control_flow context =
 
 
 let test_check_collections context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -546,9 +546,8 @@ let test_check_collections context =
     []
 
 
-let test_check_meta_annotations context =
+let test_check_meta_annotations =
   assert_type_errors
-    ~context
     {|
       import typing
       class Class:
@@ -560,7 +559,7 @@ let test_check_meta_annotations context =
 
 
 let test_check_noreturn context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import NoReturn
@@ -674,7 +673,7 @@ let test_check_noreturn context =
 
 
 let test_check_never context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -818,8 +817,8 @@ let test_check_never context =
 
 
 let test_check_return_unimplemented context =
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_strict_type_errors
     {|
       def f() -> int:

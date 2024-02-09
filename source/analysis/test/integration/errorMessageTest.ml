@@ -10,7 +10,9 @@ open OUnit2
 open IntegrationTest
 
 let test_show_error_traces context =
-  let assert_type_errors = assert_type_errors ~context ~show_error_traces:true ~handle:"test.py" in
+  let assert_type_errors source errors =
+    assert_type_errors ~show_error_traces:true ~handle:"test.py" source errors context
+  in
   assert_type_errors
     "def foo() -> int: return 1.0"
     [
@@ -213,7 +215,9 @@ let test_show_error_traces context =
 
 
 let test_concise context =
-  let assert_type_errors = assert_type_errors ~context ~concise:true in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources ~concise:true source errors context
+  in
   (* Illegal Annotation *)
   assert_type_errors
     {|
@@ -450,8 +454,8 @@ let test_concise context =
     ["Invalid class instantiation [45]: Cannot instantiate abstract class `Foo`."]
 
 
-let test_reveal_type context =
-  let assert_type_errors = assert_type_errors ~context ~handle:"test.py" in
+let test_reveal_type =
+  let assert_type_errors = assert_type_errors ~handle:"test.py" in
   assert_type_errors
     {|
       class A: pass
@@ -466,7 +470,7 @@ let test_reveal_type context =
 
 
 let test_include_suppressed_errors context =
-  let assert_type_errors = assert_type_errors ~context ~handle:"test.py" in
+  let assert_type_errors = assert_type_errors ~handle:"test.py" in
   assert_type_errors
     {|
       def expect_int(x: int) -> None: ...
@@ -478,7 +482,8 @@ let test_include_suppressed_errors context =
         # pyre-fixme[6]
         expect_int("hello")
     |}
-    [];
+    []
+    context;
   assert_type_errors
     ~include_suppressed_errors:true
     {|
@@ -495,7 +500,8 @@ let test_include_suppressed_errors context =
       "Incompatible variable type [9]: x is declared to have type `str` but is used as type `int`.";
       "Incompatible parameter type [6]: In call `expect_int`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   ()
 
 

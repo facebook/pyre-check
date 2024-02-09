@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_tuple context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import return_tuple
@@ -421,7 +421,7 @@ let test_check_tuple context =
 
 
 let test_tuple_literal_access context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def foo() -> int:
@@ -546,7 +546,7 @@ let test_tuple_literal_access context =
 
 
 let test_custom_tuple context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class C:
@@ -611,7 +611,7 @@ let test_custom_tuple context =
 
 
 let test_length context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple
@@ -626,7 +626,7 @@ let test_length context =
 
 
 let test_unpacking context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple
@@ -745,7 +745,7 @@ let test_unpacking context =
 
 
 let test_star_args context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* We should be able to pass an unpacked list to `*args`. *)
   assert_type_errors
     {|

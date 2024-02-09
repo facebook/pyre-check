@@ -13,61 +13,61 @@ let assert_type_errors
     ?include_line_numbers
     ?other_sources
     ?show_error_traces
-    ~context
     source
     expected_errors
+    context
   =
   assert_type_errors
-    ~context
     ~constraint_solving_style:Configuration.Analysis.ExpressionLevel
     ?include_line_numbers
     ?other_sources
     ?show_error_traces
     source
-    expected_errors;
+    expected_errors
+    context;
   assert_type_errors
-    ~context
     ~constraint_solving_style:Configuration.Analysis.FunctionCallLevel
     ?include_line_numbers
     ?other_sources
     ?show_error_traces
     source
     expected_errors
+    context;
+  ()
 
 
 let test_check_method_returns context =
   assert_type_errors
-    ~context
     {|
       def foo(input: str) -> int:
           return input.lower()
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(input: str) -> int:
           return input.lower().upper()
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo() -> int:
           return ''.upper()
     |}
-    ["Incompatible return type [7]: Expected `int` but got `str`."];
+    ["Incompatible return type [7]: Expected `int` but got `str`."]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> typing.Optional[typing.List[int]]:
           return [3]
     |}
-    [];
+    []
+    context;
 
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -77,9 +77,9 @@ let test_check_method_returns context =
       def foo() -> typing.Optional[typing.List[C]]:
           return [C()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -89,9 +89,9 @@ let test_check_method_returns context =
       def foo() -> typing.Optional[typing.List[C]]:
           return [D()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -101,9 +101,9 @@ let test_check_method_returns context =
       def foo() -> typing.Union[typing.List[C], int]:
           return [C()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -113,9 +113,9 @@ let test_check_method_returns context =
       def foo() -> None:
           x: typing.Union[typing.List[C], int] = [C()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -125,9 +125,9 @@ let test_check_method_returns context =
       def foo() -> None:
           x: typing.Union[typing.List[C], int] = [D()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -137,9 +137,9 @@ let test_check_method_returns context =
       def foo() -> None:
           x: typing.Union[typing.Dict[int, C], int] = {1: D()}
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -149,9 +149,9 @@ let test_check_method_returns context =
       def foo() -> None:
           x: typing.Union[typing.Set[C], int] = {D()}
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C:
@@ -161,9 +161,9 @@ let test_check_method_returns context =
       def foo() -> typing.Union[typing.List[C], int]:
           return [D()]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> typing.Dict[int, typing.Optional[bool]]:
@@ -172,9 +172,9 @@ let test_check_method_returns context =
           **{3: False},
         }
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> typing.Dict[int, typing.Optional[bool]]:
@@ -185,9 +185,9 @@ let test_check_method_returns context =
           **d2,
         }
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C: ...
@@ -199,9 +199,9 @@ let test_check_method_returns context =
 
       bar({'foo': 'foo'})
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       from typing import Dict, Mapping, Optional, Sequence, Tuple, Union
       from enum import Enum
@@ -219,31 +219,31 @@ let test_check_method_returns context =
           (3, 4, "world", {"foo": "hello", "bar": "hello", "baz": "hello"}),
       ]
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> None:
           f: typing.Callable
           f(1, 2)
     |}
-    ["Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters."];
+    ["Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters."]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> None:
           x: typing.Tuple
           x = (1, 2)
     |}
-    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `tuple` expects at least 1 type parameter."]
+    context;
   ()
 
 
 let test_check_attributes_from_unknown_imports context =
   assert_type_errors
-    ~context
     {|
       # test.py
       from other_module import Bar
@@ -257,9 +257,9 @@ let test_check_attributes_from_unknown_imports context =
       "Undefined import [21]: Could not find a module corresponding to import `other_module`.";
       "Undefined or invalid type [11]: Annotation `Bar` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `test.Foo().foo_attribute` is `unknown`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
     # test.py
     from other_module import Bar
@@ -275,13 +275,13 @@ let test_check_attributes_from_unknown_imports context =
       "Undefined or invalid type [11]: Annotation `Bar` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `bar` is `unknown`.";
       "Revealed type [-1]: Revealed type for `my_bar` is `unknown`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_inverse_operator context =
   assert_type_errors
-    ~context
     {|
       from typing import Optional, Tuple
       x: int
@@ -320,10 +320,10 @@ let test_check_inverse_operator context =
       "Unsupported operand [58]: `>>` is not supported for operand types `D` and `C`.";
       "Unsupported operand [58]: `+` is not supported for operand types `D` and `C`.";
       "Unsupported operand [58]: `<<` is not supported for operand types `C` and `C`.";
-    ];
+    ]
+    context;
   (* Explicit use of `__lt__` gets the full error message. *)
   assert_type_errors
-    ~context
     {|
       from typing import Optional
 
@@ -336,9 +336,9 @@ let test_check_inverse_operator context =
       "Incompatible parameter type [6]: In call `int.__lt__`, for 1st positional argument, \
        expected `int` but got `Optional[int]`.";
       "Unsupported operand [58]: `<` is not supported for operand types `int` and `Optional[int]`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         y = 1
@@ -350,9 +350,9 @@ let test_check_inverse_operator context =
       "Incomplete type [37]: Type `pyre_extensions.IntExpression[1 + N2]` inferred for `y` is \
        incomplete, add an explicit annotation.";
       "Unsupported operand [58]: `+` is not supported for operand types `int` and `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -370,18 +370,18 @@ let test_check_inverse_operator context =
       expects_bool(C() <= D())
       expects_bool(C() >= D())
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       x1: bool = 5 < 6.0
       x2: bool = 5 > 6.0
       x3: bool = 5 <= 6.0
       x4: bool = 5 >= 6.0
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         def __rshift__(self, other: object) -> int:
@@ -391,9 +391,9 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -404,9 +404,9 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    ["Unsupported operand [58]: `>>` is not supported for operand types `C` and `D`."];
+    ["Unsupported operand [58]: `>>` is not supported for operand types `C` and `D`."]
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -417,9 +417,9 @@ let test_check_inverse_operator context =
       def foo() -> C:
         return (C() >> D())
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -430,9 +430,9 @@ let test_check_inverse_operator context =
       def foo() -> C:
         return (C() >> D() >> D())
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -443,9 +443,9 @@ let test_check_inverse_operator context =
       def foo() -> int:
         return (C() >> D())
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         def __rrshift__(self, other: int) -> int:
@@ -454,9 +454,9 @@ let test_check_inverse_operator context =
       def foo() -> None:
         z = ("foo" >> C())
     |}
-    ["Unsupported operand [58]: `>>` is not supported for operand types `str` and `C`."];
+    ["Unsupported operand [58]: `>>` is not supported for operand types `str` and `C`."]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo() -> None:
@@ -464,9 +464,9 @@ let test_check_inverse_operator context =
         z = d["foo"] + d["foo"]
     |}
     (* There should be no attribute error for Any. *)
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo(xs: typing.Iterable[typing.Any]) -> None:
@@ -479,9 +479,9 @@ let test_check_inverse_operator context =
       "Missing parameter annotation [2]: Parameter `xs` must have a type that does not contain \
        `Any`.";
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     (* Any % int should return unknown, not int (via the int __mod__ operator). This is necessary
        for dealing with edge cases with old-style format strings when the format string happens to
        be typed as Any. *)
@@ -495,9 +495,9 @@ let test_check_inverse_operator context =
     [
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
       "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `typing.Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     (* Bottom % int should return unknown, not int (via the int __mod__ operator). *)
     {|
       import typing
@@ -511,51 +511,51 @@ let test_check_inverse_operator context =
        `Any`.";
       "Revealed type [-1]: Revealed type for `a` is `typing.Any`.";
       "Revealed type [-1]: Revealed type for `a.__mod__(3)` is `typing.Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: int, y: int) -> int:
           return y * x
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: float, y: float) -> float:
           return y * x
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: int, y: float) -> float:
           return x * y
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: float, y: int) -> float:
           return x * y
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: float, y: int) -> float:
           return x + y
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: int, y: float) -> float:
           return x + y
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class E:
         def __rrshift__(self, left: F) -> F:
@@ -567,10 +567,10 @@ let test_check_inverse_operator context =
 
       z: F = F() >> E()
     |}
-    [];
+    []
+    context;
   (* When an operator doesn't exist on either side, raise an undefined attribute error. *)
   assert_type_errors
-    ~context
     {|
       class D: ...
 
@@ -588,11 +588,11 @@ let test_check_inverse_operator context =
       "Undefined attribute [16]: `D` has no attribute `__radd__`.";
       "Undefined attribute [16]: `D` has no attribute `__add__`.";
       "Undefined attribute [16]: `typing.Union` has no attribute `__radd__`.";
-    ];
+    ]
+    context;
   (* When an object has type `Any`, we should not use the inverse operator since the `Any` object
      might have the original operator. Just treat it as an unknown callable. *)
   assert_type_errors
-    ~context
     {|
       from typing import Any
 
@@ -606,18 +606,17 @@ let test_check_inverse_operator context =
         y = x.__add__(D())
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `typing.Any`."];
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Any`."]
+    context;
   ()
 
 
 let test_check_method_parameters context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
   (* Calls to methods *)
   assert_type_errors {|
       def foo(input: str) -> None:
         input.substr(1)
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -626,7 +625,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: In call `str.substr`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(a: str, b: str) -> None:
@@ -639,7 +639,8 @@ let test_check_method_parameters context =
        but got `int`.";
       "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, expected `str` \
        but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Optional
@@ -651,7 +652,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: In call `bar`, for 1st positional argument, expected `int` \
        but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(input: str) -> str:
@@ -660,7 +662,8 @@ let test_check_method_parameters context =
     [
       "Incompatible parameter type [6]: In call `str.substr`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(input: str) -> None:
@@ -671,19 +674,22 @@ let test_check_method_parameters context =
        expected `int` but got `str`.";
       "Incompatible parameter type [6]: In call `str.substr`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(input: str) -> None:
         input + 1
     |}
-    ["Unsupported operand [58]: `+` is not supported for operand types `str` and `int`."];
+    ["Unsupported operand [58]: `+` is not supported for operand types `str` and `int`."]
+    context;
   assert_type_errors
     {|
       def foo(input: str) -> str:
         return input.__sizeof__()
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    context;
   assert_type_errors
     {|
       def foo(b: str, a: str) -> None: ...
@@ -696,7 +702,8 @@ let test_check_method_parameters context =
        but got `int`.";
       "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, expected `str` \
        but got `int`.";
-    ];
+    ]
+    context;
 
   (* Special Methods *)
   assert_strict_type_errors
@@ -705,21 +712,24 @@ let test_check_method_parameters context =
       def foo(x: typing.Type[int]) -> str:
         return str(x)
     |}
-    [];
+    []
+    context;
   assert_strict_type_errors
     {|
       import typing
       def foo(x: typing.Iterable[int]) -> int:
         return x[0]
     |}
-    ["Undefined attribute [16]: `typing.Iterable` has no attribute `__getitem__`."];
+    ["Undefined attribute [16]: `typing.Iterable` has no attribute `__getitem__`."]
+    context;
   assert_strict_type_errors
     {|
       import typing
       def foo(x: typing.Type[int], y: object) -> bool:
         return x == y
     |}
-    [];
+    []
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -731,14 +741,16 @@ let test_check_method_parameters context =
       "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
        positional argument, expected `Tuple[Type[Variable[_KT]], \
        Type[Variable[_VT_co](covariant)]]` but got `Type[int]`.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       import typing
       x = typing.Mapping[int, str]
       reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.Mapping[int, str]]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Type[typing.Mapping[int, str]]`."]
+    context;
   assert_strict_type_errors
     {|
       class Meta(type):
@@ -755,7 +767,8 @@ let test_check_method_parameters context =
       ^ "`typing.Callable(Foo.foo)[[Named(self, Foo)], None]`.";
       "Revealed type [-1]: Revealed type for `test.Foo().foo` is "
       ^ "`BoundMethod[typing.Callable(Foo.foo)[[Named(self, Foo)], None], Foo]`.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       class Meta(type):
@@ -770,7 +783,8 @@ let test_check_method_parameters context =
     [
       "Revealed type [-1]: Revealed type for `test.Foo[1]` is `int`.";
       "Revealed type [-1]: Revealed type for `test.Foo()[1]` is `str`.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -794,7 +808,8 @@ let test_check_method_parameters context =
     [
       "Revealed type [-1]: Revealed type for `test.StringEnum[\"key\"]` is `StringEnum`.";
       "Revealed type [-1]: Revealed type for `test.StringEnumTwo[\"key\"]` is `StringEnumTwo`.";
-    ];
+    ]
+    context;
 
   (* Defining methods *)
   assert_type_errors
@@ -804,19 +819,24 @@ let test_check_method_parameters context =
           def baz(x: int) -> int:
             return x
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
         def bar(x: int) -> None:
           return
     |}
-    ["Invalid method signature [47]: Non-static method must specify `self` parameter."];
-  assert_type_errors {|
+    ["Invalid method signature [47]: Non-static method must specify `self` parameter."]
+    context;
+  assert_type_errors
+    {|
       class Foo:
         def bar(x: Foo) -> None:
           return
-    |} [];
+    |}
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -824,7 +844,8 @@ let test_check_method_parameters context =
         def bar(x: int) -> None:
           return
     |}
-    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -833,14 +854,16 @@ let test_check_method_parameters context =
         def bar(x: typing.Type[Foo]) -> None:
           return
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
         def bar() -> None:
           return
     |}
-    ["Invalid method signature [47]: Non-static method must specify `self` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `self` parameter."]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -848,7 +871,8 @@ let test_check_method_parameters context =
         def bar() -> None:
           return
     |}
-    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."];
+    ["Invalid method signature [47]: Non-static method must specify `cls` parameter."]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -856,7 +880,8 @@ let test_check_method_parameters context =
         def bar() -> None:
           return
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
     import typing
@@ -865,7 +890,8 @@ let test_check_method_parameters context =
       def __new__(cls) -> typing.Type[Foo]: ...
     Foo()
   |}
-    [];
+    []
+    context;
 
   (* TODO(T45029821): Eliminate special casing so that calls to Foo() error here. *)
   assert_type_errors
@@ -876,7 +902,8 @@ let test_check_method_parameters context =
       def __new__() -> typing.Type[Foo]: ...
     Foo()
   |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -884,7 +911,8 @@ let test_check_method_parameters context =
         def foo(self, x: typing.Optional[typing.Set[int]] = ...) -> None:
           self.x = x
     |}
-    ["Undefined attribute [16]: `Foo` has no attribute `x`."];
+    ["Undefined attribute [16]: `Foo` has no attribute `x`."]
+    context;
   assert_type_errors
     {|
       from typing import List, TypeVar
@@ -901,7 +929,8 @@ let test_check_method_parameters context =
     [
       "Revealed type [-1]: Revealed type for `test.Foo.bar` is \
        `List[typing.ClassMethod[typing.Callable(Foo.bar)[[Named(cls, typing.Type[Foo])], None]]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import List, TypeVar
@@ -924,7 +953,8 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `test.Foo().__class_getitem__` is \
        `BoundMethod[typing.Callable(Foo.__class_getitem__)[[Named(cls, typing.Type[Foo])], None], \
        typing.Type[Foo]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import List, TypeVar, Callable
@@ -953,7 +983,8 @@ let test_check_method_parameters context =
        `List[typing.Callable(Foo.__init_subclass__)[[Named(cls, typing.Type[Foo])], None]]`.";
       "Revealed type [-1]: Revealed type for `test.Foo().__class_getitem__` is \
        `BoundMethod[typing.Callable[[int], str], typing.Type[Foo]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import List, TypeVar
@@ -970,7 +1001,8 @@ let test_check_method_parameters context =
     [
       "Revealed type [-1]: Revealed type for `test.Foo().s` is \
        `List[typing.StaticMethod[typing.Callable(Foo.s)[[], None]]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~include_line_numbers:true
     {|
@@ -981,7 +1013,8 @@ let test_check_method_parameters context =
     [
       "4: Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, expected \
        `str` but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Never
@@ -995,7 +1028,8 @@ let test_check_method_parameters context =
 
       never_input(never())
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Never
@@ -1011,7 +1045,8 @@ let test_check_method_parameters context =
        expected `Never` but got `None`.";
       "Incompatible parameter type [6]: In call `never_input`, for 1st positional argument, \
        expected `Never` but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def return_str() -> str: ...
@@ -1019,7 +1054,8 @@ let test_check_method_parameters context =
       def foo(x: int = 1 + return_str()) -> None:
         pass
     |}
-    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
+    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."]
+    context;
   (* TODO(T135867020): Respect the variable bound in the default value. *)
   assert_type_errors
     {|
@@ -1037,7 +1073,8 @@ let test_check_method_parameters context =
       "Revealed type [-1]: Revealed type for `y2` is `unknown`.";
       "Revealed type [-1]: Revealed type for `y` is `unknown`.";
       "Revealed type [-1]: Revealed type for `z` is `str`.";
-    ];
+    ]
+    context;
   ()
 
 
@@ -1057,7 +1094,6 @@ let test_check_abstract_methods context =
     ]
   in
   assert_type_errors
-    ~context
     ~other_sources
     {|
       import abc
@@ -1065,9 +1101,9 @@ let test_check_abstract_methods context =
       def abstract()->int:
         pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     ~other_sources
     {|
       import abc
@@ -1076,10 +1112,11 @@ let test_check_abstract_methods context =
         pass
     |}
     []
+    context;
+  ()
 
 
 let test_check_behavioral_subtyping__strengthened_postcondition context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo():
@@ -1090,7 +1127,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `float` is not a subtype of the overridden return `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1098,7 +1136,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
       class Bar(Foo):
         def foo(self) -> int: return 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1109,7 +1148,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `None` is not a subtype of the overridden return `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1122,7 +1162,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `str` is not a subtype of the overridden return `float`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1132,7 +1173,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
       class Bar(Foo[float]):
         def foo(self) -> int: return 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -1146,7 +1188,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Returned type `str` is not a subtype of the overridden return `float`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1157,7 +1200,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
       class Bar(Passthrough[float]):
         def foo(self) -> int: return 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -1173,7 +1217,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
       "Inconsistent override [15]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Returned type `typing.Union[int, str]` is not a subtype "
       ^ "of the overridden return `int`.";
-    ];
+    ]
+    context;
 
   (* Decorators are applied. *)
   assert_type_errors
@@ -1187,7 +1232,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
         @contextlib.contextmanager
         def foo(self) -> typing.Generator[int, None, None]: ...
     |}
-    [];
+    []
+    context;
   (* Method resolution order. TODO(T124880784): the reason Pyre behaves this way in terms of
      implementation is that when we resolve the parent attribute the lookup respects method
      resolution order. But this is not actually sound - an instance of Bar is a valid value of type
@@ -1219,7 +1265,8 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.foo_illegal_override` overrides method defined in \
        `Foo1` inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
      class Foo:
@@ -1233,12 +1280,12 @@ let test_check_behavioral_subtyping__strengthened_postcondition context =
     [
       "Inconsistent override [15]: `test.Bar.same_method` overrides method defined in `Foo` \
        inconsistently. Returned type `str` is not a subtype of the overridden return `int`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_behavioral_subtyping__weakened_precondition context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo():
@@ -1251,7 +1298,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     [
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1262,7 +1310,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     [
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `int` is not a supertype of the overridden parameter `float`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1273,7 +1322,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
     [
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1281,7 +1331,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class Bar(Foo):
         def foo(self, a) -> None: pass
     |}
-    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+    ["Missing parameter annotation [2]: Parameter `a` has no type specified."]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1293,7 +1344,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
        inconsistently. Could not find parameter `a` in overridden signature.";
       "Missing parameter annotation [2]: Parameter `a` has no type specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1301,7 +1353,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class Bar(Foo):
         def foo(self, a: int) -> None: pass
     |}
-    ["Missing parameter annotation [2]: Parameter `a` has no type specified."];
+    ["Missing parameter annotation [2]: Parameter `a` has no type specified."]
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1315,7 +1368,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
        inconsistently. "
       ^ "Could not find parameter `b` in overridden signature.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~show_error_traces:true
     {|
@@ -1331,7 +1385,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` "
       ^ "inconsistently. Parameter of type `int` is not a "
       ^ "supertype of the overridden parameter `typing.Union[int, str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1347,7 +1402,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `typing.Union[int, str]` is not a supertype "
       ^ "of the overridden parameter `typing.Union[float, str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1359,7 +1415,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
         def bar(self, x: typing.Union[str, float]) -> None:
           pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -1376,7 +1433,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       "Inconsistent override [14]: `test.Bar.bar` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `typing.Union[int, str]` is not a supertype "
       ^ "of the overridden parameter `typing.Union[float, str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1389,7 +1447,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
         def bar(self, x: typing.Union[str, float]) -> None:
           pass
     |}
-    [];
+    []
+    context;
 
   (* Starred arguments. *)
   assert_type_errors
@@ -1399,7 +1458,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class D(C):
         def f(self, *args: int) -> None: ...
     |}
-    [];
+    []
+    context;
 
   (* Keyword arguments. *)
   assert_type_errors
@@ -1409,7 +1469,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class D(C):
         def f(self, **kwargs: str) -> None: ...
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo():
@@ -1417,7 +1478,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
       class Bar(Foo):
         def foo(self, input) -> int: ...
     |}
-    ["Missing parameter annotation [2]: Parameter `input` has no type specified."];
+    ["Missing parameter annotation [2]: Parameter `input` has no type specified."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1435,7 +1497,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
        inconsistently. "
       ^ "Parameter of type `str` is not a supertype of the overridden parameter "
       ^ "`Variable[T (bound to int)]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1449,7 +1512,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
         def foo(self) -> None:
           pass
     |}
-    [];
+    []
+    context;
 
   (* Positional-only parameters *)
   assert_type_errors
@@ -1461,7 +1525,8 @@ let test_check_behavioral_subtyping__weakened_precondition context =
           def bar(self, __y: int) -> str:
               return ""
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -1471,12 +1536,12 @@ let test_check_behavioral_subtyping__weakened_precondition context =
           def bar(self, y: int, /) -> str:
               return ""
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_check_behavioral_subtyping__overloads context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
       import typing
@@ -1499,7 +1564,8 @@ let test_check_behavioral_subtyping__overloads context =
         def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
           return input
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
     {|
       import typing
@@ -1519,7 +1585,8 @@ let test_check_behavioral_subtyping__overloads context =
         def foo(self, input: typing.Union[int, str]) -> typing.Union[int, str]:
           return input
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
     {|
       import typing
@@ -1552,7 +1619,8 @@ let test_check_behavioral_subtyping__overloads context =
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` \
        inconsistently. Parameter of type `typing.Union[A, B]` is not a supertype of the overridden \
        parameter `typing.Union[A, B, C]`.";
-    ];
+    ]
+    context;
   assert_default_type_errors
     {|
       import typing
@@ -1582,13 +1650,12 @@ let test_check_behavioral_subtyping__overloads context =
     [
       "Missing overload implementation [42]: Overloaded function `Bar.foo` must have an \
        implementation.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_behavioral_subtyping__special_cases context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
   (* Don't warn on constructors. *)
   assert_type_errors
     {|
@@ -1597,7 +1664,8 @@ let test_check_behavioral_subtyping__special_cases context =
       class Bar(Foo):
         def __init__(self, a: int) -> None: pass
     |}
-    [];
+    []
+    context;
 
   (* Don't warn on allowlisted dunder methods *)
   assert_type_errors
@@ -1607,7 +1675,8 @@ let test_check_behavioral_subtyping__special_cases context =
       class Bar(Foo):
         def __eq__(self, other: int) -> bool: ...
     |}
-    [];
+    []
+    context;
 
   (* Do warn on other dunder methods. *)
   assert_type_errors
@@ -1621,7 +1690,8 @@ let test_check_behavioral_subtyping__special_cases context =
       "Inconsistent override [14]: `test.Bar.__dunder__` overrides method defined in `Foo` \
        inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
        `float`.";
-    ];
+    ]
+    context;
 
   (* Ensure that our preprocessing doesn't clobber starred argument names. *)
   assert_type_errors
@@ -1631,7 +1701,8 @@ let test_check_behavioral_subtyping__special_cases context =
       class Bar(Foo):
         def foo( **kwargs) -> int: ...
     |}
-    [];
+    []
+    context;
 
   (* Ignore anything involving `Any`. *)
   assert_default_type_errors
@@ -1642,7 +1713,8 @@ let test_check_behavioral_subtyping__special_cases context =
       class Bar(Foo):
         def __eq__(self, o: int) -> int: pass
     |}
-    [];
+    []
+    context;
 
   (* Overrides when both *args and **kwargs exist are not inconsistent. *)
   assert_default_type_errors
@@ -1656,7 +1728,8 @@ let test_check_behavioral_subtyping__special_cases context =
     [
       "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `a` in overriding signature.";
-    ];
+    ]
+    context;
   assert_default_type_errors
     {|
       import typing
@@ -1668,7 +1741,8 @@ let test_check_behavioral_subtyping__special_cases context =
     [
       "Inconsistent override [14]: `test.Bar.f` overrides method defined in `Foo` inconsistently. "
       ^ "Could not find parameter `b` in overriding signature.";
-    ];
+    ]
+    context;
   assert_default_type_errors
     {|
       import typing
@@ -1677,7 +1751,8 @@ let test_check_behavioral_subtyping__special_cases context =
       class Bar(Foo):
         def f(self, *args: typing.Any, **kwargs: typing.Any) -> None: pass
     |}
-    [];
+    []
+    context;
   (* Overrides with strengthened condition on self is okay *)
   assert_default_type_errors
     {|
@@ -1694,7 +1769,8 @@ let test_check_behavioral_subtyping__special_cases context =
           self.scale = scale + 1.0
           return self
      |}
-    [];
+    []
+    context;
   (* Overrides with strengthened condition on cls is okay *)
   assert_default_type_errors
     {|
@@ -1713,7 +1789,8 @@ let test_check_behavioral_subtyping__special_cases context =
         def with_scale(cls: Type[Circle], scale: float) -> Circle:
           return cls(scale + 1.0)
      |}
-    [];
+    []
+    context;
   (* Overrides on static methods are unchanged *)
   assert_default_type_errors
     {|
@@ -1730,7 +1807,8 @@ let test_check_behavioral_subtyping__special_cases context =
         def with_scale(scale: float) -> Circle:
           return Circle(scale + 1.0)
      |}
-    [];
+    []
+    context;
   (* The first parameter of a static method gets no special treatment *)
   assert_default_type_errors
     {|
@@ -1753,12 +1831,12 @@ let test_check_behavioral_subtyping__special_cases context =
       "Inconsistent override [14]: `test.Circle.with_scale` overrides method defined in `Shape` \
        inconsistently. Parameter of type `int` is not a supertype of the overridden parameter \
        `float`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_behavioral_subtyping__attribute_kinds context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
      class Foo:
@@ -1768,12 +1846,12 @@ let test_check_behavioral_subtyping__attribute_kinds context =
        def foo(self, input: int) -> str:
           ...
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_check_nested_class_inheritance context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class X():
@@ -1786,7 +1864,8 @@ let test_check_nested_class_inheritance context =
       def foo() -> X.Q:
           return Y.Q()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class X():
@@ -1799,7 +1878,8 @@ let test_check_nested_class_inheritance context =
       def foo() -> X.Q:
           return X.Q()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class X():
@@ -1816,7 +1896,8 @@ let test_check_nested_class_inheritance context =
       def foo() -> X.Q:
           return Z.Q()
     |}
-    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."];
+    ["Incompatible return type [7]: Expected `X.Q` but got `Z.Q`."]
+    context;
   assert_type_errors
     {|
       class X:
@@ -1829,7 +1910,8 @@ let test_check_nested_class_inheritance context =
       def foo() -> X.N.NN.NNN:
           return Y.N.NN.NNN()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class B1:
@@ -1844,22 +1926,23 @@ let test_check_nested_class_inheritance context =
         return C.N()
     |}
     []
+    context;
+  ()
 
 
 let test_check_method_resolution context =
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         bar().baz()
     |}
-    ["Unbound name [10]: Name `bar` is used but not defined in the current scope."];
-  assert_type_errors ~context {|
+    ["Unbound name [10]: Name `bar` is used but not defined in the current scope."]
+    context;
+  assert_type_errors {|
       def foo(input: str) -> None:
         input.lower()
-    |} [];
+    |} [] context;
   assert_type_errors
-    ~context
     {|
       import typing
       class Foo:
@@ -1871,17 +1954,17 @@ let test_check_method_resolution context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `x.attribute` is `typing.Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo(input: typing.Type[typing.Protocol]) -> None:
         reveal_type(input[42])
     |}
-    ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`."];
+    ["Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`."]
+    context;
   assert_type_errors
-    ~context
     {|
       from typing import overload, Generic, TypeVar
 
@@ -1904,23 +1987,24 @@ let test_check_method_resolution context =
        `BoundMethod[typing.Callable(Foo.__add__)[[Named(self, Foo[int]), Named(other, Foo[int])], \
        Foo[int]], Foo[int]]`.";
       "Unsupported operand [58]: `+` is not supported for operand types `Foo[int]` and `Foo[str]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_callables context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       x: int = 1
       x()
     |}
-    ["Call error [29]: `int` is not a function."];
+    ["Call error [29]: `int` is not a function."]
+    context;
   assert_type_errors {|
       import typing
       x: typing.Type[int]
       x()
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
     import typing
@@ -1934,25 +2018,28 @@ let test_check_callables context =
       x()
       [A, B][0]()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
     import typing
     x: typing.Type[typing.Union[int, str]]
     x()
     |}
-    [];
+    []
+    context;
   assert_type_errors {|
     types = [int, str]
     types[0]()
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
     x: int
     x = 3
     [int, x][0]()
     |}
-    ["Call error [29]: `typing.Union[typing.Type[int], int]` is not a function."];
+    ["Call error [29]: `typing.Union[typing.Type[int], int]` is not a function."]
+    context;
   assert_type_errors
     {|
       def foo() -> None: pass
@@ -1965,7 +2052,8 @@ let test_check_callables context =
     [
       "Incompatible variable type [9]: x is declared to have type `typing.Callable(foo)[[], None]` \
        but is used as type `typing.Callable(bar)[[], None]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo() -> None: pass
@@ -1982,7 +2070,8 @@ let test_check_callables context =
       "Incompatible variable type [9]: x is declared to have type `typing.Callable(foo)[[], None]` \
        but is used as type `typing.Callable(bar)[[], None]`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable(foo)[[], None]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -1999,7 +2088,8 @@ let test_check_callables context =
         y()
         z()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2009,7 +2099,8 @@ let test_check_callables context =
       def bar(x: typing.Union[typing.Type[A], typing.Callable[[], None]]) -> None:
         x()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Any
@@ -2020,7 +2111,8 @@ let test_check_callables context =
     [
       "Missing parameter annotation [2]: Parameter `x` must have a type that does not contain `Any`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import overload, TypeVar, Tuple
@@ -2035,13 +2127,12 @@ let test_check_callables context =
         y = x(1.0)
         reveal_type(y)
     |}
-    ["Revealed type [-1]: Revealed type for `y` is `Tuple[int, float]`."];
+    ["Revealed type [-1]: Revealed type for `y` is `Tuple[int, float]`."]
+    context;
   ()
 
 
 let test_check_callable_protocols context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
   (* Objects with a `__call__` method are callables. *)
   assert_type_errors
     {|
@@ -2050,7 +2141,8 @@ let test_check_callable_protocols context =
       def foo(call: Call) -> int:
         return call()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2060,7 +2152,8 @@ let test_check_callable_protocols context =
       def foo(call: Call[int]) -> int:
         return call()
     |}
-    [];
+    []
+    context;
 
   assert_type_errors
     {|
@@ -2070,7 +2163,8 @@ let test_check_callable_protocols context =
       def foo(call: Call) -> None:
         reveal_type(call())
     |}
-    ["Revealed type [-1]: Revealed type for `call()` is `str`."];
+    ["Revealed type [-1]: Revealed type for `call()` is `str`."]
+    context;
 
   assert_type_errors
     {|
@@ -2083,7 +2177,8 @@ let test_check_callable_protocols context =
     [
       "Invalid method signature [47]: `typing.Callable[[int], str]` cannot be the type of `self`.";
       "Revealed type [-1]: Revealed type for `call()` is `int`.";
-    ];
+    ]
+    context;
 
   (* We handle subclassing. *)
   assert_type_errors
@@ -2097,7 +2192,8 @@ let test_check_callable_protocols context =
       def f(sc: SubClass) -> None:
         sc('foo')
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Call:
@@ -2105,11 +2201,12 @@ let test_check_callable_protocols context =
       def foo(call: Call) -> int:
         return call()
     |}
-    ["Call error [29]: `Call` is not a function."];
+    ["Call error [29]: `Call` is not a function."]
+    context;
   assert_default_type_errors {|
       def foo(call) -> int:
         return call()
-    |} [];
+    |} [] context;
 
   (* Test for terminating fixpoint *)
   assert_type_errors
@@ -2121,7 +2218,8 @@ let test_check_callable_protocols context =
           call()
         return 7
     |}
-    ["Call error [29]: `Call` is not a function."];
+    ["Call error [29]: `Call` is not a function."]
+    context;
   assert_type_errors
     {|
       import unittest.mock
@@ -2139,7 +2237,8 @@ let test_check_callable_protocols context =
       "Illegal annotation target [35]: Target `unittest.mock.patch` cannot be annotated.";
       "Undefined attribute [16]: Module `unittest.mock` has no attribute `patch`.";
       "Undefined attribute [16]: Module `unittest.mock` has no attribute `patch`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2152,7 +2251,8 @@ let test_check_callable_protocols context =
     [
       "Incompatible return type [7]: Expected `None` but got "
       ^ "`typing.Callable(Foo.bar)[[Named(self, Foo), Named(x, int)], str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2167,7 +2267,8 @@ let test_check_callable_protocols context =
       "Incompatible return type [7]: Expected `None` but got "
       ^ "`BoundMethod[typing.Callable(Foo.bar)[[Named(self, Type[Foo]), Named(x, int)], str], \
          Type[Foo]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Call:
@@ -2178,7 +2279,8 @@ let test_check_callable_protocols context =
     [
       "Incompatible parameter type [6]: In call `Call.__call__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
      errors. *)
@@ -2191,7 +2293,8 @@ let test_check_callable_protocols context =
     [
       "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional argument, \
        expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, None]`.";
-    ];
+    ]
+    context;
 
   (* TODO(T54644856): Allow generator to initialize tuple so that this test does not expect any
      errors. *)
@@ -2203,14 +2306,16 @@ let test_check_callable_protocols context =
     [
       "Incompatible parameter type [6]: In call `tuple.__init__`, for 1st positional argument, \
        expected `List[Variable[_T_co](covariant)]` but got `Generator[int, None, None]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
       def foo_try_with_list(obj: typing.List[int]) -> None:
         type(obj)(v for v in obj)
     |}
-    [];
+    []
+    context;
 
   (* Calling is a special method access of `__call__`, thus calling Type[X] prefers a `__call__` in
      a metaclass over both the constructor and a `__call__` on X *)
@@ -2230,7 +2335,8 @@ let test_check_callable_protocols context =
         x = C(1)
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `str`."];
+    ["Revealed type [-1]: Revealed type for `x` is `str`."]
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -2245,7 +2351,8 @@ let test_check_callable_protocols context =
       "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 1 was \
        provided.";
       "Revealed type [-1]: Revealed type for `f` is `typing.Callable[..., str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -2255,7 +2362,8 @@ let test_check_callable_protocols context =
 
       f: Callable[[int], C] = C
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -2267,7 +2375,8 @@ let test_check_callable_protocols context =
 
       f: Callable[[C, str], int] = C
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -2282,7 +2391,8 @@ let test_check_callable_protocols context =
     [
       "Incompatible variable type [9]: f is declared to have type `typing.Callable[[int], C]` but \
        is used as type `Type[C]`.";
-    ];
+    ]
+    context;
   assert_default_type_errors
     {|
       from typing import Any
@@ -2294,7 +2404,8 @@ let test_check_callable_protocols context =
         x = c()
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."]
+    context;
   assert_default_type_errors
     {|
       from typing import Any
@@ -2306,7 +2417,8 @@ let test_check_callable_protocols context =
         x = C()
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."]
+    context;
   assert_default_type_errors
     {|
       from typing import Any
@@ -2323,13 +2435,13 @@ let test_check_callable_protocols context =
         x = C()
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing.Any`."]
+    context;
   ()
 
 
-let test_check_explicit_method_call context =
+let test_check_explicit_method_call =
   assert_type_errors
-    ~context
     {|
       class Class:
         def method(self, i: int) -> None:
@@ -2343,7 +2455,6 @@ let test_check_explicit_method_call context =
 
 
 let test_check_self context =
-  let assert_type_errors = assert_type_errors ~context in
   (* Self parameter is typed. *)
   assert_type_errors
     {|
@@ -2353,7 +2464,8 @@ let test_check_self context =
         def bar(self) -> str:
           return self.foo()
     |}
-    ["Incompatible return type [7]: Expected `str` but got `int`."];
+    ["Incompatible return type [7]: Expected `str` but got `int`."]
+    context;
   assert_type_errors
     {|
       class Other:
@@ -2366,7 +2478,8 @@ let test_check_self context =
           def two(self: Other) -> None:
               pass
     |}
-    ["Invalid method signature [47]: `Other` cannot be the type of `self`."];
+    ["Invalid method signature [47]: `Other` cannot be the type of `self`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2385,7 +2498,8 @@ let test_check_self context =
         b = a.f
         return b(1)
     |}
-    [];
+    []
+    context;
 
   (* Make sure the SelfType pattern works *)
   assert_type_errors
@@ -2412,7 +2526,8 @@ let test_check_self context =
       def g() -> SubSubclass:
         return SubSubclass().interface("A").verbose(7)
     |}
-    [];
+    []
+    context;
 
   (* Make sure the SelfType pattern works for generics *)
   assert_type_errors
@@ -2430,7 +2545,8 @@ let test_check_self context =
       def foo(x: G[int], y: G[str]) -> typing.Tuple[G[int], G[str]]:
         return (x.verbose(1), y.verbose(1))
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2450,7 +2566,8 @@ let test_check_self context =
     [
       "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
       "Revealed type [-1]: Revealed type for `x.verbose(1).outer()` is `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2479,13 +2596,12 @@ let test_check_self context =
       "Revealed type [-1]: Revealed type for `x` is `A`.";
       "Revealed type [-1]: Revealed type for `x` is `B`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Union[A, B]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_meta_self context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
   assert_default_type_errors
     {|
       import typing
@@ -2498,7 +2614,8 @@ let test_check_meta_self context =
       def foo(input: typing.Any) -> None:
         typing.cast(D[int, float], input)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2514,7 +2631,8 @@ let test_check_meta_self context =
       def boo() -> Subclass:
         return Subclass.__construct__()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2528,7 +2646,8 @@ let test_check_meta_self context =
       def foo() -> C:
         return Subclass.__construct__()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2542,7 +2661,8 @@ let test_check_meta_self context =
       def foo()-> Subclass:
         return C.__construct__()
     |}
-    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2556,7 +2676,8 @@ let test_check_meta_self context =
         to_call = s.f
         return to_call()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2570,7 +2691,8 @@ let test_check_meta_self context =
         to_call = c.f
         return to_call()
     |}
-    ["Incompatible return type [7]: Expected `Subclass` but got `C`."];
+    ["Incompatible return type [7]: Expected `Subclass` but got `C`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2580,7 +2702,8 @@ let test_check_meta_self context =
         def bar(self) -> typing.Type[int]:
           return type(1)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2589,7 +2712,8 @@ let test_check_meta_self context =
         def foo(self) -> int:
           return type(self).ATTRIBUTE
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2597,11 +2721,15 @@ let test_check_meta_self context =
       def foo(t: T) -> str:
         return type(t).__name__
     |}
-    [];
-  assert_type_errors {|
+    []
+    context;
+  assert_type_errors
+    {|
       def foo(x: int) -> str:
         return type(x).__name__
-    |} [];
+    |}
+    []
+    context;
   assert_type_errors
     {|
       class C:
@@ -2611,10 +2739,11 @@ let test_check_meta_self context =
         return R()
     |}
     []
+    context;
+  ()
 
 
 let test_check_override_decorator context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
      from typing import override
@@ -2631,7 +2760,8 @@ let test_check_override_decorator context =
     [
       "Invalid override [40]: `test.Bar.foo` is decorated with @override, but no method of the \
        same name exists in superclasses of `Bar`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2649,7 +2779,8 @@ let test_check_override_decorator context =
     [
       "Invalid override [40]: Non-static method `test.Bar.same_method` cannot override a static \
        method defined in `Foo`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2664,7 +2795,8 @@ let test_check_override_decorator context =
        def same_method(cls, input: int) -> int:
          return input + 1
   |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2676,7 +2808,8 @@ let test_check_override_decorator context =
     [
       "Invalid override [40]: `test.foo` is illegally decorated with @override: @override may only \
        be applied to methods, but this element is not a method.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import override
@@ -2692,7 +2825,8 @@ let test_check_override_decorator context =
     [
       "Invalid override [40]: `foo_inner` is illegally decorated with @override: @override may \
        only be applied to methods, but this element is not a method.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2708,7 +2842,8 @@ let test_check_override_decorator context =
        def foo(self, input: int) -> int:
          return 0
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2723,7 +2858,8 @@ let test_check_override_decorator context =
          return "Bar: " + str(input)
     |}
     [ (* TODO: See T123628048. This should return an error, but isn't at the moment. Decorator logic
-         needs to be checked. *) ];
+         needs to be checked. *) ]
+    context;
   assert_type_errors
     {|
      from typing import override
@@ -2735,7 +2871,8 @@ let test_check_override_decorator context =
        @override
        foo: str = "hello world"
     |}
-    ["Parsing failure [404]: invalid syntax"];
+    ["Parsing failure [404]: invalid syntax"]
+    context;
   assert_type_errors
     {|
      import typing_extensions
@@ -2753,12 +2890,12 @@ let test_check_override_decorator context =
        same name exists in superclasses of `Bar`.";
       "Invalid override [40]: `test.Bar.method1` is decorated with @override, but no method of the \
        same name exists in superclasses of `Bar`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_static context =
-  let assert_type_errors = assert_type_errors ~context in
   (* No self parameter in static method. *)
   assert_type_errors
     {|
@@ -2775,7 +2912,8 @@ let test_check_static context =
         def baz(self) -> None:
           self.bar("")
     |}
-    [];
+    []
+    context;
 
   (* Static method calls are properly resolved. *)
   assert_type_errors
@@ -2791,7 +2929,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2806,7 +2945,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* Static methods throw override errors *)
   assert_type_errors
@@ -2824,7 +2964,8 @@ let test_check_static context =
     [
       "Inconsistent override [14]: `test.Bar.foo` overrides method defined in `Foo` inconsistently. "
       ^ "Parameter of type `str` is not a supertype of the overridden parameter `int`.";
-    ];
+    ]
+    context;
 
   (* Class method calls are properly resolved. *)
   assert_type_errors
@@ -2840,7 +2981,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.foo`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2849,7 +2991,8 @@ let test_check_static context =
         def foo(cls) -> typing.Type[Foo]:
           return cls
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2860,7 +3003,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.classmethod`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2874,7 +3018,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.staticmethod`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -2887,7 +3032,8 @@ let test_check_static context =
     [
       "Incompatible parameter type [6]: In call `Foo.instancemethod`, for 2nd positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* Special classmethods are treated properly without a decorator. *)
   assert_type_errors
@@ -2901,7 +3047,8 @@ let test_check_static context =
         def __class_getitem__(cls, key: int) -> typing.Type[Foo]:
           return cls
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -2913,10 +3060,11 @@ let test_check_static context =
           return self.__class__.__new__(self.__class__)
     |}
     []
+    context;
+  ()
 
 
 let test_check_setitem context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import typing
@@ -2926,7 +3074,8 @@ let test_check_setitem context =
     [
       "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2939,7 +3088,8 @@ let test_check_setitem context =
       "Undefined attribute [16]: `A` has no attribute `__setitem__`.";
       "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2949,7 +3099,8 @@ let test_check_setitem context =
     [
       "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2960,10 +3111,11 @@ let test_check_setitem context =
       "Incompatible parameter type [6]: In call `dict.__setitem__`, for 1st positional argument, \
        expected `str` but got `int`.";
     ]
+    context;
+  ()
 
 
 let test_check_in context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class WeirdContains:
@@ -2971,7 +3123,8 @@ let test_check_in context =
           ...
       reveal_type(1 in WeirdContains())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in test.WeirdContains()` is `int`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdContains()` is `int`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2982,7 +3135,8 @@ let test_check_in context =
           ...
       reveal_type(1 in WeirdIterator())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in test.WeirdIterator()` is `str`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdIterator()` is `str`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -2994,7 +3148,8 @@ let test_check_in context =
           ...
       reveal_type(1 in WeirdGetItem())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in test.WeirdGetItem()` is `typing.List[int]`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.WeirdGetItem()` is `typing.List[int]`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -3008,7 +3163,8 @@ let test_check_in context =
           ...
       reveal_type(1 in Multiple())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `bool`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `bool`."]
+    context;
   assert_type_errors
     {|
       class Equal:
@@ -3021,7 +3177,8 @@ let test_check_in context =
           ...
       reveal_type(1 in Multiple())
     |}
-    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `int`."];
+    ["Revealed type [-1]: Revealed type for `1 in test.Multiple()` is `int`."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -3037,7 +3194,8 @@ let test_check_in context =
       def foo(a: typing.Union[GetItemA, GetItemB]) -> None:
         5 in a
     |}
-    [];
+    []
+    context;
 
   (* Unions of classes and `in`. *)
   assert_type_errors
@@ -3054,7 +3212,8 @@ let test_check_in context =
       def foo(a: typing.Union[UsesContainsInt, UsesContainsStr]) -> None:
         reveal_type(5 in a)
     |}
-    ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."];
+    ["Revealed type [-1]: Revealed type for `5 in a` is `typing.Union[int, str]`."]
+    context;
   assert_type_errors
     {|
       from typing import TypeVar, Generic, Union
@@ -3078,10 +3237,11 @@ let test_check_in context =
         reveal_type(5 in a)
     |}
     ["Revealed type [-1]: Revealed type for `5 in a` is `Union[int, str]`."]
+    context;
+  ()
 
 
 let test_check_enter context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class WithClass():
@@ -3095,7 +3255,8 @@ let test_check_enter context =
         with WithClass() as x:
           expect_string(x)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class WithClass():
@@ -3114,11 +3275,12 @@ let test_check_enter context =
       "Incompatible parameter type [6]: In call `expect_string`, for 1st positional argument, \
        expected `str` but got `int`.";
     ]
+    context;
+  ()
 
 
 let test_check_private_member_access context =
   assert_type_errors
-    ~context
     {|
       class Base:
         def __init__(self) -> None:
@@ -3134,9 +3296,9 @@ let test_check_private_member_access context =
         def method2(self) -> bool:
           return self.__child_private
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class Base:
         def __init__(self) -> None:
@@ -3149,9 +3311,9 @@ let test_check_private_member_access context =
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
       "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class Base:
         def __private_method(self) -> None:
@@ -3164,9 +3326,9 @@ let test_check_private_member_access context =
     [
       "Undefined attribute [16]: `Child` has no attribute `__private_method`. `__private_method` \
        looks like a private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class Foo:
           __private = 1
@@ -3178,9 +3340,9 @@ let test_check_private_member_access context =
     [
       "Undefined attribute [16]: `Foo` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       T = typing.TypeVar("T", bound="Base")
@@ -3189,9 +3351,9 @@ let test_check_private_member_access context =
         def __init__(self: T) -> None:
           self.__private = 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
     from typing import *
 
@@ -3209,9 +3371,9 @@ let test_check_private_member_access context =
         def derp(self, value: bool) -> None:
             return
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class Base:
@@ -3233,9 +3395,9 @@ let test_check_private_member_access context =
        private attribute, which is not accessible from outside its parent class.";
       "Undefined attribute [16]: `Child` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class Base:
         def __init__(self) -> None:
@@ -3247,9 +3409,9 @@ let test_check_private_member_access context =
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
       "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class Base:
         def __init__(self) -> None:
@@ -3264,9 +3426,9 @@ let test_check_private_member_access context =
       "Incompatible return type [7]: Expected `bool` but got `unknown`.";
       "Undefined attribute [16]: `Base` has no attribute `__private`. `__private` looks like a \
        private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class Base:
         def __private_method(self) -> None:
@@ -3284,9 +3446,9 @@ let test_check_private_member_access context =
        looks like a private attribute, which is not accessible from outside its parent class.";
       "Undefined attribute [16]: `Base` has no attribute `__private_method`. `__private_method` \
        looks like a private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       T = typing.TypeVar('T')
@@ -3309,9 +3471,9 @@ let test_check_private_member_access context =
       "Incompatible return type [7]: Expected `Variable[T]` but got `unknown`.";
       "Undefined attribute [16]: `GenericBase` has no attribute `__private`. `__private` looks \
        like a private attribute, which is not accessible from outside its parent class.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class ExampleClass:
         @staticmethod
@@ -3328,9 +3490,9 @@ let test_check_private_member_access context =
           cls.__private_static_method()
           cls.__class__.__private_static_method()
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class ExampleClass:
         @staticmethod
@@ -3376,13 +3538,13 @@ let test_check_private_member_access context =
        outside its parent class.";
       "Undefined attribute [16]: `ExampleClass` has no attribute \
        `_NonChild__private_static_method`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_enforce_dunder_params context =
   assert_type_errors
-    ~context
     {|
       def foo(__f: str) -> int:
         return 1
@@ -3390,9 +3552,9 @@ let test_enforce_dunder_params context =
       def bar() -> None:
         foo("A")
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(__f: str) -> int:
         return 1
@@ -3400,9 +3562,9 @@ let test_enforce_dunder_params context =
       def bar() -> None:
         foo(__f="A")
     |}
-    ["Unexpected keyword [28]: Unexpected keyword argument `__f` to call `foo`."];
+    ["Unexpected keyword [28]: Unexpected keyword argument `__f` to call `foo`."]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(__f__: str) -> int:
         return 1
@@ -3410,13 +3572,13 @@ let test_enforce_dunder_params context =
       def bar() -> None:
         foo(__f__="A")
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_fixpoint_threshold context =
   assert_type_errors
-    ~context
     {|
       def foo() -> bool: ...
 
@@ -3431,9 +3593,9 @@ let test_fixpoint_threshold context =
        `test.bar` was too complex.";
       "Unsupported operand [58]: `*` is not supported for operand types `unknown` and `int`.";
       "Revealed type [-1]: Revealed type for `l` is `unknown`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       from typing import Set
       def foo() -> None:
@@ -3444,7 +3606,8 @@ let test_fixpoint_threshold context =
     [
       "Undefined or invalid type [11]: Annotation `Missing` is not defined as a type.";
       "Revealed type [-1]: Revealed type for `s` is `Set[Variable[_T]]`.";
-    ];
+    ]
+    context;
   ()
 
 
@@ -3452,7 +3615,6 @@ let test_fixpoint_threshold context =
    showing "anonymous call". *)
 let test_nested_function_shows_function_name_in_errors context =
   assert_type_errors
-    ~context
     {|
       async def main() -> None:
         async def inner(x: int) -> None: ...
@@ -3467,11 +3629,11 @@ let test_nested_function_shows_function_name_in_errors context =
        `int` but got `str`.";
       "Incompatible parameter type [6]: In call `non_async_inner`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   (* When `factorial` is a nested function, `factorial` is stored as a local variable with a
      callable type. Show its name in error messages. *)
   assert_type_errors
-    ~context
     {|
       def outer() -> None:
         def factorial(n: int) -> int:
@@ -3483,10 +3645,10 @@ let test_nested_function_shows_function_name_in_errors context =
     [
       "Incompatible parameter type [6]: In call `factorial`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
   (* `inner1` is a captured variable in `inner2`. Show its name in error messages. *)
   assert_type_errors
-    ~context
     {|
       def outer() -> None:
         def inner1(x: int) -> None: ...
@@ -3497,7 +3659,8 @@ let test_nested_function_shows_function_name_in_errors context =
     [
       "Incompatible parameter type [6]: In call `inner1`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
   ()
 
 

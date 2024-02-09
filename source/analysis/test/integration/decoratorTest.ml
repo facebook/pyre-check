@@ -10,7 +10,6 @@ open IntegrationTest
 
 let test_check_nested context =
   assert_default_type_errors
-    ~context
     {|
      from typing import Callable, Any
 
@@ -22,9 +21,9 @@ let test_check_nested context =
          return f(x)
        return decorated
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
-    ~context
     {|
       from typing import Callable
       def decorator(x: Callable[[int], str]) -> Callable[[str], int]: ...
@@ -35,12 +34,13 @@ let test_check_nested context =
               return "A"
           reveal_type(inner)
     |}
-    ["Revealed type [-1]: Revealed type for `inner` is `typing.Callable[[str], int]`."];
+    ["Revealed type [-1]: Revealed type for `inner` is `typing.Callable[[str], int]`."]
+    context;
   ()
 
 
 let test_check_contextmanager context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -125,7 +125,7 @@ let test_check_contextmanager context =
 
 
 let test_check_asynccontextmanager context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -208,7 +208,7 @@ let test_check_asynccontextmanager context =
 
 
 let test_check_click_command context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import click
@@ -316,7 +316,7 @@ let test_check_click_command context =
 
 
 let test_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Optional
@@ -444,7 +444,9 @@ let test_decorators context =
 
 
 let test_check_user_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
       import typing
@@ -664,7 +666,7 @@ let test_check_user_decorators context =
 
 
 let test_check_callable_class_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* This should not work because that's a __call__ on the *instance* not the class. *)
   assert_type_errors
     {|
@@ -817,7 +819,9 @@ let test_check_callable_class_decorators context =
 
 
 let test_decorator_factories context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
      from typing import Callable
@@ -1138,7 +1142,7 @@ let test_decorator_factories context =
 
 
 let test_general_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
      from typing import Callable
@@ -1177,7 +1181,7 @@ let test_general_decorators context =
 
 
 let test_invalid_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
     @dec
@@ -1257,7 +1261,9 @@ let test_invalid_decorators context =
 
 
 let test_six_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     ~other_sources:
       [
@@ -1293,7 +1299,7 @@ let test_six_decorators context =
 
 
 let test_loosely_typed_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Any
@@ -1415,7 +1421,7 @@ let test_loosely_typed_decorators context =
 
 
 let test_classmethod_decorator context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* Ensure that a decorated classmethod preserves its callable name. That way, error messages show
      the name of the function being called instead of "anonymous call". *)
   assert_type_errors
@@ -1573,7 +1579,7 @@ let test_classmethod_decorator context =
 
 
 let test_staticmethod_decorator context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* Ensure that a decorated staticmethod preserves its callable name. That way, error messages show
      the name of the function being called instead of "anonymous call". *)
   assert_type_errors
@@ -1669,7 +1675,7 @@ let test_staticmethod_decorator context =
 
 
 let test_named_callable_against_decorator_factory context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from pyre_extensions import ParameterSpecification

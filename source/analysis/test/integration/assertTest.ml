@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_assert context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -187,7 +187,6 @@ let test_check_assert context =
 
 let test_check_assert_functions context =
   assert_default_type_errors
-    ~context
     {|
       import typing
       class One:
@@ -205,9 +204,9 @@ let test_check_assert_functions context =
           pyretestassert(o)
           return o.a
     |}
-    ["Undefined attribute [16]: Optional type has no attribute `a`."];
+    ["Undefined attribute [16]: Optional type has no attribute `a`."]
+    context;
   assert_default_type_errors
-    ~context
     ~handle:"foo.py"
     {|
       import typing
@@ -226,9 +225,9 @@ let test_check_assert_functions context =
           pyretestassert(o)
           return o.a
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class One:
@@ -247,10 +246,12 @@ let test_check_assert_functions context =
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
       "Undefined attribute [16]: Optional type has no attribute `a`.";
     ]
+    context;
+  ()
 
 
 let test_check_all context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -312,8 +313,8 @@ let test_check_all context =
 
 
 let test_check_impossible_assert context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors {|
       def foo() -> None:
         x = None
@@ -420,7 +421,7 @@ let test_check_impossible_assert context =
 
 
 let test_if_statement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Optional

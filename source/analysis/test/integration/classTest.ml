@@ -10,7 +10,6 @@ open IntegrationTest
 
 let test_inconsistent_mro context =
   assert_type_errors
-    ~context
     {|
         class A(B): pass
         class B(A): pass
@@ -20,10 +19,10 @@ let test_inconsistent_mro context =
        resolution order";
       "Inconsistent method resolution order [64]: Class `B` does not have a consistent method \
        resolution order";
-    ];
+    ]
+    context;
   (* Inconsistent MRO would shadow other checks like override validity *)
   assert_type_errors
-    ~context
     {|
         class A(B):
           def foo(self) -> int: ...
@@ -35,9 +34,9 @@ let test_inconsistent_mro context =
        resolution order";
       "Inconsistent method resolution order [64]: Class `B` does not have a consistent method \
        resolution order";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
         class A: pass
         class B(A): pass
@@ -46,10 +45,10 @@ let test_inconsistent_mro context =
     [
       "Inconsistent method resolution order [64]: Class `C` does not have a consistent method \
        resolution order";
-    ];
+    ]
+    context;
   (* No MRO error due to special-handling of GenericMeta.__mro_entries__ *)
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
         T1 = TypeVar("T1")
@@ -60,10 +59,10 @@ let test_inconsistent_mro context =
         class Bar1(Generic[T1, T2], Foo1[T1], Foo2[T2]): pass
         class Bar2(Generic[T1, T2], Foo1, Foo2[T2]): pass
     |}
-    ["Invalid type parameters [24]: Generic type `Foo1` expects 1 type parameter."];
+    ["Invalid type parameters [24]: Generic type `Foo1` expects 1 type parameter."]
+    context;
   (* MRO error even in the presence of GenericMeta.__mro_entries__ *)
   assert_type_errors
-    ~context
     {|
         from typing import Generic, TypeVar
         T1 = TypeVar("T1")
@@ -78,7 +77,8 @@ let test_inconsistent_mro context =
        resolution order";
       "Invalid type parameters [24]: Generic type `Foo1` expects 1 type parameter.";
       "Invalid type parameters [24]: Generic type `Foo2` expects 1 type parameter.";
-    ];
+    ]
+    context;
   ()
 
 

@@ -10,7 +10,7 @@ open IntegrationTest
 open Test
 
 let test_check_typed_dictionaries context =
-  let assert_test_typed_dictionary source =
+  let assert_test_typed_dictionary source errors =
     let mypy_extensions_stub =
       {
         handle = "mypy_extensions.pyi";
@@ -50,9 +50,10 @@ let test_check_typed_dictionaries context =
       }
     in
     assert_type_errors
-      ~context
       ~other_sources:[mypy_extensions_stub; typed_dictionary_for_import]
       source
+      errors
+      context
   in
   assert_test_typed_dictionary
     {|
@@ -1078,7 +1079,7 @@ let test_check_typed_dictionaries context =
 
 
 let test_check_typed_dictionary_inference context =
-  let assert_test_typed_dictionary source =
+  let assert_test_typed_dictionary source errors =
     let mypy_extensions_stub =
       {
         handle = "mypy_extensions.pyi";
@@ -1093,7 +1094,7 @@ let test_check_typed_dictionary_inference context =
           |};
       }
     in
-    assert_type_errors ~context ~other_sources:[mypy_extensions_stub] source
+    assert_type_errors ~other_sources:[mypy_extensions_stub] source errors context
   in
   assert_test_typed_dictionary
     {|
@@ -1198,7 +1199,7 @@ let test_check_typed_dictionary_inference context =
 
 
 let test_check_typed_dictionary_inheritance context =
-  let assert_test_typed_dictionary source =
+  let assert_test_typed_dictionary source errors =
     let mypy_extensions_stub =
       {
         handle = "mypy_extensions.pyi";
@@ -1254,9 +1255,10 @@ let test_check_typed_dictionary_inheritance context =
       }
     in
     assert_type_errors
-      ~context
       ~other_sources:[mypy_extensions_stub; typed_dictionary_helpers]
       source
+      errors
+      context
   in
   assert_test_typed_dictionary
     {|
@@ -1753,7 +1755,7 @@ let test_check_typed_dictionary_inheritance context =
 
 
 let test_check_typed_dictionary_in_alias context =
-  let assert_test_typed_dictionary source =
+  let assert_test_typed_dictionary source errors =
     let mypy_extensions_stub =
       {
         handle = "mypy_extensions.pyi";
@@ -1809,9 +1811,10 @@ let test_check_typed_dictionary_in_alias context =
       }
     in
     assert_type_errors
-      ~context
       ~other_sources:[mypy_extensions_stub; typed_dictionary_helpers]
       source
+      errors
+      context
   in
   assert_test_typed_dictionary
     {|
@@ -2003,7 +2006,6 @@ let test_check_typed_dictionary_in_alias context =
 
 let test_check_optional_typed_dictionary context =
   assert_type_errors
-    ~context
     {|
      from typing import Any, TypedDict, Optional
 
@@ -2024,13 +2026,13 @@ let test_check_optional_typed_dictionary context =
     [
       "TypedDict initialization error [55]: Expected type `str` for `MyDict` field `b` but got \
        `int`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_required_not_required_fields context =
   assert_type_errors_inject_typing_and_typing_extensions
-    ~context
     {|
       from typing import Any, TypedDict, Optional
       from __TYPING_PLACEHOLDER import NotRequired
@@ -2046,9 +2048,9 @@ let test_required_not_required_fields context =
         movie2: Movie = { "name": "The Matrix", "year": 1999 }
         movie3: Movie = { "name": "The Matrix" }
     |}
-    [];
+    []
+    context;
   assert_type_errors_inject_typing_and_typing_extensions
-    ~context
     {|
       from typing import Any, TypedDict, Optional
       from __TYPING_PLACEHOLDER import Required
@@ -2067,13 +2069,13 @@ let test_required_not_required_fields context =
     [
       "TypedDict initialization error [55]: Missing required field `name` for TypedDict \
        `MovieNonTotal`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_extraneous_fields context =
   assert_type_errors_inject_typing_and_typing_extensions
-    ~context
     {|
       from typing import TypedDict, Optional
 
@@ -2091,14 +2093,14 @@ let test_extraneous_fields context =
     [
       "TypedDict initialization error [55]: TypedDict `Movie` has no field `name_with_typo1`.";
       "TypedDict initialization error [55]: TypedDict `Movie` has no field `name_with_typo2`.";
-    ];
+    ]
+    context;
   (* If passing a literal to a union of TypedDicts, only show errors for the best TypedDict match.
      Don't show errors for the other TypedDicts.
 
      In this example, the given literal could match `Book` and error about the two extra field
      `year` and `extra field`. But we choose to match against `Movie`, since it has fewer errors. *)
   assert_type_errors_inject_typing_and_typing_extensions
-    ~context
     {|
       from typing import TypedDict, Optional
 
@@ -2114,10 +2116,10 @@ let test_extraneous_fields context =
       def main() -> None:
         expect_union({ "name": "The Matrix", "year": 1999, "extra field": 42 })
     |}
-    ["TypedDict initialization error [55]: TypedDict `Movie` has no field `extra field`."];
+    ["TypedDict initialization error [55]: TypedDict `Movie` has no field `extra field`."]
+    context;
   (* No errors if one TypedDict in a union matches completely. *)
   assert_type_errors_inject_typing_and_typing_extensions
-    ~context
     {|
       from typing import TypedDict, Optional
 
@@ -2133,7 +2135,8 @@ let test_extraneous_fields context =
       def main() -> None:
         expect_union({ "name": "The Matrix", "year": 1999 })
     |}
-    [];
+    []
+    context;
   ()
 
 

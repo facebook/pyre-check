@@ -9,8 +9,8 @@ open OUnit2
 open IntegrationTest
 
 let test_check_protocol context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -485,7 +485,7 @@ let test_check_protocol context =
 
 
 let test_check_generic_protocols context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -606,7 +606,7 @@ let test_check_generic_protocols context =
 
 
 let test_check_generic_implementors context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -735,7 +735,7 @@ let test_check_generic_implementors context =
 
 
 let test_callback_protocols context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -892,7 +892,7 @@ let test_callback_protocols context =
 
 
 let test_hash_protocol context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Hashable

@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_comprehensions context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -185,7 +185,7 @@ let test_check_comprehensions context =
 
 
 let test_check_yield context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -326,7 +326,7 @@ let test_check_yield context =
 
 
 let test_check_yield_from context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -407,7 +407,7 @@ let test_check_yield_from context =
 
 
 let test_check_generator_edge_cases context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing

@@ -9,9 +9,6 @@ open OUnit2
 open IntegrationTest
 
 let test_mode context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
-  let assert_debug_type_errors = assert_type_errors ~context in
   assert_default_type_errors
     {|
       # pyre-strict
@@ -23,7 +20,8 @@ let test_mode context =
       "Unused local mode [51]: Mode `pyre-unsafe` is unused. This conflicts with `pyre-strict` \
        mode set on line 2.";
       "Missing return annotation [3]: Returning `None` but no return type is specified.";
-    ];
+    ]
+    context;
   assert_default_type_errors
     {|
       # pyre-strict
@@ -38,7 +36,8 @@ let test_mode context =
       "Missing return annotation [3]: Returning `None` but no return type is specified.";
       "Unused local mode [51]: Mode `pyre-ignore-all-errors` is unused. This conflicts with \
        `pyre-strict` mode set on line 2.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       # pyre-unsafe
@@ -49,8 +48,9 @@ let test_mode context =
     [
       "Unused local mode [51]: Mode `pyre-strict` is unused. This conflicts with `pyre-unsafe` \
        mode set on line 2.";
-    ];
-  assert_debug_type_errors
+    ]
+    context;
+  assert_type_errors
     {|
       # pyre-unsafe
       # pyre-strict
@@ -62,6 +62,8 @@ let test_mode context =
        mode set on line 2.";
       "Missing return annotation [3]: Returning `None` but no return type is specified.";
     ]
+    context;
+  ()
 
 
 let () = "mode" >::: ["mode" >:: test_mode] |> Test.run

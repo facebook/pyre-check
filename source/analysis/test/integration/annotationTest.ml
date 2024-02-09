@@ -9,9 +9,9 @@ open OUnit2
 open IntegrationTest
 
 let test_check_undefined_type context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   assert_default_type_errors
     {|
       def foo(x: Derp) -> Herp:
@@ -312,8 +312,8 @@ let test_check_undefined_type context =
 
 
 let test_check_invalid_type context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   assert_type_errors {|
       MyType = int
       x: MyType = 1
@@ -490,7 +490,7 @@ let test_check_invalid_type context =
 
 
 let test_check_illegal_annotation_target context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class Bar:
@@ -533,7 +533,7 @@ let test_check_illegal_annotation_target context =
 
 
 let test_check_missing_type_parameters context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -575,7 +575,6 @@ let test_check_missing_type_parameters context =
 
 let test_check_analysis_failure context =
   assert_type_errors
-    ~context
     {|
       def foo() -> Derp:
         pass
@@ -587,9 +586,9 @@ let test_check_analysis_failure context =
       "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
       "Incompatible variable type [9]: x is declared to have type `int` "
       ^ "but is used as type `unknown`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: int) -> None:
         pass
@@ -602,12 +601,14 @@ let test_check_analysis_failure context =
       "Invalid argument [32]: Keyword argument `x` has type `unknown` "
       ^ "but must be a mapping with string keys.";
     ]
+    context;
+  ()
 
 
 let test_check_immutable_annotations context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   assert_type_errors
     {|
       a: int = None
@@ -1002,8 +1003,8 @@ let test_check_immutable_annotations context =
 
 
 let test_check_incomplete_annotations context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -1073,7 +1074,6 @@ let test_check_incomplete_annotations context =
 
 let test_check_incomplete_callable context =
   assert_type_errors
-    ~context
     {|
       import typing
       def foo(x: int) -> str:
@@ -1083,9 +1083,9 @@ let test_check_incomplete_callable context =
     [
       "Incompatible variable type [9]: bar is declared to have type `typing.Callable[[int], bool]` \
        but is used as type `typing.Callable(foo)[[Named(x, int)], str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       def foo(x: int) -> str:
@@ -1098,9 +1098,9 @@ let test_check_incomplete_callable context =
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
       "Invalid type [31]: Expression `typing.Callable[[int]]` is not a valid type.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     ~show_error_traces:true
     {|
       from typing import Callable
@@ -1112,12 +1112,13 @@ let test_check_incomplete_callable context =
        `Callable[[<parameters>], <return type>]`.";
       "Invalid type [31]: Expression `typing.Callable[(int, str)]` is not a valid type. Expected \
        `Callable[[<parameters>], <return type>]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_refinement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def takes_int(a: int) -> None: pass
@@ -1239,7 +1240,7 @@ let test_check_refinement context =
 
 
 let test_check_invalid_type_variables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -1375,7 +1376,7 @@ let test_check_invalid_type_variables context =
 
 
 let test_check_aliases context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing_extensions
@@ -1480,7 +1481,7 @@ let test_check_aliases context =
 
 
 let test_final_type context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors {|
       from typing import Final
       x: Final[int] = 3
@@ -1594,7 +1595,7 @@ let test_final_type context =
 
 
 let test_check_invalid_inheritance context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Callable
@@ -1636,7 +1637,7 @@ let test_check_invalid_inheritance context =
 
 
 let test_check_invalid_generic_inheritance context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
         from typing import Generic, TypeVar
@@ -1819,7 +1820,7 @@ let test_check_invalid_generic_inheritance context =
 
 
 let test_check_literal_assignment context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing_extensions import Literal
@@ -1868,7 +1869,7 @@ let test_check_literal_assignment context =
 
 
 let test_check_pyre_extensions_generic context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from pyre_extensions import Generic
@@ -1885,7 +1886,7 @@ let test_check_pyre_extensions_generic context =
 
 
 let test_check_safe_cast context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import pyre_extensions
@@ -1916,9 +1917,8 @@ let test_check_safe_cast context =
   ()
 
 
-let test_check_annotation_with_any context =
+let test_check_annotation_with_any =
   assert_type_errors
-    ~context
     {|
       from typing import List, Any
       def foo(x: List[Any] = None) -> None:
@@ -1932,9 +1932,8 @@ let test_check_annotation_with_any context =
     ]
 
 
-let test_check_variable_bounds_with_any context =
+let test_check_variable_bounds_with_any =
   assert_type_errors
-    ~context
     {|
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound=List[Any])
@@ -1942,9 +1941,8 @@ let test_check_variable_bounds_with_any context =
     ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."]
 
 
-let test_check_variable_bounds_with_quoted_bound context =
+let test_check_variable_bounds_with_quoted_bound =
   assert_type_errors
-    ~context
     {|
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound="List[Any]")
@@ -1952,9 +1950,8 @@ let test_check_variable_bounds_with_quoted_bound context =
     ["Prohibited any [33]: Type variable `T` cannot have a bound containing `Any`."]
 
 
-let test_check_variable_bounds_with_quoted_any context =
+let test_check_variable_bounds_with_quoted_any =
   assert_type_errors
-    ~context
     {|
       from typing import TypeVar, Any, List
       T = TypeVar("T", bound=List["Any"])
@@ -1963,8 +1960,8 @@ let test_check_variable_bounds_with_quoted_any context =
 
 
 let test_check_typevar_arithmetic context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       from typing_extensions import Literal
@@ -2304,7 +2301,7 @@ let test_check_typevar_arithmetic context =
 
 
 let test_check_literal_arithmetic context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from typing import TypeVar, Any
@@ -2619,7 +2616,7 @@ let test_check_literal_arithmetic context =
 
 
 let test_check_int_expression_arithmetic context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from typing import TypeVar, Any
@@ -2787,7 +2784,7 @@ let test_check_int_expression_arithmetic context =
 
 
 let test_check_typevar_division_simplify context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import TypeVar
@@ -2877,7 +2874,7 @@ let test_check_typevar_division_simplify context =
 
 
 let test_check_annotated context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Annotated
@@ -2895,7 +2892,7 @@ let test_check_annotated context =
 
 
 let test_check_union_shorthand context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* String annotations should work correctly with the union shorthand. *)
   assert_type_errors
     {|
@@ -2918,7 +2915,7 @@ let test_check_union_shorthand context =
 
 
 let test_check_broadcast context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors {|
       from pyre_extensions import Broadcast
     |} [];
@@ -3116,7 +3113,7 @@ let test_check_broadcast context =
 
 
 let test_check_compose context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from pyre_extensions import Compose
@@ -3635,7 +3632,7 @@ let test_check_compose context =
 
 
 let test_check_subtract context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from typing_extensions import Literal
@@ -3761,7 +3758,7 @@ let test_check_subtract context =
 
 
 let test_check_product context =
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from pyre_extensions import Product

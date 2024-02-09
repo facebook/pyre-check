@@ -10,8 +10,12 @@ open OUnit2
 open IntegrationTest
 
 let test_check_attributes context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors ?show_error_traces source errors =
+    assert_type_errors ?show_error_traces source errors context
+  in
+  let assert_strict_type_errors ?other_sources source errors =
+    assert_strict_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
       class Foo:
@@ -727,8 +731,8 @@ let test_check_attributes context =
 
 
 let test_attribute_decorators context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   (* Attributes defined with property decorators. *)
   assert_type_errors
     {|
@@ -851,9 +855,9 @@ let test_attribute_decorators context =
 
 
 let test_attribute_strict context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   (* Annotations containing `Any` in strict are not permitted. *)
   assert_type_errors
     {|
@@ -944,7 +948,7 @@ let test_attribute_strict context =
 
 
 let test_check_attribute_initialization context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
         class Foo:
@@ -1187,8 +1191,13 @@ let test_check_attribute_initialization context =
 
 
 let test_check_missing_attribute context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors ?handle source errors =
+    assert_default_type_errors ?handle source errors context
+  in
+  let assert_strict_type_errors ?other_sources source errors =
+    assert_strict_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
       class Foo:
@@ -1378,7 +1387,6 @@ let test_check_missing_attribute context =
        `typing.Any` but is never initialized.";
     ];
   assert_strict_type_errors
-    ~context
     ~other_sources:
       [
         {
@@ -1404,7 +1412,7 @@ let test_check_missing_attribute context =
 
 
 let test_attribute_type_variable_resolution context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* Check attribute type variable resolution. *)
   assert_type_errors
     {|
@@ -1626,7 +1634,7 @@ let test_attribute_type_variable_resolution context =
 
 
 let test_check_getattr context =
-  let assert_test_getattr source =
+  let assert_test_getattr source errors =
     let getattr_stub =
       {
         handle = "has_getattr.pyi";
@@ -1670,7 +1678,6 @@ let test_check_getattr context =
       }
     in
     assert_type_errors
-      ~context
       ~other_sources:
         [
           getattr_stub;
@@ -1680,6 +1687,8 @@ let test_check_getattr context =
           getattr_stub_not_callable;
         ]
       source
+      errors
+      context
   in
   assert_test_getattr
     {|
@@ -1742,7 +1751,7 @@ let test_check_getattr context =
 
 
 let test_getattr_literal_access context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class A:
@@ -1770,7 +1779,7 @@ let test_getattr_literal_access context =
 
 
 let test_check_metaclass_attributes context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class Meta(type):
@@ -1910,8 +1919,8 @@ let test_check_metaclass_attributes context =
 
 
 let test_check_annotated context =
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
-    ~context
     {|
       from typing import Annotated
       class A:
@@ -1921,7 +1930,6 @@ let test_check_annotated context =
     |}
     [];
   assert_type_errors
-    ~context
     {|
       from typing import Annotated
       class A:
@@ -1931,7 +1939,6 @@ let test_check_annotated context =
     |}
     [];
   assert_type_errors
-    ~context
     {|
       from typing import Annotated
       def f(a: Annotated[str, int]) -> int:
@@ -1939,7 +1946,6 @@ let test_check_annotated context =
     |}
     ["Undefined attribute [16]: `str` has no attribute `foo`."];
   assert_type_errors
-    ~context
     {|
       class C:
         a: int = 0
@@ -1951,7 +1957,6 @@ let test_check_annotated context =
        `str` is not a subtype of the overridden attribute `int`.";
     ];
   assert_type_errors
-    ~context
     {|
       class C:
         __a: int = 0
@@ -1963,7 +1968,9 @@ let test_check_annotated context =
 
 
 let test_class_with_same_name_as_local_variable context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?handle ?other_sources source errors =
+    assert_type_errors ?handle ?other_sources source errors context
+  in
   assert_type_errors
     ~handle:"Foo.py"
     {|

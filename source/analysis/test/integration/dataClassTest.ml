@@ -9,7 +9,6 @@ open OUnit2
 open IntegrationTest
 
 let test_check_data_class context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -22,7 +21,8 @@ let test_check_data_class context =
     [
       "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -35,7 +35,8 @@ let test_check_data_class context =
     [
       "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
       ^ "2 were provided.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import dataclasses
@@ -48,7 +49,8 @@ let test_check_data_class context =
     [
       "Too many arguments [19]: Call `Foo.__init__` expects 1 positional argument, "
       ^ "2 were provided.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -63,7 +65,8 @@ let test_check_data_class context =
       ^ "but no type is specified.";
       "Too many arguments [19]: Call `Foo.__init__` expects 0 positional arguments, 1 was"
       ^ " provided.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -73,7 +76,8 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -83,7 +87,8 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo(1)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -95,7 +100,8 @@ let test_check_data_class context =
       def boo() -> None:
           b = Child(1)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -117,7 +123,8 @@ let test_check_data_class context =
                 "x": x,
             }
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -130,7 +137,8 @@ let test_check_data_class context =
         x: int = 1
         y: str
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -141,7 +149,8 @@ let test_check_data_class context =
       def boo() -> None:
           b = Foo(1)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -152,7 +161,8 @@ let test_check_data_class context =
     [
       "Missing attribute annotation [4]: Attribute `x` of class `F` has type `int` but no type is \
        specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import ClassVar
@@ -163,7 +173,8 @@ let test_check_data_class context =
         y: str = "a"
       A("a")
     |}
-    [];
+    []
+    context;
   (* Actually a test of descriptors to make sure it doesn't infinitely loop *)
   assert_type_errors
     {|
@@ -181,13 +192,13 @@ let test_check_data_class context =
     [
       "Revealed type [-1]: Revealed type for `test.D().x` is `C`.";
       "Revealed type [-1]: Revealed type for `test.D().x.x.x` is `C`.";
-    ];
+    ]
+    context;
   ()
 
 
-let test_check_attr context =
+let test_check_attr =
   assert_type_errors
-    ~context
     ~other_sources:
       [
         {
@@ -219,7 +230,6 @@ let test_check_attr context =
 
 
 let test_check_keyword_only context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -231,12 +241,12 @@ let test_check_keyword_only context =
     [
       "Revealed type [-1]: Revealed type for `test.A.__init__` is \
        `typing.Callable(A.__init__)[[Named(self, A), KeywordOnly(x, int)], None]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_check_keyword_only_preprocessed context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from dataclasses import dataclass, KW_ONLY
@@ -251,7 +261,8 @@ let test_check_keyword_only_preprocessed context =
       "Revealed type [-1]: Revealed type for `test.A.__init__` is \
        `typing.Callable(A.__init__)[[Named(self, A), Named(x, int), KeywordOnly(y, int, default)], \
        None]`.";
-    ];
+    ]
+    context;
   ()
 
 

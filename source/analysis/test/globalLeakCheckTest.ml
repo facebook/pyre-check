@@ -41,9 +41,9 @@ let instantiate_and_stringify ~lookup errors =
 let assert_global_leak_errors
     ?(skip_type_check = false)
     ?(other_sources = [])
-    ~context
     source
     expected
+    context
   =
   let source_with_imports = "      from typing import *" ^ source in
   let preliminary_type_check_errors =
@@ -60,7 +60,6 @@ let assert_global_leak_errors
   if skip_type_check || List.is_empty preliminary_type_check_errors then
     let check ~environment ~source = run_check_module ~environment source in
     assert_errors
-      ~context
       ~check
       ~strict:true
       ~include_suppressed_errors:true
@@ -68,20 +67,21 @@ let assert_global_leak_errors
       ~other_sources
       source_with_imports
       expected
+      context
   else
     Format.sprintf "Type check errors: %s" ([%show: string list] preliminary_type_check_errors)
     |> failwith
 
 
 let test_global_assignment context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     {|
       def foo() -> None:
          x = 1
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     {|
@@ -89,7 +89,8 @@ let test_global_assignment context =
       def foo() -> None:
         x = 1
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     (* Note: my_global here is not actually a global, this is a valid assignment. *)
@@ -98,7 +99,8 @@ let test_global_assignment context =
       def foo() -> None:
         my_global = 2
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     {|
@@ -109,7 +111,8 @@ let test_global_assignment context =
           non_local = 3
         inner()
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -121,7 +124,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -133,7 +137,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -145,7 +150,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     {|
@@ -154,7 +160,8 @@ let test_global_assignment context =
         global my_global
         x, y = 2, 3
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -168,7 +175,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global doesn't error. *)
     {|
@@ -177,7 +185,8 @@ let test_global_assignment context =
          if my_local := 0:
            pass
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -190,7 +199,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a global errors. *)
     {|
@@ -203,7 +213,8 @@ let test_global_assignment context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a global using the walrus operator errors. *)
     {|
@@ -214,26 +225,28 @@ let test_global_assignment context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_global_exceptions context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Raising an exception doesn't result in an error. *)
     {|
       def foo() -> None:
         raise Exception()
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Raising an exception doesn't result in an error. *)
     {|
       def foo() -> None:
         raise Exception() from Exception()
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Raising an exception results in an error if it mutates a global. *)
     {|
@@ -244,7 +257,8 @@ let test_global_exceptions context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Raising an exception results in an error if it mutates a global. *)
     {|
@@ -255,7 +269,8 @@ let test_global_exceptions context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Handling exceptions doesn't result in an error. *)
     {|
@@ -265,7 +280,8 @@ let test_global_exceptions context =
         except:
           print("An exception occurred")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Handling exceptions doesn't result in an error. *)
     {|
@@ -277,7 +293,8 @@ let test_global_exceptions context =
         else:
           print("No exception")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Handling exceptions doesn't result in an error. *)
     {|
@@ -289,7 +306,8 @@ let test_global_exceptions context =
         finally:
           print("try except is complete")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Handling exceptions doesn't result in an error. *)
     {|
@@ -299,7 +317,8 @@ let test_global_exceptions context =
         except Exception as e:
           my_local = 2
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
     (* TODO (T142189949): de-duplicate errors on globals detected at the same location. *)
@@ -316,7 +335,8 @@ let test_global_exceptions context =
       "Leak via method argument [3107]: Potential data leak to global `my_global` of type \
        `typing.Any` via method arguments to method `isinstance`.";
       "Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
     {|
@@ -331,7 +351,8 @@ let test_global_exceptions context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Handling an exception results in an error if it mutates a global. *)
     {|
@@ -346,7 +367,8 @@ let test_global_exceptions context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Handling exceptions doesn't result in an error. *)
     {|
@@ -358,12 +380,12 @@ let test_global_exceptions context =
         except:
           print("An exception occurred")
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_list_global_leaks context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Appending to a local list doesn't error. *)
     {|
@@ -372,7 +394,8 @@ let test_list_global_leaks context =
         my_local: List[int] = []
         my_local.append(123)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Clearing and setting a local doesn't error. *)
     {|
@@ -380,7 +403,8 @@ let test_list_global_leaks context =
         my_local: List[int] = []
         my_local[:] = [1,2]
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Getting a known mutable method from a local doesn't error. *)
     {|
@@ -389,7 +413,8 @@ let test_list_global_leaks context =
         my_local: List[int] = []
         my_local.append
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Clearing and setting a global results in an error. *)
     {|
@@ -400,7 +425,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Appending to a global results in an error. *)
     {|
@@ -411,7 +437,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Getting a known mutable method from a global results in an error. *)
     {|
@@ -422,7 +449,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Setting an index in a local doesn't result in an error. *)
     {|
@@ -431,7 +459,8 @@ let test_list_global_leaks context =
         my_local: List[int] = []
         my_local[0] = 123
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Setting an index in a global results in an error. *)
     {|
@@ -442,7 +471,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a list results in an error. *)
     {|
@@ -453,7 +483,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a list results in an error. *)
     {|
@@ -465,7 +496,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* In-place list extension on a local does not result in an error. *)
     {|
@@ -475,7 +507,8 @@ let test_list_global_leaks context =
         my_local: List[int] = [1]
         my_local += my_local
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* In-place list extension on a global results in an error. *)
     {|
@@ -487,7 +520,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a non-mutable method on a global list does not result in an error. *)
     {|
@@ -496,7 +530,8 @@ let test_list_global_leaks context =
         global my_global
         my_global.clear()
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in a starred expression results in an error. *)
     {|
@@ -510,7 +545,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, typing.List[int]]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in list construction results in an error. *)
     {|
@@ -522,7 +558,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in the generator of a list comprehension results
        in an error. *)
@@ -535,7 +572,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in the element of a list comprehension results in
        an error. *)
@@ -548,7 +586,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in the condition of a list comprehension results
        in an error. *)
@@ -561,7 +600,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global the accessor of a list results in an error. *)
     {|
@@ -575,7 +615,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Using a global in a list accessor when the global is not mutated results in a global read
        error. This is because we consider globals passed as function parameters as potential
@@ -592,7 +633,8 @@ let test_list_global_leaks context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `int` via method arguments to method `my_list.__getitem__`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Mutating a global with the walrus operator in a list constructor results in an error. *)
     {|
@@ -604,7 +646,8 @@ let test_list_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a non-global with list deconstruction doesn't error. *)
     {|
@@ -614,7 +657,8 @@ let test_list_global_leaks context =
         my_local = 1
         [my_local, b] = 2, 3
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a global in a list deconstruction errors. *)
     {|
@@ -626,7 +670,8 @@ let test_list_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a position of a global in a list deconstruction errors. *)
     {|
@@ -638,7 +683,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a starred global results in error. *)
     {|
@@ -650,7 +696,8 @@ let test_list_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Using a global in a list append when the global is not mutated results in a global read
        error. This is because we consider globals passed as function parameters as potential
@@ -666,12 +713,12 @@ let test_list_global_leaks context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `int` via method arguments to method `my_list.append`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_tuple_global_leaks context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Calling a known mutable method on a global in tuple construction results in an error. *)
     {|
@@ -683,7 +730,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global in the generator of a tuple comprehension results
        in an error. *)
@@ -696,7 +744,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Destructuring a tuple into a global results in an error. *)
     {|
@@ -708,7 +757,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Destructuring a tuple into a global results in an error. *)
     {|
@@ -720,7 +770,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Destructuring a tuple into a global results in an error. *)
     {|
@@ -736,7 +787,8 @@ let test_tuple_global_leaks context =
        `int`.";
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a global in a tuple deconstruction errors. *)
     {|
@@ -748,7 +800,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a position of a non-global in a tuple deconstruction does not errors. *)
     {|
@@ -758,7 +811,8 @@ let test_tuple_global_leaks context =
         my_local: List[int] = []
         (my_local[0], y) = 123, 456
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Assignment to a position of a global in a tuple deconstruction errors. *)
     {|
@@ -770,7 +824,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Assignment to a key of a global in a tuple deconstruction errors. *)
     {|
@@ -781,7 +836,8 @@ let test_tuple_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -791,12 +847,12 @@ let test_tuple_global_leaks context =
         x, y = my_global, 1
     |}
     [ (* TODO (T142189949): leaks should be detected on global assignment to a local variable
-         through tuple deconstruction *) ];
+         through tuple deconstruction *) ]
+    context;
   ()
 
 
 let test_dict_global_leaks context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Mutating a local dict does not result in an error. *)
     {|
@@ -804,7 +860,8 @@ let test_dict_global_leaks context =
         my_local: Dict[str, int] = {}
         my_local[str(1)] = 1
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Setting the key and value of a global dict results in an error. *)
     {|
@@ -815,7 +872,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Setting the key and value of a global dict results in an error. *)
     {|
@@ -826,7 +884,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a dict results in an error. *)
     {|
@@ -838,7 +897,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a dict results in an error. *)
     {|
@@ -849,7 +909,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
   (* Calling a known mutable method on a starred dict results in an error. *)
     ~skip_type_check:true (* Pyre is finding an issue with the test, but it is runnable in repl. *)
@@ -862,7 +923,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method in dict construction results in an error. *)
     {|
@@ -874,7 +936,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method in dict construction results in an error. *)
     {|
@@ -886,7 +949,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method in a dict comprehension for element key results in an
        error. *)
@@ -899,7 +963,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method in a dict comprehension for element value results in an
        error. *)
@@ -912,7 +977,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method in a dict comprehension for generator results in an error. *)
     {|
@@ -924,7 +990,8 @@ let test_dict_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing global as a function parameter results in an error. *)
     (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
@@ -938,12 +1005,12 @@ let test_dict_global_leaks context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `int` via method arguments to method `my_dict.__setitem__`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_set_global_leaks context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -954,7 +1021,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -965,7 +1033,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
   (* Calling a known mutable method on a global set results in an error. *)
     ~skip_type_check:true (* Type checker errors on Set not being an AbstractSet. *)
@@ -979,7 +1048,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -990,7 +1060,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1002,7 +1073,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1013,7 +1085,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1025,7 +1098,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1036,7 +1110,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1048,7 +1123,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Set[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1060,7 +1136,8 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling a known mutable method on a global set results in an error. *)
     {|
@@ -1072,13 +1149,13 @@ let test_set_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
 
   ()
 
 
 let test_setattr_known_mutable_methods context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Calling object.__setattr__ on a non-global object does not result in an error. *)
     {|
@@ -1087,7 +1164,8 @@ let test_setattr_known_mutable_methods context =
         def __init__(self, x: int) -> None:
           object.__setattr__(self, "x", x)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Calling setattr on a non-global object does not result in an error. *)
     {|
@@ -1096,7 +1174,8 @@ let test_setattr_known_mutable_methods context =
         def __init__(self, x: int) -> None:
           setattr(self, "x", x)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Calling __setattr__ on a non-global object does not result in an error. *)
     {|
@@ -1105,7 +1184,8 @@ let test_setattr_known_mutable_methods context =
         def __init__(self, x: int) -> None:
           self.__setattr__("x", x)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Calling setitem on a non-global object does not result in an error. *)
     {|
@@ -1114,7 +1194,8 @@ let test_setattr_known_mutable_methods context =
         def __init__(self, x: int) -> None:
           super().__setitem__("x", 1)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Calling object.__setattr__ on a global object results in an error. *)
     {|
@@ -1126,7 +1207,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
        `int` defined in class `test.MyClass`";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling setattr on a global object results in an error. *)
     {|
@@ -1138,7 +1220,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
        `int` defined in class `test.MyClass`";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling object.__setattr__ on a global object results in an error. *)
     {|
@@ -1151,7 +1234,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
        `int` defined in class `test.MyClass`";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling setattr on a global object results in an error. *)
     {|
@@ -1164,7 +1248,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a class attribute [3105]: Data write to class attribute `test.MyClass.x` of type \
        `int` defined in class `test.MyClass`";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling setattr with a global mutation in the value position results in an error *)
     {|
@@ -1179,7 +1264,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling object.__setattr__ with a global mutation in the value position results in an
        error *)
@@ -1195,7 +1281,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling __setitem__ on a global results in an error. *)
     {|
@@ -1213,7 +1300,8 @@ let test_setattr_known_mutable_methods context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `test.MyClass`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Calling __setitem__ on a local does not result in an error. *)
     {|
@@ -1227,12 +1315,12 @@ let test_setattr_known_mutable_methods context =
         my_local: MyClass = MyClass()
         my_local[-1] = 2
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_object_global_leaks context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1248,7 +1336,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1264,7 +1353,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         my_global.set_x(2)
     |}
-    [ (* TODO (T142189949): leaks should be detected on object attribute mutations *) ];
+    [ (* TODO (T142189949): leaks should be detected on object attribute mutations *) ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1285,7 +1375,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x.y` of \
        type `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1296,7 +1387,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         MyClass(2).my_list.append(1)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       import collections
@@ -1309,7 +1401,8 @@ let test_object_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable \
        `test.MyClass.my_list` of type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     ~other_sources:
       [
@@ -1334,7 +1427,8 @@ let test_object_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable \
        `other_module.my_list` of type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1348,7 +1442,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1360,7 +1455,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors (* Global leaks are found in calls to constructors. *)
     ~skip_type_check:true
       (* The types don't match up correctly, but this is an easy way to verify leaks in calls. *)
@@ -1378,7 +1474,8 @@ let test_object_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Aliasing a class will still properly interact with global leaks. *)
     {|
@@ -1392,7 +1489,8 @@ let test_object_global_leaks context =
         B().x = 6
         C.x = 6
     |}
-    ["Leak to a primitive global [3102]: Data write to global variable `test.C.x` of type `int`."];
+    ["Leak to a primitive global [3102]: Data write to global variable `test.C.x` of type `int`."]
+    context;
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
     {|
@@ -1408,7 +1506,8 @@ let test_object_global_leaks context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.MyClass.x` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
     {|
@@ -1424,7 +1523,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Returning a class from a function will still find a global leak. *)
     {|
@@ -1440,7 +1540,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.MyClass.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* A mutation on something returned from a class does not result in an error. *)
     {|
@@ -1462,7 +1563,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         MyClass.get_current().x.append(2)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Getting a class and instantiating it from a function finds a leak with assignment. *)
     {|
@@ -1475,7 +1577,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         get_class()().x = 5
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Getting a class and instantiating it doesn't find a global leak with a mutable call. *)
     {|
@@ -1488,7 +1591,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         get_class()().x.append(5)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* A mutation on something returned from a class does not result in an error. *)
     {|
@@ -1510,7 +1614,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         MyClass.get_current().x = 2
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1522,7 +1627,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         (my_global1 if True else my_global2).x = 5
     |}
-    [ (* TODO (T142189949): attribute write using a ternary operator should be detected. *) ];
+    [ (* TODO (T142189949): attribute write using a ternary operator should be detected. *) ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1534,7 +1640,8 @@ let test_object_global_leaks context =
       def foo() -> None:
         (my_global1, my_global2)[1].x = 5
     |}
-    [ (* TODO (T142189949): attribute write via tuple access should be detected. *) ];
+    [ (* TODO (T142189949): attribute write via tuple access should be detected. *) ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1550,7 +1657,8 @@ let test_object_global_leaks context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1567,12 +1675,12 @@ let test_object_global_leaks context =
     [
       "Leak to other types [3104]: Data write to global variable `test.my_global.x` of type \
        `unknown`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_global_statements context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1582,7 +1690,8 @@ let test_global_statements context =
     [
       "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
        `int` via alias to local `y`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing global as a function parameter results in an error. *)
     (* TODO (T142189949): globals passed into known immutable functions can be ignored. *)
@@ -1596,7 +1705,8 @@ let test_global_statements context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `int` via method arguments to method `my_set.add`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1613,7 +1723,8 @@ let test_global_statements context =
     [
       "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
        `int` via alias to local `my_obj.x`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1629,7 +1740,8 @@ let test_global_statements context =
     [
       "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
        `int` via alias to local `test.MyClass(1).x`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -1645,20 +1757,23 @@ let test_global_statements context =
     [
       "Leak via local variable [3106]: Potential data leak to global `test.my_global.x` of type \
        `int` via alias to local `my_local`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       async def test() -> AsyncGenerator[None, None]:
         print("Hello")
         yield
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       async def test() -> AsyncGenerator[int, None]:
         yield from (i for i in range(10))
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1669,7 +1784,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1683,7 +1799,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1693,7 +1810,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1703,7 +1821,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1713,7 +1832,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1723,7 +1843,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1734,7 +1855,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -1744,7 +1866,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1754,7 +1877,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1764,7 +1888,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1774,7 +1899,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1784,7 +1910,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     ~skip_type_check:true
       (* This is a bug in Pyre, where scoping rules are not always correctly applied. *)
@@ -1794,7 +1921,8 @@ let test_global_statements context =
         if my_global == 1:
           my_global = 3
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     ~skip_type_check:true
       (* This is a bug in Pyre, where scoping rules are not always correctly applied. *)
@@ -1806,7 +1934,8 @@ let test_global_statements context =
         else:
           my_global = 4
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1817,7 +1946,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1829,7 +1959,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1841,7 +1972,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1855,7 +1987,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1869,7 +2002,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1885,7 +2019,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1900,7 +2035,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global_t` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1908,7 +2044,8 @@ let test_global_statements context =
         while True:
           my_global += 1
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1916,7 +2053,8 @@ let test_global_statements context =
         while True:
           my_local += 1
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1928,7 +2066,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1940,7 +2079,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 0
@@ -1951,7 +2091,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -1959,7 +2100,8 @@ let test_global_statements context =
         for i in "hello":
           print("hi")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Using a global in a range function when the global is not mutated results in a global read
        error. This is because we consider globals passed as function parameters as potential
@@ -1974,7 +2116,8 @@ let test_global_statements context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `int` via method arguments to method `range`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -1986,7 +2129,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -1997,7 +2141,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2008,21 +2153,24 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       def foo() -> None:
         with open("hello", "r") as f:
           print("hi")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       def foo() -> None:
         with open("hello", "r") as f, open("world", "r") as f1:
           print("hi")
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2035,7 +2183,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2045,7 +2194,8 @@ let test_global_statements context =
           print("hi")
     |}
     (* TODO (T142189949): should pyre figure out the right type here? *)
-    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."];
+    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2057,7 +2207,8 @@ let test_global_statements context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2067,7 +2218,8 @@ let test_global_statements context =
           print("hi")
     |}
     (* TODO (T142189949): should pyre figure out the right type here? *)
-    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."];
+    ["Leak to other types [3104]: Data write to global variable `my_global` of type `unknown`."]
+    context;
   assert_global_leak_errors
     ~skip_type_check:true (* This is invalid, but we want to make sure unknown type stuff works. *)
     {|
@@ -2079,7 +2231,8 @@ let test_global_statements context =
     [
       "Leak to other types [3104]: Data write to global variable `other_module.my_list` of type \
        `unknown`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     ~other_sources:
       [
@@ -2100,7 +2253,8 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable \
        `other_module.my_list` of type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     ~other_sources:
       [
@@ -2120,12 +2274,12 @@ let test_global_statements context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable \
        `other_module.my_list` of type `typing.List[int]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_recursive_coverage context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -2135,7 +2289,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -2146,7 +2301,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: List[List[int]] = [[]]
@@ -2157,7 +2313,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[typing.List[int]]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       class MyClass:
@@ -2170,7 +2327,8 @@ let test_recursive_coverage context =
         global my_global
         my_global.get(2)[0] = 5
     |}
-    [ (* TODO (T142189949): mutations on call returns for globals should not result in error *) ];
+    [ (* TODO (T142189949): mutations on call returns for globals should not result in error *) ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2180,7 +2338,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2191,7 +2350,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2202,7 +2362,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2218,7 +2379,8 @@ let test_recursive_coverage context =
        type `typing.Dict[str, int]`.";
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2229,7 +2391,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2240,7 +2403,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2251,7 +2415,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: Dict[str, int] = {}
@@ -2261,7 +2426,8 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.Dict[str, int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2275,7 +2441,8 @@ let test_recursive_coverage context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2291,7 +2458,8 @@ let test_recursive_coverage context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       my_global: int = 1
@@ -2307,7 +2475,8 @@ let test_recursive_coverage context =
     [
       "Leak to a primitive global [3102]: Data write to global variable `test.my_global` of type \
        `int`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     {|
       def nested_run() -> None:
@@ -2317,7 +2486,8 @@ let test_recursive_coverage context =
 
         do_the_thing()
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     {|
       my_global: List[int] = []
@@ -2331,12 +2501,12 @@ let test_recursive_coverage context =
     [
       "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
        type `typing.List[int]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_global_returns context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Returning a global results in an error. *)
     {|
@@ -2344,7 +2514,8 @@ let test_global_returns context =
       def foo() -> int:
         return my_global
     |}
-    ["Leak via method return [3108]: Potential data leak to global `test.my_global` of type `int`."];
+    ["Leak via method return [3108]: Potential data leak to global `test.my_global` of type `int`."]
+    context;
   assert_global_leak_errors
     (* Returning a member from a global results in an error. *)
     {|
@@ -2355,7 +2526,8 @@ let test_global_returns context =
     [
       "Leak via method return [3108]: Potential data leak to global `test.my_global` of type \
        `typing.List[int]`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Returning an attribute from a global results in an error. *)
     {|
@@ -2369,12 +2541,12 @@ let test_global_returns context =
     [
       "Leak via method return [3108]: Potential data leak to global `test.my_global.x` of type \
        `int`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_globals_passed_as_function_parameters context =
-  let assert_global_leak_errors = assert_global_leak_errors ~context in
   assert_global_leak_errors
     (* Passing a non-global as a parameter does not result in an error. *)
     {|
@@ -2383,7 +2555,8 @@ let test_globals_passed_as_function_parameters context =
         my_local = 1
         print(my_local)
     |}
-    [];
+    []
+    context;
   assert_global_leak_errors
     (* Passing a global as a parameter results in an error. *)
     {|
@@ -2394,7 +2567,8 @@ let test_globals_passed_as_function_parameters context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `typing.List[int]` via method arguments to method `print`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing multiple globals as parameters results in an error.*)
     {|
@@ -2413,7 +2587,8 @@ let test_globals_passed_as_function_parameters context =
        `int` via method arguments to method `test.bar`.";
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `typing.List[int]` via method arguments to method `test.bar`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing a global multiple times as a parameter results in multiple errors.*)
     {|
@@ -2432,7 +2607,8 @@ let test_globals_passed_as_function_parameters context =
        `int` via method arguments to method `test.bar`.";
       "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
        `int` via method arguments to method `test.bar`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing multiple globals as parameters in nested calls results in an error.*)
     {|
@@ -2454,7 +2630,8 @@ let test_globals_passed_as_function_parameters context =
        `int` via method arguments to method `test.baz`.";
       "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
        `typing.List[int]` via method arguments to method `test.bar`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing globals as parameters in calls in assignment statement results in an error.*)
     {|
@@ -2469,7 +2646,8 @@ let test_globals_passed_as_function_parameters context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
        `int` via method arguments to method `test.baz`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing a global as a parameter to a class function results in an error. *)
     {|
@@ -2488,7 +2666,8 @@ let test_globals_passed_as_function_parameters context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
        `int` via method arguments to method `my_local.set_x`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Passing a global as a parameter to a class initialization results in an error. *)
     {|
@@ -2504,7 +2683,8 @@ let test_globals_passed_as_function_parameters context =
     [
       "Leak via method argument [3107]: Potential data leak to global `test.my_global_int` of type \
        `int` via method arguments to method `test.MyClass`.";
-    ];
+    ]
+    context;
   assert_global_leak_errors
     (* Using a global in a list append when the global is not mutated results in a global read
        error. This is because we consider globals passed as function parameters as potential
@@ -2516,7 +2696,8 @@ let test_globals_passed_as_function_parameters context =
         my_list: List[int] = []
         my_list.append(my_global.pop(3))
     |}
-    [];
+    []
+    context;
   ()
 
 

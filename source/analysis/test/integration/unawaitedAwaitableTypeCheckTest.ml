@@ -9,7 +9,9 @@ open OUnit2
 open IntegrationTest
 
 let test_unawaited_awaitable_configuration_flag context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ~enable_unawaited_awaitable_analysis source errors =
+    assert_type_errors ~enable_unawaited_awaitable_analysis source errors context
+  in
   assert_type_errors
     ~enable_unawaited_awaitable_analysis:false
     {|

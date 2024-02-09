@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_format_string context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors {|
       def foo() -> None:
         f'foo{1}'
@@ -56,7 +56,7 @@ let test_format_string context =
 
 
 let test_multiline_format_string context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def foo() -> None:

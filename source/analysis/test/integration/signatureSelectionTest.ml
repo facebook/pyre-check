@@ -9,8 +9,8 @@ open OUnit2
 open IntegrationTest
 
 let test_check_callables context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   (* Callable parameter checks. *)
   assert_type_errors
     {|
@@ -195,22 +195,23 @@ let test_check_callables context =
 
 
 let test_check_function_redirects context =
-  assert_type_errors ~context {|
+  assert_type_errors {|
       def foo(a: float) -> float:
         return abs(a)
-    |} []
+    |} [] context
 
 
 let test_check_function_parameters_with_backups context =
-  assert_type_errors ~context "(1).__add__(1)" [];
-  assert_type_errors ~context "(1).__add__(1j)" [];
-  assert_type_errors ~context "(1).__add__(1.0)" [];
-  assert_type_errors ~context "(1).__iadd__(1.0)" []
+  assert_type_errors "(1).__add__(1)" [] context;
+  assert_type_errors "(1).__add__(1j)" [] context;
+  assert_type_errors "(1).__add__(1.0)" [] context;
+  assert_type_errors "(1).__iadd__(1.0)" [] context;
+  ()
 
 
 let test_check_function_parameters context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -583,7 +584,7 @@ let test_check_function_parameters context =
 
 
 let test_check_function_parameter_errors context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import str_float_to_int
@@ -660,7 +661,7 @@ let test_check_function_parameter_errors context =
 
 
 let test_check_function_overloads context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import overload, Union
@@ -818,7 +819,6 @@ let test_check_function_overloads context =
 
 let test_check_constructor_overloads context =
   assert_type_errors
-    ~context
     {|
       import typing
 
@@ -835,11 +835,12 @@ let test_check_constructor_overloads context =
       "Missing overload implementation [42]: Overloaded function `Class.__init__` must have an \
        implementation.";
     ]
+    context
 
 
 let test_check_variable_arguments context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_strict_type_errors source errors = assert_strict_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -1023,7 +1024,7 @@ let test_check_variable_arguments context =
 
 
 let test_check_variable_restrictions context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
        from builtins import variable_restricted_identity
@@ -1074,8 +1075,8 @@ let test_check_variable_restrictions context =
 
 
 let test_check_keyword_arguments context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -1170,7 +1171,7 @@ let test_check_keyword_arguments context =
 
 
 let test_check_named_arguments context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import str_float_to_int
@@ -1220,7 +1221,7 @@ let test_check_named_arguments context =
 
 
 let test_check_literals context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing

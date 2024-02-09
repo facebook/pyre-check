@@ -11,49 +11,65 @@ open IntegrationTest
 let test_basic context =
   (* We need to use assert_default_type_errors because we want to avoid debug mode, which prevents
      suppressing syntax errors. *)
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  assert_default_type_errors "def good_syntax() -> int: ..." [];
-  assert_default_type_errors "def bad_syntax(" ["Parsing failure [404]: '(' was never closed"];
+  assert_default_type_errors "def good_syntax() -> int: ..." [] context;
+  assert_default_type_errors
+    "def bad_syntax("
+    ["Parsing failure [404]: '(' was never closed"]
+    context;
   assert_default_type_errors
     "def good_syntax() -> int: ..."
     ~other_sources:[{ Test.handle = "foo.py"; source = "def bad_syntax(" }]
-    [];
-  assert_default_type_errors {|
+    []
+    context;
+  assert_default_type_errors
+    {|
       # pyre-ignore-all-errors
       def bad_syntax(
-    |} [];
-  assert_default_type_errors {|
+    |}
+    []
+    context;
+  assert_default_type_errors
+    {|
       # pyre-placeholder-stub
       def bad_syntax(
-    |} [];
+    |}
+    []
+    context;
   assert_default_type_errors
     {|
       # pyre-ignore-all-errors[10]
       def bad_syntax(
     |}
-    ["Parsing failure [404]: '(' was never closed"];
-  assert_default_type_errors {|
+    ["Parsing failure [404]: '(' was never closed"]
+    context;
+  assert_default_type_errors
+    {|
       # pyre-ignore-all-errors[404]
       def bad_syntax(
-    |} [];
+    |}
+    []
+    context;
   assert_default_type_errors
     {|
       # pyre-ignore-all-errors[10, 404]
       def bad_syntax(
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
     {|
       # pyre-unsafe
       def bad_syntax(
     |}
-    ["Parsing failure [404]: '(' was never closed"];
+    ["Parsing failure [404]: '(' was never closed"]
+    context;
   assert_default_type_errors
     {|
       # pyre-strict
       def bad_syntax(
     |}
-    ["Parsing failure [404]: '(' was never closed"];
+    ["Parsing failure [404]: '(' was never closed"]
+    context;
   ()
 
 

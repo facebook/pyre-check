@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_variance context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def narnia(): pass
@@ -147,7 +147,9 @@ let test_check_variance context =
 
 
 let test_check_literal_variance context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?show_error_traces source errors =
+    assert_type_errors ?show_error_traces source errors context
+  in
   (* We special case literal lists and dicts for convenience, as they can never escape scope. *)
   assert_type_errors {|
       import typing

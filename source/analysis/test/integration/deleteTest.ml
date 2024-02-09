@@ -10,16 +10,15 @@ open IntegrationTest
 
 let test_delete context =
   assert_type_errors
-    ~context
     {|
     def foo() -> None:
         x = 10
         del x
         return x # Error
     |}
-    ["Incompatible return type [7]: Expected `None` but got `unknown`."];
+    ["Incompatible return type [7]: Expected `None` but got `unknown`."]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo(x: int) -> int:
         if x > 100:
@@ -29,6 +28,8 @@ let test_delete context =
         return x
     |}
     []
+    context;
+  ()
 
 
 let () = "delete" >::: ["check_delete" >:: test_delete] |> Test.run

@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_enumeration_methods context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import enum
@@ -89,7 +89,7 @@ let test_enumeration_methods context =
 
 
 let test_check_enumeration_attributes context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors {|
       import enum
 
@@ -188,7 +188,7 @@ let test_check_enumeration_attributes context =
 
 
 let test_functional_syntax context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from enum import Enum

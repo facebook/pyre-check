@@ -9,30 +9,33 @@ open OUnit2
 open IntegrationTest
 
 let test_check_imports context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import durp
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+    context;
   assert_type_errors {|
       import typing
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
       import typing, durp
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+    context;
   assert_type_errors
     {|
       from typing import durp
     |}
-    ["Undefined import [21]: Could not find a name `durp` defined in module `typing`."];
+    ["Undefined import [21]: Could not find a name `durp` defined in module `typing`."]
+    context;
   assert_type_errors
     {|
       from durp import typing
     |}
-    ["Undefined import [21]: Could not find a module corresponding to import `durp`."];
+    ["Undefined import [21]: Could not find a module corresponding to import `durp`."]
+    context;
 
   (* Ensure we don't double-error. *)
   assert_type_errors
@@ -42,7 +45,8 @@ let test_check_imports context =
     [
       "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
       "Unbound name [10]: Name `durp` is used but not defined in the current scope.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import durp
@@ -51,13 +55,15 @@ let test_check_imports context =
     [
       "Undefined import [21]: Could not find a module corresponding to import `durp`.";
       "Missing global annotation [5]: Globally accessible variable `a` has no type specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Optional
       def foo() -> None: return 1
     |}
-    ["Incompatible return type [7]: Expected `None` but got `int`."];
+    ["Incompatible return type [7]: Expected `None` but got `int`."]
+    context;
 
   assert_type_errors
     ~other_sources:
@@ -79,7 +85,8 @@ let test_check_imports context =
       from durp import b
       from durp import c
     |}
-    [];
+    []
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -104,7 +111,8 @@ let test_check_imports context =
       "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
       "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
       "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -130,7 +138,8 @@ let test_check_imports context =
       "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
       "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
       "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -153,7 +162,8 @@ let test_check_imports context =
       if StoryEvent.USERNAME in keys:
         expects_str(StoryEvent.USERNAME)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -176,7 +186,8 @@ let test_check_imports context =
       if StoryEvent.USERNAME in keys:
         expects_str(StoryEvent.USERNAME)
     |}
-    [];
+    []
+    context;
   let source = { Test.handle = "existing_module.py"; source = {| class Foo: ... |} } in
   assert_type_errors
     ~other_sources:[source]
@@ -189,7 +200,8 @@ let test_check_imports context =
           foo: Optional[existing_module.Foo],
         ) -> None: ...
     |}
-    ["Unbound name [10]: Name `existing_module` is used but not defined in the current scope."];
+    ["Unbound name [10]: Name `existing_module` is used but not defined in the current scope."]
+    context;
   (* TODO(T80454071): This should raise an error about `existing_module` since it was not
      imported. *)
   assert_type_errors
@@ -203,12 +215,12 @@ let test_check_imports context =
           foo: Optional["existing_module.Foo"],
         ) -> None: ...
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_check_stub_imports context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     ~show_error_traces:true
     ~other_sources:
@@ -261,7 +273,8 @@ let test_check_stub_imports context =
       "Undefined import [21]: Could not find a name `a` defined in module `not_stubbed`. For \
        common reasons, see \
        https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
-    ];
+    ]
+    context;
   assert_type_errors
     ~show_error_traces:true
     ~other_sources:
@@ -291,9 +304,9 @@ let test_check_stub_imports context =
        the stub file.";
       "Undefined import [21]: Could not find a name `a` defined in module `qualifier`. For common \
        reasons, see https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
-    ];
+    ]
+    context;
   assert_strict_type_errors
-    ~context
     ~show_error_traces:true
     ~other_sources:
       [
@@ -328,9 +341,9 @@ let test_check_stub_imports context =
     [
       "Undefined attribute [16]: `Foo` has no attribute `b`. `Foo` is defined in a stub file at \
        `stubbed.pyi`. Ensure attribute `b` is defined in the stub file.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
-    ~context
     ~show_error_traces:true
     ~other_sources:
       [
@@ -370,9 +383,9 @@ let test_check_stub_imports context =
       "Undefined attribute [16]: `Foo` has no attribute `b`. `Foo` is defined in a stub file at \
        `stubbed.pyi`. Ensure attribute `b` is defined in the stub file.";
       "Undefined attribute [16]: `Bar` has no attribute `b`.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
-    ~context
     ~show_error_traces:true
     ~other_sources:
       [
@@ -398,7 +411,8 @@ let test_check_stub_imports context =
       "Undefined attribute [16]: Module `stubbed` has no attribute `b`. This module is shadowed by \
        a stub file at `stubbed.pyi`. Ensure `b` is defined in the stub file.";
       "Undefined attribute [16]: Module `not_stubbed` has no attribute `b`.";
-    ];
+    ]
+    context;
   ()
 
 

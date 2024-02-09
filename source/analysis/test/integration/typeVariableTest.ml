@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_bounded_variables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import TypeVar, Callable
@@ -156,7 +156,7 @@ let test_check_bounded_variables context =
 
 
 let test_check_unbounded_variables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -451,7 +451,7 @@ let test_check_unbounded_variables context =
 
 
 let test_check_variable_bindings context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import str_to_int
@@ -799,8 +799,8 @@ let test_check_variable_bindings context =
 
 
 let test_unbound_variables context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       def foo() -> None:
@@ -1112,7 +1112,7 @@ let test_unbound_variables context =
 
 
 let test_distinguish context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -1249,7 +1249,6 @@ let test_distinguish context =
 
 let test_integer_variables context =
   assert_type_errors
-    ~context
     {|
       import typing_extensions
       T = typing_extensions.IntVar("T")
@@ -1267,9 +1266,9 @@ let test_integer_variables context =
         x = foo(1)
         reveal_type(x)
     |}
-    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."];
+    ["Revealed type [-1]: Revealed type for `x` is `typing_extensions.Literal[1]`."]
+    context;
   assert_type_errors
-    ~context
     {|
       import typing_extensions
       X = typing_extensions.IntVar("X")
@@ -1281,13 +1280,13 @@ let test_integer_variables context =
     [
       "Incompatible parameter type [6]: In call `baz`, for 1st positional argument, expected \
        `IntegerVariable[X]` but got `int`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_nested_variable_error context =
   assert_type_errors
-    ~context
     {|
       import typing
       T1 = typing.TypeVar("T1")
@@ -1297,25 +1296,26 @@ let test_nested_variable_error context =
       "Invalid type [31]: Expression `Variable[T2 <: [typing.List[Variable[test.T1]], "
       ^ "typing.Dict[str, Variable[test.T1]]]]` is not a valid type. Type variables cannot contain "
       ^ "other type variables in their constraints.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_single_explicit_error context =
   assert_type_errors
-    ~context
     {|
       import typing
       T1 = typing.TypeVar("T1", int)
     |}
     [
       "Invalid type [31]: TypeVar can't have a single explicit constraint. Did you mean `bound=int`?";
-    ];
+    ]
+    context;
   ()
 
 
 let test_callable_parameter_variadics context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?handle source errors = assert_type_errors ?handle source errors context in
   assert_type_errors
     {|
       from typing import Callable, List
@@ -1664,7 +1664,7 @@ let test_callable_parameter_variadics context =
 
 
 let test_user_defined_parameter_specification_classes context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
 
   (* Make sure `typing.ParamSpec` works. *)
   assert_type_errors
@@ -1910,7 +1910,9 @@ let test_user_defined_parameter_specification_classes context =
 
 
 let test_duplicate_type_variables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
     from typing import TypeVar, Generic
@@ -1944,7 +1946,9 @@ let test_duplicate_type_variables context =
 
 
 let test_generic_aliases context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors ?other_sources source errors =
+    assert_type_errors ?other_sources source errors context
+  in
   assert_type_errors
     {|
       from typing import List
@@ -2294,7 +2298,7 @@ let test_generic_aliases context =
 
 
 let test_recursive_aliases context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple, Union
@@ -2805,7 +2809,7 @@ let test_recursive_aliases context =
 
 
 let test_variadic_tuples context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple
@@ -3057,7 +3061,7 @@ let test_variadic_tuples context =
 
 
 let test_variadic_classes context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Generic
@@ -3397,7 +3401,7 @@ let test_variadic_classes context =
 
 
 let test_variadic_callables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Callable, Tuple
@@ -3603,7 +3607,7 @@ let test_variadic_callables context =
 
 
 let test_self_type context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing_extensions import Self

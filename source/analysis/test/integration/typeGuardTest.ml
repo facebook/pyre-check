@@ -9,8 +9,8 @@ open OUnit2
 open IntegrationTest
 
 let test_type_guard context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_default_type_errors
     {|
       from typing import Any, List, TypeGuard
@@ -142,8 +142,8 @@ let test_type_guard context =
 
 
 let test_multiple_arguments context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       from typing import TypeGuard, List
@@ -189,7 +189,7 @@ let test_multiple_arguments context =
 
 
 let test_methods context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import List, TypeGuard
@@ -264,8 +264,8 @@ let test_methods context =
 
 
 let test_callback context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Callable, TypeGuard
@@ -312,8 +312,8 @@ let test_callback context =
 
 
 let test_return_type context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
 
   assert_type_errors
     {|
@@ -374,7 +374,7 @@ let test_return_type context =
 
 
 let test_walrus_operator context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* TODO(T95581122): `bar` should be narrowed to `int`. *)
   assert_type_errors
     {|
@@ -392,8 +392,8 @@ let test_walrus_operator context =
 
 
 let test_boolean_operators context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   (* We see only two revealed types because the `False` branches are unreachable. *)
   assert_type_errors
     {|
@@ -508,7 +508,7 @@ let test_boolean_operators context =
 
 
 let test_misc context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* Test ternary operator *)
   assert_type_errors
     {|

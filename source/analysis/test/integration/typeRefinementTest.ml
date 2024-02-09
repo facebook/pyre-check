@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_assert_is_none context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import unittest
@@ -362,9 +362,8 @@ let test_assert_is_none context =
   ()
 
 
-let test_assert_is context =
+let test_assert_is =
   assert_type_errors
-    ~context
     {|
       from typing import Type
       class Foo:
@@ -373,12 +372,11 @@ let test_assert_is context =
         if (o is Foo):
           o.x
     |}
-    [];
-  ()
+    []
 
 
 let test_check_global_refinement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -456,7 +454,7 @@ let test_check_global_refinement context =
 
 
 let test_check_local_refinement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -606,7 +604,7 @@ let test_check_local_refinement context =
 
 
 let test_check_if_else_clause context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -637,8 +635,8 @@ let test_check_if_else_clause context =
 
 
 let test_assert_contains_none context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       import typing
@@ -708,7 +706,7 @@ let test_assert_contains_none context =
 
 
 let test_check_callable context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Dict, Optional
@@ -906,7 +904,7 @@ let test_check_callable context =
 
 
 let test_check_final_attribute_refinement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Final, Optional
@@ -1217,7 +1215,7 @@ let test_check_final_attribute_refinement context =
 
 
 let test_check_temporary_refinement context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       MY_GLOBAL = 1.0
@@ -1600,7 +1598,7 @@ let test_check_temporary_refinement context =
 
 
 let test_check_is_typeddict context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
     import typing
@@ -1749,7 +1747,7 @@ let test_check_is_typeddict context =
 
 
 let test_ternary_expression context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* The type of `self` in the ternary condition is `Self (bound to Foo)`. We should be able to
      refine `self.bar` to be `str` in the if-branch. *)
   assert_type_errors

@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_non_data_descriptors context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import overload, Union
@@ -560,7 +560,7 @@ let test_non_data_descriptors context =
 
 
 let test_data_descriptors context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import overload, Union

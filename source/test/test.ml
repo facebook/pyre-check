@@ -3319,10 +3319,10 @@ let assert_errors
     ?enable_readonly_analysis
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
-    ~context
     ~check
     source
     errors
+    context
   =
   let in_memory = List.is_empty other_sources in
   (if ModulePath.qualifier_from_relative_path handle |> Reference.is_empty then

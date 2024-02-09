@@ -9,8 +9,8 @@ open OUnit2
 open IntegrationTest
 
 let test_reveal_locals context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       def f(a: int, b: int) -> int:

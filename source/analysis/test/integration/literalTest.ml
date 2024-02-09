@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_boolean_literal context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Literal
@@ -43,7 +43,7 @@ let test_boolean_literal context =
 
 
 let test_enumeration_literal context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       import enum
@@ -194,7 +194,7 @@ let test_enumeration_literal context =
 
 
 let test_ternary_with_literals context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Union, Literal
@@ -250,7 +250,7 @@ let test_ternary_with_literals context =
 
 
 let test_bytes_literals context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Literal
@@ -275,7 +275,7 @@ let test_bytes_literals context =
 
 
 let test_literal_none context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Literal
@@ -301,7 +301,7 @@ let test_literal_none context =
 
 
 let test_literal_alias context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import *
@@ -344,7 +344,7 @@ let test_literal_alias context =
 
 
 let test_string_literal context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Literal
@@ -533,7 +533,7 @@ let test_string_literal context =
 
 
 let test_pep_675 context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import LiteralString

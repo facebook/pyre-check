@@ -10,15 +10,14 @@ open IntegrationTest
 
 let test_check_invalid_constructor context =
   assert_type_errors
-    ~context
     {|
       class C:
         def __init__(self) -> None:
           return
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         def __init__(self) -> int:
@@ -27,21 +26,22 @@ let test_check_invalid_constructor context =
     [
       "Incompatible constructor annotation [17]: `__init__` is annotated as "
       ^ "returning `int`, but it should return `None`.";
-    ];
+    ]
+    context;
 
   (* TODO(T45018328): We should error here. *)
   assert_type_errors
-    ~context
     {|
       class C:
         def __new__(cls) -> None:
           ...
     |}
     []
+    context;
+  ()
 
 
 let test_check_init context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -52,7 +52,8 @@ let test_check_init context =
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -61,7 +62,8 @@ let test_check_init context =
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -69,14 +71,16 @@ let test_check_init context =
         def __init__(renamed_self) -> None:
           renamed_self.attribute = 0
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
         def __init__(renamed_self) -> None:
           renamed_self.attribute = 0
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -91,14 +95,16 @@ let test_check_init context =
       ^ "but is used as type `str`.";
       "Missing attribute annotation [4]: Attribute `y` of class `Foo` has type "
       ^ "`int` but no type is specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
         def __init__(self) -> None:
           self.attribute: bool = False
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -106,7 +112,8 @@ let test_check_init context =
         def __init__(self) -> None:
           pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -120,7 +127,8 @@ let test_check_init context =
       ^ "type `int` but is never initialized.";
       "Uninitialized attribute [13]: Attribute `attribute_two` is declared in class `Foo` to "
       ^ "have type `str` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -128,7 +136,8 @@ let test_check_init context =
         def __init__(self) -> None:
           self.attribute = 0
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -138,7 +147,8 @@ let test_check_init context =
         def __enter__(self) -> "Foo":
           return self
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -146,7 +156,8 @@ let test_check_init context =
         def __init__(self) -> None:
           self.attribute = 0 if True else 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -158,7 +169,8 @@ let test_check_init context =
           else:
             self.attribute = 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -168,7 +180,8 @@ let test_check_init context =
             return None
           self.attribute = 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -179,7 +192,8 @@ let test_check_init context =
             raise
           self.attribute = 1
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -193,7 +207,8 @@ let test_check_init context =
       ^ "has type `int` but is used as type `unknown`.";
       "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
       "Unbound name [10]: Name `unknown2` is used but not defined in the current scope.";
-    ];
+    ]
+    context;
 
   (* No need to initialize properties. *)
   assert_type_errors
@@ -205,7 +220,8 @@ let test_check_init context =
         def foo(self) -> str:
           return "asdf"
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -216,14 +232,16 @@ let test_check_init context =
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `int` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
         def __init__(self) -> None:
           self.attribute = 0
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -235,7 +253,8 @@ let test_check_init context =
     [
       "Uninitialized attribute [13]: Attribute `attribute` is declared in class `Foo` to have "
       ^ "type `typing.Optional[int]` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -245,7 +264,8 @@ let test_check_init context =
           self.attribute = None
           pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -256,7 +276,8 @@ let test_check_init context =
     [
       "Incompatible attribute type [8]: Attribute `attribute` declared in class `Foo` has type "
       ^ "`int` but is used as type `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -267,7 +288,8 @@ let test_check_init context =
     [
       "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class C:
@@ -276,7 +298,8 @@ let test_check_init context =
         def a(self) -> int:
           return self._a
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class C:
@@ -290,7 +313,8 @@ let test_check_init context =
       ^ "`BoundMethod[typing.Callable(C.a)[[Named(self, C)], int], C]` but is used as type `int`.";
       "Incompatible return type [7]: Expected `int` but got "
       ^ "`BoundMethod[typing.Callable(C.a)[[Named(self, C)], int], C]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class C:
@@ -298,7 +322,8 @@ let test_check_init context =
           self.x = x
           self.y = y
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class C:
@@ -311,7 +336,8 @@ let test_check_init context =
     [
       "Missing attribute annotation [4]: Attribute `y` of class `C` has type `int` but no type is \
        specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def identity(x: int) -> int:
@@ -326,10 +352,11 @@ let test_check_init context =
       "Missing attribute annotation [4]: Attribute `_a`"
       ^ " of class `C` has type `int` but no type is specified.";
       "Incompatible return type [7]: Expected `int` but got `unknown`.";
-    ];
+    ]
+    context;
   assert_type_errors {|
        alias = int
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
       class C:
@@ -338,7 +365,8 @@ let test_check_init context =
       B = C
       reveal_type(B.D)
     |}
-    ["Revealed type [-1]: Revealed type for `B.D` is `typing.Type[C.D]`."];
+    ["Revealed type [-1]: Revealed type for `B.D` is `typing.Type[C.D]`."]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -349,7 +377,8 @@ let test_check_init context =
     [
       "Incompatible parameter type [6]: In call `Foo.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* Prefer init over new if both exist. *)
   assert_type_errors
@@ -361,7 +390,8 @@ let test_check_init context =
           pass
       a: Foo = Foo("")
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Super:
@@ -374,7 +404,8 @@ let test_check_init context =
     [
       "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* We look at both __init__ and __new__ in the inheritance structure. *)
   assert_type_errors
@@ -390,7 +421,8 @@ let test_check_init context =
     [
       "Incompatible parameter type [6]: In call `Super.__new__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class SuperSuper:
@@ -404,7 +436,8 @@ let test_check_init context =
     [
       "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class A:
@@ -415,7 +448,8 @@ let test_check_init context =
     [
       "Inconsistent override [15]: `foo` overrides attribute defined in `A` inconsistently. "
       ^ "Type `str` is not a subtype of the overridden attribute `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class A:
@@ -423,7 +457,8 @@ let test_check_init context =
       class B(A):
         foo = 100
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from typing import Optional
@@ -436,7 +471,8 @@ let test_check_init context =
     [
       "Missing attribute annotation [4]:"
       ^ " Attribute `x` of class `B` has type `int` but no type is specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -445,7 +481,8 @@ let test_check_init context =
         def __init__(self) -> None:
            pass
       |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -457,7 +494,8 @@ let test_check_init context =
     [
       "Uninitialized attribute [13]: Attribute `foo` inherited from abstract class `A` in class \
        `B` to have type `int` but is never initialized.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import ABCMeta
@@ -465,7 +503,8 @@ let test_check_init context =
         foo: int
 
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from abc import ABC
@@ -479,12 +518,11 @@ let test_check_init context =
           pass
     |}
     []
+    context;
+  ()
 
 
 let test_check_constructors context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       class Foo:
@@ -493,7 +531,8 @@ let test_check_constructors context =
       def foo() -> Foo:
         return Foo()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -502,7 +541,8 @@ let test_check_constructors context =
       def foo() -> Foo:
         return Foo(10)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -514,7 +554,8 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: In call `Foo.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -530,7 +571,8 @@ let test_check_constructors context =
        expected `int` but got `str`.";
       "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional argument, \
        expected `Optional[str]` but got `int`.";
-    ];
+    ]
+    context;
 
   (* Check abstract methods *)
   assert_type_errors
@@ -546,7 +588,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
        method `bar`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -563,7 +606,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
        methods `bar`, `foo`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -594,7 +638,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `B` with `a`, `b`, `c` \
        and 3 additional abstract methods.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod
@@ -608,7 +653,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
        method `bar`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -618,7 +664,8 @@ let test_check_constructors context =
       def foo() -> None:
         Foo()
       |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -634,7 +681,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `B` with abstract \
        method `f`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import abstractproperty, ABCMeta
@@ -647,7 +695,8 @@ let test_check_constructors context =
       def foo() -> None:
          B()
    |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABCMeta
@@ -675,7 +724,8 @@ let test_check_constructors context =
        method `h`.";
       "Invalid class instantiation [45]: Cannot instantiate abstract class `C` with abstract \
        method `h`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from abc import ABCMeta, abstractmethod
@@ -690,7 +740,8 @@ let test_check_constructors context =
           foo:int = 1
       B()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from abc import abstractmethod, ABC
@@ -704,7 +755,8 @@ let test_check_constructors context =
     [
       "Invalid class instantiation [45]: Cannot instantiate abstract class `Foo` with abstract \
        method `bar`.";
-    ];
+    ]
+    context;
 
   (* Explicit call. *)
   assert_type_errors
@@ -718,7 +770,8 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: In call `Foo.__init__`, for 2nd positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
 
   (* Super calls. *)
   assert_type_errors
@@ -733,7 +786,8 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: In call `Super.foo`, for 1st positional argument, expected \
        `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Super:
@@ -746,7 +800,8 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: In call `Super.__init__`, for 1st positional argument, \
        expected `int` but got `str`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from placeholder_stub import MadeUpClass
@@ -754,7 +809,8 @@ let test_check_constructors context =
         def __init__(self, i: int) -> None:
           super().__init__('asdf')
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from placeholder_stub import MadeUpClass
@@ -763,7 +819,8 @@ let test_check_constructors context =
       def foo() -> None:
         Foo(7)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from placeholder_stub import MadeUpClass
@@ -772,7 +829,8 @@ let test_check_constructors context =
       def foo() -> int:
         return Foo()
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       from placeholder_stub import MadeUpClass
@@ -783,7 +841,8 @@ let test_check_constructors context =
       def bar() -> int:
         return Bar()
     |}
-    [];
+    []
+    context;
 
   (* Check that subclasses of numeric types are instantiatable *)
   assert_type_errors
@@ -802,7 +861,8 @@ let test_check_constructors context =
         custom_float = CustomFloat(42.0)
         custom_complex = CustomComplex(42.0, 42.0)
     |}
-    [];
+    []
+    context;
 
   assert_type_errors
     {|
@@ -812,7 +872,8 @@ let test_check_constructors context =
       def foo(x: typing.Type[Class]) -> Class:
         return x(7)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -821,21 +882,24 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."];
+    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."]
+    context;
   assert_default_type_errors
     {|
       import typing
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x()
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
     {|
       import typing
       def foo(x: typing.Type[typing.Any]) -> typing.Any:
         return x(42)
     |}
-    [];
+    []
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -844,7 +908,8 @@ let test_check_constructors context =
       def foo(x: typing.Type[Clss]) -> Class:
         return x(7)
     |}
-    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."];
+    ["Unbound name [10]: Name `Clss` is used but not defined in the current scope."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -854,7 +919,8 @@ let test_check_constructors context =
       def foo(x: typing.Callable[[int], Class]) -> None: ...
       foo(Class)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -867,7 +933,8 @@ let test_check_constructors context =
     [
       "Incompatible parameter type [6]: In call `foo`, for 1st positional argument, expected \
        `typing.Callable[[str], Class]` but got `Type[Class]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Callable, Union, Type
@@ -880,7 +947,8 @@ let test_check_constructors context =
         foo(b)
         foo(c)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -892,7 +960,8 @@ let test_check_constructors context =
       "Revealed type [-1]: Revealed type for `test.Foo.__call__` is \
        `BoundMethod[typing.Callable(Foo.__init__)[[Named(self, Foo), Named(x, int), Named(y, \
        str)], Foo], Foo]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       class Foo:
@@ -903,14 +972,14 @@ let test_check_constructors context =
     [
       "Illegal annotation target [35]: Target `self.x` cannot be annotated as it shadows the \
        class-level annotation of `str` with `int`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_infer_constructor_attributes context =
   (* We infer basic constructors. *)
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -920,9 +989,9 @@ let test_infer_constructor_attributes context =
         def foo(self) -> int:
           return self.x
     |}
-    ["Incompatible return type [7]: Expected `int` but got `C`."];
+    ["Incompatible return type [7]: Expected `int` but got `C`."]
+    context;
   assert_type_errors
-    ~context
     {|
       class C:
         pass
@@ -937,9 +1006,9 @@ let test_infer_constructor_attributes context =
       "Too many arguments [19]: Call `object.__init__` expects 0 positional arguments, 4 were"
       ^ " provided.";
       "Incompatible return type [7]: Expected `int` but got `C`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class A:
           def __init__(self, x: int) -> None:
@@ -960,11 +1029,12 @@ let test_infer_constructor_attributes context =
       (* Private attribute throws undefined attribute error. *)
       "Revealed type [-1]: Revealed type for `a.__x` is `unknown`.";
     ]
+    context;
+  ()
 
 
 let test_newtype context =
   assert_type_errors
-    ~context
     {|
       import typing
       class C():
@@ -973,9 +1043,9 @@ let test_newtype context =
       def foo() -> T:
         return T(C(7, "A"))
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       import typing
       class C():
@@ -984,13 +1054,13 @@ let test_newtype context =
       def foo() -> T:
         return T(7, "A")
     |}
-    ["Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided."];
+    ["Too many arguments [19]: Call `T.__init__` expects 1 positional argument, 2 were provided."]
+    context;
   ()
 
 
 let test_init_subclass context =
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1001,9 +1071,9 @@ let test_init_subclass context =
       class Quest(QuestBase, swallow="african"):
           pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1016,9 +1086,9 @@ let test_init_subclass context =
     [
       "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
        `QuestBase.__init_subclass__`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1028,9 +1098,9 @@ let test_init_subclass context =
       class Quest(QuestBase, swallow="african"):
           pass
     |}
-    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `coconut`."];
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `coconut`."]
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1043,9 +1113,9 @@ let test_init_subclass context =
     [
       "Unexpected keyword [28]: Unexpected keyword argument `coconut` to call \
        `QuestBase.__init_subclass__`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         pass
@@ -1056,9 +1126,9 @@ let test_init_subclass context =
     [
       "Unexpected keyword [28]: Unexpected keyword argument `swallow` to call \
        `object.__init_subclass__`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1069,9 +1139,9 @@ let test_init_subclass context =
       class Quest(QuestBase, swallow="african"):
           pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       class QuestBase:
         swallow: str = ""
@@ -1082,9 +1152,9 @@ let test_init_subclass context =
       class Quest(QuestBase):
           pass
     |}
-    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `swallow`."];
+    ["Missing argument [20]: Call `QuestBase.__init_subclass__` expects argument `swallow`."]
+    context;
   assert_type_errors
-    ~context
     {|
       from typing import Any
       class QuestBase:
@@ -1097,9 +1167,9 @@ let test_init_subclass context =
       class Quest2(QuestBase, arbitrary="string"):
         pass
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       from typing import Any
       class QuestBase:
@@ -1112,13 +1182,13 @@ let test_init_subclass context =
       class SubQuest(Quest, arbitrary="string"):
         pass
     |}
-    [];
+    []
+    context;
   ()
 
 
 let test_dictionary_constructor context =
   assert_type_errors
-    ~context
     {|
     from typing import Optional, Dict
     def expand(x: Optional[Dict[str, int]] = None) -> None:
@@ -1132,9 +1202,9 @@ let test_dictionary_constructor context =
       "Invalid argument [32]: Keyword argument `x` has type `Optional[Dict[str, int]]` but must be \
        a mapping.";
       "Revealed type [-1]: Revealed type for `new_dict` is `unknown`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
     from typing import Dict, Mapping
     def combine(x: Dict[str, int], y: Mapping[float, bool]) -> None:
@@ -1148,12 +1218,12 @@ let test_dictionary_constructor context =
     [
       "Revealed type [-1]: Revealed type for `new_dict` is `Dict[typing.Union[bool, float, str], \
        typing.Union[bool, int, str]]`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_register_buffer_attribute context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import torch
@@ -1182,7 +1252,8 @@ let test_register_buffer_attribute context =
       "Revealed type [-1]: Revealed type for `self.foo_persistent` is `torch.Tensor`.";
       "Revealed type [-1]: Revealed type for `self.none_buffer` is `unknown`.";
       "Revealed type [-1]: Revealed type for `y` is `torch.Tensor`.";
-    ];
+    ]
+    context;
   (* No spurious "uninitialized attribute" error if someone also explicitly declares the
      attribute. *)
   assert_type_errors
@@ -1200,7 +1271,8 @@ let test_register_buffer_attribute context =
         def bar(self) -> None:
           reveal_type(self.foo)
     |}
-    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."];
+    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."]
+    context;
   assert_type_errors
     {|
       import torch
@@ -1220,7 +1292,8 @@ let test_register_buffer_attribute context =
       "Incompatible attribute type [8]: Attribute `foo` declared in class `Foo` has type `Tensor` \
        but is used as type `str`.";
       "Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`.";
-    ];
+    ]
+    context;
   (* TODO(T80453653): We shouldn't respect `register_buffer` in non-Modules. *)
   assert_type_errors
     {|
@@ -1233,12 +1306,12 @@ let test_register_buffer_attribute context =
         def bar(self) -> None:
           reveal_type(self.foo)
     |}
-    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."];
+    ["Revealed type [-1]: Revealed type for `self.foo` is `torch.Tensor`."]
+    context;
   ()
 
 
 let test_generic__new__ context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Generic, Iterable, TypeVar, overload
@@ -1264,7 +1337,8 @@ let test_generic__new__ context =
        implementation.";
       "Revealed type [-1]: Revealed type for `x3` is `zip[typing.Tuple[str]]`.";
       "Revealed type [-1]: Revealed type for `x4` is `zip[typing.Tuple[str, int]]`.";
-    ];
+    ]
+    context;
   ()
 
 

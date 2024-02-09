@@ -11,13 +11,15 @@ open Analysis
 open Test
 open Ast
 
-let assert_uninitialized_errors ~context =
+let assert_uninitialized_errors source errors context =
   let check ~environment:_ ~source = UninitializedLocalCheck.check_module_for_testing ~source in
-  assert_errors ~context ~check
+  assert_errors ~check source errors context
 
 
 let test_simple context =
-  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+  let assert_uninitialized_errors source errors =
+    assert_uninitialized_errors source errors context
+  in
   assert_uninitialized_errors
     {|
       def f():
@@ -234,7 +236,9 @@ let test_simple context =
 
 (* Tests about uninitialized locals reliant on correct CFG construction. *)
 let test_cfg context =
-  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+  let assert_uninitialized_errors source errors =
+    assert_uninitialized_errors source errors context
+  in
 
   assert_uninitialized_errors
     {|
@@ -732,7 +736,9 @@ let test_defined_locals_at_each_statement _ =
    As a result, it merits a separate test suite because the implementation is separate from the
    implementation of language features that can be represented in the CFG. *)
 let test_no_return context =
-  let assert_uninitialized_errors = assert_uninitialized_errors ~context in
+  let assert_uninitialized_errors source errors =
+    assert_uninitialized_errors source errors context
+  in
   assert_uninitialized_errors
     {|
       from typing import NoReturn

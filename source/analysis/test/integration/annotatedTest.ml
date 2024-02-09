@@ -10,7 +10,6 @@ open IntegrationTest
 
 let test_annotated context =
   assert_type_errors
-    ~context
     {|
       from builtins import expect_int
       import typing_extensions
@@ -19,10 +18,10 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
+    context;
 
   assert_type_errors
-    ~context
     {|
       from builtins import expect_int
       import typing
@@ -31,9 +30,9 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
+    context;
   assert_type_errors
-    ~context
     {|
       from builtins import expect_int
       from typing import Annotated
@@ -42,9 +41,9 @@ let test_annotated context =
         reveal_type(annotated)
         return annotated
     |}
-    ["Revealed type [-1]: Revealed type for `annotated` is `int`."];
+    ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
+    context;
   assert_type_errors
-    ~context
     {|
       from builtins import expect_int
       from typing import Annotated
@@ -54,6 +53,8 @@ let test_annotated context =
         return annotated
     |}
     ["Revealed type [-1]: Revealed type for `annotated` is `int`."]
+    context;
+  ()
 
 
 let () = "annotated" >::: ["annotated" >:: test_annotated] |> Test.run

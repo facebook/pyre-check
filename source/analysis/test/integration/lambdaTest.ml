@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_check_map_lambda context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
 
   assert_type_errors
     {|
@@ -81,7 +81,7 @@ let test_check_map_lambda context =
 
 
 let test_check_filter_lambda context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
 
   assert_type_errors
     {|
@@ -148,7 +148,7 @@ let test_check_filter_lambda context =
 
 
 let test_check_reduce_lambda context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
 
   (* False negative *)
   assert_type_errors
@@ -219,7 +219,7 @@ let test_check_reduce_lambda context =
 
 
 let test_check_apply_lambda context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
 
   assert_type_errors
     {|

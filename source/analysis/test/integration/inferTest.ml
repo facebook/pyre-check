@@ -10,30 +10,29 @@ open OUnit2
 open IntegrationTest
 
 let test_check_missing_parameter context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
   (* No annotation given *)
   assert_default_type_errors {|
       def foo(x):
         return 1
-    |} [];
+    |} [] context;
   assert_strict_type_errors
     {|
       def foo(x) -> int:
         return 1
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has no type specified."];
+    ["Missing parameter annotation [2]: Parameter `x` has no type specified."]
+    context;
   assert_strict_type_errors {|
       def foo(_x) -> int:
         return 1
-    |} [];
+    |} [] context;
   assert_strict_type_errors
     {|
       def foo(x = 1) -> int:
         return 1
     |}
-    ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."];
+    ["Missing parameter annotation [2]: Parameter `x` has type `int` but no type is specified."]
+    context;
 
   (* typing.Any given *)
   assert_strict_type_errors
@@ -42,7 +41,8 @@ let test_check_missing_parameter context =
       def foo(x: typing.Any) -> int:
         return 1
     |}
-    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."];
+    ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -52,7 +52,8 @@ let test_check_missing_parameter context =
     [
       "Missing parameter annotation [2]: Parameter `y` must have a type "
       ^ "that does not contain `Any`.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -60,7 +61,8 @@ let test_check_missing_parameter context =
       def foo(x: MyType) -> int:
         return 1
     |}
-    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."]
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -70,7 +72,8 @@ let test_check_missing_parameter context =
     [
       "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
       "Unbound name [10]: Name `unknown` is used but not defined in the current scope.";
-    ];
+    ]
+    context;
   assert_strict_type_errors
     {|
       import typing
@@ -80,7 +83,8 @@ let test_check_missing_parameter context =
     [
       "Missing parameter annotation [2]: Parameter `x` must have a type "
       ^ "that does not contain `Any`.";
-    ];
+    ]
+    context;
 
   (* Special cases *)
   assert_type_errors
@@ -91,13 +95,15 @@ let test_check_missing_parameter context =
     [
       "Missing parameter annotation [2]: Parameter `x` has no type specified.";
       "Missing parameter annotation [2]: Parameter `force_named` has no type specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(x: UnknownType) -> int:
         return 1
     |}
-    ["Unbound name [10]: Name `UnknownType` is used but not defined in the current scope."];
+    ["Unbound name [10]: Name `UnknownType` is used but not defined in the current scope."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -105,31 +111,33 @@ let test_check_missing_parameter context =
         return 1
     |}
     ["Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`."]
+    context;
+  ()
 
 
 let test_check_missing_return context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
-  let assert_strict_type_errors = assert_strict_type_errors ~context in
   assert_type_errors
     {|
       def foo():
         return 1
     |}
-    ["Missing return annotation [3]: Returning `int` but no return type is specified."];
+    ["Missing return annotation [3]: Returning `int` but no return type is specified."]
+    context;
   assert_strict_type_errors
     {|
       def foo():
         return 1
     |}
-    ["Missing return annotation [3]: Returning `int` but no return type is specified."];
+    ["Missing return annotation [3]: Returning `int` but no return type is specified."]
+    context;
   assert_type_errors
     {|
       import typing
       def foo() -> typing.Any:
         return 1
     |}
-    ["Missing return annotation [3]: Returning `int` but type `Any` is specified."];
+    ["Missing return annotation [3]: Returning `int` but type `Any` is specified."]
+    context;
   assert_type_errors
     {|
       import typing
@@ -142,7 +150,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -150,7 +159,8 @@ let test_check_missing_return context =
       def foo() -> MyType:
         return 1
     |}
-    ["Prohibited any [33]: `MyType` cannot alias to `Any`."];
+    ["Prohibited any [33]: `MyType` cannot alias to `Any`."]
+    context;
   assert_type_errors
     ~other_sources:[{ handle = "export.py"; source = "MyType = typing.List[typing.Any]" }]
     {|
@@ -162,29 +172,33 @@ let test_check_missing_return context =
       def bar() -> MyTypeLocal:
         return []
     |}
-    ["Prohibited any [33]: `MyTypeLocal` cannot alias to a type containing `Any`."];
+    ["Prohibited any [33]: `MyTypeLocal` cannot alias to a type containing `Any`."]
+    context;
   assert_type_errors
     {|
       def foo() -> None:
         return 1
     |}
-    ["Incompatible return type [7]: Expected `None` but got `int`."];
+    ["Incompatible return type [7]: Expected `None` but got `int`."]
+    context;
   assert_type_errors
     {|
       def foo():
         return
     |}
-    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."]
+    context;
   assert_type_errors
     {|
       def foo():
         return None
     |}
-    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."]
+    context;
   assert_type_errors {|
       def foo() -> None:
         return None
-    |} [];
+    |} [] context;
   assert_type_errors
     {|
       def foo(a: int):
@@ -196,7 +210,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Optional[int]` but no return type is "
       ^ "specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo() -> None:
@@ -209,7 +224,8 @@ let test_check_missing_return context =
       "Unbound name [10]: Name `a` is used but not defined in the current scope.";
       "Unsupported operand [58]: `>` is not supported for operand types `unknown` and `int`.";
       "Incompatible return type [7]: Expected `None` but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -219,7 +235,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo(x):
@@ -228,7 +245,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type is not specified.";
       "Missing parameter annotation [2]: Parameter `x` has no type specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def unknown_call():
@@ -240,7 +258,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `None` but no return type is specified.";
       "Missing return annotation [3]: Return type is not specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -251,7 +270,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Unbound name [10]: Name `unknown_call` is used but not defined in the current scope.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
        import typing
@@ -261,7 +281,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Missing parameter annotation [2]: Parameter `x` must have a type other than `Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -271,7 +292,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Return type must be specified as type "
       ^ "that does not contain `Any`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       def foo() -> list:
@@ -280,26 +302,28 @@ let test_check_missing_return context =
     [
       "Invalid type parameters [24]: Generic type `list` expects 1 type parameter, use \
        `typing.List[<element type>]` to avoid runtime subscripting errors.";
-    ];
+    ]
+    context;
 
   (* Don't report in non-debug mode. *)
   assert_default_type_errors {|
       def foo():
         return 1
-    |} [];
+    |} [] context;
   assert_default_type_errors {|
       def foo():
         pass
-    |} [];
+    |} [] context;
   assert_default_type_errors {|
       def foo(x):
         return x
-    |} [];
+    |} [] context;
   assert_default_type_errors
     {|
       1 + 'asdf'  # report in top-level function
     |}
-    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."];
+    ["Unsupported operand [58]: `+` is not supported for operand types `int` and `str`."]
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -311,7 +335,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Optional[int]` but "
       ^ "type `Any` is specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import int_to_bool
@@ -324,7 +349,8 @@ let test_check_missing_return context =
       ^ "but type `Any` is specified.";
       "Incompatible parameter type [6]: In call `int_to_bool`, for 1st positional argument, \
        expected `int` but got `Optional[int]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import int_to_bool
@@ -335,7 +361,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[None, bool, int]` but type `Any` is \
        specified.";
-    ];
+    ]
+    context;
 
   (* Joining. *)
   assert_type_errors
@@ -350,7 +377,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[int, str]` but no return type is "
       ^ "specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -365,7 +393,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Union[None, int, str]` but no return type \
        is specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -375,7 +404,8 @@ let test_check_missing_return context =
         else:
           return 2.0
     |}
-    ["Missing return annotation [3]: Returning `float` but no return type is specified."];
+    ["Missing return annotation [3]: Returning `float` but no return type is specified."]
+    context;
   assert_type_errors
     {|
       from builtins import condition
@@ -388,7 +418,8 @@ let test_check_missing_return context =
     [
       "Missing return annotation [3]: Returning `typing.Optional[str]` but no return type is "
       ^ "specified.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from builtins import condition, A, B
@@ -399,6 +430,8 @@ let test_check_missing_return context =
           return B()
     |}
     ["Missing return annotation [3]: Returning `A` but no return type is specified."]
+    context;
+  ()
 
 
 let () =

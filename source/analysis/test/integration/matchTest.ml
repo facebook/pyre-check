@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_simple context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def foo(x: int) -> None:
@@ -137,7 +137,7 @@ let test_simple context =
 
 
 let test_pattern context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple
@@ -306,7 +306,7 @@ let test_pattern context =
 
 
 let test_class context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from dataclasses import dataclass
@@ -401,7 +401,7 @@ let test_class context =
 
 
 let test_mapping context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Dict
@@ -461,7 +461,7 @@ let test_mapping context =
 
 
 let test_guard context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Tuple
@@ -482,7 +482,7 @@ let test_guard context =
 
 
 let test_star context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import List
@@ -551,7 +551,7 @@ let test_star context =
 
 
 let test_enum context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from enum import Enum
@@ -631,7 +631,7 @@ let test_enum context =
 
 
 let test_match_args context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Literal, Tuple
@@ -708,7 +708,7 @@ let test_match_args context =
 
 
 let test_syntax context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def foo(subject: int) -> None:
@@ -733,7 +733,7 @@ let test_syntax context =
 
 
 let test_isinstance context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import List, Dict

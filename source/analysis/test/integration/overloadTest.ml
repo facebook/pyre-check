@@ -9,8 +9,10 @@ open OUnit2
 open IntegrationTest
 
 let test_check_implementation context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
+  let assert_default_type_errors ?handle source errors =
+    assert_default_type_errors ?handle source errors context
+  in
   assert_type_errors
     {|
       from typing import overload
@@ -206,7 +208,7 @@ let test_check_implementation context =
 
 
 let test_check_inferred_return_type context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import overload, Union
@@ -263,7 +265,7 @@ let test_check_inferred_return_type context =
 
 
 let test_check_decorated_overloads context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import overload, Callable
@@ -404,7 +406,7 @@ let test_check_decorated_overloads context =
 
 
 let test_typing_extensions_overloads context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing_extensions import overload

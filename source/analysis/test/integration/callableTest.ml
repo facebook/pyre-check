@@ -9,7 +9,6 @@ open OUnit2
 open IntegrationTest
 
 let test_higher_order_callables context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       import typing
@@ -21,7 +20,8 @@ let test_higher_order_callables context =
 
       foo(callme)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -33,7 +33,8 @@ let test_higher_order_callables context =
 
       foo(callme)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
       import typing
@@ -51,7 +52,8 @@ let test_higher_order_callables context =
     [
       "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[[str], \
        str]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       import typing
@@ -69,11 +71,12 @@ let test_higher_order_callables context =
     [
       "Revealed type [-1]: Revealed type for `test.foo(test.callme)` is `typing.Callable[..., str]`.";
     ]
+    context;
+  ()
 
 
-let test_union_of_callables context =
+let test_union_of_callables =
   assert_type_errors
-    ~context
     {|
       import typing
       def baz(x: typing.Union[typing.Callable[[int], typing.Any], typing.Callable[..., typing.Any]]) -> None:
@@ -89,26 +92,25 @@ let test_union_of_callables context =
 
 let test_callable_attribute_access context =
   assert_type_errors
-    ~context
     {|
       def foo() -> int:
         return 0
       def bar() -> None:
         foo.attr
     |}
-    ["Undefined attribute [16]: Callable `foo` has no attribute `attr`."];
+    ["Undefined attribute [16]: Callable `foo` has no attribute `attr`."]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         anon = lambda x: 0
         anon.attr
     |}
-    ["Undefined attribute [16]: Anonymous callable has no attribute `attr`."];
+    ["Undefined attribute [16]: Anonymous callable has no attribute `attr`."]
+    context;
 
   (* We filter errors related to patching. *)
   assert_default_type_errors
-    ~context
     {|
       from unittest.mock import Mock
       from unittest import TestCase
@@ -121,9 +123,9 @@ let test_callable_attribute_access context =
           c.foo = Mock()
           c.foo.assert_not_called()
     |}
-    [];
+    []
+    context;
   assert_default_type_errors
-    ~context
     {|
       from unittest import TestCase
       def patch(item): ...
@@ -135,9 +137,9 @@ let test_callable_attribute_access context =
           x.assert_not_called()
           x.assert_called_once()
     |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         pass
@@ -157,38 +159,38 @@ let test_callable_attribute_access context =
       "Revealed type [-1]: Revealed type for `c` is \
        `BoundMethod[typing.Callable(object.__str__)[[Named(self, object)], str], \
        typing.Callable(foo)[[], None]]`.";
-    ];
+    ]
+    context;
   assert_type_errors
-    ~context
     {|
       def foo() -> None:
         pass
       def bar() -> None:
         foo.nonsense = 1
     |}
-    ["Undefined attribute [16]: Callable `foo` has no attribute `nonsense`."];
+    ["Undefined attribute [16]: Callable `foo` has no attribute `nonsense`."]
+    context;
   (* `__qualname__` is supported for all functions, including lambdas, as per PEP 3155. *)
   assert_type_errors
-    ~context
     {|
      def foo() -> None:
          pass
      def bar() -> str:
          return foo.__qualname__
      |}
-    [];
+    []
+    context;
   assert_type_errors
-    ~context
     {|
      def foo() -> str:
          f = lambda x: 0
          return f.__qualname__
      |}
-    [];
+    []
+    context;
   (* Pyre unsoundly assumes that all callables have qualnames, even though objects with `__call__`
    * don't necessarily have one. *)
   assert_type_errors
-    ~context
     {|
      from typing import Callable
      class C:
@@ -200,21 +202,21 @@ let test_callable_attribute_access context =
      # This fails in the runtime, but type checks.
      foo(C())
      |}
-    [];
+    []
+    context;
 
   ()
 
 
 let test_position_only_parameters context =
-  let assert_type_errors = assert_type_errors ~context in
-
   assert_type_errors
     {|
       def foo(a: int, b: int, /) -> None:
         pass
       foo(1, 2)
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
     def foo(a: int, b: int, /, c: str) -> None:
@@ -222,7 +224,8 @@ let test_position_only_parameters context =
 
     foo(1, 2, c="a")
     |}
-    [];
+    []
+    context;
   assert_type_errors
     {|
     def foo(a: int, b: int, /, c: str, *, d: int) -> None:
@@ -230,7 +233,8 @@ let test_position_only_parameters context =
 
     foo(1, 2, "a", 1)
     |}
-    ["Too many arguments [19]: Call `foo` expects 3 positional arguments, 4 were provided."];
+    ["Too many arguments [19]: Call `foo` expects 3 positional arguments, 4 were provided."]
+    context;
   assert_type_errors
     {|
     def foo(a: int, b: int, /, c: str, *, d: int) -> None:
@@ -239,10 +243,11 @@ let test_position_only_parameters context =
     foo(1, 2, "a", d=1)
     |}
     []
+    context;
+  ()
 
 
 let test_bound_method context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     {|
       from typing import Callable
@@ -250,7 +255,8 @@ let test_bound_method context =
           c = bm.__call__
           reveal_type(c)
     |}
-    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."];
+    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."]
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -259,7 +265,8 @@ let test_bound_method context =
           c = bm.__call__
           reveal_type(c)
     |}
-    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."];
+    ["Revealed type [-1]: Revealed type for `c` is `typing.Callable[[str], bool]`."]
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -276,7 +283,8 @@ let test_bound_method context =
       "Revealed type [-1]: Revealed type for `c` is `bool`.";
       "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
        `str` but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import Callable
@@ -292,7 +300,8 @@ let test_bound_method context =
       "Revealed type [-1]: Revealed type for `c` is `Bar`.";
       "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, expected \
        `str` but got `int`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import *
@@ -308,7 +317,8 @@ let test_bound_method context =
        but got `unknown`.";
       "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, expected `str` \
        but got `bool`.";
-    ];
+    ]
+    context;
   assert_type_errors
     {|
       from typing import *
@@ -330,12 +340,12 @@ let test_bound_method context =
        `typing.Tuple[*test.Ts]` but got `Tuple[int, int]`.";
       "Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, expected \
        `typing.Tuple[*test.Ts]` but got `str`.";
-    ];
+    ]
+    context;
   ()
 
 
 let test_reexported_callable context =
-  let assert_type_errors = assert_type_errors ~context in
   assert_type_errors
     ~other_sources:
       [
@@ -369,7 +379,8 @@ let test_reexported_callable context =
       "Revealed type [-1]: Revealed type for `f1` is `typing.Callable[[int], str]`.";
       "Revealed type [-1]: Revealed type for `test.Foo.my_method` is \
        `typing.Callable(Foo.my_method)[[Named(self, Foo)], int]`.";
-    ];
+    ]
+    context;
   assert_type_errors
     ~other_sources:
       [
@@ -397,7 +408,8 @@ let test_reexported_callable context =
       "Invalid type parameters [24]: Generic type `typing.Callable` expects 2 type parameters.";
       "Prohibited any [33]: `F` cannot alias to a type containing `Any`.";
       "Prohibited any [33]: `G` cannot alias to a type containing `Any`.";
-    ];
+    ]
+    context;
   ()
 
 

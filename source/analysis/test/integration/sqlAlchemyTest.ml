@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_declarative_base context =
-  let assert_sql_alchemy_errors = assert_type_errors ~context in
+  let assert_sql_alchemy_errors source errors = assert_type_errors source errors context in
   assert_sql_alchemy_errors
     {|
       from sqlalchemy.ext.declarative import declarative_base

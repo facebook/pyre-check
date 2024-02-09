@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_scheduling context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   (* Top-level is scheduled. *)
   assert_type_errors
     "'string' + 1"
@@ -109,7 +109,7 @@ let test_scheduling context =
 
 
 let test_check_excepts context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class Exception: pass
@@ -162,7 +162,7 @@ let test_check_excepts context =
 
 
 let test_check_ternary context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Optional
@@ -277,7 +277,7 @@ let test_check_ternary context =
 
 
 let test_check_unbound_variables context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def foo(flag: bool) -> int:
@@ -335,8 +335,8 @@ let test_check_unbound_variables context =
 
 
 let test_check_nested context =
-  let assert_type_errors = assert_type_errors ~context in
-  let assert_default_type_errors = assert_default_type_errors ~context in
+  let assert_type_errors ?handle source errors = assert_type_errors ?handle source errors context in
+  let assert_default_type_errors source errors = assert_default_type_errors source errors context in
   assert_type_errors
     {|
       from builtins import int_to_int
@@ -504,7 +504,7 @@ let test_check_nested context =
 
 
 let test_check_while context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       def produce() -> bool: ...

@@ -9,7 +9,7 @@ open OUnit2
 open IntegrationTest
 
 let test_extra_overriding_parameter context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       class Obj:

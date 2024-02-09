@@ -10,7 +10,7 @@ open IntegrationTest
 open Core
 
 let test_check_union context =
-  let assert_type_errors = assert_type_errors ~context in
+  let assert_type_errors source errors = assert_type_errors source errors context in
   assert_type_errors
     {|
       from typing import Union
@@ -322,7 +322,6 @@ let test_large_union_non_quadratic_time context =
   in
   let timer = Timer.start () in
   assert_type_errors
-    ~context
     (Format.asprintf
        {|
       from typing import Literal, Union%s
@@ -483,7 +482,8 @@ let test_large_union_non_quadratic_time context =
        BoundMethod[typing.Callable(object.__str__)[[Named(self, object)], str], Foo147], \
        BoundMethod[typing.Callable(object.__str__)[[Named(self, object)], str], Foo148], \
        BoundMethod[typing.Callable(object.__str__)[[Named(self, object)], str], Foo149]]`.";
-    ];
+    ]
+    context;
   (* Currently, with the efficient fold_balanced, this test takes 1.4 seconds, with the inefficient
      fold it takes 60 seconds. Choosing a conservative 10 second cutoff *)
   let time = Timer.stop_in_sec timer in
