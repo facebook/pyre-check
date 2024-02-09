@@ -5,7 +5,18 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* The Test module provides several related things used for fast tests of
+ * Pyre's type checking logic:
+ * - A library of "small" stubs to use for type checking in tests,
+ *   which decouples unit tests from typeshed changes and makes tests faster.
+ * - A ScratchProject module for creating projects on the fly to use in tests.
+ *   - There are two flavors of ScratchProject:
+ *     - Projects with sources in-memory (via a backdoor to ModuleTracker), for speed
+ *     - Filesystem-backed projects, which are needed to test incremental updates
+ *   - ScratchProject will create an environment, and also provides a variety
+ *     of functions to get handles on data for testing or run assertions.
+ * - A handful of utility functions that help with interacting with OUnit.
+ *)
 
 (* `open Core` hides this module, and does not provide a replacement for `open_process_args_in`. *)
 module CamlUnix = Unix
