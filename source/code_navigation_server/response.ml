@@ -39,6 +39,10 @@ module DefinitionLocation = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+module DocumentSymbolItem = struct
+  type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 module CompletionItem = struct
   module CompletionItemKind = struct
     type t =
@@ -78,6 +82,8 @@ type t =
   | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
+  | GetDocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
+      (** TODO: T166374635 Create structure for document symbol response *)
   | Completion of { completions: CompletionItem.t list }
   | ServerStatus of Status.t
   | Info of {

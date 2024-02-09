@@ -374,6 +374,13 @@ module Testing : sig
                 navigation server, the server will also provide a best-effort response and will only
                 return a {!Response.ErrorKind.ModuleNotTracked} error if it cannot find the file on
                 the filesystem. *)
+        | GetDocumentSymbol of {
+            path: string;
+            client_id: string;
+          }
+            (** A query that asks the server to find all symbols in a document. The server will send
+                back either a list of symbol information or a list of document symbols.
+                TODO(T166374635): create classes for document symbol response*)
         | Completion of {
             path: string;
             position: Ast.Location.position;
@@ -471,6 +478,15 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    module DocumentSymbolItem : sig
+      (** A type representing one document symbol result. A list of [DocumentSymbolItem] is sent
+          from the server to its clients.
+
+          TODO(T166374635): support other DocumentSymbolItem attributes *)
+
+      type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+    end
+
     module CompletionItem : sig
       (** A type representing a completion (autocomplete) result. A list of [CompletionItems] are
           sent from the server to its clients via the [Completion] response.
@@ -540,6 +556,8 @@ module Testing : sig
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined
               multiple times.*)
+      | GetDocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
+          (** TODO: T166374635 Create structure for document symbol response *)
       | Completion of { completions: CompletionItem.t list }
           (** Response for {!Request.Completion}. [completions] contains a list of possible
               completion items that will be shown to the user. *)

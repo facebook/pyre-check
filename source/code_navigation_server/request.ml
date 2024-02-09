@@ -71,6 +71,10 @@ module Query = struct
         position: Ast.Location.position;
         client_id: string;
       }
+    | GetDocumentSymbol of {
+        path: string;
+        client_id: string;
+      }
     | Completion of {
         path: string;
         position: Ast.Location.position;
