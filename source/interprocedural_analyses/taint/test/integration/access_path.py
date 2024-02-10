@@ -48,3 +48,7 @@ def issue_positional_and_variadic():
     positional_and_variadic2(1, 2, _test_source())
     positional_and_variadic2(1, _test_source())
     positional_and_variadic2(1, y=_test_source())
+
+
+def sink_on_keyword_only(x, *, y):
+    pass
