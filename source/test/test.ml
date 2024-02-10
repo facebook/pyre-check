@@ -103,6 +103,22 @@ let run tests =
   tests |> bracket |> OUnit2.run_test_tt_main
 
 
+let labeled_test_case function_name line_number ?name test_callback =
+  let description =
+    let function_name =
+      function_name |> String.split ~on:'.' |> List.last |> Option.value ~default:"toplevel"
+    in
+    function_name
+    ^ ":"
+    ^
+    match name with
+    | Some name -> name ^ ":line="
+    | None -> "testcase:line="
+  in
+  let open OUnit2 in
+  description ^ string_of_int line_number >:: test_callback
+
+
 let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
   let do_parse context =
     match PyreNewParser.parse_module ~context ~enable_type_comment:true source with

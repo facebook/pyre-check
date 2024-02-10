@@ -39,3 +39,6 @@ let assert_type_errors_inject_typing_and_typing_extensions
   in
   assert_type_errors_with_typing_as "typing";
   assert_type_errors_with_typing_as "typing_extensions"
+
+
+let labeled_test_case = Test.labeled_test_case
