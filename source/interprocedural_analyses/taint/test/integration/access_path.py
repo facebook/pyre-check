@@ -52,3 +52,13 @@ def issue_positional_and_variadic():
 
 def sink_on_keyword_only(x, *, y):
     pass
+
+
+# __x marked as a sink in .pysa
+def sink_on_positional_only(__x, /, y):
+    pass
+
+
+# y marked as a sink in .pysa
+def sink_on_non_positional_only(__x, /, y):
+    pass

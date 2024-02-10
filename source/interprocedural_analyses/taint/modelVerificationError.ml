@@ -24,7 +24,7 @@ module IncompatibleModelError = struct
     | InvalidNamedParameterPosition of {
         name: string;
         position: int;
-        valid_positions: int list;
+        valid_roots: AccessPath.Root.t list;
       }
   [@@deriving sexp, equal, compare, show]
 
@@ -227,12 +227,12 @@ let description error =
                   Format.sprintf "unexpected named parameter: `%s`" name
               | UnexpectedStarredParameter -> "unexpected star parameter"
               | UnexpectedDoubleStarredParameter -> "unexpected star star parameter"
-              | InvalidNamedParameterPosition { name; position; valid_positions } ->
+              | InvalidNamedParameterPosition { name; position; valid_roots } ->
                   Format.sprintf
-                    "invalid position for named parameter `%s` (%d not in {%s})"
-                    name
+                    "invalid position %d for named parameter `%s` (valid options are {%s})"
                     position
-                    (List.map ~f:string_of_int valid_positions |> String.concat ~sep:", ")
+                    name
+                    (List.map ~f:AccessPath.Root.show valid_roots |> String.concat ~sep:", ")
             in
             match overload with
             | Some overload ->

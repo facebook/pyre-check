@@ -611,7 +611,31 @@
     "callable": "access_path.sink_on_keyword_only",
     "sinks": [
       {
+        "port": "formal(y)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "access_path.sink_on_non_positional_only",
+    "sinks": [
+      {
         "port": "formal(y, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "access_path.sink_on_positional_only",
+    "sinks": [
+      {
+        "port": "formal(__x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]

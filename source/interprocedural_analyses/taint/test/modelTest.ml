@@ -4051,7 +4051,8 @@ let test_invalid_models context =
     ~expect:
       "Model signature parameters for `test.function_with_multiple_positions` do not match \
        implementation `def function_with_multiple_positions(a: int, b: int, c: int) -> Union[int, \
-       str]: ...`. Reason: invalid position for named parameter `c` (0 not in {1, 2})."
+       str]: ...`. Reason: invalid position 0 for named parameter `c` (valid options are \
+       {formal(c, position=1), formal(c, position=2)})."
     ();
   assert_invalid_model
     ~model_source:"def test.function_with_positional_and_named(__x): ..."

@@ -20,7 +20,7 @@ module IncompatibleModelError : sig
     | InvalidNamedParameterPosition of {
         name: string;
         position: int;
-        valid_positions: int list;
+        valid_roots: AccessPath.Root.t list;
       }
   [@@deriving sexp, equal, compare]
 

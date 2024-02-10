@@ -271,7 +271,7 @@ let rec parse_annotations
     ~origin
     ~taint_configuration
     ~parameters
-    ~callable_parameter_names_to_positions
+    ~callable_parameter_names_to_roots
     annotation
   =
   let open Core.Result in
@@ -282,14 +282,13 @@ let rec parse_annotations
       (InvalidTaintAnnotation { taint_annotation = annotation; reason })
   in
   let get_parameter_position name =
-    let callable_parameter_names_to_positions =
-      Option.value ~default:String.Map.empty callable_parameter_names_to_positions
+    let callable_parameter_names_to_roots =
+      Option.value ~default:String.Map.empty callable_parameter_names_to_roots
     in
-    match Map.find callable_parameter_names_to_positions name with
-    | Some (position :: _) -> Ok position
-    | Some []
-    | None -> (
-        (* `callable_parameter_names_to_positions` might be missing the `self` parameter. *)
+    match Map.find callable_parameter_names_to_roots name with
+    | Some (AccessPath.Root.PositionalParameter { position; _ } :: _) -> Ok position
+    | _ -> (
+        (* `callable_parameter_names_to_roots` might be missing the `self` parameter. *)
         let matches_parameter_name index { Node.value = parameter; _ } =
           if String.equal parameter.Parameter.name name then
             Some index
@@ -780,7 +779,7 @@ let rec parse_annotations
                   ~origin
                   ~taint_configuration
                   ~parameters
-                  ~callable_parameter_names_to_positions
+                  ~callable_parameter_names_to_roots
                   expression)
             |> all
             |> map ~f:List.concat
@@ -832,7 +831,7 @@ let rec parse_annotations
               ~origin
               ~taint_configuration
               ~parameters
-              ~callable_parameter_names_to_positions
+              ~callable_parameter_names_to_roots
               expression)
         |> all
         >>| List.concat
@@ -2198,7 +2197,7 @@ let parse_model_clause
               ~origin
               ~taint_configuration
               ~parameters:[]
-              ~callable_parameter_names_to_positions:None
+              ~callable_parameter_names_to_roots:None
               expression
             >>| List.map ~f:(fun taint -> ModelQuery.QueryTaintAnnotation.TaintAnnotation taint)
       in
@@ -2440,7 +2439,7 @@ let parse_parameter_taint
     ~origin
     ~taint_configuration
     ~parameters
-    ~callable_parameter_names_to_positions
+    ~callable_parameter_names_to_roots
     { AccessPath.NormalizedParameter.root; original = parameter; _ }
   =
   parameter.Node.value.Parameter.annotation
@@ -2450,7 +2449,7 @@ let parse_parameter_taint
         ~origin
         ~taint_configuration
         ~parameters
-        ~callable_parameter_names_to_positions
+        ~callable_parameter_names_to_roots
   |> Option.value ~default:(Ok [])
   |> Core.Result.map
        ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ParameterAnnotation (root, annotation)))
@@ -2574,7 +2573,7 @@ let parse_return_taint
     ~origin
     ~taint_configuration
     ~parameters
-    ~callable_parameter_names_to_positions
+    ~callable_parameter_names_to_roots
     expression
   =
   let open Core.Result in
@@ -2584,7 +2583,7 @@ let parse_return_taint
     ~origin
     ~taint_configuration
     ~parameters
-    ~callable_parameter_names_to_positions
+    ~callable_parameter_names_to_roots
     expression
   |> map ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ReturnAnnotation annotation))
 
@@ -2674,7 +2673,7 @@ let adjust_sanitize_and_modes_and_skipped_override
       ~origin
       ~taint_configuration
       ~parameters:[]
-      ~callable_parameter_names_to_positions:None
+      ~callable_parameter_names_to_roots:None
       expression
     |> function
     | Ok [Sanitize sanitize_annotations] ->
@@ -2924,22 +2923,31 @@ let create_model_from_signature
         model_verification_error (ModelingAttributeAsDefine (Reference.show callable_name))
   in
   (* Check model matches callables primary signature. *)
-  let callable_parameter_names_to_positions =
+  let callable_parameter_names_to_roots =
     match callable_annotation with
     | Ok (Some callable_annotation) ->
+        let add_into_map map name root =
+          Map.update map name ~f:(function
+              | None -> [root]
+              | Some roots -> root :: roots)
+        in
         let add_parameter_to_position map (position, parameter) =
           match parameter with
-          | Type.Callable.Parameter.Named { name; _ }
+          | Type.Callable.Parameter.Named { name; _ } ->
+              let name = Identifier.sanitized name in
+              add_into_map
+                map
+                name
+                (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
           | Type.Callable.Parameter.KeywordOnly { name; _ } ->
-              Map.update map (Identifier.sanitized name) ~f:(function
-                  | None -> [position]
-                  | Some positions -> position :: positions)
+              let name = Identifier.sanitized name in
+              add_into_map map name (AccessPath.Root.NamedParameter { name })
           | _ -> map
         in
         callable_annotation
         |> parameters_of_callable_annotation
         |> List.fold ~init:String.Map.empty ~f:add_parameter_to_position
-        |> String.Map.map ~f:(List.dedup_and_sort ~compare:Int.compare)
+        |> String.Map.map ~f:(List.dedup_and_sort ~compare:AccessPath.Root.compare)
         |> Option.some
     | _ -> None
   in
@@ -2947,9 +2955,9 @@ let create_model_from_signature
      conversion. Let's fix the positions after the fact to make sure that our models aren't off. *)
   let normalized_model_parameters =
     let parameters = AccessPath.normalize_parameters parameters in
-    match callable_parameter_names_to_positions with
+    match callable_parameter_names_to_roots with
     | None -> Ok parameters
-    | Some names_to_positions ->
+    | Some names_to_roots ->
         let create_error reason =
           {
             ModelVerificationError.kind =
@@ -2964,33 +2972,35 @@ let create_model_from_signature
             location;
           }
         in
-        let adjust_position_of_positional_parameter ~name ~position =
-          match Map.find names_to_positions name with
-          | Some [accurate_position] -> Ok accurate_position
-          | Some accurate_positions when List.mem ~equal:Int.equal accurate_positions position ->
-              Ok position
-          | Some valid_positions ->
+        let adjust_named_parameter ~name ~position =
+          match Map.find names_to_roots name with
+          | Some [root] -> Ok root
+          | Some roots
+            when List.mem
+                   roots
+                   (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
+                   ~equal:AccessPath.Root.equal ->
+              Ok (AccessPath.Root.PositionalParameter { name; position; positional_only = false })
+          | Some valid_roots ->
               Error
                 (create_error
                    (ModelVerificationError.IncompatibleModelError.InvalidNamedParameterPosition
-                      { name; position; valid_positions }))
+                      { name; position; valid_roots }))
           | None ->
               Error
                 (create_error
                    (ModelVerificationError.IncompatibleModelError.UnexpectedNamedParameter name))
         in
-        let adjust_position_of_root = function
+        let adjust_root = function
           | AccessPath.Root.PositionalParameter { name; position; positional_only = false }
             when not (String.is_prefix ~prefix:"__" name) ->
-              adjust_position_of_positional_parameter ~name ~position
-              >>| fun position ->
-              AccessPath.Root.PositionalParameter { name; position; positional_only = false }
+              adjust_named_parameter ~name ~position
           | root -> Ok root
         in
-        let adjust_position ({ AccessPath.NormalizedParameter.root; _ } as parameter) =
-          adjust_position_of_root root >>| fun root -> { parameter with root }
+        let adjust_parameter ({ AccessPath.NormalizedParameter.root; _ } as parameter) =
+          adjust_root root >>| fun root -> { parameter with root }
         in
-        List.map parameters ~f:adjust_position |> all
+        List.map parameters ~f:adjust_parameter |> all
   in
   let annotations () =
     normalized_model_parameters
@@ -3004,7 +3014,7 @@ let create_model_from_signature
            ~origin:DefineParameter
            ~taint_configuration
            ~parameters
-           ~callable_parameter_names_to_positions)
+           ~callable_parameter_names_to_roots)
     |> all
     >>| List.concat
     >>= fun parameter_taint ->
@@ -3017,7 +3027,7 @@ let create_model_from_signature
               ~origin:DefineReturn
               ~taint_configuration
               ~parameters
-              ~callable_parameter_names_to_positions)
+              ~callable_parameter_names_to_roots)
     |> Option.value ~default:(Ok [])
     >>| fun return_taint -> List.rev_append parameter_taint return_taint
   in
@@ -3464,7 +3474,7 @@ let rec parse_statement
           ~origin:Attribute
           ~taint_configuration
           ~parameters:[]
-          ~callable_parameter_names_to_positions:None
+          ~callable_parameter_names_to_roots:None
           annotation
         >>| (fun annotations ->
               ParsedAttribute
