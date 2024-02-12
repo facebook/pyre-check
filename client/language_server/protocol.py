@@ -351,11 +351,17 @@ class LspRange(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class CodeDescription(json_mixins.CamlCaseAndExcludeJsonMixin):
+    href: str
+
+
+@dataclasses.dataclass(frozen=True)
 class Diagnostic(json_mixins.CamlCaseAndExcludeJsonMixin):
     range: LspRange
     message: str
     severity: Optional[DiagnosticSeverity] = None
-    code: Optional[int] = None
+    code: Optional[int | str] = None
+    code_description: Optional[CodeDescription] = None
     source: Optional[str] = None
 
 

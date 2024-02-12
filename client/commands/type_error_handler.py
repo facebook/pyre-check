@@ -14,9 +14,9 @@ from typing import Dict, List, Optional, Sequence
 
 from .. import backend_arguments, error, json_rpc
 from ..language_server import connections, protocol as lsp
-from . import server_state
+from . import error_code_to_link_mapper, server_state
 
-
+PYRE_DOCUMENTATION_LINK = "https://pyre-check.org/docs/errors/#"
 LOG: logging.Logger = logging.getLogger(__name__)
 
 
@@ -52,6 +52,7 @@ def type_errors_to_diagnostics(
 
 
 def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
+    code_description = _get_code_description(type_error)
     return lsp.Diagnostic(
         range=lsp.LspRange(
             start=lsp.LspPosition(
@@ -63,9 +64,17 @@ def type_error_to_diagnostic(type_error: error.Error) -> lsp.Diagnostic:
         ),
         message=type_error.description,
         severity=lsp.DiagnosticSeverity.ERROR,
-        code=None,
+        code=None if code_description is None else "pyre (documentation link)",
+        code_description=code_description,
         source="Pyre",
     )
+
+
+def _get_code_description(type_error: error.Error) -> lsp.CodeDescription:
+    code = type_error.code
+    fragment = error_code_to_link_mapper.error_code_to_fragment.get(code, "")
+    href = PYRE_DOCUMENTATION_LINK + fragment
+    return lsp.CodeDescription(href=href)
 
 
 @dataclasses.dataclass(frozen=True)

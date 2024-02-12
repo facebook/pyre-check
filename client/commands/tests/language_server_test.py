@@ -461,8 +461,11 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                 ),
                 message="description",
                 severity=lsp.DiagnosticSeverity.ERROR,
-                code=None,
+                code="pyre (documentation link)",
                 source="Pyre",
+                code_description=lsp.CodeDescription(
+                    href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                ),
             ),
         )
         self.assertDictEqual(
@@ -509,8 +512,11 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="foo_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                        ),
                     ),
                     lsp.Diagnostic(
                         range=lsp.LspRange(
@@ -519,8 +525,11 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="foo_description2",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#43-incompatible-overload-implementation"
+                        ),
                     ),
                 ],
                 Path("/bar.py"): [
@@ -531,8 +540,11 @@ class DiagnosticHelperFunctionsTest(testslide.TestCase):
                         ),
                         message="bar_description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#"
+                        ),
                     )
                 ],
             },
@@ -906,8 +918,11 @@ class ClientTypeErrorHandlerTest(testslide.TestCase):
                         ),
                         message="first error",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                        ),
                     ),
                     lsp.Diagnostic(
                         range=lsp.LspRange(
@@ -916,8 +931,11 @@ class ClientTypeErrorHandlerTest(testslide.TestCase):
                         ),
                         message="second error",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                        ),
                     ),
                 ]
             },
@@ -1653,8 +1671,11 @@ class DidChangeTest(ApiTestCase):
                         ),
                         message="description",
                         severity=lsp.DiagnosticSeverity.ERROR,
-                        code=None,
+                        code="pyre (documentation link)",
                         source="Pyre",
+                        code_description=lsp.CodeDescription(
+                            href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                        ),
                     )
                 ],
             )
@@ -1812,8 +1833,11 @@ class DidChangeTest(ApiTestCase):
                     ),
                     message="description",
                     severity=lsp.DiagnosticSeverity.ERROR,
-                    code=None,
+                    code="pyre (documentation link)",
                     source="Pyre",
+                    code_description=lsp.CodeDescription(
+                        href="https://pyre-check.org/docs/errors/#42-missing-overload-implementation"
+                    ),
                 )
             ],
         )
