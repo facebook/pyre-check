@@ -132,6 +132,9 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         mock_definition_response: Optional[
             querier.GetDefinitionLocationsResponse
         ] = None,
+        mock_document_symbol_response: Optional[
+            querier.GetDocumentSymbolsResponse
+        ] = None,
         mock_completion_response: Optional[List[lsp.CompletionItem]] = None,
         mock_call_hierarchy_response: Optional[List[lsp.CallHierarchyItem]] = None,
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
@@ -143,6 +146,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self.mock_type_coverage = mock_type_coverage
         self.mock_hover_response = mock_hover_response
         self.mock_definition_response = mock_definition_response
+        self.mock_document_symbol_response = mock_document_symbol_response
         self.mock_completion_response = mock_completion_response
         self.mock_call_hierarchy_response = mock_call_hierarchy_response
         self.mock_references_response = mock_references_response
@@ -185,6 +189,15 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
             )
         else:
             return self.mock_definition_response
+
+    async def get_document_symbols(
+        self,
+        path: str,
+    ) -> Union[querier.DaemonQueryFailure, querier.GetDocumentSymbolsResponse]:
+        if self.mock_document_symbol_response is None:
+            raise ValueError("You need to set symbol search in the mock querier")
+        else:
+            return self.mock_document_symbol_response
 
     async def get_completions(
         self,
