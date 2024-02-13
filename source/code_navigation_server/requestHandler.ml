@@ -201,7 +201,8 @@ let handle_completion
   >>| fun completions -> Response.(Completion { completions })
 
 
-let handle_document_symbol _ _ = None
+let handle_document_symbol _ _ _ = Response.(GetDocumentSymbol { document_symbol_items = [] })
+
 (* TODO T166374635: return the correct response *)
 
 let handle_superclasses
@@ -617,14 +618,10 @@ let handle_query
         handle_location_of_definition ~path ~position ~client_id state |> response_from_result
       in
       Lwt.return response
-  | Request.Query.GetDocumentSymbol _ ->
-      let f _state =
-        let response =
-          Response.Error (Response.ErrorKind.InvalidRequest "DocumentSymbol not yet implemented")
-        in
-        Lwt.return response
-      in
-      Server.ExclusiveLock.read state ~f
+  | Request.Query.GetDocumentSymbol { path = _; client_id = _ } ->
+      (* make sure its not an empty list *)
+      let response = Response.(GetDocumentSymbol { document_symbol_items = [] }) in
+      Lwt.return response
   | Request.Query.Completion { path; position; client_id } ->
       let state = Server.ExclusiveLock.unsafe_read state in
       let response = handle_completion ~path ~position ~client_id state |> response_from_result in

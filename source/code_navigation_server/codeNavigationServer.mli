@@ -479,12 +479,47 @@ module Testing : sig
     end
 
     module DocumentSymbolItem : sig
-      (** A type representing one document symbol result. A list of [DocumentSymbolItem] is sent
-          from the server to its clients.
+      (** A type a document symbol response *)
+      module SymbolKind : sig
+        type t =
+          | File
+          | Module
+          | Namespace
+          | Package
+          | Class
+          | Method
+          | Property
+          | Field
+          | Constructor
+          | Enum
+          | Interface
+          | Function
+          | Variable
+          | Constant
+          | String
+          | Number
+          | Boolean
+          | Array
+          | Object
+          | Key
+          | Null
+          | EnumMember
+          | Struct
+          | Event
+          | Operator
+          | TypeParameter
+        [@@deriving sexp, compare, yojson { strict = false }]
+      end
 
-          TODO(T166374635): support other DocumentSymbolItem attributes *)
-
-      type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+      type t = {
+        name: string;
+        kind: SymbolKind.t;
+        detail: string;
+        range: Ast.Location.t;
+        selection_range: Ast.Location.t;
+        children: t list; (* recursive type to represent a list of document symbols *)
+      }
+      [@@deriving sexp, compare, yojson { strict = false }]
     end
 
     module CompletionItem : sig

@@ -40,7 +40,74 @@ module DefinitionLocation = struct
 end
 
 module DocumentSymbolItem = struct
-  type t = { label: string } [@@deriving sexp, compare, yojson { strict = false }]
+  module SymbolKind = struct
+    type t =
+      | File
+      | Module
+      | Namespace
+      | Package
+      | Class
+      | Method
+      | Property
+      | Field
+      | Constructor
+      | Enum
+      | Interface
+      | Function
+      | Variable
+      | Constant
+      | String
+      | Number
+      | Boolean
+      | Array
+      | Object
+      | Key
+      | Null
+      | EnumMember
+      | Struct
+      | Event
+      | Operator
+      | TypeParameter
+    [@@deriving sexp, compare, yojson { strict = false }]
+
+    let to_yojson = function
+      | File -> `String "FILE"
+      | Module -> `String "MODULE"
+      | Namespace -> `String "NAMESPACE"
+      | Package -> `String "PACKAGE"
+      | Class -> `String "CLASS"
+      | Method -> `String "METHOD"
+      | Property -> `String "PROPERTY"
+      | Field -> `String "FIELD"
+      | Constructor -> `String "CONSTRUCTOR"
+      | Enum -> `String "ENUM"
+      | Interface -> `String "INTERFACE"
+      | Function -> `String "FUNCTION"
+      | Variable -> `String "VARIABLE"
+      | Constant -> `String "CONSTANT"
+      | String -> `String "STRING"
+      | Number -> `String "NUMBER"
+      | Boolean -> `String "BOOLEAN"
+      | Array -> `String "ARRAY"
+      | Object -> `String "OBJECT"
+      | Key -> `String "KEY"
+      | Null -> `String "NULL"
+      | EnumMember -> `String "ENUMMEMBER"
+      | Struct -> `String "STRUCT"
+      | Event -> `String "EVENT"
+      | Operator -> `String "OPERATOR"
+      | TypeParameter -> `String "TYPEPARAMETER"
+  end
+
+  type t = {
+    name: string;
+    kind: SymbolKind.t;
+    detail: string;
+    range: Ast.Location.t;
+    selection_range: Ast.Location.t;
+    children: t list; (* recursive type to represent a list of document symbols *)
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
 end
 
 module CompletionItem = struct
