@@ -296,6 +296,9 @@ class Configurationless(Command):
             if file_mode is not None:
                 filesystem.add_local_mode(str(file), file_mode)
 
+        options.local_configuration.original_contents["migration_status"] = "mode"
+        options.local_configuration.write()
+
         self._repository.commit_changes(
             commit=self._commit,
             title=f"Configurationless migration for {str(options.local_configuration.get_path())}",
