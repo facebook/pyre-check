@@ -136,8 +136,6 @@ class Configurationless(Command):
             for ignore_prefix in options.ignore_all_errors_prefixes
         ):
             return filesystem.LocalMode.IGNORE
-        elif default_local_mode == options.default_global_mode:
-            return None
         else:
             return default_local_mode
 

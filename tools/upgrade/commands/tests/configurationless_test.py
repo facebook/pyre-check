@@ -213,11 +213,12 @@ class TestConfigurationless(unittest.TestCase):
 
     def test_get_mode_to_apply_file_project_mode_same_as_global(self) -> None:
         options = self.get_options()
-        self.assertIsNone(
+        self.assertEqual(
             self.configurationless.get_file_mode_to_apply(
                 Path("path/to/file.py"),
                 options,
             ),
+            LocalMode.STRICT,
         )
 
     def test_get_mode_to_apply_file_project_mode_local_unsafe(self) -> None:
