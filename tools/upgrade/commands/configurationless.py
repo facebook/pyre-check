@@ -192,6 +192,7 @@ class Configurationless(Command):
 
         with tempfile.NamedTemporaryFile("w+", prefix="pyre_configurationless") as file:
             file.write(arguments)
+            file.flush()
 
             buck_command = [
                 "buck2",
