@@ -96,3 +96,7 @@ module Testing : sig
 end
 
 val check_and_preprocess : scheduler:Scheduler.t -> t -> Ast.Reference.t list -> unit
+
+(* Convenience function to create an AstEnvironment.t and use that for the
+   UnannotatedGlobalEnvironment.CreateHandle.t *)
+val create_with_ast_environment : EnvironmentControls.t -> t

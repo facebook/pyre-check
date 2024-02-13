@@ -33,7 +33,10 @@ let build_environment_data
     Log.info "Building type environment...";
     let timer = Timer.start () in
     let annotated_global_environment =
-      EnvironmentControls.create configuration |> AnnotatedGlobalEnvironment.create
+      EnvironmentControls.create configuration
+      |> AstEnvironment.create
+      |> UnannotatedGlobalEnvironment.CreateHandle.of_ast_environment
+      |> AnnotatedGlobalEnvironment.create
     in
     Statistics.performance ~name:"full environment built" ~timer ();
     ( AnnotatedGlobalEnvironment.read_only annotated_global_environment,

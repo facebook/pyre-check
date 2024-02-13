@@ -149,9 +149,18 @@ module Overlay : sig
   val read_only : t -> ReadOnly.t
 end
 
+module CreateHandle : sig
+  type t = {
+    source_code_incremental_base: SourceCodeIncrementalApi.Base.t;
+    maybe_ast_environment: AstEnvironment.t option;
+  }
+
+  val of_ast_environment : AstEnvironment.t -> t
+end
+
 type t
 
-val create : EnvironmentControls.t -> t
+val create : CreateHandle.t -> t
 
 (* This handle to self is needed to fulfill the (recursive) interface used in the Environment.ml
    functor *)

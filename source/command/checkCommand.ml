@@ -151,7 +151,7 @@ let do_check configuration =
       with_performance_tracking ~debug:configuration.debug (fun () ->
           let read_write_environment =
             Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-            |> Analysis.ErrorsEnvironment.create
+            |> Analysis.ErrorsEnvironment.create_with_ast_environment
           in
           let type_check_qualifiers =
             Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api

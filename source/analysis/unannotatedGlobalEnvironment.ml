@@ -1310,6 +1310,20 @@ module Overlay = struct
     { parent with source_code_incremental_read_only; get_queries }
 end
 
+(* A CreateHandle.t contains the data needed to construct an UnannotatedGlobalEnvironment.t. We
+   define it mostly so that it's easy to see the abstract interface when implementing new
+   module-tracking-and-parsing backends *)
+module CreateHandle = struct
+  type t = {
+    source_code_incremental_base: SourceCodeIncrementalApi.Base.t;
+    maybe_ast_environment: AstEnvironment.t option;
+  }
+
+  let of_ast_environment ast_environment =
+    let source_code_incremental_base = AstEnvironment.as_source_code_incremental ast_environment in
+    { source_code_incremental_base; maybe_ast_environment = Some ast_environment }
+end
+
 module Base = struct
   type t = {
     source_code_incremental_base: SourceCodeIncrementalApi.Base.t;
@@ -1317,7 +1331,8 @@ module Base = struct
     maybe_ast_environment: AstEnvironment.t option;
   }
 
-  let construct ~source_code_incremental_base ~maybe_ast_environment =
+  let create dependencies =
+    let { CreateHandle.source_code_incremental_base; maybe_ast_environment } = dependencies in
     let from_read_only_upstream =
       SourceCodeIncrementalApi.Base.read_only source_code_incremental_base
       |> FromReadOnlyUpstream.create
@@ -1325,13 +1340,6 @@ module Base = struct
     FromReadOnlyUpstream.cold_start from_read_only_upstream;
     { source_code_incremental_base; from_read_only_upstream; maybe_ast_environment }
 
-
-  let construct_from_ast_environment ast_environment =
-    let source_code_incremental_base = AstEnvironment.as_source_code_incremental ast_environment in
-    construct ~source_code_incremental_base ~maybe_ast_environment:(Some ast_environment)
-
-
-  let create controls = AstEnvironment.create controls |> construct_from_ast_environment
 
   let update_this_and_all_preceding_environments
       { source_code_incremental_base; from_read_only_upstream; _ }
@@ -1385,10 +1393,7 @@ module Base = struct
     (* All SharedMemory tables are populated and stored in separate, imperative steps that must be
        run before loading / after storing. These functions only handle serializing and deserializing
        the non-SharedMemory data *)
-    let load controls =
-      let ast_environment = AstEnvironment.load controls in
-      construct_from_ast_environment ast_environment
-
+    let load controls = AstEnvironment.load controls |> CreateHandle.of_ast_environment |> create
 
     let store { maybe_ast_environment; _ } =
       match maybe_ast_environment with

@@ -286,7 +286,7 @@ module Testing = struct
   end
 end
 
-let create controls =
+let create_with_ast_environment controls =
   let timer = Timer.start () in
   (* Validate paths at creation, but only if the sources are not in memory *)
   let () =
@@ -294,10 +294,12 @@ let create controls =
     | Some _ -> ()
     | None -> EnvironmentControls.configuration controls |> Configuration.Analysis.validate_paths
   in
-  PyreProfiling.track_shared_memory_usage ~name:"Before module tracking" ();
-  Log.info "Creating environment...";
-  let environment = create controls in
-  Statistics.performance ~name:"full environment built" ~timer ();
+  let environment =
+    AstEnvironment.create controls
+    |> UnannotatedGlobalEnvironment.CreateHandle.of_ast_environment
+    |> create
+  in
+  Statistics.performance ~name:"Full environment built" ~timer ();
   environment
 
 

@@ -85,8 +85,9 @@ module Make (In : In) = struct
 
   include EnvironmentTable
 
-  let create controls =
-    let table = EnvironmentTable.create controls in
+  let create create_handle =
+    let table = EnvironmentTable.create create_handle in
+    let controls = unannotated_global_environment table |> UnannotatedGlobalEnvironment.controls in
     let () = UnmanagedCache.enabled := not (EnvironmentControls.track_dependencies controls) in
     table
 

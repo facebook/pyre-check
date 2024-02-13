@@ -234,7 +234,7 @@ let type_check
       let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
       let errors_environment =
         Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-        |> Analysis.ErrorsEnvironment.create
+        |> Analysis.ErrorsEnvironment.create_with_ast_environment
       in
       let type_environment =
         Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment

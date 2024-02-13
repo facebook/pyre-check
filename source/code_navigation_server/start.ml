@@ -138,7 +138,8 @@ let initialize_server_state ~build_system_initializer ~environment_controls () =
   initialize_shared_memory environment_controls;
   let build_system = BuildSystem.Initializer.initialize build_system_initializer in
   let environment =
-    Analysis.ErrorsEnvironment.create environment_controls |> Analysis.OverlaidEnvironment.create
+    Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls
+    |> Analysis.OverlaidEnvironment.create
   in
   let client_states = State.Client.create () in
   let build_failure = Server.ServerState.BuildFailure.create () in

@@ -222,7 +222,9 @@ let initialize_server_state
         ~configuration
         ~should_log_exception:(fun _ -> true)
         ~f:(fun scheduler ->
-          let environment = Analysis.ErrorsEnvironment.create environment_controls in
+          let environment =
+            Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls
+          in
           let () =
             if skip_initial_type_check then
               ()

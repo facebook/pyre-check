@@ -92,7 +92,7 @@ module PreviousEnvironment = struct
 
     type t
 
-    val create : EnvironmentControls.t -> t
+    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
     val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
@@ -294,7 +294,7 @@ module EnvironmentTable = struct
 
     type t
 
-    val create : EnvironmentControls.t -> t
+    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
     val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 

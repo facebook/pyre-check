@@ -54,7 +54,7 @@ module PreviousEnvironment : sig
 
     type t
 
-    val create : EnvironmentControls.t -> t
+    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
     val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 
@@ -177,7 +177,7 @@ module EnvironmentTable : sig
 
     type t
 
-    val create : EnvironmentControls.t -> t
+    val create : UnannotatedGlobalEnvironment.CreateHandle.t -> t
 
     val unannotated_global_environment : t -> UnannotatedGlobalEnvironment.t
 

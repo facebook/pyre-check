@@ -152,7 +152,7 @@ let get_environment configuration no_validation_on_class_lookup_failure =
               ~populate_call_graph:false
               configuration
               ~no_validation_on_class_lookup_failure
-            |> Analysis.ErrorsEnvironment.create
+            |> Analysis.ErrorsEnvironment.create_with_ast_environment
           in
           Analysis.OverlaidEnvironment.create read_write_environment))
 

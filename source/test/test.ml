@@ -3140,7 +3140,7 @@ module ScratchProject = struct
           ~no_validation_on_class_lookup_failure
           configuration
     in
-    let errors_environment = ErrorsEnvironment.create controls in
+    let errors_environment = ErrorsEnvironment.create_with_ast_environment controls in
     let () =
       if not use_lazy_module_tracking then (
         (* Use AstEnvironment push updates to wipe shared memory. This isn't needed for correctness,

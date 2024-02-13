@@ -312,7 +312,7 @@ let test_error_filtering context =
     let environment, type_check_qualifiers =
       let read_write =
         EnvironmentControls.create ~populate_call_graph:true configuration
-        |> ErrorsEnvironment.create
+        |> ErrorsEnvironment.create_with_ast_environment
       in
       ( ErrorsEnvironment.read_only read_write,
         ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api read_write
