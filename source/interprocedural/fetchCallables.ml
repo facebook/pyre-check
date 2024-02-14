@@ -130,9 +130,10 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
         definitions
     in
     let is_internal =
-      Ast.ModulePath.is_internal_path
-        ~configuration
-        (Ast.ModulePath.full_path ~configuration source.module_path)
+      Analysis.ArtifactPaths.(
+        is_internal_path
+          ~configuration
+          (artifact_path_of_module_path ~configuration source.module_path))
     in
     let add_definition definition { Node.value = define; _ } result =
       if Define.is_stub define then

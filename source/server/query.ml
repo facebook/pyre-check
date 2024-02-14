@@ -937,7 +937,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         SourceCodeApi.module_path_of_qualifier source_code_api module_name
         >>= (fun source_path ->
               let path =
-                ModulePath.full_path ~configuration source_path
+                ArtifactPaths.artifact_path_of_module_path ~configuration source_path
                 |> ArtifactPath.raw
                 |> PyrePath.absolute
               in

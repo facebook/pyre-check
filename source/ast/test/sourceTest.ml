@@ -258,28 +258,6 @@ let test_qualifier _ =
   ()
 
 
-let test_extension_suffix _ =
-  let root = PyrePath.create_absolute "/root" in
-  let assert_qualifier_equal ~configuration ~path expected =
-    let actual_qualifier =
-      match ModulePath.create ~configuration (Test.relative_artifact_path ~root ~relative:path) with
-      | Some { ModulePath.qualifier; _ } -> qualifier
-      | None -> Reference.create "<UNEXPECTED_NONE>"
-    in
-    assert_equal ~printer:Reference.show (Reference.create expected) actual_qualifier
-  in
-  let configuration =
-    Configuration.Analysis.create
-      ~extensions:
-        [{ Configuration.Extension.suffix = ".cinc"; include_suffix_in_module_qualifier = true }]
-      ~source_paths:[SearchPath.Root root]
-      ()
-  in
-  assert_qualifier_equal ~configuration ~path:"test.py" "test";
-  assert_qualifier_equal ~configuration ~path:"test.pyi" "test";
-  assert_qualifier_equal ~configuration ~path:"test.cinc" "test.cinc"
-
-
 let test_expand_relative_import _ =
   let assert_export ~relative ~from ~expected =
     let from =
@@ -356,7 +334,6 @@ let () =
   "source"
   >::: [
          "qualifier" >:: test_qualifier;
-         "extension_suffix" >:: test_extension_suffix;
          "expand_relative_import" >:: test_expand_relative_import;
          "ignored_lines" >:: test_ignored_lines;
        ]

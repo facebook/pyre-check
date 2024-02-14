@@ -14,6 +14,7 @@ module SourceCodeApi = Analysis.SourceCodeApi
 module ModuleTracker = Analysis.ModuleTracker
 module GlobalModulePathsApi = Analysis.GlobalModulePathsApi
 module SourceCodeIncrementalApi = Analysis.SourceCodeIncrementalApi
+module ArtifactPaths = Analysis.ArtifactPaths
 
 module ReadOnlyHelpers = struct
   let is_qualifier_tracked tracker qualifier =
@@ -45,7 +46,7 @@ let create_file path = File.create path ~content:content_on_disk |> File.write
 
 let create_module_path ~configuration root relative =
   let path = Test.relative_artifact_path ~root ~relative in
-  ModulePath.create ~configuration path
+  ArtifactPaths.module_path_of_artifact_path ~configuration path
 
 
 let create_module_path_exn ~configuration root relative =
@@ -123,7 +124,7 @@ let assert_module_path
      } as module_path)
   =
   let expected_path = Test.relative_artifact_path ~root:search_root ~relative in
-  let actual_path = ModulePath.full_path ~configuration module_path in
+  let actual_path = ArtifactPaths.artifact_path_of_module_path ~configuration module_path in
   assert_equal
     ~cmp:[%compare.equal: ArtifactPath.t]
     ~printer:ArtifactPath.show
@@ -288,11 +289,11 @@ let test_module_path_search_path_subdirectory context =
   let module_path_a = create_module_path_exn ~configuration local_root "a.py" in
   assert_path
     (Test.relative_artifact_path ~root:local_root ~relative:"a.py")
-    (ModulePath.full_path ~configuration module_path_a);
+    (ArtifactPaths.artifact_path_of_module_path ~configuration module_path_a);
   let module_path_b = create_module_path_exn ~configuration search_subdirectory "c.py" in
   assert_path
     (Test.relative_artifact_path ~root:search_subdirectory ~relative:"c.py")
-    (ModulePath.full_path ~configuration module_path_b)
+    (ArtifactPaths.artifact_path_of_module_path ~configuration module_path_b)
 
 
 let test_module_path_exclude context =
@@ -2025,6 +2026,32 @@ let test_overlay_code_hiding context =
   ()
 
 
+let test_extension_suffix _ =
+  let root = PyrePath.create_absolute "/root" in
+  let assert_qualifier_equal ~configuration ~path expected =
+    let actual_qualifier =
+      match
+        ArtifactPaths.module_path_of_artifact_path
+          ~configuration
+          (Test.relative_artifact_path ~root ~relative:path)
+      with
+      | Some { ModulePath.qualifier; _ } -> qualifier
+      | None -> Reference.create "<UNEXPECTED_NONE>"
+    in
+    assert_equal ~printer:Reference.show (Reference.create expected) actual_qualifier
+  in
+  let configuration =
+    Configuration.Analysis.create
+      ~extensions:
+        [{ Configuration.Extension.suffix = ".cinc"; include_suffix_in_module_qualifier = true }]
+      ~source_paths:[SearchPath.Root root]
+      ()
+  in
+  assert_qualifier_equal ~configuration ~path:"test.py" "test";
+  assert_qualifier_equal ~configuration ~path:"test.pyi" "test";
+  assert_qualifier_equal ~configuration ~path:"test.cinc" "test.cinc"
+
+
 let () =
   "environment"
   >::: [
@@ -2053,5 +2080,6 @@ let () =
          "invalidate_lazy_tracker_cache__add" >:: test_invalidate_lazy_tracker_cache__add;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_code_hiding" >:: test_overlay_code_hiding;
+         "extension_suffix" >:: test_extension_suffix;
        ]
   |> Test.run

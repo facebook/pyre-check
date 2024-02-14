@@ -103,7 +103,8 @@ module Overlay = struct
     in
     let process_code_update (artifact_path, code_update) =
       let configuration = ReadOnly.controls parent |> EnvironmentControls.configuration in
-      ModulePath.create ~configuration artifact_path >>| add_or_update_code ~code_update
+      ArtifactPaths.module_path_of_artifact_path ~configuration artifact_path
+      >>| add_or_update_code ~code_update
     in
     List.filter_map code_updates ~f:process_code_update
 
@@ -197,7 +198,7 @@ module ModulePaths = struct
           let file_filter = python_file_filter finder ~visited_paths in
           PyrePath.list ~file_filter ~directory_filter ~root () |> List.map ~f:ArtifactPath.create)
       |> List.concat
-      |> List.filter_map ~f:(ModulePath.create ~configuration)
+      |> List.filter_map ~f:(ArtifactPaths.module_path_of_artifact_path ~configuration)
   end
 
   module LazyFinder = struct
@@ -250,7 +251,7 @@ module ModulePaths = struct
       let module_paths =
         directory_paths ~configuration qualifier
         |> List.concat_map ~f:list_directory
-        |> List.filter_map ~f:(ModulePath.create ~configuration)
+        |> List.filter_map ~f:(ArtifactPaths.module_path_of_artifact_path ~configuration)
       in
       let sort_by_qualifier so_far module_path =
         Reference.Map.Tree.update so_far (ModulePath.qualifier module_path) ~f:(function
@@ -306,7 +307,7 @@ module ModulePaths = struct
       | Remove of ModulePath.t
 
     let create ~configuration { ArtifactPath.Event.kind; path } =
-      match ModulePath.create ~configuration path with
+      match ArtifactPaths.module_path_of_artifact_path ~configuration path with
       | None ->
           Log.log ~section:`Server "`%a` not found in search path." ArtifactPath.pp path;
           None
@@ -996,7 +997,7 @@ module Base = struct
   }
 
   let load_raw_code ~configuration module_path =
-    let path = ModulePath.full_path ~configuration module_path in
+    let path = ArtifactPaths.artifact_path_of_module_path ~configuration module_path in
     try Ok (ArtifactPath.raw path |> File.create |> File.content_exn) with
     | Sys_error error ->
         Error (Format.asprintf "Cannot open file `%a` due to: %s" ArtifactPath.pp path error)

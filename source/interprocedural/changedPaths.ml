@@ -45,7 +45,9 @@ let hash_of_content analysis_path =
 let save_current_paths ~scheduler ~configuration ~module_tracker =
   let save_paths module_paths =
     let save_path module_path =
-      let hash = ModulePath.full_path ~configuration module_path |> hash_of_content in
+      let hash =
+        ArtifactPaths.artifact_path_of_module_path ~configuration module_path |> hash_of_content
+      in
       let qualifier = ModulePath.qualifier module_path in
       SharedMemoryHashes.remove_batch (SharedMemoryHashes.KeySet.singleton qualifier);
       SharedMemoryHashes.add qualifier hash
@@ -84,7 +86,7 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
   let changed_paths new_module_paths =
     let changed_path module_path =
       let old_hash = SharedMemoryHashes.get (ModulePath.qualifier module_path) in
-      let path = ModulePath.full_path ~configuration module_path in
+      let path = ArtifactPaths.artifact_path_of_module_path ~configuration module_path in
       let current_hash = hash_of_content path in
       if Option.equal HashResult.equal old_hash (Some current_hash) then
         None
@@ -118,7 +120,7 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
     |> List.filter ~f:(fun module_path ->
            let key = ModulePath.raw module_path in
            not (Hash_set.mem tracked_set key))
-    |> List.map ~f:(ModulePath.full_path ~configuration)
+    |> List.map ~f:(ArtifactPaths.artifact_path_of_module_path ~configuration)
   in
   Statistics.performance ~name:"computed locally changed files" ~timer ();
   changed_paths @ removed_paths

@@ -76,7 +76,7 @@ let test_basic context =
   let assert_module_path ~module_tracker ~expected reference =
     match ModuleTracker.ReadOnly.look_up_qualifier module_tracker reference with
     | SourceCodeApi.ModuleLookup.Explicit module_path ->
-        let actual = ModulePath.full_path ~configuration module_path in
+        let actual = ArtifactPaths.artifact_path_of_module_path ~configuration module_path in
         assert_equal
           ~cmp:[%compare.equal: ArtifactPath.t]
           ~printer:ArtifactPath.show

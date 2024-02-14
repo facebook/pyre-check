@@ -3048,7 +3048,9 @@ module ScratchProject = struct
     let raw =
       let { Configuration.Analysis.local_root; _ } = configuration in
       let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
-      ModulePath.Raw.create ~configuration (ArtifactPath.create path_in_local_root)
+      ArtifactPaths.raw_module_path_of_artifact_path
+        ~configuration
+        (ArtifactPath.create path_in_local_root)
       |> Option.value_exn
     in
     ModulePath.create_for_testing ~should_type_check raw

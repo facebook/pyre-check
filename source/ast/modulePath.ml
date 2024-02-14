@@ -43,20 +43,6 @@ module Raw = struct
 
   let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
 
-  let create ~configuration path =
-    let search_paths = Configuration.Analysis.search_paths configuration in
-    SearchPath.search_for_path ~search_paths path
-    >>| fun SearchPath.{ relative_path; priority } -> { relative = relative_path; priority }
-
-
-  let full_path ~configuration { relative; priority; _ } =
-    let root =
-      Configuration.Analysis.search_paths configuration
-      |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
-    in
-    PyrePath.create_relative ~root ~relative |> ArtifactPath.create
-
-
   (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
      only. Do NOT use it on aribitrary SourceFiles. *)
   let priority_aware_compare
@@ -173,51 +159,6 @@ let qualifier_from_relative_path relative =
       |> Reference.create_from_list
 
 
-let is_internal_path
-    ~configuration:{ Configuration.Analysis.filter_directories; ignore_all_errors; _ }
-    path
-  =
-  let original_raw_path =
-    let raw_path = ArtifactPath.raw path in
-    (* NOTE(grievejia): Symlink are generally not followed by the type checker. This usage comes
-       from legacy code and should not be replicated elsewhere. *)
-    PyrePath.follow_symbolic_link raw_path |> Option.value ~default:raw_path
-  in
-  let source_path_is_covered item =
-    PyrePath.equal item original_raw_path
-    || PyrePath.directory_contains ~directory:item original_raw_path
-  in
-  let filter_directories = Option.value filter_directories ~default:[] in
-  let ignore_all_errors = Option.value ignore_all_errors ~default:[] in
-  List.exists filter_directories ~f:source_path_is_covered
-  && not (List.exists ignore_all_errors ~f:source_path_is_covered)
-
-
-let should_type_check_path
-    ~configuration:({ Configuration.Analysis.analyze_external_sources; _ } as configuration)
-    path
-  =
-  analyze_external_sources || is_internal_path ~configuration path
-
-
-let create ~configuration:({ Configuration.Analysis.excludes; _ } as configuration) path =
-  let absolute_path = ArtifactPath.raw path |> PyrePath.absolute in
-  if List.exists excludes ~f:(fun regexp -> Str.string_match regexp absolute_path 0) then
-    None
-  else
-    Raw.create ~configuration path
-    >>= fun (Raw.{ relative; _ } as raw) ->
-    let qualifier =
-      match Configuration.Analysis.find_extension configuration path with
-      | Some { Configuration.Extension.include_suffix_in_module_qualifier; _ }
-        when include_suffix_in_module_qualifier ->
-          (* Ensure extension is not stripped when creating qualifier *)
-          qualifier_from_relative_path (relative ^ ".py")
-      | _ -> qualifier_from_relative_path relative
-    in
-    Some { raw; qualifier; should_type_check = should_type_check_path ~configuration path }
-
-
 let qualifier { qualifier; _ } = qualifier
 
 let raw { raw; _ } = raw
@@ -230,8 +171,6 @@ let create_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
   { raw; qualifier; should_type_check }
 
-
-let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
 
 let is_stub { raw = { Raw.relative; _ }; _ } = PyrePath.is_path_python_stub relative
 
