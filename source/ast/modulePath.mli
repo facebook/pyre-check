@@ -12,6 +12,8 @@ module Raw : sig
   }
   [@@deriving compare, equal, hash, sexp]
 
+  val priority_aware_compare : configuration:Configuration.Analysis.t -> t -> t -> int
+
   val create : configuration:Configuration.Analysis.t -> ArtifactPath.t -> t option
 
   val full_path : configuration:Configuration.Analysis.t -> t -> ArtifactPath.t
@@ -41,9 +43,6 @@ val create_for_testing : should_type_check:bool -> Raw.t -> t
 val qualifier_from_relative_path : string -> Reference.t
 
 val full_path : configuration:Configuration.Analysis.t -> t -> ArtifactPath.t
-
-(* Expose for testing *)
-val same_module_compare : configuration:Configuration.Analysis.t -> t -> t -> int
 
 val is_stub : t -> bool
 

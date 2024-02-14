@@ -119,6 +119,18 @@ end
 
 module RawModulePathSet = Stdlib.Set.Make (ModulePath.Raw)
 
+(* NOTE: This comparator is expected to operate on module paths that share the same qualifier and
+   should_type_check flag. Do NOT use it on aribitrary module paths. *)
+(* TODO: Find a way to avoid having this function to start with, possibly by cachings raw module
+   paths instead of module paths. *)
+let same_module_compare
+    ~configuration
+    { ModulePath.raw = left_raw; _ }
+    { ModulePath.raw = right_raw; _ }
+  =
+  ModulePath.Raw.priority_aware_compare ~configuration left_raw right_raw
+
+
 module ModulePaths = struct
   module Finder = struct
     type t = {
@@ -277,7 +289,7 @@ module ModulePaths = struct
                |> Option.value ~default:[])
         |> Stdlib.List.flatten
       in
-      List.sort files ~compare:(ModulePath.same_module_compare ~configuration)
+      List.sort files ~compare:(same_module_compare ~configuration)
 
 
     let find_submodule_paths ~lazy_finder qualifier =
@@ -409,7 +421,7 @@ module ExplicitModules = struct
       let rec insert sofar = function
         | [] -> List.rev_append sofar [to_insert]
         | current_path :: rest as existing -> (
-            match ModulePath.same_module_compare ~configuration to_insert current_path with
+            match same_module_compare ~configuration to_insert current_path with
             | 0 ->
                 (* We have the following precondition for files that are in the same module: *)
                 (* `same_module_compare a b = 0` implies `equal a b` *)
@@ -433,7 +445,7 @@ module ExplicitModules = struct
       let rec remove sofar = function
         | [] -> existing_paths
         | current_path :: rest -> (
-            match ModulePath.same_module_compare ~configuration to_remove current_path with
+            match same_module_compare ~configuration to_remove current_path with
             | 0 ->
                 let () =
                   (* For removed files, we only check for equality on relative path & priority. *)
