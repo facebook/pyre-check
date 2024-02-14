@@ -11,31 +11,26 @@ open Core
 open Pyre
 
 module Raw = struct
-  module T = struct
-    type t = {
-      relative: string;
-      priority: int;
-    }
-    [@@deriving compare, equal, hash, sexp]
+  type t = {
+    relative: string;
+    priority: int;
+  }
+  [@@deriving compare, equal, hash, sexp]
 
-    let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
+  let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
 
-    let create ~configuration path =
-      let search_paths = Configuration.Analysis.search_paths configuration in
-      SearchPath.search_for_path ~search_paths path
-      >>| fun SearchPath.{ relative_path; priority } -> { relative = relative_path; priority }
+  let create ~configuration path =
+    let search_paths = Configuration.Analysis.search_paths configuration in
+    SearchPath.search_for_path ~search_paths path
+    >>| fun SearchPath.{ relative_path; priority } -> { relative = relative_path; priority }
 
 
-    let full_path ~configuration { relative; priority; _ } =
-      let root =
-        Configuration.Analysis.search_paths configuration
-        |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
-      in
-      PyrePath.create_relative ~root ~relative |> ArtifactPath.create
-  end
-
-  include T
-  module Set = Stdlib.Set.Make (T)
+  let full_path ~configuration { relative; priority; _ } =
+    let root =
+      Configuration.Analysis.search_paths configuration
+      |> fun search_paths -> List.nth_exn search_paths priority |> SearchPath.get_root
+    in
+    PyrePath.create_relative ~root ~relative |> ArtifactPath.create
 end
 
 module T = struct

@@ -117,6 +117,8 @@ module Overlay = struct
     { parent with code_of_module_path }
 end
 
+module RawModulePathSet = Stdlib.Set.Make (ModulePath.Raw)
+
 module ModulePaths = struct
   module Finder = struct
     type t = {
@@ -283,7 +285,7 @@ module ModulePaths = struct
       |> Reference.Map.Tree.data
       |> List.concat
       |> List.map ~f:ModulePath.raw
-      |> ModulePath.Raw.Set.of_list
+      |> RawModulePathSet.of_list
   end
 
   module Update = struct
@@ -654,14 +656,14 @@ module ImplicitModules = struct
     (* This represents the raw paths of all *explicit* children. We treat a namespace package as
        importable only when it has regular python files as children, i.e. when this set is
        nonempty. *)
-    type t = ModulePath.Raw.Set.t [@@deriving compare]
+    type t = RawModulePathSet.t [@@deriving compare]
 
-    let empty = ModulePath.Raw.Set.empty
+    let empty = RawModulePathSet.empty
 
     let description = "ImplicitModules"
 
     let should_treat_as_importable explicit_children =
-      not (ModulePath.Raw.Set.is_empty explicit_children)
+      not (RawModulePathSet.is_empty explicit_children)
   end
 
   module Update = struct
@@ -704,14 +706,14 @@ module ImplicitModules = struct
                 previous_existence
               else (* Get the previous state and new state *)
                 let previous_explicit_children =
-                  find qualifier |> Option.value ~default:ModulePath.Raw.Set.empty
+                  find qualifier |> Option.value ~default:RawModulePathSet.empty
                 in
                 let next_explicit_children =
                   match module_path_update with
                   | ModulePaths.Update.NewOrChanged _ ->
-                      ModulePath.Raw.Set.add raw_child previous_explicit_children
+                      RawModulePathSet.add raw_child previous_explicit_children
                   | ModulePaths.Update.Remove _ ->
-                      ModulePath.Raw.Set.remove raw_child previous_explicit_children
+                      RawModulePathSet.remove raw_child previous_explicit_children
                 in
                 (* update implicit_modules as a side effect *)
                 let () = set qualifier next_explicit_children in
@@ -748,8 +750,8 @@ module ImplicitModules = struct
           | None -> ()
           | Some (parent_qualifier, raw) ->
               Hashtbl.update implicit_modules parent_qualifier ~f:(function
-                  | None -> ModulePath.Raw.Set.singleton raw
-                  | Some paths -> ModulePath.Raw.Set.add raw paths)
+                  | None -> RawModulePathSet.singleton raw
+                  | Some paths -> RawModulePathSet.add raw paths)
         in
         Hashtbl.iter explicit_modules ~f:(List.iter ~f:process_module_path);
         implicit_modules
@@ -901,7 +903,7 @@ module Layouts = struct
       type nonrec t = t
 
       module Serialized = struct
-        type t = (Reference.t * ModulePath.t list) list * (Reference.t * ModulePath.Raw.Set.t) list
+        type t = (Reference.t * ModulePath.t list) list * (Reference.t * RawModulePathSet.t) list
 
         let prefix = Hack_parallel.Std.Prefix.make ()
 
