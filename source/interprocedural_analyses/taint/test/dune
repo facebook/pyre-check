@@ -26,6 +26,7 @@
   forwardAnalysisTest
   backwardAnalysisTest
   modelTest
+  modelInvalidTest
   modelVerificationErrorTest
   missingFlowsTest
   modelVerifierTest
@@ -33,6 +34,7 @@
   sanitizeTransformTest
   sanitizeTransformSetTest
   modelQueryExecutionTest
+  modelQueryParsingTest
   globalVariableModelQueryTest)
  (modules :standard \ testHelper)
  (preprocess
