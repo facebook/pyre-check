@@ -36,12 +36,6 @@ val relative : t -> string
 
 val should_type_check : t -> bool
 
-val create_for_in_memory_scratch_project
-  :  configuration:Configuration.Analysis.t ->
-  relative:string ->
-  should_type_check:bool ->
-  t
-
 val create_for_testing : should_type_check:bool -> Raw.t -> t
 
 val qualifier_from_relative_path : string -> Reference.t

@@ -3044,6 +3044,16 @@ module ScratchProject = struct
     }
   end
 
+  let module_path_for_in_memory_scratch_project ~configuration ~relative ~should_type_check =
+    let raw =
+      let { Configuration.Analysis.local_root; _ } = configuration in
+      let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
+      ModulePath.Raw.create ~configuration (ArtifactPath.create path_in_local_root)
+      |> Option.value_exn
+    in
+    ModulePath.create_for_testing ~should_type_check raw
+
+
   let setup
       ?(track_dependencies = true)
       ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
@@ -3111,10 +3121,7 @@ module ScratchProject = struct
           let to_in_memory_source (relative, content) ~should_type_check =
             let code = trim_extra_indentation content in
             let module_path =
-              ModulePath.create_for_in_memory_scratch_project
-                ~configuration
-                ~relative
-                ~should_type_check
+              module_path_for_in_memory_scratch_project ~configuration ~relative ~should_type_check
             in
             module_path, code
           in

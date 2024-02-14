@@ -161,15 +161,6 @@ let create_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
   { raw; qualifier; should_type_check }
 
 
-let create_for_in_memory_scratch_project ~configuration ~relative ~should_type_check =
-  let raw =
-    let { Configuration.Analysis.local_root; _ } = configuration in
-    let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
-    Raw.create ~configuration (ArtifactPath.create path_in_local_root) |> Option.value_exn
-  in
-  create_for_testing ~should_type_check raw
-
-
 let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw
 
 (* NOTE: This comparator is expected to operate on SourceFiles that are mapped to the same module
