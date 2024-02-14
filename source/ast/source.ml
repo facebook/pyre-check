@@ -305,7 +305,9 @@ let create
     ?(priority = 0)
     statements
   =
-  let module_path = ModulePath.create_for_testing ~relative ~should_type_check ~priority in
+  let module_path =
+    { ModulePath.Raw.relative; priority } |> ModulePath.create_for_testing ~should_type_check
+  in
   create_from_module_path ~typecheck_flags ~module_path statements
 
 

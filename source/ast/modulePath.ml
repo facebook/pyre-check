@@ -156,14 +156,9 @@ let relative { raw = { Raw.relative; _ }; _ } = relative
 
 let should_type_check { should_type_check; _ } = should_type_check
 
-let create_from_raw_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
+let create_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
   { raw; qualifier; should_type_check }
-
-
-let create_for_testing ~relative ~should_type_check ~priority =
-  let raw = Raw.{ relative; priority } in
-  create_from_raw_for_testing ~should_type_check raw
 
 
 let create_for_in_memory_scratch_project ~configuration ~relative ~should_type_check =
@@ -172,7 +167,7 @@ let create_for_in_memory_scratch_project ~configuration ~relative ~should_type_c
     let path_in_local_root = PyrePath.create_relative ~root:local_root ~relative in
     Raw.create ~configuration (ArtifactPath.create path_in_local_root) |> Option.value_exn
   in
-  create_from_raw_for_testing ~should_type_check raw
+  create_for_testing ~should_type_check raw
 
 
 let full_path ~configuration { raw; _ } = Raw.full_path ~configuration raw

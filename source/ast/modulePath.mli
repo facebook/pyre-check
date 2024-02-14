@@ -42,7 +42,7 @@ val create_for_in_memory_scratch_project
   should_type_check:bool ->
   t
 
-val create_for_testing : relative:string -> should_type_check:bool -> priority:int -> t
+val create_for_testing : should_type_check:bool -> Raw.t -> t
 
 val qualifier_from_relative_path : string -> Reference.t
 
