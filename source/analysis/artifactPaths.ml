@@ -18,7 +18,7 @@ let artifact_path_of_qualifier ~source_code_api qualifier =
   |> Option.map ~f:(Ast.ModulePath.full_path ~configuration)
 
 
-let module_path_of_artifact_path ~source_code_api path =
+let tracked_module_path_of_artifact_path ~source_code_api path =
   let configuration = SourceCodeApi.controls source_code_api |> EnvironmentControls.configuration in
   let open Option in
   Ast.ModulePath.create ~configuration path

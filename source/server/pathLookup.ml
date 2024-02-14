@@ -20,7 +20,8 @@ open Base
 
 let qualifiers_of_source_path ~lookup_artifact ~source_code_api path =
   lookup_artifact path
-  |> List.filter_map ~f:(Analysis.ArtifactPaths.module_path_of_artifact_path ~source_code_api)
+  |> List.filter_map
+       ~f:(Analysis.ArtifactPaths.tracked_module_path_of_artifact_path ~source_code_api)
   |> List.map ~f:Ast.ModulePath.qualifier
 
 

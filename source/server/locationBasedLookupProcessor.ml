@@ -35,7 +35,7 @@ let get_module_path ~type_environment ~build_system path =
       let source_code_api =
         TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
       in
-      match ArtifactPaths.module_path_of_artifact_path ~source_code_api analysis_path with
+      match ArtifactPaths.tracked_module_path_of_artifact_path ~source_code_api analysis_path with
       | Some module_path -> Result.Ok module_path
       | None -> Result.Error FileNotFound)
 
