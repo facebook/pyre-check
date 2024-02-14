@@ -1,0 +1,4 @@
+@generated
+Call dependencies
+closure_models.$toplevel (fun) -> []
+closure_models.inner_sink_wrapper (fun) -> [$local_closure_models?inner_sink_wrapper$inner_sink (fun) _test_source (fun)]
