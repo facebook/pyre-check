@@ -136,8 +136,8 @@ let assert_all_dependencies ~context ~expected { Sourcedb.all_dependencies; _ } 
 
 let test_sourcedb_from_manifest =
   [
-    ("empty sourcedb"
-    >:: fun context ->
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
     let sourcedb =
       Sourcedb.create_from_manifests
         ~source_manifests:[]
@@ -149,8 +149,8 @@ let test_sourcedb_from_manifest =
     assert_lookup_dependency ~context sourcedb "foo.py" ~expected:None;
     assert_all_sources ~context sourcedb ~expected:[];
     assert_all_dependencies ~context sourcedb ~expected:[]);
-    ("no overlap"
-    >:: fun context ->
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
     let sourcedb =
       Sourcedb.create_from_manifests
         ~source_manifests:[[{ Manifest.Item.artifact_path = "foo.py"; source_path = "src/foo.py" }]]
@@ -167,8 +167,8 @@ let test_sourcedb_from_manifest =
     assert_lookup_dependency ~context sourcedb "baz.pyi" ~expected:(Some "src/baz.pyi");
     assert_all_sources ~context sourcedb ~expected:["foo.py"];
     assert_all_dependencies ~context sourcedb ~expected:["bar.py"; "baz.pyi"]);
-    ("with overlap"
-    >:: fun context ->
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
     let sourcedb =
       Sourcedb.create_from_manifests
         ~source_manifests:
@@ -188,8 +188,8 @@ let test_sourcedb_from_manifest =
     assert_lookup_dependency ~context sourcedb "bar.py" ~expected:(Some "src/d1/bar.py");
     assert_all_sources ~context sourcedb ~expected:["foo.py"];
     assert_all_dependencies ~context sourcedb ~expected:["bar.py"]);
-    ("Dependency prioritizes typeshed"
-    >:: fun context ->
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
     let sourcedb =
       Sourcedb.create_from_manifests
         ~source_manifests:[]
@@ -205,7 +205,84 @@ let test_sourcedb_from_manifest =
   ]
 
 
+let test_sourcedb_from_argfile =
+  let assert_json_format_error = function
+    | Result.Error (CheckCommandInput.Error.JsonFormatError _) -> ()
+    | _ -> assert_failure "expected json format error"
+  in
+  let assert_json_parse_error = function
+    | Result.Error (CheckCommandInput.Error.JsonParseError _) -> ()
+    | _ -> assert_failure "expected json parse error"
+  in
+  let assert_file_read_error = function
+    | Result.Error (CheckCommandInput.Error.FileReadError _) -> ()
+    | _ -> assert_failure "expect file read error"
+  in
+  [
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
+    let root = setup_scratch_directory ~context [] in
+    PyrePath.create_relative ~root ~relative:"nonexistent"
+    |> CheckCommandInput.create_from_argument_file
+    |> assert_file_read_error);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
+    let relative = "test.json" in
+    let root = setup_scratch_directory ~context [relative, "derp"] in
+    PyrePath.create_relative ~root ~relative
+    |> CheckCommandInput.create_from_argument_file
+    |> assert_json_parse_error);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
+    let relative = "test.json" in
+    let root = setup_scratch_directory ~context [relative, "[]"] in
+    PyrePath.create_relative ~root ~relative
+    |> CheckCommandInput.create_from_argument_file
+    |> assert_json_format_error);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ fun context ->
+    let root = bracket_tmpdir context |> PyrePath.create_absolute in
+    let source_manifest_path = PyrePath.create_relative ~root ~relative:"source.manifest" in
+    File.create source_manifest_path ~content:{|[["foo.py", "src/foo.py", "derp"]]|} |> File.write;
+    let dependency_manifest_path = PyrePath.create_relative ~root ~relative:"dependency.manifest" in
+    File.create dependency_manifest_path ~content:{|[["bar.py", "src/bar.py", "derp"]]|}
+    |> File.write;
+    let argfile_path = PyrePath.create_relative ~root ~relative:"args.json" in
+    File.create
+      argfile_path
+      ~content:
+        (Stdlib.Format.asprintf
+           {|{ "sources": ["%a"], "dependencies": ["%a"] }|}
+           PyrePath.pp
+           source_manifest_path
+           PyrePath.pp
+           dependency_manifest_path)
+    |> File.write;
+    let { CheckCommandInput.get_source_db; _ } =
+      match CheckCommandInput.create_from_argument_file argfile_path with
+      | Result.Error error ->
+          let message =
+            Stdlib.Format.asprintf
+              "Error loading check input argfile: %a"
+              Sexp.pp_hum
+              (CheckCommandInput.Error.sexp_of_t error)
+          in
+          assert_failure message
+      | Result.Ok loaded -> loaded
+    in
+    let source_db = get_source_db () in
+    assert_lookup_source ~context source_db "foo.py" ~expected:(Some "src/foo.py");
+    assert_lookup_dependency ~context source_db "bar.py" ~expected:(Some "src/bar.py");
+    assert_all_sources ~context source_db ~expected:["foo.py"];
+    assert_all_dependencies ~context source_db ~expected:["bar.py"]);
+  ]
+
+
 let () =
   "check_options"
-  >::: [test_list test_manifest_loading; test_list test_sourcedb_from_manifest]
+  >::: [
+         test_list test_manifest_loading;
+         test_list test_sourcedb_from_manifest;
+         test_list test_sourcedb_from_argfile;
+       ]
   |> Test.run

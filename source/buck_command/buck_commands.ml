@@ -10,4 +10,5 @@ module Check = CheckCommand
 module Testing = struct
   module Manifest = Manifest
   module Sourcedb = Sourcedb
+  module CheckCommandInput = CheckCommandInput
 end
