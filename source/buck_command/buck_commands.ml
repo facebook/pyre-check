@@ -6,3 +6,7 @@
  *)
 
 module Check = CheckCommand
+
+module Testing = struct
+  module Manifest = Manifest
+end
