@@ -130,6 +130,16 @@ let test_check_walrus_operator =
               reveal_type(a)
             |}
            ["Revealed type [-1]: Revealed type for `a` is `int`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+            reveal_type(a := 5)
+            reveal_type(a)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `a := 5` is `typing_extensions.Literal[5]`.";
+             "Revealed type [-1]: Revealed type for `a` is `unknown`.";
+           ];
     ]
 
 
