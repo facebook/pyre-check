@@ -157,6 +157,7 @@ let save_results_to_directory
     ~fixpoint_state
     ~errors
     ~cache
+    ~file_coverage
   =
   let timer = Timer.start () in
   let root = local_root |> PyrePath.absolute in
@@ -236,10 +237,16 @@ let save_results_to_directory
     Yojson.Safe.to_channel out_channel metadata_json;
     Out_channel.close out_channel
   in
+  let save_file_coverage () =
+    FileCoverage.write_to_file
+      ~path:(PyrePath.append result_directory ~element:"file_coverage.txt")
+      file_coverage
+  in
   remove_existing_models ();
   save_models ();
   save_metadata ();
   save_errors ();
+  save_file_coverage ();
   Log.info "Analysis results were written to `%s`." (PyrePath.absolute result_directory);
   Statistics.performance
     ~name:"Wrote analysis results"

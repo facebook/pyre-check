@@ -40,3 +40,4 @@ module TaintFixpoint = TaintFixpoint
 module Registry = Registry
 module Cache = Cache
 module CallModel = CallModel
+module FileCoverage = FileCoverage

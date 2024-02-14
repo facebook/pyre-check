@@ -50,4 +50,5 @@ val save_results_to_directory
   fixpoint_state:TaintFixpoint.t ->
   errors:Yojson.Safe.t list ->
   cache:Cache.t ->
+  file_coverage:FileCoverage.t ->
   unit

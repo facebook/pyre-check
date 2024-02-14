@@ -824,6 +824,21 @@ let run_taint_analysis
       ~shared_models
   in
 
+  Log.info "Computing file coverage...";
+  let timer = Timer.start () in
+  let file_coverage =
+    FileCoverage.add_files_from_callables
+      ~resolution:(Analysis.TypeEnvironment.ReadOnly.global_resolution read_only_environment)
+      ~resolve_module_path
+      ~callables:callables_to_analyze
+      FileCoverage.empty
+  in
+  Statistics.performance
+    ~name:"Finished computing file coverage"
+    ~phase_name:"Computing file coverage"
+    ~timer
+    ();
+
   let callables =
     Target.Set.of_list (List.rev_append (Registry.targets initial_models) callables_to_analyze)
   in
@@ -884,7 +899,8 @@ let run_taint_analysis
           ~model_verification_errors
           ~fixpoint_state
           ~errors
-          ~cache;
+          ~cache
+          ~file_coverage;
         []
     | _ -> errors
   in
