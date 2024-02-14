@@ -275,6 +275,15 @@ module PythonVersion = struct
   }
   [@@deriving sexp, compare, hash, yojson, equal]
 
+  let create
+      ?(major = default_python_major_version)
+      ?(minor = default_python_minor_version)
+      ?(micro = default_python_micro_version)
+      ()
+    =
+    { major; minor; micro }
+
+
   let default =
     {
       major = default_python_major_version;

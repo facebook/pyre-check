@@ -7,10 +7,17 @@
 
 open Base
 
-type t = { get_source_db: unit -> Sourcedb.t }
+type t = {
+  get_source_db: unit -> Sourcedb.t;
+  get_python_version: unit -> Configuration.PythonVersion.t;
+}
 
-let create_for_testing ?(get_source_db = fun () -> Sourcedb.create_for_testing ()) () =
-  { get_source_db }
+let create_for_testing
+    ?(get_source_db = fun () -> Sourcedb.create_for_testing ())
+    ?(get_python_version = fun () -> Configuration.PythonVersion.default)
+    ()
+  =
+  { get_source_db; get_python_version }
 
 
 module Error = struct
@@ -28,6 +35,10 @@ module Error = struct
         message: string;
       }
     | ManifestError of Manifest.Error.t
+    | VersionFormatError of {
+        py_version: string;
+        message: string;
+      }
   [@@deriving sexp, compare]
 end
 
@@ -36,9 +47,29 @@ module Arguments = struct
     sources: string list; [@default []]
     dependencies: string list; [@default []]
     typeshed: string option; [@default None]
+    py_version: string;
   }
   [@@deriving of_yojson { strict = false }]
 end
+
+let parse_py_version py_version =
+  let do_parse ~major ?minor ?micro () =
+    try
+      let major = Int.of_string major in
+      let minor = Option.map minor ~f:Int.of_string in
+      let micro = Option.map micro ~f:Int.of_string in
+      Result.Ok (Configuration.PythonVersion.create ~major ?minor ?micro ())
+    with
+    | Failure message -> Result.Error (Error.VersionFormatError { py_version; message })
+  in
+  match String.split py_version ~on:'.' with
+  | [major] -> do_parse ~major ()
+  | [major; minor] -> do_parse ~major ~minor ()
+  | [major; minor; micro] -> do_parse ~major ~minor ~micro ()
+  | _ ->
+      Result.Error
+        (Error.VersionFormatError { py_version; message = "Not of the form X or X.Y or X.Y.Z" })
+
 
 let load_manifests filenames =
   let rec load sofar = function
@@ -51,7 +82,7 @@ let load_manifests filenames =
   load [] filenames
 
 
-let create_from_arguments { Arguments.sources; dependencies; typeshed } =
+let create_from_arguments { Arguments.sources; dependencies; typeshed; py_version } =
   let open Result.Monad_infix in
   load_manifests sources
   >>= fun source_manifests ->
@@ -59,10 +90,13 @@ let create_from_arguments { Arguments.sources; dependencies; typeshed } =
   >>= fun dependency_manifests ->
   load_manifests (Option.to_list typeshed)
   >>= fun typeshed_manifests ->
+  parse_py_version py_version
+  >>= fun parsed_python_version ->
   Result.Ok
     {
       get_source_db =
         Sourcedb.create_from_manifests ~source_manifests ~dependency_manifests ~typeshed_manifests;
+      get_python_version = (fun () -> parsed_python_version);
     }
 
 

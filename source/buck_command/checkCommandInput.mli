@@ -20,12 +20,25 @@ module Error : sig
         message: string;
       }
     | ManifestError of Manifest.Error.t
+    | VersionFormatError of {
+        py_version: string;
+        message: string;
+      }
   [@@deriving sexp, compare]
 end
 
-type t = { get_source_db: unit -> Sourcedb.t }
+type t = {
+  get_source_db: unit -> Sourcedb.t;
+  get_python_version: unit -> Configuration.PythonVersion.t;
+}
 
-val create_for_testing : ?get_source_db:(unit -> Sourcedb.t) -> unit -> t
+val parse_py_version : string -> (Configuration.PythonVersion.t, Error.t) result
+
+val create_for_testing
+  :  ?get_source_db:(unit -> Sourcedb.t) ->
+  ?get_python_version:(unit -> Configuration.PythonVersion.t) ->
+  unit ->
+  t
 
 val create_from_argument_json : Yojson.Safe.t -> (t, Error.t) Result.t
 

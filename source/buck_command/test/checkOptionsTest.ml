@@ -205,6 +205,15 @@ let test_sourcedb_from_manifest =
   ]
 
 
+let assert_python_version ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: Configuration.PythonVersion.t]
+    ~printer:(fun v -> [%sexp_of: Configuration.PythonVersion.t] v |> Sexp.to_string_hum)
+    expected
+    actual
+
+
 let test_sourcedb_from_argfile =
   let assert_json_format_error = function
     | Result.Error (CheckCommandInput.Error.JsonFormatError _) -> ()
@@ -252,13 +261,13 @@ let test_sourcedb_from_argfile =
       argfile_path
       ~content:
         (Stdlib.Format.asprintf
-           {|{ "sources": ["%a"], "dependencies": ["%a"] }|}
+           {|{ "sources": ["%a"], "dependencies": ["%a"], "py_version": "3.10.0" }|}
            PyrePath.pp
            source_manifest_path
            PyrePath.pp
            dependency_manifest_path)
     |> File.write;
-    let { CheckCommandInput.get_source_db; _ } =
+    let { CheckCommandInput.get_source_db; get_python_version; _ } =
       match CheckCommandInput.create_from_argument_file argfile_path with
       | Result.Error error ->
           let message =
@@ -274,7 +283,48 @@ let test_sourcedb_from_argfile =
     assert_lookup_source ~context source_db "foo.py" ~expected:(Some "src/foo.py");
     assert_lookup_dependency ~context source_db "bar.py" ~expected:(Some "src/bar.py");
     assert_all_sources ~context source_db ~expected:["foo.py"];
-    assert_all_dependencies ~context source_db ~expected:["bar.py"]);
+    assert_all_dependencies ~context source_db ~expected:["bar.py"];
+    let version = get_python_version () in
+    assert_python_version
+      ~context
+      version
+      ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:10 ~micro:0 ()));
+  ]
+
+
+let test_parse_py_version =
+  let assert_parsed ~expected input context =
+    match CheckCommandInput.parse_py_version input with
+    | Result.Error error ->
+        let message =
+          Stdlib.Format.asprintf
+            "Error parsing py_version: %a"
+            Sexp.pp_hum
+            (CheckCommandInput.Error.sexp_of_t error)
+        in
+        assert_failure message
+    | Result.Ok actual -> assert_python_version ~context ~expected actual
+  in
+  let assert_not_parsed input _ =
+    match CheckCommandInput.parse_py_version input with
+    | Result.Ok _ ->
+        let message = Stdlib.Format.sprintf "Unexpected py_version parsing success on: %s" input in
+        assert_failure message
+    | Result.Error _ -> ()
+  in
+  [
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed "3" ~expected:(Configuration.PythonVersion.create ~major:3 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed "3.8" ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed
+         "3.8.6"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ~micro:6 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "";
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "abc";
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "python3.10";
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "3.10python";
   ]
 
 
@@ -284,5 +334,6 @@ let () =
          test_list test_manifest_loading;
          test_list test_sourcedb_from_manifest;
          test_list test_sourcedb_from_argfile;
+         test_list test_parse_py_version;
        ]
   |> Test.run

@@ -76,6 +76,8 @@ module PythonVersion : sig
   }
   [@@deriving sexp, compare, hash, yojson, equal]
 
+  val create : ?major:int -> ?minor:int -> ?micro:int -> unit -> t
+
   val default : t
 end
 

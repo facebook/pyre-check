@@ -25,6 +25,8 @@ let get_error_message = function
         Option.value_map path ~default:"" ~f:(Stdlib.Format.asprintf "file `%a`" PyrePath.pp)
       in
       Stdlib.Format.sprintf "Wrong JSON format %s: %s" filename message
+  | CheckCommandInput.Error.VersionFormatError { py_version; message } ->
+      Stdlib.Format.sprintf "Cannot parse py_version string `%s`: %s" py_version message
 
 
 let run_check_command input_argument_file =
