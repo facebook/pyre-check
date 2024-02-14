@@ -26,7 +26,7 @@ type t = {
   qualifier: Reference.t;
   should_type_check: bool;
 }
-[@@deriving compare, eq, hash, sexp]
+[@@deriving compare, equal, hash, sexp]
 
 include Hashable with type t := t
 
@@ -64,5 +64,3 @@ val is_init : t -> bool
 val is_internal_path : configuration:Configuration.Analysis.t -> ArtifactPath.t -> bool
 
 val expand_relative_import : from:Reference.t -> t -> Reference.t
-
-val equal_raw_paths : t -> t -> bool

@@ -16,11 +16,9 @@ module Raw = struct
       relative: string;
       priority: int;
     }
-    [@@deriving compare, hash, sexp]
+    [@@deriving compare, equal, hash, sexp]
 
     let pp formatter { relative; priority } = Format.fprintf formatter "%d/%s" priority relative
-
-    let equal = [%compare.equal: t]
 
     let create ~configuration path =
       let search_paths = Configuration.Analysis.search_paths configuration in
@@ -289,6 +287,3 @@ let expand_relative_import ~from { qualifier; raw = { Raw.relative; _ }; _ } =
           Reference.empty
       in
       Reference.combine prefix postfix
-
-
-let equal_raw_paths { raw = left; _ } { raw = right; _ } = Raw.equal left right

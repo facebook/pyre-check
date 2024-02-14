@@ -425,6 +425,9 @@ module ExplicitModules = struct
 
 
     let remove_module_path ~configuration ~to_remove existing_paths =
+      let equal_raw_paths { ModulePath.raw = left; _ } { ModulePath.raw = right; _ } =
+        ModulePath.Raw.equal left right
+      in
       let rec remove sofar = function
         | [] -> existing_paths
         | current_path :: rest -> (
@@ -435,7 +438,7 @@ module ExplicitModules = struct
                   (* There's a corner case (where an in-project file's symlink gas been removed)
                      that may cause `removed` to have a different `should_type_check` flag, since we
                      cannot follow a deleted symlink. *)
-                  if not (ModulePath.equal_raw_paths to_remove current_path) then
+                  if not (equal_raw_paths to_remove current_path) then
                     fail_on_module_path_invariant
                       ~description:
                         "Module paths that compare with 0 should have same raw path when removing"
