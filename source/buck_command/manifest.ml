@@ -31,6 +31,8 @@ module Item = struct
   }
   [@@deriving sexp, compare]
 
+  let to_pair { artifact_path; source_path } = artifact_path, source_path
+
   module Raw = struct
     type t = string * string * string [@@deriving of_yojson]
   end
@@ -61,3 +63,6 @@ let load_from_file path =
   | exception Yojson.Json_error message ->
       Result.Error (Error.JsonParseError { path = Some path; message })
   | exception Sys_error message -> Result.Error (Error.FileReadError { path; message })
+
+
+let to_alist = List.map ~f:Item.to_pair

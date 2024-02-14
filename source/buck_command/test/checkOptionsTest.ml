@@ -96,4 +96,116 @@ let test_manifest_loading =
   ]
 
 
-let () = "check_options" >::: [test_list test_manifest_loading] |> Test.run
+let assert_equal_string_option ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: string option]
+    ~printer:(fun value -> [%sexp_of: string option] value |> Sexp.to_string_hum)
+    expected
+    actual
+
+
+let assert_equal_string_list ~context ~expected actual =
+  assert_equal
+    ~ctxt:context
+    ~cmp:[%compare.equal: string list]
+    ~printer:(fun value -> [%sexp_of: string list] value |> Sexp.to_string_hum)
+    expected
+    actual
+
+
+let assert_lookup_source ~context ~expected { Sourcedb.lookup_source; _ } key =
+  let actual = lookup_source key in
+  assert_equal_string_option ~context ~expected actual
+
+
+let assert_lookup_dependency ~context ~expected { Sourcedb.lookup_dependency; _ } key =
+  let actual = lookup_dependency key in
+  assert_equal_string_option ~context ~expected actual
+
+
+let assert_all_sources ~context ~expected { Sourcedb.all_sources; _ } =
+  let actual = all_sources () in
+  assert_equal_string_list ~context ~expected actual
+
+
+let assert_all_dependencies ~context ~expected { Sourcedb.all_dependencies; _ } =
+  let actual = all_dependencies () in
+  assert_equal_string_list ~context ~expected actual
+
+
+let test_sourcedb_from_manifest =
+  [
+    ("empty sourcedb"
+    >:: fun context ->
+    let sourcedb =
+      Sourcedb.create_from_manifests
+        ~source_manifests:[]
+        ~dependency_manifests:[]
+        ~typeshed_manifests:[]
+        ()
+    in
+    assert_lookup_source ~context sourcedb "foo.py" ~expected:None;
+    assert_lookup_dependency ~context sourcedb "foo.py" ~expected:None;
+    assert_all_sources ~context sourcedb ~expected:[];
+    assert_all_dependencies ~context sourcedb ~expected:[]);
+    ("no overlap"
+    >:: fun context ->
+    let sourcedb =
+      Sourcedb.create_from_manifests
+        ~source_manifests:[[{ Manifest.Item.artifact_path = "foo.py"; source_path = "src/foo.py" }]]
+        ~dependency_manifests:
+          [[{ Manifest.Item.artifact_path = "bar.py"; source_path = "src/bar.py" }]]
+        ~typeshed_manifests:
+          [[{ Manifest.Item.artifact_path = "baz.pyi"; source_path = "src/baz.pyi" }]]
+        ()
+    in
+    assert_lookup_source ~context sourcedb "foo.py" ~expected:(Some "src/foo.py");
+    assert_lookup_source ~context sourcedb "bar.py" ~expected:None;
+    assert_lookup_dependency ~context sourcedb "foo.py" ~expected:None;
+    assert_lookup_dependency ~context sourcedb "bar.py" ~expected:(Some "src/bar.py");
+    assert_lookup_dependency ~context sourcedb "baz.pyi" ~expected:(Some "src/baz.pyi");
+    assert_all_sources ~context sourcedb ~expected:["foo.py"];
+    assert_all_dependencies ~context sourcedb ~expected:["bar.py"; "baz.pyi"]);
+    ("with overlap"
+    >:: fun context ->
+    let sourcedb =
+      Sourcedb.create_from_manifests
+        ~source_manifests:
+          [
+            [{ Manifest.Item.artifact_path = "foo.py"; source_path = "src/d0/foo.py" }];
+            [{ Manifest.Item.artifact_path = "foo.py"; source_path = "src/d1/foo.py" }];
+          ]
+        ~dependency_manifests:
+          [
+            [{ Manifest.Item.artifact_path = "bar.py"; source_path = "src/d0/bar.py" }];
+            [{ Manifest.Item.artifact_path = "bar.py"; source_path = "src/d1/bar.py" }];
+          ]
+        ~typeshed_manifests:[]
+        ()
+    in
+    assert_lookup_source ~context sourcedb "foo.py" ~expected:(Some "src/d1/foo.py");
+    assert_lookup_dependency ~context sourcedb "bar.py" ~expected:(Some "src/d1/bar.py");
+    assert_all_sources ~context sourcedb ~expected:["foo.py"];
+    assert_all_dependencies ~context sourcedb ~expected:["bar.py"]);
+    ("Dependency prioritizes typeshed"
+    >:: fun context ->
+    let sourcedb =
+      Sourcedb.create_from_manifests
+        ~source_manifests:[]
+        ~dependency_manifests:
+          [[{ Manifest.Item.artifact_path = "bar.pyi"; source_path = "dep/bar.pyi" }]]
+        ~typeshed_manifests:
+          [[{ Manifest.Item.artifact_path = "bar.pyi"; source_path = "typeshed/bar.pyi" }]]
+        ()
+    in
+    assert_lookup_source ~context sourcedb "bar.pyi" ~expected:None;
+    assert_lookup_dependency ~context sourcedb "bar.pyi" ~expected:(Some "dep/bar.pyi");
+    assert_all_dependencies ~context sourcedb ~expected:["bar.pyi"]);
+  ]
+
+
+let () =
+  "check_options"
+  >::: [test_list test_manifest_loading; test_list test_sourcedb_from_manifest]
+  |> Test.run

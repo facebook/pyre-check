@@ -35,3 +35,5 @@ type t = Item.t list [@@deriving sexp, compare]
 val load_from_string : string -> (t, Error.t) result
 
 val load_from_file : PyrePath.t -> (t, Error.t) result
+
+val to_alist : t -> (string * string) list
