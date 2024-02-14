@@ -2100,7 +2100,7 @@ module State (Context : Context) = struct
               true
           | _ -> false
         in
-        let { Resolved.resolved; resolved_annotation; errors; _ } =
+        let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
           forward_expression ~resolution value
         in
         let annotation =

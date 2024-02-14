@@ -138,7 +138,7 @@ let test_check_walrus_operator =
             |}
            [
              "Revealed type [-1]: Revealed type for `a := 5` is `typing_extensions.Literal[5]`.";
-             "Revealed type [-1]: Revealed type for `a` is `unknown`.";
+             "Revealed type [-1]: Revealed type for `a` is `typing_extensions.Literal[5]`.";
            ];
     ]
 
