@@ -1037,6 +1037,8 @@ let test_infer_constructor_attributes =
              "Revealed type [-1]: Revealed type for `a._x` is `int`.";
              (* Private attribute throws undefined attribute error. *)
              "Revealed type [-1]: Revealed type for `a.__x` is `unknown`.";
+             "Undefined attribute [16]: `A` has no attribute `__x`. `__x` looks like a private \
+              attribute, which is not accessible from outside its parent class.";
            ];
     ]
 

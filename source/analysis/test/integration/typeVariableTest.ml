@@ -801,7 +801,6 @@ let test_check_variable_bindings =
               x: G[int]
 
               y: G[str]
-              x.expect_same_type(y)
               reveal_type(x.expect_same_type(y))
 
               z: bool
@@ -809,9 +808,9 @@ let test_check_variable_bindings =
             |}
            [
              "Invalid type parameters [24]: Generic type `G` expects 1 type parameter.";
+             "Revealed type [-1]: Revealed type for `x.expect_same_type(y)` is `G[int]`.";
              "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional \
               argument, expected `G[int]` but got `G[str]`.";
-             "Revealed type [-1]: Revealed type for `x.expect_same_type(y)` is `G[int]`.";
              "Incompatible parameter type [6]: In call `G.expect_same_type`, for 1st positional \
               argument, expected `G[int]` but got `bool`.";
            ];

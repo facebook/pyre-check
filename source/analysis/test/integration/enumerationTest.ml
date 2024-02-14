@@ -230,6 +230,7 @@ let test_functional_syntax =
              "Revealed type [-1]: Revealed type for `y` is `Color` (inferred: \
               `typing_extensions.Literal[Color.RED]`).";
              "Revealed type [-1]: Revealed type for `x.value` is `unknown`.";
+             "Undefined attribute [16]: `Color` has no attribute `value`.";
            ];
     ]
 

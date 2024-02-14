@@ -1952,14 +1952,13 @@ let test_check_invalid_generic_inheritance =
 
                 y1: TypeNotUsedInConstructor[str, int]
                 reveal_type(y1.identity(0))
-                y1.identity("hello")
                 reveal_type(y1.identity("hello"))
               |}
            [
              "Revealed type [-1]: Revealed type for `y1.identity(0)` is `int`.";
+             "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
              "Incompatible parameter type [6]: In call `TypeNotUsedInConstructor.identity`, for \
               1st positional argument, expected `int` but got `str`.";
-             "Revealed type [-1]: Revealed type for `y1.identity(\"hello\")` is `int`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors

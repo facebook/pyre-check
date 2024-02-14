@@ -2006,6 +2006,8 @@ let test_check_method_resolution =
             |}
            [
              "Revealed type [-1]: Revealed type for `input[42]` is `typing.Type[typing.Protocol[]]`.";
+             "Incompatible parameter type [6]: In call `typing.GenericMeta.__getitem__`, for 1st \
+              positional argument, expected `Tuple[]` but got `int`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -2218,7 +2220,10 @@ let test_check_callable_protocols =
               def foo(call: Call) -> None:
                 reveal_type(call())
             |}
-           ["Revealed type [-1]: Revealed type for `call()` is `str`."];
+           [
+             "Revealed type [-1]: Revealed type for `call()` is `str`.";
+             "Missing argument [20]: Call `Call.__call__` expects argument `x`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -2232,6 +2237,7 @@ let test_check_callable_protocols =
              "Invalid method signature [47]: `typing.Callable[[int], str]` cannot be the type of \
               `self`.";
              "Revealed type [-1]: Revealed type for `call()` is `int`.";
+             "Missing argument [20]: Call `Call.__call__` expects argument `x`.";
            ];
       (* We handle subclassing. *)
       labeled_test_case __FUNCTION__ __LINE__

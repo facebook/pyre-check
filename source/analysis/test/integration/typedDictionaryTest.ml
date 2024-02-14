@@ -2128,12 +2128,9 @@ let test_check_typed_dictionary_in_alias =
                 def foo(x: int) -> str: ...
 
                 reveal_type(foo(1))
-                d: int = foo(1)
             |}
            [
              "Revealed type [-1]: Revealed type for `test.foo(1)` is `Child`.";
-             "Incompatible variable type [9]: d is declared to have type `int` but is used as type \
-              `Child`.";
              "Incompatible parameter type [6]: In anonymous call, for 1st positional argument, \
               expected `Child` but got `int`.";
            ];

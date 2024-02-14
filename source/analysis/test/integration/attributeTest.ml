@@ -1870,17 +1870,14 @@ let test_getattr_literal_access =
               reveal_type(getattr(A(), "a", 1))
               reveal_type(getattr(A(), "b"))
               reveal_type(getattr(A(), "c", None))
-              getattr(A(), "a")
-              getattr(A(), "b")
-              getattr(A(), "c", None)
             |}
            [
              "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\")` is `int`.";
              "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\", None)` is `int`.";
              "Revealed type [-1]: Revealed type for `getattr(test.A(), \"a\", 1)` is `int`.";
              "Revealed type [-1]: Revealed type for `getattr(test.A(), \"b\")` is `unknown`.";
-             "Revealed type [-1]: Revealed type for `getattr(test.A(), \"c\", None)` is `unknown`.";
              "Undefined attribute [16]: `A` has no attribute `b`.";
+             "Revealed type [-1]: Revealed type for `getattr(test.A(), \"c\", None)` is `unknown`.";
            ];
     ]
 

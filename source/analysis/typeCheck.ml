@@ -2100,13 +2100,17 @@ module State (Context : Context) = struct
               true
           | _ -> false
         in
+        let { Resolved.resolved; resolved_annotation; errors; _ } =
+          forward_expression ~resolution value
+        in
+        let annotation =
+          Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation
+        in
         let errors =
           emit_error
-            ~errors:[]
+            ~errors
             ~location
-            ~kind:
-              (Error.RevealedType
-                 { expression = value; annotation = resolve_expression ~resolution value; qualify })
+            ~kind:(Error.RevealedType { expression = value; annotation; qualify })
         in
         { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
