@@ -72,7 +72,7 @@ end
 module Overlay = struct
   type t = {
     parent: ReadOnly.t;
-    overlaid_code: string ModulePath.Table.t;
+    overlaid_code: string Hashtbl.M(ModulePath).t;
     overlaid_qualifiers: Reference.Hash_set.t;
   }
 
@@ -83,7 +83,7 @@ module Overlay = struct
   let from_read_only parent =
     {
       parent;
-      overlaid_code = ModulePath.Table.create ();
+      overlaid_code = Hashtbl.create (module ModulePath);
       overlaid_qualifiers = Reference.Hash_set.create ();
     }
 

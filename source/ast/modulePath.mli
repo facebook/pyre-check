@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Core
-
 module Raw : sig
   type t = {
     relative: string;
@@ -27,8 +25,6 @@ type t = {
   should_type_check: bool;
 }
 [@@deriving compare, equal, hash, sexp]
-
-include Hashable with type t := t
 
 val pp : Format.formatter -> t -> unit
 
