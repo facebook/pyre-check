@@ -200,3 +200,11 @@ def test_unknown_positional_named_args_kwargs1(a, b, c, d, e):
     args = [d]
     kwargs = {"fifth": e}
     return return_via_second_parameter(a, *args, **kwargs, second=b)
+
+
+def return_via_keyword_only(*, a, b):
+    return 0
+
+
+def test_return_via_keyword_only():
+    return return_via_keyword_only(b="B", a="A")
