@@ -5,20 +5,46 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module Lookup : sig
+  type t = {
+    get_source: string -> string option;
+    get_dependency: string -> string option;
+  }
+
+  val create
+    :  ?get_source:(string -> string option) ->
+    ?get_dependency:(string -> string option) ->
+    unit ->
+    t
+
+  val create_for_testing
+    :  ?sources:(string * string) list ->
+    ?dependencies:(string * string) list ->
+    unit ->
+    t
+end
+
+module Listing : sig
+  type t = {
+    all_sources: unit -> string list;
+    all_dependencies: unit -> string list;
+  }
+
+  val create
+    :  ?all_sources:(unit -> string list) ->
+    ?all_dependencies:(unit -> string list) ->
+    unit ->
+    t
+
+  val create_for_testing : ?sources:string list -> ?dependencies:string list -> unit -> t
+end
+
 type t = {
-  lookup_source: string -> string option;
-  lookup_dependency: string -> string option;
-  all_sources: unit -> string list;
-  all_dependencies: unit -> string list;
+  lookup: Lookup.t;
+  listing: Listing.t;
 }
 
-val create_for_testing
-  :  ?lookup_source:(string -> string option) ->
-  ?lookup_dependency:(string -> string option) ->
-  ?all_sources:(unit -> string list) ->
-  ?all_dependencies:(unit -> string list) ->
-  unit ->
-  t
+val create : ?lookup:Lookup.t -> ?listing:Listing.t -> unit -> t
 
 val create_from_alists
   :  source_alists:(string * string) list list ->

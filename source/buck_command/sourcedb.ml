@@ -7,22 +7,43 @@
 
 open Base
 
+module Lookup = struct
+  type t = {
+    get_source: string -> string option;
+    get_dependency: string -> string option;
+  }
+
+  let create ?(get_source = fun _ -> None) ?(get_dependency = fun _ -> None) () =
+    { get_source; get_dependency }
+
+
+  let create_for_testing ?(sources = []) ?(dependencies = []) () =
+    {
+      get_source = List.Assoc.find ~equal:String.equal sources;
+      get_dependency = List.Assoc.find ~equal:String.equal dependencies;
+    }
+end
+
+module Listing = struct
+  type t = {
+    all_sources: unit -> string list;
+    all_dependencies: unit -> string list;
+  }
+
+  let create ?(all_sources = fun () -> []) ?(all_dependencies = fun () -> []) () =
+    { all_sources; all_dependencies }
+
+
+  let create_for_testing ?(sources = []) ?(dependencies = []) () =
+    { all_sources = (fun () -> sources); all_dependencies = (fun () -> dependencies) }
+end
+
 type t = {
-  lookup_source: string -> string option;
-  lookup_dependency: string -> string option;
-  all_sources: unit -> string list;
-  all_dependencies: unit -> string list;
+  lookup: Lookup.t;
+  listing: Listing.t;
 }
 
-let create_for_testing
-    ?(lookup_source = fun _ -> None)
-    ?(lookup_dependency = fun _ -> None)
-    ?(all_sources = fun () -> [])
-    ?(all_dependencies = fun () -> [])
-    ()
-  =
-  { lookup_source; lookup_dependency; all_sources; all_dependencies }
-
+let create ?(lookup = Lookup.create ()) ?(listing = Listing.create ()) () = { lookup; listing }
 
 let create_from_alists ~source_alists ~dependency_alists ~typeshed_alists () =
   let create_map_from_alist sofar alist =
@@ -38,10 +59,13 @@ let create_from_alists ~source_alists ~dependency_alists ~typeshed_alists () =
   (* Mappings in dependency manifests take priorities over the ones in typeshed on conflicts *)
   let dependency_map = List.fold dependency_alists ~init:typeshed_map ~f:create_map_from_alist in
   {
-    lookup_source = Map.find source_map;
-    lookup_dependency = Map.find dependency_map;
-    all_sources = (fun () -> Map.keys source_map);
-    all_dependencies = (fun () -> Map.keys dependency_map);
+    lookup =
+      Lookup.create ~get_source:(Map.find source_map) ~get_dependency:(Map.find dependency_map) ();
+    listing =
+      Listing.create
+        ~all_sources:(fun () -> Map.keys source_map)
+        ~all_dependencies:(fun () -> Map.keys dependency_map)
+        ();
   }
 
 

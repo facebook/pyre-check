@@ -114,22 +114,31 @@ let assert_equal_string_list ~context ~expected actual =
     actual
 
 
-let assert_lookup_source ~context ~expected { Sourcedb.lookup_source; _ } key =
-  let actual = lookup_source key in
+let assert_lookup_source ~context ~expected Sourcedb.{ lookup = { Lookup.get_source; _ }; _ } key =
+  let actual = get_source key in
   assert_equal_string_option ~context ~expected actual
 
 
-let assert_lookup_dependency ~context ~expected { Sourcedb.lookup_dependency; _ } key =
-  let actual = lookup_dependency key in
+let assert_lookup_dependency
+    ~context
+    ~expected
+    Sourcedb.{ lookup = { Lookup.get_dependency; _ }; _ }
+    key
+  =
+  let actual = get_dependency key in
   assert_equal_string_option ~context ~expected actual
 
 
-let assert_all_sources ~context ~expected { Sourcedb.all_sources; _ } =
+let assert_all_sources ~context ~expected Sourcedb.{ listing = { Listing.all_sources; _ }; _ } =
   let actual = all_sources () in
   assert_equal_string_list ~context ~expected actual
 
 
-let assert_all_dependencies ~context ~expected { Sourcedb.all_dependencies; _ } =
+let assert_all_dependencies
+    ~context
+    ~expected
+    Sourcedb.{ listing = { Listing.all_dependencies; _ }; _ }
+  =
   let actual = all_dependencies () in
   assert_equal_string_list ~context ~expected actual
 
