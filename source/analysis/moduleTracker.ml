@@ -407,15 +407,24 @@ module ExplicitModules = struct
       | [] -> None
 
 
-    let fail_on_module_path_invariant ~description ~left ~right =
-      let failure_message =
-        Format.asprintf
-          "Invariant violation (%s): left = %s, right = %s"
-          description
-          (ModulePath.sexp_of_t left |> Sexp.to_string)
-          (ModulePath.sexp_of_t right |> Sexp.to_string)
+    (* When ModuleTracker is working with module paths, we want to make sure that
+       same_module_compare is only zero when the module paths are the same, which is an invariant
+       the type system can't ensure. We don't require the ModulePaths to be the same because
+       filesystem changes and race conditions can lead to the is_external field - which requires
+       reading a symlink - being different for ModulePaths created at different times. *)
+    let fail_if_raw_paths_not_equal ~description ~left ~right =
+      let equal_raw_paths { ModulePath.raw = left; _ } { ModulePath.raw = right; _ } =
+        ModulePath.Raw.equal left right
       in
-      failwith failure_message
+      if not (equal_raw_paths left right) then
+        let failure_message =
+          Format.asprintf
+            "Invariant violation (%s): left = %s, right = %s"
+            description
+            (ModulePath.sexp_of_t left |> Sexp.to_string)
+            (ModulePath.sexp_of_t right |> Sexp.to_string)
+        in
+        failwith failure_message
 
 
     let insert_module_path ~configuration ~to_insert existing_paths =
@@ -424,13 +433,12 @@ module ExplicitModules = struct
         | current_path :: rest as existing -> (
             match same_module_compare ~configuration to_insert current_path with
             | 0 ->
-                (* We have the following precondition for files that are in the same module: *)
-                (* `same_module_compare a b = 0` implies `equal a b` *)
-                if not (ModulePath.equal to_insert current_path) then
-                  fail_on_module_path_invariant
-                    ~description:"Module paths that compare with 0 should be equal when inserting"
+                let () =
+                  fail_if_raw_paths_not_equal
+                    ~description:"Module paths that compare as equal should have same raw path"
                     ~left:to_insert
-                    ~right:current_path;
+                    ~right:current_path
+                in
                 (* Duplicate entry detected. Do nothing *)
                 existing_paths
             | x when x < 0 -> List.rev_append sofar (to_insert :: existing)
@@ -440,25 +448,16 @@ module ExplicitModules = struct
 
 
     let remove_module_path ~configuration ~to_remove existing_paths =
-      let equal_raw_paths { ModulePath.raw = left; _ } { ModulePath.raw = right; _ } =
-        ModulePath.Raw.equal left right
-      in
       let rec remove sofar = function
         | [] -> existing_paths
         | current_path :: rest -> (
             match same_module_compare ~configuration to_remove current_path with
             | 0 ->
                 let () =
-                  (* For removed files, we only check for equality on relative path & priority. *)
-                  (* There's a corner case (where an in-project file's symlink gas been removed)
-                     that may cause `removed` to have a different `should_type_check` flag, since we
-                     cannot follow a deleted symlink. *)
-                  if not (equal_raw_paths to_remove current_path) then
-                    fail_on_module_path_invariant
-                      ~description:
-                        "Module paths that compare with 0 should have same raw path when removing"
-                      ~left:to_remove
-                      ~right:current_path
+                  fail_if_raw_paths_not_equal
+                    ~description:"Module paths that compare as equal should have same raw path"
+                    ~left:to_remove
+                    ~right:current_path
                 in
                 List.rev_append sofar rest
             | x when x < 0 -> existing_paths
