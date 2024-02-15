@@ -434,12 +434,16 @@
 (executable
  (name main)
  (modules main)
- (libraries cmdliner core pyrelib pyrelib.commands pyrelib.exception))
+ (libraries cmdliner core pyrelib pyrelib.commands pyrelib.exception)
+ %CUSTOM_LINKER_OPTION%
+)
 
 (executable
  (name buck_main)
  (modules buck_main)
- (libraries cmdliner core pyrelib pyrelib.buck_commands pyrelib.exception))
+ (libraries cmdliner core pyrelib pyrelib.buck_commands pyrelib.exception)
+ %CUSTOM_LINKER_OPTION%
+)
 
 (alias
  (name DEFAULT)

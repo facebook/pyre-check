@@ -61,6 +61,19 @@ class BuildType(Enum):
     FACEBOOK = "facebook"
 
 
+def _custom_linker_option(pyre_directory: Path, build_type: BuildType) -> str:
+    # HACK: This is a temporary workaround for inconsistent OS installations
+    # in FB-internal CI. Can be removed once all fleets are upgraded.
+    if build_type == BuildType.FACEBOOK and sys.platform == "linux":
+        return (
+            (pyre_directory / "facebook" / "scripts" / "custom_linker_options.txt")
+            .read_text()
+            .rstrip()
+        )
+    else:
+        return ""
+
+
 def detect_opam_version() -> Tuple[int, ...]:
     LOG.info(["opam", "--version"])
     version = subprocess.check_output(
@@ -160,7 +173,12 @@ def produce_dune_file(pyre_directory: Path, build_type: BuildType) -> None:
         # lint-ignore: NoUnsafeFilesystemRule
         with open(pyre_directory / "source" / "dune", "w") as dune:
             dune_data = dune_in.read()
-            dune.write(dune_data.replace("%VERSION%", build_type.value))
+            dune.write(
+                dune_data.replace("%VERSION%", build_type.value).replace(
+                    "%CUSTOM_LINKER_OPTION%",
+                    _custom_linker_option(pyre_directory, build_type),
+                )
+            )
 
 
 def _opam_already_initialized(opam_root: Path) -> bool:
