@@ -68,7 +68,6 @@ let missing_return annotation =
       name = !&"$return_annotation";
       annotation = Some annotation;
       given_annotation = None;
-      evidence_locations = [];
       thrown_at_source = true;
     }
 
@@ -159,29 +158,16 @@ let test_due_to_analysis_limitations _ =
   (* MissingParameterAnnotation. *)
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
-       {
-         name = !&"";
-         annotation = Some Type.Top;
-         given_annotation = None;
-         evidence_locations = [];
-         thrown_at_source = true;
-       });
+       { name = !&""; annotation = Some Type.Top; given_annotation = None; thrown_at_source = true });
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
-       {
-         name = !&"";
-         annotation = None;
-         given_annotation = Some Type.Top;
-         evidence_locations = [];
-         thrown_at_source = true;
-       });
+       { name = !&""; annotation = None; given_annotation = Some Type.Top; thrown_at_source = true });
   assert_not_due_to_analysis_limitations
     (Error.MissingParameterAnnotation
        {
          name = !&"";
          annotation = Some Type.string;
          given_annotation = None;
-         evidence_locations = [];
          thrown_at_source = true;
        });
 
@@ -192,7 +178,6 @@ let test_due_to_analysis_limitations _ =
          name = !&"$return_annotation";
          annotation = Some Type.Top;
          given_annotation = None;
-         evidence_locations = [];
          thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
@@ -201,7 +186,6 @@ let test_due_to_analysis_limitations _ =
          name = !&"$return_annotation";
          annotation = None;
          given_annotation = Some Type.Top;
-         evidence_locations = [];
          thrown_at_source = true;
        });
   assert_not_due_to_analysis_limitations
@@ -210,7 +194,6 @@ let test_due_to_analysis_limitations _ =
          name = !&"$return_annotation";
          annotation = Some Type.string;
          given_annotation = None;
-         evidence_locations = [];
          thrown_at_source = true;
        });
 
@@ -224,7 +207,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              annotation = Some Type.Top;
              given_annotation = None;
-             evidence_locations = [];
              thrown_at_source = true;
            };
        });
@@ -237,7 +219,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              annotation = None;
              given_annotation = Some Type.Top;
-             evidence_locations = [];
              thrown_at_source = true;
            };
        });
@@ -250,7 +231,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              annotation = Some Type.string;
              given_annotation = None;
-             evidence_locations = [];
              thrown_at_source = true;
            };
        });
@@ -263,7 +243,6 @@ let test_due_to_analysis_limitations _ =
              Error.name = !&"";
              annotation = None;
              given_annotation = None;
-             evidence_locations = [];
              thrown_at_source = true;
            };
        });
@@ -404,13 +383,6 @@ let test_join context =
             mismatch =
               { Error.actual = Type.float; expected = Type.string; due_to_invariance = false };
           }));
-  let create_mock_location path =
-    {
-      Location.WithPath.path;
-      start = { Location.line = 1; column = 1 };
-      stop = { Location.line = 1; column = 1 };
-    }
-  in
   assert_join
     (error
        (Error.MissingGlobalAnnotation
@@ -418,7 +390,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -427,7 +398,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -436,7 +406,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }));
   assert_join
@@ -446,7 +415,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -455,7 +423,6 @@ let test_join context =
             Error.name = !&"";
             annotation = None;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -464,7 +431,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }));
   assert_join
@@ -474,7 +440,6 @@ let test_join context =
             Error.name = !&"";
             annotation = None;
             given_annotation = None;
-            evidence_locations = [];
             thrown_at_source = false;
           }))
     (error
@@ -483,7 +448,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -492,7 +456,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = None;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }));
   assert_join
@@ -502,7 +465,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = true;
           }))
     (error
@@ -511,7 +473,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.integer;
             given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = false;
           }))
     (error
@@ -520,7 +481,6 @@ let test_join context =
             Error.name = !&"";
             annotation = Some Type.float;
             given_annotation = Some Type.Any;
-            evidence_locations = [create_mock_location "derp.py"];
             thrown_at_source = true;
           }));
   assert_join

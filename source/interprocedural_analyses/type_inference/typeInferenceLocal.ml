@@ -316,7 +316,6 @@ module State (Context : Context) = struct
                              name = reference;
                              annotation = Some annotation;
                              given_annotation;
-                             evidence_locations = [];
                              thrown_at_source = true;
                            })
                       ~define:Context.define
@@ -516,7 +515,6 @@ module State (Context : Context) = struct
                           name = Reference.create "$return_annotation";
                           annotation = Some actual;
                           given_annotation;
-                          evidence_locations = [];
                           thrown_at_source = true;
                         }))
             else
@@ -1071,7 +1069,6 @@ let infer_parameters_from_parent
                               name = Reference.create name;
                               annotation = Some overridden_annotation;
                               given_annotation = None;
-                              evidence_locations = [];
                               thrown_at_source = true;
                             })
                        ~define)

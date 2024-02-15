@@ -48,19 +48,13 @@ let test_show_error_traces context =
     ];
   assert_type_errors
     "def foo(): pass"
-    [
-      "Missing return annotation [3]: Returning `None` but no return type is specified. "
-      ^ "Type `None` was returned on line 1, return type should be specified on line 1.";
-    ];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
   assert_type_errors
     {|
       def foo():
         return None
     |}
-    [
-      "Missing return annotation [3]: Returning `None` but no return type is specified. "
-      ^ "Type `None` was returned on line 3, return type should be specified on line 2.";
-    ];
+    ["Missing return annotation [3]: Returning `None` but no return type is specified."];
   assert_type_errors
     {|
       class Foo:
@@ -124,8 +118,7 @@ let test_show_error_traces context =
     |}
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Foo` has type `str` but \
-       no type is specified. Attribute `attribute` declared on line 3, type `str` deduced from \
-       test.py:7:4.";
+       no type is specified.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
     ];
@@ -138,8 +131,7 @@ let test_show_error_traces context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `constant` has type `int` but \
-       no type is specified. Global variable `constant` declared on line 2, type `int` deduced \
-       from test.py:5:2.";
+       no type is specified.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
     ];
@@ -153,8 +145,7 @@ let test_show_error_traces context =
     |}
     [
       "Missing global annotation [5]: Globally accessible variable `constant` has type \
-       `typing.Union[int, str]` but no type is specified. Global variable `constant` declared on \
-       line 2, type `typing.Union[int, str]` deduced from test.py:5:2, test.py:6:2.";
+       `typing.Union[int, str]` but no type is specified.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
     ];
@@ -167,8 +158,7 @@ let test_show_error_traces context =
     |}
     [
       "Missing attribute annotation [4]: Attribute `attribute` of class `Other` has type `int` but \
-       no type is specified. Attribute `attribute` declared on line 3, type `int` deduced from \
-       test.py:5:4.";
+       no type is specified.";
       "Unbound name [10]: Name `x` is used but not defined in the current scope. Did you forget to \
        import it or assign to it?";
     ];

@@ -12,7 +12,6 @@ type missing_annotation = {
   name: Reference.t;
   annotation: Type.t option;
   given_annotation: Type.t option;
-  evidence_locations: Location.WithPath.t list;
   thrown_at_source: bool;
 }
 [@@deriving compare, sexp, show, hash]
