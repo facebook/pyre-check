@@ -430,10 +430,7 @@ end
 
 module ReadOnly = struct
   type readonlyness_mismatch =
-    | IncompatibleVariableType of {
-        incompatible_type: incompatible_type;
-        declare_location: Location.WithPath.t;
-      }
+    | IncompatibleVariableType of { incompatible_type: incompatible_type }
     | IncompatibleParameterType of {
         keyword_argument_name: Identifier.t option;
         position: int;
@@ -469,8 +466,8 @@ module ReadOnly = struct
         ""
     in
     match kind with
-    | IncompatibleVariableType
-        { incompatible_type = { name; mismatch = { actual; expected; _ }; _ }; _ } ->
+    | IncompatibleVariableType { incompatible_type = { name; mismatch = { actual; expected; _ } } }
+      ->
         let message =
           let pp_type = pp_type ~concise in
           if concise then
@@ -585,20 +582,15 @@ module ReadOnly = struct
   let join ~resolution left right =
     match left, right with
     | ( IncompatibleVariableType
-          ({
-             incompatible_type =
-               { name = left_name; mismatch = left_mismatch; _ } as left_incompatible_type;
-             _;
-           } as left),
+          { incompatible_type = { name = left_name; mismatch = left_mismatch } },
         IncompatibleVariableType
-          { incompatible_type = { name = right_name; mismatch = right_mismatch; _ }; _ } )
+          { incompatible_type = { name = right_name; mismatch = right_mismatch }; _ } )
       when Reference.equal left_name right_name ->
         IncompatibleVariableType
           {
-            left with
             incompatible_type =
               {
-                left_incompatible_type with
+                name = left_name;
                 mismatch = join_mismatch ~resolution left_mismatch right_mismatch;
               };
           }
@@ -722,10 +714,7 @@ and kind =
       is_unimplemented: bool;
       define_location: Location.t;
     }
-  | IncompatibleVariableType of {
-      incompatible_type: incompatible_type;
-      declare_location: Location.WithPath.t;
-    }
+  | IncompatibleVariableType of { incompatible_type: incompatible_type }
   | IncompatibleOverload of incompatible_overload_kind
   | IncompleteType of {
       target: Expression.t;
@@ -1067,13 +1056,9 @@ let weaken_literals kind =
           attribute with
           incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
         }
-  | IncompatibleVariableType
-      ({ incompatible_type = { mismatch; _ } as incompatible; _ } as variable) ->
+  | IncompatibleVariableType { incompatible_type = { mismatch; _ } as incompatible; _ } ->
       IncompatibleVariableType
-        {
-          variable with
-          incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch };
-        }
+        { incompatible_type = { incompatible with mismatch = weaken_mismatch mismatch } }
   | InconsistentOverride ({ override = WeakenedPostcondition mismatch; _ } as inconsistent) ->
       InconsistentOverride
         { inconsistent with override = WeakenedPostcondition (weaken_mismatch mismatch) }
@@ -1231,7 +1216,7 @@ let simplify_kind kind =
       IncompatibleReturnType { details with mismatch = simplify_mismatch details.mismatch }
   | IncompatibleVariableType details ->
       IncompatibleVariableType
-        { details with incompatible_type = simplify_incompatible_type details.incompatible_type }
+        { incompatible_type = simplify_incompatible_type details.incompatible_type }
   | _ -> kind
 
 
@@ -3405,7 +3390,6 @@ let join ~resolution left right =
       when Reference.equal left.incompatible_type.name right.incompatible_type.name ->
         IncompatibleVariableType
           {
-            left with
             incompatible_type =
               {
                 left.incompatible_type with
@@ -4211,13 +4195,9 @@ let dequalify
             parent = dequalify parent;
             incompatible_type = { incompatible_type with mismatch = dequalify_mismatch mismatch };
           }
-    | IncompatibleVariableType ({ incompatible_type = { mismatch; _ }; _ } as variable) ->
+    | IncompatibleVariableType { incompatible_type = { name; mismatch } } ->
         IncompatibleVariableType
-          {
-            variable with
-            incompatible_type =
-              { variable.incompatible_type with mismatch = dequalify_mismatch mismatch };
-          }
+          { incompatible_type = { name; mismatch = dequalify_mismatch mismatch } }
     | InconsistentOverride
         ({ override = StrengthenedPrecondition (Found mismatch); parent; overridden_method; _ } as
         inconsistent_override) ->

@@ -352,7 +352,6 @@ let test_join context =
                 mismatch =
                   { Error.actual = Type.Top; expected = Type.Top; due_to_invariance = false };
               };
-            declare_location = Location.WithPath.any;
           }))
     (error Error.Top);
   assert_join
@@ -1028,7 +1027,6 @@ let test_weaken_literals _ =
                  due_to_invariance = false;
                };
            };
-         declare_location = Location.WithPath.any;
        })
     (Error.IncompatibleVariableType
        {
@@ -1042,7 +1040,6 @@ let test_weaken_literals _ =
                  due_to_invariance = false;
                };
            };
-         declare_location = Location.WithPath.any;
        });
   ()
 

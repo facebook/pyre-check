@@ -304,13 +304,12 @@ let errors_from_not_found
 
 let incompatible_variable_type_error_kind
     ~global_resolution
-    ~declare_location
     ({ Error.mismatch = { expected; actual; _ }; _ } as incompatible_type)
   =
   if is_readonlyness_mismatch ~global_resolution ~actual ~expected then
-    Error.ReadOnlynessMismatch (IncompatibleVariableType { incompatible_type; declare_location })
+    Error.ReadOnlynessMismatch (IncompatibleVariableType { incompatible_type })
   else
-    Error.IncompatibleVariableType { incompatible_type; declare_location }
+    Error.IncompatibleVariableType { incompatible_type }
 
 
 let rec unpack_callable_and_self_argument ~signature_select ~global_resolution input =
@@ -749,13 +748,6 @@ module State (Context : Context) = struct
     | Some variables ->
         List.map variables ~f:Type.Variable.to_parameter |> Type.parametric parent_name
     | exception _ -> parent_type
-
-
-  let instantiate_path ~global_resolution location =
-    let location = Location.with_module ~module_reference:Context.qualifier location in
-    Location.WithModule.instantiate
-      ~lookup:(GlobalResolution.relative_path_of_qualifier global_resolution)
-      location
 
 
   let define_signature =
@@ -4355,7 +4347,6 @@ module State (Context : Context) = struct
                         | None when is_incompatible ->
                             incompatible_variable_type_error_kind
                               ~global_resolution
-                              ~declare_location:(instantiate_path ~global_resolution location)
                               {
                                 Error.name = reference;
                                 mismatch =
@@ -5662,7 +5653,6 @@ module State (Context : Context) = struct
           else
             incompatible_variable_type_error_kind
               ~global_resolution
-              ~declare_location:(instantiate_path ~global_resolution location)
               {
                 Error.name = Reference.create name;
                 mismatch =
