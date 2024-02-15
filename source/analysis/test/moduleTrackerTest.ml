@@ -1207,9 +1207,9 @@ module IncrementalTest = struct
   let assert_incremental
       ?(external_setups = [])
       ?(loading_style = LoadingStyle.NonLazy)
-      ~context
       ~expected
       setups
+      context
     =
     let get_old_inputs setups =
       List.filter_map setups ~f:(fun { handle; operation } ->
@@ -1310,434 +1310,504 @@ module IncrementalTest = struct
     ()
 end
 
-let test_update_new_files context =
+let test_update_new_files =
   let open IncrementalTest in
-  let assert_incremental = assert_incremental ~context in
+  let open Test in
   (* Baseline: no update *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
-    ~external_setups:[{ handle = "b.py"; operation = FileOperation.LeftAlone }]
-    ~expected:[];
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
+           ~external_setups:[{ handle = "b.py"; operation = FileOperation.LeftAlone }]
+           ~expected:[];
+      (* Adding new file for a new module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Add }]
+           ~expected:[Event.create_new_explicit "a.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Add };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Update };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Add };
+             { handle = "b.thrift"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.create_new_explicit "a.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.thrift"; operation = FileOperation.Add };
+           ]
+           ~expected:[];
+      (* Adding new shadowing file for an existing module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Add }]
+           ~expected:[Event.create_new_explicit ~should_type_check:false "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
+           ~external_setups:
+             [
+               { handle = "a.py"; operation = FileOperation.Add };
+               { handle = "a.pyi"; operation = FileOperation.LeftAlone };
+               { handle = "a/__init__.pyi"; operation = FileOperation.Add };
+             ]
+           ~expected:[Event.create_new_explicit ~should_type_check:false "a/__init__.pyi"];
+      (* Adding new shadowed file for an existing module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a/__init__.py"; operation = FileOperation.Add };
+           ]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
+           ~expected:[];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~external_setups:
+             [
+               { handle = "a.pyi"; operation = FileOperation.LeftAlone };
+               { handle = "a.py"; operation = FileOperation.Add };
+             ]
+           ~expected:[];
+      (* Test updating conflicting files - ignore based on precedence. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "conflict/a.py"; operation = FileOperation.LeftAlone };
+             { handle = "conflict.a.py"; operation = FileOperation.Add };
+           ]
+           ~external_setups:[{ handle = "conflict/a.py"; operation = FileOperation.Add }]
+           ~expected:[Event.create_new_explicit ~should_type_check:false "conflict/a.py"];
+    ]
 
-  (* Adding new file for a new module *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit "a.py"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Add };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Update };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Add };
-      { handle = "b.thrift"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.create_new_explicit "a.py"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.thrift"; operation = FileOperation.Add };
-    ]
-    ~expected:[];
-  (* Adding new shadowing file for an existing module *)
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit ~should_type_check:false "a.pyi"];
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
-    ~external_setups:
-      [
-        { handle = "a.py"; operation = FileOperation.Add };
-        { handle = "a.pyi"; operation = FileOperation.LeftAlone };
-        { handle = "a/__init__.pyi"; operation = FileOperation.Add };
-      ]
-    ~expected:[Event.create_new_explicit ~should_type_check:false "a/__init__.pyi"];
-  (* Adding new shadowed file for an existing module *)
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a/__init__.py"; operation = FileOperation.Add };
-    ]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
-    ~expected:[];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~external_setups:
-      [
-        { handle = "a.pyi"; operation = FileOperation.LeftAlone };
-        { handle = "a.py"; operation = FileOperation.Add };
-      ]
-    ~expected:[];
-  (* Test updating conflicting files - ignore based on precedence. *)
-  assert_incremental
-    [
-      { handle = "conflict/a.py"; operation = FileOperation.LeftAlone };
-      { handle = "conflict.a.py"; operation = FileOperation.Add };
-    ]
-    ~external_setups:[{ handle = "conflict/a.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit ~should_type_check:false "conflict/a.py"];
-  ()
 
-
-let test_update_remove_files context =
+let test_update_remove_files =
   let open IncrementalTest in
-  let assert_incremental = assert_incremental ~context in
-  (* Removing a module *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~expected:[Event.Delete "a"];
-  assert_incremental
-    []
-    ~external_setups:[{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~expected:[Event.Delete "a"];
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
-    ~expected:[Event.Delete "a"];
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~external_setups:
-      [
-        { handle = "a.pyi"; operation = FileOperation.Remove };
-        { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
-      ]
-    ~expected:[Event.Delete "a"];
-  assert_incremental
+  let open Test in
+  test_list
     [
-      { handle = "a.py"; operation = FileOperation.Remove };
-      { handle = "a.thrift"; operation = FileOperation.Remove };
+      (* Removing a module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~expected:[Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           []
+           ~external_setups:[{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~expected:[Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
+           ~expected:[Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~external_setups:
+             [
+               { handle = "a.pyi"; operation = FileOperation.Remove };
+               { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
+             ]
+           ~expected:[Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Remove };
+             { handle = "a.thrift"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "b.thrift"; operation = FileOperation.Remove };
+           ]
+           ~expected:[];
+      (* Removing shadowing file for a module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
+           ~expected:[Event.create_new_explicit "a.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
+           ~external_setups:
+             [
+               { handle = "a.pyi"; operation = FileOperation.Remove };
+               { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
+             ]
+           ~expected:[Event.create_new_explicit "a.py"];
+      (* Removing shadowed file for a module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
+           ~expected:[];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Remove }]
+           ~external_setups:
+             [
+               { handle = "a.pyi"; operation = FileOperation.Remove };
+               { handle = "a/__init__.pyi"; operation = LeftAlone };
+             ]
+           ~expected:[];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Remove };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
+           ~expected:[];
     ]
-    ~expected:[Event.Delete "a"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "b.thrift"; operation = FileOperation.Remove };
-    ]
-    ~expected:[];
-  (* Removing shadowing file for a module *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
-    ~expected:[Event.create_new_explicit "a.py"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.Remove }]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.LeftAlone }]
-    ~external_setups:
-      [
-        { handle = "a.pyi"; operation = FileOperation.Remove };
-        { handle = "a/__init__.pyi"; operation = FileOperation.Remove };
-      ]
-    ~expected:[Event.create_new_explicit "a.py"];
-  (* Removing shadowed file for a module *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
-    ~expected:[];
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Remove }]
-    ~external_setups:
-      [
-        { handle = "a.pyi"; operation = FileOperation.Remove };
-        { handle = "a/__init__.pyi"; operation = LeftAlone };
-      ]
-    ~expected:[];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Remove };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~external_setups:[{ handle = "a.pyi"; operation = FileOperation.LeftAlone }]
-    ~expected:[];
-  ()
 
 
-let test_update_changed_files context =
+let test_update_changed_files =
   let open IncrementalTest in
-  let assert_incremental = assert_incremental ~context in
-  (* Update file *)
-  assert_incremental
-    [{ handle = "a.py"; operation = FileOperation.Update }]
-    ~expected:[Event.create_new_explicit "a.py"];
-  assert_incremental
+  let open Test in
+  test_list
     [
-      { handle = "a.py"; operation = FileOperation.Update };
-      { handle = "a.pyi"; operation = FileOperation.Update };
+      (* Update file *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a.py"; operation = FileOperation.Update }]
+           ~expected:[Event.create_new_explicit "a.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Update };
+             { handle = "a.pyi"; operation = FileOperation.Update };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.LeftAlone };
+             { handle = "a.pyi"; operation = FileOperation.Update };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Update };
+             { handle = "a.pyi"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental [{ handle = "a.thrift"; operation = FileOperation.Update }] ~expected:[];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Update };
+             { handle = "b.thrift"; operation = FileOperation.Update };
+           ]
+           ~expected:[Event.create_new_explicit "a.py"];
+      (* Removing and adding the same module *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a.py"; operation = FileOperation.Remove };
+             { handle = "a.pyi"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.create_new_explicit "a.pyi"];
     ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.LeftAlone };
-      { handle = "a.pyi"; operation = FileOperation.Update };
-    ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Update };
-      { handle = "a.pyi"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[];
-  assert_incremental [{ handle = "a.thrift"; operation = FileOperation.Update }] ~expected:[];
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Update };
-      { handle = "b.thrift"; operation = FileOperation.Update };
-    ]
-    ~expected:[Event.create_new_explicit "a.py"];
 
-  (* Removing and adding the same module *)
-  assert_incremental
-    [
-      { handle = "a.py"; operation = FileOperation.Remove };
-      { handle = "a.pyi"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.create_new_explicit "a.pyi"];
-  ()
 
-
-let test_update_implicits context =
+let test_update_implicits =
   let open IncrementalTest in
-  let assert_incremental = assert_incremental ~context in
-  (* Implicit submodule insertion *)
-  assert_incremental
-    [{ handle = "a/b.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit "a/b.py"; Event.NewImplicit "a"];
-  assert_incremental
-    [{ handle = "a/b/c.py"; operation = FileOperation.Add }]
-    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a.b"];
-  assert_incremental
+  let open Test in
+  test_list
     [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.Add };
+      (* Implicit submodule insertion *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a/b.py"; operation = FileOperation.Add }]
+           ~expected:[Event.create_new_explicit "a/b.py"; Event.NewImplicit "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a/b/c.py"; operation = FileOperation.Add }]
+           ~expected:[Event.create_new_explicit "a/b/c.py"; Event.NewImplicit "a.b"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.Add };
+           ]
+           ~expected:
+             [
+               Event.create_new_explicit "a/b/c.py";
+               Event.create_new_explicit "a/b/d.py";
+               Event.NewImplicit "a.b";
+             ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[Event.create_new_explicit "a/b/c.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[Event.create_new_explicit "a/b/c.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.Update };
+           ]
+           ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
+      (* Implicit submodule remove *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [{ handle = "a/b/c.py"; operation = FileOperation.Remove }]
+           ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Remove };
+             { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[Event.Delete "a.b.c"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Remove };
+             { handle = "a/d.py"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+             { handle = "a/d.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "a.d"; Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b.py"; operation = FileOperation.LeftAlone };
+             { handle = "a/b.pyi"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.create_new_explicit "a/b.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b.py"; operation = FileOperation.Remove };
+             { handle = "a/b.pyi"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "a.b"; Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+             { handle = "a/d/e.py"; operation = FileOperation.Remove };
+             { handle = "a/d/f.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "a.d"; Event.Delete "a.d.e"; Event.Delete "a.d.f"];
+      (* Implicit submodule add+remove *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.Update };
+           ]
+           ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.Remove };
+             { handle = "a/b/e.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:
+             [Event.create_new_explicit "a/b/c.py"; Event.Delete "a.b.d"; Event.Delete "a.b.e"];
+      (* NOTE: These tests are likely to change if we want to allow a/b.py to shadow a/b/... *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b.py"; operation = FileOperation.Remove };
+             { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
+             { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
+           ]
+           ~expected:[Event.Delete "a.b"; Event.Delete "a"];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b.py"; operation = FileOperation.Remove };
+             { handle = "a/b/c.py"; operation = FileOperation.Add };
+             { handle = "a/b/d.py"; operation = FileOperation.Add };
+           ]
+           ~expected:
+             [
+               Event.Delete "a.b";
+               Event.Delete "a";
+               Event.create_new_explicit "a/b/c.py";
+               Event.create_new_explicit "a/b/d.py";
+             ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "a/b.py"; operation = FileOperation.Add };
+             { handle = "a/b/c.py"; operation = FileOperation.Remove };
+             { handle = "a/b/d.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:
+             [
+               Event.Delete "a.b.c";
+               Event.Delete "a.b.d";
+               Event.NewImplicit "a";
+               Event.create_new_explicit "a/b.py";
+             ];
     ]
-    ~expected:
-      [
-        Event.create_new_explicit "a/b/c.py";
-        Event.create_new_explicit "a/b/d.py";
-        Event.NewImplicit "a.b";
-      ];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[Event.create_new_explicit "a/b/c.py"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[Event.create_new_explicit "a/b/c.py"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.Update };
-    ]
-    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
-
-  (* Implicit submodule remove *)
-  assert_incremental
-    [{ handle = "a/b/c.py"; operation = FileOperation.Remove }]
-    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Remove };
-      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[Event.Delete "a.b.c"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Remove };
-      { handle = "a/d.py"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[Event.Delete "a.b.c"; Event.Delete "a.b"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
-      { handle = "a/d.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.Delete "a.d"; Event.Delete "a"];
-  assert_incremental
-    [
-      { handle = "a/b.py"; operation = FileOperation.LeftAlone };
-      { handle = "a/b.pyi"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.create_new_explicit "a/b.py"];
-  assert_incremental
-    [
-      { handle = "a/b.py"; operation = FileOperation.Remove };
-      { handle = "a/b.pyi"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.Delete "a.b"; Event.Delete "a"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
-      { handle = "a/d/e.py"; operation = FileOperation.Remove };
-      { handle = "a/d/f.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.Delete "a.d"; Event.Delete "a.d.e"; Event.Delete "a.d.f"];
-
-  (* Implicit submodule add+remove *)
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.Update };
-    ]
-    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.create_new_explicit "a/b/d.py"];
-  assert_incremental
-    [
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.Remove };
-      { handle = "a/b/e.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.create_new_explicit "a/b/c.py"; Event.Delete "a.b.d"; Event.Delete "a.b.e"];
-
-  (* NOTE: These tests are likely to change if we want to allow a/b.py to shadow a/b/... *)
-  assert_incremental
-    [
-      { handle = "a/b.py"; operation = FileOperation.Remove };
-      { handle = "a/b/c.py"; operation = FileOperation.LeftAlone };
-      { handle = "a/b/d.py"; operation = FileOperation.LeftAlone };
-    ]
-    ~expected:[Event.Delete "a.b"; Event.Delete "a"];
-  assert_incremental
-    [
-      { handle = "a/b.py"; operation = FileOperation.Remove };
-      { handle = "a/b/c.py"; operation = FileOperation.Add };
-      { handle = "a/b/d.py"; operation = FileOperation.Add };
-    ]
-    ~expected:
-      [
-        Event.Delete "a.b";
-        Event.Delete "a";
-        Event.create_new_explicit "a/b/c.py";
-        Event.create_new_explicit "a/b/d.py";
-      ];
-  assert_incremental
-    [
-      { handle = "a/b.py"; operation = FileOperation.Add };
-      { handle = "a/b/c.py"; operation = FileOperation.Remove };
-      { handle = "a/b/d.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:
-      [
-        Event.Delete "a.b.c";
-        Event.Delete "a.b.d";
-        Event.NewImplicit "a";
-        Event.create_new_explicit "a/b.py";
-      ];
-  ()
 
 
 (* The update code is mostly shared between eager and lazy tracking (the only difference is really
    that the lazy tracker skips processing qualifiers that are not yet in its cache). So rather than
    duplicating all the tests - which are a bit slow - we just exercise each known edge case once *)
-let test_update_lazy_tracker context =
+let test_update_lazy_tracker =
   let open IncrementalTest in
+  let open Test in
   let assert_incremental =
-    let open Test in
     assert_incremental
-      ~context
       ~loading_style:
         (LazyLookUpQualifiers [!&"looked_up"; !&"inner.looked_up"; !&"implicit_looked_up"])
   in
   (* TODO: get rid of this; without it the compiler will not let us include a not-yet-used
      variant. *)
   let _ = LoadingStyle.LazyLookUpQualifiers [] in
-  (* Adding new entirely new modules *)
-  assert_incremental
+  test_list
     [
-      { handle = "looked_up.py"; operation = FileOperation.Add };
-      { handle = "inner/looked_up.py"; operation = FileOperation.Add };
-      { handle = "not_looked_up.py"; operation = FileOperation.Add };
+      (* Adding new entirely new modules *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "looked_up.py"; operation = FileOperation.Add };
+             { handle = "inner/looked_up.py"; operation = FileOperation.Add };
+             { handle = "not_looked_up.py"; operation = FileOperation.Add };
+           ]
+           ~expected:
+             [
+               Event.create_new_explicit "looked_up.py";
+               Event.create_new_explicit "inner/looked_up.py";
+             ];
+      (* Updating modules *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "looked_up.py"; operation = FileOperation.Update };
+             { handle = "inner/looked_up.py"; operation = FileOperation.Update };
+             { handle = "not_looked_up.py"; operation = FileOperation.Update };
+           ]
+           ~expected:
+             [
+               Event.create_new_explicit "looked_up.py";
+               Event.create_new_explicit "inner/looked_up.py";
+             ];
+      (* Shadowing existing modules *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "looked_up/__init__.py"; operation = FileOperation.Add };
+             { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "inner/looked_up.pyi"; operation = FileOperation.Add };
+             { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "not_looked_up.pyi"; operation = FileOperation.Add };
+           ]
+           ~expected:
+             [
+               Event.create_new_explicit "looked_up/__init__.py";
+               Event.create_new_explicit "inner/looked_up.pyi";
+             ];
+      (* Un-shadowing existing modules *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "looked_up/__init__.py"; operation = FileOperation.Remove };
+             { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "inner/looked_up.pyi"; operation = FileOperation.Remove };
+             { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
+             { handle = "not_looked_up.pyi"; operation = FileOperation.Remove };
+           ]
+           ~expected:
+             [
+               Event.create_new_explicit "looked_up.py";
+               Event.create_new_explicit "inner/looked_up.py";
+             ];
+      (* Removing modules *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "looked_up.py"; operation = FileOperation.Remove };
+             { handle = "inner/looked_up.py"; operation = FileOperation.Remove };
+             { handle = "not_looked_up.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "looked_up"; Event.Delete "inner.looked_up"];
+      (* New implicits *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Add };
+             { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Add };
+           ]
+           ~expected:[Event.NewImplicit "implicit_looked_up"];
+      (* Removing implicits *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_incremental
+           [
+             { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Remove };
+             { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Remove };
+           ]
+           ~expected:[Event.Delete "implicit_looked_up"];
     ]
-    ~expected:
-      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
-  (* Updating modules *)
-  assert_incremental
-    [
-      { handle = "looked_up.py"; operation = FileOperation.Update };
-      { handle = "inner/looked_up.py"; operation = FileOperation.Update };
-      { handle = "not_looked_up.py"; operation = FileOperation.Update };
-    ]
-    ~expected:
-      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
-  (* Shadowing existing modules *)
-  assert_incremental
-    [
-      { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "looked_up/__init__.py"; operation = FileOperation.Add };
-      { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "inner/looked_up.pyi"; operation = FileOperation.Add };
-      { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "not_looked_up.pyi"; operation = FileOperation.Add };
-    ]
-    ~expected:
-      [
-        Event.create_new_explicit "looked_up/__init__.py";
-        Event.create_new_explicit "inner/looked_up.pyi";
-      ];
-  (* Un-shadowing existing modules *)
-  assert_incremental
-    [
-      { handle = "looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "looked_up/__init__.py"; operation = FileOperation.Remove };
-      { handle = "inner/looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "inner/looked_up.pyi"; operation = FileOperation.Remove };
-      { handle = "not_looked_up.py"; operation = FileOperation.LeftAlone };
-      { handle = "not_looked_up.pyi"; operation = FileOperation.Remove };
-    ]
-    ~expected:
-      [Event.create_new_explicit "looked_up.py"; Event.create_new_explicit "inner/looked_up.py"];
-  (* Removing modules *)
-  assert_incremental
-    [
-      { handle = "looked_up.py"; operation = FileOperation.Remove };
-      { handle = "inner/looked_up.py"; operation = FileOperation.Remove };
-      { handle = "not_looked_up.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.Delete "looked_up"; Event.Delete "inner.looked_up"];
-  (* New implicits *)
-  assert_incremental
-    [
-      { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Add };
-      { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Add };
-    ]
-    ~expected:[Event.NewImplicit "implicit_looked_up"];
-  (* Removing implicits *)
-  assert_incremental
-    [
-      { handle = "implicit_looked_up/submodule.py"; operation = FileOperation.Remove };
-      { handle = "implicit_not_looked_up/submodule.py"; operation = FileOperation.Remove };
-    ]
-    ~expected:[Event.Delete "implicit_looked_up"];
-  ()
 
 
 let test_invalidate_lazy_tracker_cache__removal context =
@@ -2071,11 +2141,11 @@ let () =
          "hidden_files2 " >:: test_hidden_files2;
          "namespace_modules " >:: test_namespace_modules;
          "stub_package_priority" >:: test_stub_package_priority;
-         "update_new_files" >:: test_update_new_files;
-         "update_remove_files" >:: test_update_remove_files;
-         "update_changed_files" >:: test_update_changed_files;
-         "update_implicits" >:: test_update_implicits;
-         "update_lazy_tracker" >:: test_update_lazy_tracker;
+         test_update_new_files;
+         test_update_remove_files;
+         test_update_changed_files;
+         test_update_implicits;
+         test_update_lazy_tracker;
          "invalidate_lazy_tracker_cache__removal" >:: test_invalidate_lazy_tracker_cache__removal;
          "invalidate_lazy_tracker_cache__add" >:: test_invalidate_lazy_tracker_cache__add;
          "overlay_basic" >:: test_overlay_basic;
