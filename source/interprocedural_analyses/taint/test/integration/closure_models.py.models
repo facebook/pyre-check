@@ -45,3 +45,16 @@
     "modes": [ "Obscure" ]
   }
 }
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.inner_sink_wrapper.inner_sink",
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}

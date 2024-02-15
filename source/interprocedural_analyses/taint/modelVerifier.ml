@@ -102,8 +102,31 @@ end
 (* Resolve global symbols, ignoring decorators. *)
 let resolve_global ~resolution name =
   (* Resolve undecorated functions. *)
-  match GlobalResolution.global resolution name with
-  | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ } ->
+  let resolved_global = GlobalResolution.global resolution name in
+  let resolved_local =
+    if Option.is_none resolved_global then
+      name
+      |> Reference.this_and_all_parents
+      |> List.filter_map ~f:(GlobalResolution.get_define_body resolution)
+      |> List.map ~f:Node.value
+      |> List.concat_map ~f:(fun define -> define.Statement.Define.body)
+      |> List.find_map ~f:(fun statement ->
+             match statement with
+             | { Node.value = Statement.Statement.Define define; _ }
+               when Reference.equal name (Reference.delocalize (Statement.Define.name define)) ->
+                 Some define
+             | _ -> None)
+      >>| fun define ->
+      GlobalResolution.resolve_define
+        ~implementation:(Some define.signature)
+        ~overloads:[]
+        resolution
+    else
+      None
+  in
+  match resolved_global, resolved_local with
+  | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
+  | _, Some { AttributeResolution.undecorated_signature = signature; _ } ->
       Some (Global.Attribute (Type.Callable signature))
   | _ -> (
       (* Resolve undecorated methods. *)
@@ -217,7 +240,7 @@ let verify_model_syntax ~path ~location ~callable_name ~normalized_model_paramet
 let verify_imported_model ~path ~location ~callable_name ~callable_annotation =
   match callable_annotation with
   | Some { Type.Callable.kind = Type.Callable.Named actual_name; _ }
-    when not (Reference.equal callable_name actual_name) ->
+    when not (Reference.equal callable_name (Reference.delocalize actual_name)) ->
       Error
         (model_verification_error
            ~path

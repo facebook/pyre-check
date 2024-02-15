@@ -978,15 +978,13 @@ let test_invalid_models context =
     ~expect:
       {|`Sanitize(TaintSource[(A, Via[featureA])])` is an invalid taint annotation: `TaintSource[A, Via[featureA]]` is not supported within `Sanitize[...]`|}
     ();
-  (* TODO(T179023946): Allow inner function models *)
-  assert_invalid_model
+  assert_valid_model
     ~source:{|
       def outer():
         def inner():
           return 1
     |}
     ~model_source:"def test.outer.inner() -> TaintSource[Test]: ..."
-    ~expect:"Module `test` does not define `test.outer.inner`."
     ();
   ()
 
