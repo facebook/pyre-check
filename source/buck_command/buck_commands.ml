@@ -11,4 +11,5 @@ module Testing = struct
   module Manifest = Manifest
   module Sourcedb = Sourcedb
   module CheckCommandInput = CheckCommandInput
+  module FileLoader = FileLoader
 end
