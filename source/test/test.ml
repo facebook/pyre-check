@@ -3053,7 +3053,7 @@ module ScratchProject = struct
         (ArtifactPath.create path_in_local_root)
       |> Option.value_exn
     in
-    ModulePath.create_for_testing ~should_type_check raw
+    ModulePath.create ~should_type_check raw
 
 
   let setup

@@ -167,7 +167,7 @@ let relative { raw = { Raw.relative; _ }; _ } = relative
 
 let should_type_check { should_type_check; _ } = should_type_check
 
-let create_for_testing ~should_type_check ({ Raw.relative; _ } as raw) =
+let create ~should_type_check ({ Raw.relative; _ } as raw) =
   let qualifier = qualifier_from_relative_path relative in
   { raw; qualifier; should_type_check }
 
