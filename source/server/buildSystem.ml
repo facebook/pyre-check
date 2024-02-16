@@ -143,7 +143,7 @@ module BuckBuildSystem = struct
         let normals =
           match metadata with
           | None -> normals
-          | Some build_id -> ("buck uuid", build_id) :: normals
+          | Some build_id -> ("buck_uuid", build_id) :: normals
         in
         Statistics.buck_event ~normals ~integers ();
         Lwt.return result)
