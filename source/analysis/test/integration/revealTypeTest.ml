@@ -305,6 +305,19 @@ let test_typing_reveal_type =
              reveal_type("s")
            |}
            ["Revealed type [-1]: Revealed type for `\"s\"` is `typing_extensions.Literal['s']`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~python_major_version:3
+           ~python_minor_version:11
+           {|
+             from typing import reveal_type
+
+             reveal_type(reveal_type("s"))
+           |}
+           [
+             "Revealed type [-1]: Revealed type for `typing.reveal_type(\"s\")` is `None`.";
+             "Revealed type [-1]: Revealed type for `\"s\"` is `typing_extensions.Literal['s']`.";
+           ];
     ]
 
 
