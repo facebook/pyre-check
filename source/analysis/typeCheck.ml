@@ -2075,7 +2075,20 @@ module State (Context : Context) = struct
         { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
     | Call
         {
-          callee = { Node.location; value = Name (Name.Identifier "reveal_type") };
+          callee =
+            {
+              Node.location;
+              value =
+                Name
+                  ( Name.Identifier "reveal_type"
+                  | Name.Identifier "typing.reveal_type"
+                  | Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "reveal_type";
+                        _;
+                      } );
+            };
           arguments = { Call.Argument.value; _ } :: remainder;
         } ->
         (* Special case reveal_type(). *)

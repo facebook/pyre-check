@@ -304,7 +304,7 @@ let test_typing_reveal_type =
 
              reveal_type("s")
            |}
-           [];
+           ["Revealed type [-1]: Revealed type for `\"s\"` is `typing_extensions.Literal['s']`."];
     ]
 
 
