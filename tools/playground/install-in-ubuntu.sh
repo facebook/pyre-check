@@ -10,12 +10,13 @@ set -e
 set -x
 
 sudo apt-get update
+sudo apt install software-properties-common -y
+sudo add-apt-repository ppa:deadsnakes/ppa -y
 
 sudo apt-get install -y \
   build-essential \
-  python3 \
-  python3-venv \
-  python3-dev \
+  python3.12 \
+  python3.12-venv \
   watchman \
   git \
   nginx
@@ -27,7 +28,7 @@ cd ~/playground
 
 # Set up the environment. You can verify the python app works with:
 #   python application.py --debug
-python3 -m venv ~/play-env
+python3.12 -m venv ~/play-env
 source ~/play-env/bin/activate
 pip install -r requirements.txt
 
