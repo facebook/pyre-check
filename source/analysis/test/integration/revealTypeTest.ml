@@ -297,8 +297,7 @@ let test_typing_reveal_type =
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
-           ~python_major_version:3
-           ~python_minor_version:11
+           ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ~micro:0 ())
            {|
              from typing import reveal_type
 
@@ -307,8 +306,7 @@ let test_typing_reveal_type =
            ["Revealed type [-1]: Revealed type for `\"s\"` is `typing_extensions.Literal['s']`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
-           ~python_major_version:3
-           ~python_minor_version:11
+           ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ~micro:0 ())
            {|
              from typing import reveal_type
 

@@ -3073,8 +3073,7 @@ module ScratchProject = struct
       ?(use_lazy_module_tracking = false)
       ?(no_validation_on_class_lookup_failure = false)
       ?(use_errpy_parser = false)
-      ?python_major_version
-      ?python_minor_version
+      ?python_version
       ?debug
       ?strict
       ?enable_readonly_analysis
@@ -3117,8 +3116,7 @@ module ScratchProject = struct
           ~show_error_traces
           ~parallel:false
           ~use_errpy_parser
-          ?python_major_version
-          ?python_minor_version
+          ?python_version
           ?strict
           ?debug
           ?enable_readonly_analysis
@@ -3349,8 +3347,7 @@ let assert_errors
     ?(other_sources = [])
     ?(include_line_numbers = false)
     ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
-    ?python_major_version
-    ?python_minor_version
+    ?python_version
     ?enable_readonly_analysis
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
@@ -3382,8 +3379,7 @@ let assert_errors
             ~in_memory
             ~strict
             ~debug
-            ?python_major_version
-            ?python_minor_version
+            ?python_version
             ?enable_readonly_analysis
             ?enable_unawaited_awaitable_analysis
             ?include_suppressed_errors
