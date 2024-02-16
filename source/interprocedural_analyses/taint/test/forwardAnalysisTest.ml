@@ -49,7 +49,7 @@ let assert_taint ?models ?models_source ~context source expect =
           ([]
           |> Interprocedural.Target.HashsetSharedMemory.from_heap
           |> Interprocedural.Target.HashsetSharedMemory.read_only)
-        ~python_version:ModelParser.PythonVersion.default
+        ~python_version:(ModelParser.PythonVersion.create ())
         ()
     in
     let () = assert_bool "Error while parsing models." (List.is_empty errors) in

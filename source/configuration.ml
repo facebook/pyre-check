@@ -282,14 +282,6 @@ module PythonVersion = struct
       ()
     =
     { major; minor; micro }
-
-
-  let default =
-    {
-      major = default_python_major_version;
-      minor = default_python_minor_version;
-      micro = default_python_micro_version;
-    }
 end
 
 module SharedMemory = struct
@@ -402,9 +394,7 @@ module Analysis = struct
     store_type_errors: bool;
     track_dependencies: bool;
     log_directory: PyrePath.t;
-    python_major_version: int;
-    python_minor_version: int;
-    python_micro_version: int;
+    python_version: PythonVersion.t;
     shared_memory: shared_memory;
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
@@ -413,7 +403,6 @@ module Analysis = struct
     include_suppressed_errors: bool;
     use_errpy_parser: bool;
   }
-  [@@deriving show]
 
   let create
       ?(parallel = true)
@@ -434,9 +423,7 @@ module Analysis = struct
       ?(store_type_errors = true)
       ?(track_dependencies = false)
       ?log_directory
-      ?(python_major_version = default_python_major_version)
-      ?(python_minor_version = default_python_minor_version)
-      ?(python_micro_version = default_python_micro_version)
+      ?(python_version = PythonVersion.create ())
       ?(shared_memory_heap_size = default_shared_memory_heap_size)
       ?(shared_memory_dependency_table_power_from_configuration =
         default_shared_memory_dependency_table_power)
@@ -489,9 +476,7 @@ module Analysis = struct
         (match log_directory with
         | Some directory -> PyrePath.create_absolute directory
         | None -> PyrePath.append local_root ~element:".pyre");
-      python_major_version;
-      python_minor_version;
-      python_micro_version;
+      python_version;
       shared_memory =
         {
           heap_size = shared_memory_heap_size;

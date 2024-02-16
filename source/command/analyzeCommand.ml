@@ -203,7 +203,7 @@ module AnalyzeConfiguration = struct
             global_root;
             local_root;
             debug;
-            python_version = { Configuration.PythonVersion.major; minor; micro };
+            python_version;
             parallel;
             number_of_workers;
             enable_readonly_analysis;
@@ -271,9 +271,7 @@ module AnalyzeConfiguration = struct
         ~store_type_errors:false
         ~track_dependencies:false
         ~log_directory:(PyrePath.absolute log_path)
-        ~python_major_version:major
-        ~python_minor_version:minor
-        ~python_micro_version:micro
+        ~python_version
         ~shared_memory_heap_size:heap_size
         ~shared_memory_dependency_table_power_from_configuration:dependency_table_power
         ~shared_memory_hash_table_power:hash_table_power

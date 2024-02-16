@@ -84,7 +84,7 @@ module BaseConfiguration = struct
         json
         |> member "python_version"
         |> function
-        | `Null -> Configuration.PythonVersion.default
+        | `Null -> Configuration.PythonVersion.create ()
         | _ as json -> Configuration.PythonVersion.of_yojson json |> Result.ok_or_failwith
       in
       let parallel = json |> bool_member "parallel" ~default:false in

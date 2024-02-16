@@ -67,7 +67,7 @@ let set_up_environment ?source ~context ~model_source () =
         (stubs
         |> Interprocedural.Target.HashsetSharedMemory.from_heap
         |> Interprocedural.Target.HashsetSharedMemory.read_only)
-      ~python_version:ModelParser.PythonVersion.default
+      ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
   assert_bool

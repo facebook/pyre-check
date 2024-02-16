@@ -14,7 +14,7 @@ type t = {
 
 let create_for_testing
     ?(get_source_db = fun () -> Sourcedb.create ())
-    ?(get_python_version = fun () -> Configuration.PythonVersion.default)
+    ?(get_python_version = fun () -> Configuration.PythonVersion.create ())
     ()
   =
   { get_source_db; get_python_version }

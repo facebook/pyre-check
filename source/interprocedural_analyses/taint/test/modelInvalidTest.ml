@@ -79,7 +79,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
         ([]
         |> Interprocedural.Target.HashsetSharedMemory.from_heap
         |> Interprocedural.Target.HashsetSharedMemory.read_only)
-      ~python_version:ModelParser.PythonVersion.default
+      ~python_version:(ModelParser.PythonVersion.create ())
       ()
     |> fun { ModelParseResult.errors; _ } ->
     if List.is_empty errors then

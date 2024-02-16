@@ -391,7 +391,7 @@ let get_initial_models ~context =
         ([]
         |> Interprocedural.Target.HashsetSharedMemory.from_heap
         |> Interprocedural.Target.HashsetSharedMemory.read_only)
-      ~python_version:ModelParser.PythonVersion.default
+      ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
   assert_bool
@@ -521,7 +521,7 @@ let initialize
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)
             ~definitions:(Some (Target.HashSet.of_list definitions))
             ~stubs:(Target.HashsetSharedMemory.read_only stubs_shared_memory)
-            ~python_version:ModelParser.PythonVersion.default
+            ~python_version:(ModelParser.PythonVersion.create ())
             ()
         in
         assert_bool

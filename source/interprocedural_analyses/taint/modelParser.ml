@@ -46,16 +46,7 @@ module PythonVersion = struct
     >>| fun micro -> { major; minor; micro }
 
 
-  let from_configuration
-      {
-        Configuration.Analysis.python_major_version = major;
-        python_minor_version = minor;
-        python_micro_version = micro;
-        _;
-      }
-    =
-    { major; minor; micro }
-
+  let from_configuration { Configuration.Analysis.python_version; _ } = python_version
 
   let compare_with left operator right =
     match operator with

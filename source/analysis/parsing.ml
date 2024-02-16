@@ -177,10 +177,18 @@ let parse_result_of_load_result ~controls module_path code_result =
     | _ -> parse_raw_code_with_errpy
   in
   let post_process_source source =
-    let EnvironmentControls.PythonVersionInfo.{ major_version; minor_version; micro_version } =
-      EnvironmentControls.python_version_info controls
+    let {
+      Configuration.Analysis.python_version = { Configuration.PythonVersion.major; minor; micro };
+      _;
+    }
+      =
+      configuration
     in
-    Preprocessing.replace_version_specific_code ~major_version ~minor_version ~micro_version source
+    Preprocessing.replace_version_specific_code
+      ~major_version:major
+      ~minor_version:minor
+      ~micro_version:micro
+      source
     |> Preprocessing.preprocess_before_wildcards
   in
   match code_result with

@@ -31,16 +31,6 @@ val no_validation_on_class_lookup_failure : t -> bool
 
 val assert_allow_updates : t -> unit
 
-module PythonVersionInfo : sig
-  type t = {
-    major_version: int;
-    minor_version: int;
-    micro_version: int;
-  }
-end
-
-val python_version_info : t -> PythonVersionInfo.t
-
 val populate_call_graph : t -> bool
 
 val use_lazy_module_tracking : t -> bool

@@ -77,8 +77,6 @@ module PythonVersion : sig
   [@@deriving sexp, compare, hash, yojson, equal]
 
   val create : ?major:int -> ?minor:int -> ?micro:int -> unit -> t
-
-  val default : t
 end
 
 module SharedMemory : sig
@@ -147,9 +145,7 @@ module Analysis : sig
     store_type_errors: bool;
     track_dependencies: bool;
     log_directory: PyrePath.t;
-    python_major_version: int;
-    python_minor_version: int;
-    python_micro_version: int;
+    python_version: PythonVersion.t;
     shared_memory: shared_memory;
     enable_type_comments: bool;
     constraint_solving_style: constraint_solving_style;
@@ -158,7 +154,6 @@ module Analysis : sig
     include_suppressed_errors: bool;
     use_errpy_parser: bool;
   }
-  [@@deriving show]
 
   val create
     :  ?parallel:bool ->
@@ -179,9 +174,7 @@ module Analysis : sig
     ?store_type_errors:bool ->
     ?track_dependencies:bool ->
     ?log_directory:string ->
-    ?python_major_version:int ->
-    ?python_minor_version:int ->
-    ?python_micro_version:int ->
+    ?python_version:PythonVersion.t ->
     ?shared_memory_heap_size:int ->
     ?shared_memory_dependency_table_power_from_configuration:int ->
     ?shared_memory_hash_table_power:int ->

@@ -61,29 +61,6 @@ let assert_allow_updates controls =
   ()
 
 
-module PythonVersionInfo = struct
-  type t = {
-    major_version: int;
-    minor_version: int;
-    micro_version: int;
-  }
-end
-
-let python_version_info
-    {
-      configuration =
-        {
-          Configuration.Analysis.python_major_version = major_version;
-          python_minor_version = minor_version;
-          python_micro_version = micro_version;
-          _;
-        };
-      _;
-    }
-  =
-  { PythonVersionInfo.major_version; minor_version; micro_version }
-
-
 module TypeCheckControls = struct
   type t = {
     constraint_solving_style: Configuration.Analysis.constraint_solving_style;
