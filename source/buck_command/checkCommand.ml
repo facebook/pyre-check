@@ -29,20 +29,30 @@ let get_error_message = function
       Stdlib.Format.sprintf "Cannot parse py_version string `%s`: %s" py_version message
 
 
-let run_check_command input_argument_file =
+let run_check_command input_argument_file output_file =
   Log.info "Loading argument file `%s`..." input_argument_file;
   match
     PyrePath.create_absolute input_argument_file |> CheckCommandInput.create_from_argument_file
   with
   | Result.Error error -> `Error (false, get_error_message error)
   | Result.Ok _input_arguments ->
-      Log.info "Input argument file loaded";
+      Log.info "Input argument file loaded.";
+      Option.iter output_file ~f:(Log.info "Output will be written into %s");
       `Ok ()
 
 
 let command () =
   let open Cmdliner in
   let filename = Arg.(required & pos 0 (some file) None & info [] ~docv:"filename") in
-  let term = Term.(const run_check_command $ filename |> ret) in
+  let output =
+    Arg.(
+      value
+      & opt (some string) None
+      & info
+          ["o"; "output"]
+          ~docv:"output"
+          ~doc:"If specified, write output to this file instead of stdout")
+  in
+  let term = Term.(const run_check_command $ filename $ output |> ret) in
   let info = Cmd.info "check" ~doc in
   Cmd.v info term
