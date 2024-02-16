@@ -2116,7 +2116,13 @@ module State (Context : Context) = struct
             ~location
             ~kind:(Error.RevealedType { expression = value; annotation; qualify })
         in
-        { resolution; errors; resolved = Type.none; resolved_annotation = None; base = None }
+        {
+          resolution;
+          errors;
+          resolved = Annotation.annotation annotation;
+          resolved_annotation = Some annotation;
+          base = None;
+        }
     | Call
         {
           callee =
