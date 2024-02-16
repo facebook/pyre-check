@@ -1496,6 +1496,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         class SupportsNext(Protocol[_T_co]):
           def __next__(self) -> _T_co: ...
+
+        if sys.version_info >= (3, 11):
+          def reveal_type(__obj: _T) -> _T: ...
+          def assert_type(__val: _T, __typ: Any) -> _T: ...
       |}
     );
     "asyncio/coroutines.pyi", {|
@@ -3069,6 +3073,8 @@ module ScratchProject = struct
       ?(use_lazy_module_tracking = false)
       ?(no_validation_on_class_lookup_failure = false)
       ?(use_errpy_parser = false)
+      ?python_major_version
+      ?python_minor_version
       ?debug
       ?strict
       ?enable_readonly_analysis
@@ -3111,6 +3117,8 @@ module ScratchProject = struct
           ~show_error_traces
           ~parallel:false
           ~use_errpy_parser
+          ?python_major_version
+          ?python_minor_version
           ?strict
           ?debug
           ?enable_readonly_analysis
@@ -3341,6 +3349,8 @@ let assert_errors
     ?(other_sources = [])
     ?(include_line_numbers = false)
     ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
+    ?python_major_version
+    ?python_minor_version
     ?enable_readonly_analysis
     ?enable_unawaited_awaitable_analysis
     ?include_suppressed_errors
@@ -3372,6 +3382,8 @@ let assert_errors
             ~in_memory
             ~strict
             ~debug
+            ?python_major_version
+            ?python_minor_version
             ?enable_readonly_analysis
             ?enable_unawaited_awaitable_analysis
             ?include_suppressed_errors

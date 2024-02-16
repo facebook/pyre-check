@@ -292,4 +292,20 @@ let test_reveal_type =
     ]
 
 
-let () = "revealType" >::: [test_reveal_type] |> Test.run
+let test_typing_reveal_type =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~python_major_version:3
+           ~python_minor_version:11
+           {|
+             from typing import reveal_type
+
+             reveal_type("s")
+           |}
+           [];
+    ]
+
+
+let () = "revealType" >::: [test_reveal_type; test_typing_reveal_type] |> Test.run
