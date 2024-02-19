@@ -105,3 +105,13 @@ let from_model
     sinks = sinks |> Sinks.Set.filter_map Sinks.from_sink;
     transforms = Transforms.Set.union source_transforms sink_transforms;
   }
+
+
+let from_rule { Rule.sources; sinks; transforms; _ } =
+  {
+    sources = sources |> Sources.Set.of_list |> Sources.Set.filter_map Sources.from_source;
+    sinks = sinks |> Sinks.Set.of_list |> Sinks.Set.filter_map Sinks.from_sink;
+    transforms =
+      (* Not consider transforms from sources or sinks, since those should not have transforms. *)
+      Transforms.Set.of_list transforms;
+  }

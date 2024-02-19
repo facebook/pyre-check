@@ -37,3 +37,5 @@ type t = {
 [@@deriving eq, show]
 
 val from_model : Model.t -> t
+
+val from_rule : Rule.t -> t

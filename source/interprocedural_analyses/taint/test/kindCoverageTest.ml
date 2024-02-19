@@ -230,6 +230,44 @@ let test_from_model _ =
     actual_used_taint
 
 
+let test_from_rule _ =
+  let rule =
+    {
+      Rule.sources = [Sources.NamedSource "SourceA"];
+      sinks =
+        [
+          Sinks.NamedSink "SinkA";
+          Sinks.TriggeredPartialSink { kind = "SinkB"; label = "label_1" };
+          Sinks.TriggeredPartialSink { kind = "SinkB"; label = "label_2" };
+        ];
+      transforms = [TaintTransform.Named "TransformZ"];
+      code = 1234;
+      name = "Test Rule";
+      message_format = "";
+      location = None;
+    }
+  in
+  let actual_used_taint = KindCoverage.from_rule rule in
+  let expected_used_taint =
+    {
+      KindCoverage.sources = KindCoverage.Sources.Set.of_list [Sources.NamedSource "SourceA"];
+      sinks =
+        KindCoverage.Sinks.Set.of_list
+          [
+            Sinks.NamedSink "SinkA";
+            Sinks.TriggeredPartialSink { kind = "SinkB"; label = "label_1" };
+            Sinks.TriggeredPartialSink { kind = "SinkB"; label = "label_2" };
+          ];
+      transforms = KindCoverage.Transforms.Set.of_list [TaintTransform.Named "TransformZ"];
+    }
+  in
+  assert_equal
+    ~cmp:KindCoverage.equal
+    ~printer:KindCoverage.show
+    expected_used_taint
+    actual_used_taint
+
+
 let () =
   "kind_coverage"
   >::: [
@@ -237,5 +275,6 @@ let () =
          "from_sink" >:: test_from_sink;
          "from_transform" >:: test_from_transform;
          "from_model" >:: test_from_model;
+         "from_rule" >:: test_from_rule;
        ]
   |> Test.run
