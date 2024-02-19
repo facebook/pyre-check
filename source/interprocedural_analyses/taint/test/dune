@@ -35,7 +35,8 @@
   sanitizeTransformSetTest
   modelQueryExecutionTest
   modelQueryParsingTest
-  globalVariableModelQueryTest)
+  globalVariableModelQueryTest
+  kindCoverageTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))
