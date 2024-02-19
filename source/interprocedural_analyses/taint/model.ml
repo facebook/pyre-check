@@ -411,29 +411,20 @@ let less_or_equal ~left ~right =
   && ModeSet.less_or_equal ~left:left.modes ~right:right.modes
 
 
-let strip_for_callsite
+let for_override_model
+    ~callable
     { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
   =
-  (* Remove positions and other info that are not needed at call site *)
-  let source_taint =
-    source_taint
-    |> ForwardState.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
-           Features.TitoPositionSet.bottom)
-    |> ForwardState.transform ForwardTaint.call_info Map ~f:CallInfo.strip_for_callsite
-  in
-  let sink_taint =
-    sink_taint
-    |> BackwardState.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
-           Features.TitoPositionSet.bottom)
-    |> BackwardState.transform BackwardTaint.call_info Map ~f:CallInfo.strip_for_callsite
-  in
-  let taint_in_taint_out =
-    taint_in_taint_out
-    |> BackwardState.transform Features.TitoPositionSet.Self Map ~f:(fun _ ->
-           Features.TitoPositionSet.bottom)
-    |> BackwardState.transform BackwardTaint.call_info Map ~f:CallInfo.strip_for_callsite
-  in
-  { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
+  {
+    forward = { source_taint = ForwardState.for_override_model ~callable source_taint };
+    backward =
+      {
+        sink_taint = BackwardState.for_override_model ~callable sink_taint;
+        taint_in_taint_out = BackwardState.for_override_model ~callable taint_in_taint_out;
+      };
+    sanitizers;
+    modes;
+  }
 
 
 let apply_sanitizers

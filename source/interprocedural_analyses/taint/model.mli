@@ -110,7 +110,7 @@ val widen : iteration:int -> previous:t -> next:t -> t
 
 val less_or_equal : left:t -> right:t -> bool
 
-val strip_for_callsite : t -> t
+val for_override_model : callable:Target.t -> t -> t
 
 val apply_sanitizers : taint_configuration:TaintConfiguration.Heap.t -> t -> t
 

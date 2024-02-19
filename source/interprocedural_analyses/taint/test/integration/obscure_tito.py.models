@@ -6,7 +6,22 @@
     "sinks": [
       {
         "port": "formal(tainted_parameter, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "obscure_tito.C.taint_parameter",
+                    "port": "leaf:tainted_parameter"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
       }
     ],
     "modes": [ "Obscure" ]
@@ -158,7 +173,7 @@
               {
                 "leaves": [
                   {
-                    "name": "Overrides{obscure_tito.C.taint_parameter}",
+                    "name": "obscure_tito.C.taint_parameter",
                     "port": "leaf:tainted_parameter"
                   }
                 ],

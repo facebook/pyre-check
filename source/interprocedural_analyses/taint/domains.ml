@@ -270,15 +270,6 @@ module CallInfo = struct
         ("call", call_json) :: class_intervals_json_list
 
 
-  let strip_for_callsite = function
-    | Origin { class_intervals; _ } ->
-        Origin { location = Location.WithModule.any; class_intervals }
-    | CallSite { port; path; location = _; callees; class_intervals } ->
-        CallSite { port; path; location = Location.WithModule.any; callees; class_intervals }
-    | Declaration _ -> Declaration { leaf_name_provided = false }
-    | Tito -> Tito
-
-
   let replace_location ~location call_info =
     match call_info with
     | Tito
@@ -538,6 +529,13 @@ module type TAINT_DOMAIN = sig
     is_class_method:bool ->
     is_static_method:bool ->
     call_info_intervals:ClassIntervals.t ->
+    t
+
+  val for_override_model
+    :  callable:Target.t ->
+    port:AccessPath.Root.t ->
+    path:AccessPath.Path.t ->
+    t ->
     t
 
   (* Return the taint with only essential elements. *)
@@ -1228,21 +1226,7 @@ end = struct
             else
               let open Features in
               let make_leaf_name callee =
-                let port =
-                  let root =
-                    match port with
-                    | AccessPath.Root.LocalResult -> "return"
-                    | AccessPath.Root.PositionalParameter { name; _ }
-                    | AccessPath.Root.NamedParameter { name } ->
-                        name
-                    | AccessPath.Root.StarParameter _ -> "*"
-                    | AccessPath.Root.StarStarParameter _ -> "**"
-                    | AccessPath.Root.Variable _
-                    | AccessPath.Root.CapturedVariable _ ->
-                        failwith "unexpected port in apply_call"
-                  in
-                  LeafPort.Leaf { root; path }
-                in
+                let port = LeafPort.from_access_path ~root:port ~path in
                 LeafName.{ leaf = Target.external_name callee; port } |> LeafNameInterned.intern
               in
               List.map ~f:make_leaf_name callees |> Features.LeafNameSet.of_list
@@ -1252,6 +1236,47 @@ end = struct
           in
           call_info, local_taint
       | CallInfo.Tito -> failwith "cannot apply call on tito taint"
+    in
+    Map.transform Map.KeyValue Map ~f:apply taint
+
+
+  let for_override_model ~callable ~port ~path taint =
+    let apply (call_info, local_taint) =
+      (* Override models are temporary models used at the call site for base methods, which means we
+         will call `apply_call` on them, which will remove tito positions. Overrides models are not
+         exported to SAPP, thus tito positions are not necessary. Let's remove them to save
+         memory. *)
+      let local_taint =
+        LocalTaintDomain.update
+          LocalTaintDomain.Slots.TitoPosition
+          Features.TitoPositionSet.bottom
+          local_taint
+      in
+      match call_info with
+      | CallInfo.Origin { class_intervals; _ } ->
+          let call_info = CallInfo.Origin { location = Location.WithModule.any; class_intervals } in
+          call_info, local_taint
+      | CallSite { port; path; location = _; callees; class_intervals } ->
+          let call_info =
+            CallInfo.CallSite
+              { port; path; location = Location.WithModule.any; callees; class_intervals }
+          in
+          call_info, local_taint
+      | Declaration { leaf_name_provided = true } -> call_info, local_taint
+      | Declaration { leaf_name_provided = false } ->
+          (* We need to materialize leaf names now, so that the override model as the right leaf
+             names instead of `Overrides{foo}`. *)
+          let leaf_name =
+            let open Features in
+            let port = LeafPort.from_access_path ~root:port ~path in
+            LeafName.{ leaf = Target.external_name callable; port } |> LeafNameInterned.intern
+          in
+          let local_taint =
+            LocalTaintDomain.transform Features.LeafNameSet.Element Add ~f:leaf_name local_taint
+          in
+          let call_info = CallInfo.Declaration { leaf_name_provided = true } in
+          call_info, local_taint
+      | Tito -> call_info, local_taint
     in
     Map.transform Map.KeyValue Map ~f:apply taint
 
@@ -1377,6 +1402,11 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
           ~is_static_method
           ~call_info_intervals )
     in
+    transform Path Map ~f:transform_path taint_tree
+
+
+  let for_override_model ~callable ~port taint_tree =
+    let transform_path (path, tip) = path, Taint.for_override_model ~callable ~port ~path tip in
     transform Path Map ~f:transform_path taint_tree
 
 
@@ -1746,6 +1776,14 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       |> SanitizeTransformSet.join tito_sanitizers
     in
     apply ~sanitizers taint
+
+
+  let for_override_model ~callable taint =
+    transform
+      Tree.Self
+      (Context (Key, Map))
+      ~f:(fun port -> Tree.for_override_model ~callable ~port)
+      taint
 end
 
 (** Used to infer which sources reach the exit points of a function. *)

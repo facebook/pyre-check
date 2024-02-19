@@ -210,6 +210,21 @@ module LeafPort = struct
 
 
   let show_external = Format.asprintf "%a" pp_external
+
+  let from_access_path ~root ~path =
+    let root =
+      match root with
+      | AccessPath.Root.LocalResult -> "return"
+      | AccessPath.Root.PositionalParameter { name; _ }
+      | AccessPath.Root.NamedParameter { name } ->
+          name
+      | AccessPath.Root.StarParameter _ -> "*"
+      | AccessPath.Root.StarStarParameter _ -> "**"
+      | AccessPath.Root.Variable _
+      | AccessPath.Root.CapturedVariable _ ->
+          failwith "unexpected port in apply_call"
+    in
+    Leaf { root; path }
 end
 
 module LeafName = struct

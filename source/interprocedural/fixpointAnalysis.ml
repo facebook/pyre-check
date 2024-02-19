@@ -37,8 +37,8 @@ module type MODEL = sig
 
   val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
-  (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)
-  val strip_for_callsite : t -> t
+  (** Transform the model before joining into the override model. *)
+  val for_override_model : callable:Target.t -> t -> t
 end
 
 (** Represents the result of the analysis.
@@ -483,12 +483,13 @@ module Make (Analysis : ANALYSIS) = struct
               Target.pp_pretty
               callable
             |> failwith
-        | Some model -> model |> Model.strip_for_callsite
+        | Some model -> model
       in
       let direct_model =
-        State.get_model shared_models_handle (Target.get_corresponding_method callable)
+        let direct_callable = Target.get_corresponding_method callable in
+        State.get_model shared_models_handle direct_callable
         |> Option.value ~default:Analysis.empty_model
-        |> Model.strip_for_callsite
+        |> Model.for_override_model ~callable:direct_callable
       in
       overrides
       |> List.map ~f:lookup

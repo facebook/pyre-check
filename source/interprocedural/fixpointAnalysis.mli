@@ -21,8 +21,8 @@ module type MODEL = sig
 
   val less_or_equal : callable:Target.t -> left:t -> right:t -> bool
 
-  (** Remove aspects from the model that are not needed at call sites. Just for optimization. *)
-  val strip_for_callsite : t -> t
+  (** Transform the model before joining into the override model. *)
+  val for_override_model : callable:Target.t -> t -> t
 end
 
 (** Represents the result of the analysis.

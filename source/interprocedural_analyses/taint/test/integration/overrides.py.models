@@ -612,7 +612,11 @@
               {
                 "leaves": [
                   {
-                    "name": "Overrides{overrides.BaseWithDeclaration.return_source}",
+                    "name": "overrides.BaseWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "overrides.DerivedWithDeclaration.return_source",
                     "port": "leaf:return"
                   }
                 ],
@@ -983,7 +987,26 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "overrides.BaseWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  },
+                  {
+                    "name": "overrides.DerivedWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
       }
     ]
   }
@@ -1109,7 +1132,22 @@
     "sources": [
       {
         "port": "result",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "overrides.DerivedWithDeclaration.return_source",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
       }
     ]
   }
