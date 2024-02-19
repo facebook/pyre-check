@@ -16,10 +16,10 @@
   (ocamlopt_flags (-O3))))
 
 (library
-  (name exception)
-  (modules exception)
-  (public_name pyrelib.exception)
-  (preprocess
+ (name exception)
+ (modules exception)
+ (public_name pyrelib.exception)
+ (preprocess
   (pps
    ppx_deriving.eq
    ppx_deriving.show
@@ -27,7 +27,7 @@
    ppx_hash
    ppx_compare
    ppx_sexp_conv))
-  (libraries core))
+ (libraries core))
 
 (library
  (name version)
@@ -435,15 +435,13 @@
  (name main)
  (modules main)
  (libraries cmdliner core pyrelib pyrelib.commands pyrelib.exception)
- %CUSTOM_LINKER_OPTION%
-)
+ %CUSTOM_LINKER_OPTION%)
 
 (executable
  (name buck_main)
  (modules buck_main)
  (libraries cmdliner core pyrelib pyrelib.buck_commands pyrelib.exception)
- %CUSTOM_LINKER_OPTION%
-)
+ %CUSTOM_LINKER_OPTION%)
 
 (alias
  (name DEFAULT)
