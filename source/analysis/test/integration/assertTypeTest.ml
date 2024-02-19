@@ -91,9 +91,6 @@ let test_assert_type_from_conformance =
               expected `int` but got `str`.";
              "Too many arguments [19]: Call `assert_type` expects 2 positional arguments, 3 were \
               provided.";
-             (* TODO(T179508721): Support or types in assert_type *)
-             "Unsupported operand [58]: `|` is not supported for operand types `typing.Type[int]` \
-              and `typing.Type[str]`.";
            ];
     ]
 

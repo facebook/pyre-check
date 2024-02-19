@@ -3846,6 +3846,11 @@ let replace_union_shorthand source =
       in
       let value =
         match Node.value expression with
+        | Expression.Call { callee; arguments = value_argument :: type_argument :: rest }
+        (* Note: Union shorthand expansion happens before qualification *)
+          when name_is ~name:"assert_type" callee ->
+            let arguments = value_argument :: transform_argument type_argument :: rest in
+            Expression.Call { callee; arguments }
         | Expression.Call { callee; arguments }
           when name_is ~name:"isinstance" callee || name_is ~name:"issubclass" callee ->
             let arguments = List.map ~f:transform_argument arguments in
