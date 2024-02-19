@@ -426,7 +426,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_methods.C.abstract_class_method}",
+    "callable": "Overrides{class_methods.C.abstract_class_method}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -455,7 +455,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_methods.C.class_abstractmethod}",
+    "callable": "Overrides{class_methods.C.class_abstractmethod}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -484,7 +484,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_methods.D.abstract_class_method}",
+    "callable": "Overrides{class_methods.D.abstract_class_method}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -513,7 +513,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{class_methods.D.class_abstractmethod}",
+    "callable": "Overrides{class_methods.D.class_abstractmethod}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",

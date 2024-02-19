@@ -106,7 +106,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.AbstractEventProcessor.async_call_tainted}",
+    "callable": "Overrides{callables.AbstractEventProcessor.async_call_tainted}",
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -136,7 +136,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.AbstractEventProcessor.async_run}",
+    "callable": "Overrides{callables.AbstractEventProcessor.async_run}",
     "sinks": [
       {
         "port": "formal(self, position=0)[benign]",
@@ -166,7 +166,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.ConcreteEventProcessor.async_call_tainted}",
+    "callable": "Overrides{callables.ConcreteEventProcessor.async_call_tainted}",
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -196,7 +196,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{callables.ConcreteEventProcessor.async_run}",
+    "callable": "Overrides{callables.ConcreteEventProcessor.async_run}",
     "sinks": [
       {
         "port": "formal(self, position=0)[benign]",

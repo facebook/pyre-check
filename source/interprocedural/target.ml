@@ -94,7 +94,7 @@ let pp_pretty formatter = function
   | Method { class_name; method_name; kind } ->
       Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
   | Override { class_name; method_name; kind } ->
-      Format.fprintf formatter "Override{%s.%s%a}" class_name method_name pp_kind kind
+      Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
   | Object name -> Format.fprintf formatter "Object{%s}" name
 
 
@@ -123,7 +123,7 @@ let pp_external formatter = function
   | Method { class_name; method_name; kind } ->
       Format.fprintf formatter "%s.%s%a" class_name method_name pp_kind kind
   | Override { class_name; method_name; kind } ->
-      Format.fprintf formatter "Ovr{%s.%s%a}" class_name method_name pp_kind kind
+      Format.fprintf formatter "Overrides{%s.%s%a}" class_name method_name pp_kind kind
   | Object name -> Format.fprintf formatter "Obj{%s}" name
 
 

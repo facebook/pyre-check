@@ -26,7 +26,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.A.method}",
+    "callable": "Overrides{combinatory_ports.A.method}",
     "sinks": [
       {
         "port": "formal(self, position=0)[a][a][a]",
@@ -2374,7 +2374,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.B.method}",
+    "callable": "Overrides{combinatory_ports.B.method}",
     "sinks": [
       {
         "port": "formal(self, position=0)[b][a][a]",
@@ -4722,7 +4722,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.Base.method}",
+    "callable": "Overrides{combinatory_ports.Base.method}",
     "sinks": [
       {
         "port": "formal(self, position=0)[a][a][a]",
@@ -11772,7 +11772,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{combinatory_ports.C.method}",
+    "callable": "Overrides{combinatory_ports.C.method}",
     "sinks": [
       {
         "port": "formal(self, position=0)[c][a][a]",

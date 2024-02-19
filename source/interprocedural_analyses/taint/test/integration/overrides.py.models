@@ -595,7 +595,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.A.methodA}",
+    "callable": "Overrides{overrides.A.methodA}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -625,7 +625,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.AnalyzeAllOverrides.return_source}",
+    "callable": "Overrides{overrides.AnalyzeAllOverrides.return_source}",
     "sources": [
       {
         "port": "result",
@@ -658,7 +658,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.AnalyzeAllOverridesChild3.return_source}",
+    "callable": "Overrides{overrides.AnalyzeAllOverridesChild3.return_source}",
     "sources": [
       {
         "port": "result",
@@ -690,7 +690,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.B.classMethod}",
+    "callable": "Overrides{overrides.B.classMethod}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -720,7 +720,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.B.methodB}",
+    "callable": "Overrides{overrides.B.methodB}",
     "sources": [
       {
         "port": "result",
@@ -771,7 +771,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base.classMethod}",
+    "callable": "Overrides{overrides.Base.classMethod}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -801,7 +801,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base.methodA}",
+    "callable": "Overrides{overrides.Base.methodA}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -859,7 +859,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.Base.methodB}",
+    "callable": "Overrides{overrides.Base.methodB}",
     "sources": [
       {
         "port": "result",
@@ -910,7 +910,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.C.methodA}",
+    "callable": "Overrides{overrides.C.methodA}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -951,7 +951,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.D.methodA}",
+    "callable": "Overrides{overrides.D.methodA}",
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -992,7 +992,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.D.methodB}",
+    "callable": "Overrides{overrides.D.methodB}",
     "sources": [
       {
         "port": "result",
@@ -1024,7 +1024,7 @@
 {
   "kind": "model",
   "data": {
-    "callable": "Ovr{overrides.OverloadedOverride.methodA}",
+    "callable": "Overrides{overrides.OverloadedOverride.methodA}",
     "tito": [
       {
         "port": "formal(arg, position=1)",
