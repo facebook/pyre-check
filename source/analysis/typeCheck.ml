@@ -2130,6 +2130,61 @@ module State (Context : Context) = struct
               Node.location;
               value =
                 Name
+                  ( Name.Identifier "typing.assert_type"
+                  | Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "typing"); _ };
+                        attribute = "assert_type";
+                        _;
+                      } );
+            };
+          arguments = [{ Call.Argument.value; _ }; { Call.Argument.value = expected_annotation; _ }];
+        } ->
+        let { Resolved.resolution; errors; resolved; resolved_annotation; _ } =
+          forward_expression ~resolution value
+        in
+        let value_annotation =
+          Option.value ~default:(Annotation.create_mutable resolved) resolved_annotation
+        in
+        let value_type = Annotation.annotation value_annotation in
+        let expected_type_errors, expected_type =
+          parse_and_check_annotation ~resolution expected_annotation
+        in
+        let errors =
+          if Type.equal value_type expected_type then
+            errors
+          else
+            emit_error
+              ~errors:(List.append expected_type_errors errors)
+              ~location
+              ~kind:
+                (Error.IncompatibleParameterType
+                   {
+                     keyword_argument_name = None;
+                     position = 1;
+                     callee = Some (Reference.create "typing.assert_type");
+                     mismatch =
+                       {
+                         Error.actual = value_type;
+                         expected = expected_type;
+                         due_to_invariance = false;
+                       };
+                   })
+        in
+        {
+          resolution;
+          errors;
+          resolved = value_type;
+          resolved_annotation = Some value_annotation;
+          base = None;
+        }
+    | Call
+        {
+          callee =
+            {
+              Node.location;
+              value =
+                Name
                   ( Name.Identifier "typing.cast"
                   | Name.Attribute
                       {

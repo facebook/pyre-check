@@ -1238,6 +1238,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
       {|
         from abc import ABCMeta, abstractmethod
         import collections
+
         class _SpecialForm:
           def __getitem__(self, typeargs: Any) -> Any: ...
 

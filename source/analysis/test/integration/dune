@@ -17,6 +17,7 @@
   annotatedTest
   annotationTest
   assertTest
+  assertTypeTest
   assignTest
   asyncTest
   attributeTest
