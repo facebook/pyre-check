@@ -74,6 +74,7 @@ class Arguments:
     saved_state_arguments: command_arguments.PysaSavedStateArguments = (
         dataclasses.field(default_factory=command_arguments.PysaSavedStateArguments)
     )
+    compute_coverage: bool = False
 
     def serialize(self) -> Dict[str, Any]:
         dump_call_graph = self.dump_call_graph
@@ -198,6 +199,7 @@ class Arguments:
             "limit_entrypoints": self.limit_entrypoints,
             "compact_ocaml_heap": self.compact_ocaml_heap,
             "saved_state": self.saved_state_arguments.serialize(),
+            "compute_coverage": self.compute_coverage,
         }
 
 
@@ -304,6 +306,7 @@ def create_analyze_arguments(
         limit_entrypoints=analyze_arguments.limit_entrypoints,
         compact_ocaml_heap=analyze_arguments.compact_ocaml_heap,
         saved_state_arguments=analyze_arguments.saved_state_arguments,
+        compute_coverage=analyze_arguments.compute_coverage,
     )
 
 

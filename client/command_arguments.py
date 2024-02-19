@@ -319,6 +319,7 @@ class AnalyzeArguments:
     saved_state_arguments: PysaSavedStateArguments = field(
         default_factory=PysaSavedStateArguments
     )
+    compute_coverage: bool = False
 
 
 @dataclass(frozen=True)

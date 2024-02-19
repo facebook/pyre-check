@@ -575,6 +575,12 @@ def pyre(
     default=False,
     help="Compact OCaml heap during the analysis to save memory.",
 )
+@click.option(
+    "--compute-coverage-metrics",
+    is_flag=True,
+    default=False,
+    help="Whether to compute the file, kind, and rule coverage.",
+)
 @click.pass_context
 def analyze(
     context: click.Context,
@@ -611,6 +617,7 @@ def analyze(
     check_invariants: bool,
     limit_entrypoints: bool,
     compact_ocaml_heap: bool,
+    compute_coverage: bool,
 ) -> int:
     """
     Run Pysa, the inter-procedural static analysis tool.
@@ -667,6 +674,7 @@ def analyze(
             limit_entrypoints=limit_entrypoints,
             compact_ocaml_heap=compact_ocaml_heap,
             saved_state_arguments=command_arguments.PysaSavedStateArguments(),
+            compute_coverage=compute_coverage,
         ),
     )
 

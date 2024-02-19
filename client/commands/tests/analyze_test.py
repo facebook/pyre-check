@@ -78,6 +78,7 @@ class ArgumentTest(testslide.TestCase):
                     preset="some_preset",
                     cache_critical_files=["*.py"],
                 ),
+                compute_coverage=True,
             ),
             [
                 ("log_path", "/log"),
@@ -123,6 +124,7 @@ class ArgumentTest(testslide.TestCase):
                         "cache_critical_files": ["*.py"],
                     },
                 ),
+                ("compute_coverage", True),
             ],
         )
 
@@ -200,6 +202,7 @@ class ArgumentTest(testslide.TestCase):
                             preset="some_preset",
                             cache_critical_files=["*.py"],
                         ),
+                        compute_coverage=True,
                     ),
                 ),
                 analyze.Arguments(
@@ -266,5 +269,6 @@ class ArgumentTest(testslide.TestCase):
                         preset="some_preset",
                         cache_critical_files=["*.py"],
                     ),
+                    compute_coverage=True,
                 ),
             )
