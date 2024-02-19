@@ -11,15 +11,17 @@ open IntegrationTest
 (* These test cases are adapted from the conformance test at
    https://github.com/python/typing/blob/62ec871cad97b241a4c5e5cbc483eaaf87f274f6/conformance/tests/directives_assert_type.py#L6C1-L7C1 *)
 let test_assert_type_from_conformance =
-  let assert_type_errors = assert_type_errors ~python_major_version:3 ~python_minor_version:11 in
+  let assert_type_errors =
+    assert_type_errors ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ())
+  in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Annotated, Any, Literal, assert_type
-        
-        
+
+
               def f(
                   a: int | str,
                   b: list[int],
@@ -36,23 +38,23 @@ let test_assert_type_from_conformance =
       @@ assert_type_errors
            {|
               from typing import Annotated, Any, Literal, assert_type
-        
-        
+
+
               def f(
                   d: "ForwardReference",
               ) -> None:
                   assert_type(d, "ForwardReference")  # OK
-        
+
               class ForwardReference:
-                  pass      
+                  pass
             |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               from typing import Annotated, Any, Literal, assert_type
-        
-        
+
+
               def f(
                   a: int | str,
                   c: Any,  # type: ignore
@@ -74,8 +76,8 @@ let test_assert_type_from_conformance =
       @@ assert_type_errors
            {|
               from typing import Annotated, Any, Literal, assert_type
-        
-        
+
+
               def f(
                   a: int | str,
                   c: Any,  # type: ignore
