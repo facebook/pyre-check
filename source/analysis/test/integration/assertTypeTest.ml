@@ -46,13 +46,7 @@ let test_assert_type_from_conformance =
               class ForwardReference:
                   pass      
             |}
-           [
-             (* TODO(T179508721) Support forward assignment in assert_type *)
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `unknown` but got `ForwardReference`.";
-             "Undefined or invalid type [11]: Annotation `ForwardReference` is not defined as a \
-              type.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
