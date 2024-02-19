@@ -36,7 +36,8 @@
   modelQueryExecutionTest
   modelQueryParsingTest
   globalVariableModelQueryTest
-  kindCoverageTest)
+  kindCoverageTest
+  ruleCoverageTest)
  (modules :standard \ testHelper)
  (preprocess
   (pps ppx_sexp_message ppx_compare ppx_deriving.show))

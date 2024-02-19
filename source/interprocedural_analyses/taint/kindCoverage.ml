@@ -115,3 +115,14 @@ let from_rule { Rule.sources; sinks; transforms; _ } =
       (* Not consider transforms from sources or sinks, since those should not have transforms. *)
       Transforms.Set.of_list transforms;
   }
+
+
+let intersect
+    { sources = sources_left; sinks = sinks_left; transforms = transforms_left }
+    { sources = sources_right; sinks = sinks_right; transforms = transforms_right }
+  =
+  {
+    sources = Sources.Set.inter sources_left sources_right;
+    sinks = Sinks.Set.inter sinks_left sinks_right;
+    transforms = Transforms.Set.inter transforms_left transforms_right;
+  }

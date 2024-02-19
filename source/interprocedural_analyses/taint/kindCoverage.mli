@@ -39,3 +39,5 @@ type t = {
 val from_model : Model.t -> t
 
 val from_rule : Rule.t -> t
+
+val intersect : t -> t -> t
