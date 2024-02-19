@@ -92,7 +92,7 @@ let apply_call = function
 
 
 module Set = struct
-  include Stdlib.Set.Make (struct
+  include Data_structures.SerializableSet.Make (struct
     include T
   end)
 

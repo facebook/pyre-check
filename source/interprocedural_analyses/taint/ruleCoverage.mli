@@ -13,4 +13,16 @@ module CoveredRule : sig
   [@@deriving eq, show]
 
   val is_covered : kind_coverage:KindCoverage.t -> Rule.t -> t option
+
+  module Set : Data_structures.SerializableSet.S with type elt = t
 end
+
+module IntSet : Stdlib.Set.S with type elt = Int.t
+
+type t = {
+  covered_rules: CoveredRule.Set.t;
+  uncovered_rule_codes: IntSet.t;
+}
+[@@deriving eq, show]
+
+val from_rules : kind_coverage:KindCoverage.t -> Rule.t list -> t

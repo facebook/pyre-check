@@ -56,7 +56,7 @@ type t = {
   sinks: Sinks.Set.t;
   transforms: Transforms.Set.t;
 }
-[@@deriving eq, show]
+[@@deriving eq, show, compare, sexp, hash]
 
 let from_model
     {
@@ -125,4 +125,15 @@ let intersect
     sources = Sources.Set.inter sources_left sources_right;
     sinks = Sinks.Set.inter sinks_left sinks_right;
     transforms = Transforms.Set.inter transforms_left transforms_right;
+  }
+
+
+let union
+    { sources = sources_left; sinks = sinks_left; transforms = transforms_left }
+    { sources = sources_right; sinks = sinks_right; transforms = transforms_right }
+  =
+  {
+    sources = Sources.Set.union sources_left sources_right;
+    sinks = Sinks.Set.union sinks_left sinks_right;
+    transforms = Transforms.Set.union transforms_left transforms_right;
   }

@@ -44,11 +44,7 @@ val ignore_kind_at_call : t -> bool
 val apply_call : t -> t
 
 module Set : sig
-  include Stdlib.Set.S with type elt = t
-
-  val pp : Format.formatter -> t -> unit
-
-  val show : t -> string
+  include Data_structures.SerializableSet.S with type elt = t
 
   val to_sanitize_transform_set_exn : t -> SanitizeTransformSet.t
 
