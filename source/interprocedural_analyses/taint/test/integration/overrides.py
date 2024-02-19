@@ -231,3 +231,17 @@ class TooManyOverridesChild3(TooManyOverrides):
 
 def call_too_many_overrides(t: TooManyOverrides):
     t.return_source()
+
+
+class BaseWithDeclaration:
+    def return_source(self):
+        pass
+
+
+class DerivedWithDeclaration(BaseWithDeclaration):
+    def return_source(self):
+        pass
+
+
+def test_overrides_with_declaration(b: BaseWithDeclaration):
+    _test_sink(b.return_source())
