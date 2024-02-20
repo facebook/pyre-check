@@ -177,7 +177,7 @@ class Configurationless(Command):
             text=True,
             cwd=self._path,
         )
-        LOG.info(f"Found targets:\n{raw_result}")
+        LOG.debug(f"Found targets:\n{raw_result}")
         result = json.loads(raw_result)
 
         return set(result)
@@ -206,7 +206,7 @@ class Configurationless(Command):
                 cwd=self._path,
             ).strip()
 
-            LOG.info(f"Found files:\n`{result}`")
+            LOG.debug(f"Found files:\n`{result}`")
 
             return {
                 (buck_root / file.strip()).absolute() for file in result.split("\n")
@@ -233,7 +233,7 @@ class Configurationless(Command):
     def _get_files_to_migrate_from_source_directories(
         self, source_directories: List[str]
     ) -> Collection[Path]:
-        LOG.info("Finding files with filesystem")
+        LOG.debug("Finding files with filesystem")
         file_system = filesystem.get_filesystem()
 
         return {
