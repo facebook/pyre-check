@@ -8,12 +8,16 @@
 open OUnit2
 open IntegrationTest
 
+let () = Unix.putenv "OUNIT_SHARDS" "1"
+
+(* `typing.assert_type` is only defined as of 3.11 *)
+let assert_type_errors =
+  assert_type_errors ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ())
+
+
 (* These test cases are adapted from the conformance test at
    https://github.com/python/typing/blob/62ec871cad97b241a4c5e5cbc483eaaf87f274f6/conformance/tests/directives_assert_type.py#L6C1-L7C1 *)
 let test_assert_type_from_conformance =
-  let assert_type_errors =
-    assert_type_errors ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ())
-  in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
@@ -97,4 +101,77 @@ let test_assert_type_from_conformance =
     ]
 
 
-let () = "assert" >::: [test_assert_type_from_conformance] |> Test.run
+(* Verifying behavior on a variety of examples that show up elsewhere in the conformance tests. *)
+let test_assert_type_edge_cases =
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import assert_type
+
+              x: int | str = ...
+
+              assert_type(x, int | str)
+              assert_type(x, str | int)
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import assert_type, Dict, Tuple
+        
+              def f(
+                  *args: int,
+                  **kwargs: int,
+              ) -> None:
+                  assert_type(args, tuple[int, ...])
+                  assert_type(args, Tuple[int, ...])
+                  assert_type(kwargs, dict[str, int])
+                  assert_type(kwargs, Dict[str, int])
+            |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import Any, Callable, Coroutine, assert_type
+
+              async def func1(ignored: int, /) -> str:
+                  return "str"
+
+              assert_type(func1, Callable[[int], Coroutine[Any, Any, str]])
+            |}
+           [
+             (* TODO(T179508721): Handle Pyre's tagged callable types *)
+             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
+              expected `typing.Callable[[int], Coroutine[typing.Any, typing.Any, str]]` but got \
+              `typing.Callable(func1)[[int], Coroutine[typing.Any, typing.Any, str]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import assert_type, Callable
+
+              class Foo:
+                  @classmethod
+                  def class_method(cls) -> None: ...
+
+                  def normal_method(self) -> None: ...
+
+              assert_type(Foo.class_method, Callable[[], None])
+              assert_type(Foo().normal_method, Callable[[], None])
+            |}
+           [
+             (* TODO(T179508721): Handle Pyre's tagged bound method types *)
+             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
+              expected `typing.Callable[[], None]` but got \
+              `BoundMethod[typing.Callable(Foo.class_method)[[Named(cls, Type[Foo])], None], \
+              Type[Foo]]`.";
+             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
+              expected `typing.Callable[[], None]` but got \
+              `BoundMethod[typing.Callable(Foo.normal_method)[[Named(self, Foo)], None], Foo]`.";
+           ];
+    ]
+
+
+let () = "assert" >::: [test_assert_type_from_conformance; test_assert_type_edge_cases] |> Test.run
