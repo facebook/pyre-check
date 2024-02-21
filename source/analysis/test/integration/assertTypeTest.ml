@@ -141,12 +141,7 @@ let test_assert_type_edge_cases =
 
               assert_type(func1, Callable[[int], Coroutine[Any, Any, str]])
             |}
-           [
-             (* TODO(T179508721): Handle Pyre's tagged callable types *)
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing.Callable[[int], Coroutine[typing.Any, typing.Any, str]]` but got \
-              `typing.Callable(func1)[[int], Coroutine[typing.Any, typing.Any, str]]`.";
-           ];
+           [];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

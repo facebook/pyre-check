@@ -2151,7 +2151,7 @@ module State (Context : Context) = struct
           parse_and_check_annotation ~resolution expected_annotation
         in
         let errors =
-          if Type.equal value_type expected_type then
+          if Type.equivalent_for_assert_type value_type expected_type then
             errors
           else
             emit_error

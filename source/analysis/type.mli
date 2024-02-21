@@ -1140,3 +1140,5 @@ val class_data_for_attribute_lookup : t -> class_data_for_attribute_lookup list 
 
 (* Gives the name of either a Callable or BoundMethod[Callable, X] type *)
 val callable_name : t -> Reference.t option
+
+val equivalent_for_assert_type : t -> t -> bool
