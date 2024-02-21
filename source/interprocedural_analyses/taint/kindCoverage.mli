@@ -36,6 +36,8 @@ type t = {
 }
 [@@deriving eq, show, compare, sexp, hash]
 
+val empty : t
+
 val from_model : Model.t -> t
 
 val from_rule : Rule.t -> t
@@ -43,3 +45,5 @@ val from_rule : Rule.t -> t
 val intersect : t -> t -> t
 
 val union : t -> t -> t
+
+val to_json : t -> Yojson.Safe.t

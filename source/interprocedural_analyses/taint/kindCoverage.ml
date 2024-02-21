@@ -58,6 +58,10 @@ type t = {
 }
 [@@deriving eq, show, compare, sexp, hash]
 
+let empty =
+  { sources = Sources.Set.empty; sinks = Sinks.Set.empty; transforms = Transforms.Set.empty }
+
+
 let from_model
     {
       Model.forward = { source_taint };
@@ -137,3 +141,23 @@ let union
     sinks = Sinks.Set.union sinks_left sinks_right;
     transforms = Transforms.Set.union transforms_left transforms_right;
   }
+
+
+let to_json { sources; sinks; transforms } =
+  let sources_json =
+    `List
+      (sources |> Sources.Set.elements |> List.map ~f:(fun source -> `String (Sources.show source)))
+  in
+  let sinks_json =
+    `List (sinks |> Sinks.Set.elements |> List.map ~f:(fun sink -> `String (Sinks.show sink)))
+  in
+  if Transforms.Set.is_empty transforms then
+    `Assoc ["sources", sources_json; "sinks", sinks_json]
+  else
+    let transforms_json =
+      `List
+        (transforms
+        |> Transforms.Set.elements
+        |> List.map ~f:(fun transform -> `String (TaintTransform.show transform)))
+    in
+    `Assoc ["sources", sources_json; "sinks", sinks_json; "transforms", transforms_json]

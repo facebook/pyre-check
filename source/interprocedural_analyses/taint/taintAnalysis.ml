@@ -481,6 +481,72 @@ let compact_ocaml_heap ~name =
   Statistics.performance ~name ~phase_name:name ~timer ()
 
 
+let compute_coverage
+    ~environment
+    ~scheduler
+    ~resolve_module_path
+    ~callables_to_analyze
+    ~all_callables
+    ~rules
+    ~fixpoint_state
+  =
+  Log.info "Computing file coverage...";
+  let timer = Timer.start () in
+  let file_coverage =
+    FileCoverage.add_files_from_callables
+      ~resolution:(Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+      ~resolve_module_path
+      ~callables:callables_to_analyze
+      FileCoverage.empty
+  in
+  Statistics.performance
+    ~name:"Finished computing file coverage"
+    ~phase_name:"Computing file coverage"
+    ~timer
+    ();
+
+  Log.info "Computing kind coverage...";
+  let timer = Timer.start () in
+  let compute_kind_coverage callables =
+    callables
+    |> List.filter_map ~f:(fun callable ->
+           match TaintFixpoint.get_model fixpoint_state callable with
+           | Some model -> Some (KindCoverage.from_model model)
+           | None -> None)
+    |> Algorithms.fold_balanced ~f:KindCoverage.union ~init:KindCoverage.empty
+  in
+  let kind_coverage =
+    Scheduler.map_reduce
+      scheduler
+      ~policy:
+        (Scheduler.Policy.fixed_chunk_size
+           ~minimum_chunks_per_worker:1
+           ~minimum_chunk_size:50000
+           ~preferred_chunk_size:100000
+           ())
+      ~initial:KindCoverage.empty
+      ~map:compute_kind_coverage
+      ~reduce:KindCoverage.union
+      ~inputs:all_callables
+      ()
+  in
+  Statistics.performance
+    ~name:"Finished computing kind coverage"
+    ~phase_name:"Computing kind coverage"
+    ~timer
+    ();
+
+  Log.info "Computing rule coverage...";
+  let timer = Timer.start () in
+  let rule_coverage = RuleCoverage.from_rules ~kind_coverage rules in
+  Statistics.performance
+    ~name:"Finished computing rule coverage"
+    ~phase_name:"Computing rule coverage"
+    ~timer
+    ();
+  file_coverage, rule_coverage
+
+
 let run_taint_analysis
     ~static_analysis_configuration:
       ({
@@ -800,24 +866,20 @@ let run_taint_analysis
       ~shared_models
   in
 
-  Log.info "Computing file coverage...";
-  let timer = Timer.start () in
-  let file_coverage =
-    FileCoverage.add_files_from_callables
-      ~resolution:(Analysis.TypeEnvironment.ReadOnly.global_resolution read_only_environment)
-      ~resolve_module_path
-      ~callables:callables_to_analyze
-      FileCoverage.empty
-  in
-  Statistics.performance
-    ~name:"Finished computing file coverage"
-    ~phase_name:"Computing file coverage"
-    ~timer
-    ();
+  let all_callables = List.rev_append (Registry.targets initial_models) callables_to_analyze in
 
-  let callables =
-    Target.Set.of_list (List.rev_append (Registry.targets initial_models) callables_to_analyze)
+  let file_coverage, rule_coverage =
+    compute_coverage
+      ~environment:read_only_environment
+      ~scheduler
+      ~resolve_module_path
+      ~callables_to_analyze
+      ~all_callables
+      ~rules:taint_configuration.TaintConfiguration.Heap.rules
+      ~fixpoint_state
   in
+
+  let callables = Target.Set.of_list all_callables in
 
   Log.info "Post-processing issues for multi-source rules...";
   let timer = Timer.start () in
@@ -876,7 +938,8 @@ let run_taint_analysis
           ~fixpoint_state
           ~errors
           ~cache
-          ~file_coverage;
+          ~file_coverage
+          ~rule_coverage;
         []
     | _ -> errors
   in

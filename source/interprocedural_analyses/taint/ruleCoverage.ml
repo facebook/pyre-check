@@ -44,6 +44,9 @@ module CoveredRule = struct
 
 
   module Set = Data_structures.SerializableSet.Make (T)
+
+  let to_json { rule_code; kind_coverage } =
+    `Assoc ["cases", KindCoverage.to_json kind_coverage; "code", `Int rule_code]
 end
 
 module IntSet = Data_structures.SerializableSet.Make (struct
@@ -55,6 +58,8 @@ type t = {
   uncovered_rule_codes: IntSet.t;
 }
 [@@deriving eq, show]
+
+let empty = { covered_rules = CoveredRule.Set.empty; uncovered_rule_codes = IntSet.empty }
 
 let from_rules ~kind_coverage rules =
   let module RuleMap = Stdlib.Map.Make (Int) in
@@ -99,3 +104,23 @@ let from_rules ~kind_coverage rules =
       (CoveredRule.Set.empty, IntSet.empty)
   in
   { covered_rules; uncovered_rule_codes }
+
+
+let to_json { covered_rules; uncovered_rule_codes } =
+  let rules_covered_json =
+    `List (covered_rules |> CoveredRule.Set.elements |> List.map ~f:CoveredRule.to_json)
+  in
+  let rules_lacking_models_json =
+    `List (uncovered_rule_codes |> IntSet.elements |> List.map ~f:(fun code -> `Int code))
+  in
+  let json =
+    `Assoc ["rules_covered", rules_covered_json; "rules_lacking_models", rules_lacking_models_json]
+  in
+  `Assoc ["category_coverage", json]
+
+
+let write_to_file ~path rule_coverage =
+  let out_channel = Out_channel.create (PyrePath.absolute path) in
+  let json = to_json rule_coverage in
+  Yojson.Safe.to_channel out_channel json;
+  Out_channel.close out_channel
