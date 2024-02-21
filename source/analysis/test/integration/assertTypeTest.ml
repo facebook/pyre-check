@@ -156,16 +156,7 @@ let test_assert_type_edge_cases =
               assert_type(Foo.class_method, Callable[[], None])
               assert_type(Foo().normal_method, Callable[[], None])
             |}
-           [
-             (* TODO(T179508721): Handle Pyre's tagged bound method types *)
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing.Callable[[], None]` but got \
-              `BoundMethod[typing.Callable(Foo.class_method)[[Named(cls, Type[Foo])], None], \
-              Type[Foo]]`.";
-             "Incompatible parameter type [6]: In call `assert_type`, for 1st positional argument, \
-              expected `typing.Callable[[], None]` but got \
-              `BoundMethod[typing.Callable(Foo.normal_method)[[Named(self, Foo)], None], Foo]`.";
-           ];
+           [];
     ]
 
 
