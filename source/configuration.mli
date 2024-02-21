@@ -267,6 +267,7 @@ module StaticAnalysis : sig
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
     saved_state: SavedState.t;
+    compute_coverage: bool;
   }
 
   val create
@@ -302,6 +303,7 @@ module StaticAnalysis : sig
     ?limit_entrypoints:bool ->
     ?compact_ocaml_heap:bool ->
     ?saved_state:SavedState.t ->
+    ?compute_coverage:bool ->
     unit ->
     t
 end

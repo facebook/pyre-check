@@ -61,6 +61,10 @@ type t = {
 
 let empty = { covered_rules = CoveredRule.Set.empty; uncovered_rule_codes = IntSet.empty }
 
+let is_empty { covered_rules; uncovered_rule_codes } =
+  CoveredRule.Set.is_empty covered_rules && IntSet.is_empty uncovered_rule_codes
+
+
 let from_rules ~kind_coverage rules =
   let module RuleMap = Stdlib.Map.Make (Int) in
   (* Group rules by code. *)

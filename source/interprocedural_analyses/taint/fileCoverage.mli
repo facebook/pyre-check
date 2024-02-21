@@ -17,4 +17,6 @@ val from_callables
 
 val empty : t
 
+val is_empty : t -> bool
+
 val write_to_file : path:PyrePath.t -> t -> unit

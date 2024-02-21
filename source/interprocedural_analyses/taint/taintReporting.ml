@@ -239,14 +239,16 @@ let save_results_to_directory
     Out_channel.close out_channel
   in
   let save_file_coverage () =
-    FileCoverage.write_to_file
-      ~path:(PyrePath.append result_directory ~element:"file_coverage.txt")
-      file_coverage
+    if not (FileCoverage.is_empty file_coverage) then
+      FileCoverage.write_to_file
+        ~path:(PyrePath.append result_directory ~element:"file_coverage.txt")
+        file_coverage
   in
   let save_rule_coverage () =
-    RuleCoverage.write_to_file
-      ~path:(PyrePath.append result_directory ~element:"rule_coverage.json")
-      rule_coverage
+    if not (RuleCoverage.is_empty rule_coverage) then
+      RuleCoverage.write_to_file
+        ~path:(PyrePath.append result_directory ~element:"rule_coverage.json")
+        rule_coverage
   in
   remove_existing_models ();
   save_models ();

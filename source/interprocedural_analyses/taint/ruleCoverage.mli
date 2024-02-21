@@ -27,6 +27,8 @@ type t = {
 
 val empty : t
 
+val is_empty : t -> bool
+
 val from_rules : kind_coverage:KindCoverage.t -> Rule.t list -> t
 
 val write_to_file : path:PyrePath.t -> t -> unit

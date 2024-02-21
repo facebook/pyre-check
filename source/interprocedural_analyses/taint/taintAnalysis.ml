@@ -556,6 +556,7 @@ let run_taint_analysis
          limit_entrypoints;
          compact_ocaml_heap = compact_ocaml_heap_flag;
          saved_state;
+         compute_coverage = compute_coverage_flag;
          _;
        } as static_analysis_configuration)
     ~build_system
@@ -869,14 +870,17 @@ let run_taint_analysis
   let all_callables = List.rev_append (Registry.targets initial_models) callables_to_analyze in
 
   let file_coverage, rule_coverage =
-    compute_coverage
-      ~environment:read_only_environment
-      ~scheduler
-      ~resolve_module_path
-      ~callables_to_analyze
-      ~all_callables
-      ~rules:taint_configuration.TaintConfiguration.Heap.rules
-      ~fixpoint_state
+    if not compute_coverage_flag then
+      FileCoverage.empty, RuleCoverage.empty
+    else
+      compute_coverage
+        ~environment:read_only_environment
+        ~scheduler
+        ~resolve_module_path
+        ~callables_to_analyze
+        ~all_callables
+        ~rules:taint_configuration.TaintConfiguration.Heap.rules
+        ~fixpoint_state
   in
 
   let callables = Target.Set.of_list all_callables in

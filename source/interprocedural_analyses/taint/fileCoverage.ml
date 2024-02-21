@@ -34,6 +34,8 @@ type t = { (* Any file that contains a callable that is analyzed. *)
 
 let empty = { files = File.Set.empty }
 
+let is_empty { files } = File.Set.is_empty files
+
 let union { files = files_left } { files = files_right } =
   { files = File.Set.union files_left files_right }
 
@@ -61,6 +63,6 @@ let from_callables ~scheduler ~resolution ~resolve_module_path ~callables =
     ()
 
 
-let write_to_file ~path { files; _ } =
+let write_to_file ~path { files } =
   let out_channel = Out_channel.create (PyrePath.absolute path) in
   File.Set.iter (fun { File.name } -> Printf.fprintf out_channel "%s\n" name) files

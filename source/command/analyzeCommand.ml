@@ -59,6 +59,7 @@ module AnalyzeConfiguration = struct
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
     saved_state: Configuration.StaticAnalysis.SavedState.t;
+    compute_coverage: bool;
   }
   [@@deriving sexp, compare, hash]
 
@@ -128,6 +129,7 @@ module AnalyzeConfiguration = struct
           let check_invariants = bool_member "check_invariants" ~default:false json in
           let limit_entrypoints = bool_member "limit_entrypoints" ~default:false json in
           let compact_ocaml_heap = bool_member "compact_ocaml_heap" ~default:false json in
+          let compute_coverage = bool_member "compute_coverage" ~default:false json in
           (match Yojson.Safe.Util.member "saved_state" json with
           | `Null -> Result.Ok Configuration.StaticAnalysis.SavedState.empty
           | saved_state ->
@@ -181,6 +183,7 @@ module AnalyzeConfiguration = struct
               limit_entrypoints;
               compact_ocaml_heap;
               saved_state;
+              compute_coverage;
             }
     with
     | Type_error (message, _)
@@ -250,6 +253,7 @@ module AnalyzeConfiguration = struct
         limit_entrypoints;
         compact_ocaml_heap;
         saved_state;
+        compute_coverage;
       }
     =
     let configuration =
@@ -316,6 +320,7 @@ module AnalyzeConfiguration = struct
       limit_entrypoints;
       compact_ocaml_heap;
       saved_state;
+      compute_coverage;
     }
 end
 

@@ -60,6 +60,7 @@ let test_json_parsing context =
       limit_entrypoints = false;
       compact_ocaml_heap = false;
       saved_state = Configuration.StaticAnalysis.SavedState.empty;
+      compute_coverage = false;
     }
   in
 
@@ -212,6 +213,9 @@ let test_json_parsing context =
             cache_critical_files = ["*.py"; "*.pysa"];
           };
       };
+  assert_parsed
+    (`Assoc (("compute_coverage", `Bool true) :: BaseConfigurationTest.dummy_base_json))
+    ~expected:{ dummy_analyze_configuration with compute_coverage = true };
   ()
 
 

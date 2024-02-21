@@ -606,6 +606,7 @@ module StaticAnalysis = struct
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
     saved_state: SavedState.t;
+    compute_coverage: bool;
   }
 
   let create
@@ -641,6 +642,7 @@ module StaticAnalysis = struct
       ?(limit_entrypoints = false)
       ?(compact_ocaml_heap = false)
       ?(saved_state = SavedState.empty)
+      ?(compute_coverage = false)
       ()
     =
     {
@@ -676,5 +678,6 @@ module StaticAnalysis = struct
       limit_entrypoints;
       compact_ocaml_heap;
       saved_state;
+      compute_coverage;
     }
 end

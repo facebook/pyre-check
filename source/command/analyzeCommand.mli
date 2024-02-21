@@ -52,6 +52,7 @@ module AnalyzeConfiguration : sig
     limit_entrypoints: bool;
     compact_ocaml_heap: bool;
     saved_state: Configuration.StaticAnalysis.SavedState.t;
+    compute_coverage: bool;
   }
   [@@deriving sexp, compare, hash]
 
