@@ -8,11 +8,11 @@
 type t
 
 (* Add the files that contain any of the given callables. *)
-val add_files_from_callables
-  :  resolution:Analysis.GlobalResolution.t ->
+val from_callables
+  :  scheduler:Scheduler.t ->
+  resolution:Analysis.GlobalResolution.t ->
   resolve_module_path:(Ast.Reference.t -> Interprocedural.RepositoryPath.t option) ->
   callables:Interprocedural.Target.t list ->
-  t ->
   t
 
 val empty : t

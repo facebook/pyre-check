@@ -493,11 +493,11 @@ let compute_coverage
   Log.info "Computing file coverage...";
   let timer = Timer.start () in
   let file_coverage =
-    FileCoverage.add_files_from_callables
+    FileCoverage.from_callables
+      ~scheduler
       ~resolution:(Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
       ~resolve_module_path
       ~callables:callables_to_analyze
-      FileCoverage.empty
   in
   Statistics.performance
     ~name:"Finished computing file coverage"

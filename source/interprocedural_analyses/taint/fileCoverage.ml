@@ -34,20 +34,31 @@ type t = { (* Any file that contains a callable that is analyzed. *)
 
 let empty = { files = File.Set.empty }
 
-let add_file_from_callable ~resolution ~resolve_module_path ~callable ({ files } as coverage) =
-  match File.from_callable ~resolve_module_path ~resolution callable with
-  | Some file -> { files = File.Set.add file files }
-  | None -> coverage
+let union { files = files_left } { files = files_right } =
+  { files = File.Set.union files_left files_right }
 
 
 (* Add the files that contain any of the given callables. *)
-let add_files_from_callables ~resolution ~resolve_module_path ~callables coverage =
-  let callables = Interprocedural.Target.Set.of_list callables in
-  Interprocedural.Target.Set.fold
-    (fun callable so_far ->
-      add_file_from_callable ~resolution ~resolve_module_path ~callable so_far)
-    callables
-    coverage
+let from_callables ~scheduler ~resolution ~resolve_module_path ~callables =
+  Scheduler.map_reduce
+    scheduler
+    ~policy:
+      (Scheduler.Policy.fixed_chunk_size
+         ~minimum_chunks_per_worker:1
+         ~minimum_chunk_size:50000
+         ~preferred_chunk_size:100000
+         ())
+    ~initial:empty
+    ~map:(fun callables ->
+      let files =
+        callables
+        |> List.filter_map ~f:(File.from_callable ~resolution ~resolve_module_path)
+        |> File.Set.of_list
+      in
+      { files })
+    ~reduce:union
+    ~inputs:callables
+    ()
 
 
 let write_to_file ~path { files; _ } =
