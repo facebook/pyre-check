@@ -22,4 +22,6 @@ val create
 
 val get_source_code_api : t -> Analysis.SourceCodeApi.t
 
+val get_source_code_incremental_api : t -> Analysis.SourceCodeIncrementalApi.Base.t
+
 val get_type_check_qualifiers : t -> Ast.Reference.t list

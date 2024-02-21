@@ -100,3 +100,19 @@ let create
 let get_source_code_api { get_source_code_api; _ } = get_source_code_api ()
 
 let get_type_check_qualifiers { get_type_check_qualifiers; _ } = get_type_check_qualifiers ()
+
+let get_source_code_incremental_api { get_source_code_api; _ } =
+  let read_only =
+    let get_tracked_api ~dependency:_ = get_source_code_api () in
+    SourceCodeIncrementalApi.ReadOnly.create ~get_tracked_api ~get_untracked_api:get_source_code_api
+  in
+  let overlay () = failwith "Buck based source code api does not support overlay" in
+  let update ~scheduler:_ _ =
+    failwith "Buck based source code api does not support incremental update"
+  in
+  let global_module_paths_api =
+    (fun () ->
+      failwith "Buck based source code api is not expected to perform global module listing")
+    |> GlobalModulePathsApi.create
+  in
+  SourceCodeIncrementalApi.Base.create ~read_only ~overlay ~update ~global_module_paths_api
