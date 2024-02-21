@@ -12,4 +12,5 @@ module Testing = struct
   module Sourcedb = Sourcedb
   module CheckCommandInput = CheckCommandInput
   module FileLoader = FileLoader
+  module BuckBasedSourceCodeApi = BuckBasedSourceCodeApi
 end

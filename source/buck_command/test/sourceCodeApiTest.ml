@@ -9,6 +9,8 @@ open OUnit2
 open Base
 open Buck_commands.Testing
 
+let ( ! ) = Ast.Reference.create
+
 let test_file_loader =
   let assert_loaded ~context ~expected ~loader:{ FileLoader.load } path =
     match load path with
@@ -59,4 +61,83 @@ let test_file_loader =
   ]
 
 
-let () = "source_code_api" >::: [test_list test_file_loader] |> Test.run
+let test_source_code_api =
+  let controls =
+    (* Just a dummy value *)
+    Configuration.Analysis.create ~source_paths:[] () |> Analysis.EnvironmentControls.create
+  in
+  let create loader listing = BuckBasedSourceCodeApi.create ~controls ~loader ~listing () in
+  let assert_lookup_relative_path ~context ~api expects =
+    let f (qualifier, expected) =
+      let actual =
+        let source_code_api = BuckBasedSourceCodeApi.get_source_code_api api in
+        Analysis.SourceCodeApi.module_path_of_qualifier source_code_api qualifier
+        |> Option.map ~f:Ast.ModulePath.relative
+      in
+      assert_equal
+        ~ctxt:context
+        ~cmp:[%compare.equal: string option]
+        ~printer:(fun p -> [%sexp_of: string option] p |> Sexp.to_string_hum)
+        expected
+        actual
+    in
+    List.iter expects ~f
+  in
+  let assert_type_check_qualifiers ~context ~api expected =
+    let expected = List.sort expected ~compare:Ast.Reference.compare in
+    let actual = BuckBasedSourceCodeApi.get_type_check_qualifiers api in
+    let actual = List.sort actual ~compare:Ast.Reference.compare in
+    assert_equal
+      ~ctxt:context
+      ~cmp:[%compare.equal: Ast.Reference.t list]
+      ~printer:(fun q -> [%sexp_of: Ast.Reference.t list] q |> Sexp.to_string_hum)
+      expected
+      actual
+  in
+  [
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"empty"
+    @@ fun context ->
+    let api = create (FileLoader.create ()) (Sourcedb.Listing.create ()) in
+    assert_lookup_relative_path ~context ~api [];
+    assert_type_check_qualifiers ~context ~api []);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"simple"
+    @@ fun context ->
+    let api =
+      let loader = FileLoader.create_for_testing ["foo.py", ""; "bar.py", ""] in
+      let listing =
+        Sourcedb.Listing.create_for_testing ~sources:["foo.py"] ~dependencies:["bar.py"] ()
+      in
+      create loader listing
+    in
+    assert_lookup_relative_path
+      ~context
+      ~api
+      [!"foo", Some "foo.py"; !"bar", Some "bar.py"; !"baz", None];
+    assert_type_check_qualifiers ~context ~api [!"foo"]);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"conflict mappings in source"
+    @@ fun context ->
+    let api =
+      let loader = FileLoader.create_for_testing ["foo.py", ""; "foo.pyi", ""] in
+      let listing =
+        Sourcedb.Listing.create_for_testing ~sources:["foo.py"; "foo.pyi"] ~dependencies:[] ()
+      in
+      create loader listing
+    in
+    assert_lookup_relative_path ~context ~api [!"foo", Some "foo.pyi"];
+    assert_type_check_qualifiers ~context ~api [!"foo"]);
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"source_overwrites_dep"
+    @@ fun context ->
+    let api =
+      let loader = FileLoader.create_for_testing ["foo.py", ""; "foo.pyi", ""] in
+      let listing =
+        Sourcedb.Listing.create_for_testing ~sources:["foo.py"] ~dependencies:["foo.pyi"] ()
+      in
+      create loader listing
+    in
+    assert_lookup_relative_path ~context ~api [!"foo", Some "foo.py"];
+    assert_type_check_qualifiers ~context ~api [!"foo"]);
+  ]
+
+
+let () =
+  "source_code_api" >::: [test_list test_file_loader; test_list test_source_code_api] |> Test.run
