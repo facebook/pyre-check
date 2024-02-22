@@ -180,6 +180,7 @@ class PartialConfiguration:
             "unstable_client",
             "vscode_project_identifier",
             "vscode_excluded_directories",
+            "migration_status",
         }
 
     @staticmethod
