@@ -359,3 +359,13 @@ class FilesystemTest(unittest.TestCase):
             read_text.return_value = "1\n2"
             add_local_mode("local.py", LocalMode.IGNORE)
             path_write_text.assert_called_once_with("# pyre-ignore-all-errors\n1\n2")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "   \n\t\n  "
+            add_local_mode("local.py", LocalMode.IGNORE, ignore_empty_files=True)
+            path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = ""
+            add_local_mode("local.py", LocalMode.IGNORE, ignore_empty_files=True)
+            path_write_text.assert_not_called()

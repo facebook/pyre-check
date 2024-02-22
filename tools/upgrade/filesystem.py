@@ -175,10 +175,16 @@ def remove_local_mode(path: Path, modes: List[LocalMode]) -> None:
     return
 
 
-def add_local_mode(filename: str, mode: LocalMode) -> None:
+def add_local_mode(
+    filename: str, mode: LocalMode, ignore_empty_files: bool = False
+) -> None:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
     text = path.read_text()
+
+    if ignore_empty_files and len(text.strip()) == 0:
+        return
+
     if "@" "generated" in text:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
         return
