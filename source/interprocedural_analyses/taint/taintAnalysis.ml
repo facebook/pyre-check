@@ -165,6 +165,7 @@ let write_modules_to_file
     ~path
     qualifiers
   =
+  let timer = Timer.start () in
   Log.info "Writing modules to `%s`" (PyrePath.absolute path);
   let source_code_api =
     type_environment
@@ -189,7 +190,8 @@ let write_modules_to_file
     ~path
     ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
     ~to_json_lines
-    qualifiers
+    qualifiers;
+  Statistics.performance ~name:"Wrote modules" ~phase_name:"Writing modules" ~timer ()
 
 
 let write_functions_to_file
@@ -198,6 +200,7 @@ let write_functions_to_file
     ~path
     definitions
   =
+  let timer = Timer.start () in
   Log.info "Writing functions to `%s`" (PyrePath.absolute path);
   let to_json_lines definition =
     [
@@ -211,7 +214,8 @@ let write_functions_to_file
     ~path
     ~configuration:(`Assoc ["repo", `String (PyrePath.absolute local_root)])
     ~to_json_lines
-    definitions
+    definitions;
+  Statistics.performance ~name:"Wrote functions" ~phase_name:"Writing functions" ~timer ()
 
 
 (** Perform a full type check and build a type environment. *)
