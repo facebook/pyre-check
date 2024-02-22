@@ -293,7 +293,7 @@ class Configurationless(Command):
         for file in files_to_migrate:
             file_mode = self.get_file_mode_to_apply(file, options)
             if file_mode is not None:
-                filesystem.add_local_mode(str(file), file_mode)
+                filesystem.add_local_mode(str(file), file_mode, ignore_empty_files=True)
 
         options.local_configuration.original_contents["migration_status"] = "mode"
         options.local_configuration.write()
