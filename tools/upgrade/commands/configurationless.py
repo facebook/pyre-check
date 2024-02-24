@@ -30,8 +30,8 @@ class ConfigurationlessOptions:
     @cached_property
     def ignore_all_errors_prefixes(self) -> Collection[Path]:
         return (
-            self.global_configuration.get_ignore_path_prefixes()
-            | self.local_configuration.get_ignore_path_prefixes()
+            self.global_configuration.get_resolved_ignore_path_prefixes()
+            | self.local_configuration.get_resolved_ignore_path_prefixes()
         )
 
     @cached_property
@@ -93,7 +93,7 @@ class Configurationless(Command):
     ) -> "Configurationless":
         return Configurationless(
             repository=repository,
-            path=arguments.path,
+            path=arguments.path.resolve(),
             includes=arguments.include_file_suffixes,
             commit=(not arguments.no_commit),
         )
@@ -124,7 +124,7 @@ class Configurationless(Command):
     def get_file_mode_to_apply(
         self, file: Path, options: ConfigurationlessOptions
     ) -> Optional[filesystem.LocalMode]:
-        file = (self._path / file).absolute()
+        file = file.resolve()
         default_local_mode = options.default_local_mode
         if any(
             exclude_pattern.search(str(file)) is not None
@@ -208,9 +208,7 @@ class Configurationless(Command):
 
             LOG.debug(f"Found files:\n`{result}`")
 
-            return {
-                (buck_root / file.strip()).absolute() for file in result.split("\n")
-            }
+            return {(buck_root / file.strip()).resolve() for file in result.split("\n")}
 
     def _get_files_to_migrate_from_targets(
         self, configuration_targets: List[str]
@@ -231,15 +229,15 @@ class Configurationless(Command):
         }
 
     def _get_files_to_migrate_from_source_directories(
-        self, source_directories: List[str]
+        self, source_directories: List[Path]
     ) -> Collection[Path]:
-        LOG.debug("Finding files with filesystem")
+        LOG.debug(f"Finding files with filesystem under {source_directories}")
         file_system = filesystem.get_filesystem()
 
         return {
-            Path(file)
+            (source_directory / file).resolve()
             for source_directory in source_directories
-            for file in file_system.list(source_directory, patterns=self._includes)
+            for file in file_system.list(str(source_directory), patterns=self._includes)
         }
 
     def get_files_to_migrate(
@@ -248,8 +246,10 @@ class Configurationless(Command):
         if local_configuration.targets is not None:
             files = self._get_files_to_migrate_from_targets(local_configuration.targets)
         elif local_configuration.source_directories is not None:
+            source_directories = local_configuration.source_directories
+            local_root = Path(local_configuration.root)
             files = self._get_files_to_migrate_from_source_directories(
-                local_configuration.source_directories
+                [local_root / directory for directory in source_directories]
             )
         else:
             raise ValueError(
@@ -261,8 +261,10 @@ class Configurationless(Command):
     def get_options(
         self,
     ) -> ConfigurationlessOptions:
-        global_configuration = Configuration(Configuration.find_project_configuration())
-        configuration_path = self._path / ".pyre_configuration.local"
+        global_configuration = Configuration(
+            Configuration.find_project_configuration().resolve()
+        )
+        configuration_path = (self._path / ".pyre_configuration.local").resolve()
         local_configuration = Configuration(configuration_path)
 
         if not global_configuration.get_path().exists():

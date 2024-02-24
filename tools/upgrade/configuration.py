@@ -155,10 +155,26 @@ class Configuration:
         else:
             return set()
 
-    def get_ignore_path_prefixes(self) -> Set[Path]:
+    def _relative_path_from_prefix(self, prefix: str) -> Path:
         root = Path(self.root)
+        if not prefix.startswith("//"):
+            return root / prefix
+
+        # strip preceding '//'
+        stripped_prefix = prefix[2:]
+
+        if self.is_local:
+            global_root = self.find_project_configuration(root).parent
+            return global_root / stripped_prefix
+        else:
+            return root / stripped_prefix
+
+    def get_resolved_ignore_path_prefixes(self) -> Set[Path]:
         if self.ignore_all_errors is not None:
-            return {(root / prefix).absolute() for prefix in self.ignore_all_errors}
+            return {
+                self._relative_path_from_prefix(prefix).resolve()
+                for prefix in self.ignore_all_errors
+            }
         else:
             return set()
 

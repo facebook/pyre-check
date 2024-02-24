@@ -3,9 +3,9 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
-import unittest
 from pathlib import Path
 from typing import Any, Iterable, List, Optional
+from unittest import mock, TestCase
 
 from ...configuration import Configuration
 
@@ -14,7 +14,7 @@ from ...repository import Repository
 from ..configurationless import Configurationless, ConfigurationlessOptions
 
 
-class TestConfigurationless(unittest.TestCase):
+class TestConfigurationless(TestCase):
     def __init__(self, *args: Any, **kwargs: Any) -> None:
         super().__init__(*args, **kwargs)
 
@@ -199,6 +199,28 @@ class TestConfigurationless(unittest.TestCase):
             ),
             LocalMode.IGNORE,
         )
+
+    def test_get_file_mode_to_apply_file_in_ignore_root_path(self) -> None:
+        options = self.get_options(ignore_all_errors_prefixes=["//path/to/ignore"])
+        with mock.patch.object(
+            Configuration,
+            "find_project_configuration",
+            return_value=options.global_configuration.get_path(),
+        ):
+            self.assertEqual(
+                self.configurationless.get_file_mode_to_apply(
+                    Path("path/to/ignore/file.py").resolve(),
+                    options,
+                ),
+                LocalMode.STRICT,
+            )
+            self.assertEqual(
+                self.configurationless.get_file_mode_to_apply(
+                    Path("../path/to/ignore/file.py").resolve(),
+                    options,
+                ),
+                LocalMode.IGNORE,
+            )
 
     def test_get_mode_to_apply_file_ignore_exclude_precedence(self) -> None:
         options = self.get_options(
