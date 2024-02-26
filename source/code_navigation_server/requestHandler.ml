@@ -201,10 +201,6 @@ let handle_completion
   >>| fun completions -> Response.(Completion { completions })
 
 
-let handle_document_symbol _ _ _ = Response.(GetDocumentSymbol { document_symbol_items = [] })
-
-(* TODO T166374635: return the correct response *)
-
 let handle_superclasses
     ~class_:{ Request.ClassExpression.module_; qualified_name }
     { State.environment; _ }
@@ -618,9 +614,11 @@ let handle_query
         handle_location_of_definition ~path ~position ~client_id state |> response_from_result
       in
       Lwt.return response
-  | Request.Query.GetDocumentSymbol { path = _; client_id = _ } ->
+  | Request.Query.DocumentSymbol { path = _; client_id = _ } ->
+      (* TODO T166374635: populate this method with the real response instead of the mock
+         response *)
       (* make sure its not an empty list *)
-      let response = Response.(GetDocumentSymbol { document_symbol_items = [] }) in
+      let response = Response.(DocumentSymbol { document_symbol_items = [] }) in
       Lwt.return response
   | Request.Query.Completion { path; position; client_id } ->
       let state = Server.ExclusiveLock.unsafe_read state in

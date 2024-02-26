@@ -374,7 +374,7 @@ module Testing : sig
                 navigation server, the server will also provide a best-effort response and will only
                 return a {!Response.ErrorKind.ModuleNotTracked} error if it cannot find the file on
                 the filesystem. *)
-        | GetDocumentSymbol of {
+        | DocumentSymbol of {
             path: string;
             client_id: string;
           }
@@ -591,7 +591,7 @@ module Testing : sig
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined
               multiple times.*)
-      | GetDocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
+      | DocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
           (** TODO: T166374635 Create structure for document symbol response *)
       | Completion of { completions: CompletionItem.t list }
           (** Response for {!Request.Completion}. [completions] contains a list of possible

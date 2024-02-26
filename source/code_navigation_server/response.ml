@@ -149,8 +149,7 @@ type t =
   | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
-  | GetDocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
-      (** TODO: T166374635 Create structure for document symbol response *)
+  | DocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
   | Completion of { completions: CompletionItem.t list }
   | ServerStatus of Status.t
   | Info of {
