@@ -57,7 +57,7 @@ class DefinitionLocationResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 @dataclasses.dataclass(frozen=True)
 class GetDocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
-    response: Optional[lsp.DocumentSymbolsResponse]
+    response: Optional[List[lsp.DocumentSymbolsResponse]]
 
 
 @dataclasses.dataclass(frozen=True)
