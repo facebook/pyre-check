@@ -791,6 +791,21 @@ class DocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class DocumentSymbolRequest:
+    path: str
+    client_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "DocumentSymbol",
+            {
+                "path": self.path,
+                "client_id": self.client_id,
+            },
+        ]
+
+
+@dataclasses.dataclass(frozen=True)
 class CompletionRequest:
     path: str
     client_id: str

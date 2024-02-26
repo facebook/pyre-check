@@ -819,6 +819,24 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         path: str,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
         raise NotImplementedError()
+        document_symbol_request = lsp.DocumentSymbolRequest(
+            path=str(path),
+            client_id=self._get_client_id(),
+        )
+
+        response = await code_navigation_request.async_handle_document_symbol_request(
+            self.socket_path,
+            document_symbol_request,
+        )
+
+        if isinstance(response, code_navigation_request.ErrorResponse):
+            return DaemonQueryFailure(
+                response.message, error_source=response.error_source
+            )
+
+        else:
+            response = response.to_lsp_document_symbol_response()
+            return lsp.DocumentSymbol(response=response)
 
     async def get_symbol_search(
         self,

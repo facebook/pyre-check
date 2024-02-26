@@ -132,6 +132,140 @@ class TypeErrorsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
         return [error.Error.from_json(error_response) for error_response in self.errors]
 
 
+class PyreDocumentSymbolKind(str, enum.Enum):
+    FILE = "FILE"
+    MODULE = "MODULE"
+    NAMESPACE = "NAMESPACE"
+    PACKAGE = "PACKAGE"
+    CLASS = "CLASS"
+    METHOD = "METHOD"
+    PROPERTY = "PROPERTY"
+    FIELD = "FIELD"
+    CONSTRUCTOR = "CONSTRUCTOR"
+    ENUM = "ENUM"
+    INTERFACE = "INTERFACE"
+    FUNCTION = "FUNCTION"
+    VARIABLE = "VARIABLE"
+    CONSTANT = "CONSTANT"
+    STRING = "STRING"
+    NUMBER = "NUMBER"
+    BOOLEAN = "BOOLEAN"
+    ARRAY = "ARRAY"
+    OBJECT = "OBJECT"
+    KEY = "KEY"
+    NULL = "NULL"
+    ENUM_MEMBER = "ENUM_MEMBER"
+    STRUCT = "STRUCT"
+    EVENT = "EVENT"
+    OPERATOR = "OPERATOR"
+    TYPEPARAMETER = "TYPEPARAMETER"
+
+    def to_lsp_document_symbol_kind(self) -> lsp.SymbolKind:
+        if self == self.FILE:
+            return lsp.SymbolKind.FILE
+        elif self == self.MODULE:
+            return lsp.SymbolKind.MODULE
+        elif self == self.NAMESPACE:
+            return lsp.SymbolKind.NAMESPACE
+        elif self == self.PACKAGE:
+            return lsp.SymbolKind.PACKAGE
+        elif self == self.CLASS:
+            return lsp.SymbolKind.CLASS
+        elif self == self.METHOD:
+            return lsp.SymbolKind.METHOD
+        elif self == self.PROPERTY:
+            return lsp.SymbolKind.PROPERTY
+        elif self == self.FIELD:
+            return lsp.SymbolKind.FIELD
+        elif self == self.CONSTRUCTOR:
+            return lsp.SymbolKind.CONSTRUCTOR
+        elif self == self.ENUM:
+            return lsp.SymbolKind.ENUM
+        elif self == self.INTERFACE:
+            return lsp.SymbolKind.INTERFACE
+        elif self == self.FUNCTION:
+            return lsp.SymbolKind.FUNCTION
+        elif self == self.VARIABLE:
+            return lsp.SymbolKind.VARIABLE
+        elif self == self.CONSTANT:
+            return lsp.SymbolKind.CONSTANT
+        elif self == self.STRING:
+            return lsp.SymbolKind.STRING
+        elif self == self.NUMBER:
+            return lsp.SymbolKind.NUMBER
+        elif self == self.BOOLEAN:
+            return lsp.SymbolKind.BOOLEAN
+        elif self == self.ARRAY:
+            return lsp.SymbolKind.ARRAY
+        elif self == self.OBJECT:
+            return lsp.SymbolKind.OBJECT
+        elif self == self.KEY:
+            return lsp.SymbolKind.KEY
+        elif self == self.NULL:
+            return lsp.SymbolKind.NULL
+        elif self == self.ENUM_MEMBER:
+            return lsp.SymbolKind.ENUMMEMBER
+        elif self == self.STRUCT:
+            return lsp.SymbolKind.STRUCT
+        elif self == self.EVENT:
+            return lsp.SymbolKind.EVENT
+        elif self == self.OPERATOR:
+            return lsp.SymbolKind.OPERATOR
+        elif self == self.TYPEPARAMETER:
+            return lsp.SymbolKind.TYPEPARAMETER
+        else:
+            raise ValueError("Unknown symbol kind")
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreDocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
+    name: str
+    detail: Optional[str]
+    kind: PyreDocumentSymbolKind
+    range: CodeNavigationRange
+    selection_range: CodeNavigationRange
+    children: List["PyreDocumentSymbol"]
+
+    def to_lsp_document_symbol_response(
+        self,
+    ) -> lsp.DocumentSymbol:
+
+        children = []
+        for child in self.children:
+            res = child.to_lsp_document_symbol_response()
+            assert child is not None
+            children.append(res)
+
+        response = lsp.DocumentSymbol(
+            name=self.name,
+            detail=self.detail,
+            kind=self.kind.to_lsp_document_symbol_kind(),
+            range=self.range.to_lsp_range(),
+            selection_range=self.selection_range.to_lsp_range(),
+            children=children,
+        )
+
+        return response
+
+
+@dataclasses.dataclass(frozen=True)
+class PyreDocumentSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    symbols: List[PyreDocumentSymbol]
+
+
+@dataclasses.dataclass(frozen=True)
+class RegisterClient:
+    client_id: str
+
+    def to_json(self) -> List[object]:
+        return [
+            "RegisterClient",
+            {
+                "client_id": self.client_id,
+            },
+        ]
+
+
 class PyreCompletionItemKind(str, enum.Enum):
     # TODO(T159253974): extend to support remaining CompletionItemKinds when local/global variable autocomplete are supported
     SIMPLE = "SIMPLE"
@@ -368,6 +502,26 @@ async def async_handle_type_errors_request(
         response,
         expected_response_kind="TypeErrors",
         response_type=TypeErrorsResponse,
+        raw_request=raw_request,
+    )
+
+
+async def async_handle_document_symbol_request(
+    socket_path: Path,
+    document_symbol_request: lsp.DocumentSymbolRequest,
+) -> Union[PyreDocumentSymbolResponse, ErrorResponse]:
+    raw_request = json.dumps(["Query", document_symbol_request.to_json()])
+    response = await daemon_connection.attempt_send_async_raw_request(
+        socket_path, raw_request
+    )
+    if isinstance(response, daemon_connection.DaemonConnectionFailure):
+        return ErrorResponse(
+            message=response.error_message, error_source=response.error_source
+        )
+    return parse_raw_response(
+        response,
+        expected_response_kind="DocumentSymbol",
+        response_type=PyreDocumentSymbolResponse,
         raw_request=raw_request,
     )
 
