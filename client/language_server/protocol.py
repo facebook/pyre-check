@@ -779,7 +779,7 @@ class DocumentSymbolsParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class DocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+class DocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     """Contains detailed information about a specified symbol."""
 
     name: str
@@ -787,7 +787,7 @@ class DocumentSymbolsResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     kind: SymbolKind
     range: LspRange
     selection_range: LspRange
-    children: List["DocumentSymbolsResponse"]
+    children: List["DocumentSymbol"]
 
 
 @dataclasses.dataclass(frozen=True)

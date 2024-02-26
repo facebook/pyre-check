@@ -15,7 +15,7 @@ import dataclasses
 from typing import List, Optional, Union
 
 from ..language_server.protocol import (
-    DocumentSymbolsResponse,
+    DocumentSymbol,
     LspRange,
     PyrePosition,
     SymbolKind,
@@ -32,7 +32,7 @@ class SymbolInfo:
 
 def _node_to_symbol(
     node: Union[ast.FunctionDef, ast.AsyncFunctionDef, ast.ClassDef]
-) -> DocumentSymbolsResponse:
+) -> DocumentSymbol:
     node_is_class_def = isinstance(node, ast.ClassDef)
     symbol_info = SymbolKind.CLASS if node_is_class_def else SymbolKind.FUNCTION
 
@@ -47,11 +47,11 @@ def _node_to_symbol(
 
 def _create_document_symbols_response(
     symbol_info: SymbolInfo,
-    children_symbols: Optional[List[DocumentSymbolsResponse]] = None,
-) -> DocumentSymbolsResponse:
+    children_symbols: Optional[List[DocumentSymbol]] = None,
+) -> DocumentSymbol:
     if children_symbols is None:
         children_symbols = []
-    return DocumentSymbolsResponse(
+    return DocumentSymbol(
         name=symbol_info.name,
         # TODO(114362484): add docstrings to details
         detail="",
@@ -80,7 +80,7 @@ def _generate_lsp_symbol_info(node: ast.AST, name: str, kind: SymbolKind) -> Sym
 
 
 class _SymbolsCollector(ast.NodeVisitor):
-    symbols: List[DocumentSymbolsResponse]
+    symbols: List[DocumentSymbol]
 
     def __init__(self) -> None:
         super().__init__()
@@ -139,7 +139,7 @@ class UnparseableError(Exception):
 
 
 # TODO(114362484): 1) Support details filled with docstrings/comments 2) incremental re-parsing via tree-sitter.
-def parse_source_and_collect_symbols(source: str) -> List[DocumentSymbolsResponse]:
+def parse_source_and_collect_symbols(source: str) -> List[DocumentSymbol]:
     try:
         ast_tree = ast.parse(source=source, mode="exec")
     except Exception as e:

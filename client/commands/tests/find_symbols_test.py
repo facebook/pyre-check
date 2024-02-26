@@ -19,9 +19,9 @@ def make_document_symbol(
     detail: str,
     kind: lsp.SymbolKind,
     range: lsp.LspRange,
-    children: Optional[List[lsp.DocumentSymbolsResponse]] = None,
-) -> lsp.DocumentSymbolsResponse:
-    return lsp.DocumentSymbolsResponse(
+    children: Optional[List[lsp.DocumentSymbol]] = None,
+) -> lsp.DocumentSymbol:
+    return lsp.DocumentSymbol(
         name=name,
         detail=detail,
         kind=kind,
@@ -39,7 +39,7 @@ if (sys.version_info.major, sys.version_info.minor) >= (3, 8):
 
     class FindSymbolTests(testslide.TestCase):
         def assert_collected_symbols(
-            self, source: str, expected_symbols: List[lsp.DocumentSymbolsResponse]
+            self, source: str, expected_symbols: List[lsp.DocumentSymbol]
         ) -> None:
             self.maxDiff = None
             self.assertListEqual(
