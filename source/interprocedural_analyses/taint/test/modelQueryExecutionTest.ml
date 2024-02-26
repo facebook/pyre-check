@@ -1933,6 +1933,39 @@ let test_generated_annotations context =
   assert_generated_annotations
     ~source:
       {|
+      class Flask:
+        def route():
+          pass
+      application = Flask()
+      @application.route
+      def my_view():
+        pass
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_flask_route";
+        logging_group_name = None;
+        path = None;
+        where =
+          (* The constraint matches against the fully qualified name of the local variable that
+             points to the decorator (which is `test.application.route`), as opposed to matching
+             against the fully qualified name of the decorator itself (which is
+             `test.Flask.route`). *)
+          [
+            AnyDecoratorConstraint
+              (FullyQualifiedNameConstraint (Matches (Re2.create_exn "test.Flask.route")));
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~expected:[];
+  assert_generated_annotations
+    ~source:
+      {|
        def d1(c): ...
        def d2(c): ...
 
