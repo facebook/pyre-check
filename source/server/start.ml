@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module provides startup logic for the "classic" Pyre daemon that backs `pyre incremental`,
+   `pyre server`, and `pyre persistent`. *)
 
 open Core
 

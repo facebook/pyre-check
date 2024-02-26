@@ -5,7 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module defines all of the options / flags to control how a classic Pyre daemon (the one that
+   powers `pyre incremental`, `pyre query`, and `pyre persistent`) behaves. *)
 
 open Base
 
