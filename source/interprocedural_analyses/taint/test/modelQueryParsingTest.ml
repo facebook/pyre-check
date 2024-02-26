@@ -1159,6 +1159,39 @@ let test_query_parsing_find_methods context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
+     where = Decorator(fully_qualified_callee.matches("foo")),
+     model = [Returns([TaintSource[Test]])],
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "get_foo";
+          logging_group_name = None;
+          path = None;
+          where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "foo")))];
+          find = Method;
+          models =
+            [
+              Return
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "methods",
      where = Decorator(name.matches("foo"), name.matches("bar")),
      model = [Returns([TaintSource[Test]])],
     )

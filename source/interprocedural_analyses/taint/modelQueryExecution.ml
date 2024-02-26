@@ -396,6 +396,7 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
         ~name_captures
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.show)
+  | ModelQuery.DecoratorConstraint.FullyQualifiedCallee _ -> failwith "Unsupported"
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =
