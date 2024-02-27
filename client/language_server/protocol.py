@@ -876,6 +876,24 @@ class WorkspaceSymbolParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
+class DocumentFormattingParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
+    text_document: TextDocumentIdentifier
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DocumentFormattingParameters":
+        return _parse_parameters(parameters, target=DocumentFormattingParameters)
+
+
+@dataclasses.dataclass(frozen=True)
+class DocumentFormattingResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+    """describing the modification to the document to be formatted"""
+
+    list_of_edits: Optional[List[TextEdit]]
+
+
+@dataclasses.dataclass(frozen=True)
 class WorkspaceSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     name: str
     kind: SymbolKind
