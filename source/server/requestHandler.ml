@@ -5,7 +5,19 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module provides the request handler for the "classic" Pyre daemon that powers `pyre
+ * incremental`, `pyre persistent`, and `pyre query`.
+ *
+ * There are a few types of requests that can arrive:
+ * - File updates from watchman (`IncrementalUpdate`) which trigger us to do an
+ *   incremental update and propagate to overlays. - Overlay actions, which
+ *   cause us to add / update / remove overlays from the overlaid environment in
+ *   the server state.
+ * - Requests to display type errors (in an overlay or not), to which we respond
+ *   with type check results.
+ * - Requests from `pyre query`, which are dispatched to the handler in
+ *   `Query.ml`
+ *)
 
 module CamlUnix = Unix
 open Core

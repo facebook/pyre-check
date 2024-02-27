@@ -5,7 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module defines the logic for the daemon-side handling of Pyre subscriptions
+
+   Subscriptions are how Pyre language servers started via `pyre persistent` know what the daemon is
+   doing and get any information needed after incemental updates.
+
+   The daemon will typically send type errors after update, although in some unusual configurations
+   the daemon may not be performing type checking, and will instead just inform the frontend when
+   state changes. *)
 
 open Core
 module ServerResponse = Response
