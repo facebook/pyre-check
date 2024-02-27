@@ -85,6 +85,21 @@ class CodeNavigationRequestsTest(testslide.TestCase):
             ],
         )
 
+        document_symbol_request = lsp.DocumentSymbolRequest(
+            path="/a/b.py",
+            client_id="foo",
+        )
+        self.assertEqual(
+            document_symbol_request.to_json(),
+            [
+                "DocumentSymbol",
+                {
+                    "path": "/a/b.py",
+                    "client_id": "foo",
+                },
+            ],
+        )
+
     def test_serialize_type_errors_request(self) -> None:
         request = code_navigation_request.TypeErrorsRequest(
             paths=["/a/b.py"],
@@ -278,6 +293,66 @@ class CodeNavigationRequestsTest(testslide.TestCase):
                         label="attribute4",
                         kind=code_navigation_request.PyreCompletionItemKind.VARIABLE,
                         detail="object",
+                    ),
+                ]
+            ),
+        )
+
+    def test_document_symbol_response(self) -> None:
+        response = {
+            "symbols": [
+                {
+                    "name": "foo",
+                    "kind": "FUNCTION",
+                    "detail": "",
+                    "range": {
+                        "start": {"line": 0, "column": 0},
+                        "stop": {
+                            "line": 0,
+                            "column": 0,
+                        },
+                    },
+                    "selectionRange": {
+                        "start": {"line": 1, "column": 1},
+                        "stop": {
+                            "line": 1,
+                            "column": 1,
+                        },
+                    },
+                    "children": [],
+                }
+            ]
+        }
+
+        self.assertEqual(
+            code_navigation_request.parse_response(
+                response,
+                response_type=code_navigation_request.PyreDocumentSymbolResponse,
+                raw_request="RAW_REQUEST",
+            ),
+            code_navigation_request.PyreDocumentSymbolResponse(
+                symbols=[
+                    code_navigation_request.PyreDocumentSymbol(
+                        name="foo",
+                        detail="",
+                        kind=code_navigation_request.PyreDocumentSymbolKind.FUNCTION,
+                        range=code_navigation_request.CodeNavigationRange(
+                            code_navigation_request.CodeNavigationPosition(
+                                line=0, column=0
+                            ),
+                            code_navigation_request.CodeNavigationPosition(
+                                line=0, column=0
+                            ),
+                        ),
+                        selection_range=code_navigation_request.CodeNavigationRange(
+                            code_navigation_request.CodeNavigationPosition(
+                                line=1, column=1
+                            ),
+                            code_navigation_request.CodeNavigationPosition(
+                                line=1, column=1
+                            ),
+                        ),
+                        children=[],
                     ),
                 ]
             ),
