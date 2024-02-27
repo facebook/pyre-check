@@ -513,10 +513,10 @@ module Testing : sig
 
       type t = {
         name: string;
-        kind: SymbolKind.t;
         detail: string;
+        kind: SymbolKind.t;
         range: Ast.Location.t;
-        selection_range: Ast.Location.t;
+        selectionRange: Ast.Location.t;
         children: t list; (* recursive type to represent a list of document symbols *)
       }
       [@@deriving sexp, compare, yojson { strict = false }]
@@ -591,7 +591,7 @@ module Testing : sig
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined
               multiple times.*)
-      | DocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
+      | DocumentSymbol of { symbols: DocumentSymbolItem.t list }
           (** TODO: T166374635 Create structure for document symbol response *)
       | Completion of { completions: CompletionItem.t list }
           (** Response for {!Request.Completion}. [completions] contains a list of possible

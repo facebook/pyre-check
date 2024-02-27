@@ -101,10 +101,10 @@ module DocumentSymbolItem = struct
 
   type t = {
     name: string;
-    kind: SymbolKind.t;
     detail: string;
+    kind: SymbolKind.t;
     range: Ast.Location.t;
-    selection_range: Ast.Location.t;
+    selectionRange: Ast.Location.t;
     children: t list; (* recursive type to represent a list of document symbols *)
   }
   [@@deriving sexp, compare, yojson { strict = false }]
@@ -149,7 +149,7 @@ type t =
   | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }
   | LocationOfDefinition of { definitions: DefinitionLocation.t list }
-  | DocumentSymbol of { document_symbol_items: DocumentSymbolItem.t list }
+  | DocumentSymbol of { symbols: DocumentSymbolItem.t list }
   | Completion of { completions: CompletionItem.t list }
   | ServerStatus of Status.t
   | Info of {

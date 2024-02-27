@@ -618,7 +618,7 @@ let handle_query
       (* TODO T166374635: populate this method with the real response instead of the mock
          response *)
       (* make sure its not an empty list *)
-      let response = Response.(DocumentSymbol { document_symbol_items = [] }) in
+      let response = Response.(DocumentSymbol { symbols = [] }) in
       Lwt.return response
   | Request.Query.Completion { path; position; client_id } ->
       let state = Server.ExclusiveLock.unsafe_read state in
