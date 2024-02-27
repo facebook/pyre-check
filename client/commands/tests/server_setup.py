@@ -190,7 +190,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[querier.DaemonQueryFailure, querier.DocumentSymbolsResponse]:
         if self.mock_document_symbol_response is None:
             raise ValueError("You need to set symbol search in the mock querier")

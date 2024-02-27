@@ -31,6 +31,7 @@ from ..daemon_querier import (
     CodeNavigationDaemonQuerier,
     DaemonQuerierSource,
     DaemonQueryFailure,
+    DocumentSymbolsResponse,
     GetDefinitionLocationsResponse,
     GetHoverResponse,
     PersistentDaemonQuerier,
@@ -619,6 +620,84 @@ class DaemonQuerierTest(testslide.TestCase):
                     detail="test",
                 ),
             ],
+        )
+
+    @setup.async_test
+    async def test_query_document_symbols(self) -> None:
+        json_output = """
+        {
+            "symbols": [
+                {"name": "foo",
+                "detail": "",
+                "kind": "FUNCTION",
+                 "range": {
+                        "start": {
+                            "line": 1,
+                            "column": 1
+                        },
+                        "stop": {
+                            "line": 1,
+                            "column": 1
+                        }
+                    },
+                "selectionRange": {
+                        "start": {
+                            "line": 2,
+                            "column": 1
+                        },
+                        "stop": {
+                            "line": 2,
+                            "column": 1
+                        }
+                },
+                "children": []
+                }
+            ]
+        }
+        """
+
+        querier = CodeNavigationDaemonQuerier(
+            server_state=server_setup.create_server_state_with_options(
+                language_server_features=LanguageServerFeatures(),
+            ),
+        )
+        memory_bytes_writer = MemoryBytesWriter()
+        flat_json = "".join(json_output.splitlines())
+        input_channel = create_memory_text_reader(f'["DocumentSymbol", {flat_json}]\n')
+        output_channel = AsyncTextWriter(memory_bytes_writer)
+
+        with patch_connect_async(input_channel, output_channel):
+            response = await querier.get_document_symbols(
+                path=Path("bar.py"),
+            )
+
+        items = memory_bytes_writer.items()
+        # self.assertEqual(len(items), 1)
+        self.assertRegex(
+            str(items[0]),
+            """["Query", ["DocumentSymbol", {"path": "bar.py", "client_id": "codenav_pid_[0-9]{6}"}]]""",
+        )
+
+        self.assertEqual(
+            response,
+            DocumentSymbolsResponse(
+                response=[
+                    lsp.DocumentSymbol(
+                        name="foo",
+                        detail="",
+                        kind=lsp.SymbolKind.FUNCTION,
+                        range=lsp.LspRange(
+                            lsp.LspPosition(line=0, character=1),
+                            lsp.LspPosition(line=0, character=1),
+                        ),
+                        selection_range=lsp.LspRange(
+                            lsp.LspPosition(line=1, character=1),
+                            lsp.LspPosition(line=1, character=1),
+                        ),
+                        children=[],
+                    ),
+                ]
+            ),
         )
 
     @setup.async_test

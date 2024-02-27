@@ -178,7 +178,7 @@ class AbstractDaemonQuerier(abc.ABC):
     @abc.abstractmethod
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
         raise NotImplementedError()
 
@@ -285,7 +285,7 @@ class EmptyQuerier(AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
         raise NotImplementedError()
 
@@ -498,7 +498,7 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
         return DaemonQueryFailure(
             "Document Symbol is not supported in the pyre persistent client. Please use code-navigation. "
@@ -723,9 +723,9 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
-        return await self.base_querier.get_document_symbols(str(path))
+        return await self.base_querier.get_document_symbols(path)
 
     async def get_symbol_search(
         self,
@@ -816,9 +816,8 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
-        raise NotImplementedError()
         document_symbol_request = lsp.DocumentSymbolRequest(
             path=str(path),
             client_id=self._get_client_id(),
@@ -835,8 +834,12 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
             )
 
         else:
-            response = response.to_lsp_document_symbol_response()
-            return lsp.DocumentSymbol(response=response)
+            return DocumentSymbolsResponse(
+                [
+                    document_symbols.to_lsp_document_symbol()
+                    for document_symbols in response.symbols
+                ]
+            )
 
     async def get_symbol_search(
         self,
@@ -993,7 +996,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
 
     async def get_document_symbols(
         self,
-        path: str,
+        path: Path,
     ) -> Union[DaemonQueryFailure, DocumentSymbolsResponse]:
         raise NotImplementedError()
 

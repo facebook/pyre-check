@@ -226,13 +226,13 @@ class PyreDocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
     selection_range: CodeNavigationRange
     children: List["PyreDocumentSymbol"]
 
-    def to_lsp_document_symbol_response(
+    def to_lsp_document_symbol(
         self,
     ) -> lsp.DocumentSymbol:
 
         children = []
         for child in self.children:
-            res = child.to_lsp_document_symbol_response()
+            res = child.to_lsp_document_symbol()
             assert child is not None
             children.append(res)
 
@@ -251,19 +251,6 @@ class PyreDocumentSymbol(json_mixins.CamlCaseAndExcludeJsonMixin):
 @dataclasses.dataclass(frozen=True)
 class PyreDocumentSymbolResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     symbols: List[PyreDocumentSymbol]
-
-
-@dataclasses.dataclass(frozen=True)
-class RegisterClient:
-    client_id: str
-
-    def to_json(self) -> List[object]:
-        return [
-            "RegisterClient",
-            {
-                "client_id": self.client_id,
-            },
-        ]
 
 
 class PyreCompletionItemKind(str, enum.Enum):
