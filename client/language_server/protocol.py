@@ -436,6 +436,7 @@ class ServerCapabilities(json_mixins.CamlCaseAndExcludeJsonMixin):
     rename_provider: Optional[bool] = None
     workspace_symbol_provider: Optional[bool] = None
     inlay_hint_provider: Optional[bool] = None
+    document_formatting_provider: Optional[bool] = None
 
 
 @dataclasses.dataclass(frozen=True)

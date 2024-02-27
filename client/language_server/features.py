@@ -76,6 +76,7 @@ CallHierarchyAvailability = _Availability
 RenameAvailability = _Availability
 SymbolSearchAvailability = _Availability
 InlayHintAvailability = _Availability
+FormattingAvailability = _Availability
 
 # Telemetry: is the editor able to forward events somewhere?
 TelemetryAvailability = _Availability
@@ -97,6 +98,7 @@ class LanguageServerFeatures:
     rename: RenameAvailability = RenameAvailability.DISABLED
     symbol: SymbolSearchAvailability = SymbolSearchAvailability.DISABLED
     inlay_hint: InlayHintAvailability = InlayHintAvailability.DISABLED
+    formatting: FormattingAvailability = FormattingAvailability.DISABLED
 
     def capabilities(self) -> Dict[str, bool]:
         return {
@@ -109,4 +111,5 @@ class LanguageServerFeatures:
             "rename_provider": not self.rename.is_disabled(),
             "workspace_symbol_provider": not self.symbol.is_disabled(),
             "inlay_hint_provider": not self.inlay_hint.is_disabled(),
+            "document_formatting_provider": not self.formatting.is_disabled(),
         }
