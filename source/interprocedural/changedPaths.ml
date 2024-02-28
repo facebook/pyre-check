@@ -112,11 +112,11 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
   in
   let removed_paths =
     let tracked_set =
-      ModuleTracker.all_module_paths new_module_tracker
+      ModuleTracker.module_paths new_module_tracker
       |> List.map ~f:ModulePath.raw
       |> IndexedRelativePath.Hash_set.of_list
     in
-    ModuleTracker.all_module_paths old_module_tracker
+    ModuleTracker.module_paths old_module_tracker
     |> List.filter ~f:(fun module_path ->
            let key = ModulePath.raw module_path in
            not (Hash_set.mem tracked_set key))
