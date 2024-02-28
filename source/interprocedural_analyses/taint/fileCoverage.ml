@@ -8,6 +8,7 @@
 open Core
 open Data_structures
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module File = struct
   module T = struct
@@ -17,8 +18,10 @@ module File = struct
   include T
   module Set = SerializableSet.Make (T)
 
-  let from_callable ~resolve_module_path ~resolution callable =
-    Interprocedural.Target.get_module_and_definition callable ~resolution
+  let from_callable ~pyre_api ~resolve_module_path callable =
+    Interprocedural.Target.get_module_and_definition
+      callable
+      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
     >>| fst
     >>= resolve_module_path
     >>= function
@@ -41,7 +44,7 @@ let union { files = files_left } { files = files_right } =
 
 
 (* Add the files that contain any of the given callables. *)
-let from_callables ~scheduler ~resolution ~resolve_module_path ~callables =
+let from_callables ~scheduler ~pyre_api ~resolve_module_path ~callables =
   Scheduler.map_reduce
     scheduler
     ~policy:
@@ -54,7 +57,7 @@ let from_callables ~scheduler ~resolution ~resolve_module_path ~callables =
     ~map:(fun callables ->
       let files =
         callables
-        |> List.filter_map ~f:(File.from_callable ~resolution ~resolve_module_path)
+        |> List.filter_map ~f:(File.from_callable ~pyre_api ~resolve_module_path)
         |> File.Set.of_list
       in
       { files })

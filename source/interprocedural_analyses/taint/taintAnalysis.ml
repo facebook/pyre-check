@@ -431,7 +431,7 @@ let compact_ocaml_heap ~name =
 
 
 let compute_coverage
-    ~environment
+    ~pyre_api
     ~scheduler
     ~resolve_module_path
     ~callables_to_analyze
@@ -444,7 +444,7 @@ let compute_coverage
   let file_coverage =
     FileCoverage.from_callables
       ~scheduler
-      ~resolution:(Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
+      ~pyre_api
       ~resolve_module_path
       ~callables:callables_to_analyze
   in
@@ -811,7 +811,7 @@ let run_taint_analysis
       FileCoverage.empty, RuleCoverage.empty
     else
       compute_coverage
-        ~environment:read_only_environment
+        ~pyre_api
         ~scheduler
         ~resolve_module_path
         ~callables_to_analyze
