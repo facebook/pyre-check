@@ -379,7 +379,7 @@ let run_analyze analyze_configuration =
               else
                 TaintAnalysis.run_taint_analysis
                   ~static_analysis_configuration
-                  ~build_system
+                  ~lookup_source:(Server.BuildSystem.lookup_source build_system)
                   ~scheduler
                   ());
           Lwt.return (ExitStatus.CheckStatus CheckCommand.ExitStatus.Ok)))

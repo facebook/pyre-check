@@ -133,17 +133,14 @@ let parse_decorator_preprocessing_configuration
 
 
 let resolve_module_path
-    ~build_system
+    ~lookup_source
     ~source_code_api
     ~static_analysis_configuration:
       { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
     qualifier
   =
   match
-    Server.PathLookup.absolute_source_path_of_qualifier_with_build_system
-      ~build_system
-      ~source_code_api
-      qualifier
+    Server.PathLookup.absolute_source_path_of_qualifier ~lookup_source ~source_code_api qualifier
   with
   | None -> None
   | Some path ->
@@ -161,7 +158,7 @@ let write_modules_to_file
       ({ Configuration.StaticAnalysis.configuration = { local_root; _ }; _ } as
       static_analysis_configuration)
     ~type_environment
-    ~build_system
+    ~lookup_source
     ~path
     qualifiers
   =
@@ -174,7 +171,7 @@ let write_modules_to_file
   in
   let to_json_lines qualifier =
     let path =
-      resolve_module_path ~build_system ~source_code_api ~static_analysis_configuration qualifier
+      resolve_module_path ~lookup_source ~source_code_api ~static_analysis_configuration qualifier
       |> function
       | Some { path; _ } -> `String (PyrePath.absolute path)
       | None -> `Null
@@ -267,7 +264,7 @@ let type_check
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; save_results_to; _ } as
       static_analysis_configuration)
-    ~build_system
+    ~lookup_source
     ~decorator_configuration
     ~cache
   =
@@ -280,7 +277,7 @@ let type_check
             write_modules_to_file
               ~static_analysis_configuration
               ~type_environment
-              ~build_system
+              ~lookup_source
               ~path:(PyrePath.append directory ~element:"modules.json")
               qualifiers;
             write_functions_to_file
@@ -570,7 +567,7 @@ let run_taint_analysis
          compute_coverage = compute_coverage_flag;
          _;
        } as static_analysis_configuration)
-    ~build_system
+    ~lookup_source
     ~scheduler
     ()
   =
@@ -599,7 +596,7 @@ let run_taint_analysis
     type_check
       ~scheduler
       ~static_analysis_configuration
-      ~build_system
+      ~lookup_source
       ~decorator_configuration
       ~cache
   in
@@ -624,7 +621,7 @@ let run_taint_analysis
   in
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
   let resolve_module_path =
-    resolve_module_path ~build_system ~source_code_api ~static_analysis_configuration
+    resolve_module_path ~lookup_source ~source_code_api ~static_analysis_configuration
   in
 
   let class_hierarchy_graph, cache =
