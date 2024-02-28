@@ -218,6 +218,22 @@ let write_functions_to_file
   Statistics.performance ~name:"Wrote functions" ~phase_name:"Writing functions" ~timer ()
 
 
+let create_type_environment ~configuration ~decorator_configuration =
+  let configuration =
+    (* In order to get an accurate call graph and type information, we need to ensure that we
+       schedule a type check for external files. *)
+    (* TODO(T180476103) Remove the need for this by using explicit_qualifiers, and delete this flag
+       from the configuration + environment logic. *)
+    { configuration with Configuration.Analysis.analyze_external_sources = true }
+  in
+  let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
+  let errors_environment =
+    Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
+    |> Analysis.ErrorsEnvironment.create_with_ast_environment
+  in
+  Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
+
+
 (** Perform a full type check and build a type environment. *)
 let type_check
     ~scheduler
@@ -229,24 +245,10 @@ let type_check
     ~cache
   =
   Cache.type_environment cache (fun () ->
+      let type_environment = create_type_environment ~configuration ~decorator_configuration in
       Log.info "Starting type checking...";
-      let configuration =
-        (* In order to get an accurate call graph and type information, we need to ensure that we
-           schedule a type check for external files. *)
-        { configuration with Configuration.Analysis.analyze_external_sources = true }
-      in
-      let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
-      let errors_environment =
-        Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-        |> Analysis.ErrorsEnvironment.create_with_ast_environment
-      in
-      let type_environment =
-        Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment
-          errors_environment
-      in
       let qualifiers =
-        Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api
-          errors_environment
+        Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers
       in
       Log.info "Found %d modules" (List.length qualifiers);
