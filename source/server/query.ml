@@ -542,7 +542,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
             ~configuration
-            ~environment:type_environment
+            ~pyre_api
             ~include_unit_tests:false
             ~qualifiers
         in

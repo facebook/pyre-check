@@ -11,19 +11,19 @@ open Interprocedural
 
 let test_callables context =
   let assert_callables ?(additional_sources = []) ?(source_filename = "test.py") source ~expected =
-    let configuration, source_code_api, resolution =
+    let configuration, source_code_api, pyre_api =
       let scratch_project =
         Test.ScratchProject.setup ~context ((source_filename, source) :: additional_sources)
       in
       ( Test.ScratchProject.configuration_of scratch_project,
         Test.ScratchProject.get_untracked_source_code_api scratch_project,
-        Test.ScratchProject.build_global_resolution scratch_project )
+        Test.ScratchProject.pyre_pysa_read_only_api scratch_project )
     in
     let source =
       Analysis.SourceCodeApi.source_of_qualifier source_code_api (Ast.Reference.create "test")
       |> Option.value_exn
     in
-    FetchCallables.from_source ~configuration ~resolution ~include_unit_tests:false ~source
+    FetchCallables.from_source ~configuration ~pyre_api ~include_unit_tests:false ~source
     |> FetchCallables.get ~definitions:true ~stubs:true
     |> List.sort ~compare:Target.compare
     |> assert_equal

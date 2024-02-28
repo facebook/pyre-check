@@ -13,8 +13,7 @@ open Core
 open Pyre
 open Ast
 open Statement
-module GlobalResolution = Analysis.GlobalResolution
-module TypeEnvironment = Analysis.TypeEnvironment
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type t = {
   (* All callables:
@@ -40,9 +39,7 @@ let join left right =
   }
 
 
-let gather_raw_definitions
-    ~resolution
-    ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
+let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath.qualifier; _ }; _ }
   =
   (* Ignoring parameters that are also function definitions,
    * i.e def f(g): if not g: def g(): ...; g() *)
@@ -65,7 +62,9 @@ let gather_raw_definitions
     let { Target.qualifier = define_qualifier; callables; has_multiple_definitions } =
       Option.value_exn
         ~message:"Missing definitions for define name"
-        (Target.get_definitions ~resolution define_name)
+        (Target.get_definitions
+           ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+           define_name)
     in
     if not (Reference.equal qualifier define_qualifier) then
       let () =
@@ -106,7 +105,7 @@ let gather_raw_definitions
       callables_left
       callables_right
   in
-  GlobalResolution.get_define_names resolution qualifier
+  PyrePysaApi.ReadOnly.get_define_names pyre_api qualifier
   |> Reference.Set.of_list
   |> Set.elements
   |> List.filter ~f:filter_parameters
@@ -115,11 +114,11 @@ let gather_raw_definitions
 
 
 (** Traverse the AST to find all callables (functions and methods). *)
-let from_source ~configuration ~resolution ~include_unit_tests ~source =
-  if (not include_unit_tests) && GlobalResolution.source_is_unit_test resolution ~source then
+let from_source ~configuration ~pyre_api ~include_unit_tests ~source =
+  if (not include_unit_tests) && PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
     empty
   else
-    let definitions = gather_raw_definitions ~resolution ~source in
+    let definitions = gather_raw_definitions ~pyre_api ~source in
     let definitions =
       if Ast.ModulePath.is_stub source.module_path then
         Target.Map.filter
@@ -150,18 +149,11 @@ let from_source ~configuration ~resolution ~include_unit_tests ~source =
     Target.Map.fold add_definition definitions empty
 
 
-let get_source ~environment qualifier =
-  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
-  Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier
-
-
-let from_qualifiers ~scheduler ~environment ~configuration ~include_unit_tests ~qualifiers =
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+let from_qualifiers ~scheduler ~pyre_api ~configuration ~include_unit_tests ~qualifiers =
   let map qualifiers =
     let callables_of_qualifier callables qualifier =
-      get_source ~environment qualifier
-      >>| (fun source ->
-            from_source ~configuration ~resolution:global_resolution ~include_unit_tests ~source)
+      PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
+      >>| (fun source -> from_source ~configuration ~pyre_api ~include_unit_tests ~source)
       |> Option.value ~default:empty
       |> join callables
     in

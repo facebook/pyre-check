@@ -12,10 +12,9 @@ open Test
 open TestHelper
 open Taint
 
-let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
-  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, _ =
-    Test.ScratchProject.build_type_environment_and_postprocess project
-  in
+let get_stubs_and_definitions ~source_file_name ~project =
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
+  let type_environment = Test.ScratchProject.type_environment project in
   let source_code_api =
     Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
   in
@@ -27,7 +26,7 @@ let get_stubs_and_definitions ~source_file_name ~global_resolution ~project =
   let initial_callables =
     Interprocedural.FetchCallables.from_source
       ~configuration:(Test.ScratchProject.configuration_of project)
-      ~resolution:global_resolution
+      ~pyre_api
       ~include_unit_tests:false
       ~source:ast_source
   in
@@ -118,9 +117,7 @@ let set_up_environment
   let global_resolution = ScratchProject.build_global_resolution project in
 
   ModelVerifier.ClassDefinitionsCache.invalidate ();
-  let stubs, definitions =
-    get_stubs_and_definitions ~source_file_name ~global_resolution ~project
-  in
+  let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
       ~resolution:global_resolution

@@ -446,7 +446,7 @@ let initialize
   let taint_configuration_shared_memory =
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
-  let configuration, type_environment, global_module_paths_api, errors =
+  let configuration, type_environment, global_module_paths_api, pyre_api, errors =
     let project = Test.ScratchProject.setup ~context [handle, source_content] in
     set_up_decorator_preprocessing ~handle models_source;
     let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ }, errors =
@@ -455,6 +455,7 @@ let initialize
     ( Test.ScratchProject.configuration_of project,
       type_environment,
       Test.ScratchProject.global_module_paths_api project,
+      Test.ScratchProject.pyre_pysa_read_only_api project,
       errors )
   in
   let static_analysis_configuration =
@@ -485,17 +486,13 @@ let initialize
      in
      failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let initial_callables =
-    FetchCallables.from_source
-      ~configuration
-      ~resolution:global_resolution
-      ~include_unit_tests:false
-      ~source
+    FetchCallables.from_source ~configuration ~pyre_api ~include_unit_tests:false ~source
   in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
   let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =

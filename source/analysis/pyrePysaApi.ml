@@ -223,6 +223,8 @@ module ReadOnly = struct
 
   let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
+  let get_define_names api = global_resolution api |> GlobalResolution.get_define_names
+
   let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
 
   let get_unannotated_global api =

@@ -605,7 +605,7 @@ let run_taint_analysis
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
             ~configuration
-            ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+            ~pyre_api
             ~include_unit_tests:false
             ~qualifiers
         in
