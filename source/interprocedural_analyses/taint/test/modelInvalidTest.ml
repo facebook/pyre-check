@@ -43,9 +43,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
             |}
   in
   let sources = ("test.py", source) :: sources in
-  let global_resolution =
-    ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
-  in
+  let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
   let taint_configuration =
     TaintConfiguration.Heap.
       {
@@ -69,7 +67,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     let path = path >>| PyrePath.create_absolute in
     ModelVerifier.ClassDefinitionsCache.invalidate ();
     ModelParser.parse
-      ~resolution:global_resolution
+      ~pyre_api
       ~taint_configuration
       ~source_sink_filter:None
       ?path

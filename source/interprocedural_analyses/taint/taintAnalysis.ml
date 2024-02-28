@@ -260,7 +260,7 @@ let parse_models_and_queries_from_sources
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.fold sources ~init:ModelParseResult.empty ~f:(fun state (path, source) ->
         ModelParser.parse
-          ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+          ~pyre_api
           ~path
           ~source
           ~taint_configuration

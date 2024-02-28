@@ -51,13 +51,13 @@ let set_up_environment ?source ~context ~model_source () =
     TaintConfiguration.Heap.{ empty with sources; sinks }
   in
   let source = Test.trim_extra_indentation model_source in
-  let global_resolution = ScratchProject.build_global_resolution project in
+  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
 
   ModelVerifier.ClassDefinitionsCache.invalidate ();
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
-      ~resolution:global_resolution
+      ~pyre_api
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)

@@ -822,6 +822,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         |> List.partition_result
         |> construct_result
     | ModelQuery { path; query_name } -> (
+        let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
         if not (PyrePath.file_exists path) then
           Error (Format.sprintf "File path `%s` does not exist" (PyrePath.show path))
         else
@@ -835,7 +836,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
               in
               let get_model_queries (path, source) =
                 Taint.ModelParser.parse
-                  ~resolution:global_resolution
+                  ~pyre_api
                   ~path
                   ~source
                   ~taint_configuration
@@ -1067,10 +1068,11 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
           |> Taint.TaintConfiguration.exception_on_error
         in
         let get_model_errors_and_model_queries sources =
+          let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
           let python_version = Taint.ModelParser.PythonVersion.from_configuration configuration in
           let get_model_errors_and_model_queries (path, source) =
             Taint.ModelParser.parse
-              ~resolution:global_resolution
+              ~pyre_api
               ~path
               ~source
               ~taint_configuration

@@ -5,6 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+module PyrePysaApi = Analysis.PyrePysaApi
+
 module PythonVersion : sig
   include module type of Configuration.PythonVersion
 
@@ -22,7 +24,7 @@ end
 val get_model_sources : paths:PyrePath.t list -> (PyrePath.t * string) list
 
 val parse
-  :  resolution:Analysis.GlobalResolution.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   ?path:PyrePath.t ->
   source:string ->
   taint_configuration:TaintConfiguration.Heap.t ->
@@ -48,7 +50,7 @@ val parse_decorator_modes
 
 (* Exposed for model queries. *)
 val create_callable_model_from_annotations
-  :  resolution:Analysis.GlobalResolution.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   modelable:ModelParseResult.Modelable.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   is_obscure:bool ->
@@ -57,7 +59,7 @@ val create_callable_model_from_annotations
 
 (* Exposed for model queries. *)
 val create_attribute_model_from_annotations
-  :  resolution:Analysis.GlobalResolution.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   name:Ast.Reference.t ->
   source_sink_filter:SourceSinkFilter.t option ->
   ModelParseResult.TaintAnnotation.t list ->

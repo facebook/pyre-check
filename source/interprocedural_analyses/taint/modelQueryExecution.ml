@@ -1671,9 +1671,8 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       ~modelable
       annotations
     =
-    let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
     ModelParser.create_callable_model_from_annotations
-      ~resolution
+      ~pyre_api
       ~modelable
       ~source_sink_filter
       ~is_obscure:(Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs callable)
@@ -1775,9 +1774,8 @@ module AttributeQueryExecutor = struct
         ~modelable:_
         annotations
       =
-      let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
       ModelParser.create_attribute_model_from_annotations
-        ~resolution
+        ~pyre_api
         ~name:(Target.object_name target)
         ~source_sink_filter
         annotations
@@ -1842,9 +1840,8 @@ module GlobalVariableQueryExecutor = struct
         ~modelable:_
         annotations
       =
-      let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
       ModelParser.create_attribute_model_from_annotations
-        ~resolution
+        ~pyre_api
         ~name:(Target.object_name target)
         ~source_sink_filter
         annotations

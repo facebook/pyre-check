@@ -14,7 +14,6 @@
 
 open Core
 open Ast
-open Analysis
 open Expression
 open Pyre
 open PyreParser
@@ -22,6 +21,9 @@ open Interprocedural
 open Statement
 open Domains
 open ModelParseResult
+module PyrePysaApi = Analysis.PyrePysaApi
+module ClassSummary = Analysis.ClassSummary
+module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 
 module PythonVersion = struct
   (* Not putting the functions there to prevent circular dependency errors *)
@@ -1038,10 +1040,10 @@ let rec class_names_from_annotation = function
   | Type.ReadOnly annotation -> class_names_from_annotation annotation
 
 
-let get_class_attributes ~resolution = function
+let get_class_attributes ~pyre_api = function
   | "object" -> Some []
   | class_name ->
-      GlobalResolution.get_class_summary resolution class_name
+      PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
       >>| Node.value
       >>| fun class_summary ->
       let attributes = ClassSummary.attributes ~include_generated_attributes:false class_summary in
@@ -1057,16 +1059,17 @@ let get_class_attributes ~resolution = function
       Identifier.SerializableMap.fold get_attribute all_attributes []
 
 
-let get_class_attributes_transitive ~resolution class_name =
+let get_class_attributes_transitive ~pyre_api class_name =
   let successors =
-    match GlobalResolution.get_class_metadata resolution class_name with
-    | Some { ClassSuccessorMetadataEnvironment.successors = Some successors; _ } -> successors
+    match PyrePysaApi.ReadOnly.get_class_metadata pyre_api class_name with
+    | Some { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
+        successors
     | _ -> []
   in
-  class_name :: successors |> List.filter_map ~f:(get_class_attributes ~resolution) |> List.concat
+  class_name :: successors |> List.filter_map ~f:(get_class_attributes ~pyre_api) |> List.concat
 
 
-let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features =
+let paths_for_source_or_sink ~pyre_api ~kind ~root ~root_annotations ~features =
   let open Core.Result in
   let all_static_field_paths () =
     let is_return = AccessPath.Root.equal root LocalResult in
@@ -1081,7 +1084,7 @@ let paths_for_source_or_sink ~resolution ~kind ~root ~root_annotations ~features
       root_annotations
       |> List.map ~f:strip_all
       |> List.concat_map ~f:class_names_from_annotation
-      |> List.concat_map ~f:(get_class_attributes_transitive ~resolution)
+      |> List.concat_map ~f:(get_class_attributes_transitive ~pyre_api)
       |> List.filter ~f:(Fn.non Ast.Expression.is_dunder_attribute)
       |> List.dedup_and_sort ~compare:Identifier.compare
     in
@@ -1222,15 +1225,17 @@ let output_path_for_tito ~input_root ~kind ~features =
         (Format.asprintf "Invalid mix of ReturnPath and UpdatePath for %a annotation" Sinks.pp kind)
 
 
-let type_breadcrumbs_from_annotations ~resolution annotations =
+let type_breadcrumbs_from_annotations ~pyre_api annotations =
   List.fold annotations ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar annotation ->
-      CallGraph.ReturnType.from_annotation ~resolution annotation
+      CallGraph.ReturnType.from_annotation
+        ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+        annotation
       |> Features.type_breadcrumbs
       |> Features.BreadcrumbSet.add_set ~to_add:sofar)
 
 
 let introduce_sink_taint
-    ~resolution
+    ~pyre_api
     ~root
     ~root_annotations
     ~features:
@@ -1279,7 +1284,7 @@ let introduce_sink_taint
     let leaf_names =
       leaf_names |> List.map ~f:Features.LeafNameInterned.intern |> Features.LeafNameSet.of_list
     in
-    let type_breadcrumbs = type_breadcrumbs_from_annotations ~resolution root_annotations in
+    let type_breadcrumbs = type_breadcrumbs_from_annotations ~pyre_api root_annotations in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
@@ -1298,7 +1303,7 @@ let introduce_sink_taint
       |> transform_call_information
       |> BackwardState.Tree.create_leaf
     in
-    paths_for_source_or_sink ~resolution ~kind:"sink" ~root ~root_annotations ~features
+    paths_for_source_or_sink ~pyre_api ~kind:"sink" ~root ~root_annotations ~features
     >>| fun paths ->
     let sink_taint =
       List.fold paths ~init:sink_taint ~f:(fun sink_taint path ->
@@ -1310,7 +1315,7 @@ let introduce_sink_taint
 
 
 let introduce_taint_in_taint_out
-    ~resolution
+    ~pyre_api
     ~root
     ~root_annotations
     ~result_annotations
@@ -1333,7 +1338,7 @@ let introduce_taint_in_taint_out
   let open Core.Result in
   (* For tito, both the parameter and the return type can provide type based breadcrumbs *)
   let type_breadcrumbs =
-    List.append root_annotations result_annotations |> type_breadcrumbs_from_annotations ~resolution
+    List.append root_annotations result_annotations |> type_breadcrumbs_from_annotations ~pyre_api
   in
   let breadcrumbs =
     breadcrumbs
@@ -1416,7 +1421,7 @@ let introduce_taint_in_taint_out
 
 
 let introduce_source_taint
-    ~resolution
+    ~pyre_api
     ~root
     ~root_annotations
     ~features:
@@ -1449,7 +1454,7 @@ let introduce_source_taint
            SourceSinkFilter.should_keep_source source_sink_filter taint_source_kind)
     |> Option.value ~default:true
   then
-    let type_breadcrumbs = type_breadcrumbs_from_annotations ~resolution root_annotations in
+    let type_breadcrumbs = type_breadcrumbs_from_annotations ~pyre_api root_annotations in
     let breadcrumbs =
       breadcrumbs
       |> List.map ~f:Features.BreadcrumbInterned.intern
@@ -1488,7 +1493,7 @@ let introduce_source_taint
       |> transform_call_information
       |> ForwardState.Tree.create_leaf
     in
-    paths_for_source_or_sink ~resolution ~kind:"source" ~root ~root_annotations ~features
+    paths_for_source_or_sink ~pyre_api ~kind:"source" ~root ~root_annotations ~features
     >>| fun paths ->
     let source_taint =
       List.fold paths ~init:source_taint ~f:(fun source_taint path ->
@@ -2451,7 +2456,7 @@ let parse_parameter_taint
 
 
 let add_taint_annotation_to_model
-    ~resolution
+    ~pyre_api
     ~path
     ~location
     ~model_name
@@ -2474,7 +2479,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.Sink { sink; features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_sink_taint
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~features
@@ -2485,7 +2490,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.Source { source; features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_source_taint
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~features
@@ -2512,7 +2517,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.Sink { sink; features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_sink_taint
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~features
@@ -2523,7 +2528,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.Source { source; features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_source_taint
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~features
@@ -2537,7 +2542,7 @@ let add_taint_annotation_to_model
             port_annotations_from_signature ~root:AccessPath.Root.LocalResult ~callable_annotation
           in
           introduce_taint_in_taint_out
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~result_annotations
@@ -2548,7 +2553,7 @@ let add_taint_annotation_to_model
       | TaintAnnotation.AddFeatureToArgument { features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
           introduce_sink_taint
-            ~resolution
+            ~pyre_api
             ~root
             ~root_annotations
             ~features
@@ -2610,19 +2615,25 @@ let resolve_global_callable
     ~path
     ~location
     ~verify_decorators
-    ~resolution
+    ~pyre_api
     ({ Define.Signature.name; decorators; _ } as define)
   =
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let open ModelVerifier in
   if signature_is_property define then
-    find_method_definitions ~resolution ~predicate:is_property name
+    find_method_definitions
+      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+      ~predicate:is_property
+      name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter define then
-    find_method_definitions ~resolution ~predicate:Define.is_property_setter name
+    find_method_definitions
+      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+      ~predicate:Define.is_property_setter
+      name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
@@ -2637,7 +2648,7 @@ let resolve_global_callable
          ~location
          (UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
-    Ok (resolve_global ~resolution name)
+    Ok (resolve_global ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api) name)
 
 
 let adjust_sanitize_and_modes_and_skipped_override
@@ -2839,7 +2850,7 @@ let adjust_sanitize_and_modes_and_skipped_override
 
 
 let create_model_from_signature
-    ~resolution
+    ~pyre_api
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -2890,11 +2901,15 @@ let create_model_from_signature
   (* Make sure we know about what we model. *)
   let model_verification_error kind = Error { ModelVerificationError.kind; path; location } in
   let callable_annotation =
-    resolve_global_callable ~path ~location ~verify_decorators:true ~resolution define
+    resolve_global_callable ~path ~location ~verify_decorators:true ~pyre_api define
     >>= function
     | None -> (
         let module_name = Reference.first callable_name in
-        let module_resolved = resolve_global ~resolution (Reference.create module_name) in
+        let module_resolved =
+          ModelVerifier.resolve_global
+            ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+            (Reference.create module_name)
+        in
         match module_resolved with
         | Some _ ->
             model_verification_error
@@ -3046,7 +3061,7 @@ let create_model_from_signature
           ~path
           ~location
           ~model_name:(Reference.show callable_name)
-          ~resolution
+          ~pyre_api
           ~callable_annotation
           ~source_sink_filter
           accumulator
@@ -3063,14 +3078,18 @@ let create_model_from_signature
 
 
 let create_model_from_attribute
-    ~resolution
+    ~pyre_api
     ~path
     ~taint_configuration
     ~source_sink_filter
     { name; annotations; decorators; location; call_target }
   =
   let open Core.Result in
-  ModelVerifier.verify_global ~path ~location ~resolution ~name
+  ModelVerifier.verify_global
+    ~path
+    ~location
+    ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+    ~name
   >>= fun () ->
   List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
       let model_annotation =
@@ -3087,7 +3106,7 @@ let create_model_from_attribute
         ~path
         ~location
         ~model_name:(Reference.show name)
-        ~resolution
+        ~pyre_api
         ~callable_annotation:None
         ~source_sink_filter
         accumulator
@@ -3108,13 +3127,13 @@ let is_obscure ~definitions ~stubs call_target =
   || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
 
 
-let parse_models ~resolution ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
+let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
   let open Core.Result in
   List.map
     models
     ~f:(fun ((({ call_target; _ } : parsed_signature) as parsed_signature), model_source) ->
       create_model_from_signature
-        ~resolution
+        ~pyre_api
         ~path:None
         ~taint_configuration
         ~source_sink_filter
@@ -3219,7 +3238,7 @@ let mangle_private_variable name =
 
 
 let rec parse_statement
-    ~resolution
+    ~pyre_api
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -3245,11 +3264,11 @@ let rec parse_statement
   } ->
       let class_candidate =
         Reference.prefix name
-        |> Option.map ~f:(GlobalResolution.parse_reference resolution)
+        |> Option.map ~f:(PyrePysaApi.ReadOnly.parse_reference pyre_api)
         |> Option.bind ~f:(fun parsed ->
                let parent, _ = Type.split parsed in
                Type.primitive_name parent)
-        |> Option.bind ~f:(GlobalResolution.get_class_summary resolution)
+        |> Option.bind ~f:(PyrePysaApi.ReadOnly.get_class_summary pyre_api)
       in
       let call_target =
         match class_candidate with
@@ -3319,7 +3338,8 @@ let rec parse_statement
         || not (List.is_empty extra_decorators)
       then
         name
-        |> ModelVerifier.class_summaries ~resolution
+        |> ModelVerifier.class_summaries
+             ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =
@@ -3540,7 +3560,7 @@ let rec parse_statement
             >>| List.map
                   ~f:
                     (parse_statement
-                       ~resolution
+                       ~pyre_api
                        ~path
                        ~taint_configuration
                        ~source_sink_filter
@@ -3597,7 +3617,7 @@ let rec parse_statement
                 | Error errors -> Error errors
                 | Ok parsed_signatures ->
                     parse_models
-                      ~resolution
+                      ~pyre_api
                       ~taint_configuration
                       ~source_sink_filter
                       ~definitions
@@ -3699,7 +3719,7 @@ let rec parse_statement
             |> List.map
                  ~f:
                    (parse_statement
-                      ~resolution
+                      ~pyre_api
                       ~path
                       ~taint_configuration
                       ~source_sink_filter
@@ -3735,7 +3755,7 @@ let verify_no_duplicate_model_query_names ~path (results, errors) =
 
 
 let create
-    ~resolution
+    ~pyre_api
     ~path
     ~taint_configuration
     ~source_sink_filter
@@ -3753,7 +3773,7 @@ let create
     >>| List.map
           ~f:
             (parse_statement
-               ~resolution
+               ~pyre_api
                ~path
                ~taint_configuration
                ~source_sink_filter
@@ -3772,7 +3792,7 @@ let create
   let create_model_or_query = function
     | ParsedSignature ({ call_target; _ } as parsed_signature) ->
         create_model_from_signature
-          ~resolution
+          ~pyre_api
           ~path
           ~taint_configuration
           ~source_sink_filter
@@ -3780,7 +3800,7 @@ let create
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
-          ~resolution
+          ~pyre_api
           ~path
           ~taint_configuration
           ~source_sink_filter
@@ -3864,7 +3884,7 @@ let get_model_sources ~paths =
 
 
 let parse
-    ~resolution
+    ~pyre_api
     ?path
     ~source
     ~taint_configuration
@@ -3876,7 +3896,7 @@ let parse
   =
   let new_models_and_queries, errors =
     create
-      ~resolution
+      ~pyre_api
       ~path
       ~taint_configuration
       ~source_sink_filter
@@ -3909,7 +3929,7 @@ let invalid_model_query_error error =
 
 
 let create_callable_model_from_annotations
-    ~resolution
+    ~pyre_api
     ~modelable
     ~source_sink_filter
     ~is_obscure
@@ -3922,7 +3942,7 @@ let create_callable_model_from_annotations
       resolve_global_callable
         ~path:None
         ~location:Location.any
-        ~resolution
+        ~pyre_api
         ~verify_decorators:false
         (Lazy.force define)
       >>| (function
@@ -3943,7 +3963,7 @@ let create_callable_model_from_annotations
             ~path:None
             ~location:Location.any
             ~model_name:"Model query"
-            ~resolution
+            ~pyre_api
             ~callable_annotation
             ~source_sink_filter
             accumulator
@@ -3951,7 +3971,7 @@ let create_callable_model_from_annotations
   | _ -> failwith "unreachable"
 
 
-let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filter annotations =
+let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter annotations =
   let open Core.Result in
   List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
       let model_annotation =
@@ -3972,7 +3992,7 @@ let create_attribute_model_from_annotations ~resolution ~name ~source_sink_filte
         ~path:None
         ~location:Location.any
         ~model_name:"Model query"
-        ~resolution
+        ~pyre_api
         ~callable_annotation:None
         ~source_sink_filter
         accumulator

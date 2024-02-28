@@ -377,12 +377,12 @@ let initial_models_source =
 
 
 let get_initial_models ~context =
-  let global_resolution =
-    Test.ScratchProject.setup ~context [] |> Test.ScratchProject.build_global_resolution
+  let pyre_api =
+    Test.ScratchProject.setup ~context [] |> Test.ScratchProject.pyre_pysa_read_only_api
   in
   let { ModelParseResult.models; errors; _ } =
     ModelParser.parse
-      ~resolution:global_resolution
+      ~pyre_api
       ~source:initial_models_source
       ~taint_configuration:TaintConfiguration.Heap.default
       ~source_sink_filter:None
@@ -492,7 +492,6 @@ let initialize
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
   let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
   let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =
@@ -510,7 +509,7 @@ let initialize
         ModelVerifier.ClassDefinitionsCache.invalidate ();
         let { ModelParseResult.models; errors; queries } =
           ModelParser.parse
-            ~resolution:global_resolution
+            ~pyre_api
             ?path:model_path
             ~source:(Test.trim_extra_indentation source)
             ~taint_configuration

@@ -33,14 +33,14 @@ let assert_taint ?models ?models_source ~context source expect =
       qualifier
     |> fun option -> Option.value_exn option
   in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let models =
     models >>| Test.trim_extra_indentation |> Option.value ~default:TestHelper.initial_models_source
   in
   let initial_models =
     let { ModelParseResult.models; errors; _ } =
       ModelParser.parse
-        ~resolution:global_resolution
+        ~pyre_api
         ~source:models
         ~taint_configuration:TaintConfiguration.Heap.default
         ~source_sink_filter:None

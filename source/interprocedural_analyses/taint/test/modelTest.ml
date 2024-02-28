@@ -51,6 +51,7 @@ let set_up_environment
   in
   let source_file_name = "test.py" in
   let project = ScratchProject.setup ~context [source_file_name, source] in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let taint_configuration =
     let named name = { AnnotationParser.name; kind = Named; location = None } in
     let sources =
@@ -114,13 +115,12 @@ let set_up_environment
       }
   in
   let source = Test.trim_extra_indentation model_source in
-  let global_resolution = ScratchProject.build_global_resolution project in
 
   ModelVerifier.ClassDefinitionsCache.invalidate ();
   let stubs, definitions = get_stubs_and_definitions ~source_file_name ~project in
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.parse
-      ~resolution:global_resolution
+      ~pyre_api
       ~source
       ~taint_configuration
       ~source_sink_filter:(Some taint_configuration.source_sink_filter)
@@ -208,9 +208,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
             |}
   in
   let sources = ("test.py", source) :: sources in
-  let global_resolution =
-    ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
-  in
+  let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
   let taint_configuration =
     TaintConfiguration.Heap.
       {
@@ -234,7 +232,7 @@ let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~e
     let path = path >>| PyrePath.create_absolute in
     ModelVerifier.ClassDefinitionsCache.invalidate ();
     ModelParser.parse
-      ~resolution:global_resolution
+      ~pyre_api
       ~taint_configuration
       ~source_sink_filter:None
       ?path
