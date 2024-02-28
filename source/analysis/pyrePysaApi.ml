@@ -10,6 +10,13 @@
 
 open Core
 
+let absolute_source_path_of_qualifier ~lookup_source read_only_type_environment =
+  let source_code_api =
+    read_only_type_environment |> TypeEnvironment.ReadOnly.get_untracked_source_code_api
+  in
+  SourcePaths.absolute_source_path_of_qualifier ~lookup_source ~source_code_api
+
+
 (* Private helper module for creating a TypeEnvironment the way Pysa wants to. *)
 module PysaTypeEnvironment = struct
   let create ~configuration ~decorator_configuration =
@@ -50,14 +57,6 @@ module PysaTypeEnvironment = struct
       ();
     PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ();
     ()
-
-
-  let absolute_source_path_of_qualifier ~lookup_source type_environment =
-    let source_code_api =
-      TypeEnvironment.read_only type_environment
-      |> TypeEnvironment.ReadOnly.get_untracked_source_code_api
-    in
-    SourcePaths.absolute_source_path_of_qualifier ~lookup_source ~source_code_api
 end
 
 (* Api used in the top-level code of `pyre analyze`, where we need read-write access in order to
@@ -90,7 +89,7 @@ module ReadWrite = struct
     in
     let () =
       callback_with_qualifiers_and_definitions
-        (PysaTypeEnvironment.absolute_source_path_of_qualifier type_environment)
+        (TypeEnvironment.read_only type_environment |> absolute_source_path_of_qualifier)
         qualifiers
         definitions
     in
@@ -139,9 +138,50 @@ module ReadWrite = struct
     |> TypeEnvironment.AssumeAstEnvironment.store_without_dependency_keys
 
 
+  (* Aggressively shrink shared memory by dropping all raw sources *)
+  let purge_shared_memory api =
+    Log.info "Purging shared memory...";
+    let timer = Timer.start () in
+    let ast_environment =
+      read_write_type_environment api
+      |> TypeEnvironment.unannotated_global_environment
+      |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
+    in
+    let qualifiers =
+      read_write_type_environment api
+      |> TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api
+      |> GlobalModulePathsApi.explicit_qualifiers
+    in
+    AstEnvironment.remove_sources ast_environment qualifiers;
+    Memory.SharedMemory.collect `aggressive;
+    Statistics.performance
+      ~name:"Purged shared memory"
+      ~phase_name:"Purging shared memory"
+      ~timer
+      ();
+    ()
+end
+
+module ReadOnly = struct
+  type t = {
+    type_environment: TypeEnvironment.ReadOnly.t;
+    global_module_paths_api: GlobalModulePathsApi.t;
+  }
+
+  let of_read_write_api { ReadWrite.type_environment } =
+    {
+      type_environment = TypeEnvironment.read_only type_environment;
+      global_module_paths_api =
+        TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment;
+    }
+
+
+  let type_environment { type_environment; _ } = type_environment
+
+  let global_module_paths_api { global_module_paths_api; _ } = global_module_paths_api
+
   (* Interface to get source paths; used when dumping stats from Pysa *)
 
   let absolute_source_path_of_qualifier ~lookup_source api =
-    read_write_type_environment api
-    |> PysaTypeEnvironment.absolute_source_path_of_qualifier ~lookup_source
+    type_environment api |> absolute_source_path_of_qualifier ~lookup_source
 end

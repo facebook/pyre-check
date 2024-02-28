@@ -420,17 +420,6 @@ let initialize_models
   { ModelParseResult.models; queries = []; errors }
 
 
-(** Aggressively remove things we do not need anymore from the shared memory. *)
-let purge_shared_memory ~environment ~qualifiers =
-  let ast_environment =
-    Analysis.TypeEnvironment.unannotated_global_environment environment
-    |> Analysis.UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
-  in
-  Analysis.AstEnvironment.remove_sources ast_environment qualifiers;
-  Memory.SharedMemory.collect `aggressive;
-  ()
-
-
 let compact_ocaml_heap ~name =
   let timer = Timer.start () in
   let () = Log.info "Compacting OCaml heap: %s" name in
@@ -553,12 +542,13 @@ let run_taint_analysis
           ~lookup_source
           ~decorator_configuration)
   in
-  let environment = PyrePysaApi.ReadWrite.read_write_type_environment pyre_read_write_api in
+  let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
+
   let resolve_module_path =
     resolve_module_path
       ~lookup_source
       ~absolute_source_path_of_qualifier:
-        (PyrePysaApi.ReadWrite.absolute_source_path_of_qualifier pyre_read_write_api)
+        (PyrePysaApi.ReadOnly.absolute_source_path_of_qualifier pyre_api)
       ~static_analysis_configuration
   in
 
@@ -571,11 +561,10 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let global_module_paths_api =
-    environment |> Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api
-  in
+  let global_module_paths_api = PyrePysaApi.ReadOnly.global_module_paths_api pyre_api in
+  let read_only_environment = PyrePysaApi.ReadOnly.type_environment pyre_api in
+
   let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-  let read_only_environment = Analysis.TypeEnvironment.read_only environment in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
@@ -642,7 +631,7 @@ let run_taint_analysis
       ~taint_configuration
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
-      ~environment:(Analysis.TypeEnvironment.read_only environment)
+      ~environment:read_only_environment
       ~global_module_paths_api
       ~initial_callables
   in
@@ -668,7 +657,7 @@ let run_taint_analysis
         Interprocedural.OverrideGraph.build_whole_program_overrides
           ~static_analysis_configuration
           ~scheduler
-          ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~environment:read_only_environment
           ~include_unit_tests:false
           ~skip_overrides_targets
           ~maximum_overrides
@@ -687,7 +676,7 @@ let run_taint_analysis
         Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
           ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
           ~scheduler
-          ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~environment:read_only_environment
           ~qualifiers)
   in
   Statistics.performance
@@ -711,7 +700,7 @@ let run_taint_analysis
         Interprocedural.CallGraph.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
-          ~environment:(Analysis.TypeEnvironment.read_only environment)
+          ~environment:read_only_environment
           ~resolve_module_path:(Some resolve_module_path)
           ~override_graph:(Some override_graph_shared_memory_read_only)
           ~store_shared_memory:true
@@ -775,10 +764,7 @@ let run_taint_analysis
      let () = Log.info "Cache has been built. Exiting now" in
      raise Cache.BuildCacheOnly);
 
-  Log.info "Purging shared memory...";
-  let timer = Timer.start () in
-  let () = purge_shared_memory ~environment ~qualifiers in
-  Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
+  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   let initial_models =
     MissingFlow.add_unknown_callee_models
@@ -787,10 +773,7 @@ let run_taint_analysis
       ~initial_models
   in
 
-  Log.info "Purging shared memory...";
-  let timer = Timer.start () in
-  let () = purge_shared_memory ~environment ~qualifiers in
-  Statistics.performance ~name:"Purged shared memory" ~phase_name:"Purging shared memory" ~timer ();
+  let () = PyrePysaApi.ReadWrite.purge_shared_memory pyre_read_write_api in
 
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"before fixpoint";
@@ -810,13 +793,13 @@ let run_taint_analysis
   let fixpoint_state =
     Taint.TaintFixpoint.compute
       ~scheduler
-      ~type_environment:(Analysis.TypeEnvironment.read_only environment)
+      ~type_environment:read_only_environment
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
       ~context:
         {
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
-          type_environment = Analysis.TypeEnvironment.read_only environment;
+          type_environment = read_only_environment;
           class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs =
             Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
