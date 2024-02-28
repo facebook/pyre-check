@@ -247,11 +247,16 @@ let type_check
   Cache.type_environment cache (fun () ->
       let type_environment = create_type_environment ~configuration ~decorator_configuration in
       Log.info "Starting type checking...";
+      PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
       let qualifiers =
         Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment
         |> Analysis.GlobalModulePathsApi.type_check_qualifiers
       in
       Log.info "Found %d modules" (List.length qualifiers);
+      let definitions =
+        Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
+      in
+      Log.info "Found %d functions" (List.length definitions);
       let () =
         match save_results_to with
         | Some directory ->
@@ -260,21 +265,12 @@ let type_check
               ~type_environment
               ~build_system
               ~path:(PyrePath.append directory ~element:"modules.json")
-              qualifiers
-        | None -> ()
-      in
-      PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-      let definitions =
-        Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
-      in
-      Log.info "Found %d functions" (List.length definitions);
-      let () =
-        match save_results_to with
-        | Some directory ->
+              qualifiers;
             write_functions_to_file
               ~static_analysis_configuration
               ~path:(PyrePath.append directory ~element:"functions.json")
-              definitions
+              definitions;
+            ()
         | None -> ()
       in
       let () =
