@@ -35,7 +35,7 @@ val save
   t ->
   unit
 
-val type_environment : t -> (unit -> TypeEnvironment.t) -> TypeEnvironment.t * t
+val pyre_read_write_api : t -> (unit -> PyrePysaApi.ReadWrite.t) -> PyrePysaApi.ReadWrite.t * t
 
 val class_hierarchy_graph
   :  t ->

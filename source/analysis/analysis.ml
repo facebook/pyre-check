@@ -47,6 +47,7 @@ module NamedTuple = NamedTuple
 module Parsing = Parsing
 module Postprocessing = Postprocessing
 module Preprocessing = Preprocessing
+module PyrePysaApi = PyrePysaApi
 module Refinement = Refinement
 module Resolution = Resolution
 module ResolvedReference = ResolvedReference

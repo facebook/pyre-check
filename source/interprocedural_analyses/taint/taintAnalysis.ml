@@ -11,6 +11,7 @@ open Core
 open Pyre
 open Taint
 module Target = Interprocedural.Target
+module PyrePysaApi = Analysis.PyrePysaApi
 
 let initialize_configuration
     ~static_analysis_configuration:
@@ -134,14 +135,12 @@ let parse_decorator_preprocessing_configuration
 
 let resolve_module_path
     ~lookup_source
-    ~source_code_api
+    ~absolute_source_path_of_qualifier
     ~static_analysis_configuration:
       { Configuration.StaticAnalysis.configuration = { local_root; _ }; repository_root; _ }
     qualifier
   =
-  match
-    Analysis.SourcePaths.absolute_source_path_of_qualifier ~lookup_source ~source_code_api qualifier
-  with
+  match absolute_source_path_of_qualifier ~lookup_source qualifier with
   | None -> None
   | Some path ->
       let root = Option.value repository_root ~default:local_root in
@@ -157,21 +156,20 @@ let write_modules_to_file
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration = { local_root; _ }; _ } as
       static_analysis_configuration)
-    ~type_environment
     ~lookup_source
+    ~absolute_source_path_of_qualifier
     ~path
     qualifiers
   =
   let timer = Timer.start () in
   Log.info "Writing modules to `%s`" (PyrePath.absolute path);
-  let source_code_api =
-    type_environment
-    |> Analysis.TypeEnvironment.read_only
-    |> Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api
-  in
   let to_json_lines qualifier =
     let path =
-      resolve_module_path ~lookup_source ~source_code_api ~static_analysis_configuration qualifier
+      resolve_module_path
+        ~lookup_source
+        ~absolute_source_path_of_qualifier
+        ~static_analysis_configuration
+        qualifier
       |> function
       | Some { path; _ } -> `String (PyrePath.absolute path)
       | None -> `Null
@@ -215,51 +213,7 @@ let write_functions_to_file
   Statistics.performance ~name:"Wrote functions" ~phase_name:"Writing functions" ~timer ()
 
 
-let create_type_environment ~configuration ~decorator_configuration =
-  let configuration =
-    (* In order to get an accurate call graph and type information, we need to ensure that we
-       schedule a type check for external files. *)
-    (* TODO(T180476103) Remove the need for this by using explicit_qualifiers, and delete this flag
-       from the configuration + environment logic. *)
-    { configuration with Configuration.Analysis.analyze_external_sources = true }
-  in
-  let () = Analysis.DecoratorPreprocessing.setup_preprocessing decorator_configuration in
-  let errors_environment =
-    Analysis.EnvironmentControls.create ~populate_call_graph:false configuration
-    |> Analysis.ErrorsEnvironment.create_with_ast_environment
-  in
-  Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
-
-
-let qualifiers_and_definitions ~scheduler ~type_environment =
-  Log.info "Starting type checking...";
-  PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-  let qualifiers =
-    Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment
-    |> Analysis.GlobalModulePathsApi.type_check_qualifiers
-  in
-  Log.info "Found %d modules" (List.length qualifiers);
-  let definitions =
-    Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
-  in
-  Log.info "Found %d functions" (List.length definitions);
-  qualifiers, definitions
-
-
-let populate_type_environment ~scheduler ~type_environment definitions =
-  let () =
-    Analysis.TypeEnvironment.populate_for_definitions ~scheduler type_environment definitions
-  in
-  Statistics.event
-    ~section:`Memory
-    ~name:"shared memory size post-typecheck"
-    ~integers:["size", Memory.heap_size ()]
-    ();
-  PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ();
-  ()
-
-
-let create_and_populate_type_environment
+let create_pyre_read_write_api_and_perform_type_analysis
     ~scheduler
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; save_results_to; _ } as
@@ -267,15 +221,13 @@ let create_and_populate_type_environment
     ~lookup_source
     ~decorator_configuration
   =
-  let type_environment = create_type_environment ~configuration ~decorator_configuration in
-  let qualifiers, definitions = qualifiers_and_definitions ~scheduler ~type_environment in
-  let () =
+  let save_qualifiers_and_definitions absolute_source_path_of_qualifier qualifiers definitions =
     match save_results_to with
     | Some directory ->
         write_modules_to_file
           ~static_analysis_configuration
-          ~type_environment
           ~lookup_source
+          ~absolute_source_path_of_qualifier
           ~path:(PyrePath.append directory ~element:"modules.json")
           qualifiers;
         write_functions_to_file
@@ -285,8 +237,11 @@ let create_and_populate_type_environment
         ()
     | None -> ()
   in
-  populate_type_environment ~scheduler ~type_environment definitions;
-  type_environment
+  PyrePysaApi.ReadWrite.create_with_cold_start
+    ~scheduler
+    ~configuration
+    ~decorator_configuration
+    ~callback_with_qualifiers_and_definitions:save_qualifiers_and_definitions
 
 
 let parse_models_and_queries_from_sources
@@ -590,13 +545,21 @@ let run_taint_analysis
   in
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
-  let environment, cache =
-    Cache.type_environment cache (fun () ->
-        create_and_populate_type_environment
+  let pyre_read_write_api, cache =
+    Cache.pyre_read_write_api cache (fun () ->
+        create_pyre_read_write_api_and_perform_type_analysis
           ~scheduler
           ~static_analysis_configuration
           ~lookup_source
           ~decorator_configuration)
+  in
+  let environment = PyrePysaApi.ReadWrite.read_write_type_environment pyre_read_write_api in
+  let resolve_module_path =
+    resolve_module_path
+      ~lookup_source
+      ~absolute_source_path_of_qualifier:
+        (PyrePysaApi.ReadWrite.absolute_source_path_of_qualifier pyre_read_write_api)
+      ~static_analysis_configuration
   in
 
   if compact_ocaml_heap_flag then
@@ -612,15 +575,7 @@ let run_taint_analysis
     environment |> Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api
   in
   let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-  let source_code_api =
-    environment
-    |> Analysis.TypeEnvironment.read_only
-    |> Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api
-  in
   let read_only_environment = Analysis.TypeEnvironment.read_only environment in
-  let resolve_module_path =
-    resolve_module_path ~lookup_source ~source_code_api ~static_analysis_configuration
-  in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->

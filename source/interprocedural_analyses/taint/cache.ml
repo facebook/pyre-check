@@ -13,10 +13,7 @@
 module CamlUnix = Unix
 open Core
 open Pyre
-module TypeEnvironment = Analysis.TypeEnvironment
-module UnannotatedGlobalEnvironment = Analysis.UnannotatedGlobalEnvironment
-module AstEnvironment = Analysis.AstEnvironment
-module ModuleTracker = Analysis.ModuleTracker
+module PyrePysaApi = Analysis.PyrePysaApi
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
@@ -138,29 +135,20 @@ end
 module ChangedFiles = struct
   let show_files files = files |> List.map ~f:PyrePath.show |> String.concat ~sep:", "
 
-  let should_invalidate_type_environment_if_changed path =
+  let should_invalidate_if_changed path =
     let is_pysa_model path = String.is_suffix ~suffix:".pysa" (PyrePath.get_suffix_path path) in
     let is_taint_config path = String.is_suffix ~suffix:"taint.config" (PyrePath.absolute path) in
     not (is_pysa_model path || is_taint_config path)
 
 
-  let from_type_environment ~scheduler ~configuration old_type_environment =
-    let old_module_tracker =
-      old_type_environment
-      |> TypeEnvironment.unannotated_global_environment
-      |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
-      |> AstEnvironment.module_tracker
-    in
-    let new_module_tracker =
-      configuration |> Analysis.EnvironmentControls.create |> ModuleTracker.create
-    in
+  let from_pyre_read_write_api ~scheduler pyre_read_write_api =
     Interprocedural.ChangedPaths.compute_locally_changed_paths
       ~scheduler
-      ~configuration
-      ~old_module_paths:(ModuleTracker.module_paths old_module_tracker)
-      ~new_module_paths:(ModuleTracker.module_paths new_module_tracker)
+      ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
+      ~old_module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api)
+      ~new_module_paths:(PyrePysaApi.ReadWrite.module_paths_from_disk pyre_read_write_api)
     |> List.map ~f:ArtifactPath.raw
-    |> List.filter ~f:should_invalidate_type_environment_if_changed
+    |> List.filter ~f:should_invalidate_if_changed
 end
 
 type t = {
@@ -372,45 +360,37 @@ let try_load ~scheduler ~saved_state ~configuration ~decorator_configuration ~en
     { status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman }
 
 
-let load_type_environment ~configuration =
+let load_pyre_read_write_api ~configuration =
   let open Result in
-  let controls = Analysis.EnvironmentControls.create configuration in
   SaveLoadSharedMemory.exception_to_error
     ~error:SharedMemoryStatus.TypeEnvironmentLoadError
     ~message:"Loading type environment"
-    ~f:(fun () -> Ok (TypeEnvironment.AssumeAstEnvironment.load_without_dependency_keys controls))
+    ~f:(fun () -> Ok (PyrePysaApi.ReadWrite.load_from_cache ~configuration))
 
 
-let save_type_environment ~scheduler ~configuration ~environment =
+let save_pyre_read_write_api ~scheduler pyre_read_write_api =
   SaveLoadSharedMemory.exception_to_error
     ~error:()
     ~message:"saving type environment to cache"
     ~f:(fun () ->
       Memory.SharedMemory.collect `aggressive;
-      let module_tracker =
-        TypeEnvironment.unannotated_global_environment environment
-        |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
-        |> AstEnvironment.module_tracker
-      in
       Interprocedural.ChangedPaths.save_current_paths
         ~scheduler
-        ~configuration
-        ~module_paths:(ModuleTracker.module_paths module_tracker);
-      TypeEnvironment.AssumeAstEnvironment.store_without_dependency_keys environment;
+        ~configuration:(PyrePysaApi.ReadWrite.configuration pyre_read_write_api)
+        ~module_paths:(PyrePysaApi.ReadWrite.module_paths pyre_read_write_api);
+      PyrePysaApi.ReadWrite.save pyre_read_write_api;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())
 
 
-let type_environment
+let pyre_read_write_api
     ({ status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman } as
     cache)
     f
   =
-  let no_file_changes_detected_by_comparing_type_environments old_type_environment =
+  let no_file_changes_detected_by_comparing_type_environments old_pyre_read_write_api =
     Log.info "Determining if source files have changed since cache was created.";
-    let changed_files =
-      ChangedFiles.from_type_environment ~scheduler ~configuration old_type_environment
-    in
+    let changed_files = ChangedFiles.from_pyre_read_write_api ~scheduler old_pyre_read_write_api in
     if List.is_empty changed_files then
       let () = Log.info "No source file change is detected." in
       true
@@ -420,16 +400,16 @@ let type_environment
       in
       false
   in
-  let compute_and_save_environment () =
-    let environment = f () in
+  let compute_and_save_pyre_read_write_api () =
+    let pyre_read_write_api = f () in
     if save_cache then
-      save_type_environment ~scheduler ~configuration ~environment |> ignore_result;
-    environment
+      save_pyre_read_write_api ~scheduler pyre_read_write_api |> ignore_result;
+    pyre_read_write_api
   in
   let environment, status =
     match status with
     | Loaded _ -> (
-        match load_type_environment ~configuration with
+        match load_pyre_read_write_api ~configuration with
         | Ok environment ->
             if
               no_file_changes_reported_by_watchman
@@ -445,12 +425,12 @@ let type_environment
             else
               let () = Log.info "Resetting shared memory due to source file changes" in
               Memory.reset_shared_memory ();
-              compute_and_save_environment (), SharedMemoryStatus.InvalidByCodeChange
+              compute_and_save_pyre_read_write_api (), SharedMemoryStatus.InvalidByCodeChange
         | Error error_status ->
             Log.info "Resetting shared memory due to failing to load the type environment";
             Memory.reset_shared_memory ();
-            compute_and_save_environment (), error_status)
-    | _ -> compute_and_save_environment (), status
+            compute_and_save_pyre_read_write_api (), error_status)
+    | _ -> compute_and_save_pyre_read_write_api (), status
   in
   environment, { cache with status }
 
