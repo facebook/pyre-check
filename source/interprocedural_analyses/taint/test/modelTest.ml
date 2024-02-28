@@ -138,8 +138,8 @@ let set_up_environment
        (List.to_string errors ~f:ModelVerificationError.display))
     (List.is_empty errors);
 
-  let environment = ScratchProject.type_environment project in
-  parse_result, environment, taint_configuration
+  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
+  parse_result, pyre_api, taint_configuration
 
 
 let assert_model
@@ -153,7 +153,7 @@ let assert_model
     ~expect
     ()
   =
-  let { ModelParseResult.models; _ }, type_environment, taint_configuration =
+  let { ModelParseResult.models; _ }, pyre_api, taint_configuration =
     set_up_environment ?source ?rules ?filtered_sources ?filtered_sinks ~context ~model_source ()
   in
   begin
@@ -171,9 +171,7 @@ let assert_model
   end;
   let get_model = Registry.get models in
   let get_errors _ = [] in
-  List.iter
-    ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)
-    expect
+  List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
 
 
 let assert_invalid_model ?path ?source ?(sources = []) ~context ~model_source ~expect () =

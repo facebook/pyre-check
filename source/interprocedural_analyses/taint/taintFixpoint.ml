@@ -17,12 +17,12 @@
 
 open Core
 open Pyre
-module TypeEnvironment = Analysis.TypeEnvironment
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module Context = struct
   type t = {
     taint_configuration: TaintConfiguration.SharedMemory.t;
-    type_environment: TypeEnvironment.ReadOnly.t;
+    pyre_api: PyrePysaApi.ReadOnly.t;
     class_interval_graph: Interprocedural.ClassIntervalSetGraph.SharedMemory.t;
     (* Use a lightweight handle, to avoid copying a large handle for each worker. *)
     define_call_graphs: Interprocedural.CallGraph.DefineCallGraphSharedMemory.ReadOnly.t;
@@ -96,7 +96,7 @@ module Analysis = struct
 
   let analyze_define_with_sanitizers_and_modes
       ~taint_configuration
-      ~type_environment
+      ~pyre_api
       ~class_interval_graph
       ~global_constants
       ~define_call_graphs
@@ -137,7 +137,7 @@ module Analysis = struct
             ~taint_configuration
             ~string_combine_partial_sink_tree:
               (CallModel.string_combine_partial_sink_tree taint_configuration)
-            ~environment:type_environment
+            ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
             ~class_interval_graph
             ~global_constants
             ~qualifier
@@ -154,7 +154,7 @@ module Analysis = struct
           BackwardAnalysis.run
             ~profiler
             ~taint_configuration
-            ~environment:type_environment
+            ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
             ~class_interval_graph
             ~global_constants
             ~qualifier
@@ -186,7 +186,7 @@ module Analysis = struct
       ~context:
         {
           Context.taint_configuration;
-          type_environment;
+          pyre_api;
           class_interval_graph;
           define_call_graphs;
           global_constants;
@@ -205,7 +205,7 @@ module Analysis = struct
     let open Analysis in
     let open Ast in
     let module_reference =
-      let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+      let global_resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
       (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
@@ -221,7 +221,7 @@ module Analysis = struct
     else
       analyze_define_with_sanitizers_and_modes
         ~taint_configuration
-        ~type_environment
+        ~pyre_api
         ~class_interval_graph
         ~global_constants
         ~define_call_graphs

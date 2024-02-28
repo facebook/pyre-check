@@ -247,6 +247,10 @@ module ReadOnly = struct
 
   let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
 
+  let relative_path_of_qualifier api =
+    source_code_api api |> SourceCodeApi.relative_path_of_qualifier
+
+
   let resolve_expression_to_annotation api =
     let global_resolution = global_resolution api in
     TypeCheck.resolution

@@ -560,7 +560,6 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let read_only_environment = PyrePysaApi.ReadOnly.type_environment pyre_api in
   let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
 
   let class_hierarchy_graph, cache =
@@ -693,7 +692,7 @@ let run_taint_analysis
         Interprocedural.CallGraph.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
-          ~environment:read_only_environment
+          ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
           ~resolve_module_path:(Some resolve_module_path)
           ~override_graph:(Some override_graph_shared_memory_read_only)
           ~store_shared_memory:true
@@ -786,13 +785,13 @@ let run_taint_analysis
   let fixpoint_state =
     Taint.TaintFixpoint.compute
       ~scheduler
-      ~type_environment:read_only_environment
+      ~pyre_api
       ~override_graph:override_graph_shared_memory_read_only
       ~dependency_graph
       ~context:
         {
           Taint.TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
-          type_environment = read_only_environment;
+          pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs =
             Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;

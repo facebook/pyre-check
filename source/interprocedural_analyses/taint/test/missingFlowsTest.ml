@@ -33,7 +33,7 @@ let assert_fixpoint
     taint_configuration_shared_memory;
     whole_program_call_graph;
     define_call_graphs;
-    type_environment;
+    pyre_api;
     override_graph_heap;
     override_graph_shared_memory;
     initial_models;
@@ -69,14 +69,14 @@ let assert_fixpoint
   let fixpoint_state =
     TaintFixpoint.compute
       ~scheduler:(Test.mock_scheduler ())
-      ~type_environment
+      ~pyre_api
       ~override_graph:
         (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory)
       ~dependency_graph
       ~context:
         {
           TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
-          type_environment;
+          pyre_api;
           class_interval_graph = class_interval_graph_shared_memory;
           define_call_graphs =
             Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
@@ -101,9 +101,7 @@ let assert_fixpoint
     TaintFixpoint.get_result fixpoint_state callable |> IssueHandle.SerializableMap.data
   in
   let () =
-    List.iter
-      ~f:(check_expectation ~type_environment ~taint_configuration ~get_model ~get_errors)
-      expect
+    List.iter ~f:(check_expectation ~pyre_api ~taint_configuration ~get_model ~get_errors) expect
   in
   let () = TaintFixpoint.cleanup fixpoint_state in
   ()

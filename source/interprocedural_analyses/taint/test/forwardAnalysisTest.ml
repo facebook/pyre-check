@@ -24,13 +24,9 @@ let assert_taint ?models ?models_source ~context source expect =
   let project = Test.ScratchProject.setup ~context sources in
   let configuration = Test.ScratchProject.configuration_of project in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-    Test.ScratchProject.build_type_environment project
-  in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let source =
-    SourceCodeApi.source_of_qualifier
-      (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment)
-      qualifier
+    PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier
     |> fun option -> Option.value_exn option
   in
   let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
@@ -62,7 +58,7 @@ let assert_taint ?models ?models_source ~context source expect =
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
-        ~environment:type_environment
+        ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
         ~override_graph:
           (Some (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only))
         ~attribute_targets:
@@ -78,7 +74,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~taint_configuration
         ~string_combine_partial_sink_tree:
           (Taint.CallModel.string_combine_partial_sink_tree taint_configuration)
-        ~environment:type_environment
+        ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)
@@ -100,7 +96,7 @@ let assert_taint ?models ?models_source ~context source expect =
   List.iter
     ~f:
       (check_expectation
-         ~type_environment
+         ~pyre_api
          ~taint_configuration:TaintConfiguration.Heap.default
          ~get_model
          ~get_errors)

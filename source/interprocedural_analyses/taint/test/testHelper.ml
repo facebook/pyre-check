@@ -107,7 +107,7 @@ let create_callable kind define_name =
 let check_expectation
     ~get_model
     ~get_errors
-    ~type_environment
+    ~pyre_api
     ~taint_configuration
     {
       kind;
@@ -337,9 +337,7 @@ let check_expectation
     let to_analysis_error =
       Error.instantiate
         ~show_error_traces:true
-        ~lookup:
-          (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment
-          |> SourceCodeApi.relative_path_of_qualifier)
+        ~lookup:(PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api)
     in
     get_errors callable
     |> List.map ~f:(Issue.to_error ~taint_configuration)
@@ -414,7 +412,7 @@ type test_environment = {
   stubs: Target.t list;
   initial_models: Registry.t;
   model_query_results: ModelQueryExecution.ModelQueryRegistryMap.t;
-  type_environment: TypeEnvironment.ReadOnly.t;
+  pyre_api: PyrePysaApi.ReadOnly.t;
   class_interval_graph: ClassIntervalSetGraph.Heap.t;
   class_interval_graph_shared_memory: ClassIntervalSetGraph.SharedMemory.t;
   global_constants: GlobalConstants.SharedMemory.t;
@@ -616,7 +614,7 @@ let initialize
     stubs;
     initial_models;
     model_query_results;
-    type_environment;
+    pyre_api;
     class_interval_graph;
     class_interval_graph_shared_memory;
     global_constants;
@@ -741,7 +739,7 @@ let end_to_end_integration_test path context =
       taint_configuration_shared_memory;
       whole_program_call_graph;
       define_call_graphs;
-      type_environment;
+      pyre_api;
       override_graph_heap;
       override_graph_shared_memory;
       initial_models;
@@ -797,13 +795,13 @@ let end_to_end_integration_test path context =
     let fixpoint_state =
       TaintFixpoint.compute
         ~scheduler:(Test.mock_scheduler ())
-        ~type_environment
+        ~pyre_api
         ~override_graph:override_graph_shared_memory_read_only
         ~dependency_graph
         ~context:
           {
             TaintFixpoint.Context.taint_configuration = taint_configuration_shared_memory;
-            type_environment;
+            pyre_api;
             class_interval_graph = class_interval_graph_shared_memory;
             define_call_graphs =
               Interprocedural.CallGraph.DefineCallGraphSharedMemory.read_only define_call_graphs;
@@ -816,9 +814,7 @@ let end_to_end_integration_test path context =
         ~shared_models
     in
     let resolve_module_path qualifier =
-      SourceCodeApi.relative_path_of_qualifier
-        (TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment)
-        qualifier
+      PyrePysaApi.ReadOnly.relative_path_of_qualifier pyre_api qualifier
       >>| fun filename ->
       { RepositoryPath.filename = Some filename; path = PyrePath.create_absolute filename }
     in

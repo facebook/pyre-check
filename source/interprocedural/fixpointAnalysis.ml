@@ -22,7 +22,7 @@ open Core
 open Ast
 open Pyre
 open Statement
-module TypeEnvironment = Analysis.TypeEnvironment
+module PyrePysaApi = Analysis.PyrePysaApi
 
 (** Represents the set of information that must be propagated from callees to callers during an
     interprocedural analysis, within the global fixpoint. Each iteration should produce a model for
@@ -508,8 +508,8 @@ module Make (Analysis : ANALYSIS) = struct
     state
 
 
-  let analyze_callable ~type_environment ~override_graph ~context ~step ~callable =
-    let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  let analyze_callable ~pyre_api ~override_graph ~context ~step ~callable =
+    let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
     let () =
       (* Verify invariants *)
       match State.get_meta_data callable with
@@ -544,24 +544,11 @@ module Make (Analysis : ANALYSIS) = struct
   }
 
   (* Called on a worker with a set of targets to analyze. *)
-  let one_analysis_pass
-      ~shared_models_handle
-      ~type_environment
-      ~override_graph
-      ~context
-      ~step
-      ~callables
-    =
+  let one_analysis_pass ~shared_models_handle ~pyre_api ~override_graph ~context ~step ~callables =
     let analyze_target expensive_callables callable =
       let timer = Timer.start () in
       let result =
-        analyze_callable
-          ~shared_models_handle
-          ~type_environment
-          ~override_graph
-          ~context
-          ~step
-          ~callable
+        analyze_callable ~shared_models_handle ~pyre_api ~override_graph ~context ~step ~callable
       in
       State.add ~shared_models_handle step callable result;
       (* Log outliers. *)
@@ -629,7 +616,7 @@ module Make (Analysis : ANALYSIS) = struct
 
   let compute
       ~scheduler
-      ~type_environment
+      ~pyre_api
       ~override_graph
       ~dependency_graph
       ~context
@@ -653,7 +640,7 @@ module Make (Analysis : ANALYSIS) = struct
         let map callables =
           one_analysis_pass
             ~shared_models_handle
-            ~type_environment
+            ~pyre_api
             ~override_graph
             ~context
             ~step
