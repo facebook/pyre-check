@@ -377,13 +377,17 @@ let matches_name_constraint ~name_captures ~name_constraint name =
       is_match
 
 
-let rec matches_decorator_constraint ~name_captures ~decorator = function
+let rec matches_decorator_constraint ~environment ~name_captures ~decorator = function
   | ModelQuery.DecoratorConstraint.AnyOf constraints ->
-      List.exists constraints ~f:(matches_decorator_constraint ~name_captures ~decorator)
+      List.exists
+        constraints
+        ~f:(matches_decorator_constraint ~environment ~name_captures ~decorator)
   | ModelQuery.DecoratorConstraint.AllOf constraints ->
-      List.for_all constraints ~f:(matches_decorator_constraint ~name_captures ~decorator)
+      List.for_all
+        constraints
+        ~f:(matches_decorator_constraint ~environment ~name_captures ~decorator)
   | ModelQuery.DecoratorConstraint.Not decorator_constraint ->
-      not (matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
+      not (matches_decorator_constraint ~environment ~name_captures ~decorator decorator_constraint)
   | ModelQuery.DecoratorConstraint.NameConstraint name_constraint ->
       let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
       matches_name_constraint
@@ -396,7 +400,44 @@ let rec matches_decorator_constraint ~name_captures ~decorator = function
         ~name_captures
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.show)
-  | ModelQuery.DecoratorConstraint.FullyQualifiedCallee _ -> failwith "Unsupported"
+  | ModelQuery.DecoratorConstraint.FullyQualifiedCallee name_constraint ->
+      let ({ Node.value = expression; _ } as decorator_expression) =
+        Statement.Decorator.to_expression decorator
+      in
+      let callee =
+        match expression with
+        | Expression.Expression.Call { callee; _ } ->
+            (* Decorator factory, such as `@foo(1)` *) callee
+        | Expression.Expression.Name _ ->
+            (* Regular decorator, such as `@foo` *) decorator_expression
+        | _ -> decorator_expression
+      in
+      let return_type =
+        (* Since this won't be used and resolving the return type could be expensive, let's pass a
+           random type. *)
+        lazy Type.Any
+      in
+      let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
+        Interprocedural.CallGraph.resolve_callees_from_type_external
+          ~resolution:
+            (TypeCheck.resolution
+               (GlobalResolution.create environment)
+               (module TypeCheck.DummyContext))
+          ~override_graph:None
+          ~return_type
+          callee
+      in
+      let call_target_to_string call_target =
+        call_target
+        |> CallGraph.CallTarget.target
+        |> Interprocedural.Target.define_name
+        |> Reference.show
+      in
+      List.exists call_targets ~f:(fun call_target ->
+          matches_name_constraint
+            ~name_captures
+            ~name_constraint
+            (call_target_to_string call_target))
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =
@@ -574,14 +615,18 @@ let rec normalized_parameter_matches_constraint
 
 
 let class_matches_decorator_constraint ~name_captures ~environment ~decorator_constraint class_name =
-  let resolution = GlobalResolution.create environment in
-  GlobalResolution.get_class_summary resolution class_name
+  let global_resolution = GlobalResolution.create environment in
+  GlobalResolution.get_class_summary global_resolution class_name
   >>| Node.value
   >>| (fun { decorators; _ } ->
         List.exists decorators ~f:(fun decorator ->
             Statement.Decorator.from_expression decorator
             >>| (fun decorator ->
-                  matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
+                  matches_decorator_constraint
+                    ~environment
+                    ~name_captures
+                    ~decorator
+                    decorator_constraint)
             |> Option.value ~default:false))
   |> Option.value ~default:false
 
@@ -722,7 +767,11 @@ let rec matches_constraint ~environment ~class_hierarchy_graph ~name_captures va
       |> List.exists ~f:(fun decorator ->
              Statement.Decorator.from_expression decorator
              >>| (fun decorator ->
-                   matches_decorator_constraint ~name_captures ~decorator decorator_constraint)
+                   matches_decorator_constraint
+                     ~environment
+                     ~name_captures
+                     ~decorator
+                     decorator_constraint)
              |> Option.value ~default:false)
   | ModelQuery.Constraint.ClassConstraint class_constraint ->
       Modelable.class_name value

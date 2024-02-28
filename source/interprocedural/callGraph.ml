@@ -1527,6 +1527,26 @@ let rec resolve_callees_from_type
               ())
 
 
+and resolve_callees_from_type_external
+    ~resolution
+    ~override_graph
+    ~return_type
+    ?(dunder_call = false)
+    callee
+  =
+  let callee_type = CallResolution.resolve_ignoring_errors ~resolution callee in
+  let callee_kind = CalleeKind.from_callee ~resolution callee callee_type in
+  resolve_callees_from_type
+    ~debug:false
+    ~resolution
+    ~override_graph
+    ~call_indexer:(CallTargetIndexer.create ()) (* Don't care about indexing the callees. *)
+    ~dunder_call
+    ~return_type
+    ~callee_kind
+    callee_type
+
+
 and resolve_constructor_callee ~debug ~resolution ~override_graph ~call_indexer class_type =
   let meta_type = Type.meta class_type in
   match

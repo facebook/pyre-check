@@ -236,6 +236,15 @@ module LocationCallees : sig
   val to_json : t -> Yojson.Safe.t
 end
 
+(* Exposed for rare use cases, such as resolving the callees of decorators. *)
+val resolve_callees_from_type_external
+  :  resolution:Resolution.t ->
+  override_graph:OverrideGraph.SharedMemory.ReadOnly.t option ->
+  return_type:Type.t lazy_t ->
+  ?dunder_call:bool ->
+  Expression.t ->
+  CallCallees.t
+
 (** The call graph of a function or method definition. *)
 module DefineCallGraph : sig
   type t [@@deriving eq, show]
