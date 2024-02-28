@@ -2621,19 +2621,13 @@ let resolve_global_callable
   (* Since properties and setters share the same undecorated name, we need to special-case them. *)
   let open ModelVerifier in
   if signature_is_property define then
-    find_method_definitions
-      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-      ~predicate:is_property
-      name
+    find_method_definitions ~pyre_api ~predicate:is_property name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
     |> Core.Result.return
   else if Define.Signature.is_property_setter define then
-    find_method_definitions
-      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-      ~predicate:Define.is_property_setter
-      name
+    find_method_definitions ~pyre_api ~predicate:Define.is_property_setter name
     |> List.hd
     >>| Type.Callable.create_from_implementation
     >>| (fun callable -> Global.Attribute callable)
@@ -2648,7 +2642,7 @@ let resolve_global_callable
          ~location
          (UnexpectedDecorators { name; unexpected_decorators = decorators }))
   else
-    Ok (resolve_global ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api) name)
+    Ok (resolve_global ~pyre_api name)
 
 
 let adjust_sanitize_and_modes_and_skipped_override
@@ -2906,9 +2900,7 @@ let create_model_from_signature
     | None -> (
         let module_name = Reference.first callable_name in
         let module_resolved =
-          ModelVerifier.resolve_global
-            ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-            (Reference.create module_name)
+          ModelVerifier.resolve_global ~pyre_api (Reference.create module_name)
         in
         match module_resolved with
         | Some _ ->
@@ -3085,11 +3077,7 @@ let create_model_from_attribute
     { name; annotations; decorators; location; call_target }
   =
   let open Core.Result in
-  ModelVerifier.verify_global
-    ~path
-    ~location
-    ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-    ~name
+  ModelVerifier.verify_global ~path ~location ~pyre_api ~name
   >>= fun () ->
   List.fold_result annotations ~init:Model.empty_model ~f:(fun accumulator annotation ->
       let model_annotation =
@@ -3338,8 +3326,7 @@ let rec parse_statement
         || not (List.is_empty extra_decorators)
       then
         name
-        |> ModelVerifier.class_summaries
-             ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+        |> ModelVerifier.class_summaries ~pyre_api
         |> Option.bind ~f:List.hd
         |> Option.map ~f:(fun { Node.value = { Class.body; _ }; _ } ->
                let signature { Node.value; location } =

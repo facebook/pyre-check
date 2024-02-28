@@ -30,28 +30,28 @@ module ClassDefinitionsCache = DefinitionsCache (struct
   type t = Statement.Class.t Node.t list option
 end)
 
-let containing_source ~resolution reference =
+let containing_source ~pyre_api reference =
   let rec qualifier ~found ~lead ~tail =
     match tail with
     | head :: (_ :: _ as tail) ->
         let new_lead = Reference.create ~prefix:lead head in
-        if GlobalResolution.module_exists resolution new_lead then
+        if PyrePysaApi.ReadOnly.module_exists pyre_api new_lead then
           qualifier ~found:new_lead ~lead:new_lead ~tail
         else
           qualifier ~found ~lead:new_lead ~tail
     | _ -> found
   in
   qualifier ~found:Reference.empty ~lead:Reference.empty ~tail:(Reference.as_list reference)
-  |> GlobalResolution.source_of_qualifier resolution
+  |> PyrePysaApi.ReadOnly.source_of_qualifier pyre_api
 
 
-let class_summaries ~resolution reference =
+let class_summaries ~pyre_api reference =
   match ClassDefinitionsCache.get reference with
   | Some result -> result
   | None ->
       let open Option in
       let result =
-        containing_source ~resolution reference
+        containing_source ~pyre_api reference
         >>| Preprocessing.classes
         >>| List.filter ~f:(fun { Node.value = { Statement.Class.name; _ }; _ } ->
                 Reference.equal reference name)
@@ -63,7 +63,7 @@ let class_summaries ~resolution reference =
 
 
 (* Find a method definition matching the given predicate. *)
-let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
+let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
   let open Statement in
   let get_matching_define = function
     | {
@@ -72,8 +72,8 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
         _;
       } ->
         if Reference.equal define_name name && predicate define then
-          let parser = GlobalResolution.annotation_parser resolution in
-          let variables = GlobalResolution.type_parameters_as_variables resolution in
+          let parser = PyrePysaApi.ReadOnly.annotation_parser pyre_api in
+          let variables = PyrePysaApi.ReadOnly.type_parameters_as_variables pyre_api in
           AnnotatedDefine.Callable.create_overload_without_applying_decorators
             ~parser
             ~variables
@@ -84,7 +84,7 @@ let find_method_definitions ~resolution ?(predicate = fun _ -> true) name =
     | _ -> None
   in
   Reference.prefix name
-  >>= class_summaries ~resolution
+  >>= class_summaries ~pyre_api
   >>= List.hd
   >>| (fun definition -> definition.Node.value.Class.body)
   >>| List.filter_map ~f:get_matching_define
@@ -100,14 +100,14 @@ module Global = struct
 end
 
 (* Resolve global symbols, ignoring decorators. *)
-let resolve_global ~resolution name =
+let resolve_global ~pyre_api name =
   (* Resolve undecorated functions. *)
-  let resolved_global = GlobalResolution.global resolution name in
+  let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
   let resolved_local =
     if Option.is_none resolved_global then
       name
       |> Reference.this_and_all_parents
-      |> List.filter_map ~f:(GlobalResolution.get_define_body resolution)
+      |> List.filter_map ~f:(PyrePysaApi.ReadOnly.get_define_body pyre_api)
       |> List.map ~f:Node.value
       |> List.concat_map ~f:(fun define -> define.Statement.Define.body)
       |> List.find_map ~f:(fun statement ->
@@ -117,10 +117,10 @@ let resolve_global ~resolution name =
                  Some define
              | _ -> None)
       >>| fun define ->
-      GlobalResolution.resolve_define
+      PyrePysaApi.ReadOnly.resolve_define
         ~implementation:(Some define.signature)
         ~overloads:[]
-        resolution
+        pyre_api
     else
       None
   in
@@ -130,7 +130,7 @@ let resolve_global ~resolution name =
       Some (Global.Attribute (Type.Callable signature))
   | _ -> (
       (* Resolve undecorated methods. *)
-      match find_method_definitions ~resolution name with
+      match find_method_definitions ~pyre_api name with
       | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
       | first :: _ :: _ as overloads ->
           (* Note that we use the first overload as the base implementation, which might be
@@ -144,23 +144,15 @@ let resolve_global ~resolution name =
                   ()))
       | [] -> (
           (* Fall back for anything else. *)
-          let global_resolution = resolution in
-          let resolution =
-            Analysis.TypeCheck.resolution
-              global_resolution
-              (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-              (module Analysis.TypeCheck.DummyContext)
-          in
           let annotation =
             from_reference name ~location:Location.any
-            |> Resolution.resolve_expression_to_annotation resolution
+            |> PyrePysaApi.ReadOnly.resolve_expression_to_annotation pyre_api
           in
           match Annotation.annotation annotation with
           | Type.Parametric { name = "type"; _ }
-            when GlobalResolution.class_exists global_resolution (Reference.show name) ->
+            when PyrePysaApi.ReadOnly.class_exists pyre_api (Reference.show name) ->
               Some Global.Class
-          | Type.Top when GlobalResolution.module_exists global_resolution name ->
-              Some Global.Module
+          | Type.Top when PyrePysaApi.ReadOnly.module_exists pyre_api name -> Some Global.Module
           | Type.Top when not (Annotation.is_immutable annotation) ->
               (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
                  to mutable annotation, while existing ones resolve to immutable annotation. This is
@@ -380,9 +372,9 @@ let verify_signature
   | _ -> Ok ()
 
 
-let verify_global ~path ~location ~resolution ~name =
+let verify_global ~path ~location ~pyre_api ~name =
   let name = demangle_class_attribute (Reference.show name) |> Reference.create in
-  let global = resolve_global ~resolution name in
+  let global = resolve_global ~pyre_api name in
   match global with
   | Some Global.Class ->
       Error
@@ -405,7 +397,7 @@ let verify_global ~path ~location ~resolution ~name =
       let class_summary =
         Reference.prefix name
         >>| Reference.show
-        >>= GlobalResolution.get_class_summary resolution
+        >>= PyrePysaApi.ReadOnly.get_class_summary pyre_api
         >>| Node.value
       in
       match class_summary, global with
@@ -430,7 +422,7 @@ let verify_global ~path ~location ~resolution ~name =
       | None, Some _ -> Ok ()
       | None, None -> (
           let module_name = Reference.first name in
-          let module_resolved = resolve_global ~resolution (Reference.create module_name) in
+          let module_resolved = resolve_global ~pyre_api (Reference.create module_name) in
           match module_resolved with
           | Some _ ->
               Error

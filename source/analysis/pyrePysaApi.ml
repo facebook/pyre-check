@@ -227,7 +227,32 @@ module ReadOnly = struct
 
   let parse_reference api = global_resolution api |> GlobalResolution.parse_reference
 
+  let module_exists api = global_resolution api |> GlobalResolution.module_exists
+
+  let class_exists api = global_resolution api |> GlobalResolution.class_exists
+
+  let get_define_body api = global_resolution api |> GlobalResolution.get_define_body
+
+  let resolve_define api = global_resolution api |> GlobalResolution.resolve_define
+
+  let global api = global_resolution api |> GlobalResolution.global
+
+  let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
+
+  let type_parameters_as_variables api =
+    global_resolution api |> GlobalResolution.type_parameters_as_variables
+
+
   let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
+
+  let resolve_expression_to_annotation api =
+    let global_resolution = global_resolution api in
+    TypeCheck.resolution
+      global_resolution
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+    |> Resolution.resolve_expression_to_annotation
+
 
   let get_unannotated_global api =
     unannotated_global_environment api

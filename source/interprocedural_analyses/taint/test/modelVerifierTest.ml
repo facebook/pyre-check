@@ -15,10 +15,8 @@ module Global = ModelVerifier.Global
 
 let assert_resolve ~context sources name ~expect =
   ModelVerifier.ClassDefinitionsCache.invalidate ();
-  let resolution =
-    ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
-  in
-  let actual = ModelVerifier.resolve_global ~resolution (Ast.Reference.create name) in
+  let pyre_api = ScratchProject.setup ~context sources |> ScratchProject.pyre_pysa_read_only_api in
+  let actual = ModelVerifier.resolve_global ~pyre_api (Ast.Reference.create name) in
   let printer = function
     | None -> "None"
     | Some global -> Global.show global
