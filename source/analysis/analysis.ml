@@ -55,6 +55,7 @@ module SharedMemoryKeys = SharedMemoryKeys
 module SignatureSelectionTypes = SignatureSelectionTypes
 module SourceCodeApi = SourceCodeApi
 module SourceCodeIncrementalApi = SourceCodeIncrementalApi
+module SourcePaths = SourcePaths
 module Type = Type
 module TypeCheck = TypeCheck
 module TypeEnvironment = TypeEnvironment

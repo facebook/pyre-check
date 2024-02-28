@@ -57,7 +57,7 @@ let get_modules ~source_code_api ~build_system path =
   let modules =
     let source_path = PyrePath.create_absolute path |> SourcePath.create in
     match
-      Server.PathLookup.qualifiers_of_source_path
+      Analysis.SourcePaths.qualifiers_of_source_path
         source_path
         ~source_code_api
         ~lookup_artifact:(BuildSystem.lookup_artifact build_system)
@@ -65,7 +65,7 @@ let get_modules ~source_code_api ~build_system path =
     (* In case there's no build system artifacts for this source, lookup the module as if it's built
        by a no-op build system (using normal source path mapping) *)
     | [] ->
-        Server.PathLookup.qualifiers_of_source_path
+        Analysis.SourcePaths.qualifiers_of_source_path
           source_path
           ~source_code_api
           ~lookup_artifact:BuildSystem.default_lookup_artifact
@@ -137,7 +137,7 @@ let get_location_of_definition_for_module ~overlay ~build_system ~position modul
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   LocationBasedLookup.location_of_definition ~type_environment ~module_reference position
   >>= fun { Ast.Location.WithModule.module_reference; start; stop } ->
-  Server.PathLookup.absolute_source_path_of_qualifier
+  Analysis.SourcePaths.absolute_source_path_of_qualifier
     ~lookup_source:(BuildSystem.lookup_source build_system)
     ~source_code_api
     module_reference

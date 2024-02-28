@@ -27,7 +27,7 @@ open Analysis
 let instantiate_error ~lookup_source ~show_error_traces ~source_code_api error =
   AnalysisError.instantiate
     ~show_error_traces
-    ~lookup:(PathLookup.absolute_source_path_of_qualifier ~lookup_source ~source_code_api)
+    ~lookup:(Analysis.SourcePaths.absolute_source_path_of_qualifier ~lookup_source ~source_code_api)
     error
 
 

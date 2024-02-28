@@ -140,7 +140,7 @@ let resolve_module_path
     qualifier
   =
   match
-    Server.PathLookup.absolute_source_path_of_qualifier ~lookup_source ~source_code_api qualifier
+    Analysis.SourcePaths.absolute_source_path_of_qualifier ~lookup_source ~source_code_api qualifier
   with
   | None -> None
   | Some path ->
