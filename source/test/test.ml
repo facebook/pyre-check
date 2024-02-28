@@ -3288,6 +3288,15 @@ module ScratchProject = struct
          type_environment
 
 
+  let pyre_pysa_read_only_api project =
+    (* Some of the PyrePysa api logic uses global queries that assume we've pre-populated symbol
+       tables. *)
+    populate_type_environment project;
+    PyrePysaApi.ReadOnly.create
+      ~type_environment:(type_environment project)
+      ~global_module_paths_api:(global_module_paths_api project)
+
+
   let build_type_environment project =
     populate_type_environment project;
     let sources = get_project_sources project in

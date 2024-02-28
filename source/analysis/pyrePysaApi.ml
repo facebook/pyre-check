@@ -176,12 +176,68 @@ module ReadOnly = struct
     }
 
 
+  let create ~type_environment ~global_module_paths_api =
+    { type_environment; global_module_paths_api }
+
+
   let type_environment { type_environment; _ } = type_environment
 
   let global_module_paths_api { global_module_paths_api; _ } = global_module_paths_api
+
+  let global_resolution api = type_environment api |> TypeEnvironment.ReadOnly.global_resolution
+
+  let unannotated_global_environment api =
+    type_environment api |> TypeEnvironment.ReadOnly.unannotated_global_environment
+
+
+  let source_code_api api =
+    type_environment api |> TypeEnvironment.ReadOnly.get_untracked_source_code_api
+
+
+  let contextless_resolution api =
+    TypeCheck.resolution
+      (global_resolution api)
+      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+      (module TypeCheck.DummyContext)
+
 
   (* Interface to get source paths; used when dumping stats from Pysa *)
 
   let absolute_source_path_of_qualifier ~lookup_source api =
     type_environment api |> absolute_source_path_of_qualifier ~lookup_source
+
+
+  let explicit_qualifiers api =
+    global_module_paths_api api |> GlobalModulePathsApi.explicit_qualifiers
+
+
+  let parse_annotation api = global_resolution api |> GlobalResolution.parse_annotation
+
+  let get_class_summary api = global_resolution api |> GlobalResolution.get_class_summary
+
+  let get_class_metadata api = global_resolution api |> GlobalResolution.get_class_metadata
+
+  let class_hierarchy api = global_resolution api |> GlobalResolution.class_hierarchy
+
+  let source_is_unit_test api = global_resolution api |> GlobalResolution.source_is_unit_test
+
+  let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
+
+  let source_of_qualifier api = source_code_api api |> SourceCodeApi.source_of_qualifier
+
+  let get_unannotated_global api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
+
+
+  let all_classes api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
+         ~global_module_paths_api:(global_module_paths_api api)
+
+
+  let all_unannotated_globals api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_unannotated_globals
+         ~global_module_paths_api:(global_module_paths_api api)
 end

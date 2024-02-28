@@ -535,6 +535,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
         errors
     in
     let setup_and_execute_model_queries model_queries =
+      let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
       let scheduler_wrapper scheduler =
         let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
         let initial_callables =
@@ -546,18 +547,14 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
             ~qualifiers
         in
         let class_hierarchy_graph =
-          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
-            ~scheduler
-            ~environment:type_environment
-            ~qualifiers
+          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers ~scheduler ~pyre_api ~qualifiers
         in
         let stubs_shared_memory_handle =
           Interprocedural.Target.HashsetSharedMemory.from_heap
             (Interprocedural.FetchCallables.get_stubs initial_callables)
         in
         Taint.ModelQueryExecution.generate_models_from_queries
-          ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
-          ~global_module_paths_api
+          ~pyre_api
           ~scheduler
           ~class_hierarchy_graph
           ~source_sink_filter:None

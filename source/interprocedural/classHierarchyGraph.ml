@@ -11,7 +11,7 @@
 open Core
 open Ast
 open Statement
-open Analysis
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type class_name = string
 
@@ -90,9 +90,8 @@ module Heap = struct
 
   let roots { roots; _ } = roots
 
-  let from_source ~environment ~source =
-    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    if GlobalResolution.source_is_unit_test resolution ~source then
+  let from_source ~pyre_api ~source =
+    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
       empty
     else
       let register_immediate_subclasses
@@ -100,7 +99,7 @@ module Heap = struct
           { Node.value = { Class.name = class_name; _ }; _ }
         =
         let class_name = Reference.show class_name in
-        let parents = GlobalResolution.immediate_parents resolution class_name in
+        let parents = PyrePysaApi.ReadOnly.immediate_parents pyre_api class_name in
         List.fold ~init:accumulator parents ~f:(fun accumulator parent ->
             add accumulator ~parent ~child:class_name)
       in
@@ -142,17 +141,12 @@ module Heap = struct
     { roots; edges }
 
 
-  let get_source ~environment qualifier =
-    let ast_environment = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
-    SourceCodeApi.source_of_qualifier ast_environment qualifier
-
-
-  let from_qualifiers ~scheduler ~environment ~qualifiers =
+  let from_qualifiers ~scheduler ~pyre_api ~qualifiers =
     let build_class_hierarchy_graph qualifiers =
       List.fold qualifiers ~init:empty ~f:(fun accumulator qualifier ->
-          match get_source ~environment qualifier with
+          match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
           | Some source ->
-              let graph = from_source ~environment ~source in
+              let graph = from_source ~pyre_api ~source in
               join accumulator graph
           | None -> accumulator)
     in

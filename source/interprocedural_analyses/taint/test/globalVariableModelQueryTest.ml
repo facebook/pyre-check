@@ -72,10 +72,7 @@ let test_find_globals =
         ~include_helper_builtins:false
         ~include_typeshed_stubs:true
     in
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.build_type_environment project
-    in
-    let environment = TypeEnvironment.ReadOnly.global_environment type_environment in
+    let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
     let is_uninteresting_global name =
       not
         (List.exists uninteresting_globals_prefix ~f:(fun exclude_prefix ->
@@ -85,13 +82,11 @@ let test_find_globals =
       {
         VariableWithType.name;
         type_annotation =
-          ModelQueryExecution.GlobalVariableQueryExecutor.get_type_annotation ~environment name;
+          ModelQueryExecution.GlobalVariableQueryExecutor.get_type_annotation ~pyre_api name;
       }
     in
     let actual =
-      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals
-        ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
-        ~global_module_paths_api:(ScratchProject.global_module_paths_api project)
+      ModelQueryExecution.GlobalVariableQueryExecutor.get_globals ~pyre_api
       |> List.map ~f:Target.object_name
       |> List.filter ~f:is_uninteresting_global
       |> List.map ~f:add_type_annotation

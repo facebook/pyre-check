@@ -31,23 +31,22 @@ let sink name =
 
 let test_generated_annotations context =
   let assert_generated_annotations ~source ~query ~callable ~expected =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    let pyre_api =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
     in
-    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
-        ~environment:type_environment
+        ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~environment
+        ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:(ModelQueryExecution.CallableQueryExecutor.make_modelable ~environment callable)
+        ~modelable:(ModelQueryExecution.CallableQueryExecutor.make_modelable ~pyre_api callable)
         query
     in
     assert_equal
@@ -57,14 +56,13 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_attributes ~source ~query ~name ~expected =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    let pyre_api =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
     in
-    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
-        ~environment:type_environment
+        ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
@@ -72,9 +70,9 @@ let test_generated_annotations context =
     let actual =
       ModelQueryExecution.AttributeQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~environment
+        ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:(ModelQueryExecution.AttributeQueryExecutor.make_modelable ~environment target)
+        ~modelable:(ModelQueryExecution.AttributeQueryExecutor.make_modelable ~pyre_api target)
         query
     in
     assert_equal
@@ -84,14 +82,13 @@ let test_generated_annotations context =
       actual
   in
   let assert_generated_annotations_for_globals ~source ~query ~name ~expected =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    let pyre_api =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
     in
-    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
-        ~environment:type_environment
+        ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
@@ -99,10 +96,9 @@ let test_generated_annotations context =
     let actual =
       ModelQueryExecution.GlobalVariableQueryExecutor.generate_annotations_from_query_on_target
         ~verbose:false
-        ~environment
+        ~pyre_api
         ~class_hierarchy_graph
-        ~modelable:
-          (ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable ~environment target)
+        ~modelable:(ModelQueryExecution.GlobalVariableQueryExecutor.make_modelable ~pyre_api target)
         query
     in
     assert_equal
@@ -4792,21 +4788,20 @@ let test_partition_cache_queries _ =
 
 let test_generated_cache context =
   let assert_generated_cache ~source ~queries ~callables ~expected =
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.build_type_environment
+    let pyre_api =
+      ScratchProject.setup ~context ["test.py", source] |> ScratchProject.pyre_pysa_read_only_api
     in
-    let environment = Analysis.TypeEnvironment.ReadOnly.global_environment type_environment in
     let class_hierarchy_graph =
       ClassHierarchyGraph.Heap.from_qualifiers
         ~scheduler:(mock_scheduler ())
-        ~environment:type_environment
+        ~pyre_api
         ~qualifiers:[Ast.Reference.create "test"]
       |> ClassHierarchyGraph.SharedMemory.from_heap ~store_transitive_children_for:[]
     in
     let actual =
       ModelQueryExecution.CallableQueryExecutor.generate_cache_from_queries_on_targets
         ~verbose:false
-        ~environment
+        ~pyre_api
         ~class_hierarchy_graph
         ~targets:callables
         queries

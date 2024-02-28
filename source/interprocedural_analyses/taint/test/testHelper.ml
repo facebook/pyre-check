@@ -495,9 +495,8 @@ let initialize
   in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
-  let class_hierarchy_graph =
-    ClassHierarchyGraph.Heap.from_source ~environment:type_environment ~source
-  in
+  let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
+  let class_hierarchy_graph = ClassHierarchyGraph.Heap.from_source ~pyre_api ~source in
   let stubs_shared_memory_handle = Target.HashsetSharedMemory.from_heap stubs in
   let user_models, model_query_results =
     let models_source =
@@ -533,8 +532,7 @@ let initialize
 
         let { ModelQueryExecution.ExecutionResult.models = model_query_results; errors } =
           ModelQueryExecution.generate_models_from_queries
-            ~environment:(TypeEnvironment.ReadOnly.global_environment type_environment)
-            ~global_module_paths_api
+            ~pyre_api
             ~scheduler:(Test.mock_scheduler ())
             ~class_hierarchy_graph
             ~source_sink_filter:(Some taint_configuration.source_sink_filter)

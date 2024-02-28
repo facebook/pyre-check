@@ -14,20 +14,21 @@ open ClassHierarchyGraph.Heap
 
 let test_from_source context =
   let assert_class_hierarchy ~source ~expected =
-    let test_source, environment =
+    let test_source, pyre_api =
       let project = Test.ScratchProject.setup ~context ["test.py", source] in
-      let { ScratchProject.BuiltTypeEnvironment.type_environment; sources } =
-        ScratchProject.build_type_environment project
-      in
+      let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
       let test_source =
+        let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
+          ScratchProject.build_type_environment project
+        in
         List.find_map_exn
           sources
           ~f:(fun ({ Source.module_path = { ModulePath.qualifier; _ }; _ } as source) ->
             Option.some_if (String.equal (Reference.show qualifier) "test") source)
       in
-      test_source, type_environment
+      test_source, pyre_api
     in
-    let class_hierarchy = from_source ~environment ~source:test_source in
+    let class_hierarchy = from_source ~pyre_api ~source:test_source in
     assert_equal
       expected
       class_hierarchy

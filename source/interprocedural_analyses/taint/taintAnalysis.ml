@@ -245,9 +245,9 @@ let create_pyre_read_write_api_and_perform_type_analysis
 
 
 let parse_models_and_queries_from_sources
-    ~taint_configuration
     ~scheduler
-    ~resolution
+    ~pyre_api
+    ~taint_configuration
     ~source_sink_filter
     ~definitions
     ~stubs
@@ -260,7 +260,7 @@ let parse_models_and_queries_from_sources
     let taint_configuration = TaintConfiguration.SharedMemory.get taint_configuration in
     List.fold sources ~init:ModelParseResult.empty ~f:(fun state (path, source) ->
         ModelParser.parse
-          ~resolution
+          ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
           ~path
           ~source
           ~taint_configuration
@@ -288,9 +288,9 @@ let parse_models_and_queries_from_sources
 
 let parse_models_and_queries_from_configuration
     ~scheduler
+    ~pyre_api
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.verify_models; configuration; _ }
     ~taint_configuration
-    ~resolution
     ~source_sink_filter
     ~definitions
     ~stubs
@@ -299,9 +299,9 @@ let parse_models_and_queries_from_configuration
   let ({ ModelParseResult.errors; _ } as parse_result) =
     ModelParser.get_model_sources ~paths:configuration.taint_model_paths
     |> parse_models_and_queries_from_sources
-         ~taint_configuration
          ~scheduler
-         ~resolution
+         ~pyre_api
+         ~taint_configuration
          ~source_sink_filter
          ~definitions
          ~stubs
@@ -313,17 +313,14 @@ let parse_models_and_queries_from_configuration
 
 let initialize_models
     ~scheduler
+    ~pyre_api
     ~static_analysis_configuration
     ~taint_configuration
     ~taint_configuration_shared_memory
     ~class_hierarchy_graph
-    ~environment
-    ~global_module_paths_api
     ~initial_callables
   =
   let open TaintConfiguration.Heap in
-  let resolution = Analysis.TypeEnvironment.ReadOnly.global_resolution environment in
-
   Log.info "Parsing taint models...";
   let timer = Timer.start () in
   let definitions_hashset =
@@ -335,9 +332,9 @@ let initialize_models
   let { ModelParseResult.models; queries; errors } =
     parse_models_and_queries_from_configuration
       ~scheduler
+      ~pyre_api
       ~static_analysis_configuration
       ~taint_configuration:taint_configuration_shared_memory
-      ~resolution
       ~source_sink_filter:taint_configuration.source_sink_filter
       ~definitions:(Some definitions_hashset)
       ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory)
@@ -362,8 +359,7 @@ let initialize_models
         }
           =
           ModelQueryExecution.generate_models_from_queries
-            ~environment:(Analysis.TypeEnvironment.ReadOnly.global_environment environment)
-            ~global_module_paths_api
+            ~pyre_api
             ~scheduler
             ~class_hierarchy_graph
             ~verbose
@@ -403,14 +399,17 @@ let initialize_models
   in
 
   let models =
-    ClassModels.infer ~environment ~global_module_paths_api ~user_models:models
+    ClassModels.infer
+      ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+      ~global_module_paths_api:(PyrePysaApi.ReadOnly.global_module_paths_api pyre_api)
+      ~user_models:models
     |> Registry.merge ~join:Model.join_user_models models
   in
 
   let models =
     MissingFlow.add_obscure_models
       ~static_analysis_configuration
-      ~environment
+      ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
       ~stubs:stubs_hashset
       ~initial_models:models
   in
@@ -561,20 +560,15 @@ let run_taint_analysis
     TaintConfiguration.SharedMemory.from_heap taint_configuration
   in
 
-  let global_module_paths_api = PyrePysaApi.ReadOnly.global_module_paths_api pyre_api in
   let read_only_environment = PyrePysaApi.ReadOnly.type_environment pyre_api in
-
-  let qualifiers = Analysis.GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
+  let qualifiers = PyrePysaApi.ReadOnly.explicit_qualifiers pyre_api in
 
   let class_hierarchy_graph, cache =
     Cache.class_hierarchy_graph cache (fun () ->
         let timer = Timer.start () in
         let () = Log.info "Computing class hierarchy graph..." in
         let class_hierarchy_graph =
-          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers
-            ~scheduler
-            ~environment:read_only_environment
-            ~qualifiers
+          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers ~scheduler ~pyre_api ~qualifiers
         in
         Statistics.performance
           ~name:"Computed class hierarchy graph"
@@ -611,7 +605,7 @@ let run_taint_analysis
           Interprocedural.FetchCallables.from_qualifiers
             ~scheduler
             ~configuration
-            ~environment:read_only_environment
+            ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
             ~include_unit_tests:false
             ~qualifiers
         in
@@ -627,12 +621,11 @@ let run_taint_analysis
   let { ModelParseResult.models = initial_models; errors = model_verification_errors; _ } =
     initialize_models
       ~scheduler
+      ~pyre_api
       ~static_analysis_configuration
       ~taint_configuration
       ~taint_configuration_shared_memory
       ~class_hierarchy_graph
-      ~environment:read_only_environment
-      ~global_module_paths_api
       ~initial_callables
   in
 

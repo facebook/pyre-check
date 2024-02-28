@@ -32,7 +32,7 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source : environment:TypeEnvironment.ReadOnly.t -> source:Source.t -> t
+  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
 
   val create : roots:class_name list -> edges:(class_name * class_name list) list -> t
 
@@ -42,7 +42,7 @@ module Heap : sig
 
   val from_qualifiers
     :  scheduler:Scheduler.t ->
-    environment:TypeEnvironment.ReadOnly.t ->
+    pyre_api:PyrePysaApi.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t
 end
