@@ -756,7 +756,7 @@ let run_taint_analysis
           ~static_analysis_configuration
           ~environment:(Analysis.TypeEnvironment.read_only environment)
           ~resolve_module_path:(Some resolve_module_path)
-          ~override_graph:override_graph_shared_memory_read_only
+          ~override_graph:(Some override_graph_shared_memory_read_only)
           ~store_shared_memory:true
           ~attribute_targets
           ~skip_analysis_targets

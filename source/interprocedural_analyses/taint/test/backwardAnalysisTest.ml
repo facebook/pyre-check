@@ -38,7 +38,7 @@ let assert_taint ~context source expected =
         ~static_analysis_configuration
         ~environment:type_environment
         ~override_graph:
-          (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only)
+          (Some (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only))
         ~attribute_targets:
           (initial_models
           |> Registry.object_targets

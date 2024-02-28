@@ -592,7 +592,7 @@ let initialize
       ~static_analysis_configuration
       ~environment:type_environment
       ~resolve_module_path:None
-      ~override_graph:override_graph_shared_memory_read_only
+      ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
       ~attribute_targets:(Registry.object_targets initial_models)
       ~skip_analysis_targets:Target.Set.empty

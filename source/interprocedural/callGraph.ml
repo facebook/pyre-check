@@ -1273,10 +1273,11 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
   let global_resolution = Resolution.global_resolution resolution in
   let get_class_type = GlobalResolution.parse_reference global_resolution in
   let get_actual_target method_name =
-    if OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph method_name then
-      Target.get_corresponding_override method_name
-    else
-      method_name
+    match override_graph with
+    | Some override_graph
+      when OverrideGraph.SharedMemory.ReadOnly.overrides_exist override_graph method_name ->
+        Target.get_corresponding_override method_name
+    | _ -> method_name
   in
   let receiver_type = receiver_type |> strip_meta |> strip_optional |> Type.weaken_literals in
   let declaring_type, method_name, kind =
@@ -1288,11 +1289,15 @@ let compute_indirect_targets ~resolution ~override_graph ~receiver_type implemen
   if Reference.equal declaring_type (Type.class_name receiver_type) then (* case a *)
     [get_actual_target implementation_target]
   else
-    match
-      OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
-        override_graph
-        ~member:implementation_target
-    with
+    let overriding_types =
+      match override_graph with
+      | Some override_graph ->
+          OverrideGraph.SharedMemory.ReadOnly.get_overriding_types
+            override_graph
+            ~member:implementation_target
+      | None -> None
+    in
+    match overriding_types with
     | None ->
         (* case b *)
         [implementation_target]
@@ -2191,7 +2196,7 @@ module DefineCallGraphFixpoint (Context : sig
 
   val callees_at_location : UnprocessedLocationCallees.t Location.Table.t
 
-  val override_graph : OverrideGraph.SharedMemory.ReadOnly.t
+  val override_graph : OverrideGraph.SharedMemory.ReadOnly.t option
 
   val call_indexer : CallTargetIndexer.t
 
