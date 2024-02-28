@@ -237,6 +237,8 @@ module ReadOnly = struct
 
   let global api = global_resolution api |> GlobalResolution.global
 
+  let overrides api = global_resolution api |> GlobalResolution.overrides
+
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
 
   let type_parameters_as_variables api =

@@ -15,8 +15,7 @@ open Core
 open Pyre
 open Ast
 open Statement
-module GlobalResolution = Analysis.GlobalResolution
-module TypeEnvironment = Analysis.TypeEnvironment
+module PyrePysaApi = Analysis.PyrePysaApi
 
 (** Override graph in the ocaml heap, storing a mapping from a method to classes overriding it. *)
 module Heap = struct
@@ -47,9 +46,8 @@ module Heap = struct
 
   let show = Format.asprintf "%a" pp
 
-  let from_source ~environment ~include_unit_tests ~source =
-    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    if (not include_unit_tests) && GlobalResolution.source_is_unit_test resolution ~source then
+  let from_source ~pyre_api ~include_unit_tests ~source =
+    if (not include_unit_tests) && PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
       Target.Map.Tree.empty
     else
       let timer = Timer.start () in
@@ -58,7 +56,7 @@ module Heap = struct
           let method_name = Define.unqualified_name child_method in
           let ancestor =
             try
-              GlobalResolution.overrides resolution (Reference.show class_name) ~name:method_name
+              PyrePysaApi.ReadOnly.overrides pyre_api (Reference.show class_name) ~name:method_name
             with
             | Analysis.ClassHierarchy.Untracked untracked_type ->
                 Log.warning
@@ -240,11 +238,6 @@ module SharedMemory = struct
   let load_from_cache = T.load_from_cache
 end
 
-let get_source ~environment qualifier =
-  let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api environment in
-  Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier
-
-
 type skipped_overrides = Target.t list
 
 type whole_program_overrides = {
@@ -258,7 +251,7 @@ type whole_program_overrides = {
 let build_whole_program_overrides
     ~scheduler
     ~static_analysis_configuration
-    ~environment
+    ~pyre_api
     ~include_unit_tests
     ~skip_overrides_targets
     ~maximum_overrides
@@ -268,11 +261,11 @@ let build_whole_program_overrides
   let overrides =
     let combine ~key:_ left right = List.rev_append left right in
     let build_overrides overrides qualifier =
-      match get_source ~environment qualifier with
+      match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
       | None -> overrides
       | Some source ->
           let new_overrides =
-            Heap.from_source ~environment ~include_unit_tests ~source
+            Heap.from_source ~pyre_api ~include_unit_tests ~source
             |> Heap.skip_overrides ~to_skip:skip_overrides_targets
           in
           Target.Map.Tree.merge_skewed ~combine overrides new_overrides

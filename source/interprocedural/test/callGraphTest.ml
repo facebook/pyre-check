@@ -44,7 +44,7 @@ let test_call_graph_of_define context =
         ~f:(fun call_graph_of_define (location, callees) ->
           DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
     in
-    let define, test_source, environment, configuration =
+    let define, test_source, pyre_api, environment, configuration =
       let find_define = function
         | { Node.value = define; _ }
           when String.equal (Statement.Define.name define |> Reference.show) define_name ->
@@ -65,12 +65,13 @@ let test_call_graph_of_define context =
           (Preprocessing.defines ~include_nested:true ~include_toplevels:true test_source)
           ~f:find_define,
         test_source,
+        ScratchProject.pyre_pysa_read_only_api project,
         type_environment,
         ScratchProject.configuration_of project )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
     let override_graph_heap =
-      OverrideGraph.Heap.from_source ~environment ~include_unit_tests:false ~source:test_source
+      OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:false ~source:test_source
     in
     let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
     let () =

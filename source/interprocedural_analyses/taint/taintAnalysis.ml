@@ -650,7 +650,7 @@ let run_taint_analysis
         Interprocedural.OverrideGraph.build_whole_program_overrides
           ~static_analysis_configuration
           ~scheduler
-          ~environment:read_only_environment
+          ~pyre_api
           ~include_unit_tests:false
           ~skip_overrides_targets
           ~maximum_overrides

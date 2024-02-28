@@ -561,7 +561,7 @@ let initialize
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =
-    OverrideGraph.Heap.from_source ~environment:type_environment ~include_unit_tests:true ~source
+    OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:true ~source
     |> OverrideGraph.Heap.skip_overrides ~to_skip:(Registry.skip_overrides user_models)
     |> OverrideGraph.Heap.cap_overrides
          ~analyze_all_overrides_targets:(Registry.analyze_all_overrides initial_models)

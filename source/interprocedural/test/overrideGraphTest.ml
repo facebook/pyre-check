@@ -16,14 +16,15 @@ let setup ?(other_sources = []) ~context ~handle source =
     let external_sources = List.map other_sources ~f:(fun { handle; source } -> handle, source) in
     ScratchProject.setup ~context ~external_sources [handle, source]
   in
-  let { ScratchProject.BuiltTypeEnvironment.sources; type_environment; _ } =
+  let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
     ScratchProject.build_type_environment project
   in
+  let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
   let source =
     List.find_exn sources ~f:(fun { Source.module_path; _ } ->
         String.equal (ModulePath.relative module_path) handle)
   in
-  source, type_environment, ScratchProject.configuration_of project
+  source, pyre_api, ScratchProject.configuration_of project
 
 
 let test_method_overrides context =
@@ -34,9 +35,9 @@ let test_method_overrides context =
       in
       List.map expected ~f:create_callables
     in
-    let source, environment, _ = setup ~other_sources ~context ~handle source in
+    let source, pyre_api, _ = setup ~other_sources ~context ~handle source in
     let overrides_map =
-      OverrideGraph.Heap.from_source ~environment ~include_unit_tests:false ~source
+      OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:false ~source
     in
     let expected_overrides = OverrideGraph.Heap.of_alist_exn expected in
     assert_equal
