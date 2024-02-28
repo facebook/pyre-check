@@ -30,8 +30,8 @@ module VariableWithType = struct
        = 0
 end
 
-let test_find_globals context =
-  let assert_found_globals ~source ~expected =
+let test_find_globals =
+  let assert_found_globals ~source ~expected context =
     let uninteresting_globals_prefix =
       [
         !&"_T";
@@ -108,102 +108,114 @@ let test_find_globals context =
       expected
       actual
   in
-  assert_found_globals
-    ~source:{|
+
+  test_list
+    [
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:{|
       foo = []
       bar: typing.List[typing.Any] = []
     |}
-    ~expected:[!&"test.foo", None; !&"test.bar", Some (Type.list Type.Any)];
-  (* Note that functions are not selected *)
-  assert_found_globals ~source:{|
+           ~expected:[!&"test.foo", None; !&"test.bar", Some (Type.list Type.Any)];
+      (* Note that functions are not selected *)
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals ~source:{|
       def foo():
         pass
     |} ~expected:[];
-  assert_found_globals
-    ~source:
-      {|
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
       foo = []
       bar = {}
 
       baz: typing.List[typing.Any] = []
       abc: typing.Dict[typing.Any, typing.Any] = {}
     |}
-    ~expected:
-      [
-        !&"test.foo", None;
-        !&"test.bar", None;
-        !&"test.baz", Some (Type.list Type.Any);
-        !&"test.abc", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
-      ];
-  (* TODO(T132423781): Classes are not recognized as globals *)
-  assert_found_globals
-    ~source:{|
+           ~expected:
+             [
+               !&"test.foo", None;
+               !&"test.bar", None;
+               !&"test.baz", Some (Type.list Type.Any);
+               !&"test.abc", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+             ];
+      (* TODO(T132423781): Classes are not recognized as globals *)
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:{|
       class C:
         def f():
           pass
       C.bar = 1
     |}
-    ~expected:[];
-  assert_found_globals
-    ~source:
-      {|
+           ~expected:[];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
       class C:
         def f():
           pass
       c = C()
       annotated_c: C = C()
     |}
-    ~expected:[!&"test.c", None; !&"test.annotated_c", Some (Type.Primitive "test.C")];
-  assert_found_globals
-    ~source:
-      {|
+           ~expected:[!&"test.c", None; !&"test.annotated_c", Some (Type.Primitive "test.C")];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
       x, y = [], {}
 
       annotated_x: typing.List[typing.Any]
       annotated_y: typing.Dict[typing.Any, typing.Any]
       annotated_x, annotated_y = [], {}
     |}
-    ~expected:
-      [
-        !&"test.x", None;
-        !&"test.y", None;
-        !&"test.annotated_x", Some (Type.list Type.Any);
-        !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
-        !&"test.annotated_x", Some (Type.list Type.Any);
-        !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
-      ];
-  assert_found_globals
-    ~source:
-      {|
+           ~expected:
+             [
+               !&"test.x", None;
+               !&"test.y", None;
+               !&"test.annotated_x", Some (Type.list Type.Any);
+               !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+               !&"test.annotated_x", Some (Type.list Type.Any);
+               !&"test.annotated_y", Some (Type.dictionary ~key:Type.Any ~value:Type.Any);
+             ];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
       def setup() -> int:
         return 5
 
       global_1: typing.Dict[str, int] = setup()
       global_2 = setup()
     |}
-    ~expected:
-      [
-        !&"test.global_1", Some (Type.dictionary ~key:Type.string ~value:Type.integer);
-        !&"test.global_2", None;
-      ];
-  assert_found_globals
-    ~source:
-      {|
+           ~expected:
+             [
+               !&"test.global_1", Some (Type.dictionary ~key:Type.string ~value:Type.integer);
+               !&"test.global_2", None;
+             ];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
     from typing import List, Callable
 
     x: int
     y: List[bool]
     z: Callable[[], str]
     |}
-    ~expected:
-      [
-        !&"test.x", Some Type.integer;
-        !&"test.y", Some (Type.list Type.bool);
-        !&"test.z", Some (Type.lambda ~parameters:[] ~return_annotation:Type.string);
-      ];
-  assert_found_globals
-    ~source:
-      {|
+           ~expected:
+             [
+               !&"test.x", Some Type.integer;
+               !&"test.y", Some (Type.list Type.bool);
+               !&"test.z", Some (Type.lambda ~parameters:[] ~return_annotation:Type.string);
+             ];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
       x = lambda x, y: x + int(y)
 
       def fun(x: int, y: str) -> int:
@@ -214,9 +226,12 @@ let test_find_globals context =
       a = fun(1, "2")
       b: int = fun(1, "2")
       |}
-    ~expected:[!&"test.x", None; !&"test.y", None; !&"test.a", None; !&"test.b", Some Type.integer];
-  assert_found_globals
-    ~source:{|
+           ~expected:
+             [!&"test.x", None; !&"test.y", None; !&"test.a", None; !&"test.b", Some Type.integer];
+      labeled_test_case __FILE__ __LINE__
+      @@ assert_found_globals
+           ~source:
+             {|
     x = 1
     x = "abc"
 
@@ -224,15 +239,15 @@ let test_find_globals context =
     y = "abc"
     y: str = "abc"
     |}
-    ~expected:
-      [
-        !&"test.x", None;
-        !&"test.x", None;
-        !&"test.y", Some Type.integer;
-        !&"test.y", Some Type.integer;
-        !&"test.y", Some Type.integer;
-      ];
-  ()
+           ~expected:
+             [
+               !&"test.x", None;
+               !&"test.x", None;
+               !&"test.y", Some Type.integer;
+               !&"test.y", Some Type.integer;
+               !&"test.y", Some Type.integer;
+             ];
+    ]
 
 
-let () = "globalVariableQuery" >::: ["find_globals" >:: test_find_globals] |> Test.run
+let () = "globalVariableQuery" >::: [test_find_globals] |> Test.run
