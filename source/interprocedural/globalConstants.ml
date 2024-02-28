@@ -9,6 +9,7 @@ open Core
 open Ast
 open Statement
 open Expression
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module Heap = struct
   type t = StringLiteral.t Reference.Map.t [@@deriving show, eq]
@@ -65,12 +66,9 @@ module Heap = struct
     |> Ast.Reference.Map.of_alist_reduce ~f:(fun _old updated -> updated)
 
 
-  let from_qualifiers ~environment ~qualifiers =
-    let source_code_api =
-      Analysis.TypeEnvironment.ReadOnly.get_untracked_source_code_api environment
-    in
+  let from_qualifiers ~pyre_api ~qualifiers =
     let build_per_qualifier qualifier =
-      match Analysis.SourceCodeApi.source_of_qualifier source_code_api qualifier with
+      match PyrePysaApi.ReadOnly.source_of_qualifier pyre_api qualifier with
       | None -> empty
       | Some source -> from_source ~qualifier source
     in
@@ -112,7 +110,7 @@ module SharedMemory = struct
     Map.fold heap ~init:handle ~f:(fun ~key ~data handle -> add handle key data)
 
 
-  let from_qualifiers ~handle ~scheduler ~environment ~qualifiers =
+  let from_qualifiers ~handle ~scheduler ~pyre_api ~qualifiers =
     Scheduler.map_reduce
       scheduler
       ~policy:
@@ -122,7 +120,7 @@ module SharedMemory = struct
            ~preferred_chunks_per_worker:1
            ())
       ~initial:handle
-      ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~environment ~qualifiers))
+      ~map:(fun qualifiers -> add_heap handle (Heap.from_qualifiers ~pyre_api ~qualifiers))
       ~reduce:(fun smaller larger -> merge_same_handle ~smaller ~larger)
       ~inputs:qualifiers
       ()

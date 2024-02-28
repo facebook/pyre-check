@@ -92,13 +92,14 @@ let test_from_source context =
 let test_from_qualifiers context =
   let from_sources sources =
     let project = Test.ScratchProject.setup ~context sources in
-    let { ScratchProject.BuiltTypeEnvironment.type_environment; sources } =
+    let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
       ScratchProject.build_type_environment project
     in
+    let pyre_api = ScratchProject.pyre_pysa_read_only_api project in
     let qualifiers =
       List.map sources ~f:(fun { Source.module_path = { ModulePath.qualifier; _ }; _ } -> qualifier)
     in
-    GlobalConstants.Heap.from_qualifiers ~environment:type_environment ~qualifiers
+    GlobalConstants.Heap.from_qualifiers ~pyre_api ~qualifiers
   in
   let assert_global_constants ~sources ~expected =
     let global_constants = from_sources sources in

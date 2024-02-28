@@ -669,7 +669,7 @@ let run_taint_analysis
         Interprocedural.GlobalConstants.SharedMemory.from_qualifiers
           ~handle:(Interprocedural.GlobalConstants.SharedMemory.create ())
           ~scheduler
-          ~environment:read_only_environment
+          ~pyre_api
           ~qualifiers)
   in
   Statistics.performance

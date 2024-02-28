@@ -7,6 +7,7 @@
 
 open Ast
 open Expression
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module Heap : sig
   type t [@@deriving show, eq]
@@ -17,10 +18,7 @@ module Heap : sig
 
   val from_source : qualifier:Ast.Reference.t -> Source.t -> t
 
-  val from_qualifiers
-    :  environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
-    qualifiers:Reference.t list ->
-    t
+  val from_qualifiers : pyre_api:PyrePysaApi.ReadOnly.t -> qualifiers:Reference.t list -> t
 end
 
 module SharedMemory : sig
@@ -33,7 +31,7 @@ module SharedMemory : sig
   val from_qualifiers
     :  handle:t ->
     scheduler:Scheduler.t ->
-    environment:Analysis.TypeEnvironment.ReadOnly.t ->
+    pyre_api:PyrePysaApi.ReadOnly.t ->
     qualifiers:Reference.t list ->
     t
 
