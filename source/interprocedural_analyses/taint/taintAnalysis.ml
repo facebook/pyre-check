@@ -259,36 +259,34 @@ let populate_type_environment ~scheduler ~type_environment definitions =
   ()
 
 
-let type_check
+let create_and_populate_type_environment
     ~scheduler
     ~static_analysis_configuration:
       ({ Configuration.StaticAnalysis.configuration; save_results_to; _ } as
       static_analysis_configuration)
     ~lookup_source
     ~decorator_configuration
-    ~cache
   =
-  Cache.type_environment cache (fun () ->
-      let type_environment = create_type_environment ~configuration ~decorator_configuration in
-      let qualifiers, definitions = qualifiers_and_definitions ~scheduler ~type_environment in
-      let () =
-        match save_results_to with
-        | Some directory ->
-            write_modules_to_file
-              ~static_analysis_configuration
-              ~type_environment
-              ~lookup_source
-              ~path:(PyrePath.append directory ~element:"modules.json")
-              qualifiers;
-            write_functions_to_file
-              ~static_analysis_configuration
-              ~path:(PyrePath.append directory ~element:"functions.json")
-              definitions;
-            ()
-        | None -> ()
-      in
-      populate_type_environment ~scheduler ~type_environment definitions;
-      type_environment)
+  let type_environment = create_type_environment ~configuration ~decorator_configuration in
+  let qualifiers, definitions = qualifiers_and_definitions ~scheduler ~type_environment in
+  let () =
+    match save_results_to with
+    | Some directory ->
+        write_modules_to_file
+          ~static_analysis_configuration
+          ~type_environment
+          ~lookup_source
+          ~path:(PyrePath.append directory ~element:"modules.json")
+          qualifiers;
+        write_functions_to_file
+          ~static_analysis_configuration
+          ~path:(PyrePath.append directory ~element:"functions.json")
+          definitions;
+        ()
+    | None -> ()
+  in
+  populate_type_environment ~scheduler ~type_environment definitions;
+  type_environment
 
 
 let parse_models_and_queries_from_sources
@@ -593,12 +591,12 @@ let run_taint_analysis
 
   (* We should NOT store anything in memory before calling `Cache.try_load` *)
   let environment, cache =
-    type_check
-      ~scheduler
-      ~static_analysis_configuration
-      ~lookup_source
-      ~decorator_configuration
-      ~cache
+    Cache.type_environment cache (fun () ->
+        create_and_populate_type_environment
+          ~scheduler
+          ~static_analysis_configuration
+          ~lookup_source
+          ~decorator_configuration)
   in
 
   if compact_ocaml_heap_flag then
