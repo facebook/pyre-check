@@ -234,7 +234,34 @@ let create_type_environment ~configuration ~decorator_configuration =
   Analysis.ErrorsEnvironment.AssumeDownstreamNeverNeedsUpdates.type_environment errors_environment
 
 
-(** Perform a full type check and build a type environment. *)
+let qualifiers_and_definitions ~scheduler ~type_environment =
+  Log.info "Starting type checking...";
+  PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
+  let qualifiers =
+    Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment
+    |> Analysis.GlobalModulePathsApi.type_check_qualifiers
+  in
+  Log.info "Found %d modules" (List.length qualifiers);
+  let definitions =
+    Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
+  in
+  Log.info "Found %d functions" (List.length definitions);
+  qualifiers, definitions
+
+
+let populate_type_environment ~scheduler ~type_environment definitions =
+  let () =
+    Analysis.TypeEnvironment.populate_for_definitions ~scheduler type_environment definitions
+  in
+  Statistics.event
+    ~section:`Memory
+    ~name:"shared memory size post-typecheck"
+    ~integers:["size", Memory.heap_size ()]
+    ();
+  PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ();
+  ()
+
+
 let type_check
     ~scheduler
     ~static_analysis_configuration:
@@ -246,17 +273,7 @@ let type_check
   =
   Cache.type_environment cache (fun () ->
       let type_environment = create_type_environment ~configuration ~decorator_configuration in
-      Log.info "Starting type checking...";
-      PyreProfiling.track_shared_memory_usage ~name:"Before legacy type check" ();
-      let qualifiers =
-        Analysis.TypeEnvironment.AssumeGlobalModuleListing.global_module_paths_api type_environment
-        |> Analysis.GlobalModulePathsApi.type_check_qualifiers
-      in
-      Log.info "Found %d modules" (List.length qualifiers);
-      let definitions =
-        Analysis.TypeEnvironment.collect_definitions ~scheduler type_environment qualifiers
-      in
-      Log.info "Found %d functions" (List.length definitions);
+      let qualifiers, definitions = qualifiers_and_definitions ~scheduler ~type_environment in
       let () =
         match save_results_to with
         | Some directory ->
@@ -273,15 +290,7 @@ let type_check
             ()
         | None -> ()
       in
-      let () =
-        Analysis.TypeEnvironment.populate_for_definitions ~scheduler type_environment definitions
-      in
-      Statistics.event
-        ~section:`Memory
-        ~name:"shared memory size post-typecheck"
-        ~integers:["size", Memory.heap_size ()]
-        ();
-      PyreProfiling.track_shared_memory_usage ~name:"After legacy type check" ();
+      populate_type_environment ~scheduler ~type_environment definitions;
       type_environment)
 
 
