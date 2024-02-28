@@ -31,7 +31,10 @@ let test_compute_locally_changed_files context =
         ScratchProject.ReadWrite.AssumeBackedByAstEnvironment.module_tracker project
       in
       let () =
-        Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker
+        Interprocedural.ChangedPaths.save_current_paths
+          ~scheduler
+          ~configuration
+          ~module_paths:(Analysis.ModuleTracker.module_paths module_tracker)
       in
       configuration, module_tracker
     in
@@ -51,8 +54,8 @@ let test_compute_locally_changed_files context =
       Interprocedural.ChangedPaths.compute_locally_changed_paths
         ~scheduler
         ~configuration
-        ~old_module_tracker
-        ~new_module_tracker
+        ~old_module_paths:(Analysis.ModuleTracker.module_paths old_module_tracker)
+        ~new_module_paths:(Analysis.ModuleTracker.module_paths new_module_tracker)
       |> List.filter_map ~f:(fun path ->
              PyrePath.get_relative_to_root ~root:local_root ~path:(ArtifactPath.raw path))
     in

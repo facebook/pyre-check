@@ -42,7 +42,7 @@ let hash_of_content analysis_path =
   ArtifactPath.raw analysis_path |> File.create |> HashResult.from_file
 
 
-let save_current_paths ~scheduler ~configuration ~module_tracker =
+let save_current_paths ~scheduler ~configuration ~module_paths =
   let save_paths module_paths =
     let save_path module_path =
       let hash =
@@ -65,7 +65,7 @@ let save_current_paths ~scheduler ~configuration ~module_tracker =
     ~initial:()
     ~map:save_paths
     ~reduce:(fun () () -> ())
-    ~inputs:(ModuleTracker.module_paths module_tracker)
+    ~inputs:module_paths
     ()
 
 
@@ -81,7 +81,7 @@ end
 
 (* Return the list of paths to files that have changed between now and the previous call to
    `save_current_paths`. *)
-let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker ~new_module_tracker =
+let compute_locally_changed_paths ~scheduler ~configuration ~old_module_paths ~new_module_paths =
   let timer = Timer.start () in
   let changed_paths new_module_paths =
     let changed_path module_path =
@@ -107,16 +107,14 @@ let compute_locally_changed_paths ~scheduler ~configuration ~old_module_tracker 
       ~initial:[]
       ~map:changed_paths
       ~reduce:( @ )
-      ~inputs:(ModuleTracker.module_paths new_module_tracker)
+      ~inputs:new_module_paths
       ()
   in
   let removed_paths =
     let tracked_set =
-      ModuleTracker.module_paths new_module_tracker
-      |> List.map ~f:ModulePath.raw
-      |> IndexedRelativePath.Hash_set.of_list
+      new_module_paths |> List.map ~f:ModulePath.raw |> IndexedRelativePath.Hash_set.of_list
     in
-    ModuleTracker.module_paths old_module_tracker
+    old_module_paths
     |> List.filter ~f:(fun module_path ->
            let key = ModulePath.raw module_path in
            not (Hash_set.mem tracked_set key))

@@ -16,6 +16,7 @@ open Pyre
 module TypeEnvironment = Analysis.TypeEnvironment
 module UnannotatedGlobalEnvironment = Analysis.UnannotatedGlobalEnvironment
 module AstEnvironment = Analysis.AstEnvironment
+module ModuleTracker = Analysis.ModuleTracker
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
@@ -151,13 +152,13 @@ module ChangedFiles = struct
       |> AstEnvironment.module_tracker
     in
     let new_module_tracker =
-      configuration |> Analysis.EnvironmentControls.create |> Analysis.ModuleTracker.create
+      configuration |> Analysis.EnvironmentControls.create |> ModuleTracker.create
     in
     Interprocedural.ChangedPaths.compute_locally_changed_paths
       ~scheduler
       ~configuration
-      ~old_module_tracker
-      ~new_module_tracker
+      ~old_module_paths:(ModuleTracker.module_paths old_module_tracker)
+      ~new_module_paths:(ModuleTracker.module_paths new_module_tracker)
     |> List.map ~f:ArtifactPath.raw
     |> List.filter ~f:should_invalidate_type_environment_if_changed
 end
@@ -391,7 +392,10 @@ let save_type_environment ~scheduler ~configuration ~environment =
         |> UnannotatedGlobalEnvironment.AssumeAstEnvironment.ast_environment
         |> AstEnvironment.module_tracker
       in
-      Interprocedural.ChangedPaths.save_current_paths ~scheduler ~configuration ~module_tracker;
+      Interprocedural.ChangedPaths.save_current_paths
+        ~scheduler
+        ~configuration
+        ~module_paths:(ModuleTracker.module_paths module_tracker);
       TypeEnvironment.AssumeAstEnvironment.store_without_dependency_keys environment;
       Log.info "Saved type environment to cache shared memory.";
       Ok ())

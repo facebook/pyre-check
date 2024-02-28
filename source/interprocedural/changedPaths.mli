@@ -8,7 +8,7 @@
 val save_current_paths
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  module_tracker:Analysis.ModuleTracker.t ->
+  module_paths:Ast.ModulePath.t list ->
   unit
 
 (* Return the list of paths to files that have changed between now and the previous call to
@@ -16,6 +16,6 @@ val save_current_paths
 val compute_locally_changed_paths
   :  scheduler:Scheduler.t ->
   configuration:Configuration.Analysis.t ->
-  old_module_tracker:Analysis.ModuleTracker.t ->
-  new_module_tracker:Analysis.ModuleTracker.t ->
+  old_module_paths:Ast.ModulePath.t list ->
+  new_module_paths:Ast.ModulePath.t list ->
   ArtifactPath.t list
