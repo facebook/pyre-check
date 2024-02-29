@@ -154,14 +154,19 @@ class Configurationless(Command):
             ) from e
         return root
 
-    def _get_applicable_targets_from_buck(
-        self, targets: Collection[str]
-    ) -> Collection[str]:
+    @staticmethod
+    def format_buck_targets_for_query(targets: Collection[str]) -> List[str]:
         targets = [
             target_expression
             for target in targets
             for target_expression in ["--target", target]
         ]
+        return targets
+
+    def _get_applicable_targets_from_wildcard_targets_buck_query(
+        self, targets: Collection[str]
+    ) -> Collection[str]:
+        targets = self.format_buck_targets_for_query(targets)
         buck_command = [
             "buck2",
             "bxl",
@@ -215,8 +220,10 @@ class Configurationless(Command):
     ) -> Set[Path]:
         buck_root = self._get_buck_root()
 
-        applicable_targets = self._get_applicable_targets_from_buck(
-            configuration_targets
+        applicable_targets = (
+            self._get_applicable_targets_from_wildcard_targets_buck_query(
+                configuration_targets
+            )
         )
         files = self._get_files_to_process_from_applicable_targets(
             applicable_targets, buck_root
