@@ -200,9 +200,12 @@ def add_local_mode(
     def is_header(line: str) -> bool:
         is_comment = line.lstrip().startswith("#")
         is_pyre_ignore = (
-            re.match("^[ \t]*# *pyre-ignore *$", line)
-            or re.match("^[ \t]*# *pyre-fixme *$", line)
-            or re.match("^[ \t]*# *type: ignore *$", line)
+            (
+                re.match("^[ \t]*# *pyre-ignore.*$", line)
+                and not re.match("^[ \t]*# *pyre-ignore-all-errors *$", line)
+            )
+            or re.match("^[ \t]*# *pyre-fixme.*$", line)
+            or re.match("^[ \t]*# *type: ignore.*$", line)
         )
         return is_comment and not is_pyre_ignore
 

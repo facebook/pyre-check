@@ -369,3 +369,25 @@ class FilesystemTest(unittest.TestCase):
             read_text.return_value = ""
             add_local_mode("local.py", LocalMode.IGNORE, ignore_empty_files=True)
             path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-fixme[3]"
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_called_once_with("# pyre-strict\n# pyre-fixme[3]")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-ignore[4]"
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_called_once_with("# pyre-strict\n# pyre-ignore[4]")
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-ignore-all-errors[5]"
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_called_once_with(
+                "# pyre-strict\n# pyre-ignore-all-errors[5]"
+            )
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# pyre-ignore-all-errors"
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_not_called()
