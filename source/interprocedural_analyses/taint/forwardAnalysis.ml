@@ -3010,7 +3010,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
             FunctionContext.definition
           in
-          TypeCheck.resolution_with_key
+          TypeCheck.resolution_at_key
             ~global_resolution
             ~local_annotations
             ~parent

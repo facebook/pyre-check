@@ -75,7 +75,7 @@ val resolution
   (module Context) ->
   Resolution.t
 
-val resolution_with_key
+val resolution_at_key
   :  global_resolution:GlobalResolution.t ->
   local_annotations:LocalAnnotationMap.ReadOnly.t option ->
   parent:Reference.t option ->

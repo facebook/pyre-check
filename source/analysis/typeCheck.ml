@@ -6793,7 +6793,7 @@ let resolution
   Resolution.create ~global_resolution ~annotation_store ~resolve_expression ~resolve_statement ()
 
 
-let resolution_with_key ~global_resolution ~local_annotations ~parent ~statement_key context =
+let resolution_at_key ~global_resolution ~local_annotations ~parent ~statement_key context =
   resolution global_resolution context
   |> Resolution.resolution_for_statement ~local_annotations ~parent ~statement_key
 

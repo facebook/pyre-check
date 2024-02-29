@@ -2770,7 +2770,7 @@ struct
 
     let forward ~statement_key _ ~statement =
       let resolution =
-        TypeCheck.resolution_with_key
+        TypeCheck.resolution_at_key
           ~global_resolution:Context.global_resolution
           ~local_annotations:Context.local_annotations
           ~parent:Context.parent

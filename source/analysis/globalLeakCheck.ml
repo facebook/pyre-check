@@ -503,7 +503,7 @@ module State (Context : Context) = struct
       Context.define
     in
     let resolution =
-      TypeCheck.resolution_with_key
+      TypeCheck.resolution_at_key
         ~global_resolution:Context.global_resolution
         ~local_annotations:Context.local_annotations
         ~parent:name
