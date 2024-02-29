@@ -48,7 +48,7 @@ let assert_taint ~context source expected =
       BackwardAnalysis.run
         ?profiler:None
         ~taint_configuration:TaintConfiguration.Heap.default
-        ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+        ~pyre_api
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)

@@ -54,7 +54,7 @@ module type FUNCTION_CONTEXT = sig
 
   val profiler : TaintProfiler.t
 
-  val environment : TypeEnvironment.ReadOnly.t
+  val pyre_api : PyrePysaApi.ReadOnly.t
 
   val taint_configuration : TaintConfiguration.Heap.t
 
@@ -166,11 +166,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
 
 
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
+  let global_resolution = PyrePysaApi.ReadOnly.global_resolution FunctionContext.pyre_api
 
   let local_annotations =
     TypeEnvironment.ReadOnly.get_local_annotations
-      FunctionContext.environment
+      (PyrePysaApi.ReadOnly.type_environment FunctionContext.pyre_api)
       (Node.value FunctionContext.definition |> Statement.Define.name)
 
 
@@ -3109,7 +3109,7 @@ let run
     ?(profiler = TaintProfiler.none)
     ~taint_configuration
     ~string_combine_partial_sink_tree
-    ~environment
+    ~pyre_api
     ~class_interval_graph
     ~global_constants
     ~qualifier
@@ -3133,7 +3133,7 @@ let run
 
     let profiler = profiler
 
-    let environment = environment
+    let pyre_api = pyre_api
 
     let taint_configuration = taint_configuration
 
@@ -3189,7 +3189,7 @@ let run
     | Some exit_state -> State.log "Exit state:@,%a" State.pp exit_state
     | None -> State.log "No exit state found"
   in
-  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
   let extract_model { State.taint; _ } =
     let breadcrumbs_to_attach, via_features_to_attach =
       ForwardState.extract_features_to_attach

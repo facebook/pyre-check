@@ -251,6 +251,12 @@ module ReadOnly = struct
     source_code_api api |> SourceCodeApi.relative_path_of_qualifier
 
 
+  let decorated_define api define =
+    AnnotatedDefine.create define
+    |> AnnotatedDefine.decorate ~resolution:(global_resolution api)
+    |> AnnotatedDefine.define
+
+
   let resolve_expression_to_annotation api =
     let global_resolution = global_resolution api in
     TypeCheck.resolution

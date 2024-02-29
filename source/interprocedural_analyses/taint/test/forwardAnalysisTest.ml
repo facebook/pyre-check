@@ -74,7 +74,7 @@ let assert_taint ?models ?models_source ~context source expect =
         ~taint_configuration
         ~string_combine_partial_sink_tree:
           (Taint.CallModel.string_combine_partial_sink_tree taint_configuration)
-        ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+        ~pyre_api
         ~class_interval_graph:(ClassIntervalSetGraph.SharedMemory.create ())
         ~global_constants:
           (GlobalConstants.SharedMemory.create () |> GlobalConstants.SharedMemory.read_only)

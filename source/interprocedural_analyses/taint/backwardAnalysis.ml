@@ -47,7 +47,7 @@ module type FUNCTION_CONTEXT = sig
 
   val profiler : TaintProfiler.t
 
-  val environment : TypeEnvironment.ReadOnly.t
+  val pyre_api : PyrePysaApi.ReadOnly.t
 
   val taint_configuration : TaintConfiguration.Heap.t
 
@@ -156,11 +156,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
 
 
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution FunctionContext.environment
+  let global_resolution = PyrePysaApi.ReadOnly.global_resolution FunctionContext.pyre_api
 
   let local_annotations =
     TypeEnvironment.ReadOnly.get_local_annotations
-      FunctionContext.environment
+      (PyrePysaApi.ReadOnly.type_environment FunctionContext.pyre_api)
       (Node.value FunctionContext.definition |> Statement.Define.name)
 
 
@@ -2624,7 +2624,7 @@ let extract_tito_and_sink_models
 let run
     ?(profiler = TaintProfiler.none)
     ~taint_configuration
-    ~environment
+    ~pyre_api
     ~class_interval_graph
     ~global_constants
     ~qualifier
@@ -2638,16 +2638,11 @@ let run
     ()
   =
   let timer = Timer.start () in
-  let define =
-    (* Apply decorators to make sure we match parameters up correctly. Decorators are not applied in
-       the forward analysis, because in case a decorator changes the parameters of the decorated
-       function, the user-defined models of the function may no longer be applicable to the
-       resultant function of the application (e.g., T132302522). *)
-    let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
-    Analysis.AnnotatedDefine.create define
-    |> Analysis.AnnotatedDefine.decorate ~resolution
-    |> Analysis.AnnotatedDefine.define
-  in
+  (* Apply decorators to make sure we match parameters up correctly. Decorators are not applied in
+     the forward analysis, because in case a decorator changes the parameters of the decorated
+     function, the user-defined models of the function may no longer be applicable to the resultant
+     function of the application (e.g., T132302522). *)
+  let define = PyrePysaApi.ReadOnly.decorated_define pyre_api define in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -2659,7 +2654,7 @@ let run
 
     let profiler = profiler
 
-    let environment = environment
+    let pyre_api = pyre_api
 
     let taint_configuration = taint_configuration
 
@@ -2710,7 +2705,7 @@ let run
     | Some entry_state -> State.log "Entry state:@,%a" State.pp entry_state
     | None -> State.log "No entry state found"
   in
-  let resolution = TypeEnvironment.ReadOnly.global_resolution environment in
+  let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
   let apply_broadening =
     not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
   in

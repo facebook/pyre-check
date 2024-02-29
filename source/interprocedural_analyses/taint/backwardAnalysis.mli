@@ -12,7 +12,7 @@ open Statement
 val run
   :  ?profiler:TaintProfiler.t ->
   taint_configuration:TaintConfiguration.Heap.t ->
-  environment:TypeEnvironment.ReadOnly.t ->
+  pyre_api:PyrePysaApi.ReadOnly.t ->
   class_interval_graph:Interprocedural.ClassIntervalSetGraph.SharedMemory.t ->
   global_constants:Interprocedural.GlobalConstants.SharedMemory.ReadOnly.t ->
   qualifier:Reference.t ->
