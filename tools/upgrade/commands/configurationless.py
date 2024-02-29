@@ -189,7 +189,7 @@ class Configurationless(Command):
 
     def _get_files_to_process_from_applicable_targets(
         self, applicable_targets: Collection[str], buck_root: Path
-    ) -> Collection[Path]:
+    ) -> Set[Path]:
         formatted_targets = " ".join([f"{target!r}" for target in applicable_targets])
         arguments = f"inputs( set( {formatted_targets} ) )"
 
@@ -215,23 +215,34 @@ class Configurationless(Command):
 
             return {(buck_root / file.strip()).resolve() for file in result.split("\n")}
 
-    def _get_files_to_migrate_from_targets(
-        self, configuration_targets: List[str]
+    def _get_files_from_wildcard_targets(
+        self, wildcard_targets: Collection[str], buck_project_root: Path
     ) -> Set[Path]:
-        buck_root = self._get_buck_root()
+        if len(wildcard_targets) == 0:
+            return set()
 
         applicable_targets = (
             self._get_applicable_targets_from_wildcard_targets_buck_query(
-                configuration_targets
+                wildcard_targets
             )
         )
-        files = self._get_files_to_process_from_applicable_targets(
-            applicable_targets, buck_root
+        wildcard_target_files = self._get_files_to_process_from_applicable_targets(
+            applicable_targets, buck_project_root
+        )
+        return wildcard_target_files
+
+    def _get_files_to_migrate_from_targets(
+        self, configuration_targets: List[str]
+    ) -> Set[Path]:
+        buck_project_root = self._get_buck_root()
+
+        wildcard_target_files = self._get_files_from_wildcard_targets(
+            configuration_targets, buck_project_root
         )
 
         return {
             file
-            for file in files
+            for file in wildcard_target_files
             if any(file.match(pattern) for pattern in self._includes)
         }
 
