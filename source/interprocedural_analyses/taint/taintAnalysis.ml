@@ -399,17 +399,14 @@ let initialize_models
   in
 
   let models =
-    ClassModels.infer
-      ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
-      ~global_module_paths_api:(PyrePysaApi.ReadOnly.global_module_paths_api pyre_api)
-      ~user_models:models
+    ClassModels.infer ~pyre_api ~user_models:models
     |> Registry.merge ~join:Model.join_user_models models
   in
 
   let models =
     MissingFlow.add_obscure_models
       ~static_analysis_configuration
-      ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+      ~pyre_api
       ~stubs:stubs_hashset
       ~initial_models:models
   in

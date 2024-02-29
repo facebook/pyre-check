@@ -66,23 +66,17 @@ let unknown_callee_model _ =
 (* Return the initial set of models, updated for the missing-flows=obscure analysis. *)
 let add_obscure_models
     ~static_analysis_configuration:{ Configuration.StaticAnalysis.find_missing_flows; _ }
-    ~environment
+    ~pyre_api
     ~stubs
     ~initial_models
   =
   let remove_sinks models = Registry.map models ~f:Model.remove_sinks in
   let add_obscure_sinks models =
-    let resolution =
-      Analysis.TypeCheck.resolution
-        (Analysis.TypeEnvironment.ReadOnly.global_resolution environment)
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module Analysis.TypeCheck.DummyContext)
-    in
     let add_obscure_sink models callable =
       let model =
         Registry.get models callable
         |> Option.value ~default:Model.empty_model
-        |> Model.add_obscure_sink ~resolution ~call_target:callable
+        |> Model.add_obscure_sink ~pyre_api ~call_target:callable
         |> Model.remove_obscureness
       in
       Registry.set models ~target:callable ~model

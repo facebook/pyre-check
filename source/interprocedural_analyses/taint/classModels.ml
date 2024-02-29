@@ -43,10 +43,9 @@ module FeatureSet = struct
     }
 end
 
-let infer ~environment ~global_module_paths_api ~user_models =
+let infer ~pyre_api ~user_models =
   Log.info "Computing inferred models...";
   let timer = Timer.start () in
-  let global_resolution = TypeEnvironment.ReadOnly.global_resolution environment in
   (* Translate ViaXXX features on attributes to ViaXX features on callables. *)
   let translate_via_features_on_attribute attribute root tree =
     let expand_via_feature via_feature taint =
@@ -161,7 +160,7 @@ let infer ~environment ~global_module_paths_api ~user_models =
     | None -> existing_state
   in
   let get_attributes_in_alphabetical_order class_name =
-    GlobalResolution.get_class_summary global_resolution class_name
+    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
     >>| Node.value
     >>| ClassSummary.attributes ~include_generated_attributes:false ~in_test:false
     |> Option.value ~default:Identifier.SerializableMap.empty
@@ -228,7 +227,7 @@ let infer ~environment ~global_module_paths_api ~user_models =
   in
   let compute_typed_dict_models class_name =
     let fields =
-      GlobalResolution.get_typed_dictionary global_resolution (Type.Primitive class_name)
+      PyrePysaApi.ReadOnly.get_typed_dictionary pyre_api (Type.Primitive class_name)
       >>| (fun { Type.Record.TypedDictionary.fields; _ } -> fields)
       >>| List.map ~f:(fun { Analysis.Type.Record.TypedDictionary.name; required = _; _ } -> name)
       |> Option.value ~default:[]
@@ -283,15 +282,15 @@ let infer ~environment ~global_module_paths_api ~user_models =
   in
   let compute_models class_name class_summary =
     if
-      UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
-        (TypeEnvironment.ReadOnly.unannotated_global_environment environment)
+      PyrePysaApi.ReadOnly.exists_matching_class_decorator
+        pyre_api
         ~names:["dataclasses.dataclass"; "dataclass"]
         class_summary
     then
       compute_dataclass_models class_name
     else if
       CallResolution.has_transitive_successor_ignoring_untracked
-        global_resolution
+        (PyrePysaApi.ReadOnly.global_resolution pyre_api)
         ~reflexive:false
         ~predecessor:class_name
         ~successor:"typing.NamedTuple"
@@ -299,12 +298,12 @@ let infer ~environment ~global_module_paths_api ~user_models =
       compute_named_tuple_models class_name
     else if
       CallResolution.has_transitive_successor_ignoring_untracked
-        global_resolution
+        (PyrePysaApi.ReadOnly.global_resolution pyre_api)
         ~reflexive:false
         ~predecessor:class_name
         ~successor:"TypedDictionary"
       || CallResolution.has_transitive_successor_ignoring_untracked
-           global_resolution
+           (PyrePysaApi.ReadOnly.global_resolution pyre_api)
            ~reflexive:false
            ~predecessor:class_name
            ~successor:"NonTotalTypedDictionary"
@@ -314,14 +313,11 @@ let infer ~environment ~global_module_paths_api ~user_models =
       []
   in
   let inferred_models class_name =
-    GlobalResolution.get_class_summary global_resolution class_name
+    PyrePysaApi.ReadOnly.get_class_summary pyre_api class_name
     >>| compute_models class_name
     |> Option.value ~default:[]
   in
-  let all_classes =
-    TypeEnvironment.ReadOnly.unannotated_global_environment environment
-    |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes ~global_module_paths_api
-  in
+  let all_classes = PyrePysaApi.ReadOnly.all_classes pyre_api in
   let models =
     List.concat_map all_classes ~f:inferred_models |> Registry.of_alist ~join:Model.join_user_models
   in

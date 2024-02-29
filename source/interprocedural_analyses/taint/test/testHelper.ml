@@ -547,15 +547,13 @@ let initialize
         let models =
           MissingFlow.add_obscure_models
             ~static_analysis_configuration
-            ~environment:type_environment
+            ~pyre_api
             ~stubs:(Target.HashSet.of_list stubs)
             ~initial_models:models
         in
         models, model_query_results
   in
-  let inferred_models =
-    ClassModels.infer ~environment:type_environment ~global_module_paths_api ~user_models
-  in
+  let inferred_models = ClassModels.infer ~pyre_api ~user_models in
   let initial_models = Registry.merge ~join:Model.join_user_models inferred_models user_models in
   (* Overrides must be done first, as they influence the call targets. *)
   let { OverrideGraph.Heap.overrides = override_graph_heap; _ } =

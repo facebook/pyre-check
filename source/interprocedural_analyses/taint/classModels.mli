@@ -5,8 +5,4 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val infer
-  :  environment:Analysis.TypeEnvironment.ReadOnly.t ->
-  global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
-  user_models:Registry.t ->
-  Registry.t
+val infer : pyre_api:Analysis.PyrePysaApi.ReadOnly.t -> user_models:Registry.t -> Registry.t

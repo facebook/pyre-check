@@ -241,6 +241,13 @@ module ReadOnly = struct
 
   let annotation_parser api = global_resolution api |> GlobalResolution.annotation_parser
 
+  let get_typed_dictionary api = global_resolution api |> GlobalResolution.get_typed_dictionary
+
+  let exists_matching_class_decorator api =
+    unannotated_global_environment api
+    |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
+
+
   let type_parameters_as_variables api =
     global_resolution api |> GlobalResolution.type_parameters_as_variables
 

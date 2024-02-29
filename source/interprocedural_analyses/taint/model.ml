@@ -351,7 +351,7 @@ let remove_sinks model =
   { model with backward = { model.backward with sink_taint = BackwardState.empty } }
 
 
-let add_obscure_sink ~resolution ~call_target model =
+let add_obscure_sink ~pyre_api ~call_target model =
   let real_target =
     match call_target with
     | Target.Function _ -> Some call_target
@@ -364,7 +364,7 @@ let add_obscure_sink ~resolution ~call_target model =
   | Some real_target -> (
       match
         Target.get_module_and_definition
-          ~resolution:(Resolution.global_resolution resolution)
+          ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
           real_target
       with
       | None ->
