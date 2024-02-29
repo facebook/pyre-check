@@ -1,5 +1,333 @@
 @generated
 {
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 76,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.reclassify",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 72,
+              "start": 12,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 76,
+              "start": 4,
+              "end": 9
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via-feature2-value": "breadcrumb2" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 3,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|3|formal(self):02ec2d87642bc9b886fb25ca643d42f9"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 69,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.reclassify",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 65,
+              "start": 12,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 69,
+              "start": 4,
+              "end": 9
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via-feature2-value": "breadcrumb2" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 2,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|2|formal(self):4f3a5add1af3ef40aef8627c7514f15a"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 63,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.reclassify",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 59,
+              "start": 12,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 63,
+              "start": 4,
+              "end": 9
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via-feature2-value": "breadcrumb2" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 1,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|1|formal(self):02424705405e33044d3df4033d03c2f4"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 57,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.reclassify",
+                    "port": "leaf:return"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 52,
+              "start": 12,
+              "end": 12
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 57,
+              "start": 4,
+              "end": 9
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via-feature2-value": "breadcrumb2" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 0,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|0|formal(self):76d7796467b6a67406119dc08e839040"
+  }
+}
+{
   "kind": "model",
   "data": {
     "callable": "_test_sink",
@@ -48,6 +376,85 @@
 {
   "kind": "model",
   "data": {
+    "callable": "closure_models.Reclassification.__init__",
+    "tito": [
+      {
+        "port": "formal(feature, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[feature]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(inner, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              { "return_paths": { "[inner]": 3 }, "kind": "LocalReturn" }
+            ],
+            "tito": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.Reclassification.reclassify",
+    "sinks": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature2"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "tito": [
+      {
+        "port": "formal(self, position=0)[inner]",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "obscure:unknown-callee" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "closure_models.inner_sink_wrapper.inner_sink",
     "sinks": [
       {
@@ -56,5 +463,110 @@
       }
     ],
     "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.outer",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.reclassify",
+    "sources": [
+      {
+        "port": "formal(feature, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "via_features": [
+                  {
+                    "kind": "ViaValueOf",
+                    "parameter": "formal(feature)",
+                    "tag": "feature1"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.test.return_model_taint",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.test.return_model_taint",
+    "tito": [
+      {
+        "port": "captured_variable($local_closure_models?test$value)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.test.return_taint",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 42,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ]
   }
 }
