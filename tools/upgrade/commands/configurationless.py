@@ -143,11 +143,11 @@ class Configurationless(Command):
         try:
             root = Path(
                 subprocess.check_output(
-                    ["buck2", "root"],
+                    ["buck2", "root", "--kind", "project"],
                     text=True,
                     cwd=self._path,
                 ).strip()
-            ).parent
+            )
         except FileNotFoundError as e:
             raise ValueError(
                 "Could not find `buck2` executable when `targets` were specified in local configuration."
