@@ -12,11 +12,11 @@ open Analysis
 
 val forward_analyze_call
   :  analyze_expression:
-       (resolution:Resolution.t ->
+       (pyre_in_context:PyrePysaApi.InContext.t ->
        state:ForwardState.t ->
        expression:Expression.t ->
        ForwardState.Tree.t * ForwardState.t) ->
-  resolution:Resolution.t ->
+  pyre_in_context:PyrePysaApi.InContext.t ->
   callee:expression Node.t ->
   arguments:Call.Argument.t list ->
   taint:ForwardState.Tree.t ->

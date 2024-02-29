@@ -19,10 +19,12 @@ open Pyre
 
 type panda_type = DataFrame
 
-let get_panda_type resolution = function
+let get_panda_type pyre_in_context = function
   | { Node.value = Expression.Name (Name.Attribute { base; _ }); _ } -> (
       let class_name =
-        Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution base
+        Interprocedural.CallResolution.resolve_ignoring_untracked
+          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          base
         |> Type.class_name
         |> Reference.last
       in
@@ -157,28 +159,28 @@ let analyze_dataFrame_apply analyze_expression_with_state base_taint func_argume
   | _ -> collapsed_taint
 
 
-let analyze_dataFrame analyze_expression resolution callee arguments taint state =
+let analyze_dataFrame analyze_expression pyre_in_context callee arguments taint state =
   match callee with
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } -> (
       match arguments with
       | [{ Call.Argument.value = index; _ }] ->
-          let base_taint, state = analyze_expression ~resolution ~state ~expression:base in
+          let base_taint, state = analyze_expression ~pyre_in_context ~state ~expression:base in
           analyze_dataFrame_getitem base_taint index, state
       | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "__setitem__"; _ }); _ } -> (
       match arguments with
       | [{ Call.Argument.value = index; _ }; { Call.Argument.value; _ }] ->
-          let taint, state = analyze_expression ~resolution ~state ~expression:value in
+          let taint, state = analyze_expression ~pyre_in_context ~state ~expression:value in
           let state = analyze_dataFrame_setitem base taint index state in
           ForwardState.Tree.empty, state
       | _ -> taint, state)
   | { Node.value = Expression.Name (Name.Attribute { base; attribute = "apply"; _ }); _ } -> (
-      let taint, state = analyze_expression ~resolution ~state ~expression:base in
+      let taint, state = analyze_expression ~pyre_in_context ~state ~expression:base in
       match arguments with
       | [func_argument; axis_argument] ->
           let taint =
             analyze_dataFrame_apply
-              (fun expression -> analyze_expression ~resolution ~state ~expression)
+              (fun expression -> analyze_expression ~pyre_in_context ~state ~expression)
               taint
               func_argument
               axis_argument
@@ -191,7 +193,8 @@ let analyze_dataFrame analyze_expression resolution callee arguments taint state
   | _ -> taint, state
 
 
-let forward_analyze_call ~analyze_expression ~resolution ~callee ~arguments ~taint ~state =
-  match get_panda_type resolution callee with
-  | Some DataFrame -> analyze_dataFrame analyze_expression resolution callee arguments taint state
+let forward_analyze_call ~analyze_expression ~pyre_in_context ~callee ~arguments ~taint ~state =
+  match get_panda_type pyre_in_context callee with
+  | Some DataFrame ->
+      analyze_dataFrame analyze_expression pyre_in_context callee arguments taint state
   | _ -> taint, state

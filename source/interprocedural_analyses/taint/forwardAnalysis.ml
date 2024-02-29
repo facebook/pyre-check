@@ -451,7 +451,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_call_target
       ?(apply_tito = true)
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       ~triggered_sinks_for_call
       ~call_location
@@ -488,7 +488,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_target:target
         ~f:(fun () ->
           CallModel.at_callsite
-            ~resolution
+            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
             ~get_callee_model:FunctionContext.get_callee_model
             ~call_target:target
             ~arguments)
@@ -605,7 +605,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let sink_trees =
         CallModel.sink_trees_of_argument
-          ~resolution
+          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
           ~transform_non_leaves:(fun _ tree -> tree)
           ~model:taint_model
           ~location
@@ -689,7 +689,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if is_result_used then
         ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
         |> ForwardState.Tree.apply_call
-             ~resolution
+             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
              ~location:
                (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
              ~callee:(Some target)
@@ -714,7 +714,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
         GlobalModel.from_expression
-          ~resolution
+          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
@@ -837,7 +837,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   let apply_constructor_targets
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       ~triggered_sinks_for_call
       ~call_location
@@ -862,7 +862,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         List.map new_targets ~f:(fun target ->
             apply_call_target
-              ~resolution
+              ~pyre_in_context
               ~is_result_used:true
               ~triggered_sinks_for_call
               ~call_location
@@ -893,7 +893,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         List.map init_targets ~f:(fun target ->
             apply_call_target
-              ~resolution
+              ~pyre_in_context
               ~is_result_used
               ~triggered_sinks_for_call
               ~call_location
@@ -919,7 +919,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let apply_callees_with_arguments_taint
       ?(apply_tito = true)
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       ~callee
       ~call_location
@@ -956,7 +956,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       List.map call_targets ~f:(function call_target ->
           apply_call_target
             ~apply_tito
-            ~resolution
+            ~pyre_in_context
             ~is_result_used
             ~triggered_sinks_for_call
             ~call_location
@@ -1002,7 +1002,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ ->
           let new_taint, new_state =
             apply_constructor_targets
-              ~resolution
+              ~pyre_in_context
               ~is_result_used
               ~triggered_sinks_for_call
               ~call_location
@@ -1057,7 +1057,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     state: t;
   }
 
-  let rec analyze_callee ~resolution ~is_property_call ~state ~callee =
+  let rec analyze_callee
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~is_property_call
+      ~state
+      ~callee
+    =
     match callee.Node.value with
     | Expression.Name (Name.Attribute { base; attribute; special }) ->
         (* If we are already analyzing a call of a property, then ignore properties
@@ -1065,7 +1070,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let resolve_properties = not is_property_call in
         let { base_taint; attribute_taint; state } =
           analyze_attribute_access
-            ~resolution
+            ~pyre_in_context
             ~state
             ~is_attribute_used:true
             ~location:callee.Node.location
@@ -1077,13 +1082,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { self_taint = Some base_taint; callee_taint = Some attribute_taint; state }
     | _ ->
         let taint, state =
-          analyze_expression ~resolution ~state ~is_result_used:true ~expression:callee
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:callee
         in
         { self_taint = Some ForwardState.Tree.bottom; callee_taint = Some taint; state }
 
 
   (* Lazy version of `analyze_callee` which only analyze what we need for a call site. *)
-  and analyze_callee_for_callees ~resolution ~is_property_call ~state ~callee callees =
+  and analyze_callee_for_callees
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~is_property_call
+      ~state
+      ~callee
+      callees
+    =
     (* Special case: `x.foo()` where foo is a property returning a callable. *)
     let callee_is_property =
       match is_property_call, callee.Node.value with
@@ -1097,14 +1108,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | { CallGraph.CallCallees.new_targets = _ :: _; _ }, _
     | { CallGraph.CallCallees.init_targets = _ :: _; _ }, _ ->
         (* We need both the taint on self and on the whole callee. *)
-        analyze_callee ~resolution ~is_property_call ~state ~callee
+        analyze_callee ~pyre_in_context ~is_property_call ~state ~callee
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_receiver; implicit_dunder_call; _ } ->
                implicit_receiver && implicit_dunder_call)
              call_targets ->
         (* We need the taint on the whole callee. *)
-        analyze_callee ~resolution ~is_property_call ~state ~callee
+        analyze_callee ~pyre_in_context ~is_property_call ~state ~callee
     | { CallGraph.CallCallees.call_targets; _ }, _
       when List.exists
              ~f:(fun { CallGraph.CallTarget.implicit_receiver; _ } -> implicit_receiver)
@@ -1113,7 +1124,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let taint, state =
           match callee.Node.value with
           | Expression.Name (Name.Attribute { base; _ }) ->
-              analyze_expression ~resolution ~state ~is_result_used:true ~expression:base
+              analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:base
           | _ -> ForwardState.Tree.bottom, state
         in
         { self_taint = Some taint; callee_taint = None; state }
@@ -1122,11 +1133,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         { self_taint = None; callee_taint = None; state }
 
 
-  and analyze_arguments ~resolution ~state ~arguments =
+  and analyze_arguments ~(pyre_in_context : PyrePysaApi.InContext.t) ~state ~arguments =
     let compute_argument_taint (arguments_taint, state) argument =
       let taint, state =
         analyze_unstarred_expression
-          ~resolution
+          ~pyre_in_context
           ~is_result_used:true
           argument.Call.Argument.value
           state
@@ -1139,100 +1150,128 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_dictionary_entry
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       (taint, state)
       { Dictionary.Entry.key; value }
     =
     let field_name = AccessPath.get_index key in
     let key_taint, state =
-      analyze_expression ~resolution ~state ~is_result_used ~expression:key
+      analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:key
       |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
     in
-    analyze_expression ~resolution ~state ~is_result_used ~expression:value
+    analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
     |>> ForwardState.Tree.prepend [field_name]
     |>> ForwardState.Tree.join taint
     |>> ForwardState.Tree.join key_taint
 
 
-  and analyze_list_element ~resolution ~is_result_used position (taint, state) expression =
+  and analyze_list_element
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~is_result_used
+      position
+      (taint, state)
+      expression
+    =
     let index_name = Abstract.TreeDomain.Label.Index (string_of_int position) in
-    analyze_expression ~resolution ~state ~is_result_used ~expression
+    analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
     |>> ForwardState.Tree.prepend [index_name]
     |>> ForwardState.Tree.join taint
 
 
-  and analyze_set_element ~resolution ~is_result_used (taint, state) expression =
+  and analyze_set_element
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~is_result_used
+      (taint, state)
+      expression
+    =
     let value_taint, state =
-      analyze_expression ~resolution ~state ~is_result_used ~expression
+      analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
       |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
     in
     ForwardState.Tree.join taint value_taint, state
 
 
-  and analyze_comprehension_generators ~resolution ~state generators =
-    let add_binding (state, resolution) ({ Comprehension.Generator.conditions; _ } as generator) =
+  and analyze_comprehension_generators
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~state
+      generators
+    =
+    let add_binding
+        (state, pyre_in_context)
+        ({ Comprehension.Generator.conditions; _ } as generator)
+      =
       let ({ Statement.Assign.target; value; _ } as assignment) =
         Statement.Statement.generator_assignment generator
       in
       let assign_value_taint, state =
-        analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+        analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
       in
       let state =
-        analyze_assignment ~resolution target assign_value_taint assign_value_taint state
+        analyze_assignment ~pyre_in_context target assign_value_taint assign_value_taint state
       in
       (* Since generators create variables that Pyre sees as scoped within the generator, handle
          them by adding the generator's bindings to the resolution. *)
-      let resolution = Resolution.resolve_assignment resolution assignment in
       (* Analyzing the conditions might have issues and side effects. *)
       let analyze_condition state condiiton =
-        analyze_expression ~resolution ~state ~is_result_used:false ~expression:condiiton |> snd
+        analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:condiiton
+        |> snd
       in
-      List.fold conditions ~init:state ~f:analyze_condition, resolution
+      let pyre_in_context = PyrePysaApi.InContext.resolve_assignment pyre_in_context assignment in
+      List.fold conditions ~init:state ~f:analyze_condition, pyre_in_context
     in
-    List.fold ~f:add_binding generators ~init:(state, resolution)
+    List.fold ~f:add_binding generators ~init:(state, pyre_in_context)
 
 
   and analyze_comprehension
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_result_used
       { Comprehension.element; generators; _ }
     =
-    let bound_state, resolution = analyze_comprehension_generators ~resolution ~state generators in
-    analyze_expression ~resolution ~state:bound_state ~is_result_used ~expression:element
+    let bound_state, pyre_in_context =
+      analyze_comprehension_generators ~pyre_in_context ~state generators
+    in
+    analyze_expression ~pyre_in_context ~state:bound_state ~is_result_used ~expression:element
     |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
 
 
   and analyze_dictionary_comprehension
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_result_used
       { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ }
     =
-    let state, resolution = analyze_comprehension_generators ~resolution ~state generators in
+    let state, pyre_in_context =
+      analyze_comprehension_generators ~pyre_in_context ~state generators
+    in
     let value_taint, state =
-      analyze_expression ~resolution ~state ~is_result_used ~expression:value
+      analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
       |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
     in
     let key_taint, state =
-      analyze_expression ~resolution ~state ~is_result_used ~expression:key
+      analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:key
       |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
     in
     ForwardState.Tree.join key_taint value_taint, state
 
 
   (* Skip through * and **. Used at call sites where * and ** are handled explicitly *)
-  and analyze_unstarred_expression ~resolution ~is_result_used expression state =
+  and analyze_unstarred_expression
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~is_result_used
+      expression
+      state
+    =
     match expression.Node.value with
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
-        analyze_expression ~resolution ~state ~is_result_used ~expression
-    | _ -> analyze_expression ~resolution ~state ~is_result_used ~expression
+        analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
+    | _ -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
 
 
   and analyze_arguments_with_higher_order_parameters
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~arguments
       ~state
       ~higher_order_parameters
@@ -1267,7 +1306,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ({ CallGraph.HigherOrderParameter.index; _ }, function_argument)
         =
         let { self_taint; callee_taint; state } =
-          analyze_callee ~resolution ~is_property_call:false ~state ~callee:function_argument
+          analyze_callee ~pyre_in_context ~is_property_call:false ~state ~callee:function_argument
         in
         let callee_taint = Option.value_exn callee_taint in
         (index, self_taint, callee_taint) :: function_callee_taints, state
@@ -1292,7 +1331,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let compute_argument_taint (arguments_taint, state) (index, argument) =
         let taint, state =
           analyze_unstarred_expression
-            ~resolution
+            ~pyre_in_context
             ~is_result_used:true
             argument.Call.Argument.value
             state
@@ -1346,7 +1385,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let arguments_taint = [all_argument_taint; all_argument_taint] in
         let taint, state =
           apply_callees_with_arguments_taint
-            ~resolution
+            ~pyre_in_context
             ~is_result_used:true
             ~callee:argument
             ~call_location:argument_location
@@ -1383,7 +1422,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and apply_callees
       ?(apply_tito = true)
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       ~is_property
       ~callee
@@ -1393,15 +1432,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       callees
     =
     let { self_taint; callee_taint; state } =
-      analyze_callee_for_callees ~resolution ~is_property_call:is_property ~state ~callee callees
+      analyze_callee_for_callees
+        ~pyre_in_context
+        ~is_property_call:is_property
+        ~state
+        ~callee
+        callees
     in
 
     let arguments_taint, state =
       if CallGraph.HigherOrderParameterMap.is_empty callees.higher_order_parameters then
-        analyze_arguments ~resolution ~state ~arguments
+        analyze_arguments ~pyre_in_context ~state ~arguments
       else
         analyze_arguments_with_higher_order_parameters
-          ~resolution
+          ~pyre_in_context
           ~arguments
           ~state
           ~higher_order_parameters:callees.higher_order_parameters
@@ -1409,7 +1453,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
     apply_callees_with_arguments_taint
       ~apply_tito
-      ~resolution
+      ~pyre_in_context
       ~is_result_used
       ~callee
       ~call_location
@@ -1422,7 +1466,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_getitem_call_target
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       ~index
       ~index_number
@@ -1443,7 +1487,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           >>| (fun attribute ->
                 let { attribute_taint = taint; state; _ } =
                   analyze_attribute_access
-                    ~resolution
+                    ~pyre_in_context
                     ~state
                     ~is_attribute_used:is_result_used
                     ~resolve_properties:false
@@ -1485,9 +1529,18 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Lazy.force taint_and_state_after_index_access
 
 
-  and analyze_call ~resolution ~location ~state ~is_result_used ~callee ~arguments =
+  and analyze_call
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
+      ~location
+      ~state
+      ~is_result_used
+      ~callee
+      ~arguments
+    =
     let { Call.callee; arguments } =
-      CallGraph.redirect_special_calls ~resolution { Call.callee; arguments }
+      CallGraph.redirect_special_calls
+        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        { Call.callee; arguments }
     in
     let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
 
@@ -1511,7 +1564,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           } )
         when is_constructor ()
              && Interprocedural.CallResolution.is_super
-                  ~resolution
+                  ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
                   ~define:FunctionContext.definition
                   base ->
           Some self_parameter
@@ -1536,12 +1589,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          ];
       } ->
           let _, state =
-            analyze_expression ~resolution ~state ~is_result_used:false ~expression:argument_value
+            analyze_expression
+              ~pyre_in_context
+              ~state
+              ~is_result_used:false
+              ~expression:argument_value
           in
           let index = AccessPath.get_index argument_value in
           let taint_and_state_after_index_access =
             lazy
-              (analyze_expression ~resolution ~state ~is_result_used ~expression:base
+              (analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
               |>> ForwardState.Tree.read [index]
               |>> ForwardState.Tree.add_local_first_index index)
           in
@@ -1560,7 +1617,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~f:(fun (taint_so_far, state_so_far) call_target ->
                 let taint, state =
                   analyze_getitem_call_target
-                    ~resolution
+                    ~pyre_in_context
                     ~is_result_used
                     ~index
                     ~index_number
@@ -1581,7 +1638,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Name (Name.Attribute { base; attribute = "__next__"; _ }); _ };
        arguments = [];
       } ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
           |>> add_type_breadcrumbs
       | {
        callee =
@@ -1589,7 +1646,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [];
       } ->
           let taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
           in
           let label =
             (* For dictionaries, the default iterator is keys. *)
@@ -1624,7 +1681,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             let taint, state =
               apply_callees
                 ~apply_tito:(not use_custom_tito)
-                ~resolution
+                ~pyre_in_context
                 ~is_result_used:true
                 ~is_property:false
                 ~callee
@@ -1633,7 +1690,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~state
                 callees
             in
-            let state = analyze_assignment ~resolution base taint taint state in
+            let state = analyze_assignment ~pyre_in_context base taint taint state in
             taint, state
           in
           if use_custom_tito then
@@ -1643,10 +1700,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                (strict) subtype of `dict` that overrides `__setitem__`. *)
             let state =
               let value_taint, state =
-                analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+                analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
               in
               analyze_assignment
-                ~resolution
+                ~pyre_in_context
                 ~fields:[AccessPath.get_index index]
                 base
                 value_taint
@@ -1655,13 +1712,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             in
             let state_from_key_value =
               let key_taint, state =
-                analyze_expression ~resolution ~state ~is_result_used:true ~expression:index
+                analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:index
               in
               if not is_sequence_setitem then
                 (* Smash the taint of ALL keys into one place, i.e., a special field of the
                    dictionary: `d[**keys] = index`. *)
                 analyze_assignment
-                  ~resolution
+                  ~pyre_in_context
                   ~fields:[AccessPath.dictionary_keys]
                   ~weak:true
                   base
@@ -1707,11 +1764,15 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          ];
       } ->
           let taint, state =
-            analyze_expression ~resolution ~state ~is_result_used:true ~expression:assigned_value
+            analyze_expression
+              ~pyre_in_context
+              ~state
+              ~is_result_used:true
+              ~expression:assigned_value
           in
           let state =
             analyze_assignment
-              ~resolution
+              ~pyre_in_context
               (Expression.Name (Name.Attribute { base = self; attribute; special = true })
               |> Node.create ~location)
               taint
@@ -1742,10 +1803,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             |> Node.create ~location
           in
           let attribute_taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:attribute_expression
+            analyze_expression
+              ~pyre_in_context
+              ~state
+              ~is_result_used
+              ~expression:attribute_expression
           in
           let default_taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:default
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:default
           in
           ForwardState.Tree.join attribute_taint default_taint, state
       (* `zip(a, b, ...)` creates a taint object which, when iterated on, has first index equal to
@@ -1753,7 +1818,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | { callee = { Node.value = Name (Name.Identifier "zip"); _ }; arguments = lists } ->
           let add_list_to_taint index (taint, state) { Call.Argument.value; _ } =
             let index_name = Abstract.TreeDomain.Label.Index (string_of_int index) in
-            analyze_expression ~resolution ~state ~is_result_used ~expression:value
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
             |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
             |>> ForwardState.Tree.prepend [index_name]
             |>> ForwardState.Tree.join taint
@@ -1773,7 +1838,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       }
         when String.equal "asyncio" (Name.last name) ->
           analyze_expression
-            ~resolution
+            ~pyre_in_context
             ~state
             ~is_result_used
             ~expression:
@@ -1790,7 +1855,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [];
       }
         when CallGraph.CallCallees.is_mapping_method callees ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | {
@@ -1798,7 +1863,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        arguments = [];
       }
         when CallGraph.CallCallees.is_mapping_method callees ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
           |>> ForwardState.Tree.read [AccessPath.dictionary_keys]
           |>> ForwardState.Tree.prepend [Abstract.TreeDomain.Label.AnyIndex]
       | {
@@ -1831,7 +1896,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let override_taint_from_update (taint, state) (key, value) =
             let value_taint, state =
-              analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+              analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
             in
             let value_taint =
               ForwardState.Tree.transform
@@ -1851,7 +1916,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint, state = List.fold entries ~init:(taint, state) ~f:override_taint_from_update in
           GlobalModel.from_expression
-            ~resolution
+            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
@@ -1909,7 +1974,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       }
         when CallGraph.CallCallees.is_mapping_method callees ->
           let taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
           in
           let taint =
             let key_taint = ForwardState.Tree.read [AccessPath.dictionary_keys] taint in
@@ -1936,7 +2001,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         when CallGraph.CallCallees.is_mapping_method callees ->
           let index = Abstract.TreeDomain.Label.Index index in
           let taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:base
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
             |>> ForwardState.Tree.read [index]
             |>> ForwardState.Tree.add_local_first_index index
             |>> ForwardState.Tree.transform
@@ -1949,7 +2014,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | [{ Call.Argument.value = default_expression; _ }] ->
                 let default_taint, state =
                   analyze_expression
-                    ~resolution
+                    ~pyre_in_context
                     ~state
                     ~is_result_used
                     ~expression:default_expression
@@ -2043,7 +2108,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~default_target)
           in
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
             {
@@ -2075,7 +2140,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
           in
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs:
               (Features.BreadcrumbSet.singleton (Features.string_concat_left_hand_side ()))
@@ -2111,7 +2176,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                  ~default_target:Interprocedural.Target.StringCombineArtificialTargets.str_add)
           in
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs:
               (Features.BreadcrumbSet.singleton (Features.string_concat_right_hand_side ()))
@@ -2162,7 +2227,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             CallModel.arguments_for_string_format nested_expressions
           in
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs
             {
@@ -2175,7 +2240,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
        callee = { Node.value = Expression.Name (Name.Identifier "reveal_taint"); _ };
        arguments = [{ Call.Argument.value = expression; _ }];
       } ->
-          let taint, _ = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
+          let taint, _ =
+            analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
+          in
           let location =
             Node.location callee |> Location.with_module ~module_reference:FunctionContext.qualifier
           in
@@ -2198,11 +2265,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Location.WithModule.pp
             location
             (Transform.sanitize_expression expression |> Expression.show)
-            (CallResolution.resolve_ignoring_untracked ~resolution expression |> Type.show);
+            (CallResolution.resolve_ignoring_untracked
+               ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+               expression
+            |> Type.show);
           ForwardState.Tree.bottom, state
       | _ ->
           apply_callees
-            ~resolution
+            ~pyre_in_context
             ~is_result_used
             ~is_property:false
             ~call_location:location
@@ -2226,16 +2296,20 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     if not FunctionContext.taint_configuration.lineage_analysis then
       taint, state
     else
-      let analyze_expression_unwrap ~resolution ~state ~expression =
+      let analyze_expression_unwrap ~pyre_in_context ~state ~expression =
         let taint, state =
-          analyze_expression ~resolution ~state:{ taint = state } ~is_result_used:true ~expression
+          analyze_expression
+            ~pyre_in_context
+            ~state:{ taint = state }
+            ~is_result_used:true
+            ~expression
         in
         taint, state.taint
       in
       let taint, forward_state =
         LineageAnalysis.forward_analyze_call
           ~analyze_expression:analyze_expression_unwrap
-          ~resolution
+          ~pyre_in_context
           ~callee
           ~arguments
           ~taint
@@ -2245,7 +2319,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_attribute_access
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_attribute_used
       ~location
@@ -2258,7 +2332,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       Expression.Name (Name.Attribute { base; attribute; special }) |> Node.create ~location
     in
     let base_taint, state =
-      analyze_expression ~resolution ~state ~is_result_used:true ~expression:base
+      analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:base
     in
     let attribute_access_callees =
       if resolve_properties then get_attribute_access_callees ~location ~attribute else None
@@ -2269,7 +2343,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Some { property_targets = _ :: _ as property_targets; _ } ->
           let taint, state =
             apply_callees_with_arguments_taint
-              ~resolution
+              ~pyre_in_context
               ~is_result_used:is_attribute_used
               ~callee:expression
               ~call_location:location
@@ -2295,7 +2369,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None ->
           let global_model =
             GlobalModel.from_expression
-              ~resolution
+              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2352,7 +2426,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
      callsite. We assume there is a call to `call_target_for_string_combine_rules` whose arguments
      are `string_literal` followed by `nested_expressions`. *)
   and analyze_joined_string
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~breadcrumbs
       {
@@ -2369,7 +2443,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let string_combine_partial_sink_tree =
       BackwardState.Tree.apply_call
-        ~resolution
+        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
         ~callee
         ~arguments:[]
@@ -2415,7 +2489,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let new_taint, new_state =
         apply_callees_with_arguments_taint
-          ~resolution
+          ~pyre_in_context
           ~is_result_used:true
           ~call_location
           ~arguments:[]
@@ -2434,7 +2508,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ({ Node.location = expression_location; _ } as expression)
       =
       let base_taint, base_state =
-        analyze_expression ~resolution ~state ~is_result_used:true ~expression
+        analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
         |>> ForwardState.Tree.transform Features.TitoPositionSet.Element Add ~f:expression_location
         |>> ForwardState.Tree.add_local_breadcrumb (Features.tito ())
       in
@@ -2489,32 +2563,32 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_expression
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_result_used
       ~expression:({ Node.location; _ } as expression)
     =
     let taint, state =
       match expression.Node.value with
-      | Await expression -> analyze_expression ~resolution ~state ~is_result_used ~expression
+      | Await expression -> analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
       | BooleanOperator { left; operator = _; right } ->
           let left_taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:left
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
           in
           let right_taint, state =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:right
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
           in
           ForwardState.Tree.join left_taint right_taint, state
       | ComparisonOperator ({ left; operator = _; right } as comparison) -> (
           match ComparisonOperator.override ~location comparison with
           | Some override ->
-              analyze_expression ~resolution ~state ~is_result_used ~expression:override
+              analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:override
           | None ->
               let left_taint, state =
-                analyze_expression ~resolution ~state ~is_result_used ~expression:left
+                analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:left
               in
               let right_taint, state =
-                analyze_expression ~resolution ~state ~is_result_used ~expression:right
+                analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:right
               in
               let taint =
                 ForwardState.Tree.join left_taint right_taint
@@ -2522,10 +2596,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               in
               taint, state)
       | Call { callee; arguments } ->
-          analyze_call ~resolution ~location ~state ~is_result_used ~callee ~arguments
+          analyze_call ~pyre_in_context ~location ~state ~is_result_used ~callee ~arguments
       | Constant (Constant.String { StringLiteral.value; _ }) ->
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs:Features.BreadcrumbSet.empty
             {
@@ -2539,34 +2613,34 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let taint, state =
             List.fold
               entries
-              ~f:(analyze_dictionary_entry ~resolution ~is_result_used)
+              ~f:(analyze_dictionary_entry ~pyre_in_context ~is_result_used)
               ~init:(ForwardState.Tree.empty, state)
           in
           let analyze_dictionary_keywords (taint, state) keywords =
             let new_taint, state =
-              analyze_expression ~resolution ~state ~is_result_used ~expression:keywords
+              analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:keywords
             in
             ForwardState.Tree.join new_taint taint, state
           in
           List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
       | DictionaryComprehension comprehension ->
-          analyze_dictionary_comprehension ~resolution ~state ~is_result_used comprehension
+          analyze_dictionary_comprehension ~pyre_in_context ~state ~is_result_used comprehension
       | Generator comprehension ->
-          analyze_comprehension ~resolution ~state ~is_result_used comprehension
+          analyze_comprehension ~pyre_in_context ~state ~is_result_used comprehension
       | Lambda { parameters = _; body } ->
           (* Ignore parameter bindings and pretend body is inlined *)
-          analyze_expression ~resolution ~state ~is_result_used ~expression:body
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:body
       | List list ->
           List.foldi
             list
-            ~f:(analyze_list_element ~resolution ~is_result_used)
+            ~f:(analyze_list_element ~pyre_in_context ~is_result_used)
             ~init:(ForwardState.Tree.empty, state)
       | ListComprehension comprehension ->
-          analyze_comprehension ~resolution ~state ~is_result_used comprehension
+          analyze_comprehension ~pyre_in_context ~state ~is_result_used comprehension
       | Name (Name.Identifier identifier) ->
           let global_model_taint =
             GlobalModel.from_expression
-              ~resolution
+              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2586,7 +2660,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             match global_string with
             | Some global_string ->
                 analyze_joined_string
-                  ~resolution
+                  ~pyre_in_context
                   ~state
                   ~breadcrumbs:Features.BreadcrumbSet.empty
                   {
@@ -2601,7 +2675,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let local_taint =
             let root = AccessPath.Root.Variable identifier in
             ForwardState.read ~root ~path:[] state.taint
-            |> ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression
+            |> ForwardState.Tree.add_local_type_breadcrumbs
+                 ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+                 ~expression
           in
           ( local_taint
             |> ForwardState.Tree.join global_taint
@@ -2610,11 +2686,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       (* __dict__ reveals an object's underlying data structure, so we should analyze the base under
          the existing taint instead of adding the index to the taint. *)
       | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression:base
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:base
       | Name (Name.Attribute { base; attribute; special }) ->
           let { attribute_taint; state; _ } =
             analyze_attribute_access
-              ~resolution
+              ~pyre_in_context
               ~state
               ~is_attribute_used:is_result_used
               ~resolve_properties:true
@@ -2626,14 +2702,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           attribute_taint, state
       | Set set ->
           List.fold
-            ~f:(analyze_set_element ~resolution ~is_result_used)
+            ~f:(analyze_set_element ~pyre_in_context ~is_result_used)
             set
             ~init:(ForwardState.Tree.empty, state)
       | SetComprehension comprehension ->
-          analyze_comprehension ~resolution ~state ~is_result_used comprehension
+          analyze_comprehension ~pyre_in_context ~state ~is_result_used comprehension
       | Starred (Starred.Once expression)
       | Starred (Starred.Twice expression) ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression
           |>> ForwardState.Tree.read [Abstract.TreeDomain.Label.AnyIndex]
       | FormatString substrings ->
           let substrings =
@@ -2657,7 +2733,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~default_target:Interprocedural.Target.StringCombineArtificialTargets.format_string
           in
           analyze_joined_string
-            ~resolution
+            ~pyre_in_context
             ~state
             ~breadcrumbs:(Features.BreadcrumbSet.singleton (Features.format_string ()))
             {
@@ -2667,32 +2743,32 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               location;
             }
       | Ternary { target; test; alternative } ->
-          let state = analyze_condition ~resolution test state in
+          let state = analyze_condition ~pyre_in_context test state in
           let taint_then, state_then =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:target
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:target
           in
           let taint_else, state_else =
-            analyze_expression ~resolution ~state ~is_result_used ~expression:alternative
+            analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:alternative
           in
           ForwardState.Tree.join taint_then taint_else, join state_then state_else
       | Tuple expressions ->
           List.foldi
-            ~f:(analyze_list_element ~resolution ~is_result_used)
+            ~f:(analyze_list_element ~pyre_in_context ~is_result_used)
             expressions
             ~init:(ForwardState.Tree.empty, state)
       | UnaryOperator { operator = _; operand } ->
-          analyze_expression ~resolution ~state ~is_result_used ~expression:operand
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:operand
       | WalrusOperator { target; value } ->
           let value_taint, state =
-            analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+            analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
           in
-          let state = analyze_assignment ~resolution target value_taint value_taint state in
+          let state = analyze_assignment ~pyre_in_context target value_taint value_taint state in
           value_taint, state
       | Yield None -> ForwardState.Tree.empty, state
       | Yield (Some expression)
       | YieldFrom expression ->
           let taint, state =
-            analyze_expression ~resolution ~state ~is_result_used:true ~expression
+            analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
           in
           taint, store_taint ~root:AccessPath.Root.LocalResult ~path:[] taint state
     in
@@ -2701,7 +2777,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
 
   and analyze_assignment
-      ~resolution
+      ~(pyre_in_context : PyrePysaApi.InContext.t)
       ?(weak = false)
       ?(fields = [])
       ({ Node.location; value } as target)
@@ -2709,18 +2785,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       surrounding_taint
       state
     =
-    let taint = ForwardState.Tree.add_local_type_breadcrumbs ~resolution ~expression:target taint in
+    let taint =
+      ForwardState.Tree.add_local_type_breadcrumbs
+        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        ~expression:target
+        taint
+    in
     match value with
     | Starred (Once target | Twice target) ->
         (* This is approximate. Unless we can get the tuple type on the right to tell how many total
            elements there will be, we just pick up the entire collection. *)
-        analyze_assignment ~resolution ~weak target surrounding_taint surrounding_taint state
+        analyze_assignment ~pyre_in_context ~weak target surrounding_taint surrounding_taint state
     | List targets
     | Tuple targets ->
         let analyze_target_element i state target =
           let index = Abstract.TreeDomain.Label.Index (string_of_int i) in
           let indexed_taint = ForwardState.Tree.read [index] taint in
-          analyze_assignment ~resolution ~weak target indexed_taint taint state
+          analyze_assignment ~pyre_in_context ~weak target indexed_taint taint state
         in
         List.foldi targets ~f:analyze_target_element ~init:state
     (* Assignments of the form a[1][2] = 3 translate to a.__getitem__(1).__setitem__(2, 3).*)
@@ -2731,7 +2812,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         } ->
         let index = AccessPath.get_index argument_value in
         analyze_assignment
-          ~resolution
+          ~pyre_in_context
             (* Fields should only get propagated for getitem/setitem chains. These fields are not
              * reversed, as `a[0][1]` is parsed as `(a[0])[1]`, and `[1]` will appear as the
              * first attribute. *)
@@ -2745,7 +2826,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (* Check flows to tainted globals/attributes. *)
         let source_tree = taint in
         GlobalModel.from_expression
-          ~resolution
+          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
@@ -2785,10 +2866,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         store_taint_option ~weak access_path taint state
 
 
-  and analyze_condition ~resolution expression state =
+  and analyze_condition ~(pyre_in_context : PyrePysaApi.InContext.t) expression state =
     let { Node.location; _ } = expression in
     let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-    let taint, state = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
+    let taint, state =
+      analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
+    in
     (* There maybe configured sinks for conditionals, so test them here. *)
     let () =
       FunctionContext.taint_configuration.implicit_sinks.conditional_test
@@ -2808,7 +2891,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let analyze_definition ~define:_ state = state
 
-  let analyze_statement ~resolution { Node.value = statement; location } state =
+  let analyze_statement ~pyre_in_context { Node.value = statement; location } state =
     match statement with
     | Statement.Statement.Assign
         { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
@@ -2828,7 +2911,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
         let target_global_model =
           GlobalModel.from_expression
-            ~resolution
+            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
@@ -2836,7 +2919,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~interval:FunctionContext.caller_class_interval
         in
         if GlobalModel.is_sanitized target_global_model then
-          analyze_expression ~resolution ~state ~is_result_used:false ~expression:value |> snd
+          analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression:value |> snd
         else
           match target_value with
           | Expression.Name (Name.Attribute { base; attribute; _ }) ->
@@ -2848,7 +2931,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                     (* Treat `a.property = x` as `a = a.property(x)` *)
                     let taint, state =
                       apply_callees
-                        ~resolution
+                        ~pyre_in_context
                         ~is_result_used:true
                         ~is_property:true
                         ~callee:target
@@ -2866,19 +2949,23 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 | Some { is_attribute = true; _ }
                 | None ->
                     let taint, state =
-                      analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+                      analyze_expression
+                        ~pyre_in_context
+                        ~state
+                        ~is_result_used:true
+                        ~expression:value
                     in
-                    analyze_assignment ~resolution target taint taint state
+                    analyze_assignment ~pyre_in_context target taint taint state
                 | _ -> bottom
               in
 
               join property_call_state regular_attribute_state
           | _ ->
               let taint, state =
-                analyze_expression ~resolution ~state ~is_result_used:true ~expression:value
+                analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
               in
-              analyze_assignment ~resolution target taint taint state)
-    | Assert { test; _ } -> analyze_condition ~resolution test state
+              analyze_assignment ~pyre_in_context target taint taint state)
+    | Assert { test; _ } -> analyze_condition ~pyre_in_context test state
     | Break
     | Class _
     | Continue ->
@@ -2893,7 +2980,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         in
         List.fold expressions ~init:state ~f:process_expression
     | Expression expression ->
-        let _, state = analyze_expression ~resolution ~state ~is_result_used:false ~expression in
+        let _, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression
+        in
         state
     | For _
     | Global _
@@ -2905,10 +2994,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Raise { expression = None; _ } ->
         state
     | Raise { expression = Some expression; _ } ->
-        let _, state = analyze_expression ~resolution ~state ~is_result_used:false ~expression in
+        let _, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:false ~expression
+        in
         state
     | Return { expression = Some expression; _ } ->
-        let taint, state = analyze_expression ~resolution ~state ~is_result_used:true ~expression in
+        let taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
+        in
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         check_flow
           ~location
@@ -2916,7 +3009,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~source_tree:taint
           ~sink_tree:
             (CallModel.return_sink
-               ~resolution
+               ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
                ~location
                ~callee:FunctionContext.callable
                ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint);
@@ -2939,12 +3032,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           original = { Node.location; value = { Parameter.value; _ } };
         }
       =
-      let resolution = PyrePysaApi.ReadOnly.contextless_resolution pyre_api in
+      let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
       let prime =
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
         |> ForwardState.Tree.apply_call
-             ~resolution
+             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
              ~location
              ~callee:(Some FunctionContext.callable)
                (* Provide leaf callable names when sources originate from parameters. *)
@@ -2961,7 +3054,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let default_value_taint, state =
         match value with
         | None -> ForwardState.Tree.bottom, state
-        | Some expression -> analyze_expression ~resolution ~state ~is_result_used:true ~expression
+        | Some expression ->
+            analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
       in
       let root = AccessPath.Root.Variable qualified_name in
       let taint =
@@ -2988,10 +3082,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           statement
           pp
           state;
-        let resolution =
-          PyrePysaApi.ReadOnly.resolution_at_key pyre_api FunctionContext.definition ~statement_key
+        let pyre_in_context =
+          PyrePysaApi.InContext.create_at_statement_key
+            pyre_api
+            ~definition:FunctionContext.definition
+            ~statement_key
         in
-        analyze_statement ~resolution statement state)
+        analyze_statement ~pyre_in_context statement state)
 
 
   let backward ~statement_key:_ _ ~statement:_ = failwith "Don't call me"

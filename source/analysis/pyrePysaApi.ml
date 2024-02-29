@@ -276,22 +276,6 @@ module ReadOnly = struct
     contextless_resolution api |> Resolution.resolve_expression_to_annotation
 
 
-  let resolution_at_key api definition ~statement_key =
-    let { Ast.Node.value = { Ast.Statement.Define.signature = { name; parent; _ }; _ }; _ } =
-      definition
-    in
-    let local_annotations =
-      TypeEnvironment.ReadOnly.get_local_annotations (type_environment api) name
-    in
-    TypeCheck.resolution_at_key
-      ~global_resolution:(global_resolution api)
-      ~local_annotations
-      ~parent
-      ~statement_key
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-
-
   let get_unannotated_global api =
     unannotated_global_environment api
     |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global
@@ -307,4 +291,55 @@ module ReadOnly = struct
     unannotated_global_environment api
     |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_unannotated_globals
          ~global_module_paths_api:(global_module_paths_api api)
+end
+
+(* This module represents the API Pysa uses when it needs to interact with Pyre inside of a context
+   with a non-global resolution. Any Pysa code that has to traverse what is in essence a typed AST
+   (the actual mechanism is to use fixpoint states keyed on statement ids) will rely on this.
+
+   The global `pyre_api` is packaged alongside the resolution for convenience because it is always
+   sensible to ask for global information inside of a traversal (this is analagous to how Pyre
+   allows you to extract a `GlobalResolution.t` from a `Resolution.t`). *)
+module InContext = struct
+  type t = {
+    pyre_api: ReadOnly.t;
+    resolution: Resolution.t;
+  }
+
+  let create_at_global_scope pyre_api =
+    { pyre_api; resolution = ReadOnly.contextless_resolution pyre_api }
+
+
+  let create_at_statement_key pyre_api ~definition ~statement_key =
+    let { Ast.Node.value = { Ast.Statement.Define.signature = { name; parent; _ }; _ }; _ } =
+      definition
+    in
+    let local_annotations =
+      TypeEnvironment.ReadOnly.get_local_annotations (ReadOnly.type_environment pyre_api) name
+    in
+    let resolution =
+      TypeCheck.resolution_at_key
+        ~global_resolution:(ReadOnly.global_resolution pyre_api)
+        ~local_annotations
+        ~parent
+        ~statement_key
+        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
+        (module TypeCheck.DummyContext)
+    in
+    { pyre_api; resolution }
+
+
+  let pyre_api { pyre_api; _ } = pyre_api
+
+  let resolution { resolution; _ } = resolution
+
+  let resolve_assignment { pyre_api; resolution } assign =
+    { pyre_api; resolution = Resolution.resolve_assignment resolution assign }
+
+
+  let resolve_generators pyre_in_context generators =
+    let resolve_generator pyre_in_context generator =
+      resolve_assignment pyre_in_context (Ast.Statement.Statement.generator_assignment generator)
+    in
+    List.fold generators ~init:pyre_in_context ~f:resolve_generator
 end
