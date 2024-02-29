@@ -69,6 +69,8 @@ end
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
   type t = { taint: BackwardState.t }
 
+  let pyre_api = FunctionContext.pyre_api
+
   let bottom = { taint = BackwardState.bottom }
 
   let pp formatter { taint } = BackwardState.pp formatter taint
@@ -154,14 +156,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let get_string_format_callees ~location =
     CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
-
-
-  let global_resolution = PyrePysaApi.ReadOnly.global_resolution FunctionContext.pyre_api
-
-  let local_annotations =
-    TypeEnvironment.ReadOnly.get_local_annotations
-      (PyrePysaApi.ReadOnly.type_environment FunctionContext.pyre_api)
-      (Node.value FunctionContext.definition |> Statement.Define.name)
 
 
   let is_constructor () =
@@ -1330,14 +1324,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     let analyze_getitem receiver_class =
       let named_tuple_attributes =
-        if
-          Analysis.NamedTuple.is_named_tuple
-            ~global_resolution
-            ~annotation:(Type.Primitive receiver_class)
-        then
-          Analysis.NamedTuple.field_names_from_class_name ~global_resolution receiver_class
-        else
-          None
+        PyrePysaApi.ReadOnly.named_tuple_attributes pyre_api receiver_class
       in
       match named_tuple_attributes, index_number with
       | Some named_tuple_attributes, Some index_number ->
@@ -2452,16 +2439,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           pp
           state;
         let resolution =
-          let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
-            FunctionContext.definition
-          in
-          TypeCheck.resolution_at_key
-            ~global_resolution
-            ~local_annotations
-            ~parent
-            ~statement_key
-            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-            (module TypeCheck.DummyContext)
+          PyrePysaApi.ReadOnly.resolution_at_key pyre_api FunctionContext.definition ~statement_key
         in
         analyze_statement ~resolution state statement)
 
@@ -2473,8 +2451,8 @@ end
    sink_taint. *)
 let extract_tito_and_sink_models
     define
+    ~pyre_api
     ~is_constructor
-    ~resolution
     ~taint_configuration:
       {
         TaintConfiguration.Heap.analysis_model_constraints =
@@ -2512,8 +2490,9 @@ let extract_tito_and_sink_models
   let add_type_breadcrumbs annotation tree =
     let type_breadcrumbs =
       annotation
-      >>| GlobalResolution.parse_annotation resolution
-      |> Features.type_breadcrumbs_from_annotation ~resolution
+      >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+      |> Features.type_breadcrumbs_from_annotation
+           ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
     in
     BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in
@@ -2705,7 +2684,6 @@ let run
     | Some entry_state -> State.log "Entry state:@,%a" State.pp entry_state
     | None -> State.log "No entry state found"
   in
-  let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
   let apply_broadening =
     not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.Model.modes)
   in
@@ -2713,12 +2691,12 @@ let run
     let model =
       TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
           extract_tito_and_sink_models
+            ~pyre_api
             ~is_constructor:(State.is_constructor ())
-            define.value
-            ~resolution
             ~taint_configuration:FunctionContext.taint_configuration
             ~existing_backward:existing_model.Model.backward
             ~apply_broadening
+            define.value
             taint)
     in
     let () = State.log "Backward Model:@,%a" Model.Backward.pp model in

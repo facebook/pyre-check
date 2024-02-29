@@ -80,6 +80,8 @@ let ( |>> ) (taint, state) f = f taint, state
 module State (FunctionContext : FUNCTION_CONTEXT) = struct
   type t = { taint: ForwardState.t }
 
+  let pyre_api = FunctionContext.pyre_api
+
   let bottom = { taint = ForwardState.bottom }
 
   let pp formatter { taint } = ForwardState.pp formatter taint
@@ -164,14 +166,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let get_string_format_callees ~location =
     CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
-
-
-  let global_resolution = PyrePysaApi.ReadOnly.global_resolution FunctionContext.pyre_api
-
-  let local_annotations =
-    TypeEnvironment.ReadOnly.get_local_annotations
-      (PyrePysaApi.ReadOnly.type_environment FunctionContext.pyre_api)
-      (Node.value FunctionContext.definition |> Statement.Define.name)
 
 
   let is_constructor () =
@@ -1440,14 +1434,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     =
     let analyze_getitem receiver_class =
       let named_tuple_attributes =
-        if
-          Analysis.NamedTuple.is_named_tuple
-            ~global_resolution
-            ~annotation:(Type.Primitive receiver_class)
-        then
-          Analysis.NamedTuple.field_names_from_class_name ~global_resolution receiver_class
-        else
-          None
+        PyrePysaApi.ReadOnly.named_tuple_attributes pyre_api receiver_class
       in
       match named_tuple_attributes, index_number with
       | Some named_tuple_attributes, Some index_number ->
@@ -2944,12 +2931,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let create ~existing_model parameters =
     (* Use primed sources to populate initial state of parameters *)
     let forward_primed_taint = existing_model.Model.forward.source_taint in
-    let resolution =
-      TypeCheck.resolution
-        global_resolution
-        (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-        (module TypeCheck.DummyContext)
-    in
     let prime_parameter
         state
         {
@@ -2958,6 +2939,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           original = { Node.location; value = { Parameter.value; _ } };
         }
       =
+      let resolution = PyrePysaApi.ReadOnly.contextless_resolution pyre_api in
       let prime =
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
@@ -3007,16 +2989,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           pp
           state;
         let resolution =
-          let { Node.value = { Statement.Define.signature = { parent; _ }; _ }; _ } =
-            FunctionContext.definition
-          in
-          TypeCheck.resolution_at_key
-            ~global_resolution
-            ~local_annotations
-            ~parent
-            ~statement_key
-            (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-            (module TypeCheck.DummyContext)
+          PyrePysaApi.ReadOnly.resolution_at_key pyre_api FunctionContext.definition ~statement_key
         in
         analyze_statement ~resolution statement state)
 
@@ -3026,7 +2999,7 @@ end
 
 let extract_source_model
     ~define
-    ~resolution
+    ~pyre_api
     ~taint_configuration:
       {
         TaintConfiguration.Heap.analysis_model_constraints =
@@ -3041,8 +3014,9 @@ let extract_source_model
   let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
   let return_type_breadcrumbs =
     return_annotation
-    >>| GlobalResolution.parse_annotation resolution
-    |> Features.type_breadcrumbs_from_annotation ~resolution
+    >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+    |> Features.type_breadcrumbs_from_annotation
+         ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
   in
   let local_result_model =
     let simplify tree =
@@ -3189,7 +3163,6 @@ let run
     | Some exit_state -> State.log "Exit state:@,%a" State.pp exit_state
     | None -> State.log "No exit state found"
   in
-  let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
   let extract_model { State.taint; _ } =
     let breadcrumbs_to_attach, via_features_to_attach =
       ForwardState.extract_features_to_attach
@@ -3204,7 +3177,7 @@ let run
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis - extract model" ~f:(fun () ->
           extract_source_model
             ~define:define.value
-            ~resolution
+            ~pyre_api
             ~taint_configuration:FunctionContext.taint_configuration
             ~breadcrumbs_to_attach
             ~via_features_to_attach

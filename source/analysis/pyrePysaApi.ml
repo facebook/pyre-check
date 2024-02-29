@@ -257,13 +257,32 @@ module ReadOnly = struct
     |> AnnotatedDefine.define
 
 
-  let resolve_expression_to_annotation api =
+  let named_tuple_attributes api receiver_class =
     let global_resolution = global_resolution api in
-    TypeCheck.resolution
-      global_resolution
+    if NamedTuple.is_named_tuple ~global_resolution ~annotation:(Type.Primitive receiver_class) then
+      NamedTuple.field_names_from_class_name ~global_resolution receiver_class
+    else
+      None
+
+
+  let resolve_expression_to_annotation api =
+    contextless_resolution api |> Resolution.resolve_expression_to_annotation
+
+
+  let resolution_at_key api definition ~statement_key =
+    let { Ast.Node.value = { Ast.Statement.Define.signature = { name; parent; _ }; _ }; _ } =
+      definition
+    in
+    let local_annotations =
+      TypeEnvironment.ReadOnly.get_local_annotations (type_environment api) name
+    in
+    TypeCheck.resolution_at_key
+      ~global_resolution:(global_resolution api)
+      ~local_annotations
+      ~parent
+      ~statement_key
       (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
       (module TypeCheck.DummyContext)
-    |> Resolution.resolve_expression_to_annotation
 
 
   let get_unannotated_global api =
