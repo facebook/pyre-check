@@ -19,9 +19,7 @@ module File = struct
   module Set = SerializableSet.Make (T)
 
   let from_callable ~pyre_api ~resolve_module_path callable =
-    Interprocedural.Target.get_module_and_definition
-      callable
-      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+    Interprocedural.Target.get_module_and_definition callable ~pyre_api
     >>| fst
     >>= resolve_module_path
     >>= function

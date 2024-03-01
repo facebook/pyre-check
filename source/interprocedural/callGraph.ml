@@ -1068,9 +1068,7 @@ module DefineCallGraph = struct
     let bindings = ["callable", `String (Target.external_name callable)] in
     let bindings =
       let resolve_module_path = Option.value ~default:(fun _ -> None) resolve_module_path in
-      Target.get_module_and_definition
-        ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-        callable
+      Target.get_module_and_definition ~pyre_api callable
       >>| fst
       >>= resolve_module_path
       >>| (function
@@ -2880,11 +2878,7 @@ let call_graph_of_callable
     ~attribute_targets
     ~callable
   =
-  match
-    Target.get_module_and_definition
-      callable
-      ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-  with
+  match Target.get_module_and_definition callable ~pyre_api with
   | None -> Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
   | Some (qualifier, define) ->
       call_graph_of_define

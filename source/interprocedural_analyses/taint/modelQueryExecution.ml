@@ -1417,10 +1417,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
   let query_kind_name = "callable"
 
   let make_modelable ~pyre_api callable =
-    let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
     let signature =
       lazy
-        (match Target.get_module_and_definition ~resolution callable with
+        (match Target.get_module_and_definition ~pyre_api callable with
         | Some (_, { Node.value = { signature; _ }; _ }) -> signature
         | None ->
             (* This should only be called with valid targets, generated from `FetchCallables`. *)

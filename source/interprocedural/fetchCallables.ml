@@ -62,9 +62,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
     let { Target.qualifier = define_qualifier; callables; has_multiple_definitions } =
       Option.value_exn
         ~message:"Missing definitions for define name"
-        (Target.get_definitions
-           ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-           define_name)
+        (Target.get_definitions ~pyre_api define_name)
     in
     if not (Reference.equal qualifier define_qualifier) then
       let () =

@@ -14,13 +14,12 @@ open Interprocedural
 
 let test_get_module_and_definition context =
   let assert_get_module_and_definition ~source ~target ~expected =
-    let resolution =
+    let pyre_api =
       Test.ScratchProject.setup ~context ["test.py", source]
-      |> Test.ScratchProject.build_resolution
-      |> Analysis.Resolution.global_resolution
+      |> Test.ScratchProject.pyre_pysa_read_only_api
     in
     let actual =
-      Target.get_module_and_definition ~resolution target
+      Target.get_module_and_definition ~pyre_api target
       >>| fun (qualifier, { Node.value = { Statement.Define.body; _ }; _ }) -> qualifier, body
     in
     let equal (first_qualifier, first_body) (second_qualifier, second_body) =
@@ -65,14 +64,14 @@ let test_get_module_and_definition context =
 
 let test_resolve_method context =
   let assert_get_resolve_method ~source ~class_type ~method_name expected =
-    let resolution =
+    let pyre_api =
       Test.ScratchProject.setup ~context ["test.py", source]
-      |> Test.ScratchProject.build_global_resolution
+      |> Test.ScratchProject.pyre_pysa_read_only_api
     in
     assert_equal
       ~printer:(show_optional Target.show_pretty)
       expected
-      (Target.resolve_method ~resolution ~class_type ~method_name)
+      (Target.resolve_method ~pyre_api ~class_type ~method_name)
   in
   assert_get_resolve_method
     ~source:

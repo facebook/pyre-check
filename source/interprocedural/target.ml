@@ -16,8 +16,8 @@
 open Core
 open Ast
 open Statement
-open Analysis
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type kind =
   | Normal
@@ -245,10 +245,10 @@ type definitions_result = {
 
 (** This is the source of truth for the mapping of callables to definitions. All parts of the
     analysis should use this (or `get_module_and_definition`) rather than walking over source files. *)
-let get_definitions ~resolution define_name =
-  GlobalResolution.get_function_definition resolution define_name
-  >>| fun ({ FunctionDefinition.qualifier; _ } as definitions) ->
-  let bodies = FunctionDefinition.all_bodies definitions in
+let get_definitions ~pyre_api define_name =
+  PyrePysaApi.ReadOnly.get_function_definition pyre_api define_name
+  >>| fun ({ Analysis.FunctionDefinition.qualifier; _ } as definitions) ->
+  let bodies = Analysis.FunctionDefinition.all_bodies definitions in
   (* Ignore defines for type overloads. *)
   let bodies =
     List.filter ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value)) bodies
@@ -271,28 +271,28 @@ let get_definitions ~resolution define_name =
     bodies
 
 
-let get_module_and_definition ~resolution callable =
+let get_module_and_definition ~pyre_api callable =
   define_name callable
-  |> get_definitions ~resolution
+  |> get_definitions ~pyre_api
   >>= fun { qualifier; callables; _ } ->
   Map.find_opt callable callables >>| fun define -> qualifier, define
 
 
-let resolve_method ~resolution ~class_type ~method_name =
+let resolve_method ~pyre_api ~class_type ~method_name =
   let callable_implementation =
     Type.split class_type
     |> fst
     |> Type.primitive_name
-    >>= GlobalResolution.attribute_from_class_name
-          resolution
+    >>= PyrePysaApi.ReadOnly.attribute_from_class_name
+          pyre_api
           ~transitive:true
           ~name:method_name
           ~instantiated:class_type
   in
   match callable_implementation with
-  | Some callable when AnnotatedAttribute.defined callable ->
-      AnnotatedAttribute.annotation callable
-      |> Annotation.annotation
+  | Some callable when Analysis.AnnotatedAttribute.defined callable ->
+      Analysis.AnnotatedAttribute.annotation callable
+      |> Analysis.Annotation.annotation
       |> Type.callable_name
       >>| create_method
   | _ -> None

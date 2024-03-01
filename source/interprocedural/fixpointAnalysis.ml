@@ -509,7 +509,6 @@ module Make (Analysis : ANALYSIS) = struct
 
 
   let analyze_callable ~pyre_api ~override_graph ~context ~step ~callable =
-    let resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
     let () =
       (* Verify invariants *)
       match State.get_meta_data callable with
@@ -529,7 +528,7 @@ module Make (Analysis : ANALYSIS) = struct
     in
     match callable with
     | (Target.Function _ | Target.Method _) as callable -> (
-        match Target.get_module_and_definition callable ~resolution with
+        match Target.get_module_and_definition callable ~pyre_api with
         | None ->
             Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
         | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define)

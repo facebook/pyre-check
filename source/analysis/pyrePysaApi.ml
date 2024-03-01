@@ -249,6 +249,10 @@ module ReadOnly = struct
 
   let successors api = global_resolution api |> GlobalResolution.successors
 
+  let get_function_definition api =
+    global_resolution api |> GlobalResolution.get_function_definition
+
+
   let attribute_from_class_name api =
     global_resolution api |> GlobalResolution.attribute_from_class_name
 
