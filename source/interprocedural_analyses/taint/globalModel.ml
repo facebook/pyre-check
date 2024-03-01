@@ -47,11 +47,7 @@ let get_global_targets ~call_graph ~expression =
 let from_expression ~pyre_in_context ~call_graph ~get_callee_model ~qualifier ~expression ~interval =
   let fetch_model ({ CallGraph.CallTarget.target; _ } as call_target) =
     let model =
-      CallModel.at_callsite
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        ~get_callee_model
-        ~call_target:target
-        ~arguments:[]
+      CallModel.at_callsite ~pyre_in_context ~get_callee_model ~call_target:target ~arguments:[]
     in
     { Model.WithCallTarget.model; call_target }
   in

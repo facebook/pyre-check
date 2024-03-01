@@ -362,7 +362,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~call_target:target
         ~f:(fun () ->
           CallModel.at_callsite
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+            ~pyre_in_context
             ~get_callee_model:FunctionContext.get_callee_model
             ~call_target:target
             ~arguments)
@@ -525,7 +525,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let sink_trees =
         CallModel.sink_trees_of_argument
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          ~pyre_in_context
           ~transform_non_leaves
           ~model:taint_model
           ~location
@@ -2470,7 +2470,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let return_taint = get_taint (Some access_path) state in
         let return_sink =
           CallModel.return_sink
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+            ~pyre_in_context
             ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
             ~callee:FunctionContext.callable
             ~sink_model:FunctionContext.existing_model.Model.backward.sink_taint

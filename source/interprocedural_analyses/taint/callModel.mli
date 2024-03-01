@@ -12,7 +12,7 @@ open Interprocedural
 open Domains
 
 val at_callsite
-  :  resolution:Resolution.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   get_callee_model:(Target.t -> Model.t option) ->
   call_target:Target.t ->
   arguments:Expression.Call.Argument.t list ->
@@ -72,7 +72,7 @@ val return_paths_and_collapse_depths
   (AccessPath.Path.t * Features.CollapseDepth.t) list
 
 val sink_trees_of_argument
-  :  resolution:Resolution.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   model:Model.t ->
   location:Location.WithModule.t ->
@@ -117,7 +117,7 @@ val arguments_for_string_format
 
 (* At a call site, extract the returned sink from `sink_model` of `callee` *)
 val return_sink
-  :  resolution:Analysis.Resolution.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   location:Location.WithModule.t ->
   callee:Target.t ->
   sink_model:BackwardState.t ->

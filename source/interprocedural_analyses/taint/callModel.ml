@@ -17,7 +17,7 @@ open Interprocedural
 open Domains
 open Expression
 
-let at_callsite ~resolution ~get_callee_model ~call_target ~arguments =
+let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
   match get_callee_model call_target with
   | None -> Model.obscure_model
   | Some model ->
@@ -27,7 +27,10 @@ let at_callsite ~resolution ~get_callee_model ~call_target ~arguments =
         let expand_frame_via_features frame =
           let breadcrumbs =
             Frame.get Frame.Slots.ViaFeature frame
-            |> Features.expand_via_features ~resolution ~callees:[call_target] ~arguments
+            |> Features.expand_via_features
+                 ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
+                 ~callees:[call_target]
+                 ~arguments
           in
           Frame.add_propagated_breadcrumbs breadcrumbs frame
         in
@@ -283,7 +286,7 @@ let return_paths_and_collapse_depths ~kind ~tito_taint =
 
 
 let sink_trees_of_argument
-    ~resolution
+    ~pyre_in_context
     ~transform_non_leaves
     ~model:{ Model.backward; _ }
     ~location
@@ -298,7 +301,7 @@ let sink_trees_of_argument
     let sink_tree =
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call
-           ~resolution
+           ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
            ~location
            ~callee:(Some target)
            ~arguments
@@ -430,11 +433,11 @@ let arguments_for_string_format arguments =
 
 
 (* At a call site, extract the returned sink from `sink_model` of `callee` *)
-let return_sink ~resolution ~location ~callee ~sink_model =
+let return_sink ~pyre_in_context ~location ~callee ~sink_model =
   let taint =
     BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
     |> BackwardState.Tree.apply_call
-         ~resolution
+         ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
          ~location
          ~callee:(Some callee)
            (* When the source and sink meet at the return statement, we want the leaf callable to be
