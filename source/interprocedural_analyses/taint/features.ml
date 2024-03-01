@@ -728,7 +728,7 @@ let type_breadcrumbs
 let type_breadcrumbs_from_annotation ~pyre_api type_ =
   let open Interprocedural.CallGraph in
   type_
-  >>| ReturnType.from_annotation ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+  >>| ReturnType.from_annotation ~pyre_api
   |> Option.value ~default:ReturnType.none
   |> type_breadcrumbs
 

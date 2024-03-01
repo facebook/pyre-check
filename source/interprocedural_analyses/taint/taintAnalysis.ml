@@ -689,7 +689,7 @@ let run_taint_analysis
         Interprocedural.CallGraph.build_whole_program_call_graph
           ~scheduler
           ~static_analysis_configuration
-          ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+          ~pyre_api
           ~resolve_module_path:(Some resolve_module_path)
           ~override_graph:(Some override_graph_shared_memory_read_only)
           ~store_shared_memory:true

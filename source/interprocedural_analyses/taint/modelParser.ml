@@ -1227,9 +1227,7 @@ let output_path_for_tito ~input_root ~kind ~features =
 
 let type_breadcrumbs_from_annotations ~pyre_api annotations =
   List.fold annotations ~init:Features.BreadcrumbSet.bottom ~f:(fun sofar annotation ->
-      CallGraph.ReturnType.from_annotation
-        ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
-        annotation
+      CallGraph.ReturnType.from_annotation ~pyre_api annotation
       |> Features.type_breadcrumbs
       |> Features.BreadcrumbSet.add_set ~to_add:sofar)
 

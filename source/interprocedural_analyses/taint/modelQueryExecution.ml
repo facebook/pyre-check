@@ -416,7 +416,7 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
       in
       let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
         Interprocedural.CallGraph.resolve_callees_from_type_external
-          ~resolution:(PyrePysaApi.ReadOnly.contextless_resolution pyre_api)
+          ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
           ~override_graph:None
           ~return_type
           callee

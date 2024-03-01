@@ -58,7 +58,7 @@ let assert_taint ?models ?models_source ~context source expect =
     let call_graph_of_define =
       CallGraph.call_graph_of_define
         ~static_analysis_configuration
-        ~environment:(PyrePysaApi.ReadOnly.type_environment pyre_api)
+        ~pyre_api
         ~override_graph:
           (Some (OverrideGraph.SharedMemory.create () |> OverrideGraph.SharedMemory.read_only))
         ~attribute_targets:

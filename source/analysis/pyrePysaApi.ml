@@ -243,6 +243,16 @@ module ReadOnly = struct
 
   let get_typed_dictionary api = global_resolution api |> GlobalResolution.get_typed_dictionary
 
+  let less_or_equal api = global_resolution api |> GlobalResolution.less_or_equal
+
+  let resolve_exports api = global_resolution api |> GlobalResolution.resolve_exports
+
+  let successors api = global_resolution api |> GlobalResolution.successors
+
+  let attribute_from_class_name api =
+    global_resolution api |> GlobalResolution.attribute_from_class_name
+
+
   let exists_matching_class_decorator api =
     unannotated_global_environment api
     |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator

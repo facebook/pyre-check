@@ -1396,9 +1396,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   and analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments =
     let { Call.callee; arguments } =
-      CallGraph.redirect_special_calls
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        { Call.callee; arguments }
+      CallGraph.redirect_special_calls ~pyre_in_context { Call.callee; arguments }
     in
     let callees = get_call_callees ~location ~call:{ Call.callee; arguments } in
 

@@ -44,7 +44,7 @@ let test_call_graph_of_define context =
         ~f:(fun call_graph_of_define (location, callees) ->
           DefineCallGraph.add call_graph_of_define ~location:(parse_location location) ~callees)
     in
-    let define, test_source, pyre_api, environment, configuration =
+    let define, test_source, pyre_api, configuration =
       let find_define = function
         | { Node.value = define; _ }
           when String.equal (Statement.Define.name define |> Reference.show) define_name ->
@@ -52,7 +52,7 @@ let test_call_graph_of_define context =
         | _ -> None
       in
       let project = Test.ScratchProject.setup ~context ["test.py", source] in
-      let { ScratchProject.BuiltTypeEnvironment.type_environment; sources } =
+      let { ScratchProject.BuiltTypeEnvironment.sources; _ } =
         ScratchProject.build_type_environment project
       in
       let test_source =
@@ -66,7 +66,6 @@ let test_call_graph_of_define context =
           ~f:find_define,
         test_source,
         ScratchProject.pyre_pysa_read_only_api project,
-        type_environment,
         ScratchProject.configuration_of project )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
@@ -81,7 +80,7 @@ let test_call_graph_of_define context =
         expected
         (CallGraph.call_graph_of_define
            ~static_analysis_configuration
-           ~environment
+           ~pyre_api
            ~override_graph:
              (Some
                 (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
@@ -5378,12 +5377,9 @@ let test_call_graph_of_define context =
 
 let test_return_type_from_annotation context =
   let project = Test.ScratchProject.setup ~context [] in
-  let { Test.ScratchProject.BuiltTypeEnvironment.type_environment; _ } =
-    Test.ScratchProject.build_type_environment project
-  in
-  let resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
+  let pyre_api = Test.ScratchProject.pyre_pysa_read_only_api project in
   let assert_from_annotation annotation expected =
-    let actual = ReturnType.from_annotation ~resolution annotation in
+    let actual = ReturnType.from_annotation ~pyre_api annotation in
     assert_equal ~printer:ReturnType.show ~cmp:ReturnType.equal expected actual
   in
   assert_from_annotation

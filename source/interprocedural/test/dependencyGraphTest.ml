@@ -54,7 +54,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
     let callees =
       CallGraph.call_graph_of_callable
         ~static_analysis_configuration
-        ~environment
+        ~pyre_api
         ~override_graph:
           (Some (Interprocedural.OverrideGraph.SharedMemory.read_only override_graph_shared_memory))
         ~attribute_targets:(Target.HashSet.create ())

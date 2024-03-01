@@ -580,7 +580,7 @@ let initialize
     CallGraph.build_whole_program_call_graph
       ~scheduler:(Test.mock_scheduler ())
       ~static_analysis_configuration
-      ~environment:type_environment
+      ~pyre_api
       ~resolve_module_path:None
       ~override_graph:(Some override_graph_shared_memory_read_only)
       ~store_shared_memory:true
