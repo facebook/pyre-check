@@ -46,7 +46,7 @@ from .. import (
     identifiers,
     log,
 )
-from . import commands, server_event, stop
+from . import commands, initialization, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
@@ -535,16 +535,9 @@ def run(
     with backend_arguments.temporary_argument_file(
         server_arguments
     ) as argument_file_path:
-        server_subcommand = (
-            "server"
-            if start_arguments.flavor != identifiers.PyreFlavor.CODE_NAVIGATION
-            else "code-navigation"
+        server_command = initialization.get_server_start_command(
+            start_arguments.flavor, binary_location, argument_file_path
         )
-        server_command = [
-            str(binary_location),
-            server_subcommand,
-            str(argument_file_path),
-        ]
         server_environment = {
             **os.environ,
             # This is to make sure that backend server shares the socket root
@@ -554,14 +547,17 @@ def run(
             "TMPDIR": tempfile.gettempdir(),
         }
         if start_arguments.terminal:
-            return _run_in_foreground(server_command, server_environment)
+            return _run_in_foreground(
+                [server_command.binary_location, *server_command.args],
+                server_environment,
+            )
         else:
             socket_path = daemon_socket.get_socket_path(
                 configuration.get_project_identifier(),
                 flavor=start_arguments.flavor,
             )
             return _run_in_background(
-                server_command,
+                [server_command.binary_location, *server_command.args],
                 server_environment,
                 log_directory,
                 socket_path,

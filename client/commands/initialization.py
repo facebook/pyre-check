@@ -20,7 +20,7 @@ import tempfile
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, Optional, Union
+from typing import Callable, List, Optional, Union
 
 from typing_extensions import TypeAlias
 
@@ -199,8 +199,33 @@ class OtherStartFailure:
     detail: str
 
 
+@dataclass(frozen=True)
+class ServerStartCommand:
+    binary_location: str
+    args: List[str]
+
+
+def get_server_start_command(
+    flavor: identifiers.PyreFlavor,
+    binary_location: Path | str,
+    argument_file_path: Path,
+) -> ServerStartCommand:
+    server_subcommand = (
+        "server"
+        if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
+        else "code-navigation"
+    )
+    return ServerStartCommand(
+        str(binary_location),
+        [
+            server_subcommand,
+            str(argument_file_path),
+        ],
+    )
+
+
 async def async_start_pyre_server(
-    binary_location: str,
+    pyre_binary_location: str,
     pyre_arguments: start.Arguments,
     flavor: identifiers.PyreFlavor,
 ) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
@@ -222,13 +247,12 @@ async def async_start_pyre_server(
                 Path(pyre_arguments.base_arguments.log_path),
                 flavor=flavor,
             ) as server_stderr:
-                server_start_command = (
-                    "code-navigation" if is_code_navigation_server else "server"
+                server_start_command = get_server_start_command(
+                    flavor, pyre_binary_location, argument_file_path
                 )
                 server_process = await asyncio.create_subprocess_exec(
-                    binary_location,
-                    server_start_command,
-                    str(argument_file_path),
+                    server_start_command.binary_location,
+                    *server_start_command.args,
                     stdout=subprocess.PIPE,
                     stderr=server_stderr,
                     env=server_environment,
