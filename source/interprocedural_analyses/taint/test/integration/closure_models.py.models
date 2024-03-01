@@ -2,6 +2,75 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "closure_models.inner_sink_wrapper",
+    "callable_line": 9,
+    "code": 5002,
+    "line": 13,
+    "start": 15,
+    "end": 29,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 13,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.inner_sink_wrapper.inner_sink",
+                    "port": "leaf:x"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 13,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_source" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.inner_sink_wrapper.inner_sink",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "closure_models.inner_sink_wrapper:5002:0:Call|closure_models.inner_sink_wrapper.inner_sink|0|formal(x):beabfe36d7897c6c0f395cc67b2fd9cf"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "closure_models.test",
     "callable_line": 38,
     "code": 5002,
@@ -462,13 +531,6 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "closure_models.inner_sink_wrapper.inner_sink",
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -479,7 +541,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {
@@ -536,13 +599,6 @@
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ],
-    "modes": [ "Obscure" ]
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "closure_models.test.return_model_taint",
     "tito": [
       {
         "port": "captured_variable($local_closure_models?test$value)",
@@ -554,7 +610,8 @@
           }
         ]
       }
-    ]
+    ],
+    "modes": [ "Obscure" ]
   }
 }
 {

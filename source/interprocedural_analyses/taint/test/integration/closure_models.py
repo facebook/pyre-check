@@ -9,7 +9,7 @@ from builtins import _test_sink, _test_source
 def inner_sink_wrapper():
     def inner_sink(x):
         return x
-    # TODO(T179041949): Find flow through inner function model
+
     inner_sink(_test_source())
 
 

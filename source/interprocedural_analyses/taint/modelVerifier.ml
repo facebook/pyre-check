@@ -232,7 +232,7 @@ let verify_model_syntax ~path ~location ~callable_name ~normalized_model_paramet
 let verify_imported_model ~path ~location ~callable_name ~callable_annotation =
   match callable_annotation with
   | Some { Type.Callable.kind = Type.Callable.Named actual_name; _ }
-    when not (Reference.equal callable_name (Reference.delocalize actual_name)) ->
+    when not (Reference.equal callable_name actual_name) ->
       Error
         (model_verification_error
            ~path

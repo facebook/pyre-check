@@ -2859,6 +2859,22 @@ let create_model_from_signature
   =
   let open Core.Result in
   let open ModelVerifier in
+  let compute_localized_name_for_nested_functions ~callable_annotation ~callable_name =
+    let open Option in
+    callable_annotation
+    |> Result.ok
+    |> Option.value ~default:None
+    >>| (fun callable ->
+          callable.Type.Record.Callable.kind
+          |> function
+          | Named name when Reference.equal (Reference.delocalize name) callable_name -> name
+          | _ -> callable_name)
+    |> Option.value ~default:callable_name
+  in
+  let update_call_target_name ~callable_name = function
+    | Target.Function { name = _; kind } -> Target.create_function ~kind callable_name
+    | target -> target
+  in
   (* Strip off the decorators only used for taint annotations. *)
   let top_level_decorators, define =
     let get_taint_decorator decorator_expression =
@@ -2926,6 +2942,7 @@ let create_model_from_signature
   in
   (* Check model matches callables primary signature. *)
   let callable_parameter_names_to_roots =
+    (* TODO(T180849788): Consolidate `callable_annotation` accesses into an API *)
     match callable_annotation with
     | Ok (Some callable_annotation) ->
         let add_into_map map name root =
@@ -3033,6 +3050,10 @@ let create_model_from_signature
     |> Option.value ~default:(Ok [])
     >>| fun return_taint -> List.rev_append parameter_taint return_taint
   in
+  (* For nested functions, change the target to use the localized name over the delocalized name. *)
+  let callable_name =
+    compute_localized_name_for_nested_functions ~callable_annotation ~callable_name
+  in
   let model =
     callable_annotation
     >>= fun callable_annotation ->
@@ -3066,7 +3087,8 @@ let create_model_from_signature
         ~origin:DefineDecorator
         ~source_sink_filter
         ~top_level_decorators
-  >>| fun model -> Model { Model.WithTarget.model; target = call_target }
+  >>| fun model ->
+  Model { Model.WithTarget.model; target = update_call_target_name ~callable_name call_target }
 
 
 let create_model_from_attribute
