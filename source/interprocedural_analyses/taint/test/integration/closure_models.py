@@ -74,3 +74,29 @@ def test() -> None:
         feature="breadcrumb1",
     )
     value.reclassify(feature="breadcrumb2")
+
+
+def captured_variable_models():
+    complicated_name = ...
+    # complicated_name has no taint outside nested functions, no issue
+    _test_sink(complicated_name)
+
+    def model_all_captured_as_sources():
+        # TODO(T180817012): Support capturing all variables as sources in nested functions
+        _test_sink(complicated_name)
+
+    def model_all_captured_as_tito():
+        # TODO(T180817036): Support capturing all variables as TITOs in nested functions
+        complicated_name
+
+    # TODO(T180817036): Support capturing all variables as TITOs in nested functions
+    _test_sink(model_all_captured_as_tito())
+
+    def model_all_captured_as_sink():
+        # TODO(T180817051): Support making all writes to captured variables as sinks
+        nonlocal complicated_name
+        complicated_name = "tainted"
+
+    model_all_captured_as_sink()
+    # TODO(T180817051): Support making all writes to captured variables as sinks
+    _test_sink(complicated_name)
