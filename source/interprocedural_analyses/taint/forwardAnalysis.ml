@@ -714,7 +714,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
         GlobalModel.from_expression
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
@@ -1916,7 +1916,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let taint, state = List.fold entries ~init:(taint, state) ~f:override_taint_from_update in
           GlobalModel.from_expression
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+            ~pyre_in_context
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier
@@ -2369,7 +2369,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None ->
           let global_model =
             GlobalModel.from_expression
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2640,7 +2640,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | Name (Name.Identifier identifier) ->
           let global_model_taint =
             GlobalModel.from_expression
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2826,7 +2826,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (* Check flows to tainted globals/attributes. *)
         let source_tree = taint in
         GlobalModel.from_expression
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
@@ -2911,7 +2911,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
         let target_global_model =
           GlobalModel.from_expression
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+            ~pyre_in_context
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier

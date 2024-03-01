@@ -393,7 +393,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let get_argument_taint ~pyre_in_context ~argument:{ Call.Argument.value = argument; _ } =
       let global_sink =
         GlobalModel.from_expression
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          ~pyre_in_context
           ~call_graph:FunctionContext.call_graph_of_define
           ~get_callee_model:FunctionContext.get_callee_model
           ~qualifier:FunctionContext.qualifier
@@ -1032,7 +1032,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None ->
           let global_model =
             GlobalModel.from_expression
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -1674,7 +1674,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let dict_taint =
           let global_taint =
             GlobalModel.from_expression
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2329,7 +2329,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           in
           let global_taint =
             GlobalModel.from_expression
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              ~pyre_in_context
               ~call_graph:FunctionContext.call_graph_of_define
               ~get_callee_model:FunctionContext.get_callee_model
               ~qualifier:FunctionContext.qualifier
@@ -2392,7 +2392,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
         let target_global_model =
           GlobalModel.from_expression
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+            ~pyre_in_context
             ~call_graph:FunctionContext.call_graph_of_define
             ~get_callee_model:FunctionContext.get_callee_model
             ~qualifier:FunctionContext.qualifier

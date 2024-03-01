@@ -20,7 +20,7 @@ module CallGraph = Interprocedural.CallGraph
 
 type t = {
   models: Model.WithCallTarget.t list;
-  resolution: Resolution.t;
+  pyre_in_context: PyrePysaApi.InContext.t;
   location: Location.WithModule.t;
   interval: Interprocedural.ClassIntervalSet.t;
 }
@@ -44,23 +44,27 @@ let get_global_targets ~call_graph ~expression =
   | _ -> []
 
 
-let from_expression ~resolution ~call_graph ~get_callee_model ~qualifier ~expression ~interval =
+let from_expression ~pyre_in_context ~call_graph ~get_callee_model ~qualifier ~expression ~interval =
   let fetch_model ({ CallGraph.CallTarget.target; _ } as call_target) =
     let model =
-      CallModel.at_callsite ~resolution ~get_callee_model ~call_target:target ~arguments:[]
+      CallModel.at_callsite
+        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        ~get_callee_model
+        ~call_target:target
+        ~arguments:[]
     in
     { Model.WithCallTarget.model; call_target }
   in
   let models = get_global_targets ~call_graph ~expression |> List.map ~f:fetch_model in
   let location = Node.location expression |> Location.with_module ~module_reference:qualifier in
-  { models; resolution; location; interval }
+  { models; pyre_in_context; location; interval }
 
 
 let global_root =
   AccessPath.Root.PositionalParameter { position = 0; name = "$global"; positional_only = false }
 
 
-let get_source { models; resolution; location; interval } =
+let get_source { models; pyre_in_context; location; interval } =
   let to_source
       existing
       {
@@ -71,7 +75,7 @@ let get_source { models; resolution; location; interval } =
     =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
     |> ForwardState.Tree.apply_call
-         ~resolution
+         ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
          ~location
          ~callee:(Some target)
          ~arguments:[]
@@ -84,7 +88,7 @@ let get_source { models; resolution; location; interval } =
   List.fold ~init:ForwardState.Tree.bottom ~f:to_source models
 
 
-let get_sinks { models; resolution; location; interval } =
+let get_sinks { models; pyre_in_context; location; interval } =
   let to_sink_tree_with_identifier
       {
         Model.WithCallTarget.call_target = { target; _ } as call_target;
@@ -95,7 +99,7 @@ let get_sinks { models; resolution; location; interval } =
     let sink_tree =
       BackwardState.read ~root:global_root ~path:[] sink_taint
       |> BackwardState.Tree.apply_call
-           ~resolution
+           ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
            ~location
            ~callee:(Some target)
            ~arguments:[]
