@@ -2550,8 +2550,7 @@ let extract_tito_and_sink_models
     let type_breadcrumbs =
       annotation
       >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-      |> Features.type_breadcrumbs_from_annotation
-           ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+      |> Features.type_breadcrumbs_from_annotation ~pyre_api
     in
     BackwardState.Tree.add_local_breadcrumbs type_breadcrumbs tree
   in

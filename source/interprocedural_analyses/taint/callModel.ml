@@ -27,10 +27,7 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
         let expand_frame_via_features frame =
           let breadcrumbs =
             Frame.get Frame.Slots.ViaFeature frame
-            |> Features.expand_via_features
-                 ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
-                 ~callees:[call_target]
-                 ~arguments
+            |> Features.expand_via_features ~pyre_in_context ~callees:[call_target] ~arguments
           in
           Frame.add_propagated_breadcrumbs breadcrumbs frame
         in

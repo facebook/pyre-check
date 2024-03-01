@@ -3107,8 +3107,7 @@ let extract_source_model
   let return_type_breadcrumbs =
     return_annotation
     >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-    |> Features.type_breadcrumbs_from_annotation
-         ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
+    |> Features.type_breadcrumbs_from_annotation ~pyre_api
   in
   let local_result_model =
     let simplify tree =

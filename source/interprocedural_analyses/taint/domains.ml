@@ -1149,10 +1149,7 @@ end = struct
           ~f:Features.ViaFeatureSet.add
           ~init:Features.ViaFeatureSet.bottom
           local_taint
-        |> Features.expand_via_features
-             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-             ~callees
-             ~arguments
+        |> Features.expand_via_features ~pyre_in_context ~callees ~arguments
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -1479,7 +1476,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
               expression
           in
           Features.type_breadcrumbs_from_annotation
-            ~resolution:(PyrePysaApi.InContext.global_resolution pyre_in_context)
+            ~pyre_api:(PyrePysaApi.InContext.pyre_api pyre_in_context)
             (Some type_)
         in
         add_local_breadcrumbs type_breadcrumbs taint

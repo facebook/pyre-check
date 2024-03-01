@@ -455,10 +455,11 @@ module ViaFeature = struct
     Breadcrumb.ViaValue { value = feature; tag } |> BreadcrumbInterned.intern
 
 
-  let via_type_of_breadcrumb ?tag ~resolution ~argument () =
+  let via_type_of_breadcrumb ?tag ~pyre_in_context ~argument () =
     let feature =
       argument
-      >>| Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution
+      >>| Interprocedural.CallResolution.resolve_ignoring_untracked
+            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
       >>| Type.weaken_literals
       |> Option.value ~default:Type.Top
       |> Type.show
@@ -466,11 +467,11 @@ module ViaFeature = struct
     Breadcrumb.ViaType { value = feature; tag } |> BreadcrumbInterned.intern
 
 
-  let via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target () =
+  let via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target () =
     let feature =
       object_target
       |> Reference.create
-      |> Resolution.resolve_reference resolution
+      |> PyrePysaApi.InContext.resolve_reference pyre_in_context
       |> Type.weaken_literals
       |> Type.show
     in
@@ -724,15 +725,15 @@ let type_breadcrumbs
   |> add_if is_enumeration type_enumeration
 
 
-let type_breadcrumbs_from_annotation ~resolution type_ =
+let type_breadcrumbs_from_annotation ~pyre_api type_ =
   let open Interprocedural.CallGraph in
   type_
-  >>| ReturnType.from_annotation ~resolution
+  >>| ReturnType.from_annotation ~resolution:(PyrePysaApi.ReadOnly.global_resolution pyre_api)
   |> Option.value ~default:ReturnType.none
   |> type_breadcrumbs
 
 
-let expand_via_features ~resolution ~callees ~arguments via_features =
+let expand_via_features ~pyre_in_context ~callees ~arguments via_features =
   let expand_via_feature via_feature breadcrumbs =
     let match_all_arguments_to_parameter parameter =
       AccessPath.match_actuals_to_formals arguments [parameter]
@@ -755,11 +756,11 @@ let expand_via_features ~resolution ~callees ~arguments via_features =
         let breadcrumb =
           match callees with
           | [Interprocedural.Target.Object object_target] ->
-              ViaFeature.via_type_of_breadcrumb_for_object ?tag ~resolution ~object_target ()
+              ViaFeature.via_type_of_breadcrumb_for_object ?tag ~pyre_in_context ~object_target ()
           | _ ->
               ViaFeature.via_type_of_breadcrumb
                 ?tag
-                ~resolution
+                ~pyre_in_context
                 ~argument:(match_argument_to_parameter parameter)
                 ()
         in
