@@ -6,7 +6,8 @@
  *)
 
 open Ast
-open Analysis
+module PyrePysaApi = Analysis.PyrePysaApi
+module AnnotatedAttribute = Analysis.AnnotatedAttribute
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
 val extract_constant_name : Expression.t -> string option

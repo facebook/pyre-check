@@ -10,8 +10,10 @@
 open Core
 open Pyre
 open Ast
-open Analysis
 open Expression
+module PyrePysaApi = Analysis.PyrePysaApi
+module Annotation = Analysis.Annotation
+module ClassSummary = Analysis.ClassSummary
 
 module DefinitionsCache (Type : sig
   type t
@@ -74,7 +76,7 @@ let find_method_definitions ~pyre_api ?(predicate = fun _ -> true) name =
         if Reference.equal define_name name && predicate define then
           let parser = PyrePysaApi.ReadOnly.annotation_parser pyre_api in
           let variables = PyrePysaApi.ReadOnly.type_parameters_as_variables pyre_api in
-          AnnotatedDefine.Callable.create_overload_without_applying_decorators
+          Analysis.AnnotatedDefine.Callable.create_overload_without_applying_decorators
             ~parser
             ~variables
             signature
@@ -125,8 +127,8 @@ let resolve_global ~pyre_api name =
       None
   in
   match resolved_global, resolved_local with
-  | Some { AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
-  | _, Some { AttributeResolution.undecorated_signature = signature; _ } ->
+  | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
+  | _, Some { Analysis.AttributeResolution.undecorated_signature = signature; _ } ->
       Some (Global.Attribute (Type.Callable signature))
   | _ -> (
       (* Resolve undecorated methods. *)

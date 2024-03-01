@@ -6,8 +6,8 @@
  *)
 
 open Ast
-open Analysis
 open Interprocedural
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type t
 

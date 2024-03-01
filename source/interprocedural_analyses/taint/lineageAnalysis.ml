@@ -11,11 +11,11 @@
  *)
 
 open Core
-open Analysis
 open Ast
 open Expression
 open Domains
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type panda_type = DataFrame
 

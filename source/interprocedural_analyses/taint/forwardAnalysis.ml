@@ -35,13 +35,13 @@
  *)
 
 open Core
-open Analysis
 open Ast
 open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
 module CallResolution = Interprocedural.CallResolution
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t
@@ -3234,7 +3234,7 @@ let run
         let normalized_parameters = AccessPath.normalize_parameters parameters in
         State.create ~existing_model normalized_parameters)
   in
-  let () = State.log "Processing CFG:@.%a" Cfg.pp cfg in
+  let () = State.log "Processing CFG:@.%a" Analysis.Cfg.pp cfg in
   let exit_state =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - fixpoint" ~f:(fun () ->
         Alarm.with_alarm

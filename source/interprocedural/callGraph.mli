@@ -6,9 +6,9 @@
  *)
 
 open Data_structures
-open Analysis
 open Ast
 open Expression
+module PyrePysaApi = Analysis.PyrePysaApi
 
 (** Represents type information about the return type of a call. *)
 module ReturnType : sig

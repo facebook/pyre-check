@@ -12,7 +12,8 @@
 
 open Core
 open Ast
-open Analysis
+module SharedMemoryKeys = Analysis.SharedMemoryKeys
+module ArtifactPaths = Analysis.ArtifactPaths
 
 module HashResult = struct
   type t =

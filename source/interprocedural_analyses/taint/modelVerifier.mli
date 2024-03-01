@@ -7,7 +7,7 @@
 
 open Core
 open Ast
-open Analysis
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module ClassDefinitionsCache : sig
   val invalidate : unit -> unit

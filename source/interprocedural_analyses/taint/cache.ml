@@ -14,6 +14,7 @@ module CamlUnix = Unix
 open Core
 open Pyre
 module PyrePysaApi = Analysis.PyrePysaApi
+module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 module FetchCallables = Interprocedural.FetchCallables
 module ClassHierarchyGraph = Interprocedural.ClassHierarchyGraph
 module ClassIntervalSetGraph = Interprocedural.ClassIntervalSetGraph
@@ -298,7 +299,6 @@ let initialize_shared_memory ~path ~configuration =
 
 
 let check_decorator_invalidation ~decorator_configuration:current_configuration =
-  let open Analysis in
   match DecoratorPreprocessing.get_configuration () with
   | Some cached_configuration
     when DecoratorPreprocessing.Configuration.equal cached_configuration current_configuration ->

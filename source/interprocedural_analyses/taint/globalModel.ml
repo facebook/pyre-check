@@ -16,6 +16,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type t = {
   models: Model.WithCallTarget.t list;

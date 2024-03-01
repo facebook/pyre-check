@@ -6,8 +6,8 @@
  *)
 
 open Ast
-open Analysis
 open Statement
+module PyrePysaApi = Analysis.PyrePysaApi
 
 val run
   :  ?profiler:TaintProfiler.t ->
@@ -19,7 +19,7 @@ val run
   qualifier:Reference.t ->
   callable:Interprocedural.Target.t ->
   define:Define.t Node.t ->
-  cfg:Cfg.t ->
+  cfg:Analysis.Cfg.t ->
   call_graph_of_define:Interprocedural.CallGraph.DefineCallGraph.t ->
   get_callee_model:(Interprocedural.Target.t -> Model.t option) ->
   existing_model:Model.t ->

@@ -34,6 +34,7 @@ open Expression
 open Pyre
 open Domains
 module CallGraph = Interprocedural.CallGraph
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module type FUNCTION_CONTEXT = sig
   val qualifier : Reference.t

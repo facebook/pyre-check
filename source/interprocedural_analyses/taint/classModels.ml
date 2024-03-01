@@ -17,9 +17,10 @@
 open Core
 open Pyre
 open Ast
-open Analysis
 open Interprocedural
 open Domains
+module PyrePysaApi = Analysis.PyrePysaApi
+module ClassSummary = Analysis.ClassSummary
 
 module FeatureSet = struct
   type t = {

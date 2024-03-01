@@ -8,7 +8,7 @@
 open Domains
 open Ast
 open Expression
-open Analysis
+module PyrePysaApi = Analysis.PyrePysaApi
 
 val forward_analyze_call
   :  analyze_expression:

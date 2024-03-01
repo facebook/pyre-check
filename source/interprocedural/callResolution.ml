@@ -11,9 +11,10 @@
 
 open Core
 open Ast
-open Analysis
 open Expression
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
+module AnnotatedAttribute = Analysis.AnnotatedAttribute
 
 (* Evaluates to the representation of literal strings, integers and enums. *)
 let extract_constant_name { Node.value = expression; _ } =

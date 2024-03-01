@@ -18,6 +18,7 @@
 open Core
 open Pyre
 module PyrePysaApi = Analysis.PyrePysaApi
+module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 
 module Context = struct
   type t = {
@@ -202,7 +203,6 @@ module Analysis = struct
       Log.log ~section:`Interprocedural "Analyzing %a" Interprocedural.Target.pp_pretty callable
     in
     let define_qualifier = Ast.Reference.delocalize name in
-    let open Analysis in
     let open Ast in
     let module_reference =
       (* Pysa inlines decorators when a function is decorated. However, we want issues and models to

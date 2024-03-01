@@ -5,8 +5,8 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-open Analysis
 open Interprocedural
+module PyrePysaApi = Analysis.PyrePysaApi
 
 type t
 

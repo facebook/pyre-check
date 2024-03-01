@@ -17,11 +17,16 @@
 
 open Core
 open Data_structures
-open Analysis
 open Ast
 open Statement
 open Expression
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
+module Cfg = Analysis.Cfg
+module ResolvedReference = Analysis.ResolvedReference
+module ClassSummary = Analysis.ClassSummary
+module Annotation = Analysis.Annotation
+module AnnotatedAttribute = Analysis.AnnotatedAttribute
 
 module JsonHelper = struct
   let add_optional name value to_json bindings =
@@ -1629,7 +1634,7 @@ let resolve_callee_from_defining_expression
       (* If implementing_class is unknown, this must be a function rather than a method. We can use
          global resolution on the callee. *)
       PyrePysaApi.ReadOnly.global pyre_api (Ast.Expression.name_to_reference_exn name)
-      >>= fun { AttributeResolution.Global.undecorated_signature; _ } ->
+      >>= fun { Analysis.AttributeResolution.Global.undecorated_signature; _ } ->
       undecorated_signature
       >>| fun undecorated_signature ->
       resolve_callees_from_type
@@ -2141,7 +2146,9 @@ let resolve_attribute_access_global_targets
             let parents =
               let successors =
                 match PyrePysaApi.ReadOnly.get_class_metadata pyre_api class_name with
-                | Some { ClassSuccessorMetadataEnvironment.successors = Some successors; _ } ->
+                | Some
+                    { Analysis.ClassSuccessorMetadataEnvironment.successors = Some successors; _ }
+                  ->
                     successors
                 | _ -> []
               in
@@ -2738,7 +2745,7 @@ struct
 
   module CalleeVisitor = Visit.MakeNodeVisitor (NodeVisitor)
 
-  include Fixpoint.Make (struct
+  include Analysis.Fixpoint.Make (struct
     type t = unit [@@deriving show]
 
     let bottom = ()

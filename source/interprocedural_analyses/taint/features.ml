@@ -12,8 +12,8 @@
 
 open Core
 open Ast
-open Analysis
 open Pyre
+module PyrePysaApi = Analysis.PyrePysaApi
 
 module MakeInterner (T : sig
   type t
