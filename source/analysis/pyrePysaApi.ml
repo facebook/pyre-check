@@ -253,6 +253,10 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.attribute_from_class_name
 
 
+  let has_transitive_successor api =
+    global_resolution api |> GlobalResolution.has_transitive_successor
+
+
   let exists_matching_class_decorator api =
     unannotated_global_environment api
     |> UnannotatedGlobalEnvironment.ReadOnly.exists_matching_class_decorator
@@ -350,6 +354,14 @@ module InContext = struct
   let resolve_assignment { pyre_api; resolution } assign =
     { pyre_api; resolution = Resolution.resolve_assignment resolution assign }
 
+
+  let resolve_expression_to_type { resolution; _ } =
+    Resolution.resolve_expression_to_type resolution
+
+
+  let resolve_attribute_access { resolution; _ } = Resolution.resolve_attribute_access resolution
+
+  let fallback_attribute { resolution; _ } = Resolution.fallback_attribute ~resolution
 
   let resolve_generators pyre_in_context generators =
     let resolve_generator pyre_in_context generator =

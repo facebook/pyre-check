@@ -817,7 +817,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         when is_constructor ()
              && String.equal attribute "__init__"
              && Interprocedural.CallResolution.is_super
-                  ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+                  ~pyre_in_context
                   ~define:FunctionContext.definition
                   base ->
           (* If the super call is `object.__init__`, this is likely due to a lack of type

@@ -10,13 +10,18 @@ open Interprocedural
 open Test
 open Ast
 open Core
+module PyrePysaApi = Analysis.PyrePysaApi
 
 let test_resolve_ignoring_errors context =
   let assert_resolved ~source ~expression ~expected =
-    let resolution =
-      ScratchProject.setup ~context ["x.py", source] |> ScratchProject.build_resolution
+    let pyre_in_context =
+      ScratchProject.setup ~context ["x.py", source]
+      |> ScratchProject.pyre_pysa_read_only_api
+      |> PyrePysaApi.InContext.create_at_global_scope
     in
-    CallResolution.resolve_ignoring_errors ~resolution (Test.parse_single_expression expression)
+    CallResolution.resolve_ignoring_errors
+      ~pyre_in_context
+      (Test.parse_single_expression expression)
     |> assert_equal ~printer:Type.show expected
   in
   assert_resolved
@@ -85,17 +90,19 @@ let test_is_nonlocal context =
   in
   assert_qualify ~source ~expected ();
   let project = Test.ScratchProject.setup ~context [handle, source] in
-  let resolution = ScratchProject.build_resolution project in
+  let pyre_in_context =
+    ScratchProject.pyre_pysa_read_only_api project |> PyrePysaApi.InContext.create_at_global_scope
+  in
   let assert_nonlocal define variable () =
     variable
     |> Reference.create
-    |> CallResolution.is_nonlocal ~resolution ~define:(Reference.create define)
+    |> CallResolution.is_nonlocal ~pyre_in_context ~define:(Reference.create define)
     |> assert_true
   in
   let assert_not_nonlocal define variable () =
     variable
     |> Reference.create
-    |> CallResolution.is_nonlocal ~resolution ~define:(Reference.create define)
+    |> CallResolution.is_nonlocal ~pyre_in_context ~define:(Reference.create define)
     |> assert_false
   in
   assert_nonlocal "$local_module?outer$inner" "$local_module?outer$x" ();

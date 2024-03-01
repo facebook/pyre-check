@@ -22,9 +22,7 @@ type panda_type = DataFrame
 let get_panda_type pyre_in_context = function
   | { Node.value = Expression.Name (Name.Attribute { base; _ }); _ } -> (
       let class_name =
-        Interprocedural.CallResolution.resolve_ignoring_untracked
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-          base
+        Interprocedural.CallResolution.resolve_ignoring_untracked ~pyre_in_context base
         |> Type.class_name
         |> Reference.last
       in

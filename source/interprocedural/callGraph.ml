@@ -1218,11 +1218,7 @@ module CalleeKind = struct
     | Type.Callable _ -> (
         match Node.value callee with
         | Expression.Name (Name.Attribute { base; _ }) ->
-            let parent_type =
-              CallResolution.resolve_ignoring_errors
-                ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-                base
-            in
+            let parent_type = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
             let is_class () =
               let primitive, _ = Type.split parent_type in
               Type.primitive_name primitive
@@ -1462,7 +1458,7 @@ let rec resolve_callees_from_type
          ignore it for now to make sure our constructor logic via `cls()` still works. *)
       match
         CallResolution.resolve_attribute_access_ignoring_untracked
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+          ~pyre_in_context
           ~base_type:callable_type
           ~attribute:"__call__"
       with
@@ -1537,11 +1533,7 @@ and resolve_callees_from_type_external
     ?(dunder_call = false)
     callee
   =
-  let callee_type =
-    CallResolution.resolve_ignoring_errors
-      ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-      callee
-  in
+  let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
   let callee_kind = CalleeKind.from_callee ~pyre_in_context callee callee_type in
   resolve_callees_from_type
     ~debug:false
@@ -1558,11 +1550,11 @@ and resolve_constructor_callee ~debug ~pyre_in_context ~override_graph ~call_ind
   let meta_type = Type.meta class_type in
   match
     ( CallResolution.resolve_attribute_access_ignoring_untracked
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        ~pyre_in_context
         ~base_type:meta_type
         ~attribute:"__new__",
       CallResolution.resolve_attribute_access_ignoring_untracked
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        ~pyre_in_context
         ~base_type:meta_type
         ~attribute:"__init__" )
   with
@@ -1802,9 +1794,7 @@ let resolve_recognized_callees
     when Set.mem Recognized.allowlisted_callable_class_decorators name ->
       (* Because of the special class, we don't get a bound method & lose the self argument for
          non-classmethod LRU cache wrappers. Reconstruct self in this case. *)
-      CallResolution.resolve_ignoring_errors
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        base
+      CallResolution.resolve_ignoring_errors ~pyre_in_context base
       |> fun implementing_class ->
       resolve_callee_from_defining_expression
         ~debug
@@ -1931,11 +1921,7 @@ let resolve_callee_ignoring_decorators
     | Expression.Name (Name.Attribute { base; attribute; _ }) -> (
         (* Resolve `base.attribute` by looking up the type of `base` or the types of its parent
            classes in the Method Resolution Order. *)
-        match
-          CallResolution.resolve_ignoring_errors
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-            base
-        with
+        match CallResolution.resolve_ignoring_errors ~pyre_in_context base with
         (* The base expression is a class. *)
         | Type.Parametric { name = "type"; parameters = [Single (Type.Primitive class_name)] }
         (* The base expression is a class that has type parameters, such as `class A(Generic[T])`
@@ -2027,13 +2013,7 @@ let get_defining_attributes ~pyre_in_context ~base_annotation ~attribute =
     | Type.Union annotations
     | Type.Variable { Type.Variable.Unary.constraints = Type.Variable.Explicit annotations; _ } ->
         List.concat_map annotations ~f:get_defining_parents
-    | _ ->
-        [
-          CallResolution.defining_attribute
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-            annotation
-            attribute;
-        ]
+    | _ -> [CallResolution.defining_attribute ~pyre_in_context annotation attribute]
   in
   base_annotation |> strip_meta |> strip_optional |> get_defining_parents
 
@@ -2101,12 +2081,7 @@ let as_identifier_reference ~define ~pyre_in_context expression =
       let reference = Reference.create identifier in
       if PyrePysaApi.InContext.is_global pyre_in_context ~reference then
         Some (IdentifierCallees.Global (Reference.delocalize reference))
-      else if
-        CallResolution.is_nonlocal
-          ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-          ~define
-          reference
-      then
+      else if CallResolution.is_nonlocal ~pyre_in_context ~define reference then
         Some (IdentifierCallees.Nonlocal (Reference.delocalize reference))
       else
         None
@@ -2271,11 +2246,7 @@ struct
   let attribute_targets = Context.attribute_targets
 
   let resolve_regular_callees ~pyre_in_context ~override_graph ~call_indexer ~return_type ~callee =
-    let callee_type =
-      CallResolution.resolve_ignoring_errors
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        callee
-    in
+    let callee_type = CallResolution.resolve_ignoring_errors ~pyre_in_context callee in
     log
       "Checking if `%a` is a callable, resolved type is `%a`"
       Expression.pp
@@ -2342,8 +2313,7 @@ struct
           lazy
             (Expression.Call { callee = argument; arguments = [] }
             |> Node.create_with_default_location
-            |> CallResolution.resolve_ignoring_untracked
-                 ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context))
+            |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
         in
         match
           ( resolve_regular_callees
@@ -2370,8 +2340,7 @@ struct
       lazy
         (Expression.Call call
         |> Node.create_with_default_location
-        |> CallResolution.resolve_ignoring_untracked
-             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context))
+        |> CallResolution.resolve_ignoring_untracked ~pyre_in_context)
     in
     let regular_callees =
       resolve_regular_callees ~pyre_in_context ~override_graph ~call_indexer ~return_type ~callee
@@ -2389,11 +2358,7 @@ struct
       ~special
       ~setter
     =
-    let base_annotation =
-      CallResolution.resolve_ignoring_errors
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        base
-    in
+    let base_annotation = CallResolution.resolve_ignoring_errors ~pyre_in_context base in
 
     log
       "Checking if `%s` is an attribute, property or global variable. Resolved type for base `%a` \

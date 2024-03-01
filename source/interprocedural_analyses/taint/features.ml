@@ -458,8 +458,7 @@ module ViaFeature = struct
   let via_type_of_breadcrumb ?tag ~pyre_in_context ~argument () =
     let feature =
       argument
-      >>| Interprocedural.CallResolution.resolve_ignoring_untracked
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+      >>| Interprocedural.CallResolution.resolve_ignoring_untracked ~pyre_in_context
       >>| Type.weaken_literals
       |> Option.value ~default:Type.Top
       |> Type.show

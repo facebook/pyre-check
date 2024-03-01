@@ -1562,7 +1562,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           } )
         when is_constructor ()
              && Interprocedural.CallResolution.is_super
-                  ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+                  ~pyre_in_context
                   ~define:FunctionContext.definition
                   base ->
           Some self_parameter
@@ -2263,10 +2263,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             Location.WithModule.pp
             location
             (Transform.sanitize_expression expression |> Expression.show)
-            (CallResolution.resolve_ignoring_untracked
-               ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-               expression
-            |> Type.show);
+            (CallResolution.resolve_ignoring_untracked ~pyre_in_context expression |> Type.show);
           ForwardState.Tree.bottom, state
       | _ ->
           apply_callees

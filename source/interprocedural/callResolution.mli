@@ -12,40 +12,51 @@ open Analysis
 val extract_constant_name : Expression.t -> string option
 
 (* Evaluates to whether the provided expression is a superclass of define. *)
-val is_super : resolution:Resolution.t -> define:Statement.Define.t Node.t -> Expression.t -> bool
+val is_super
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  define:Statement.Define.t Node.t ->
+  Expression.t ->
+  bool
 
 (* Evaluate to whether a variable is nonlocal to a given define *)
-val is_nonlocal : resolution:Resolution.t -> define:Reference.t -> Reference.t -> bool
+val is_nonlocal
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  define:Reference.t ->
+  Reference.t ->
+  bool
 
 (* Check whether `successor` extends `predecessor`.
  * Returns false on untracked types.
  * Returns `reflexive` if `predecessor` and `successor` are equal. *)
 val has_transitive_successor_ignoring_untracked
-  :  GlobalResolution.t ->
+  :  pyre_api:PyrePysaApi.ReadOnly.t ->
   reflexive:bool ->
   predecessor:string ->
   successor:string ->
   bool
 
 (* Resolve an expression into a type. Untracked types are resolved into `Any`. *)
-val resolve_ignoring_untracked : resolution:Resolution.t -> Ast.Expression.t -> Type.t
+val resolve_ignoring_untracked
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
+  Ast.Expression.t ->
+  Type.t
 
 (* Resolve an attribute access into a type. Untracked types are resolved into `Any`. *)
 val resolve_attribute_access_ignoring_untracked
-  :  resolution:Resolution.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   base_type:Type.t ->
   attribute:string ->
   Type.t
 
 val defining_attribute
-  :  resolution:Resolution.t ->
+  :  pyre_in_context:PyrePysaApi.InContext.t ->
   Type.t ->
   string ->
   AnnotatedAttribute.instantiated option
 
 (* Resolve an expression into a type, ignoring
  * errors related to accessing `None`, `ReadOnly`, and bound `TypeVar`s. *)
-val resolve_ignoring_errors : resolution:Resolution.t -> Ast.Expression.t -> Type.t
+val resolve_ignoring_errors : pyre_in_context:PyrePysaApi.InContext.t -> Ast.Expression.t -> Type.t
 
 val strip_optional : Type.t -> Type.t
 

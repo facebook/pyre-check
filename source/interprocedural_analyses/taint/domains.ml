@@ -1471,9 +1471,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
         (* Add scalar breadcrumbs only for variables, for performance reasons *)
         let type_breadcrumbs =
           let type_ =
-            Interprocedural.CallResolution.resolve_ignoring_untracked
-              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-              expression
+            Interprocedural.CallResolution.resolve_ignoring_untracked ~pyre_in_context expression
           in
           Features.type_breadcrumbs_from_annotation
             ~pyre_api:(PyrePysaApi.InContext.pyre_api pyre_in_context)
