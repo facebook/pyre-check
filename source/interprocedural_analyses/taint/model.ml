@@ -31,7 +31,6 @@
 
 open Core
 open Pyre
-open Analysis
 open Interprocedural
 open Domains
 

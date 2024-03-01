@@ -38,6 +38,7 @@
 open Core
 open Ast
 open Interprocedural
+module PyrePysaApi = Analysis.PyrePysaApi
 
 let location_to_json
     {
@@ -519,7 +520,7 @@ module type TAINT_DOMAIN = sig
 
   (* Add trace info at call-site *)
   val apply_call
-    :  resolution:Analysis.Resolution.t ->
+    :  pyre_in_context:PyrePysaApi.InContext.t ->
     location:Location.WithModule.t ->
     callee:Target.t option ->
     arguments:Ast.Expression.Call.Argument.t list ->
@@ -1119,7 +1120,7 @@ end = struct
 
 
   let apply_call
-      ~resolution
+      ~pyre_in_context
       ~location
       ~callee
       ~arguments
@@ -1148,7 +1149,10 @@ end = struct
           ~f:Features.ViaFeatureSet.add
           ~init:Features.ViaFeatureSet.bottom
           local_taint
-        |> Features.expand_via_features ~resolution ~callees ~arguments
+        |> Features.expand_via_features
+             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+             ~callees
+             ~arguments
       in
       let local_breadcrumbs = LocalTaintDomain.get LocalTaintDomain.Slots.Breadcrumb local_taint in
       let local_first_indices =
@@ -1378,7 +1382,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
   include T
 
   let apply_call
-      ~resolution
+      ~pyre_in_context
       ~location
       ~callee
       ~arguments
@@ -1391,7 +1395,7 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
     let transform_path (path, tip) =
       ( path,
         Taint.apply_call
-          ~resolution
+          ~pyre_in_context
           ~location
           ~callee
           ~arguments
@@ -1463,17 +1467,19 @@ module MakeTaintTree (Taint : TAINT_DOMAIN) () = struct
       transform Taint.Self Map ~f:(Taint.add_local_breadcrumbs ~add_on_tito breadcrumbs) taint_tree
 
 
-  let add_local_type_breadcrumbs ~resolution ~expression taint =
+  let add_local_type_breadcrumbs ~pyre_in_context ~expression taint =
     let open Ast in
     match expression.Node.value with
     | Expression.Expression.Name (Expression.Name.Identifier _) ->
         (* Add scalar breadcrumbs only for variables, for performance reasons *)
         let type_breadcrumbs =
           let type_ =
-            Interprocedural.CallResolution.resolve_ignoring_untracked ~resolution expression
+            Interprocedural.CallResolution.resolve_ignoring_untracked
+              ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+              expression
           in
           Features.type_breadcrumbs_from_annotation
-            ~resolution:(Analysis.Resolution.global_resolution resolution)
+            ~resolution:(PyrePysaApi.InContext.global_resolution pyre_in_context)
             (Some type_)
         in
         add_local_breadcrumbs type_breadcrumbs taint

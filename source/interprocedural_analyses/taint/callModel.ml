@@ -301,7 +301,7 @@ let sink_trees_of_argument
     let sink_tree =
       BackwardState.read ~transform_non_leaves ~root ~path:[] backward.sink_taint
       |> BackwardState.Tree.apply_call
-           ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
+           ~pyre_in_context
            ~location
            ~callee:(Some target)
            ~arguments
@@ -437,7 +437,7 @@ let return_sink ~pyre_in_context ~location ~callee ~sink_model =
   let taint =
     BackwardState.read ~root:AccessPath.Root.LocalResult ~path:[] sink_model
     |> BackwardState.Tree.apply_call
-         ~resolution:(Analysis.PyrePysaApi.InContext.resolution pyre_in_context)
+         ~pyre_in_context
          ~location
          ~callee:(Some callee)
            (* When the source and sink meet at the return statement, we want the leaf callable to be

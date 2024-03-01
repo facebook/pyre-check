@@ -333,6 +333,8 @@ module InContext = struct
 
   let resolution { resolution; _ } = resolution
 
+  let global_resolution pyre_in_context = pyre_api pyre_in_context |> ReadOnly.global_resolution
+
   let resolve_assignment { pyre_api; resolution } assign =
     { pyre_api; resolution = Resolution.resolve_assignment resolution assign }
 

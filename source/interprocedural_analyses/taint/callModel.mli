@@ -7,7 +7,6 @@
 
 open Core
 open Ast
-open Analysis
 open Interprocedural
 open Domains
 

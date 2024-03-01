@@ -14,15 +14,8 @@ open Test
 open Analysis
 
 let test_partition_call_map context =
-  let global_resolution =
-    ScratchProject.setup ~context [] |> ScratchProject.build_global_resolution
-  in
-  let resolution =
-    TypeCheck.resolution
-      global_resolution
-      (* TODO(T65923817): Eliminate the need of creating a dummy context here *)
-      (module TypeCheck.DummyContext)
-  in
+  let pyre_api = ScratchProject.setup ~context [] |> ScratchProject.pyre_pysa_read_only_api in
+  let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
   let taint =
     ForwardTaint.singleton CallInfo.declaration (Sources.NamedSource "UserControlled") Frame.initial
   in
@@ -32,7 +25,7 @@ let test_partition_call_map context =
   in
   let call_taint1 =
     ForwardTaint.apply_call
-      ~resolution
+      ~pyre_in_context
       ~location:Location.WithModule.any
       ~callee
       ~arguments:[]
@@ -45,7 +38,7 @@ let test_partition_call_map context =
   in
   let call_taint2 =
     ForwardTaint.apply_call
-      ~resolution
+      ~pyre_in_context
       ~location:Location.WithModule.any
       ~callee
       ~arguments:[]

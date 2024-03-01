@@ -29,7 +29,6 @@
  *)
 
 open Core
-open Analysis
 open Ast
 open Expression
 open Pyre
@@ -2210,10 +2209,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_comprehension ~pyre_in_context taint comprehension state
     | Name (Name.Identifier identifier) ->
         let taint =
-          BackwardState.Tree.add_local_type_breadcrumbs
-            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-            ~expression
-            taint
+          BackwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression taint
         in
         store_taint ~weak:true ~root:(AccessPath.Root.Variable identifier) ~path:[] taint state
     | Name (Name.Attribute { base; attribute = "__dict__"; _ }) ->
@@ -2355,9 +2351,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       compute_assignment_taint ~pyre_in_context target state
       |> fst
       |> read_tree fields
-      |> BackwardState.Tree.add_local_type_breadcrumbs
-           ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-           ~expression:target
+      |> BackwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression:target
     in
     let state =
       let rec clear_taint state target =

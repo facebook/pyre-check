@@ -12,7 +12,6 @@
 
 open Core
 open Ast
-open Analysis
 open Expression
 open Pyre
 open Domains
@@ -71,7 +70,7 @@ let get_source { models; pyre_in_context; location; interval } =
     =
     ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
     |> ForwardState.Tree.apply_call
-         ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+         ~pyre_in_context
          ~location
          ~callee:(Some target)
          ~arguments:[]
@@ -95,7 +94,7 @@ let get_sinks { models; pyre_in_context; location; interval } =
     let sink_tree =
       BackwardState.read ~root:global_root ~path:[] sink_taint
       |> BackwardState.Tree.apply_call
-           ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+           ~pyre_in_context
            ~location
            ~callee:(Some target)
            ~arguments:[]

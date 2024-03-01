@@ -689,7 +689,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       if is_result_used then
         ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
         |> ForwardState.Tree.apply_call
-             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+             ~pyre_in_context
              ~location:
                (Location.with_module ~module_reference:FunctionContext.qualifier call_location)
              ~callee:(Some target)
@@ -2443,7 +2443,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let string_combine_partial_sink_tree =
       BackwardState.Tree.apply_call
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+        ~pyre_in_context
         ~location:(Location.with_module ~module_reference:FunctionContext.qualifier location)
         ~callee
         ~arguments:[]
@@ -2675,9 +2675,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           let local_taint =
             let root = AccessPath.Root.Variable identifier in
             ForwardState.read ~root ~path:[] state.taint
-            |> ForwardState.Tree.add_local_type_breadcrumbs
-                 ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-                 ~expression
+            |> ForwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression
           in
           ( local_taint
             |> ForwardState.Tree.join global_taint
@@ -2786,10 +2784,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       state
     =
     let taint =
-      ForwardState.Tree.add_local_type_breadcrumbs
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        ~expression:target
-        taint
+      ForwardState.Tree.add_local_type_breadcrumbs ~pyre_in_context ~expression:target taint
     in
     match value with
     | Starred (Once target | Twice target) ->
@@ -3037,7 +3032,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
         ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
         |> ForwardState.Tree.apply_call
-             ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
+             ~pyre_in_context
              ~location
              ~callee:(Some FunctionContext.callable)
                (* Provide leaf callable names when sources originate from parameters. *)
