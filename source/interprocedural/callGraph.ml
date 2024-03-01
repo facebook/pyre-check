@@ -1754,9 +1754,7 @@ let redirect_special_calls ~pyre_in_context call =
   | None ->
       (* Rewrite certain calls using the same logic used in the type checker.
        * This should be sound for most analyses. *)
-      AnnotatedCall.redirect_special_calls
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        call
+      PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
 
 
 let resolve_recognized_callees
@@ -2520,9 +2518,7 @@ struct
                     let { CallCallees.call_targets; _ } =
                       let callee =
                         let method_name =
-                          AnnotatedCall.resolve_stringify_call
-                            ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-                            expression
+                          PyrePysaApi.InContext.resolve_stringify_call pyre_in_context expression
                         in
                         {
                           Node.value =

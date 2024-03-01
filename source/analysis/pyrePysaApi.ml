@@ -249,6 +249,8 @@ module ReadOnly = struct
 
   let successors api = global_resolution api |> GlobalResolution.successors
 
+  let location_of_global api = global_resolution api |> GlobalResolution.location_of_global
+
   let get_function_definition api =
     global_resolution api |> GlobalResolution.get_function_definition
 
@@ -366,6 +368,10 @@ module InContext = struct
   let resolve_attribute_access { resolution; _ } = Resolution.resolve_attribute_access resolution
 
   let fallback_attribute { resolution; _ } = Resolution.fallback_attribute ~resolution
+
+  let redirect_special_calls { resolution; _ } = AnnotatedCall.redirect_special_calls ~resolution
+
+  let resolve_stringify_call { resolution; _ } = AnnotatedCall.resolve_stringify_call ~resolution
 
   let resolve_generators pyre_in_context generators =
     let resolve_generator pyre_in_context generator =

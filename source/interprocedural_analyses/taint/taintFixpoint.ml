@@ -205,13 +205,12 @@ module Analysis = struct
     let open Analysis in
     let open Ast in
     let module_reference =
-      let global_resolution = PyrePysaApi.ReadOnly.global_resolution pyre_api in
       (* Pysa inlines decorators when a function is decorated. However, we want issues and models to
          point to the lines in the module where the decorator was defined, not the module where it
          was inlined. So, look up the originating module, if any, and use that as the module
          qualifier. *)
       DecoratorPreprocessing.original_name_from_inlined_name define_qualifier
-      >>= GlobalResolution.location_of_global global_resolution
+      >>= PyrePysaApi.ReadOnly.location_of_global pyre_api
       >>| fun { Location.WithModule.module_reference; _ } -> module_reference
     in
     let qualifier = Option.value ~default:qualifier module_reference in
