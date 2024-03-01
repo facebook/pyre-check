@@ -15,7 +15,9 @@ import json
 
 import logging
 import os
+import shutil
 import subprocess
+import sys
 import tempfile
 import traceback
 from dataclasses import dataclass
@@ -199,6 +201,35 @@ class OtherStartFailure:
     detail: str
 
 
+def ensure_and_get_systemd_binary() -> Optional[str]:
+    if sys.platform == "linux":
+        systemd_binary = shutil.which("systemd-run")
+        if systemd_binary is not None:
+            try:
+                #  Sometimes systemd-run is available but we can't use it. For example, the systemd might not have
+                #  a proper working user session, so we might not be able to run commands via systemd-run as a
+                #  user process. Notably, `--user --scope` is broken under cgroupv2 in systemd < 238, and exits
+                #  code 1 (https://github.com/facebook/flow/issues/8012).
+                result = subprocess.run(
+                    [
+                        "timeout",
+                        "1",
+                        systemd_binary,
+                        "--quiet",
+                        "--user",
+                        "--scope",
+                        "--",
+                        "true",
+                    ]
+                )
+                if result.returncode == 0:
+                    return systemd_binary
+            except Exception:
+                return None
+
+    return None
+
+
 @dataclass(frozen=True)
 class ServerStartCommand:
     binary_location: str
@@ -215,13 +246,32 @@ def get_server_start_command(
         if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
         else "code-navigation"
     )
-    return ServerStartCommand(
-        str(binary_location),
-        [
-            server_subcommand,
-            str(argument_file_path),
-        ],
-    )
+    systemd_binary = ensure_and_get_systemd_binary()
+
+    if systemd_binary is not None:
+        LOG.info(f"Using systemd binary: {systemd_binary} for {flavor}")
+        return ServerStartCommand(
+            systemd_binary,
+            [
+                "--quiet",
+                "--user",
+                "--scope",
+                "--slice",
+                f"pyre-{flavor.value}.slice",
+                "--",
+                str(binary_location),
+                server_subcommand,
+                str(argument_file_path),
+            ],
+        )
+    else:
+        return ServerStartCommand(
+            str(binary_location),
+            [
+                server_subcommand,
+                str(argument_file_path),
+            ],
+        )
 
 
 async def async_start_pyre_server(
