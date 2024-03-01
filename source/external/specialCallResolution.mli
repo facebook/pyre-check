@@ -7,6 +7,9 @@
 
 open Ast
 
-val redirect : resolution:Analysis.Resolution.t -> Expression.Call.t -> Expression.Call.t option
+val redirect
+  :  pyre_in_context:Analysis.PyrePysaApi.InContext.t ->
+  Expression.Call.t ->
+  Expression.Call.t option
 
 val recognized_callable_target_types : Type.Set.t

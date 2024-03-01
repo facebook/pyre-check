@@ -1745,10 +1745,7 @@ let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
           arguments =
             List.map process_arguments ~f:(fun value -> { Call.Argument.value; name = None });
         }
-  | _ ->
-      SpecialCallResolution.redirect
-        ~resolution:(PyrePysaApi.InContext.resolution pyre_in_context)
-        { Call.callee; arguments }
+  | _ -> SpecialCallResolution.redirect ~pyre_in_context { Call.callee; arguments }
 
 
 let redirect_special_calls ~pyre_in_context call =
