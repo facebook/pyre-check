@@ -3080,7 +3080,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         let pyre_in_context =
           PyrePysaApi.InContext.create_at_statement_key
             pyre_api
-            ~definition:FunctionContext.definition
+            ~define:(Ast.Node.value FunctionContext.definition)
             ~statement_key
         in
         analyze_statement ~pyre_in_context statement state)

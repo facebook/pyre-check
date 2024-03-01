@@ -310,10 +310,8 @@ module InContext = struct
     { pyre_api; resolution = ReadOnly.contextless_resolution pyre_api }
 
 
-  let create_at_statement_key pyre_api ~definition ~statement_key =
-    let { Ast.Node.value = { Ast.Statement.Define.signature = { name; parent; _ }; _ }; _ } =
-      definition
-    in
+  let create_at_statement_key pyre_api ~define ~statement_key =
+    let { Ast.Statement.Define.signature = { name; parent; _ }; _ } = define in
     let local_annotations =
       TypeEnvironment.ReadOnly.get_local_annotations (ReadOnly.type_environment pyre_api) name
     in
@@ -334,6 +332,8 @@ module InContext = struct
   let resolution { resolution; _ } = resolution
 
   let global_resolution pyre_in_context = pyre_api pyre_in_context |> ReadOnly.global_resolution
+
+  let is_global { resolution; _ } = Resolution.is_global resolution
 
   let resolve_reference { resolution; _ } = Resolution.resolve_reference resolution
 
