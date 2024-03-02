@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 # flake8: noqa
 # VENDORED FROM Instagram/LibCST/libcst/codemod/visitors/_apply_type_annotations.py ON COMMIT f7417febe71c1fa8581b40dbf456d7d7d6025e62
 

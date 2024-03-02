@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module provides the logic for the `pyre rage` command, which collects
 information that may be useful for debugging problems with Pyre (e.g. logs

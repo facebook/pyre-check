@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains logic for querying a socket connection to a
 Pyre code-navigation daemon. See ./daemon_launcher.py for how to

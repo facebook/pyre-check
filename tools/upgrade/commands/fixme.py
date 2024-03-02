@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Fixes errors provided through stdin for a whole project using Pyre. This
 differs from fixme_single and fixme_all in the sense that this does not take

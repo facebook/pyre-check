@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module describes all of the flags that control behavior of a Pyre
 language server - for example, the location of the backend binary and

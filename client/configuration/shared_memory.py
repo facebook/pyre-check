@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module specifies how one can tune the backend's shared memory settings
 in a .pyre_configuration file. This is needed because for large projects we

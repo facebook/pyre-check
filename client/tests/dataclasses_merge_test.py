@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 # pyre-ignore-all-errors[16]: Pyre does not understand `dataclass_merge`.
 
 from dataclasses import dataclass, field
