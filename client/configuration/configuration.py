@@ -425,9 +425,9 @@ class PartialConfiguration:
                 only_check_paths=ensure_string_list(
                     configuration_json, "only_check_paths"
                 ),
-                dot_pyre_directory=Path(dot_pyre_directory)
-                if dot_pyre_directory is not None
-                else None,
+                dot_pyre_directory=(
+                    Path(dot_pyre_directory) if dot_pyre_directory is not None else None
+                ),
                 enable_readonly_analysis=ensure_option_type(
                     configuration_json, "enable_readonly_analysis", bool
                 ),
@@ -517,18 +517,22 @@ class PartialConfiguration:
             )
         return dataclasses.replace(
             self,
-            binary=expand_relative_path(root, self.binary)
-            if self.binary is not None
-            else self.binary,
+            binary=(
+                expand_relative_path(root, self.binary)
+                if self.binary is not None
+                else self.binary
+            ),
             only_check_paths=[
                 expand_relative_path(root, path) for path in self.only_check_paths
             ],
             ignore_all_errors=[
                 expand_relative_path(root, path) for path in self.ignore_all_errors
             ],
-            logger=expand_relative_path(root, self.logger)
-            if self.logger is not None
-            else self.logger,
+            logger=(
+                expand_relative_path(root, self.logger)
+                if self.logger is not None
+                else self.logger
+            ),
             other_critical_files=[
                 expand_relative_path(root, path) for path in self.other_critical_files
             ],
@@ -537,17 +541,19 @@ class PartialConfiguration:
                 path.expand_relative_root(root) for path in self.optional_search_path
             ],
             site_package_search_strategy=self.site_package_search_strategy,
-            source_directories=[
-                path.expand_relative_root(root) for path in self.source_directories
-            ]
-            if self.source_directories is not None
-            else self.source_directories,
+            source_directories=(
+                [path.expand_relative_root(root) for path in self.source_directories]
+                if self.source_directories is not None
+                else self.source_directories
+            ),
             taint_models_path=[
                 expand_relative_path(root, path) for path in self.taint_models_path
             ],
-            typeshed=expand_relative_path(root, self.typeshed)
-            if self.typeshed is not None
-            else self.typeshed,
+            typeshed=(
+                expand_relative_path(root, self.typeshed)
+                if self.typeshed is not None
+                else self.typeshed
+            ),
             unwatched_dependency=unwatched_dependency,
         )
 

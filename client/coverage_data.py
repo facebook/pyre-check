@@ -208,9 +208,11 @@ class AnnotationContext:
 
     def get_function_identifier(self, node: libcst.FunctionDef) -> FunctionIdentifier:
         return FunctionIdentifier(
-            parent=".".join(self.class_name_stack)
-            if len(self.class_name_stack) > 0
-            else None,
+            parent=(
+                ".".join(self.class_name_stack)
+                if len(self.class_name_stack) > 0
+                else None
+            ),
             name=node.name.value,
         )
 
@@ -595,9 +597,11 @@ def find_module_paths(
     return sorted(
         set(
             itertools.chain.from_iterable(
-                _get_paths_for_file(path)
-                if not path.is_dir()
-                else _get_paths_in_directory(path)
+                (
+                    _get_paths_for_file(path)
+                    if not path.is_dir()
+                    else _get_paths_in_directory(path)
+                )
                 for path in paths
             )
         )

@@ -273,9 +273,9 @@ def create_analyze_arguments(
         ),
         dump_call_graph=analyze_arguments.dump_call_graph,
         dump_model_query_results=analyze_arguments.dump_model_query_results,
-        find_missing_flows=str(find_missing_flows.value)
-        if find_missing_flows is not None
-        else None,
+        find_missing_flows=(
+            str(find_missing_flows.value) if find_missing_flows is not None else None
+        ),
         inline_decorators=analyze_arguments.inline_decorators,
         maximum_model_source_tree_width=analyze_arguments.maximum_model_source_tree_width,
         maximum_model_sink_tree_width=analyze_arguments.maximum_model_sink_tree_width,

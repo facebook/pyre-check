@@ -161,12 +161,14 @@ class Pysa:
         pyre_configuration = json.dumps(
             {
                 "source_directories": ["."],
-                "taint_models_path": [
-                    str(self._stubs),
-                    os.environ["PYSA_PLAYGROUND_TAINT_MODELS"],
-                ]
-                if use_builtin_pysa_models
-                else str(self._stubs),
+                "taint_models_path": (
+                    [
+                        str(self._stubs),
+                        os.environ["PYSA_PLAYGROUND_TAINT_MODELS"],
+                    ]
+                    if use_builtin_pysa_models
+                    else str(self._stubs)
+                ),
                 "search_path": [str(self._stubs), os.environ["PYSA_PLAYGROUND_STUBS"]],
             }
         )

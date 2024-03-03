@@ -385,9 +385,9 @@ def pyre(
         save_initial_state_to=save_initial_state_to,
         load_initial_state_from=load_initial_state_from,
         changed_files_path=changed_files_path,
-        dot_pyre_directory=Path(dot_pyre_directory)
-        if dot_pyre_directory is not None
-        else None,
+        dot_pyre_directory=(
+            Path(dot_pyre_directory) if dot_pyre_directory is not None else None
+        ),
         isolation_prefix=None,
         python_version=python_version,
         shared_memory_heap_size=shared_memory_heap_size,
@@ -637,9 +637,11 @@ def analyze(
             dump_model_query_results=dump_model_query_results,
             enable_memory_profiling=command_argument.enable_memory_profiling,
             enable_profiling=command_argument.enable_profiling,
-            find_missing_flows=command_arguments.MissingFlowsKind(find_missing_flows)
-            if find_missing_flows is not None
-            else None,
+            find_missing_flows=(
+                command_arguments.MissingFlowsKind(find_missing_flows)
+                if find_missing_flows is not None
+                else None
+            ),
             inline_decorators=inline_decorators,
             log_identifier=command_argument.log_identifier,
             maximum_model_source_tree_width=maximum_model_source_tree_width,
@@ -663,9 +665,11 @@ def analyze(
             sink=list(sink),
             transform=list(transform),
             save_results_to=save_results_to,
-            output_format=command_arguments.TaintOutputFormat(output_format)
-            if output_format is not None
-            else None,
+            output_format=(
+                command_arguments.TaintOutputFormat(output_format)
+                if output_format is not None
+                else None
+            ),
             sequential=command_argument.sequential,
             taint_models_path=list(taint_models_path),
             use_cache=use_cache,

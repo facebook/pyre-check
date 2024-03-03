@@ -366,16 +366,20 @@ def create_server_arguments(
         strict=configuration.is_strict(),
         show_error_traces=start_arguments.show_error_traces,
         additional_logging_sections=additional_logging_sections,
-        watchman_root=None
-        if start_arguments.no_watchman
-        else backend_arguments.find_watchman_root(global_root),
+        watchman_root=(
+            None
+            if start_arguments.no_watchman
+            else backend_arguments.find_watchman_root(global_root)
+        ),
         taint_models_path=configuration.get_taint_models_path(),
         store_type_check_resolution=start_arguments.store_type_check_resolution,
         critical_files=get_critical_files(configuration, start_arguments.flavor),
-        saved_state_action=None
-        if start_arguments.no_saved_state
-        else get_saved_state_action(
-            start_arguments, configuration, relative_local_root=relative_local_root
+        saved_state_action=(
+            None
+            if start_arguments.no_saved_state
+            else get_saved_state_action(
+                start_arguments, configuration, relative_local_root=relative_local_root
+            )
         ),
         skip_initial_type_check=start_arguments.skip_initial_type_check,
         use_lazy_module_tracking=start_arguments.use_lazy_module_tracking,

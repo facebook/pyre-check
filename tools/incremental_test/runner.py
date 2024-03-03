@@ -165,20 +165,17 @@ class PyreRunner:
     @overload
     def run_profile(
         self, output_kind: Literal["incremental_updates"]
-    ) -> List[Mapping[str, int]]:
-        ...
+    ) -> List[Mapping[str, int]]: ...
 
     @overload  # noqa T20027161
     def run_profile(
         self, output_kind: Literal["cold_start_phases"]
-    ) -> Mapping[str, int]:
-        ...
+    ) -> Mapping[str, int]: ...
 
     @overload  # noqa T20027161
     def run_profile(
         self, output_kind: Literal["total_shared_memory_size_over_time"]
-    ) -> List[Tuple[str, int]]:
-        ...
+    ) -> List[Tuple[str, int]]: ...
 
     def run_profile(self, output_kind: str) -> object:  # noqa T20027161
         pyre_profile_command = (

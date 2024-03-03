@@ -30,7 +30,10 @@ class CodeNavConnection:
 
     async def superclasses(
         self, module_name: str, class_name: str
-    ) -> code_navigation_request.ErrorResponse | code_navigation_request.SuperclassesResponse:
+    ) -> (
+        code_navigation_request.ErrorResponse
+        | code_navigation_request.SuperclassesResponse
+    ):
         class_expression = code_navigation_request.ClassExpression(
             module=module_name,
             qualified_name=class_name,

@@ -312,9 +312,9 @@ def get_source_path(
     buck_mode = configuration.get_buck_mode()
 
     if source_directories and targets is None:
-        elements: Sequence[
-            search_path.Element
-        ] = configuration.get_existent_source_directories()
+        elements: Sequence[search_path.Element] = (
+            configuration.get_existent_source_directories()
+        )
         if len(elements) == 0:
             LOG.warning("Pyre did not find an existent source directory.")
 
@@ -354,9 +354,9 @@ def get_source_path(
             artifact_root=configuration.get_dot_pyre_directory() / artifact_root_name,
             checked_directory=search_base,
             targets=targets,
-            targets_fallback_sources=None
-            if len(source_directories) == 0
-            else source_directories,
+            targets_fallback_sources=(
+                None if len(source_directories) == 0 else source_directories
+            ),
             mode=buck_mode,
             isolation_prefix=configuration.get_buck_isolation_prefix(),
             bxl_builder=configuration.get_buck_bxl_builder(),
@@ -409,8 +409,7 @@ def get_profiling_log_path(log_directory: Path) -> Path:
 
 
 class SerializableArguments(Protocol):
-    def serialize(self) -> Dict[str, Any]:
-        ...
+    def serialize(self) -> Dict[str, Any]: ...
 
 
 def _write_argument_file(

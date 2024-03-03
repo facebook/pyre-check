@@ -421,9 +421,11 @@ class PatchTransform(libcst.codemod.ContextAwareTransformer):
             )
         else:
             inner_body_as_base_statements = [
-                statement
-                if isinstance(statement, libcst.BaseStatement)
-                else libcst.SimpleStatementLine(body=[statement])
+                (
+                    statement
+                    if isinstance(statement, libcst.BaseStatement)
+                    else libcst.SimpleStatementLine(body=[statement])
+                )
                 for statement in outer_body.body
             ]
             new_outer_body = libcst.IndentedBlock(

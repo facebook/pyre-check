@@ -498,16 +498,20 @@ class ModuleAnnotations:
                 )
                 for global_ in infer_output.global_annotations
             ],
-            attributes=[
-                AttributeAnnotation(
-                    parent=attribute.parent,
-                    name=attribute.name,
-                    annotation=type_annotation(attribute.annotation, attribute.parent),
-                )
-                for attribute in infer_output.attribute_annotations
-            ]
-            if options.annotate_attributes
-            else [],
+            attributes=(
+                [
+                    AttributeAnnotation(
+                        parent=attribute.parent,
+                        name=attribute.name,
+                        annotation=type_annotation(
+                            attribute.annotation, attribute.parent
+                        ),
+                    )
+                    for attribute in infer_output.attribute_annotations
+                ]
+                if options.annotate_attributes
+                else []
+            ),
             functions=[
                 FunctionAnnotation(
                     name=define.name,

@@ -174,9 +174,9 @@ class TaintConfigurationError:
                 stop_line = None
                 stop_column = None
             return TaintConfigurationError(
-                path=Path(error_json["path"])
-                if error_json["path"] is not None
-                else None,
+                path=(
+                    Path(error_json["path"]) if error_json["path"] is not None else None
+                ),
                 description=error_json["description"],
                 code=error_json["code"],
                 start_line=start_line,
@@ -213,18 +213,22 @@ class TaintConfigurationError:
     def to_text(self) -> str:
         path = click.style(str(self.path or "?"), fg="red")
         location = click.style(
-            f":{self.start_line}:{self.start_column}"
-            if (self.start_line is not None) and (self.start_column is not None)
-            else "",
+            (
+                f":{self.start_line}:{self.start_column}"
+                if (self.start_line is not None) and (self.start_column is not None)
+                else ""
+            ),
             fg="red",
         )
         return f"{path}{location} {self.description}"
 
     def to_sarif(self) -> Dict[str, Any]:
         return {
-            "ruleId": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
-            if self.code is not None
-            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "ruleId": (
+                "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+                if self.code is not None
+                else "PYRE-TAINT-CONFIGURATION-ERROR-MDL"
+            ),
             "level": "error",
             "message": {"text": self.description},
             "locations": [
@@ -234,18 +238,20 @@ class TaintConfigurationError:
                             "uri": str(self.path) if self.path is not None else None,
                         },
                         "region": {
-                            "startLine": self.start_line
-                            if self.start_line is not None
-                            else 0,
-                            "startColumn": self.start_column
-                            if self.start_column is not None
-                            else 0,
-                            "endLine": self.stop_line
-                            if self.stop_line is not None
-                            else 0,
-                            "endColumn": self.stop_column
-                            if self.stop_column is not None
-                            else 1,
+                            "startLine": (
+                                self.start_line if self.start_line is not None else 0
+                            ),
+                            "startColumn": (
+                                self.start_column
+                                if self.start_column is not None
+                                else 0
+                            ),
+                            "endLine": (
+                                self.stop_line if self.stop_line is not None else 0
+                            ),
+                            "endColumn": (
+                                self.stop_column if self.stop_column is not None else 1
+                            ),
                         },
                     },
                 },
@@ -254,9 +260,11 @@ class TaintConfigurationError:
 
     def get_sarif_rule(self) -> Dict[str, Any]:
         return {
-            "id": "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
-            if self.code is not None
-            else "PYRE-TAINT-CONFIGURATION-ERROR-MDL",
+            "id": (
+                "PYRE-TAINT-CONFIGURATION-ERROR-" + str(self.code)
+                if self.code is not None
+                else "PYRE-TAINT-CONFIGURATION-ERROR-MDL"
+            ),
             "name": "TaintConfigurationError",
             "shortDescription": {"text": "Taint configuration error"},
             "helpUri": "https://www.pyre-check.org",
@@ -282,9 +290,9 @@ class ModelVerificationError:
                 column=error_json["column"],
                 stop_line=error_json["stop_line"],
                 stop_column=error_json["stop_column"],
-                path=Path(error_json["path"])
-                if error_json["path"] is not None
-                else None,
+                path=(
+                    Path(error_json["path"]) if error_json["path"] is not None else None
+                ),
                 description=error_json["description"],
                 code=error_json.get("code"),
             )
@@ -322,9 +330,11 @@ class ModelVerificationError:
 
     def to_sarif(self) -> Dict[str, Any]:
         return {
-            "ruleId": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
-            if self.code is not None
-            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
+            "ruleId": (
+                "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
+                if self.code is not None
+                else "PYRE-MODEL-VERIFICATION-ERROR-MDL"
+            ),
             "level": "error",
             "message": {"text": self.description},
             "locations": [
@@ -346,9 +356,11 @@ class ModelVerificationError:
 
     def get_sarif_rule(self) -> Dict[str, Any]:
         return {
-            "id": "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
-            if self.code is not None
-            else "PYRE-MODEL-VERIFICATION-ERROR-MDL",
+            "id": (
+                "PYRE-MODEL-VERIFICATION-ERROR-" + str(self.code)
+                if self.code is not None
+                else "PYRE-MODEL-VERIFICATION-ERROR-MDL"
+            ),
             "name": "ModelVerificationError",
             "shortDescription": {"text": "Model verification error"},
             "helpUri": "https://www.pyre-check.org",

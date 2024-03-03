@@ -128,8 +128,7 @@ def override(__f: T) -> T:
 class DecoratorFactory(Protocol):
     """Usable as a return type for simple decorator factories"""
 
-    def __call__(self, __f: Callable[_P, _R]) -> Callable[_P, _R]:
-        ...
+    def __call__(self, __f: Callable[_P, _R]) -> Callable[_P, _R]: ...
 
 
 class Add(Generic[_A, _B], int):

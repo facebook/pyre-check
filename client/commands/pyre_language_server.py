@@ -295,8 +295,7 @@ class LanguageServerDecorator(Protocol):
         self,
         f: Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]],
         /,
-    ) -> Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]:
-        ...
+    ) -> Callable[Concatenate[PyreLanguageServer, P], Coroutine[None, None, T]]: ...
 
 
 # Decorator factory for catching exceptions and logging as telemetry events.
@@ -354,9 +353,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
         if should_write_telemetry:
             parameters = dict(parameters)
-            parameters[
-                "project_identifier"
-            ] = self.server_state.server_options.project_identifier
+            parameters["project_identifier"] = (
+                self.server_state.server_options.project_identifier
+            )
             # TODO:(T165048078): remove this if we decide against pursuing global lazy type check
             parameters["enabled_features"] = {
                 "type_errors_enabled": self.get_language_server_features().type_errors.is_enabled()
@@ -402,12 +401,12 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     )
                     LOG.info(result.error_message)
                 else:
-                    self.server_state.opened_documents[
-                        document_path
-                    ] = OpenedDocumentState(
-                        code=code_changes,
-                        is_dirty=current_is_dirty_state,
-                        pyre_code_updated=True,
+                    self.server_state.opened_documents[document_path] = (
+                        OpenedDocumentState(
+                            code=code_changes,
+                            is_dirty=current_is_dirty_state,
+                            pyre_code_updated=True,
+                        )
                     )
         return update_timer.stop_in_millisecond()
 
@@ -755,9 +754,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "nonEmpty": not empty,
                 "response": raw_result,
                 "duration_ms": hover_timer.stop_in_millisecond(),
-                "query_source": result.source
-                if not isinstance(result, DaemonQueryFailure)
-                else None,
+                "query_source": (
+                    result.source
+                    if not isinstance(result, DaemonQueryFailure)
+                    else None
+                ),
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
@@ -816,9 +817,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> Optional[Exception]:
-        document_path: Optional[
-            Path
-        ] = parameters.text_document.document_uri().to_file_path()
+        document_path: Optional[Path] = (
+            parameters.text_document.document_uri().to_file_path()
+        )
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
@@ -957,9 +958,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
             {
                 "type": "LSP",
                 "operation": "symbol_search",
-                "query": query
-                if not isinstance(symbol_search_response, DaemonQueryFailure)
-                else None,
+                "query": (
+                    query
+                    if not isinstance(symbol_search_response, DaemonQueryFailure)
+                    else None
+                ),
                 "response": raw_results,
                 "response length": len_res,
                 "duration_ms": completion_timer.stop_in_millisecond(),
@@ -1427,9 +1430,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-        document_path: Optional[
-            Path
-        ] = parameters.text_document.document_uri().to_file_path()
+        document_path: Optional[Path] = (
+            parameters.text_document.document_uri().to_file_path()
+        )
         daemon_status_before = self.server_state.status_tracker.get_status()
         request_timer = timer.Timer()
         if document_path is None:

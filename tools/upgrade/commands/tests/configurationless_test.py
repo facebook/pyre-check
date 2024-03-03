@@ -74,12 +74,14 @@ class TestConfigurationless(TestCase):
             local_configuration = cls.get_configuration(
                 Path(".pyre_configuration.local"),
                 targets=["//path/to/my:target"],
-                ignore_all_errors=list(ignore_all_errors_prefixes)
-                if ignore_all_errors_prefixes is not None
-                else None,
-                exclude=list(exclude_patterns)
-                if exclude_patterns is not None
-                else None,
+                ignore_all_errors=(
+                    list(ignore_all_errors_prefixes)
+                    if ignore_all_errors_prefixes is not None
+                    else None
+                ),
+                exclude=(
+                    list(exclude_patterns) if exclude_patterns is not None else None
+                ),
             )
 
         return ConfigurationlessOptions(

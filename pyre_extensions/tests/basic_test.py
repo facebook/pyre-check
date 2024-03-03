@@ -80,16 +80,14 @@ class BasicTestCase(unittest.TestCase):
 
             class Base(ABC):
                 @abstractmethod
-                def some_method(self) -> None:
-                    ...
+                def some_method(self) -> None: ...
 
             # Python complains at runtime if a child class has a metaclass that
             # is not a strict subclass of the base metaclass.
             # There should be no such metaclass conflict when using Pyre's
             # custom Generic in a child class.
             class Child(Base, Generic[T1, T2]):
-                def some_method(self) -> None:
-                    ...
+                def some_method(self) -> None: ...
 
         try:
             if sys.version_info >= (3, 7):
@@ -170,20 +168,16 @@ class BasicTestCase(unittest.TestCase):
         from .. import override
 
         class Base:
-            def normal_method(self) -> int:
-                ...
+            def normal_method(self) -> int: ...
 
             @staticmethod
-            def static_method_good_order() -> int:
-                ...
+            def static_method_good_order() -> int: ...
 
             @staticmethod
-            def static_method_bad_order() -> int:
-                ...
+            def static_method_bad_order() -> int: ...
 
             @staticmethod
-            def decorator_with_slots() -> int:
-                ...
+            def decorator_with_slots() -> int: ...
 
         class Derived(Base):
             @override

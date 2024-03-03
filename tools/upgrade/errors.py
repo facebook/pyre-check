@@ -278,9 +278,11 @@ class Errors:
                     input,
                     _build_error_map(errors),
                     comment,
-                    max_line_length
-                    if max_line_length and max_line_length > 0
-                    else None,
+                    (
+                        max_line_length
+                        if max_line_length and max_line_length > 0
+                        else None
+                    ),
                     truncate,
                     unsafe,
                 )

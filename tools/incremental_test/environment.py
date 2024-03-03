@@ -38,8 +38,7 @@ class Environment(ABC):
     @abstractmethod
     def run(
         self, working_directory: Path, command: str, stdin: Optional[str]
-    ) -> CommandOutput:
-        ...
+    ) -> CommandOutput: ...
 
     def checked_run(
         self,
