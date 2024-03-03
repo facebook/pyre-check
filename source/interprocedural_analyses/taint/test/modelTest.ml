@@ -3629,24 +3629,27 @@ let test_parse_decorator_modes _ =
 let () =
   "taint_model"
   >::: [
+         "access_path" >:: test_access_path;
          "attach_features" >:: test_attach_features;
+         "attribute_sanitize" >:: test_attribute_sanitize;
          "class_models" >:: test_class_models;
          "cross_repository_models" >:: test_cross_repository_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
          "filter_by_rules" >:: test_filter_by_rules;
-         "filter_by_sources" >:: test_filter_by_sources;
          "filter_by_sinks" >:: test_filter_by_sinks;
-         "partial_sinks" >:: test_partial_sinks;
+         "filter_by_sources" >:: test_filter_by_sources;
          "global_sanitize" >:: test_global_sanitize;
-         "sanitize_single_trace" >:: test_sanitize_single_trace;
-         "attribute_sanitize" >:: test_attribute_sanitize;
-         "parameter_sanitize" >:: test_parameter_sanitize;
-         "return_sanitize" >:: test_return_sanitize;
-         "parameters_sanitize" >:: test_parameters_sanitize;
+         "models_with_if" >:: test_models_with_if;
          "modes" >:: test_modes;
-         "skip_inlining_decorator" >:: test_skip_inlining_decorator;
+         "parameter_sanitize" >:: test_parameter_sanitize;
+         "parameters_sanitize" >:: test_parameters_sanitize;
+         "parse_decorator_modes" >:: test_parse_decorator_modes;
+         "partial_sinks" >:: test_partial_sinks;
+         "return_sanitize" >:: test_return_sanitize;
+         "sanitize_single_trace" >:: test_sanitize_single_trace;
          "sink_breadcrumbs" >:: test_sink_breadcrumbs;
          "sink_models" >:: test_sink_models;
+         "skip_inlining_decorator" >:: test_skip_inlining_decorator;
          "source_breadcrumbs" >:: test_source_breadcrumbs;
          "source_models" >:: test_source_models;
          "taint_in_taint_out_models" >:: test_taint_in_taint_out_models;
@@ -3655,8 +3658,5 @@ let () =
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
-         "access_path" >:: test_access_path;
-         "parse_decorator_modes" >:: test_parse_decorator_modes;
-         "models_with_if" >:: test_models_with_if;
        ]
   |> Test.run
