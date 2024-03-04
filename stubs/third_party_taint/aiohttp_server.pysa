@@ -29,7 +29,7 @@ def aiohttp.web_request.Request.app(self) -> TaintSource[UserControlled, UserCon
 def aiohttp.web_request.Request.config_dict(self) -> TaintSource[UserControlled, UserControlled_Parameter]: ...
 
 # Responses
-def aiohttp.web_exceptions._HTTPMove.__init__(
+def aiohttp.web_exceptions.HTTPMove.__init__(
     self,
     location: TaintSink[Redirect, ReturnedToUser],
     *,
