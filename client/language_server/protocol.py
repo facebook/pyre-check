@@ -890,7 +890,13 @@ class DocumentFormattingParameters(json_mixins.CamlCaseAndExcludeJsonMixin):
 class DocumentFormattingResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     """describing the modification to the document to be formatted"""
 
-    list_of_edits: Optional[List[TextEdit]]
+    list_of_edits: List[TextEdit]
+
+    @staticmethod
+    def from_json_rpc_parameters(
+        parameters: json_rpc.Parameters,
+    ) -> "DocumentFormattingResponse":
+        return _parse_parameters(parameters, target=DocumentFormattingResponse)
 
 
 @dataclasses.dataclass(frozen=True)

@@ -166,6 +166,14 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
     ) -> None:
         raise NotImplementedError()
 
+    async def process_document_formatting_request(
+        self,
+        parameters: lsp.DocumentFormattingParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
     async def process_symbol_search_request(
         self,
         parameters: lsp.WorkspaceSymbolParameters,

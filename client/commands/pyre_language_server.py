@@ -273,6 +273,15 @@ class PyreLanguageServerApi(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
+    async def process_document_formatting_request(
+        self,
+        parameters: lsp.DocumentFormattingParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
     async def process_rename_request(
         self,
         parameters: lsp.RenameParameters,
@@ -971,6 +980,15 @@ class PyreLanguageServer(PyreLanguageServerApi):
             },
             activity_key,
         )
+
+    async def process_document_formatting_request(
+        self,
+        parameters: lsp.DocumentFormattingParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]] = None,
+    ) -> None:
+        LOG.info("Document formatting is not yet implemented")
+        raise NotImplementedError("Not implemented yet")
 
     async def process_completion_request(
         self,
@@ -1687,6 +1705,14 @@ class PyreLanguageServerDispatcher:
         elif request.method == "textDocument/documentSymbol":
             await self.api.process_document_symbols_request(
                 lsp.DocumentSymbolsParameters.from_json_rpc_parameters(
+                    request.extract_parameters()
+                ),
+                request.id,
+                request.activity_key,
+            )
+        elif request.method == "textDocument/formatting":
+            await self.api.process_document_formatting_request(
+                lsp.DocumentFormattingParameters.from_json_rpc_parameters(
                     request.extract_parameters()
                 ),
                 request.id,

@@ -138,6 +138,9 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         mock_references_response: Optional[List[lsp.LspLocation]] = None,
         mock_rename_response: Optional[lsp.WorkspaceEdit] = None,
         mock_symbol_search_response: Optional[querier.GetSymbolSearchResponse] = None,
+        mock_document_formatting_response: Optional[
+            querier.GetDocumentFormattingResponse
+        ] = None,
     ) -> None:
         self.requests: List[object] = []
         self.mock_type_errors = mock_type_errors
@@ -150,6 +153,7 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
         self.mock_references_response = mock_references_response
         self.mock_rename_response = mock_rename_response
         self.mock_symbol_search_response = mock_symbol_search_response
+        self.mock_document_formatting_response = mock_document_formatting_response
 
     async def get_type_errors(
         self,
@@ -271,6 +275,14 @@ class MockDaemonQuerier(querier.AbstractDaemonQuerier):
             raise ValueError("You need to set symbol search in the mock querier")
         else:
             return self.mock_symbol_search_response
+
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[querier.DaemonQueryFailure, querier.GetDocumentFormattingResponse]:
+        if self.mock_document_formatting_response is None:
+            raise ValueError("You need to set document formatting in the mock querier")
+        else:
+            return self.mock_document_formatting_response
 
     async def get_rename(
         self,

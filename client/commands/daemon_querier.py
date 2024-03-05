@@ -89,6 +89,12 @@ class GetSymbolSearchResponse:
 
 
 @dataclasses.dataclass(frozen=True)
+class GetDocumentFormattingResponse:
+    source: DaemonQuerierSource
+    data: Optional[lsp.DocumentFormattingResponse]
+
+
+@dataclasses.dataclass(frozen=True)
 class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
     error_message: str
     error_source: Optional[Exception] = None
@@ -187,6 +193,12 @@ class AbstractDaemonQuerier(abc.ABC):
         self,
         query: str,
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -293,6 +305,11 @@ class EmptyQuerier(AbstractDaemonQuerier):
         self,
         query: str,
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
+        raise NotImplementedError()
+
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
         raise NotImplementedError()
 
     async def get_hover(
@@ -510,6 +527,13 @@ class PersistentDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         return DaemonQueryFailure(
             "Symbol Search is not supported in the pyre persistent client. Please use code-navigation. "
+        )
+
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
+        return DaemonQueryFailure(
+            "Document formatting is not supported in the pyre persistent client. Please use code-navigation. "
         )
 
     async def get_completions(
@@ -733,6 +757,11 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         return await self.base_querier.get_symbol_search(query)
 
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
+        return await self.base_querier.get_document_formatting(text_document)
+
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     async def get_type_errors(
@@ -847,6 +876,11 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
     ) -> Union[DaemonQueryFailure, GetSymbolSearchResponse]:
         # Note: it is okay to return None here because there is currently no plan to support symbol search using the backend.
         raise NotImplementedError("Method not yet implemented")
+
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
+        raise NotImplementedError("Method not yet implemented in the backend")
 
     async def get_completions(
         self,
@@ -1008,6 +1042,11 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         return GetSymbolSearchResponse(
             source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
         )
+
+    async def get_document_formatting(
+        self, text_document: lsp.TextDocumentIdentifier
+    ) -> Union[DaemonQueryFailure, GetDocumentFormattingResponse]:
+        raise NotImplementedError()
 
     async def get_definition_locations_from_glean(
         self,
