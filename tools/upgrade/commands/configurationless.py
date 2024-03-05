@@ -267,6 +267,7 @@ class Configurationless(Command):
     def _get_files_from_sourcedb(
         self, sourcedb_path: Path, buck_root: Path
     ) -> Set[Path]:
+        LOG.debug(f"Loading files from sourcedb at {str(sourcedb_path)}")
         with sourcedb_path.open() as file:
             loaded_sourcedb = json.load(file)
 
@@ -275,6 +276,13 @@ class Configurationless(Command):
             return set()
 
         build_map = {buck_root / file for file in loaded_sourcedb["build_map"].values()}
+
+        if "dropped_targets" in loaded_sourcedb:
+            dropped_target_paths = {
+                buck_root / dropped_target["dropped_source_path"]
+                for dropped_target in loaded_sourcedb["dropped_targets"].values()
+            }
+            build_map |= dropped_target_paths
 
         return {
             file
