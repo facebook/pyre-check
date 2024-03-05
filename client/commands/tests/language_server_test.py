@@ -1446,6 +1446,7 @@ class SaveAndOpenTest(ApiTestCase):
                 },
             ),
             daemon_querier=server_setup.MockDaemonQuerier(),
+            document_formatter=None,
         )
         await api.process_did_save_request(
             lsp.DidSaveTextDocumentParameters(
@@ -1463,6 +1464,7 @@ class SaveAndOpenTest(ApiTestCase):
             output_channel=connections.create_memory_text_writer(),
             server_state=server_state,
             daemon_querier=server_setup.MockDaemonQuerier(),
+            document_formatter=None,
         )
         test_path0 = Path("/foo/bar")
         test_path1 = Path("/foo/baz")
@@ -1517,6 +1519,7 @@ class TypeCoverageTest(ApiTestCase):
             output_channel=connections.AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
             daemon_querier=querier,
+            document_formatter=None,
         )
         await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(
@@ -1547,6 +1550,7 @@ class TypeCoverageTest(ApiTestCase):
             output_channel=connections.AsyncTextWriter(output_writer),
             server_state=server_setup.mock_server_state,
             daemon_querier=querier,
+            document_formatter=None,
         )
         await api.process_type_coverage_request(
             lsp.TypeCoverageParameters(

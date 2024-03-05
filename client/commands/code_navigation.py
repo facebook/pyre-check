@@ -23,6 +23,7 @@ from .. import backend_arguments, background_tasks, log_lsp_event, timer, versio
 from ..language_server import connections, features, protocol as lsp, remote_index
 from . import (
     daemon_querier,
+    document_formatter,
     initialization,
     launch_and_subscribe_handler,
     pyre_language_server,
@@ -206,6 +207,7 @@ async def async_run_code_navigation_client(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     index: remote_index.AbstractRemoteIndex,
+    document_formatter: Optional[document_formatter.AbstractDocumentFormatter],
 ) -> int:
     initial_server_options = pyre_server_options.read_server_options(
         server_options_reader, remote_logging
@@ -274,6 +276,7 @@ async def async_run_code_navigation_client(
             server_state=server_state,
             querier=codenav_querier,
             index_querier=index_querier,
+            document_formatter=document_formatter,
             client_type_error_handler=client_type_error_handler,
         ),
         client_register_event=client_register_event,
@@ -285,6 +288,7 @@ def run(
     server_options_reader: pyre_server_options.PyreServerOptionsReader,
     remote_logging: Optional[backend_arguments.RemoteLogging],
     index: remote_index.AbstractRemoteIndex,
+    document_formatter: Optional[document_formatter.AbstractDocumentFormatter],
 ) -> int:
     command_timer = timer.Timer()
     error_message: Optional[str] = None
@@ -294,6 +298,7 @@ def run(
                 server_options_reader,
                 remote_logging,
                 index,
+                document_formatter,
             )
         )
     except Exception:

@@ -47,6 +47,7 @@ from ..language_server import connections, daemon_connection, features, protocol
 from . import (
     commands,
     daemon_querier,
+    document_formatter,
     find_symbols,
     libcst_util,
     server_state as state,
@@ -350,6 +351,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
     querier: daemon_querier.AbstractDaemonQuerier
     index_querier: daemon_querier.AbstractDaemonQuerier
+    document_formatter: Optional[document_formatter.AbstractDocumentFormatter]
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
 
     async def write_telemetry(
@@ -987,8 +989,29 @@ class PyreLanguageServer(PyreLanguageServerApi):
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-        LOG.info("Document formatting is not yet implemented")
-        raise NotImplementedError("Not implemented yet")
+
+        LOG.info("Calling document formatting")
+        document_path = parameters.text_document.document_uri().to_file_path()
+        if document_path is None:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI is not a file: {parameters.text_document.uri}"
+            )
+        if document_path not in self.server_state.opened_documents:
+            raise json_rpc.InvalidRequestError(
+                f"Document URI has not been opened: {parameters.text_document.uri}"
+            )
+
+        try:
+            LOG.info("calling the formatter")
+            if self.document_formatter is None:
+                raise json_rpc.InternalError("Formatter was not initialized correctly.")
+            else:
+                self.document_formatter.format_document(document_path)
+
+        except OSError as error:
+            raise lsp.RequestFailedError(
+                f"Document URI is not a readable file: {parameters.text_document.uri}"
+            ) from error
 
     async def process_completion_request(
         self,
