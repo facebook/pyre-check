@@ -2425,6 +2425,26 @@ let test_class_models context =
     ()
 
 
+let test_closure_models context =
+  assert_invalid_model
+    ~context
+    ~model_source:
+      {|
+      @CapturedVariables(TaintSource[Test])
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
+    ~expect:
+      "Unexpected decorators found when parsing model for `test.outer.inner`: \
+       `CapturedVariables(TaintSource[Test])`."
+    ();
+  ()
+
+
 let test_taint_in_taint_out_models context =
   assert_model
     ~context
@@ -3633,6 +3653,7 @@ let () =
          "attach_features" >:: test_attach_features;
          "attribute_sanitize" >:: test_attribute_sanitize;
          "class_models" >:: test_class_models;
+         "closure_models" >:: test_closure_models;
          "cross_repository_models" >:: test_cross_repository_models;
          "demangle_class_attributes" >:: test_demangle_class_attributes;
          "filter_by_rules" >:: test_filter_by_rules;
