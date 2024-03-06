@@ -25,7 +25,7 @@ ModelQuery(
   name = "get_entrypoint_functions",
   find = "functions",
   where = [
-    Decorator(fully_qualified_name.equals("entrypoint.MyEntrypoint")),
+    Decorator(fully_qualified_callee.equals("entrypoint.MyEntrypoint")),
   ],
   model = [
     Modes([Entrypoint])
@@ -36,7 +36,7 @@ ModelQuery(
   name = "get_entrypoint_methods",
   find = "methods",
   where = [
-    Decorator(fully_qualified_name.equals("entrypoint.MyEntrypoint")),
+    Decorator(fully_qualified_callee.equals("entrypoint.MyEntrypoint")),
   ],
   model = [
     Modes([Entrypoint])
