@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This subpackage contains classes describing Pyre configurations, as
 well as logic for finding and reading configuration files.

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains the definition of code navigation requests and an API to convert a given LSP request
 to a corresponding code navigation request. Also contains an API that sends a given request to the code navigation

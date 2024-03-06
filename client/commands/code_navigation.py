@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This command contains the main logic for the client connecting language servers
 and Pyre's code navigation server. It mainly ferries LSP requests back and forth between

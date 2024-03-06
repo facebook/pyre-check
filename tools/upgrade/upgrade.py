@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 The pyre-upgrade command is composed of many subcommands related to upgrading a project or performing codemods. See the module-level documentation for each subcommand for more details.
 """

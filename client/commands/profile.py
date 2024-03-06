@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Logic for the `pyre profile` command, which (depending on the
 `--profile-output` flag) will summarize or display the raw logs

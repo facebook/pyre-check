@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains logic for a Python-based implementation of
 gathering document symbols for a language server. We traverse the

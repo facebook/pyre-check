@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 strict_default contains a library for running a codemod across a codebase that turns pyre-strict on. Optionally, we can also remove the #pyre-strict and add #pyre-unsafe headers from files where the error count is below a certain threshhold.
 """

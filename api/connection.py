@@ -4,6 +4,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains logic for a Python API to query Pyre
 daemons. This API is based on shelling out to the `pyre query`

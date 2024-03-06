@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module stores all server state related fields as a single class, so all the mutable state
 can be accessed in one place. Note that this state is mutable and a singleton, so users of this module

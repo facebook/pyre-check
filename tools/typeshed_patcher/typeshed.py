@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Defines an abstract interface representing a typeshed that allows
 us to use different "backings" (e.g. in-memory for tests or raw

@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 This module contains two main responsibilities:
 1. Provide all the different data models representing requests/responses for the LSP client

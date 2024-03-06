@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 The daemon query module contains APIs for sending requests to the Pyre daemon.
 The responsibility of this layer is to serialize queries and send them over the connection,

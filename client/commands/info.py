@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Logic for the `pyre info` command, which prints information about
 the current pyre environment (e.g. socket path, log locations).

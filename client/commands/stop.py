@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Core logic for the `pyre stop` command, which attempts to do a clean
 shutdown of a running Pyre daemon by sending it a shutdown request

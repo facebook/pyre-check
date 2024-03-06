@@ -3,6 +3,8 @@
 # This source code is licensed under the MIT license found in the
 # LICENSE file in the root directory of this source tree.
 
+# pyre-strict
+
 """
 Defines data types specifying patches Pyre wants to apply to
 the upstream typeshed. These patches are defined in toml files.
