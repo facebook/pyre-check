@@ -391,3 +391,18 @@ class FilesystemTest(unittest.TestCase):
             read_text.return_value = "# pyre-ignore-all-errors"
             add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
             path_write_text.assert_not_called()
+
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = (
+                "# @manual=fbsource//some/buck:target\n\nimport buck.target"
+            )
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_called_once_with(
+                "# pyre-strict\n# @manual=fbsource//some/buck:target\n\nimport buck.target"
+            )
+        with patch.object(Path, "write_text") as path_write_text:
+            read_text.return_value = "# this is a header comment\n# @manual=fbsource//some/buck:target\n\nimport buck.target"
+            add_local_mode("local.py", LocalMode.STRICT, ignore_empty_files=True)
+            path_write_text.assert_called_once_with(
+                "# this is a header comment\n\n# pyre-strict\n# @manual=fbsource//some/buck:target\n\nimport buck.target"
+            )
