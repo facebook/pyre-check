@@ -47,7 +47,6 @@ from ..language_server import connections, daemon_connection, features, protocol
 from . import (
     commands,
     daemon_querier,
-    document_formatter,
     find_symbols,
     libcst_util,
     server_state as state,
@@ -55,6 +54,7 @@ from . import (
 )
 
 from .daemon_querier import DaemonQuerierSource, DaemonQueryFailure
+from .document_formatter import AbstractDocumentFormatter
 
 from .server_state import OpenedDocumentState
 
@@ -351,7 +351,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
     querier: daemon_querier.AbstractDaemonQuerier
     index_querier: daemon_querier.AbstractDaemonQuerier
-    document_formatter: Optional[document_formatter.AbstractDocumentFormatter]
+    document_formatter: Optional[AbstractDocumentFormatter]
     client_type_error_handler: type_error_handler.ClientTypeErrorHandler
 
     async def write_telemetry(
