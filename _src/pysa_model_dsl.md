@@ -468,30 +468,50 @@ ModelQuery(
 
 `Decorator` clauses are used to find callables decorated with decorators that match a pattern. This clause takes decorator clauses as arguments.
 
-#### Decorator `fully_qualified_name` clauses
+#### Decorator `fully_qualified_callee` clauses
 
-The `fully_qualified_name` decorator clause is used to match name fully qualified name of a decorator.
-The supported name clauses are the same as the ones discussed above for model query constraints, i.e. `fully_qualified_name.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and `fully_qualified_name.equals("foo.bar.d1")` which will match when the fully-qualified name of the decorator equals the specified string exactly.
+The `fully_qualified_callee` decorator clause is used to match on the fully qualified name of a decorator. That is, the fully qualified name of a higher order function.
+The supported name clauses are the same as the ones discussed above for model query constraints, i.e.,
+- `fully_qualified_callee.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and
+- `fully_qualified_callee.equals("foo.bar.d1")`, which will match when the fully-qualified name of the decorator equals the specified string exactly.
 
-For example, if you wanted to find all functions which are decorated by `@app.route()`, a decorator imported from `my_module`, you can write:
-
+For example, if you wanted to find all functions that are decorated by `@app.route()`, a decorator whose definition is in file `my_module.py`:
 ```python
-ModelQuery(
-  name = "get_app_route_decorator",
-  find = "functions",
-  where = Decorator(fully_qualified_name.matches("app.route")),
-  ...
-)
+class App:
+  def route(self, func: Callable) -> Callable:
+    ...
 ```
-or
+
+You can write:
 ```python
 ModelQuery(
   name = "get_my_module_app_route_decorator",
   find = "functions",
-  where = Decorator(fully_qualified_name.equals("my_module.app.route")),
+  where = Decorator(fully_qualified_callee.equals("my_module.App.route")),
   ...
 )
 ```
+which is arguably better because it is more precise than regex matching, or
+```python
+ModelQuery(
+  name = "get_app_route_decorator",
+  find = "functions",
+  where = Decorator(fully_qualified_callee.matches(".*\.App\.route")),
+  ...
+)
+```
+
+**Clarification.** As another example, assume the following code is in file `test.py`:
+```python
+class Flask:
+    def route(self, func: Callable) -> Callable:
+      ...
+application = Flask()
+@application.route
+def my_view():
+  pass
+```
+Then, for decorator `@application.route`, clause `fully_qualified_callee` matches against the decorator's fully qualified name `test.Flask.route`, as oppposed to the local identifier's fully qualified name `test.application.route` (that refers to this decorator).
 
 #### Decorator `name` clauses
 
