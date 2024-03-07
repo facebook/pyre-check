@@ -157,7 +157,7 @@ def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[T
 def remove_local_mode(path: Path, modes: List[LocalMode]) -> None:
     LOG.info("Processing `%s`", str(path))
     text = path.read_text()
-    if "@" "generated" in text:
+    if "@" "generated" in text or "@" "partially-generated":
         LOG.warning("Attempting to edit generated file %s, skipping.", str(path))
         return
 
