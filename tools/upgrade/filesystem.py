@@ -154,25 +154,33 @@ def find_targets(search_root: Path, pyre_only: bool = False) -> Dict[str, List[T
     return target_names
 
 
-def remove_local_mode(path: Path, modes: List[LocalMode]) -> None:
+def get_lines_with_modes(
+    lines: List[str], modes: List[LocalMode]
+) -> Dict[int, LocalMode]:
+    lines_with_modes: Dict[int, LocalMode] = {}
+    for index, line in enumerate(lines):
+        for mode in modes:
+            if re.match(mode.get_regex(), line):
+                lines_with_modes[index] = mode
+                continue
+    return lines_with_modes
+
+
+def remove_local_mode(path: Path, modes: List[LocalMode]) -> List[LocalMode]:
     LOG.info("Processing `%s`", str(path))
     text = path.read_text()
     if "@" "generated" in text or "@" "partially-generated":
         LOG.warning("Attempting to edit generated file %s, skipping.", str(path))
-        return
+        return []
 
     lines: List[str] = text.split("\n")
-    indices_to_remove = {
-        index
-        for index, line in enumerate(lines)
-        if any(re.match(mode.get_regex(), line) for mode in modes)
-    }
-    lines = [line for index, line in enumerate(lines) if index not in indices_to_remove]
+    lines_with_modes = get_lines_with_modes(lines, modes)
+    lines = [line for index, line in enumerate(lines) if index not in lines_with_modes]
 
     new_text = "\n".join(lines)
     ast.check_stable(text, new_text)
     path.write_text(new_text)
-    return
+    return list(lines_with_modes.values())
 
 
 def add_local_mode(
