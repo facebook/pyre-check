@@ -391,12 +391,6 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
         ~name_captures
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.last)
-  | ModelQuery.DecoratorConstraint.FullyQualifiedNameConstraint name_constraint ->
-      let { Statement.Decorator.name = { Node.value = decorator_name; _ }; _ } = decorator in
-      matches_name_constraint
-        ~name_captures
-        ~name_constraint
-        (decorator_name |> Reference.delocalize |> Reference.show)
   | ModelQuery.DecoratorConstraint.FullyQualifiedCallee name_constraint ->
       let ({ Node.value = expression; _ } as decorator_expression) =
         Statement.Decorator.to_expression decorator

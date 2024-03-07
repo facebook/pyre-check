@@ -1052,7 +1052,7 @@ let test_query_parsing_find_methods context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = cls.decorator(fully_qualified_name.matches("foo.*")),
+     where = cls.decorator(fully_qualified_callee.matches("foo.*")),
      model = [Returns([TaintSink[Test]])]
     )
   |}
@@ -1066,8 +1066,7 @@ let test_query_parsing_find_methods context =
           where =
             [
               ClassConstraint
-                (DecoratorConstraint
-                   (FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo.*"))));
+                (DecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "foo.*"))));
             ];
           find = Method;
           models =
@@ -1124,7 +1123,7 @@ let test_query_parsing_find_methods context =
     ModelQuery(
      name = "get_foo",
      find = "methods",
-     where = Decorator(fully_qualified_name.matches("foo")),
+     where = Decorator(fully_qualified_callee.matches("foo")),
      model = [Returns([TaintSource[Test]])],
     )
   |}
@@ -1135,8 +1134,7 @@ let test_query_parsing_find_methods context =
           name = "get_foo";
           logging_group_name = None;
           path = None;
-          where =
-            [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "foo")))];
+          where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "foo")))];
           find = Method;
           models =
             [

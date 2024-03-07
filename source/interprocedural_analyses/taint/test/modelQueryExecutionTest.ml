@@ -1917,8 +1917,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where =
-          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
+        where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -1926,39 +1925,6 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Function { name = "test.foo"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
-  assert_generated_annotations
-    ~source:
-      {|
-      class Flask:
-        def route(self):
-          pass
-      application = Flask()
-      @application.route
-      def my_view():
-        pass
-      |}
-    ~query:
-      {
-        location = Ast.Location.any;
-        name = "get_flask_route";
-        logging_group_name = None;
-        path = None;
-        where =
-          (* The constraint matches against the fully qualified name of the local variable that
-             points to the decorator (which is `test.application.route`), as opposed to matching
-             against the fully qualified name of the decorator itself (which is
-             `test.Flask.route`). *)
-          [
-            AnyDecoratorConstraint
-              (FullyQualifiedNameConstraint (Matches (Re2.create_exn "test.Flask.route")));
-          ];
-        models = [Return [TaintAnnotation (source "Test")]];
-        find = Function;
-        expected_models = [];
-        unexpected_models = [];
-      }
-    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[];
   (* Basic test case for `FullyQualifiedCallee`. *)
   assert_generated_annotations
     ~source:
@@ -2193,8 +2159,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where =
-          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
+        where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2223,8 +2188,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where =
-          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
+        where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2235,7 +2199,9 @@ let test_generated_annotations context =
   assert_generated_annotations
     ~source:
       {|
-       from flask import Flask
+       class Flask:
+         def route(self):
+          pass
        app = Flask(__name__)
        @app.route('/')
        def foo(a): ...
@@ -2249,7 +2215,7 @@ let test_generated_annotations context =
         where =
           [
             AnyDecoratorConstraint
-              (FullyQualifiedNameConstraint (Matches (Re2.create_exn "app.route")));
+              (FullyQualifiedCallee (Matches (Re2.create_exn "test.Flask.route")));
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -2301,8 +2267,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where =
-          [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Matches (Re2.create_exn "d1")))];
+        where = [AnyDecoratorConstraint (FullyQualifiedCallee (Matches (Re2.create_exn "d1")))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2331,7 +2296,7 @@ let test_generated_annotations context =
         name = "get_foo";
         logging_group_name = None;
         path = None;
-        where = [AnyDecoratorConstraint (FullyQualifiedNameConstraint (Equals "test.d1"))];
+        where = [AnyDecoratorConstraint (FullyQualifiedCallee (Equals "test.d1"))];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
         expected_models = [];
@@ -2365,7 +2330,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (ModelQuery.ArgumentsConstraint.Contains
                         [
@@ -2409,7 +2374,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -2453,7 +2418,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -2498,7 +2463,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -2543,7 +2508,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Contains
                         [
@@ -2595,7 +2560,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Equals
                         [
@@ -2647,7 +2612,7 @@ let test_generated_annotations context =
             AnyDecoratorConstraint
               (AllOf
                  [
-                   FullyQualifiedNameConstraint (Equals "test.d1");
+                   FullyQualifiedCallee (Equals "test.d1");
                    ArgumentsConstraint
                      (Equals
                         [
