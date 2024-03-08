@@ -475,7 +475,7 @@ The supported name clauses are the same as the ones discussed above for model qu
 - `fully_qualified_callee.matches("pattern")`, which will match when the decorator matches the regex pattern specified as a string, and
 - `fully_qualified_callee.equals("foo.bar.d1")`, which will match when the fully-qualified name of the decorator equals the specified string exactly.
 
-For example, if you wanted to find all functions that are decorated by `@app.route()`, a decorator whose definition is in file `my_module.py`:
+For example, if you wanted to find all functions that are decorated by `@App().route()`, a decorator whose definition is in file `my_module.py`:
 ```python
 class App:
   def route(self, func: Callable) -> Callable:
