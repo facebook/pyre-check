@@ -52,23 +52,23 @@ module Arguments = struct
   [@@deriving of_yojson { strict = false }]
 end
 
+let py_version_regex = Str.regexp {|\([0-9]+\)\(\.\([0-9]+\)\)?\(\.\([0-9]+\)\)?|}
+
 let parse_py_version py_version =
-  let do_parse ~major ?minor ?micro () =
-    try
-      let major = Int.of_string major in
-      let minor = Option.map minor ~f:Int.of_string in
-      let micro = Option.map micro ~f:Int.of_string in
-      Result.Ok (Configuration.PythonVersion.create ~major ?minor ?micro ())
-    with
-    | Failure message -> Result.Error (Error.VersionFormatError { py_version; message })
-  in
-  match String.split py_version ~on:'.' with
-  | [major] -> do_parse ~major ()
-  | [major; minor] -> do_parse ~major ~minor ()
-  | [major; minor; micro] -> do_parse ~major ~minor ~micro ()
-  | _ ->
+  try
+    let _ = Str.search_forward py_version_regex py_version 0 in
+    let extract_number_from_index index =
+      try Str.matched_group index py_version |> Int.of_string with
+      | Stdlib.Not_found -> 0
+    in
+    let major = extract_number_from_index 1 in
+    let minor = extract_number_from_index 3 in
+    let micro = extract_number_from_index 5 in
+    Result.Ok (Configuration.PythonVersion.create ~major ~minor ~micro ())
+  with
+  | Stdlib.Not_found ->
       Result.Error
-        (Error.VersionFormatError { py_version; message = "Not of the form X or X.Y or X.Y.Z" })
+        (Error.VersionFormatError { py_version; message = "Not of containing X or X.Y or X.Y.Z" })
 
 
 let load_manifests filenames =

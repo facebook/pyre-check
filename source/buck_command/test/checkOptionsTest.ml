@@ -315,17 +315,35 @@ let test_parse_py_version =
   in
   [
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
-    @@ assert_parsed "3" ~expected:(Configuration.PythonVersion.create ~major:3 ());
+    @@ assert_parsed
+         "3"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:0 ~micro:0 ());
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
-    @@ assert_parsed "3.8" ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ());
+    @@ assert_parsed
+         "3.8"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ~micro:0 ());
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
     @@ assert_parsed
          "3.8.6"
          ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ~micro:6 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed
+         "python3.10"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:10 ~micro:0 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed
+         "3.10python"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:10 ~micro:0 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed
+         "cinder.3.8"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:8 ~micro:0 ());
+    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__
+    @@ assert_parsed
+         "3.10.cinder"
+         ~expected:(Configuration.PythonVersion.create ~major:3 ~minor:10 ~micro:0 ());
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "";
     Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "abc";
-    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "python3.10";
-    Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ @@ assert_not_parsed "3.10python";
   ]
 
 
