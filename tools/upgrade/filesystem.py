@@ -169,7 +169,7 @@ def get_lines_with_modes(
 def remove_local_mode(path: Path, modes: List[LocalMode]) -> List[LocalMode]:
     LOG.info("Processing `%s`", str(path))
     text = path.read_text()
-    if "@" "generated" in text or "@" "partially-generated":
+    if "@" "generated" in text or "@" "partially-generated" in text:
         LOG.warning("Attempting to edit generated file %s, skipping.", str(path))
         return []
 
@@ -193,7 +193,7 @@ def add_local_mode(
     if ignore_empty_files and len(text.strip()) == 0:
         return
 
-    if "@" "generated" in text:
+    if "@" "generated" in text or "@" "partially-generated" in text:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
         return
 
