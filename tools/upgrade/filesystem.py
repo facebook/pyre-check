@@ -185,17 +185,17 @@ def remove_local_mode(path: Path, modes: List[LocalMode]) -> List[LocalMode]:
 
 def add_local_mode(
     filename: str, mode: LocalMode, ignore_empty_files: bool = False
-) -> None:
+) -> bool:
     LOG.info("Processing `%s`", filename)
     path = Path(filename)
     text = path.read_text()
 
     if ignore_empty_files and len(text.strip()) == 0:
-        return
+        return False
 
     if "@" "generated" in text or "@" "partially-generated" in text:
         LOG.warning("Attempting to edit generated file %s, skipping.", filename)
-        return
+        return False
 
     lines: "List[str]" = text.split("\n")
 
@@ -203,7 +203,7 @@ def add_local_mode(
     for line in lines:
         for local_mode in LocalMode:
             if re.match(local_mode.get_regex(), line):
-                return
+                return False
 
     def is_header(line: str) -> bool:
         is_comment = line.lstrip().startswith("#")
@@ -231,6 +231,7 @@ def add_local_mode(
     new_text = "\n".join(new_lines)
     ast.check_stable(text, new_text)
     path.write_text(new_text)
+    return True
 
 
 class Filesystem:
