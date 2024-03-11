@@ -3109,7 +3109,9 @@ let extract_source_model
       let tree =
         match maximum_trace_length with
         | Some maximum_trace_length ->
-            ForwardState.Tree.prune_maximum_length maximum_trace_length tree
+            (* We limit by maximum_trace_length - 1, since the distance will be incremented by one
+               when the taint is propagated. *)
+            ForwardState.Tree.prune_maximum_length (maximum_trace_length - 1) tree
         | _ -> tree
       in
       if apply_broadening then

@@ -2604,7 +2604,9 @@ let extract_tito_and_sink_models
             let sink_tree =
               match maximum_trace_length with
               | Some maximum_trace_length ->
-                  BackwardState.Tree.prune_maximum_length maximum_trace_length sink_tree
+                  (* We limit by maximum_trace_length - 1, since the distance will be incremented by
+                     one when the taint is propagated. *)
+                  BackwardState.Tree.prune_maximum_length (maximum_trace_length - 1) sink_tree
               | _ -> sink_tree
             in
             let sink_tree =
