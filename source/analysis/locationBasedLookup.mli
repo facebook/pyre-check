@@ -39,6 +39,50 @@ type coverage_gap_by_location = {
 }
 [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
+module DocumentSymbolItem : sig
+  (** A type a document symbol response *)
+  module SymbolKind : sig
+    type t =
+      | File
+      | Module
+      | Namespace
+      | Package
+      | Class
+      | Method
+      | Property
+      | Field
+      | Constructor
+      | Enum
+      | Interface
+      | Function
+      | Variable
+      | Constant
+      | String
+      | Number
+      | Boolean
+      | Array
+      | Object
+      | Key
+      | Null
+      | EnumMember
+      | Struct
+      | Event
+      | Operator
+      | TypeParameter
+    [@@deriving sexp, compare, yojson { strict = false }]
+  end
+
+  type t = {
+    name: string;
+    detail: string;
+    kind: SymbolKind.t;
+    range: Ast.Location.t;
+    selectionRange: Ast.Location.t;
+    children: t list; (* recursive type to represent a list of document symbols *)
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 type coverage_for_path = {
   total_expressions: int;
   coverage_gaps: coverage_gap_by_location list;
@@ -133,6 +177,8 @@ val hover_info_for_position
   module_reference:Reference.t ->
   Location.position ->
   hover_info
+
+val document_symbol_info : source:Ast.Source.t -> DocumentSymbolItem.t list
 
 val parameter_is_any_message : string list
 

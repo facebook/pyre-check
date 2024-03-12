@@ -61,6 +61,79 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
+(* Please view diff D53973886 to to understand how this data structure maps to the corresponding
+   Python data structure for document symbols *)
+module DocumentSymbolItem = struct
+  module SymbolKind = struct
+    type t =
+      | File
+      | Module
+      | Namespace
+      | Package
+      | Class
+      | Method
+      | Property
+      | Field
+      | Constructor
+      | Enum
+      | Interface
+      | Function
+      | Variable
+      | Constant
+      | String
+      | Number
+      | Boolean
+      | Array
+      | Object
+      | Key
+      | Null
+      | EnumMember
+      | Struct
+      | Event
+      | Operator
+      | TypeParameter
+    [@@deriving sexp, compare, yojson { strict = false }]
+
+    let to_yojson = function
+      | File -> `String "FILE"
+      | Module -> `String "MODULE"
+      | Namespace -> `String "NAMESPACE"
+      | Package -> `String "PACKAGE"
+      | Class -> `String "CLASS"
+      | Method -> `String "METHOD"
+      | Property -> `String "PROPERTY"
+      | Field -> `String "FIELD"
+      | Constructor -> `String "CONSTRUCTOR"
+      | Enum -> `String "ENUM"
+      | Interface -> `String "INTERFACE"
+      | Function -> `String "FUNCTION"
+      | Variable -> `String "VARIABLE"
+      | Constant -> `String "CONSTANT"
+      | String -> `String "STRING"
+      | Number -> `String "NUMBER"
+      | Boolean -> `String "BOOLEAN"
+      | Array -> `String "ARRAY"
+      | Object -> `String "OBJECT"
+      | Key -> `String "KEY"
+      | Null -> `String "NULL"
+      | EnumMember -> `String "ENUMMEMBER"
+      | Struct -> `String "STRUCT"
+      | Event -> `String "EVENT"
+      | Operator -> `String "OPERATOR"
+      | TypeParameter -> `String "TYPEPARAMETER"
+  end
+
+  type t = {
+    name: string;
+    detail: string;
+    kind: SymbolKind.t;
+    range: Ast.Location.t;
+    selectionRange: Ast.Location.t;
+    children: t list; (* recursive type to represent a list of document symbols *)
+  }
+  [@@deriving sexp, compare, yojson { strict = false }]
+end
+
 (** This visitor stores the coverage data information for an expression on the key of its location.
 
     It special-case names such as named arguments or the names in comprehensions and generators.
@@ -1073,6 +1146,12 @@ let show_type_for_hover annotation =
       } ->
       format_method_name reference annotation
   | _ -> Type.show_concise annotation
+
+
+let document_symbol_info ~source =
+  Log.log ~section:`Server "Extracting document symbols from source file`%s" (Source.show source);
+  (* TODO T166374635: implement a visitor which returns document symbols *)
+  []
 
 
 let hover_info_for_position ~type_environment ~module_reference position =

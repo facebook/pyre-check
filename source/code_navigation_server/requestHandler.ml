@@ -104,6 +104,8 @@ let handle_get_type_errors ~paths ~client_id { State.environment; build_system; 
   >>| fun type_errors -> Response.TypeErrors { errors = type_errors }
 
 
+let get_document_symbol_content_for_module source = LocationBasedLookup.document_symbol_info ~source
+
 let get_hover_content_for_module ~overlay ~position module_reference =
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   LocationBasedLookup.hover_info_for_position ~type_environment ~module_reference position
@@ -129,6 +131,97 @@ let handle_hover ~path ~position ~client_id { State.environment; build_system; c
         contents =
           List.map contents ~f:(fun { value; docstring } -> HoverContent.{ value; docstring });
       })
+
+
+let get_document_symbol_in_overlay ~overlay ~build_system module_ =
+  let open Result in
+  let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
+  get_modules ~source_code_api ~build_system module_
+  >>| fun x ->
+  match x with
+  | [] -> failwith "invalid module"
+  | first :: _ -> (
+      match SourceCodeApi.source_of_qualifier source_code_api first with
+      | Some source -> get_document_symbol_content_for_module source
+      | _ -> failwith "invalid source file")
+
+
+let transform_symbol_kind symbol_kind =
+  match symbol_kind with
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.File ->
+      Response.DocumentSymbolItem.SymbolKind.File
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Module ->
+      Response.DocumentSymbolItem.SymbolKind.Module
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Namespace ->
+      Response.DocumentSymbolItem.SymbolKind.Namespace
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Package ->
+      Response.DocumentSymbolItem.SymbolKind.Package
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Class ->
+      Response.DocumentSymbolItem.SymbolKind.Class
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Method ->
+      Response.DocumentSymbolItem.SymbolKind.Method
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Property ->
+      Response.DocumentSymbolItem.SymbolKind.Property
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Field ->
+      Response.DocumentSymbolItem.SymbolKind.Field
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Constructor ->
+      Response.DocumentSymbolItem.SymbolKind.Constructor
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Enum ->
+      Response.DocumentSymbolItem.SymbolKind.Enum
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Interface ->
+      Response.DocumentSymbolItem.SymbolKind.Interface
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Function ->
+      Response.DocumentSymbolItem.SymbolKind.Function
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Variable ->
+      Response.DocumentSymbolItem.SymbolKind.Variable
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Constant ->
+      Response.DocumentSymbolItem.SymbolKind.Constant
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.String ->
+      Response.DocumentSymbolItem.SymbolKind.String
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Number ->
+      Response.DocumentSymbolItem.SymbolKind.Number
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Boolean ->
+      Response.DocumentSymbolItem.SymbolKind.Boolean
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Array ->
+      Response.DocumentSymbolItem.SymbolKind.Array
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Object ->
+      Response.DocumentSymbolItem.SymbolKind.Object
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Key ->
+      Response.DocumentSymbolItem.SymbolKind.Key
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Null ->
+      Response.DocumentSymbolItem.SymbolKind.Null
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.EnumMember ->
+      Response.DocumentSymbolItem.SymbolKind.EnumMember
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Struct ->
+      Response.DocumentSymbolItem.SymbolKind.Struct
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Event ->
+      Response.DocumentSymbolItem.SymbolKind.Event
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.Operator ->
+      Response.DocumentSymbolItem.SymbolKind.Operator
+  | LocationBasedLookup.DocumentSymbolItem.SymbolKind.TypeParameter ->
+      Response.DocumentSymbolItem.SymbolKind.TypeParameter
+
+
+let rec transform_symbol symbol =
+  {
+    Response.DocumentSymbolItem.name = symbol.LocationBasedLookup.DocumentSymbolItem.name;
+    detail = symbol.LocationBasedLookup.DocumentSymbolItem.detail;
+    kind = transform_symbol_kind symbol.LocationBasedLookup.DocumentSymbolItem.kind;
+    range = symbol.LocationBasedLookup.DocumentSymbolItem.range;
+    selectionRange = symbol.LocationBasedLookup.DocumentSymbolItem.selectionRange;
+    children = List.map symbol.children ~f:(fun symbol -> transform_symbol symbol);
+  }
+
+
+let handle_document_symbol ~path ~client_id { State.environment; build_system; client_states; _ } =
+  let open Result in
+  get_overlay_id_unsafe ~path ~client_id client_states
+  >>= fun overlay_id ->
+  let overlay = get_or_create_overlay ~environment overlay_id in
+  get_document_symbol_in_overlay ~overlay ~build_system path
+  >>| fun symbols ->
+  Response.(
+    DocumentSymbol { symbols = List.map symbols ~f:(fun symbol -> transform_symbol symbol) })
 
 
 let get_location_of_definition_for_module ~overlay ~build_system ~position module_reference =
@@ -614,11 +707,9 @@ let handle_query
         handle_location_of_definition ~path ~position ~client_id state |> response_from_result
       in
       Lwt.return response
-  | Request.Query.DocumentSymbol { path = _; client_id = _ } ->
-      (* TODO T166374635: populate this method with the real response instead of the mock
-         response *)
-      (* make sure its not an empty list *)
-      let response = Response.(DocumentSymbol { symbols = [] }) in
+  | Request.Query.DocumentSymbol { path; client_id } ->
+      let state = Server.ExclusiveLock.unsafe_read state in
+      let response = handle_document_symbol ~path ~client_id state |> response_from_result in
       Lwt.return response
   | Request.Query.Completion { path; position; client_id } ->
       let state = Server.ExclusiveLock.unsafe_read state in
