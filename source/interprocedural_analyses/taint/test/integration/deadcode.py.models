@@ -1,0 +1,131 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "deadcode.early_return_no_issue_for_else",
+    "callable_line": 34,
+    "code": 5002,
+    "line": 39,
+    "start": 15,
+    "end": 29,
+    "filename": "deadcode.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "deadcode.py",
+              "line": 39,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "deadcode.py",
+              "line": 39,
+              "start": 15,
+              "end": 29
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "deadcode.early_return_no_issue_for_else:5002:0:Call|_test_sink|0|formal(arg):f54a0e7edef80ad928b1b1004596ae84"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "deadcode.EarlyReturns.__init__",
+    "tito": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
