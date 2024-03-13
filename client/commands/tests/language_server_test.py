@@ -2693,9 +2693,8 @@ class DocumentSymbolsTest(ApiTestCase):
                     self._expect_success_message(
                         result=[
                             {
-                                "name": "foo",
                                 "detail": "",
-                                "kind": lsp.SymbolKind.FUNCTION.value,
+                                "name": "foo",
                                 "range": {
                                     "start": {"line": 0, "character": 0},
                                     "end": {
@@ -2703,6 +2702,7 @@ class DocumentSymbolsTest(ApiTestCase):
                                         "character": end_character,
                                     },
                                 },
+                                "kind": lsp.SymbolKind.FUNCTION.value,
                                 "selectionRange": {
                                     "start": {"line": 0, "character": 0},
                                     "end": {

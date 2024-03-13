@@ -1092,39 +1092,6 @@ class PyreLanguageServer(PyreLanguageServerApi):
 
         return error_source
 
-    def symbol_to_dict(self, my_symbol: lsp.DocumentSymbol) -> Dict[str, typing.Any]:
-        return {
-            "name": my_symbol.name,
-            "detail": my_symbol.detail,
-            "kind": my_symbol.kind,
-            "range": {
-                "start": {
-                    "line": my_symbol.range.start.line,
-                    "character": my_symbol.range.start.character,
-                },
-                "end": {
-                    "line": my_symbol.range.end.line,
-                    "character": my_symbol.range.end.character,
-                },
-            },
-            "selectionRange": {
-                "start": {
-                    "line": my_symbol.selection_range.start.line,
-                    "character": my_symbol.selection_range.start.character,
-                },
-                "end": {
-                    "line": my_symbol.selection_range.end.line,
-                    "character": my_symbol.selection_range.end.character,
-                },
-            },
-            "children": self.symbol_to_dict_list(my_symbol.children),
-        }
-
-    def symbol_to_dict_list(
-        self, my_symbols: List[lsp.DocumentSymbol]
-    ) -> List[Dict[str, typing.Any]]:
-        return [self.symbol_to_dict(my_symbol) for my_symbol in my_symbols]
-
     async def process_document_symbols_request(
         self,
         parameters: lsp.DocumentSymbolsParameters,
@@ -1148,7 +1115,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 json_rpc.SuccessResponse(
                     id=request_id,
                     activity_key=activity_key,
-                    result=[self.symbol_to_dict(symbol) for symbol in symbols],
+                    result=[symbol.to_dict() for symbol in symbols],
                 ),
             )
         except find_symbols.UnparseableError as error:
