@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure_models.captured_variable_models",
-    "callable_line": 77,
+    "callable_line": 89,
     "code": 5002,
-    "line": 99,
+    "line": 111,
     "start": 15,
     "end": 43,
     "filename": "closure_models.py",
@@ -25,10 +25,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 99, "start": 15, "end": 43 } ],
+            "tito_positions": [ { "line": 111, "start": 15, "end": 43 } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 95,
+              "line": 107,
               "start": 23,
               "end": 37
             }
@@ -48,7 +48,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 99,
+              "line": 111,
               "start": 15,
               "end": 43
             }
@@ -671,7 +671,7 @@
             "local_features": [ { "always-via": "captured-variable" } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 84,
+              "line": 96,
               "start": 19,
               "end": 35
             }

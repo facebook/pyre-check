@@ -74,6 +74,18 @@ def test() -> None:
     value.reclassify(feature="breadcrumb2")
 
 
+def test_tito_transform():
+    source = _test_source()
+    def return_model_taint_tito():
+        use_source(source)
+
+    value = reclassify(
+        inner=return_model_taint_tito,
+        feature="breadcrumb1",
+    )
+    value.reclassify(feature="breadcrumb2")
+
+
 def captured_variable_models():
     complicated_name = ...
     # complicated_name has no taint outside nested functions, no issue
