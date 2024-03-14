@@ -3124,11 +3124,31 @@ let create_model_from_attribute
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
 
-let is_obscure ~definitions ~stubs call_target =
+let delocalize_definitions definitions =
+  let add_delocalized_target targets target =
+    match target with
+    | Target.Function { name; kind } when Reference.is_local (Reference.create name) ->
+        Target.Function
+          { name = Reference.show (Reference.delocalize (Reference.create name)); kind }
+        :: targets
+    | _ -> targets
+  in
+  definitions >>| Hash_set.fold ~init:[] ~f:add_delocalized_target >>| Target.HashSet.of_list
+
+
+let is_obscure ~definitions ~delocalized_definitions ~stubs call_target =
   (* The callable is obscure if and only if it is a type stub or it is not in the set of known
      definitions. *)
+  let not_member hash_set1 hash_set2 element =
+    match hash_set1, hash_set2 with
+    | Some hash_set1, Some hash_set2 ->
+        not (Hash_set.mem hash_set1 element || Hash_set.mem hash_set2 element)
+    | _ -> false
+  in
+  (* TODO(T182366550): Refactor modelParser to give localized targets for nested function models
+     early *)
   Interprocedural.Target.HashsetSharedMemory.ReadOnly.mem stubs call_target
-  || definitions >>| Core.Fn.flip Hash_set.mem call_target >>| not |> Option.value ~default:false
+  || not_member definitions delocalized_definitions call_target
 
 
 let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions ~stubs models =
@@ -3141,7 +3161,12 @@ let parse_models ~pyre_api ~taint_configuration ~source_sink_filter ~definitions
         ~path:None
         ~taint_configuration
         ~source_sink_filter
-        ~is_obscure:(is_obscure ~definitions ~stubs call_target)
+        ~is_obscure:
+          (is_obscure
+             ~definitions
+             ~delocalized_definitions:(delocalize_definitions definitions)
+             ~stubs
+             call_target)
         parsed_signature
       >>| fun model_or_query ->
       match model_or_query with
@@ -3792,6 +3817,7 @@ let create
     | Error { Parser.Error.location; _ } ->
         [], [[model_verification_error ~path ~location ParseError]]
   in
+  let delocalized_definitions = delocalize_definitions definitions in
   let create_model_or_query = function
     | ParsedSignature ({ call_target; _ } as parsed_signature) ->
         create_model_from_signature
@@ -3799,7 +3825,7 @@ let create
           ~path
           ~taint_configuration
           ~source_sink_filter
-          ~is_obscure:(is_obscure ~definitions ~stubs call_target)
+          ~is_obscure:(is_obscure ~definitions ~delocalized_definitions ~stubs call_target)
           parsed_signature
     | ParsedAttribute parsed_attribute ->
         create_model_from_attribute
