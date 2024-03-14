@@ -3069,6 +3069,44 @@ let create_model_from_signature
   let callable_name =
     compute_localized_name_for_nested_functions ~callable_annotation ~callable_name
   in
+  let add_captured_variables_taint
+      ~path
+      ~location
+      ~origin
+      ~taint_configuration
+      ~top_level_decorators
+      model
+    =
+    let is_captured_variables { Decorator.name = { Node.value = name; _ }; arguments } =
+      match Reference.show name, arguments with
+      | "CapturedVariables", Some [_] -> true
+      | _ -> false
+    in
+    match List.find ~f:is_captured_variables top_level_decorators with
+    | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
+        callable_annotation
+        >>= fun callable_annotation ->
+        value
+        |> parse_annotations
+             ~path
+             ~location
+             ~origin
+             ~taint_configuration
+             ~parameters:[]
+             ~callable_parameter_names_to_roots:None
+        >>= List.fold_result ~init:model ~f:(fun model annotation ->
+                add_taint_annotation_to_model
+                  ~path
+                  ~location
+                  ~model_name:(Reference.show callable_name)
+                  ~pyre_api
+                  ~callable_annotation
+                  ~source_sink_filter
+                  model
+                  (ModelAnnotation.ParameterAnnotation
+                     (AccessPath.Root.CapturedVariable "*args", annotation)))
+    | _ -> Ok model
+  in
   let model =
     callable_annotation
     >>= fun callable_annotation ->
@@ -3101,6 +3139,12 @@ let create_model_from_signature
         ~taint_configuration
         ~origin:DefineDecorator
         ~source_sink_filter
+        ~top_level_decorators
+  >>= add_captured_variables_taint
+        ~path
+        ~location
+        ~taint_configuration
+        ~origin:DefineDecorator
         ~top_level_decorators
   >>| fun model ->
   Model { Model.WithTarget.model; target = update_call_target_name ~callable_name call_target }

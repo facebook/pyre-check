@@ -525,6 +525,12 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_models.model_all_captured_as_sources",
+    "sources": [
+      {
+        "port": "captured_variable(*args)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
     "sinks": [
       {
         "port": "captured_variable($local_closure_models?captured_variable_models$complicated_name)",
@@ -544,6 +550,23 @@
               "start": 19,
               "end": 35
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.captured_variable_models.model_all_captured_as_tito",
+    "tito": [
+      {
+        "port": "captured_variable(*args)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "tito": null
           }
         ]
       }
