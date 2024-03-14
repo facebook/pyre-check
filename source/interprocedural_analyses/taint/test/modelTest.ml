@@ -2471,12 +2471,11 @@ let test_closure_models context =
       "`CapturedVariables(TaintSource[Test], TaintSource[Test])` is an invalid taint annotation: \
        `@CapturedVariables(...)` takes only one Taint Annotation as argument."
     ();
-  (* TODO(T182364904): Support TaintInTantOut transform on captured variables *)
-  assert_invalid_model
+  assert_model
     ~context
     ~model_source:
       {|
-      @CapturedVariables(TaintInTaintOut[Transform[Test]])
+      @CapturedVariables(TaintInTaintOut[Transform[TestTransform]])
       def test.outer.inner(): ...
     |}
     ~source:{|
@@ -2484,9 +2483,7 @@ let test_closure_models context =
         def inner():
           pass
     |}
-    ~expect:
-      "`TaintInTaintOut[Transform[Test]]` is an invalid taint annotation: `TaintInTaintOut[]` can \
-       only be used on parameters, attributes or globals"
+    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
     ();
   ()
 

@@ -197,6 +197,7 @@ module AnnotationOrigin = struct
     | DefineParameter
     | DefineReturn
     | DefineDecorator
+    | DefineDecoratorCapturedVariables
     | Attribute
     | ModelQueryParameter
     | ModelQueryReturn
@@ -222,6 +223,7 @@ module AnnotationOrigin = struct
 
   let is_parameter = function
     | DefineParameter
+    | DefineDecoratorCapturedVariables
     | ModelQueryParameter ->
         true
     | _ -> false
@@ -3151,7 +3153,7 @@ let create_model_from_signature
         ~path
         ~location
         ~taint_configuration
-        ~origin:DefineDecorator
+        ~origin:DefineDecoratorCapturedVariables
         ~top_level_decorators
   >>| fun model ->
   Model { Model.WithTarget.model; target = update_call_target_name ~callable_name call_target }

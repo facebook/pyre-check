@@ -216,13 +216,12 @@ module LeafPort = struct
       match root with
       | AccessPath.Root.LocalResult -> "return"
       | AccessPath.Root.PositionalParameter { name; _ }
-      | AccessPath.Root.NamedParameter { name } ->
+      | AccessPath.Root.NamedParameter { name }
+      | AccessPath.Root.CapturedVariable name ->
           name
       | AccessPath.Root.StarParameter _ -> "*"
       | AccessPath.Root.StarStarParameter _ -> "**"
-      | AccessPath.Root.Variable _
-      | AccessPath.Root.CapturedVariable _ ->
-          failwith "unexpected port in apply_call"
+      | AccessPath.Root.Variable _ -> failwith "unexpected port in apply_call"
     in
     Leaf { root; path }
 end
