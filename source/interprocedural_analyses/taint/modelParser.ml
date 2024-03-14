@@ -3084,6 +3084,12 @@ let create_model_from_signature
     in
     match List.find ~f:is_captured_variables top_level_decorators with
     | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
+        let captured_variables =
+          match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
+          | Some { Node.value = { Define.captures; _ }; _ } ->
+              List.map ~f:(fun capture -> capture.Define.Capture.name) captures
+          | _ -> []
+        in
         callable_annotation
         >>= fun callable_annotation ->
         value
@@ -3095,16 +3101,17 @@ let create_model_from_signature
              ~parameters:[]
              ~callable_parameter_names_to_roots:None
         >>= List.fold_result ~init:model ~f:(fun model annotation ->
-                add_taint_annotation_to_model
-                  ~path
-                  ~location
-                  ~model_name:(Reference.show callable_name)
-                  ~pyre_api
-                  ~callable_annotation
-                  ~source_sink_filter
-                  model
-                  (ModelAnnotation.ParameterAnnotation
-                     (AccessPath.Root.CapturedVariable "*args", annotation)))
+                List.fold_result captured_variables ~init:model ~f:(fun model captured_variable ->
+                    add_taint_annotation_to_model
+                      ~path
+                      ~location
+                      ~model_name:(Reference.show callable_name)
+                      ~pyre_api
+                      ~callable_annotation
+                      ~source_sink_filter
+                      model
+                      (ModelAnnotation.ParameterAnnotation
+                         (AccessPath.Root.CapturedVariable captured_variable, annotation))))
     | _ -> Ok model
   in
   let model =
