@@ -2809,6 +2809,24 @@ let adjust_sanitize_and_modes_and_skipped_override
     let original_expression =
       create_function_call ~location:decorator_location name (Option.value ~default:[] arguments)
     in
+    let validate_captured_variables_decorator () =
+      let annotation_error reason =
+        model_verification_error
+          ~path
+          ~location:decorator_location
+          (InvalidTaintAnnotation { taint_annotation = original_expression; reason })
+      in
+      match arguments with
+      | Some [_] -> Ok ()
+      | Some _ ->
+          Error
+            (annotation_error
+               "`@CapturedVariables(...)` takes only one Taint Annotation as argument.")
+      | None ->
+          Error
+            (annotation_error "`@CapturedVariables(...)` needs one Taint Annotation as argument.")
+    in
+
     match name with
     | "Sanitize" ->
         join_with_sanitize_decorator
@@ -2824,6 +2842,8 @@ let adjust_sanitize_and_modes_and_skipped_override
           ~original_expression
           arguments
         >>| fun sanitizers -> sanitizers, modes
+    | "CapturedVariables" ->
+        validate_captured_variables_decorator () >>| fun () -> sanitizers, modes
     | _ -> (
         match Model.Mode.from_string name with
         | Some mode ->
@@ -2885,7 +2905,8 @@ let create_model_from_signature
           | ["Entrypoint"]
           | ["SkipObscure"]
           | ["IgnoreDecorator"]
-          | ["SkipModelBroadening"] ->
+          | ["SkipModelBroadening"]
+          | ["CapturedVariables"] ->
               Either.first decorator
           | _ -> Either.Second decorator_expression)
     in

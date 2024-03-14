@@ -2426,7 +2426,7 @@ let test_class_models context =
 
 
 let test_closure_models context =
-  assert_invalid_model
+  assert_model
     ~context
     ~model_source:
       {|
@@ -2438,9 +2438,38 @@ let test_closure_models context =
         def inner():
           pass
     |}
+    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
+    ();
+  assert_invalid_model
+    ~context
+    ~model_source:{|
+      @CapturedVariables
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
     ~expect:
-      "Unexpected decorators found when parsing model for `test.outer.inner`: \
-       `CapturedVariables(TaintSource[Test])`."
+      "`CapturedVariables()` is an invalid taint annotation: `@CapturedVariables(...)` needs one \
+       Taint Annotation as argument."
+    ();
+  assert_invalid_model
+    ~context
+    ~model_source:
+      {|
+      @CapturedVariables(TaintSource[Test], TaintSource[Test])
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
+    ~expect:
+      "`CapturedVariables(TaintSource[Test], TaintSource[Test])` is an invalid taint annotation: \
+       `@CapturedVariables(...)` takes only one Taint Annotation as argument."
     ();
   ()
 
@@ -3678,6 +3707,7 @@ let () =
          "taint_in_taint_out_transform" >:: test_taint_in_taint_out_transform;
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
+         "test_closure_models" >:: test_closure_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
        ]
   |> Test.run
