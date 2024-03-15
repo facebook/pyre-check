@@ -29,9 +29,6 @@ let test_create context =
     (PyrePath.create_relative ~root ~relative:"some/path" |> PyrePath.show)
     (path ^/ "some/path");
   assert_equal
-    (PyrePath.create_relative ~root ~relative:(path ^/ "some/path") |> PyrePath.show)
-    (path ^/ "some/path");
-  assert_equal
     (PyrePath.create_relative ~root ~relative:"/other/root/some/path" |> PyrePath.show)
     (path ^/ "other/root/some/path");
   ()
@@ -42,9 +39,7 @@ let test_absolute context =
   assert_equal
     (PyrePath.create_relative ~root ~relative:"some/path" |> PyrePath.absolute)
     (path ^/ "some/path");
-  assert_equal
-    (PyrePath.create_relative ~root ~relative:(path ^/ "some/path") |> PyrePath.absolute)
-    (path ^/ "some/path")
+  ()
 
 
 let test_get_relative_to_root context =

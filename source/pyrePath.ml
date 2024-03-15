@@ -4,6 +4,7 @@
  * This source code is licensed under the MIT license found in the
  * LICENSE file in the root directory of this source tree.
  *)
+
 (* TODO(T170743593) new warning with ppx_conv_sexp.v0.16.X *)
 [@@@warning "-name-out-of-scope"]
 
@@ -35,14 +36,7 @@ let create_absolute ?(follow_symbolic_links = false) path =
     Absolute path
 
 
-let create_relative ~root ~relative =
-  let root =
-    let root = absolute root in
-    if not (String.is_suffix ~suffix:"/" root) then root ^ "/" else root
-  in
-  let relative = String.chop_prefix ~prefix:root relative |> Option.value ~default:relative in
-  Relative { root; relative }
-
+let create_relative ~root ~relative = Relative { root = absolute root; relative }
 
 let show = absolute
 

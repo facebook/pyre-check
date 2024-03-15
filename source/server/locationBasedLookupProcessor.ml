@@ -25,7 +25,11 @@ let get_module_path ~type_environment ~build_system path =
     let { Configuration.Analysis.local_root = root; _ } =
       TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
     in
-    PyrePath.create_relative ~root ~relative:path |> SourcePath.create
+    let relative =
+      PyrePath.get_relative_to_root ~root ~path:(PyrePath.create_absolute path)
+      |> Option.value ~default:path
+    in
+    PyrePath.create_relative ~root ~relative |> SourcePath.create
   in
   match BuildSystem.lookup_artifact build_system full_path with
   | [] -> Result.Error FileNotFound
