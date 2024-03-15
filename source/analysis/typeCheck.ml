@@ -5317,46 +5317,33 @@ module State (Context : Context) = struct
                   | Some (PlaceholderStub _) ->
                       None)
           | Some { Node.value = from; _ } -> (
-              match GlobalResolution.get_module_metadata global_resolution from with
-              | None ->
-                  if GlobalResolution.is_from_empty_stub global_resolution from then
-                    []
-                  else
-                    [Error.UndefinedModule from]
-              | Some module_metadata ->
-                  List.filter_map
-                    imports
-                    ~f:(fun { Node.value = { Import.name = name_reference; _ }; _ } ->
-                      let name = Reference.show name_reference in
-                      match Module.get_export module_metadata name with
+              match GlobalResolution.resolve_exports global_resolution from with
+              | None
+              | Some (ModuleAttribute _) ->
+                  [Error.UndefinedModule from]
+              | Some (PlaceholderStub _) ->
+                  (* Anything goes for placeholder stubs *)
+                  []
+              | Some (Module _) ->
+                  List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
+                      match GlobalResolution.resolve_exports global_resolution ~from name with
+                      | None ->
+                          let origin_module =
+                            match
+                              GlobalResolution.module_path_of_qualifier global_resolution from
+                            with
+                            | Some source_path -> Error.ExplicitModule source_path
+                            | None -> Error.ImplicitModule from
+                          in
+                          Some
+                            (Error.UndefinedName
+                               { from = origin_module; name = Reference.show name })
                       | Some _ ->
-                          (* `name` is defined inside the module. *)
-                          None
-                      | None -> (
-                          match Module.get_export module_metadata "__getattr__" with
-                          | Some Module.Export.(Name (Define { is_getattr_any = true })) ->
-                              (* The current module has `__getattr__: str -> Any` defined. *)
-                              None
-                          | _ ->
-                              if
-                                (* `name` is a submodule of the current package. *)
-                                GlobalResolution.module_exists
-                                  global_resolution
-                                  (Reference.combine from name_reference)
-                                || (* The current module is descendant of a placeholder-stub
-                                      module. *)
-                                GlobalResolution.is_from_empty_stub global_resolution from
-                              then
-                                None
-                              else
-                                let origin_module =
-                                  match
-                                    GlobalResolution.module_path_of_qualifier global_resolution from
-                                  with
-                                  | Some source_path -> Error.ExplicitModule source_path
-                                  | None -> Error.ImplicitModule from
-                                in
-                                Some (Error.UndefinedName { from = origin_module; name }))))
+                          (* NOTE: In theory we should preserve some info here so downstream
+                             reference to `name` can be efficiently looked up for what `name` is.
+                             But qualification made it such that we don't really know how `name`
+                             gets referenced later as all names are always fully qualified. *)
+                          None))
         in
         ( Value resolution,
           List.fold undefined_imports ~init:[] ~f:(fun errors undefined_import ->

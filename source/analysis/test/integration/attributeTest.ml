@@ -2120,13 +2120,12 @@ let test_class_with_same_name_as_local_variable =
               as type `None`.";
              "Undefined attribute [16]: `$local_Foo$Foo` has no attribute `x`.";
            ];
-      (* TODO(T121169620): Due to a comedy of errors, Pyre resolves `some_module.Foo.Foo` to
-         `some_module.Foo.Foo.Foo`, which does not exist. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            ~other_sources:
              [
-               (* This makes `some_module.Foo` map to `some_module.Bar.Foo`. *)
+               (* This makes `some_module.Foo` map to `some_module.Bar.Foo`, which in turn points to
+                  some_module.Foo.Foo, which is a class but not a module. *)
                {
                  handle = "some_module/__init__.py";
                  source =
@@ -2134,10 +2133,6 @@ let test_class_with_same_name_as_local_variable =
                     from some_module.Bar import Foo
                   |};
                };
-               (* This makes `some_module.Bar.Foo` map to `some_module.Foo.Foo`. Put together with
-                  the previous import, we map the module `some_module.Foo` to the class
-                  `some_module.Foo.Foo`, and the class `some_module.Foo.Foo` to
-                  `some_module.Foo.Foo.Foo`. *)
                {
                  handle = "some_module/Bar.py";
                  source =
@@ -2163,6 +2158,8 @@ let test_class_with_same_name_as_local_variable =
               reveal_type(y.x)
             |}
            [
+             "Undefined import [21]: Could not find a module corresponding to import \
+              `some_module.Foo`.";
              "Undefined or invalid type [11]: Annotation `Foo.Foo` is not defined as a type.";
              "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
              "Revealed type [-1]: Revealed type for `y.x` is `unknown`.";
