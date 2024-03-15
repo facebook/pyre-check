@@ -1,0 +1,64 @@
+# This file contains all pysa models for fastapi library
+
+ModelQuery(
+  name = "get_fastapi_route_decorator",
+  find = "functions",
+  where =  AnyOf(
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.get")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.put")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.post")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.delete")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.options")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.patch")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.head")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.websocket")),
+    Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.middleware")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.get")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.put")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.post")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.delete")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.options")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.patch")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.head")),
+    Decorator(fully_qualified_callee.equals("fastapi.routing.APIRouter.websocket")),
+  ),
+  model = [
+    Parameters(TaintSource[UserControlled]),
+    Returns(TaintSink[ReturnedToUser])
+  ]
+)
+
+ModelQuery(
+  name = "get_fastapi_exception_handler",
+  find = "functions",
+  where = Decorator(fully_qualified_callee.equals("fastapi.applications.FastAPI.exception_handler")),
+  model = [
+    Returns(TaintSink[ReturnedToUser])
+  ]
+)
+
+def fastapi.applications.FastAPI.__init__(self, responses: TaintSink[ReturnedToUser]): ...
+
+fastapi.Request.cookies: TaintSource[Cookies]
+fastapi.WebSocket.cookies: TaintSource[Cookies]
+
+def starlette.responses.Response.init_headers(headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]): ...
+fastapi.WebSocket.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.HTMLResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.JSONResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.PlainTextResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.Response.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.RedirectResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.StreamingResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+fastapi.responses.FileResponse.headers: TaintSink[ResponseHeaderName, ResponseHeaderValue]
+
+fastapi.responses.HTMLResponse.body: TaintSink[XSS]
+fastapi.responses.Response.body: TaintSink[XSS]
+
+fastapi.responses.RedirectResponse.body: TaintSink[Redirect]
+
+
+fastapi.WebSocket.cookies: TaintSink[CookieWrite]
+
+def starlette.responses.Response.set_cookie(key: TaintSink[CookieWrite], value: TaintSink[CookieWrite]): ...
+def starlette.responses.Response.delete_cookie(key: TaintSink[CookieWrite]): ...
