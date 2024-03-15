@@ -94,6 +94,13 @@ let test_source_code_api =
       expected
       actual
   in
+  let assert_module_tracked ~context ~api ~expected qualifier =
+    let actual =
+      let source_code_api = BuckBasedSourceCodeApi.get_source_code_api api in
+      Analysis.SourceCodeApi.is_qualifier_tracked source_code_api qualifier
+    in
+    assert_equal ~ctxt:context ~cmp:Bool.equal ~printer:Bool.to_string expected actual
+  in
   [
     (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"empty"
     @@ fun context ->
@@ -113,7 +120,11 @@ let test_source_code_api =
       ~context
       ~api
       [!"foo", Some "foo.py"; !"bar", Some "bar.py"; !"baz", None];
-    assert_type_check_qualifiers ~context ~api [!"foo"]);
+    assert_type_check_qualifiers ~context ~api [!"foo"];
+    assert_module_tracked ~context ~api !"foo" ~expected:true;
+    assert_module_tracked ~context ~api !"bar" ~expected:true;
+    assert_module_tracked ~context ~api !"baz" ~expected:false;
+    ());
     (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"conflict mappings in source"
     @@ fun context ->
     let api =
@@ -124,7 +135,9 @@ let test_source_code_api =
       create loader listing
     in
     assert_lookup_relative_path ~context ~api [!"foo", Some "foo.pyi"];
-    assert_type_check_qualifiers ~context ~api [!"foo"]);
+    assert_type_check_qualifiers ~context ~api [!"foo"];
+    assert_module_tracked ~context ~api !"foo" ~expected:true;
+    ());
     (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"source_overwrites_dep"
     @@ fun context ->
     let api =
@@ -135,7 +148,32 @@ let test_source_code_api =
       create loader listing
     in
     assert_lookup_relative_path ~context ~api [!"foo", Some "foo.py"];
-    assert_type_check_qualifiers ~context ~api [!"foo"]);
+    assert_type_check_qualifiers ~context ~api [!"foo"];
+    assert_module_tracked ~context ~api !"foo" ~expected:true;
+    ());
+    (Test.labeled_test_case Stdlib.__FUNCTION__ Stdlib.__LINE__ ~name:"implicit modules"
+    @@ fun context ->
+    let api =
+      let loader = FileLoader.create_for_testing ["a/b/c.py", ""; "a/d/e.pyi", ""] in
+      let listing =
+        Sourcedb.Listing.create_for_testing ~sources:["a/b/c.py"] ~dependencies:["a/d/e.pyi"] ()
+      in
+      create loader listing
+    in
+    assert_lookup_relative_path
+      ~context
+      ~api
+      [
+        !"a.b.c", Some "a/b/c.py"; !"a.b", None; !"a.d.e", Some "a/d/e.pyi"; !"a.d", None; !"a", None;
+      ];
+    assert_type_check_qualifiers ~context ~api [!"a.b.c"];
+    assert_module_tracked ~context ~api !"a" ~expected:true;
+    assert_module_tracked ~context ~api !"a.b" ~expected:true;
+    assert_module_tracked ~context ~api !"a.b.c" ~expected:true;
+    assert_module_tracked ~context ~api !"a.d" ~expected:true;
+    assert_module_tracked ~context ~api !"a.d.e" ~expected:true;
+    assert_module_tracked ~context ~api !"a.x" ~expected:false;
+    ());
   ]
 
 

@@ -26,6 +26,11 @@ let create_module_path ~should_type_check relative =
   { ModulePath.Raw.relative; priority = 0 } |> ModulePath.create ~should_type_check
 
 
+module ReferenceKey = struct
+  include Reference
+  include Comparator.Make (Reference)
+end
+
 let build_index ~configuration module_paths =
   let add_to_index sofar module_path =
     Map.update sofar (ModulePath.qualifier module_path) ~f:(function
@@ -39,14 +44,21 @@ let build_index ~configuration module_paths =
             in
             if compare_result > 0 then module_path else old_module_path)
   in
-  let init =
-    Map.empty
-      (module struct
-        include Reference
-        include Comparator.Make (Reference)
-      end)
-  in
+  let init = Map.empty (module ReferenceKey) in
   List.fold module_paths ~init ~f:add_to_index
+
+
+let collect_implicit_modules explicit_modules =
+  let collect sofar explicit_module_name =
+    Reference.all_parents explicit_module_name
+    |> List.fold ~init:sofar ~f:(fun sofar prefix ->
+           if Reference.is_empty prefix then
+             sofar
+           else
+             Set.add sofar prefix)
+  in
+  let init = Set.empty (module ReferenceKey) in
+  List.fold explicit_modules ~init ~f:collect
 
 
 let create
@@ -71,12 +83,24 @@ let create
     let combine ~key:_ source_value _dependency_value = source_value in
     Map.merge_skewed source_index dependency_index ~combine
   in
+  let implicit_modules =
+    (* NOTE(grievejia): Collecting these info at the module layer is justified due to the assumption
+       that if a file `a/b/c.py` exists on the filesystem, then we can be certain that the
+       directories `a/` and `a/b/` must also exist. Such assumption is currently not encoded into
+       `FileLoader.t` and `Sourcedb.Listing.t` because we don't really need them to understand how
+       directory works in this context. But if in the future those lower-level abstractions get
+       reused in a way that demands such understanding, then we should really push the collection
+       logic down, maintaining the invariant that "a module name that corresponds to a directory on
+       the filesystem is always implicit". *)
+    collect_implicit_modules (Map.keys merged_index)
+  in
   let look_up_qualifier qualifier =
-    (* Currently we are not handling implicit modules and hence not fully backward-compatible *)
-    (* TODO: Revisit this decision once we get more results from production *)
     match Map.find merged_index qualifier with
-    | None -> SourceCodeApi.ModuleLookup.NotFound
     | Some module_path -> SourceCodeApi.ModuleLookup.Explicit module_path
+    | None -> (
+        match Set.mem implicit_modules qualifier with
+        | true -> SourceCodeApi.ModuleLookup.Implicit
+        | false -> SourceCodeApi.ModuleLookup.NotFound)
   in
   let parse_result_of_qualifier qualifier =
     let open Option.Monad_infix in
