@@ -4,6 +4,10 @@ title: Querying Pyre
 sidebar_label: Querying Pyre
 ---
 
+:::warning
+These interfaces are considered legacy code by our team. They are far from production-ready, will receive minimal maintenance effort in the short to medium term (for Pysa only) and will eventually be removed in the long term. It is ok if you want to rely on them for debugging or manual triaging purpose. But we would **strongly discourage** relying on them to build any automation or product on top.
+:::
+
 Pyre has a subcommand called `query` allows you to hook into a Pyre server and get type-related
 information without having to run a full type check.
 
@@ -12,9 +16,6 @@ This allows you, for instance, to get the type of an expression at a certain lin
 To get started, set up a server with `pyre` or `pyre start`. The rest of this page goes through the various query options with examples. You can also run `pyre query help` to see a full list of available queries to the Pyre server.
 
 **Note:** The responses in the examples are prettified using the `pyre query <query> | python -m json.tool` pattern.
-
-**IMPORTANT**:
-These interfaces are considered legacy code by our team. They are far from production-ready, and will receive minimal maintenance effort in the short to medium term (for Pysa only) and will eventually be removed in the long term. It is ok if you want to rely on them for debugging or manual triaging purpose. But we would **strongly discourage** relying on them to build any automation or product on top.
 
 ## Supported Queries
 ### Attributes
