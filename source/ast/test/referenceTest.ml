@@ -197,9 +197,9 @@ let test_map_last _ =
   ()
 
 
-let test_this_and_all_parents _ =
+let test_all_parents _ =
   let assert_result reference expected =
-    let actual = Reference.this_and_all_parents (Reference.create reference) in
+    let actual = Reference.all_parents (Reference.create reference) in
     let expected_references = List.map ~f:Reference.create expected in
     assert_equal
       ~cmp:(List.equal Reference.equal)
@@ -207,10 +207,10 @@ let test_this_and_all_parents _ =
       expected_references
       actual
   in
-  assert_result "" [""];
-  assert_result "a" ["a"; ""];
-  assert_result "a.b" ["a.b"; ""; "a"];
-  assert_result "a.b.c" ["a.b.c"; ""; "a"; "a.b"];
+  assert_result "" [];
+  assert_result "a" [""];
+  assert_result "a.b" [""; "a"];
+  assert_result "a.b.c" [""; "a"; "a.b"];
   ()
 
 
@@ -243,7 +243,7 @@ let () =
          "prefix" >:: test_prefix;
          "last" >:: test_last;
          "map_last" >:: test_map_last;
-         "this_and_all_parents" >:: test_this_and_all_parents;
+         "all_parents" >:: test_all_parents;
          "possible_qualifiers_after_delocalize" >:: test_possible_qualifiers_after_delocalize;
        ]
   |> Test.run

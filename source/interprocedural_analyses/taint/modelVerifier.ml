@@ -107,8 +107,7 @@ let resolve_global ~pyre_api name =
   let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
   let resolved_local =
     if Option.is_none resolved_global then
-      name
-      |> Reference.this_and_all_parents
+      name :: Reference.all_parents name
       |> List.filter_map ~f:(PyrePysaApi.ReadOnly.get_define_body pyre_api)
       |> List.map ~f:Node.value
       |> List.concat_map ~f:(fun define -> define.Statement.Define.body)

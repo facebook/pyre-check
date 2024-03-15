@@ -198,14 +198,11 @@ let prefixes_not_including_empty reference =
   recurse (reverse reference) []
 
 
-(* The ordering here is the reference itself, and then parents ascending from the empty reference.
-   This ordering is odd but deterministic and good for performance, and most use cases do not care
-   about ordering. *)
-let this_and_all_parents reference =
-  if equal reference empty then
-    [empty]
-  else
-    reference :: empty :: prefixes_not_including_empty reference
+(* The ordering here is ascending in length from the empty reference. It is odd but deterministic
+   and good for performance, and most use cases do not care about ordering. *)
+let all_parents = function
+  | [] -> []
+  | _ as reference -> empty :: prefixes_not_including_empty reference
 
 
 let possible_qualifiers_after_delocalize reference =

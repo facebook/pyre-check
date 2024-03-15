@@ -275,7 +275,9 @@ module ModulePaths = struct
 
 
     let invalidate { cache; _ } qualifier =
-      Reference.this_and_all_parents qualifier |> Cache.KeySet.of_list |> Cache.remove_batch cache
+      qualifier :: Reference.all_parents qualifier
+      |> Cache.KeySet.of_list
+      |> Cache.remove_batch cache
 
 
     (* Given a qualifier, find all ModulePath.t values for that qualifier (across all search roots).
@@ -283,7 +285,7 @@ module ModulePaths = struct
        them. *)
     let find_module_paths ~lazy_finder:({ configuration; _ } as lazy_finder) qualifier =
       let files =
-        Reference.this_and_all_parents qualifier
+        qualifier :: Reference.all_parents qualifier
         |> List.map ~f:(fun parent_qualifier ->
                find_module_paths_inside_directories_all_search_paths lazy_finder parent_qualifier
                |> (fun map -> Reference.Map.Tree.find map qualifier)
