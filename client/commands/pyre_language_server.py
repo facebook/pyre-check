@@ -1098,6 +1098,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         document_path = parameters.text_document.document_uri().to_file_path()
+        request_timer = timer.Timer()
+        algorithm_duration = None
+        error = None
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
@@ -1107,8 +1110,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 f"Document URI has not been opened: {parameters.text_document.uri}"
             )
         try:
+            algorithm_timer = timer.Timer()
             source = document_path.read_text()
             symbols = find_symbols.parse_source_and_collect_symbols(source)
+            algorithm_duration = algorithm_timer.stop_in_millisecond()
+
             await lsp.write_json_rpc(
                 self.output_channel,
                 json_rpc.SuccessResponse(
@@ -1125,6 +1131,21 @@ class PyreLanguageServer(PyreLanguageServerApi):
             raise lsp.RequestFailedError(
                 f"Document URI is not a readable file: {parameters.text_document.uri}"
             ) from error
+
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "document_symbols",
+                "filepath": str(document_path),
+                "duration_ms": request_timer.stop_in_millisecond(),
+                "duration_document_symbol_ms": algorithm_duration,
+                "server_state_open_documents_count": len(
+                    self.server_state.opened_documents
+                ),
+                "error": str(error),
+            },
+            activity_key,
+        )
 
     async def process_find_all_references_request(
         self,
