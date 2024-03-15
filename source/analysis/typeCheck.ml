@@ -5309,12 +5309,13 @@ module State (Context : Context) = struct
           match from with
           | None ->
               List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
-                  match GlobalResolution.module_exists global_resolution name with
-                  | true -> None
-                  | false -> (
-                      match GlobalResolution.is_from_empty_stub global_resolution name with
-                      | true -> None
-                      | false -> Some (Error.UndefinedModule name)))
+                  match GlobalResolution.resolve_exports global_resolution name with
+                  | None
+                  | Some (ModuleAttribute _) ->
+                      Some (Error.UndefinedModule name)
+                  | Some (Module _)
+                  | Some (PlaceholderStub _) ->
+                      None)
           | Some { Node.value = from; _ } -> (
               match GlobalResolution.get_module_metadata global_resolution from with
               | None ->
