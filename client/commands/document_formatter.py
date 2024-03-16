@@ -16,5 +16,5 @@ class AbstractDocumentFormatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    def format_document(self, document_path: Path) -> None:
+    async def format_document(self, document_path: Path) -> None:
         raise NotImplementedError("Document formatting not yet implemented")

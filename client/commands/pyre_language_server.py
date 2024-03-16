@@ -1007,7 +1007,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             if self.document_formatter is None:
                 raise json_rpc.InternalError("Formatter was not initialized correctly.")
             else:
-                self.document_formatter.format_document(document_path)
+                await self.document_formatter.format_document(document_path)
 
         except OSError as error:
             raise lsp.RequestFailedError(
