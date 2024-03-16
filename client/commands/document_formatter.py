@@ -9,6 +9,8 @@ import abc
 
 from pathlib import Path
 
+from ..language_server import protocol as lsp
+
 
 class AbstractDocumentFormatter(abc.ABC):
     @abc.abstractmethod
@@ -16,5 +18,7 @@ class AbstractDocumentFormatter(abc.ABC):
         pass
 
     @abc.abstractmethod
-    async def format_document(self, document_path: Path) -> None:
+    async def format_document(
+        self, document_path: Path
+    ) -> lsp.DocumentFormattingResponse:
         raise NotImplementedError("Document formatting not yet implemented")

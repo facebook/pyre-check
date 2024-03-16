@@ -990,9 +990,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-
-        LOG.info("Calling document formatting")
         document_path = parameters.text_document.document_uri().to_file_path()
+        document_formatter_timer = 0
+
         if document_path is None:
             raise json_rpc.InvalidRequestError(
                 f"Document URI is not a file: {parameters.text_document.uri}"
@@ -1003,11 +1003,35 @@ class PyreLanguageServer(PyreLanguageServerApi):
             )
 
         try:
-            LOG.info("calling the formatter")
             if self.document_formatter is None:
                 raise json_rpc.InternalError("Formatter was not initialized correctly.")
             else:
-                await self.document_formatter.format_document(document_path)
+                document_formatter_timer = timer.Timer()
+                document_formatting_response = (
+                    await self.document_formatter.format_document(document_path)
+                )
+
+                raw_results = lsp.DocumentFormattingResponse.cached_schema().dump(
+                    document_formatting_response
+                )["listOfEdits"]
+
+                await lsp.write_json_rpc(
+                    self.output_channel,
+                    json_rpc.SuccessResponse(
+                        id=request_id,
+                        activity_key=activity_key,
+                        result=raw_results,
+                    ),
+                ),
+
+            await self.write_telemetry(
+                {
+                    "type": "LSP",
+                    "operation": "document_formatting",
+                    "duration_ms": document_formatter_timer.stop_in_millisecond(),
+                },
+                activity_key,
+            )
 
         except OSError as error:
             raise lsp.RequestFailedError(
