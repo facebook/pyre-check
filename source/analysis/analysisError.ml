@@ -235,7 +235,10 @@ and unawaited_awaitable = {
 }
 
 and undefined_import =
-  | UndefinedModule of Reference.t
+  | UndefinedModule of {
+      name: Reference.t;
+      kind: Module.Export.Name.t option;
+    }
   | UndefinedName of {
       from: module_reference;
       name: Identifier.t;
@@ -2821,8 +2824,8 @@ let rec messages ~concise ~signature location kind =
               attribute
               (private_attribute_warning ());
           ])
-  | UndefinedImport (UndefinedModule reference) when concise ->
-      [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized reference]
+  | UndefinedImport (UndefinedModule { name; _ }) when concise ->
+      [Format.asprintf "Could not find module `%a`." Reference.pp_sanitized name]
   | UndefinedImport (UndefinedName { from; name }) when concise ->
       let from_name, is_stub =
         match from with
@@ -2839,12 +2842,25 @@ let rec messages ~concise ~signature location kind =
           from_name
           (if is_stub then " (stubbed)" else "");
       ]
-  | UndefinedImport (UndefinedModule reference) ->
+  | UndefinedImport (UndefinedModule { name; kind }) ->
+      let kind_message =
+        match kind with
+        | None -> ""
+        | Some kind ->
+            let kind_name =
+              match kind with
+              | Module.Export.Name.Class -> "class"
+              | Module.Export.Name.Define _ -> "function"
+              | Module.Export.Name.GlobalVariable -> "variable"
+            in
+            Format.sprintf " A definition with that name exists but it's a %s." kind_name
+      in
       [
         Format.asprintf
-          "Could not find a module corresponding to import `%a`."
+          "Could not find a module corresponding to import `%a`.%s"
           Reference.pp_sanitized
-          reference;
+          name
+          kind_message;
         "For common reasons, see \
          https://pyre-check.org/docs/errors/#1821-undefined-name-undefined-import";
       ]
@@ -3741,7 +3757,7 @@ let join_at_source ~resolution errors =
         Type.show parent ^ Reference.show_sanitized name
     | { kind = MissingGlobalAnnotation { name; _ }; _ } -> Reference.show_sanitized name
     | { kind = MissingOverloadImplementation name; _ } -> Reference.show_sanitized name
-    | { kind = UndefinedImport (UndefinedModule name); _ } ->
+    | { kind = UndefinedImport (UndefinedModule { name; _ }); _ } ->
         Format.asprintf "Unknown[%a]" Reference.pp_sanitized name
     | { kind = UndefinedImport (UndefinedName { name; from }); _ } ->
         let module_qualifier =

@@ -16,7 +16,7 @@ module Export = struct
       | Class
       | Define of { is_getattr_any: bool }
       | GlobalVariable
-    [@@deriving sexp, compare, hash]
+    [@@deriving sexp, compare, hash, show]
   end
 
   type t =

@@ -77,6 +77,7 @@ let test_check_imports context =
                   a: int = 1
                 b: int = 2
                 c: Any = ...
+                def d() -> None: pass
         |};
         };
       ]
@@ -84,6 +85,7 @@ let test_check_imports context =
       from durp import Foo
       from durp import b
       from durp import c
+      from durp import d
     |}
     []
     context;
@@ -99,6 +101,7 @@ let test_check_imports context =
                     a: int = 1
                 b: int = 2
                 c: Any = ...
+                def d() -> None: pass
             |};
         };
       ]
@@ -106,11 +109,17 @@ let test_check_imports context =
       from durp.Foo import a
       from durp.b import b
       from durp.c import c  # This is NOT ok
+      from durp.d import d
     |}
     [
-      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`. A \
+       definition with that name exists but it's a class.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`. A \
+       definition with that name exists but it's a variable.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.c`. A \
+       definition with that name exists but it's a variable.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.d`. A \
+       definition with that name exists but it's a function.";
     ]
     context;
   assert_type_errors
@@ -125,6 +134,7 @@ let test_check_imports context =
                     a: int = 1
                 b: int = 2
                 c: Any = ...
+                def d() -> None: pass
             |};
         };
       ]
@@ -133,11 +143,17 @@ let test_check_imports context =
       import durp.Foo
       import durp.b
       import durp.c
+      import durp.d
     |}
     [
-      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.b`.";
-      "Undefined import [21]: Could not find a module corresponding to import `durp.c`.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.Foo`. A \
+       definition with that name exists but it's a class.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.b`. A \
+       definition with that name exists but it's a variable.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.c`. A \
+       definition with that name exists but it's a variable.";
+      "Undefined import [21]: Could not find a module corresponding to import `durp.d`. A \
+       definition with that name exists but it's a function.";
     ]
     context;
   assert_type_errors

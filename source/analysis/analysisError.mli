@@ -201,7 +201,10 @@ and unawaited_awaitable = {
 }
 
 and undefined_import =
-  | UndefinedModule of Reference.t
+  | UndefinedModule of {
+      name: Reference.t;
+      kind: Module.Export.Name.t option;
+    }
   | UndefinedName of {
       from: module_reference;
       name: Identifier.t;

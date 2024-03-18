@@ -5305,22 +5305,26 @@ module State (Context : Context) = struct
         in
         Value resolution, []
     | Import { Import.from; imports } ->
+        let get_export_kind = function
+          | ResolvedReference.Exported export -> Some export
+          | ResolvedReference.FromModuleGetattr -> None
+        in
         let undefined_imports =
           match from with
           | None ->
               List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                   match GlobalResolution.resolve_exports global_resolution name with
-                  | None
-                  | Some (ModuleAttribute _) ->
-                      Some (Error.UndefinedModule name)
+                  | None -> Some (Error.UndefinedModule { name; kind = None })
+                  | Some (ModuleAttribute { export; _ }) ->
+                      Some (Error.UndefinedModule { name; kind = get_export_kind export })
                   | Some (Module _)
                   | Some (PlaceholderStub _) ->
                       None)
           | Some { Node.value = from; _ } -> (
               match GlobalResolution.resolve_exports global_resolution from with
-              | None
-              | Some (ModuleAttribute _) ->
-                  [Error.UndefinedModule from]
+              | None -> [Error.UndefinedModule { name = from; kind = None }]
+              | Some (ModuleAttribute { export; _ }) ->
+                  [Error.UndefinedModule { name = from; kind = get_export_kind export }]
               | Some (PlaceholderStub _) ->
                   (* Anything goes for placeholder stubs *)
                   []
