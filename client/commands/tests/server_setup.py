@@ -11,7 +11,14 @@ import json
 from pathlib import Path
 from typing import Dict, Iterable, List, Optional, Sequence, Tuple, Union
 
-from ... import backend_arguments, background_tasks, error, identifiers, json_rpc
+from ... import (
+    backend_arguments,
+    background_tasks,
+    error,
+    frontend_configuration,
+    identifiers,
+    json_rpc,
+)
 from ...language_server import connections, daemon_connection, features, protocol as lsp
 from .. import (
     daemon_querier as querier,
@@ -56,7 +63,7 @@ def create_server_options(
     use_errpy_parser: bool = DEFAULT_USE_ERRPY_PARSER,
 ) -> options.PyreServerOptions:
     return options.PyreServerOptions(
-        binary,
+        frontend_configuration.DefaultServerStartCommand(binary),
         server_identifier,
         start_arguments,
         language_server_features,

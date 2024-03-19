@@ -15,6 +15,8 @@ with additional configuration, using open-source Pyre as a library.
 """
 
 
+from __future__ import annotations
+
 import abc
 import dataclasses
 import json
@@ -25,7 +27,7 @@ import sys
 from pathlib import Path
 from typing import List, Optional
 
-from . import configuration as configuration_module, find_directories
+from . import configuration as configuration_module, find_directories, identifiers
 
 LOG: logging.Logger = logging.getLogger(__name__)
 
@@ -34,6 +36,37 @@ LOG: logging.Logger = logging.getLogger(__name__)
 class SavedStateProject:
     name: str
     metadata: Optional[str] = None
+
+
+class ServerStartCommand(abc.ABC):
+    @abc.abstractmethod
+    def get_pyre_binary_location(self) -> str: ...
+
+    @abc.abstractmethod
+    def get_start_command(
+        self, argument_file_path: Path, flavor: identifiers.PyreFlavor
+    ) -> List[str]: ...
+
+
+class DefaultServerStartCommand(ServerStartCommand):
+    def __init__(self, binary_location: str) -> None:
+        self._binary_location = binary_location
+
+    def __eq__(self, other: DefaultServerStartCommand) -> bool:
+        return self._binary_location == other._binary_location
+
+    def get_pyre_binary_location(self) -> str:
+        return self._binary_location
+
+    def get_start_command(
+        self, argument_file_path: Path, flavor: identifiers.PyreFlavor
+    ) -> List[str]:
+        server_subcommand = (
+            "server"
+            if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
+            else "code-navigation"
+        )
+        return [self._binary_location, server_subcommand, str(argument_file_path)]
 
 
 # TODO(T120824066): Break this class down into smaller pieces. Ideally, one
@@ -45,6 +78,12 @@ class Base(abc.ABC):
 
     @abc.abstractmethod
     def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
+        raise NotImplementedError()
+
+    @abc.abstractmethod
+    def get_server_start_command(
+        self, download_if_needed: bool = False
+    ) -> Optional[ServerStartCommand]:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -246,6 +285,14 @@ class OpenSource(Base):
 
         # Auto-download is not supported in OSS
         return Path(binary_candidate) if binary_candidate is not None else None
+
+    def get_server_start_command(
+        self, download_if_needed: bool = False
+    ) -> Optional[ServerStartCommand]:
+        binary_location = self.get_binary_location(download_if_needed)
+        if binary_location is not None:
+            return DefaultServerStartCommand(str(binary_location))
+        return None
 
     def get_typeshed_location(self, download_if_needed: bool = False) -> Optional[Path]:
         typeshed = self.configuration.typeshed

@@ -17,18 +17,23 @@ import json
 
 import logging
 import os
-import shutil
 import subprocess
-import sys
 import tempfile
 import traceback
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Callable, List, Optional, Union
+from typing import Callable, Optional, Union
 
 from typing_extensions import TypeAlias
 
-from .. import backend_arguments, identifiers, json_rpc, log, log_lsp_event
+from .. import (
+    backend_arguments,
+    frontend_configuration,
+    identifiers,
+    json_rpc,
+    log,
+    log_lsp_event,
+)
 from ..language_server import connections, protocol as lsp
 from ..language_server.protocol import InitializeParameters, InitializeResult
 
@@ -203,81 +208,8 @@ class OtherStartFailure:
     detail: str
 
 
-def ensure_and_get_systemd_binary() -> Optional[str]:
-    if sys.platform == "linux":
-        systemd_binary = shutil.which("systemd-run")
-        if systemd_binary is not None:
-            try:
-                #  Sometimes systemd-run is available but we can't use it. For example, the systemd might not have
-                #  a proper working user session, so we might not be able to run commands via systemd-run as a
-                #  user process. Notably, `--user --scope` is broken under cgroupv2 in systemd < 238, and exits
-                #  code 1 (https://github.com/facebook/flow/issues/8012).
-                result = subprocess.run(
-                    [
-                        "timeout",
-                        "1",
-                        systemd_binary,
-                        "--quiet",
-                        "--user",
-                        "--scope",
-                        "--",
-                        "true",
-                    ]
-                )
-                if result.returncode == 0:
-                    return systemd_binary
-            except Exception:
-                return None
-
-    return None
-
-
-@dataclass(frozen=True)
-class ServerStartCommand:
-    binary_location: str
-    args: List[str]
-
-
-def get_server_start_command(
-    flavor: identifiers.PyreFlavor,
-    binary_location: Path | str,
-    argument_file_path: Path,
-) -> ServerStartCommand:
-    server_subcommand = (
-        "server"
-        if flavor != identifiers.PyreFlavor.CODE_NAVIGATION
-        else "code-navigation"
-    )
-    systemd_binary = ensure_and_get_systemd_binary()
-
-    if systemd_binary is not None:
-        LOG.info(f"Using systemd binary: {systemd_binary} for {flavor}")
-        return ServerStartCommand(
-            systemd_binary,
-            [
-                "--quiet",
-                "--user",
-                "--scope",
-                "--slice",
-                f"pyre-{flavor.value}.slice",
-                "--",
-                str(binary_location),
-                server_subcommand,
-                str(argument_file_path),
-            ],
-        )
-    else:
-        return ServerStartCommand(
-            str(binary_location),
-            [
-                server_subcommand,
-                str(argument_file_path),
-            ],
-        )
-
-
 async def async_start_pyre_server(
-    pyre_binary_location: str,
+    server_start_command: frontend_configuration.ServerStartCommand,
     pyre_arguments: start.Arguments,
     flavor: identifiers.PyreFlavor,
 ) -> Union[StartSuccess, BuckStartFailure, OtherStartFailure]:
@@ -299,12 +231,8 @@ async def async_start_pyre_server(
                 Path(pyre_arguments.base_arguments.log_path),
                 flavor=flavor,
             ) as server_stderr:
-                server_start_command = get_server_start_command(
-                    flavor, pyre_binary_location, argument_file_path
-                )
                 server_process = await asyncio.create_subprocess_exec(
-                    server_start_command.binary_location,
-                    *server_start_command.args,
+                    *server_start_command.get_start_command(argument_file_path, flavor),
                     stdout=subprocess.PIPE,
                     stderr=server_stderr,
                     env=server_environment,

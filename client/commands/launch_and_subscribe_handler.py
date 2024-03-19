@@ -128,7 +128,9 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
             server_options.start_arguments.base_arguments.relative_local_root
         )
         return {
-            "binary": server_options.binary,
+            "binary": str(
+                server_options.server_start_command.get_pyre_binary_location()
+            ),
             "log_path": server_options.start_arguments.base_arguments.log_path,
             "global_root": (server_options.start_arguments.base_arguments.global_root),
             **(
@@ -272,7 +274,7 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
         )
         self.server_state.status_tracker.set_status(state.ConnectionStatus.STARTING)
         start_status = await async_start_pyre_server(
-            server_options.binary,
+            server_options.server_start_command,
             start_arguments,
             flavor,
         )

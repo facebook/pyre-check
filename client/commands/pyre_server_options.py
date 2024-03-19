@@ -40,7 +40,7 @@ LOG: logging.Logger = logging.getLogger(__name__)
 
 @dataclasses.dataclass(frozen=True)
 class PyreServerOptions:
-    binary: str
+    server_start_command: frontend_configuration.ServerStartCommand
     project_identifier: str
     start_arguments: start.Arguments
     language_server_features: features.LanguageServerFeatures
@@ -63,8 +63,10 @@ class PyreServerOptions:
         flavor: identifiers.PyreFlavor,
         unsaved_changes_only: bool = False,
     ) -> PyreServerOptions:
-        binary_location = configuration.get_binary_location(download_if_needed=True)
-        if binary_location is None:
+        server_start_command = configuration.get_server_start_command(
+            download_if_needed=True
+        )
+        if server_start_command is None:
             raise configuration_module.InvalidConfiguration(
                 "Cannot locate a Pyre binary to run."
             )
@@ -75,7 +77,7 @@ class PyreServerOptions:
             )
 
         return PyreServerOptions(
-            binary=str(binary_location),
+            server_start_command=server_start_command,
             project_identifier=configuration.get_project_identifier(),
             start_arguments=start_arguments,
             language_server_features=language_server_features,

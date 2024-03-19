@@ -104,8 +104,11 @@ class PyreServerStarter(PyreServerStarterBase):
             configuration,
             start_arguments,
         )
+        server_start_command = configuration.get_server_start_command()
+        if server_start_command is None:
+            raise Exception("No binary found to start pyre")
         return await initialization.async_start_pyre_server(
-            binary_location,
+            server_start_command,
             pyre_arguments,
             flavor,
         )

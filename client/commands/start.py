@@ -522,12 +522,16 @@ def run(
     configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> commands.ExitCode:
-    binary_location = configuration.get_binary_location(download_if_needed=True)
-    if binary_location is None:
+    server_start_command = configuration.get_server_start_command(
+        download_if_needed=True
+    )
+    if server_start_command is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
-    LOG.info(f"Pyre binary is located at `{binary_location}`")
+    LOG.info(
+        f"Pyre binary is located at `{server_start_command.get_pyre_binary_location()}`"
+    )
 
     log_directory = configuration.get_log_directory()
     server_arguments = create_server_arguments(configuration, start_arguments)
@@ -541,9 +545,6 @@ def run(
     with backend_arguments.temporary_argument_file(
         server_arguments
     ) as argument_file_path:
-        server_command = initialization.get_server_start_command(
-            start_arguments.flavor, binary_location, argument_file_path
-        )
         server_environment = {
             **os.environ,
             # This is to make sure that backend server shares the socket root
@@ -552,9 +553,12 @@ def run(
             # configuration option instead.
             "TMPDIR": tempfile.gettempdir(),
         }
+        start_command = server_start_command.get_start_command(
+            argument_file_path, start_arguments.flavor
+        )
         if start_arguments.terminal:
             return _run_in_foreground(
-                [server_command.binary_location, *server_command.args],
+                start_command,
                 server_environment,
             )
         else:
@@ -563,7 +567,7 @@ def run(
                 flavor=start_arguments.flavor,
             )
             return _run_in_background(
-                [server_command.binary_location, *server_command.args],
+                start_command,
                 server_environment,
                 log_directory,
                 socket_path,

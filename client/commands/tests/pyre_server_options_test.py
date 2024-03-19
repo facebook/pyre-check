@@ -53,7 +53,9 @@ class ServerOptionsTest(testslide.TestCase):
         )
 
         expected = pyre_server_options.PyreServerOptions(
-            binary="/fake/binary",
+            server_start_command=frontend_configuration.DefaultServerStartCommand(
+                "/fake/binary"
+            ),
             project_identifier="test//local",
             start_arguments=start_arguments,
             language_server_features=language_server_features,
