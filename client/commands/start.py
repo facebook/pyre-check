@@ -48,7 +48,7 @@ from .. import (
     identifiers,
     log,
 )
-from . import commands, initialization, server_event, stop
+from . import commands, server_event, stop
 
 
 LOG: logging.Logger = logging.getLogger(__name__)
