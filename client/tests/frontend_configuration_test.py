@@ -73,15 +73,17 @@ class FrontendConfigurationTest(testslide.TestCase):
 
     def test_get_binary_from_configuration(self) -> None:
         with switch_environment({}):
+            start_command = frontend_configuration.OpenSource(
+                configuration_module.Configuration(
+                    global_root=Path("irrelevant"),
+                    dot_pyre_directory=Path(".pyre"),
+                    binary="foo",
+                )
+            ).get_server_start_command()
+            self.assertIsNotNone(start_command)
             self.assertEqual(
-                frontend_configuration.OpenSource(
-                    configuration_module.Configuration(
-                        global_root=Path("irrelevant"),
-                        dot_pyre_directory=Path(".pyre"),
-                        binary="foo",
-                    )
-                ).get_binary_location(),
-                Path("foo"),
+                start_command.get_pyre_binary_location(),
+                "foo",
             )
 
     def test_get_binary_auto_determined(self) -> None:
@@ -90,16 +92,18 @@ class FrontendConfigurationTest(testslide.TestCase):
         ).to_return_value("foo").and_assert_called_once()
 
         with switch_environment({}):
+            start_command = frontend_configuration.OpenSource(
+                configuration_module.Configuration(
+                    global_root=Path("irrelevant"),
+                    dot_pyre_directory=Path(".pyre"),
+                )
+            ).get_server_start_command()
+            self.assertIsNotNone(start_command)
+
             self.assertEqual(
-                frontend_configuration.OpenSource(
-                    configuration_module.Configuration(
-                        global_root=Path("irrelevant"),
-                        dot_pyre_directory=Path(".pyre"),
-                        binary=None,
-                    )
-                ).get_binary_location(),
-                Path("foo"),
-            )
+                start_command.get_pyre_binary_location(),
+                "foo",
+            ),
 
     def test_get_binary_cannot_auto_determine(self) -> None:
         self.mock_callable(shutil, "which").to_return_value(None).and_assert_called()
@@ -112,7 +116,7 @@ class FrontendConfigurationTest(testslide.TestCase):
                         dot_pyre_directory=Path(".pyre"),
                         binary=None,
                     )
-                ).get_binary_location(),
+                ).get_server_start_command(),
             )
 
     def test_typeshed_existent_search_path(self) -> None:

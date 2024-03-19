@@ -59,7 +59,6 @@ class TestServerStarterBase(PyreServerStarterBase):
     @override
     async def run(
         self,
-        binary_location: str,
         configuration: frontend_configuration.Base,
         flavor: identifiers.PyreFlavor,
     ) -> Union[
@@ -82,7 +81,6 @@ class SuccessfulPyreServerStarter(TestServerStarterBase):
     @override
     async def run(
         self,
-        binary_location: str,
         configuration: frontend_configuration.Base,
         flavor: identifiers.PyreFlavor,
     ) -> Union[
@@ -101,7 +99,6 @@ class FailedPyreServerStarter(TestServerStarterBase):
     @override
     async def run(
         self,
-        binary_location: str,
         configuration: frontend_configuration.Base,
         flavor: identifiers.PyreFlavor,
     ) -> Union[
@@ -126,7 +123,6 @@ class AlwaysFailsRegistrationPyreServerStarter(PyreServerStarterBase):
     @override
     async def run(
         self,
-        binary_location: str,
         configuration: frontend_configuration.Base,
         flavor: identifiers.PyreFlavor,
     ) -> Union[
