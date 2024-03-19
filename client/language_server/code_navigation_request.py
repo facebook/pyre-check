@@ -118,7 +118,10 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
     range: CodeNavigationRange
 
     def to_lsp_definition_response(self) -> lsp.LspLocation:
-        return lsp.LspLocation(uri=self.path, range=self.range.to_lsp_range())
+        return lsp.LspLocation(
+            uri=lsp.DocumentUri.from_file_path(Path(self.path)).unparse(),
+            range=self.range.to_lsp_range(),
+        )
 
 
 @dataclasses.dataclass(frozen=True)
