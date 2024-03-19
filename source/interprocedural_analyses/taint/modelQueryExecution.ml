@@ -378,6 +378,29 @@ let matches_name_constraint ~name_captures ~name_constraint name =
       is_match
 
 
+let matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee =
+  let return_type =
+    (* Since this won't be used and resolving the return type could be expensive, let's pass a
+       random type. *)
+    lazy Type.Any
+  in
+  let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
+    Interprocedural.CallGraph.resolve_callees_from_type_external
+      ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
+      ~override_graph:None
+      ~return_type
+      callee
+  in
+  let call_target_to_string call_target =
+    call_target
+    |> CallGraph.CallTarget.target
+    |> Interprocedural.Target.define_name
+    |> Reference.show
+  in
+  List.exists call_targets ~f:(fun call_target ->
+      matches_name_constraint ~name_captures ~name_constraint (call_target_to_string call_target))
+
+
 let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = function
   | ModelQuery.DecoratorConstraint.AnyOf constraints ->
       List.exists constraints ~f:(matches_decorator_constraint ~pyre_api ~name_captures ~decorator)
@@ -392,7 +415,7 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
         ~name_constraint
         (decorator_name |> Reference.delocalize |> Reference.last)
   | ModelQuery.DecoratorConstraint.FullyQualifiedCallee name_constraint ->
-      let ({ Node.value = expression; _ } as decorator_expression) =
+      let ({ Node.value = expression; location } as decorator_expression) =
         Statement.Decorator.to_expression decorator
       in
       let callee =
@@ -403,29 +426,15 @@ let rec matches_decorator_constraint ~pyre_api ~name_captures ~decorator = funct
             (* Regular decorator, such as `@foo` *) decorator_expression
         | _ -> decorator_expression
       in
-      let return_type =
-        (* Since this won't be used and resolving the return type could be expensive, let's pass a
-           random type. *)
-        lazy Type.Any
-      in
-      let { Interprocedural.CallGraph.CallCallees.call_targets; _ } =
-        Interprocedural.CallGraph.resolve_callees_from_type_external
-          ~pyre_in_context:(PyrePysaApi.InContext.create_at_global_scope pyre_api)
-          ~override_graph:None
-          ~return_type
-          callee
-      in
-      let call_target_to_string call_target =
-        call_target
-        |> CallGraph.CallTarget.target
-        |> Interprocedural.Target.define_name
-        |> Reference.show
-      in
-      List.exists call_targets ~f:(fun call_target ->
-          matches_name_constraint
-            ~name_captures
-            ~name_constraint
-            (call_target_to_string call_target))
+      if matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee then
+        true
+      else (* In case the callee is a callable class, such as a decorator class. *)
+        let callee =
+          Expression.Expression.Name
+            (Expression.Name.Attribute { base = callee; attribute = "__call__"; special = true })
+          |> Node.create ~location
+        in
+        matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee
   | ModelQuery.DecoratorConstraint.ArgumentsConstraint arguments_constraint -> (
       let { Statement.Decorator.arguments = decorator_arguments; _ } = decorator in
       let split_arguments =

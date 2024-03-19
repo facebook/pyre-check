@@ -2131,7 +2131,12 @@ let test_generated_annotations context =
         where =
           [
             AnyDecoratorConstraint
-              (FullyQualifiedCallee (Matches (Re2.create_exn "test.registered")));
+              (AllOf
+                 (* We can choose to write either of the following constraint. *)
+                 [
+                   FullyQualifiedCallee (Matches (Re2.create_exn "test.registered"));
+                   FullyQualifiedCallee (Equals "test.registered.__call__");
+                 ]);
           ];
         models = [Return [TaintAnnotation (source "Test")]];
         find = Function;
@@ -2139,7 +2144,7 @@ let test_generated_annotations context =
         unexpected_models = [];
       }
     ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
-    ~expected:[];
+    ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
   assert_generated_annotations
     ~source:
       {|
