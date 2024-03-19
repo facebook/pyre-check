@@ -2109,6 +2109,37 @@ let test_generated_annotations context =
       }
     ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
     ~expected:[ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test")];
+  (* Test `FullyQualifiedCallee` for class decorators. *)
+  assert_generated_annotations
+    ~source:
+      {|
+      class registered:
+        def __init__(self, arg):
+          self.arg = arg
+        def __call__(self, func):
+          pass
+      @registered(arg=1)
+      def my_view():
+        pass
+      |}
+    ~query:
+      {
+        location = Ast.Location.any;
+        name = "get_flask_route";
+        logging_group_name = None;
+        path = None;
+        where =
+          [
+            AnyDecoratorConstraint
+              (FullyQualifiedCallee (Matches (Re2.create_exn "test.registered")));
+          ];
+        models = [Return [TaintAnnotation (source "Test")]];
+        find = Function;
+        expected_models = [];
+        unexpected_models = [];
+      }
+    ~callable:(Target.Function { name = "test.my_view"; kind = Normal })
+    ~expected:[];
   assert_generated_annotations
     ~source:
       {|
