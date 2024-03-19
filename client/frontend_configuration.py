@@ -77,10 +77,6 @@ class Base(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     def get_server_start_command(
         self, download_if_needed: bool = False
     ) -> Optional[ServerStartCommand]:
@@ -268,7 +264,7 @@ class OpenSource(Base):
             or self.get_global_root() / find_directories.LOG_DIRECTORY
         )
 
-    def get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
+    def _get_binary_location(self, download_if_needed: bool = False) -> Optional[Path]:
         binary = self.configuration.binary
         if binary is not None:
             return Path(binary)
@@ -289,7 +285,7 @@ class OpenSource(Base):
     def get_server_start_command(
         self, download_if_needed: bool = False
     ) -> Optional[ServerStartCommand]:
-        binary_location = self.get_binary_location(download_if_needed)
+        binary_location = self._get_binary_location(download_if_needed)
         if binary_location is not None:
             return DefaultServerStartCommand(str(binary_location))
         return None

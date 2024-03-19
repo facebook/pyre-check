@@ -850,18 +850,22 @@ def _get_infer_command_output(
     configuration: frontend_configuration.Base,
     infer_arguments: command_arguments.InferArguments,
 ) -> str:
-    binary_location = configuration.get_binary_location(download_if_needed=True)
-    if binary_location is None:
+    start_command = configuration.get_server_start_command(download_if_needed=True)
+    if start_command is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
-    LOG.info(f"Pyre binary is located at `{binary_location}`")
+    LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
 
     with create_infer_arguments_and_cleanup(
         configuration, infer_arguments
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
-            infer_command = [str(binary_location), "infer", str(argument_file_path)]
+            infer_command = [
+                str(start_command.get_pyre_binary_location()),
+                "infer",
+                str(argument_file_path),
+            ]
             return _run_infer_command_get_output(command=infer_command)
 
 

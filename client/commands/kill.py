@@ -88,9 +88,9 @@ def _kill_binary_processes(configuration: frontend_configuration.Base) -> None:
     LOG.warning(
         "Use `pyre servers stop` if you want to gracefully stop all running servers."
     )
-    binary = configuration.get_binary_location(download_if_needed=False)
-    if binary is not None:
-        _kill_processes_by_name(str(binary))
+    start_command = configuration.get_server_start_command(download_if_needed=False)
+    if start_command is not None:
+        _kill_processes_by_name(str(start_command.get_pyre_binary_location()))
 
 
 def _kill_client_processes(configuration: frontend_configuration.Base) -> None:

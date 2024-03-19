@@ -320,8 +320,8 @@ def run(
     configuration: frontend_configuration.Base,
     start_arguments: command_arguments.StartArguments,
 ) -> int:
-    binary_location = configuration.get_binary_location()
-    if binary_location is None:
+    start_command = configuration.get_server_start_command()
+    if start_command is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
@@ -337,5 +337,9 @@ def run(
         )
 
     return asyncio.get_event_loop().run_until_complete(
-        run_persistent(str(binary_location), project_identifier, pyre_arguments)
+        run_persistent(
+            str(start_command.get_pyre_binary_location()),
+            project_identifier,
+            pyre_arguments,
+        )
     )

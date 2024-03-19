@@ -123,12 +123,12 @@ def execute_query(
     query_arguments: command_arguments.QueryArguments,
 ) -> Optional[query_response.Response]:
 
-    binary_location = configuration.get_binary_location(download_if_needed=True)
-    if binary_location is None:
+    start_command = configuration.get_server_start_command(download_if_needed=True)
+    if start_command is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
-    LOG.info(f"Pyre binary is located at `{binary_location}`")
+    LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
 
     with create_no_daemon_arguments_and_cleanup(
         configuration, query_arguments
@@ -138,7 +138,7 @@ def execute_query(
         prefix="pyre_query"
     ) as log_file:
         query_command = [
-            str(binary_location),
+            str(start_command.get_pyre_binary_location()),
             "no-daemon-query",
             str(argument_file_path),
         ]

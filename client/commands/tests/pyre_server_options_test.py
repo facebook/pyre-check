@@ -27,8 +27,10 @@ class FakeFrontendConfiguration(frontend_configuration.OpenSource):
             relative_local_root="local",
         )
 
-    def get_binary_location(self, download_if_needed: bool) -> Path:
-        return Path("/fake/binary")
+    def get_server_start_command(
+        self, download_if_needed: bool
+    ) -> frontend_configuration.ServerStartCommand:
+        return frontend_configuration.DefaultServerStartCommand("/fake/binary")
 
 
 class ServerOptionsTest(testslide.TestCase):

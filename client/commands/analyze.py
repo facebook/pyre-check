@@ -395,12 +395,13 @@ def run(
     configuration: frontend_configuration.Base,
     analyze_arguments: command_arguments.AnalyzeArguments,
 ) -> commands.ExitCode:
-    binary_location = configuration.get_binary_location(download_if_needed=True)
-    if binary_location is None:
+
+    start_command = configuration.get_server_start_command(download_if_needed=True)
+    if start_command is None:
         raise configuration_module.InvalidConfiguration(
             "Cannot locate a Pyre binary to run."
         )
-    LOG.info(f"Pyre binary is located at `{binary_location}`")
+    LOG.info(f"Pyre binary is located at `{start_command.get_pyre_binary_location()}`")
 
     save_results_to = analyze_arguments.save_results_to
     if save_results_to is not None:
@@ -410,7 +411,7 @@ def run(
     ) as arguments:
         with backend_arguments.temporary_argument_file(arguments) as argument_file_path:
             analyze_command = [
-                str(binary_location),
+                str(start_command.get_pyre_binary_location()),
                 "analyze",
                 str(argument_file_path),
             ]

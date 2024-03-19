@@ -60,8 +60,8 @@ class Info(dataclasses_json.DataClassJsonMixin):
         arguments: command_arguments.CommandArguments,
     ) -> "Info":
         flavor = identifiers.PyreFlavor.CLASSIC
-        binary_location = configuration.get_binary_location(download_if_needed=False)
-        if binary_location is None:
+        start_command = configuration.get_server_start_command(download_if_needed=True)
+        if start_command is None:
             LOG.warn("Could not locate a Pyre binary to run.")
         log_directory = configuration.get_log_directory()
         client_logs = log_directory / "pyre.stderr"
@@ -95,7 +95,11 @@ class Info(dataclasses_json.DataClassJsonMixin):
             codenav_server_log_directory=str(codenav_server_log_directory),
             client_logs=str(client_logs),
             codenav_client_logs=str(codenav_client_logs),
-            binary_location=None if binary_location is None else str(binary_location),
+            binary_location=(
+                None
+                if start_command is None
+                else str(start_command.get_pyre_binary_location())
+            ),
             client_version=client_version,
             binary_version=binary_version,
         )
