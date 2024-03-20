@@ -107,16 +107,9 @@ let resolve_global ~pyre_api name =
   let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
   let resolved_local =
     if Option.is_none resolved_global then
-      name :: Reference.all_parents name
-      |> List.filter_map ~f:(PyrePysaApi.ReadOnly.get_define_body pyre_api)
-      |> List.map ~f:Node.value
-      |> List.concat_map ~f:(fun define -> define.Statement.Define.body)
-      |> List.find_map ~f:(fun statement ->
-             match statement with
-             | { Node.value = Statement.Statement.Define define; _ }
-               when Reference.equal name (Reference.delocalize (Statement.Define.name define)) ->
-                 Some define
-             | _ -> None)
+      name
+      |> PyrePysaApi.ReadOnly.get_define_body pyre_api
+      >>| Node.value
       >>| fun define ->
       PyrePysaApi.ReadOnly.resolve_define
         ~implementation:(Some define.signature)
