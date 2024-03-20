@@ -110,11 +110,14 @@ let resolve_global ~pyre_api name =
       name
       |> PyrePysaApi.ReadOnly.get_define_body pyre_api
       >>| Node.value
-      >>| fun define ->
-      PyrePysaApi.ReadOnly.resolve_define
-        ~implementation:(Some define.signature)
-        ~overloads:[]
-        pyre_api
+      |> function
+      | Some ({ signature = { nesting_define = Some _; _ }; _ } as define) ->
+          Some
+            (PyrePysaApi.ReadOnly.resolve_define
+               ~implementation:(Some define.signature)
+               ~overloads:[]
+               pyre_api)
+      | _ -> None
     else
       None
   in
