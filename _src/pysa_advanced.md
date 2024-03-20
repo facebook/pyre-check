@@ -4,7 +4,7 @@ title: Advanced Topics
 sidebar_label: Advanced Topics
 ---
 
-This page documents less straightforward bits of Pysa.
+This page documents more advanced bits of Pysa.
 
 ## Conditional models based on Python version
 
@@ -18,17 +18,17 @@ if sys.version == (3,9,0):
 else:
     def module.bar(): ...
 ```
-In this example, the first model will only be parsed and honoured if the python
+In this example, the first model will only be parsed and honored if the python
 version in the system or virtual environment from which Pysa is run is equal
-to "3.9.0". In all other conditions, the second model will be parsed and honoured.
+to `3.9.0`. In all other conditions, the second model will be parsed and honored.
 
 sys.version is the only allowed left hand expression and the right hand expression
 has to be a tuple of integers of the form (major, minor, micro). Only the major
 version number is required and the other two are optional.
 
-The comparison operators supported include '==' (equal to), '!=' (not equal to),
-'&lt;' (less than), '&gt;' greater than, '&lt;=' (less than or equal to), and
-'&gt;=' (greater than or equal to).
+The comparison operators supported include `==` (equal to), `!=` (not equal to),
+`<` (less than), `>` greater than, `<=` (less than or equal to), and
+`>=` (greater than or equal to).
 
 If conditions can also be nested inside one another and follow the same behavior
 as python if conditions.
@@ -50,9 +50,9 @@ def foo(f: Any):
 ```
 
 Functions and methods defined in type stubs or in a different language (for
-instance, in C or C++ binding) will also be treated as obscure models.
+instance, in C or C++ bindings) will also be treated as obscure models.
 
-To prevent a function or method to be marked as obscure, one can use the
+To prevent a function or method being marked as obscure, one can use the
 `@SkipObscure` taint annotation in a `.pysa` file:
 
 ```python
