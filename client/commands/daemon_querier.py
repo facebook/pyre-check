@@ -766,12 +766,19 @@ class FailableDaemonQuerier(AbstractDaemonQuerier):
 
 
 class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
+    type_check_file_suffixes: List[str] = [".py", ".pyi"]
+
     async def get_type_errors(
         self,
         paths: List[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
         type_errors_request = code_navigation_request.TypeErrorsRequest(
-            paths=[str(path) for path in paths], client_id=self._get_client_id()
+            paths=[
+                str(path)
+                for path in paths
+                if path.suffix in self.type_check_file_suffixes
+            ],
+            client_id=self._get_client_id(),
         )
         response = await code_navigation_request.async_handle_type_errors_request(
             self.socket_path, type_errors_request
