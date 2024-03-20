@@ -74,7 +74,4 @@ class UndecoratedSourceGenerator(ModelGenerator[CallableModel]):
             #  `List[Optional[str]]`.
             paths=paths,
         ).generate_models()
-        # pyre-fixme[58]: `-` is not supported for operand types
-        #  `Set[CallableModel]` and
-        #  `Set[tools.pyre.tools.generate_taint_models.model.FunctionDefinitionModel]`.
         return set(unfiltered_models) - set(models_to_filter)

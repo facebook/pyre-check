@@ -10,6 +10,7 @@ from typing import Any, Callable, Iterable, List, Optional, Set, Type
 try:
     from graphql3 import GraphQLSchema
 except ModuleNotFoundError:
+    # pyre-fixme[21]: Could not find module `graphql`.
     from graphql import GraphQLSchema
 
 from .generator_specifications import AnnotationSpecification
