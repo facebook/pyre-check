@@ -2584,24 +2584,73 @@ let parse_return_taint
   |> map ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ReturnAnnotation annotation))
 
 
-type parsed_signature = {
-  signature: Define.Signature.t;
-  location: Location.t;
-  call_target: Target.t;
-}
+module ParsedStatement : sig
+  type parsed_signature = private {
+    signature: Define.Signature.t;
+    location: Location.t;
+    call_target: Target.t;
+  }
 
-type parsed_attribute = {
-  name: Reference.t;
-  annotations: TaintAnnotation.t list;
-  decorators: Decorator.t list;
-  location: Location.t;
-  call_target: Target.t;
-}
+  type parsed_attribute = private {
+    name: Reference.t;
+    annotations: TaintAnnotation.t list;
+    decorators: Decorator.t list;
+    location: Location.t;
+    call_target: Target.t;
+  }
 
-type parsed_statement =
-  | ParsedSignature of parsed_signature
-  | ParsedAttribute of parsed_attribute
-  | ParsedQuery of ModelQuery.t
+  type t = private
+    | ParsedSignature of parsed_signature
+    | ParsedAttribute of parsed_attribute
+    | ParsedQuery of ModelQuery.t
+
+  val create_parsed_signature
+    :  signature:Define.Signature.t ->
+    location:Location.t ->
+    call_target:Target.t ->
+    t
+
+  val create_parsed_attribute
+    :  name:Reference.t ->
+    annotations:TaintAnnotation.t list ->
+    decorators:Decorator.t list ->
+    location:Location.t ->
+    call_target:Target.t ->
+    t
+
+  val create_parsed_query : model_query:ModelQuery.t -> t
+end = struct
+  type parsed_signature = {
+    signature: Define.Signature.t;
+    location: Location.t;
+    call_target: Target.t;
+  }
+
+  type parsed_attribute = {
+    name: Reference.t;
+    annotations: TaintAnnotation.t list;
+    decorators: Decorator.t list;
+    location: Location.t;
+    call_target: Target.t;
+  }
+
+  type t =
+    | ParsedSignature of parsed_signature
+    | ParsedAttribute of parsed_attribute
+    | ParsedQuery of ModelQuery.t
+
+  let create_parsed_signature ~signature ~location ~call_target =
+    ParsedSignature { signature; location; call_target }
+
+
+  let create_parsed_attribute ~name ~annotations ~decorators ~location ~call_target =
+    ParsedAttribute { name; annotations; decorators; location; call_target }
+
+
+  let create_parsed_query ~model_query = ParsedQuery model_query
+end
+
+open ParsedStatement
 
 type model_or_query =
   | Model of Model.WithTarget.t
@@ -3380,7 +3429,7 @@ let rec parse_statement
         | Some _ -> Target.create_method name
         | None -> Target.create_function name
       in
-      [Ok (ParsedSignature { signature; location; call_target })]
+      [Ok (ParsedStatement.create_parsed_signature ~signature ~location ~call_target)]
   | { Node.value = Statement.Define { signature = { name; _ }; _ }; location } ->
       [
         Error
@@ -3480,19 +3529,18 @@ let rec parse_statement
                            []
                        in
                        let decorators = List.rev_append extra_decorators decorators in
-                       ParsedSignature
-                         {
-                           signature =
-                             {
-                               signature with
-                               Define.Signature.parameters;
-                               return_annotation = source_annotation;
-                               decorators;
-                             };
-                           location;
-                           call_target = Target.create_method name;
-                         }
+                       ParsedStatement.create_parsed_signature
+                         ~signature:
+                           {
+                             signature with
+                             Define.Signature.parameters;
+                             return_annotation = source_annotation;
+                             decorators;
+                           }
+                         ~location
+                         ~call_target:(Target.create_method name)
                      in
+
                      let sources =
                        List.map source_annotations ~f:(fun source_annotation ->
                            signature
@@ -3566,14 +3614,12 @@ let rec parse_statement
         in
         [
           Ok
-            (ParsedAttribute
-               {
-                 name;
-                 annotations = [];
-                 decorators = [decorator];
-                 location;
-                 call_target = Target.create_object name;
-               });
+            (ParsedStatement.create_parsed_attribute
+               ~name
+               ~annotations:[]
+               ~decorators:[decorator]
+               ~location
+               ~call_target:(Target.create_object name));
         ]
       else if
         String.equal annotation_string "ViaTypeOf"
@@ -3594,14 +3640,12 @@ let rec parse_statement
           ~callable_parameter_names_to_roots:None
           annotation
         >>| (fun annotations ->
-              ParsedAttribute
-                {
-                  name;
-                  annotations;
-                  decorators = [];
-                  location;
-                  call_target = Target.create_object name;
-                })
+              ParsedStatement.create_parsed_attribute
+                ~name
+                ~annotations
+                ~decorators:[]
+                ~location
+                ~call_target:(Target.create_object name))
         |> fun result -> [result]
       else
         [
@@ -3757,18 +3801,19 @@ let rec parse_statement
             >>| fun unexpected_models ->
             [
               Ok
-                (ParsedQuery
-                   {
-                     ModelQuery.find;
-                     where;
-                     models;
-                     name;
-                     logging_group_name;
-                     path;
-                     location;
-                     expected_models;
-                     unexpected_models;
-                   });
+                (ParsedStatement.create_parsed_query
+                   ~model_query:
+                     {
+                       ModelQuery.find;
+                       where;
+                       models;
+                       name;
+                       logging_group_name;
+                       path;
+                       location;
+                       expected_models;
+                       unexpected_models;
+                     });
             ])
       |> function
       | Ok parsed_statements_list -> parsed_statements_list
