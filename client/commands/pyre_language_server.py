@@ -478,7 +478,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             and self.server_state.server_options.flavor
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
-            await self.send_overlay_type_errors(
+            await self.handle_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key
             )
 
@@ -498,11 +498,12 @@ class PyreLanguageServer(PyreLanguageServerApi):
         except KeyError:
             LOG.warning(f"Trying to close an un-opened file: {document_path}")
 
-    async def send_overlay_type_errors(
+    async def handle_overlay_type_errors(
         self,
         document_path: Path,
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
+
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
@@ -600,7 +601,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             and self.server_state.server_options.flavor
             != identifiers.PyreFlavor.CODE_NAVIGATION
         ):
-            await self.send_overlay_type_errors(
+            await self.handle_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key
             )
 
@@ -654,7 +655,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             and self.server_state.server_options.flavor
             == identifiers.PyreFlavor.CODE_NAVIGATION
         ):
-            await self.send_overlay_type_errors(
+            await self.handle_overlay_type_errors(
                 document_path=document_path, activity_key=activity_key
             )
 
