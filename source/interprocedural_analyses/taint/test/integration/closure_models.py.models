@@ -3,9 +3,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure_models.captured_variable_models",
-    "callable_line": 89,
+    "callable_line": 98,
     "code": 5002,
-    "line": 111,
+    "line": 120,
     "start": 15,
     "end": 43,
     "filename": "closure_models.py",
@@ -25,10 +25,10 @@
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
-            "tito_positions": [ { "line": 111, "start": 15, "end": 43 } ],
+            "tito_positions": [ { "line": 120, "start": 15, "end": 43 } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 107,
+              "line": 116,
               "start": 23,
               "end": 37
             }
@@ -48,7 +48,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 111,
+              "line": 120,
               "start": 15,
               "end": 43
             }
@@ -145,7 +145,7 @@
     "callable": "closure_models.test",
     "callable_line": 38,
     "code": 5002,
-    "line": 74,
+    "line": 83,
     "start": 4,
     "end": 9,
     "filename": "closure_models.py",
@@ -169,7 +169,7 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 71, "start": 14, "end": 37 } ],
+            "tito_positions": [ { "line": 80, "start": 14, "end": 37 } ],
             "origin": {
               "filename": "closure_models.py",
               "line": 47,
@@ -199,7 +199,93 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 74,
+              "line": 83,
+              "start": 4,
+              "end": 9
+            },
+            "receiver_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" },
+      { "always-via-feature1-value": "breadcrumb1" },
+      { "always-via-feature2-value": "breadcrumb2" },
+      { "always-via": "tito" },
+      { "always-via": "lambda" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "closure_models.Reclassification.reclassify",
+      "index": 4,
+      "parameter": "formal(self)"
+    },
+    "master_handle": "closure_models.test:5002:0:Call|closure_models.Reclassification.reclassify|4|formal(self):9e385e5ace0f8fb33cf488693dbae210"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 77,
+    "start": 4,
+    "end": 9,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature1-value": "breadcrumb1" },
+              { "always-via": "tito" },
+              { "always-via": "lambda" }
+            ],
+            "tito_positions": [ { "line": 74, "start": 14, "end": 37 } ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 47,
+              "start": 13,
+              "end": 27
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.Reclassification.reclassify",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via-feature2-value": "breadcrumb2" }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 77,
               "start": 4,
               "end": 9
             },
@@ -231,7 +317,7 @@
     "callable": "closure_models.test",
     "callable_line": 38,
     "code": 5002,
-    "line": 68,
+    "line": 71,
     "start": 4,
     "end": 9,
     "filename": "closure_models.py",
@@ -254,10 +340,10 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 65, "start": 14, "end": 19 } ],
+            "tito_positions": [ { "line": 68, "start": 14, "end": 19 } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 65,
+              "line": 68,
               "start": 14,
               "end": 19
             }
@@ -284,7 +370,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 68,
+              "line": 71,
               "start": 4,
               "end": 9
             },
@@ -315,7 +401,7 @@
     "callable": "closure_models.test",
     "callable_line": 38,
     "code": 5002,
-    "line": 62,
+    "line": 65,
     "start": 4,
     "end": 9,
     "filename": "closure_models.py",
@@ -341,10 +427,10 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 59, "start": 14, "end": 32 } ],
+            "tito_positions": [ { "line": 62, "start": 14, "end": 32 } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 59,
+              "line": 62,
               "start": 14,
               "end": 32
             }
@@ -367,13 +453,13 @@
               { "always-via": "captured-variable" }
             ],
             "tito_positions": [
-              { "line": 52, "start": 14, "end": 26 },
-              { "line": 59, "start": 14, "end": 32 }
+              { "line": 55, "start": 14, "end": 26 },
+              { "line": 62, "start": 14, "end": 32 }
             ],
             "call": {
               "position": {
                 "filename": "closure_models.py",
-                "line": 52,
+                "line": 55,
                 "start": 14,
                 "end": 26
               },
@@ -403,7 +489,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 62,
+              "line": 65,
               "start": 4,
               "end": 9
             },
@@ -436,7 +522,7 @@
     "callable": "closure_models.test",
     "callable_line": 38,
     "code": 5002,
-    "line": 56,
+    "line": 59,
     "start": 4,
     "end": 9,
     "filename": "closure_models.py",
@@ -461,11 +547,11 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 52, "start": 14, "end": 26 } ],
+            "tito_positions": [ { "line": 55, "start": 14, "end": 26 } ],
             "call": {
               "position": {
                 "filename": "closure_models.py",
-                "line": 52,
+                "line": 55,
                 "start": 14,
                 "end": 26
               },
@@ -495,7 +581,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 56,
+              "line": 59,
               "start": 4,
               "end": 9
             },
@@ -525,9 +611,9 @@
   "kind": "issue",
   "data": {
     "callable": "closure_models.test_tito_transform",
-    "callable_line": 77,
+    "callable_line": 86,
     "code": 5003,
-    "line": 86,
+    "line": 95,
     "start": 4,
     "end": 9,
     "filename": "closure_models.py",
@@ -552,10 +638,10 @@
               { "always-via": "tito" },
               { "always-via": "lambda" }
             ],
-            "tito_positions": [ { "line": 83, "start": 14, "end": 37 } ],
+            "tito_positions": [ { "line": 92, "start": 14, "end": 37 } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 78,
+              "line": 87,
               "start": 13,
               "end": 27
             }
@@ -582,7 +668,7 @@
             ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 86,
+              "line": 95,
               "start": 4,
               "end": 9
             },
@@ -759,7 +845,7 @@
             "local_features": [ { "always-via": "captured-variable" } ],
             "origin": {
               "filename": "closure_models.py",
-              "line": 96,
+              "line": 105,
               "start": 19,
               "end": 35
             }
@@ -843,6 +929,23 @@
                 "kind": "LocalReturn"
               }
             ],
+            "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.test.return_model_query_tito",
+    "tito": [
+      {
+        "port": "captured_variable($local_closure_models?test$source)",
+        "taint": [
+          {
+            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
             "tito": null
           }
         ]

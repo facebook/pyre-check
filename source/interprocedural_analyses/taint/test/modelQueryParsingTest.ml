@@ -2203,13 +2203,44 @@ let test_query_parsing_captured_variables context =
     ~model_source:
       {|
     ModelQuery(
-     name = "get_foo",
+     name = "invalid_captured_variables",
+     find = "functions",
+     where = name.matches("foo"),
+     model = CapturedVariables
+    )
+  |}
+    ~expect:"Unexpected model expression: `CapturedVariables`"
+    ();
+
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "create_tito_for_captured_variables",
      find = "functions",
      where = name.matches("foo"),
      model = CapturedVariables(TaintInTaintOut)
     )
   |}
-    ~expect:"Unexpected model expression: `CapturedVariables(TaintInTaintOut)`"
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "create_tito_for_captured_variables";
+          logging_group_name = None;
+          path = None;
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
+            [
+              CapturedVariables
+                [TaintAnnotation (ModelParseResult.TaintAnnotation.from_tito Sinks.LocalReturn)];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
     ();
   ()
 

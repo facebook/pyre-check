@@ -1554,11 +1554,18 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               features = ModelParseResult.TaintFeatures.empty;
             }
     in
-    let apply_model ~normalized_parameters ~return_annotation = function
+    let apply_model ~normalized_parameters ~captures ~return_annotation = function
       | ModelQuery.Model.Return productions ->
           List.filter_map productions ~f:(fun production ->
               production_to_taint return_annotation ~production
               >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
+      | ModelQuery.Model.CapturedVariables productions ->
+          List.cartesian_product productions captures
+          |> List.filter_map ~f:(fun (production, capture) ->
+                 production_to_taint return_annotation ~production
+                 >>| fun taint ->
+                 ModelParseResult.ModelAnnotation.ParameterAnnotation
+                   (AccessPath.Root.CapturedVariable capture.Statement.Define.Capture.name, taint))
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =
             List.find_map
@@ -1656,13 +1663,13 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let { Statement.Define.signature = { parameters; return_annotation; _ }; _ } =
+    let { Statement.Define.signature = { parameters; return_annotation; _ }; captures; _ } =
       match modelable with
       | Modelable.Callable { define; _ } -> Lazy.force define
       | _ -> failwith "unreachable"
     in
     let normalized_parameters = AccessPath.normalize_parameters parameters in
-    List.concat_map models ~f:(apply_model ~normalized_parameters ~return_annotation)
+    List.concat_map models ~f:(apply_model ~normalized_parameters ~captures ~return_annotation)
 
 
   let generate_model_from_annotations

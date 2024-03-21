@@ -627,6 +627,7 @@ module ModelQuery = struct
           taint: QueryTaintAnnotation.t list;
         }
       | Return of QueryTaintAnnotation.t list
+      | CapturedVariables of QueryTaintAnnotation.t list
       | Attribute of QueryTaintAnnotation.t list
       | Global of QueryTaintAnnotation.t list
       | Modes of Model.ModeSet.t

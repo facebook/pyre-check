@@ -201,6 +201,7 @@ module AnnotationOrigin = struct
     | Attribute
     | ModelQueryParameter
     | ModelQueryReturn
+    | ModelQueryCapturedVariables
     | ModelQueryAttribute
     | ModelQueryGlobal
   [@@deriving equal]
@@ -215,6 +216,7 @@ module AnnotationOrigin = struct
   let is_model_query = function
     | ModelQueryParameter
     | ModelQueryReturn
+    | ModelQueryCapturedVariables
     | ModelQueryAttribute
     | ModelQueryGlobal ->
         true
@@ -2218,6 +2220,15 @@ let parse_model_clause
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
         parse_taint ~origin:ModelQueryReturn taint >>| fun taint -> ModelQuery.Model.Return taint
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "CapturedVariables"); _ } as callee;
+          arguments = [{ Call.Argument.value = taint; _ }];
+        } ->
+        check_find ~callee ModelQuery.Find.is_callable
+        >>= fun () ->
+        parse_taint ~origin:ModelQueryCapturedVariables taint
+        >>| fun taint -> ModelQuery.Model.CapturedVariables taint
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;

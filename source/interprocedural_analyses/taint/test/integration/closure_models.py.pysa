@@ -8,6 +8,13 @@ def closure_models.test.return_model_taint() -> TaintSource[Test]: ...
 @CapturedVariables(TaintInTaintOut)
 def closure_models.test.return_model_taint_tito(): ...
 
+ModelQuery(
+    name = "return_model_query_tito",
+    find = "functions",
+    where = fully_qualified_name.matches("closure_models.test.return_model_query_tito"),
+    model = CapturedVariables(TaintInTaintOut)
+)
+
 def closure_models.Reclassification.reclassify(self: TaintSink[Test, ViaValueOf[feature, WithTag["feature2"]]],*,feature): ...
 def closure_models.reclassify(inner: TaintInTaintOut[ViaValueOf[feature, WithTag["feature1"]]], feature): ...
 

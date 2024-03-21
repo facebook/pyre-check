@@ -48,6 +48,9 @@ def test() -> None:
     def return_model_taint_tito():
         use_source(source)
 
+    def return_model_query_tito():
+        use_source(source)
+
     value = reclassify(
         inner=return_taint,
         feature="breadcrumb1",
@@ -69,6 +72,12 @@ def test() -> None:
 
     value = reclassify(
         inner=return_model_taint_tito,
+        feature="breadcrumb1",
+    )
+    value.reclassify(feature="breadcrumb2")
+
+    value = reclassify(
+        inner=return_model_query_tito,
         feature="breadcrumb1",
     )
     value.reclassify(feature="breadcrumb2")
