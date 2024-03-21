@@ -21,7 +21,7 @@ import json
 import logging
 import os
 from pathlib import Path
-from typing import Dict, List, Optional, Union
+from typing import Dict, List, Optional, Set, Union
 
 from .. import dataclasses_json_extensions as json_mixins, error
 
@@ -772,12 +772,18 @@ class CodeNavigationDaemonQuerier(AbstractDaemonQuerier):
         self,
         paths: List[Path],
     ) -> Union[DaemonQueryFailure, Dict[Path, List[error.Error]]]:
+        dropped_paths: Set[Path] = set()
+        for path in paths:
+            if not path.exists():
+                dropped_paths.add(path)
+                LOG.info(f"Dropping path since it no longer exists: {str(path)}")
+            if path.suffix not in self.type_check_file_suffixes:
+                dropped_paths.add(path)
+                LOG.info(
+                    f"Dropping path since it is not a type checkable Python file: {str(path)}"
+                )
         type_errors_request = code_navigation_request.TypeErrorsRequest(
-            paths=[
-                str(path)
-                for path in paths
-                if path.suffix in self.type_check_file_suffixes
-            ],
+            paths=[str(path) for path in paths if path not in dropped_paths],
             client_id=self._get_client_id(),
         )
         response = await code_navigation_request.async_handle_type_errors_request(
