@@ -36,7 +36,7 @@ let get_stubs_and_definitions ~source_file_name ~project =
     Interprocedural.FetchCallables.get_definitions initial_callables )
 
 
-let set_up_environment ?source ~context ~model_source () =
+let set_up_environment ?source ~context ~model_source ~validate () =
   let source =
     match source with
     | None -> model_source
@@ -69,11 +69,12 @@ let set_up_environment ?source ~context ~model_source () =
       ~python_version:(ModelParser.PythonVersion.create ())
       ()
   in
-  assert_bool
-    (Format.sprintf
-       "Models have parsing errors: %s"
-       (List.to_string errors ~f:ModelVerificationError.display))
-    (List.is_empty errors);
+  if validate then
+    assert_bool
+      (Format.sprintf
+         "Models have parsing errors: %s"
+         (List.to_string errors ~f:ModelVerificationError.display))
+      (List.is_empty errors);
 
   let environment = ScratchProject.type_environment project in
   parse_result, environment, taint_configuration
@@ -81,13 +82,31 @@ let set_up_environment ?source ~context ~model_source () =
 
 let assert_queries ?source ~context ~model_source ~expect () =
   let { ModelParseResult.queries; _ }, _, _ =
-    set_up_environment ?source ~context ~model_source ()
+    set_up_environment ?source ~context ~model_source ~validate:true ()
   in
   assert_equal
     ~cmp:(List.equal ModelParseResult.ModelQuery.equal)
     ~printer:(List.to_string ~f:ModelParseResult.ModelQuery.show)
     expect
     queries
+
+
+let assert_invalid_queries ?source ~context ~model_source ~expect () =
+  let { ModelParseResult.errors; _ }, _, _ =
+    set_up_environment ?source ~context ~model_source ~validate:false ()
+  in
+  let error_message =
+    if List.is_empty errors then
+      "no failure"
+    else if List.length errors = 1 then
+      List.hd_exn errors |> ModelVerificationError.display
+    else
+      let error_strings = List.map errors ~f:ModelVerificationError.display in
+      List.fold error_strings ~init:"Multiple errors:\n[" ~f:(fun sofar string ->
+          sofar ^ "\n" ^ string)
+      ^ "\n]"
+  in
+  assert_equal ~printer:Fn.id expect error_message
 
 
 let test_query_parsing_find_functions context =
@@ -1392,7 +1411,7 @@ let test_query_parsing_model_parameters context =
 let test_query_parsing_expected_models context =
   let create_expected_model ?source ~model_source function_name =
     let { ModelParseResult.models; _ }, _, _ =
-      set_up_environment ?source ~context ~model_source ()
+      set_up_environment ?source ~context ~model_source ~validate:true ()
     in
     let model = Option.value_exn (Registry.get models (List.hd_exn (Registry.targets models))) in
     {
@@ -2178,6 +2197,23 @@ let test_query_parsing_logging_group context =
   ()
 
 
+let test_query_parsing_captured_variables context =
+  assert_invalid_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "get_foo",
+     find = "functions",
+     where = name.matches("foo"),
+     model = CapturedVariables(TaintInTaintOut)
+    )
+  |}
+    ~expect:"Unexpected model expression: `CapturedVariables(TaintInTaintOut)`"
+    ();
+  ()
+
+
 let () =
   "taint_model"
   >::: [
@@ -2190,5 +2226,6 @@ let () =
          "query_parsing_find_globals" >:: test_query_parsing_find_globals;
          "query_parsing_cache" >:: test_query_parsing_cache;
          "query_parsing_logging_group" >:: test_query_parsing_logging_group;
+         "query_parsing_captured_variables" >:: test_query_parsing_captured_variables;
        ]
   |> Test.run
