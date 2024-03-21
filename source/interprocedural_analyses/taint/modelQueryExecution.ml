@@ -1420,10 +1420,10 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
   let query_kind_name = "callable"
 
   let make_modelable ~pyre_api callable =
-    let signature =
+    let define =
       lazy
         (match Target.get_module_and_definition ~pyre_api callable with
-        | Some (_, { Node.value = { signature; _ }; _ }) -> signature
+        | Some (_, { Node.value; _ }) -> value
         | None ->
             (* This should only be called with valid targets, generated from `FetchCallables`. *)
             Format.asprintf
@@ -1432,7 +1432,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               callable
             |> failwith)
     in
-    Modelable.Callable { target = callable; signature }
+    Modelable.Callable { target = callable; define }
 
 
   let generate_annotations_from_query_models ~pyre_api ~class_hierarchy_graph ~modelable models =
@@ -1656,9 +1656,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
       | ModelQuery.Model.Global _ -> failwith "impossible case"
       | ModelQuery.Model.WriteToCache _ -> failwith "impossible case"
     in
-    let { Statement.Define.Signature.parameters; return_annotation; _ } =
+    let { Statement.Define.signature = { parameters; return_annotation; _ }; _ } =
       match modelable with
-      | Modelable.Callable { signature; _ } -> Lazy.force signature
+      | Modelable.Callable { define; _ } -> Lazy.force define
       | _ -> failwith "unreachable"
     in
     let normalized_parameters = AccessPath.normalize_parameters parameters in

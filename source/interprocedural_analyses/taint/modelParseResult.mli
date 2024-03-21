@@ -384,7 +384,7 @@ module Modelable : sig
   type t =
     | Callable of {
         target: Interprocedural.Target.t;
-        signature: Ast.Statement.Define.Signature.t lazy_t;
+        define: Ast.Statement.Define.t lazy_t;
       }
     | Attribute of {
         name: Ast.Reference.t;

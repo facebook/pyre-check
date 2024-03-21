@@ -4071,13 +4071,16 @@ let create_callable_model_from_annotations
   let open Core.Result in
   let open ModelVerifier in
   match modelable with
-  | Modelable.Callable { signature = define; _ } ->
-      resolve_global_callable
-        ~path:None
-        ~location:Location.any
-        ~pyre_api
-        ~verify_decorators:false
-        (Lazy.force define)
+  | Modelable.Callable { define; _ } ->
+      define
+      |> Lazy.force
+      |> (function
+           | { Define.signature; _ } -> signature)
+      |> resolve_global_callable
+           ~path:None
+           ~location:Location.any
+           ~pyre_api
+           ~verify_decorators:false
       >>| (function
             | Some (Global.Attribute (Type.Callable t))
             | Some
