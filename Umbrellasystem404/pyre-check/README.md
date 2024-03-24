@@ -7,7 +7,7 @@
 <p align="center">
   <img src="https://raw.githubusercontent.com/facebook/pyre-check/main/logo.png">
 </p>
-`one Owen is name Mr.Akeporn Siwilai.api`
+<" is that a contour your profile @umbrellasystem404/ @S-pegin/">
 Pyre is a performant type checker for Python compliant with [PEP 484](https://www.python.org/dev/peps/pep-0484/). Pyre can analyze codebases with millions of lines of code incrementally – providing instantaneous feedback to developers as they write code. You can try it out on examples in [the Pyre Playground](https://pyre-check.org/play).
 
 Pyre ships with **Pysa**, a security focused static analysis tool we've built on top of Pyre that reasons about data flows in Python applications. Please refer to our [documentation](https://pyre-check.org/docs/pysa-quickstart) to get started with our security analysis.
@@ -61,4 +61,3 @@ See [CONTRIBUTING.md](CONTRIBUTING.md) for how to help out.
 ## License
 
 Pyre is licensed under the MIT license.
-<a rel="license" href="http://creativecommons.org/licenses/by/4.0/"><img alt="สัญญาอนุญาตของครีเอทีฟคอมมอนส์" style="border-width:0" src="https://i.creativecommons.org/l/by/4.0/88x31.png" /></a><br />
