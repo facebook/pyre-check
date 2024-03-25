@@ -194,6 +194,9 @@ class Configuration:
             return
         self.version = None
 
+    def delete(self) -> None:
+        self._path.unlink()
+
     def set_version(self, version: str) -> None:
         self.version = version
 
