@@ -30,3 +30,10 @@ def closure_models.captured_variable_models.model_all_captured_as_sink(): ...
 
 @CapturedVariables(TaintInTaintOut[Transform[ReclassificationFakeTITO]])
 def closure_models.test_tito_transform.return_model_taint_tito(): ...
+
+ModelQuery(
+    name = "return_model_query_tito_transform",
+    find = "functions",
+    where = fully_qualified_name.matches("closure_models.test_tito_transform.return_model_query_tito"),
+    model = CapturedVariables(TaintInTaintOut[Transform[ReclassificationFakeTITO]])
+)

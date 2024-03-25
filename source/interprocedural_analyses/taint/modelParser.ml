@@ -226,6 +226,7 @@ module AnnotationOrigin = struct
   let is_parameter = function
     | DefineParameter
     | DefineDecoratorCapturedVariables
+    | ModelQueryCapturedVariables
     | ModelQueryParameter ->
         true
     | _ -> false

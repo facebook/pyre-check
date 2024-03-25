@@ -2242,7 +2242,7 @@ let test_query_parsing_captured_variables context =
         };
       ]
     ();
-  assert_invalid_queries
+  assert_queries
     ~context
     ~model_source:
       {|
@@ -2254,8 +2254,34 @@ let test_query_parsing_captured_variables context =
     )
   |}
     ~expect:
-      "`TaintInTaintOut[Transform[TestTransform]]` is an invalid taint annotation: \
-       `TaintInTaintOut[]` can only be used on parameters, attributes or globals"
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "taint_transform";
+          logging_group_name = None;
+          path = None;
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
+            [
+              CapturedVariables
+                [
+                  TaintAnnotation
+                    (ModelParseResult.TaintAnnotation.from_tito
+                       (Sinks.Transform
+                          {
+                            local =
+                              TaintTransforms.of_named_transforms
+                                [TaintTransform.Named "TestTransform"];
+                            global = TaintTransforms.empty;
+                            base = Sinks.LocalReturn;
+                          }));
+                ];
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
     ();
   ()
 
