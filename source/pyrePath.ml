@@ -104,7 +104,7 @@ let is_path_python_init path =
 let rec stat_no_eintr_raw path =
   try Some (CamlUnix.stat path) with
   | CamlUnix.Unix_error (CamlUnix.EINTR, _, _) -> stat_no_eintr_raw path
-  | CamlUnix.Unix_error ((CamlUnix.ENOENT | CamlUnix.ENOTDIR), _, _) -> None
+  | CamlUnix.Unix_error ((CamlUnix.ENOENT | CamlUnix.ENOTDIR | CamlUnix.ENAMETOOLONG), _, _) -> None
 
 
 let stat_no_eintr path = stat_no_eintr_raw (absolute path)

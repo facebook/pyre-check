@@ -94,7 +94,10 @@ let test_is_python_file _ =
 let test_file_exists context =
   let path, _ = bracket_tmpfile context in
   assert_true (!path |> PyrePath.file_exists);
-  assert_false (PyrePath.create_relative ~root:!path ~relative:"durp" |> PyrePath.file_exists)
+  assert_false (PyrePath.create_relative ~root:!path ~relative:"durp" |> PyrePath.file_exists);
+  let super_long_file_name = String.init 4096 ~f:(fun _ -> 'a') in
+  assert_false (PyrePath.create_absolute super_long_file_name |> PyrePath.file_exists);
+  ()
 
 
 let test_last context =
