@@ -2198,7 +2198,7 @@ let replace_mypy_extensions_stub ({ Source.module_path; statements; _ } as sourc
 let expand_typed_dictionary_declarations
     ({ Source.statements; module_path = { ModulePath.qualifier; _ }; _ } as source)
   =
-  let expand_typed_dictionaries ({ Node.location; value } as statement) =
+  let rec expand_typed_dictionaries ({ Node.location; value } as statement) =
     let expanded_declaration =
       let string_literal identifier =
         Expression.Constant (Constant.String { value = identifier; kind = StringLiteral.String })
@@ -2414,7 +2414,7 @@ let expand_typed_dictionary_declarations
             class_declaration
           in
           declaration (Reference.show class_name) |> Option.value ~default:value
-      | Class ({ base_arguments; _ } as class_definition) ->
+      | Class ({ base_arguments; body; _ } as class_definition) ->
           let replace_totality base =
             match extract_totality_from_base base with
             | Some true -> None
@@ -2432,6 +2432,7 @@ let expand_typed_dictionary_declarations
             {
               class_definition with
               base_arguments = List.filter_map base_arguments ~f:replace_totality;
+              body = List.map body ~f:expand_typed_dictionaries;
             }
       | _ -> value
     in

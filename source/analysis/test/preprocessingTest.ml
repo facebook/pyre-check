@@ -3922,6 +3922,19 @@ let test_expand_typed_dictionaries _ =
     |};
   assert_expand
     {|
+      class Derp:
+        class Movie(typing.TypedDict):
+          name: str
+          year: int
+    |}
+    {|
+      class Derp:
+        class Movie(TypedDictionary):
+          name: str
+          year: int
+    |};
+  assert_expand
+    {|
       class Movie(mypy_extensions.TypedDict):
         name: str
         year: int
