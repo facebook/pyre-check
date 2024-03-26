@@ -28,9 +28,7 @@ let content { path; content } =
   | Some content -> Some content
   | None -> (
       try Some (In_channel.read_all (PyrePath.absolute path)) with
-      | Sys_error error ->
-          Log.warning "Error while loading file contents for %s: %s" (PyrePath.absolute path) error;
-          None)
+      | Sys_error _ -> None)
 
 
 let content_exn { path; content } =

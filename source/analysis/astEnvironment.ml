@@ -125,7 +125,11 @@ module FromReadOnlyUpstream = struct
       |> Parsing.parse_result_of_load_result ~controls module_path
     with
     | Ok source -> RawSources.add_parsed_source raw_sources source
-    | Error parser_error -> RawSources.add_unparsed_source raw_sources parser_error
+    | Error
+        ({ Parsing.ParseResult.Error.module_path = { ModulePath.qualifier; _ }; message; _ } as
+        parser_error) ->
+        Log.warning "Parser error in module `%a`: %s" Reference.pp qualifier message;
+        RawSources.add_unparsed_source raw_sources parser_error
 
 
   let source_of_module_paths ~scheduler ~ast_environment module_paths =
