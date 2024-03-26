@@ -385,8 +385,10 @@ class PyreDaemonLaunchAndSubscribeHandler(background_tasks.Task):
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.DISCONNECTED
             )
-        except BaseException:
+        except BaseException as error:
             error_message = traceback.format_exc()
+            if isinstance(error, asyncio.IncompleteReadError):
+                error_message += f"\nIncompleteReadError partial message: `{error.partial.decode('utf-8')}`"
             self.server_state.status_tracker.set_status(
                 state.ConnectionStatus.DISCONNECTED
             )
