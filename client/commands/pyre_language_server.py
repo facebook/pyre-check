@@ -1676,6 +1676,7 @@ class PyreLanguageServerDispatcher:
         if request.method == "exit" or request.method == "shutdown":
             raise Exception("Exit and shutdown requests should be blocking")
         elif request.method == "textDocument/definition":
+            await self._restart_if_needed()
             error_source = await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1686,6 +1687,7 @@ class PyreLanguageServerDispatcher:
             await self._restart_if_needed(error_source)
         elif request.method == "textDocument/completion":
             LOG.debug("Received 'textDocument/completion' request.")
+            await self._restart_if_needed()
             error_source = await self.api.process_completion_request(
                 lsp.CompletionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1695,6 +1697,7 @@ class PyreLanguageServerDispatcher:
             )
             await self._restart_if_needed(error_source)
         elif request.method == "textDocument/didOpen":
+            await self._restart_if_needed()
             await self.api.process_open_request(
                 lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1703,6 +1706,7 @@ class PyreLanguageServerDispatcher:
             )
             await self._restart_if_needed()
         elif request.method == "textDocument/didChange":
+            await self._restart_if_needed()
             await self.api.process_did_change_request(
                 lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1716,6 +1720,7 @@ class PyreLanguageServerDispatcher:
                 )
             )
         elif request.method == "textDocument/didSave":
+            await self._restart_if_needed()
             await self.api.process_did_save_request(
                 lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
