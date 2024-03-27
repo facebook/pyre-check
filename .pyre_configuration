@@ -48,6 +48,9 @@
     {
       "is_toplevel_module": true,
       "site-package": "typing_inspect"
+    },
+    {
+      "site-package": "tomli"
     }
   ],
   "source_directories": [
