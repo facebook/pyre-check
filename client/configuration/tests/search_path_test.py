@@ -72,24 +72,45 @@ class SearchPathTest(testslide.TestCase):
             )
 
     def test_path(self) -> None:
-        self.assertEqual(SimpleElement("foo").path(), "foo")
-        self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
-        self.assertEqual(SitePackageElement("foo", "bar").path(), "foo/bar")
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(Path(temp_root), ("foo", "foo/bar"))
+            self.assertEqual(SimpleElement("foo").path(), "foo")
+            self.assertEqual(SubdirectoryElement("foo", "bar").path(), "foo/bar")
+            self.assertEqual(
+                SitePackageElement(f"{temp_root}/foo", "bar").path(),
+                f"{temp_root}/foo/bar",
+            )
 
     def test_command_line_argument(self) -> None:
-        self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
-        self.assertEqual(
-            SubdirectoryElement("foo", "bar").command_line_argument(),
-            "foo$bar",
-        )
-        self.assertEqual(
-            SitePackageElement("foo", "bar").command_line_argument(),
-            "foo$bar",
-        )
-        self.assertEqual(
-            SitePackageElement("foo", "bar", True).command_line_argument(),
-            "foo$bar.py",
-        )
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(Path(temp_root), ("foo", "foo/bar"))
+            self.assertEqual(SimpleElement("foo").command_line_argument(), "foo")
+            self.assertEqual(
+                SubdirectoryElement("foo", "bar").command_line_argument(),
+                "foo$bar",
+            )
+            self.assertEqual(
+                SitePackageElement(f"{temp_root}/foo", "bar").command_line_argument(),
+                f"{temp_root}/foo$bar",
+            )
+
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(
+                Path(temp_root), ("foo", "foo/bar-1.0.0.dist-info")
+            )
+            Path.touch(Path(f"{temp_root}/foo/bar.py"))
+
+            with open(
+                f"{temp_root}/foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8"
+            ) as f:
+                f.write("bar.py,,")
+
+            self.assertEqual(
+                SitePackageElement(
+                    f"{temp_root}/foo", "bar", True
+                ).command_line_argument(),
+                f"{temp_root}/foo$bar.py",
+            )
 
     def test_expand_global_root(self) -> None:
         self.assertEqual(
@@ -242,4 +263,27 @@ class SearchPathTest(testslide.TestCase):
                 [SitePackageRawElement(package_name="f")],
                 site_roots=[],
                 required=True,
+            )
+
+    def test_toplevel_module_not_pyfile(self) -> None:
+        with tempfile.TemporaryDirectory() as temp_root:
+            ensure_directories_exists(
+                Path(temp_root), ("foo", "foo/bar-1.0.0.dist-info")
+            )
+            Path.touch(Path(f"{temp_root}/foo/bar.so"))
+
+            with open(
+                f"{temp_root}/foo/bar-1.0.0.dist-info/RECORD", "w", encoding="UTF-8"
+            ) as f:
+                f.write("bar.so,,")
+
+            self.assertEqual(
+                SitePackageElement(f"{temp_root}/foo", "bar", True).path(),
+                f"{temp_root}/foo/bar.so",
+            )
+            self.assertEqual(
+                process_raw_elements(
+                    [SitePackageRawElement("bar", True)], [f"{temp_root}/foo"]
+                ),
+                [SitePackageElement(f"{temp_root}/foo", "bar", True)],
             )
