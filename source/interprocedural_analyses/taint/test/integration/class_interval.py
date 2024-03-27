@@ -537,6 +537,7 @@ class D17(A17):
     def m1(cls, arg):
         sink_c(arg)
 
+
 def test_class_methods():
     # Expect no issue
     B17.m0(_test_source())
@@ -577,7 +578,6 @@ def test_static_methods():
     c.m0(_test_source())
 
 
-
 class A19:
     @classmethod
     def m0(c, arg):
@@ -596,3 +596,44 @@ class A19:
 
     def m3(s, arg):
         _test_sink(arg)
+
+
+"""
+           A
+          / \
+         /   \
+        /     \
+       B      C
+        \     /
+         \   /
+          \ /
+           D
+"""
+
+
+class A20:
+    def m0(self, arg):
+        pass
+
+
+class B20(A20):
+    pass
+
+
+class C20(A20):
+    def m0(self, arg):
+        _test_sink(arg)
+
+
+class D20(C20, B20):
+    pass
+
+
+def test_multi_inheritance_parent_call(b: B20):
+    # Resolved to direct call to A.m0 since we only look up parents and
+    # children, but it can also call C.m0 (sibling).
+    b.m0(_test_source())
+
+
+def test_multi_inheritance_parent_issue():
+    test_multi_inheritance_parent_call(D20())  # TODO(T183494356): False negative.

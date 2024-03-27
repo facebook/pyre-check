@@ -279,7 +279,7 @@
               ],
               "port": "formal(x, position=1)"
             },
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "receiver_interval": [ { "lower": 87, "upper": 92 } ],
             "is_self_call": false
           }
         ]
@@ -301,9 +301,9 @@
   "kind": "issue",
   "data": {
     "callable": "class_interval.test_class_methods",
-    "callable_line": 540,
+    "callable_line": 541,
     "code": 123,
-    "line": 551,
+    "line": 552,
     "start": 11,
     "end": 25,
     "filename": "class_interval.py",
@@ -324,7 +324,7 @@
             ],
             "origin": {
               "filename": "class_interval.py",
-              "line": 551,
+              "line": 552,
               "start": 11,
               "end": 25
             }
@@ -347,7 +347,7 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 551,
+                "line": 552,
                 "start": 11,
                 "end": 25
               },
@@ -680,7 +680,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": false
           }
         ]
@@ -710,7 +710,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "caller_interval": [ { "lower": 99, "upper": 100 } ],
             "is_self_call": false
           }
         ]
@@ -740,7 +740,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false
           }
         ]
@@ -772,7 +772,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
             "is_self_call": false
           },
           {
@@ -793,8 +793,8 @@
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
+            "receiver_interval": [ { "lower": 130, "upper": 131 } ],
             "is_self_call": false
           }
         ]
@@ -860,8 +860,8 @@
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 87, "upper": 92 } ],
             "is_self_call": true
           },
           {
@@ -882,8 +882,8 @@
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": true
           }
         ]
@@ -915,7 +915,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
             "is_self_call": false
           },
           {
@@ -936,8 +936,8 @@
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
+            "receiver_interval": [ { "lower": 130, "upper": 131 } ],
             "is_self_call": false
           }
         ]
@@ -1158,8 +1158,8 @@
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": true
           }
         ]
@@ -1189,7 +1189,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": false
           }
         ]
@@ -1219,7 +1219,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "caller_interval": [ { "lower": 99, "upper": 100 } ],
             "is_self_call": false
           }
         ]
@@ -1342,7 +1342,7 @@
               "start": -1,
               "end": -1
             },
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false
           }
         ]
@@ -1965,8 +1965,8 @@
               "resolves_to": [ "class_interval.C3.m2" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 78, "upper": 85 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 86, "upper": 93 } ],
             "is_self_call": true
           }
         ]
@@ -2000,8 +2000,8 @@
               "resolves_to": [ "class_interval.C4.m3" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
-            "receiver_interval": [ { "lower": 86, "upper": 93 } ],
+            "caller_interval": [ { "lower": 99, "upper": 100 } ],
+            "receiver_interval": [ { "lower": 94, "upper": 101 } ],
             "is_self_call": true
           }
         ]
@@ -2035,8 +2035,8 @@
               "resolves_to": [ "class_interval.D5.m2" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
-            "receiver_interval": [ { "lower": 94, "upper": 101 } ],
+            "caller_interval": [ { "lower": 106, "upper": 107 } ],
+            "receiver_interval": [ { "lower": 102, "upper": 109 } ],
             "is_self_call": true
           }
         ]
@@ -2070,8 +2070,8 @@
               "resolves_to": [ "class_interval.B6.m0" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 102, "upper": 109 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
+            "receiver_interval": [ { "lower": 110, "upper": 117 } ],
             "is_self_call": true
           }
         ]
@@ -2122,8 +2122,8 @@
               "resolves_to": [ "class_interval.B7.foo" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 110, "upper": 111 } ],
-            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "caller_interval": [ { "lower": 118, "upper": 119 } ],
+            "receiver_interval": [ { "lower": 124, "upper": 125 } ],
             "is_self_call": false
           }
         ]
@@ -2157,8 +2157,8 @@
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
+            "caller_interval": [ { "lower": 120, "upper": 121 } ],
+            "receiver_interval": [ { "lower": 120, "upper": 121 } ],
             "is_self_call": true
           },
           {
@@ -2179,8 +2179,8 @@
               "resolves_to": [ "class_interval.B8.foo" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 118, "upper": 119 } ],
+            "caller_interval": [ { "lower": 120, "upper": 121 } ],
+            "receiver_interval": [ { "lower": 126, "upper": 127 } ],
             "is_self_call": false
           },
           {
@@ -2201,8 +2201,8 @@
               "resolves_to": [ "class_interval.A8.baz" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
-            "receiver_interval": [ { "lower": 112, "upper": 113 } ],
+            "caller_interval": [ { "lower": 120, "upper": 121 } ],
+            "receiver_interval": [ { "lower": 120, "upper": 121 } ],
             "is_self_call": false
           }
         ]
@@ -2245,7 +2245,7 @@
               "start": 15,
               "end": 29
             },
-            "caller_interval": [ { "lower": 112, "upper": 113 } ],
+            "caller_interval": [ { "lower": 120, "upper": 121 } ],
             "is_self_call": false
           }
         ]
@@ -2277,7 +2277,7 @@
               "start": 15,
               "end": 29
             },
-            "caller_interval": [ { "lower": 114, "upper": 115 } ],
+            "caller_interval": [ { "lower": 122, "upper": 123 } ],
             "is_self_call": false
           }
         ]
@@ -2339,7 +2339,7 @@
             ],
             "origin": {
               "filename": "class_interval.py",
-              "line": 561,
+              "line": 562,
               "start": 15,
               "end": 18
             }
@@ -2410,8 +2410,8 @@
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 79, "upper": 84 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 87, "upper": 92 } ],
             "is_self_call": true
           }
         ]
@@ -2443,7 +2443,7 @@
               "start": 19,
               "end": 33
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
             "is_self_call": false
           },
           {
@@ -2464,8 +2464,8 @@
               "resolves_to": [ "class_interval.E6.m3" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 103, "upper": 106 } ],
-            "receiver_interval": [ { "lower": 122, "upper": 123 } ],
+            "caller_interval": [ { "lower": 111, "upper": 114 } ],
+            "receiver_interval": [ { "lower": 130, "upper": 131 } ],
             "is_self_call": false
           }
         ]
@@ -2497,7 +2497,7 @@
               "start": 15,
               "end": 29
             },
-            "caller_interval": [ { "lower": 116, "upper": 117 } ],
+            "caller_interval": [ { "lower": 124, "upper": 125 } ],
             "is_self_call": false
           }
         ]
@@ -2531,8 +2531,8 @@
               "resolves_to": [ "class_interval.B7.bar" ],
               "port": "result"
             },
-            "caller_interval": [ { "lower": 116, "upper": 117 } ],
-            "receiver_interval": [ { "lower": 116, "upper": 117 } ],
+            "caller_interval": [ { "lower": 124, "upper": 125 } ],
+            "receiver_interval": [ { "lower": 124, "upper": 125 } ],
             "is_self_call": true
           }
         ]
@@ -2564,7 +2564,7 @@
               "start": 15,
               "end": 29
             },
-            "caller_interval": [ { "lower": 118, "upper": 119 } ],
+            "caller_interval": [ { "lower": 126, "upper": 127 } ],
             "is_self_call": false
           }
         ]
@@ -2774,13 +2774,45 @@
             "call": {
               "position": {
                 "filename": "class_interval.py",
-                "line": 568,
+                "line": 569,
                 "start": 14,
                 "end": 17
               },
               "resolves_to": [ "class_interval.B18.m" ],
               "port": "formal(arg, position=0)"
             }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "class_interval.C20.m0",
+    "sinks": [
+      {
+        "port": "formal(arg, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "class_interval.py",
+              "line": 625,
+              "start": 19,
+              "end": 22
+            },
+            "caller_interval": [
+              { "lower": 80, "upper": 81 }, { "lower": 83, "upper": 84 }
+            ],
+            "is_self_call": false
           }
         ]
       }
@@ -2813,8 +2845,8 @@
               "resolves_to": [ "class_interval.A3.m1" ],
               "port": "formal(x, position=1)"
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
-            "receiver_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
+            "receiver_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": true
           }
         ]
@@ -2844,7 +2876,7 @@
               "start": 19,
               "end": 20
             },
-            "caller_interval": [ { "lower": 80, "upper": 81 } ],
+            "caller_interval": [ { "lower": 88, "upper": 89 } ],
             "is_self_call": false
           }
         ]
@@ -2874,7 +2906,7 @@
               "start": 19,
               "end": 20
             },
-            "caller_interval": [ { "lower": 91, "upper": 92 } ],
+            "caller_interval": [ { "lower": 99, "upper": 100 } ],
             "is_self_call": false
           }
         ]
@@ -2997,7 +3029,7 @@
               "start": 19,
               "end": 20
             },
-            "caller_interval": [ { "lower": 98, "upper": 99 } ],
+            "caller_interval": [ { "lower": 106, "upper": 107 } ],
             "is_self_call": false
           }
         ]
@@ -3063,7 +3095,7 @@
               "start": 15,
               "end": 29
             },
-            "caller_interval": [ { "lower": 122, "upper": 123 } ],
+            "caller_interval": [ { "lower": 130, "upper": 131 } ],
             "is_self_call": false
           }
         ]
