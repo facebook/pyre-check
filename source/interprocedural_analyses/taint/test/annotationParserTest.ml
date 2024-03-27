@@ -87,14 +87,15 @@ let test_parse_tito _ =
     in
     assert_equal ~cmp:String.equal expected error
   in
+  let named_transform name = TaintTransform.Named { name; location = None } in
   assert_parsed ~expected:Sinks.LocalReturn "LocalReturn";
   assert_parsed ~expected:(Sinks.ParameterUpdate 2) "ParameterUpdate2";
   assert_parsed
-    ~allowed_transforms:[TaintTransform.Named "T"]
+    ~allowed_transforms:[named_transform "T"]
     ~expected:
       (Sinks.Transform
          {
-           local = TaintTransforms.of_named_transforms [TaintTransform.Named "T"];
+           local = TaintTransforms.of_named_transforms [named_transform "T"];
            global = TaintTransforms.empty;
            base = Sinks.LocalReturn;
          })
@@ -105,12 +106,12 @@ let test_parse_tito _ =
     ~subkind:"Subkind"
     "foo";
   assert_parse_error
-    ~allowed_transforms:[TaintTransform.Named "T"]
+    ~allowed_transforms:[named_transform "T"]
     ~expected:"Unsupported transform `U`"
     ~subkind:"U"
     "Transform";
   assert_parse_error
-    ~allowed_transforms:[TaintTransform.Named "T"]
+    ~allowed_transforms:[named_transform "T"]
     ~expected:"Tito transform requires name of the transform as parameter"
     "Transform"
 

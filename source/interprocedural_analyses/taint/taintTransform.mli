@@ -5,8 +5,14 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
+type named_transform = {
+  name: string;
+  location: (JsonParsing.JsonAst.LocationWithPath.t option[@hash.ignore] [@sexp.opaque]);
+}
+[@@deriving compare, eq, hash, sexp]
+
 type t =
-  | Named of string
+  | Named of named_transform
   (* Invariant: set is not empty. *)
   | Sanitize of SanitizeTransformSet.t
 [@@deriving compare, eq, hash, sexp]
@@ -20,3 +26,5 @@ val is_named_transform : t -> bool
 val is_sanitize_transforms : t -> bool
 
 val get_sanitize_transforms : t -> SanitizeTransformSet.t option
+
+val get_location : t -> JsonParsing.JsonAst.LocationWithPath.t option

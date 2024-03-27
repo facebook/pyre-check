@@ -46,10 +46,15 @@ let parse_sink ~allowed ?subkind name =
   | _ -> Error (Format.sprintf "Unsupported taint sink `%s`" name)
 
 
-let parse_transform ~allowed name =
-  match List.find allowed ~f:(TaintTransform.equal (TaintTransform.Named name)) with
-  | Some transform -> Ok transform
-  | None -> Error (Format.sprintf "Unsupported transform `%s`" name)
+let parse_transform ~allowed reference_name =
+  match
+    List.find allowed ~f:(function
+        | TaintTransform.Named { name; _ } -> String.equal name reference_name
+        | _ -> false)
+  with
+  | Some (TaintTransform.Named { name; _ }) -> Ok (TaintTransform.Named { name; location = None })
+  | Some (TaintTransform.Sanitize _ as transform) -> Ok transform
+  | None -> Error (Format.sprintf "Unsupported transform `%s`" reference_name)
 
 
 let parse_tito ~allowed_transforms ?subkind name =
