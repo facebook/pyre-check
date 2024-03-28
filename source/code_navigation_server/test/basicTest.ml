@@ -406,7 +406,10 @@ let test_location_of_definition_request context =
               Query
                 (Query.LocationOfDefinition
                    { client_id; path = test2_path; position = position 2 8 }))
-          ~expected:Response.(LocationOfDefinition { definitions = [] });
+          ~expected:
+            (Error
+               (Response.ErrorKind.LocationBasedLookupError
+                  Analysis.LocationBasedLookup.SymbolNotFound));
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(

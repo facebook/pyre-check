@@ -270,7 +270,8 @@ let test_find_narrowest_spanning_symbol context =
       (LocationBasedLookup.find_narrowest_spanning_symbol
          ~type_environment
          ~module_reference:!&"test"
-         (find_indicator_position ~source "cursor"))
+         (find_indicator_position ~source "cursor")
+      |> Result.ok)
   in
   assert_narrowest_expression
     ~source:{|
@@ -1144,12 +1145,14 @@ let test_resolve_definition_for_symbol context =
         ~module_reference
         (find_indicator_position ~source "cursor")
     in
+    let open Result in
     assert_equal
       ~cmp:[%compare.equal: Location.WithModule.t option]
       ~printer:[%show: Location.WithModule.t option]
       expected
       (symbol_data
-      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference)
+      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference
+      |> ok)
   in
   let assert_resolved_definition ?external_sources source =
     let expected_definition_location =
@@ -1788,6 +1791,7 @@ let test_resolve_completions_for_symbol =
     in
     let attributes =
       symbol_data
+      |> Result.ok
       >>| LocationBasedLookup.resolve_completions_for_symbol ~type_environment
       |> Option.value ~default:[]
     in
@@ -3451,7 +3455,7 @@ let test_resolve_type_for_symbol context =
       ~cmp:[%compare.equal: Type.t option]
       ~printer:[%show: Type.t option]
       expected
-      (symbol_data >>= LocationBasedLookup.resolve_type_for_symbol ~type_environment)
+      (symbol_data |> Result.ok >>= LocationBasedLookup.resolve_type_for_symbol ~type_environment)
   in
   let assert_resolved_type ?external_sources ?(aliases = Type.empty_aliases) source expected_type =
     let parse_type type_ = Type.create ~aliases (parse_single_expression type_) in

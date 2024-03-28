@@ -39,6 +39,13 @@ type coverage_gap_by_location = {
 }
 [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
+type lookup_error =
+  | SymbolNotFound
+  | IdentifierDefinitionNotFound of Ast.Reference.t
+  | AttributeDefinitionNotFound of string option
+  | UnsupportedExpression of string
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
 module DocumentSymbolItem : sig
   (** A type a document symbol response *)
   module SymbolKind : sig
@@ -136,19 +143,19 @@ val find_narrowest_spanning_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   Location.position ->
-  symbol_and_cfg_data option
+  (symbol_and_cfg_data, lookup_error) result
 
 val resolve_definition_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   symbol_and_cfg_data ->
-  Location.WithModule.t option
+  (Ast.Location.WithModule.t, lookup_error) result
 
 val location_of_definition
   :  type_environment:TypeEnvironment.ReadOnly.t ->
   module_reference:Reference.t ->
   Location.position ->
-  Location.WithModule.t option
+  (Ast.Location.WithModule.t, lookup_error) result
 
 val resolve_completions_for_symbol
   :  type_environment:TypeEnvironment.ReadOnly.t ->

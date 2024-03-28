@@ -449,7 +449,14 @@ module Testing : sig
         | FileNotOpened of { path: string }
             (** This error occurs when the client has send a command on a file not tracked by the
                 server. NOTE: certain queries can bypass tracking and not require file opens. *)
-      [@@deriving sexp, compare, yojson { strict = false }]
+        | SourcePathNotFound of { module_reference: Ast.Reference.t }
+            (** This error occurs when the server can not find the source file for the result. For
+                example, if a go-to-def result's module reference is foo.bar, but foo/bar.py can't
+                be found *)
+        | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
+            (** This error occurs when the server can't extract a location for the given position.
+                This might be the correct result (for example, if the given position is whitespace) *)
+      [@@deriving sexp, compare, to_yojson { strict = false }]
     end
 
     module HoverContent : sig
@@ -612,7 +619,7 @@ module Testing : sig
           (** Response for {!Request.Superclasses}. Does not return full types, instead opting to
               return only the names of a given class' bases. Creates a mapping from each requested
               class to its superclasses. *)
-    [@@deriving sexp, compare, yojson { strict = false }]
+    [@@deriving sexp, compare, to_yojson { strict = false }]
   end
 
   (** A utility module that helps the code navigation to keep track of established subscriptions in

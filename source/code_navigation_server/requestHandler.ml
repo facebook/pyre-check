@@ -225,23 +225,27 @@ let handle_document_symbol ~path ~client_id { State.environment; build_system; c
 
 
 let get_location_of_definition_for_module ~overlay ~build_system ~position module_reference =
-  let open Option in
+  let open Result in
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
-  LocationBasedLookup.location_of_definition ~type_environment ~module_reference position
-  >>= fun { Ast.Location.WithModule.module_reference; start; stop } ->
-  Analysis.SourcePaths.absolute_source_path_of_qualifier
-    ~lookup_source:(BuildSystem.lookup_source build_system)
-    ~source_code_api
-    module_reference
-  >>| fun path -> { Response.DefinitionLocation.path; range = { Ast.Location.start; stop } }
+  match LocationBasedLookup.location_of_definition ~type_environment ~module_reference position with
+  | Error error -> Error (Response.ErrorKind.LocationBasedLookupError error)
+  | Ok { Ast.Location.WithModule.module_reference; start; stop } -> (
+      match
+        Analysis.SourcePaths.absolute_source_path_of_qualifier
+          ~lookup_source:(BuildSystem.lookup_source build_system)
+          ~source_code_api
+          module_reference
+      with
+      | Some path -> Ok { Response.DefinitionLocation.path; range = { Ast.Location.start; stop } }
+      | None -> Error (Response.ErrorKind.SourcePathNotFound { module_reference }))
 
 
 let get_location_of_definition_in_overlay ~overlay ~build_system ~position path =
   let open Result in
   let source_code_api = ErrorsEnvironment.ReadOnly.get_untracked_source_code_api overlay in
   get_modules ~source_code_api ~build_system path
-  >>| List.filter_map ~f:(get_location_of_definition_for_module ~overlay ~build_system ~position)
+  >>| List.map ~f:(get_location_of_definition_for_module ~overlay ~build_system ~position)
 
 
 let handle_location_of_definition
@@ -255,7 +259,10 @@ let handle_location_of_definition
   >>= fun overlay_id ->
   let overlay = get_or_create_overlay ~environment overlay_id in
   get_location_of_definition_in_overlay ~overlay ~build_system ~position path
-  >>| fun definitions -> Response.(LocationOfDefinition { definitions })
+  >>= fun definitions ->
+  match List.partition_map ~f:Result.to_either definitions with
+  | definitions, [] -> Ok Response.(LocationOfDefinition { definitions })
+  | _, error :: _ -> Error error
 
 
 let get_completion_for_module ~overlay ~position module_reference =

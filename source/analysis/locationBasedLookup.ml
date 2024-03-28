@@ -61,6 +61,13 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
+type lookup_error =
+  | SymbolNotFound
+  | IdentifierDefinitionNotFound of Reference.t
+  | AttributeDefinitionNotFound of string option
+  | UnsupportedExpression of string
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
 (* Please view diff D53973886 to to understand how this data structure maps to the corresponding
    Python data structure for document symbols *)
 module DocumentSymbolItem = struct
@@ -747,7 +754,9 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     (Timer.stop_in_ms timer)
     (List.map symbols_covering_position ~f:symbol_with_definition
     |> [%show: symbol_with_definition list]);
-  symbol_data
+  match symbol_data with
+  | Some location -> Ok location
+  | None -> Error SymbolNotFound
 
 
 let resolve ~resolution expression =
@@ -830,44 +839,87 @@ let find_definition ~resolution ~module_reference ~define_name reference =
   definition_location >>= sanitize_location
 
 
+let get_expression_constructor expression : string =
+  match expression with
+  | Expression.Await _ -> "Await"
+  | BooleanOperator _ -> "BooleanOperator"
+  | Call _ -> "Call"
+  | ComparisonOperator _ -> "ComparisonOperator"
+  | Constant _ -> "Constant"
+  | Dictionary _ -> "Dictionary"
+  | DictionaryComprehension _ -> "DictionaryComprehension"
+  | Generator _ -> "Generator"
+  | FormatString _ -> "FormatString"
+  | Lambda _ -> "Lambda"
+  | List _ -> "List"
+  | ListComprehension _ -> "ListComprehension"
+  | Name _ -> "Name"
+  | Set _ -> "Set"
+  | SetComprehension _ -> "SetComprehension"
+  | Starred _ -> "Starred"
+  | Ternary _ -> "Ternary"
+  | Tuple _ -> "Tuple"
+  | UnaryOperator _ -> "UnaryOperator"
+  | WalrusOperator _ -> "WalrusOperator"
+  | Yield _ -> "Yield"
+  | YieldFrom _ -> "YieldFrom"
+
+
 let resolve_definition_for_name ~resolution ~module_reference ~define_name expression =
   let find_definition = find_definition ~resolution ~module_reference ~define_name in
   match Node.value expression with
-  | Expression.Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
-  | Expression.Name (Name.Attribute { base; attribute; _ } as name) -> (
-      let definition = name_to_reference name >>= find_definition in
-      match definition with
-      | Some definition -> Some definition
-      | None -> (
-          (* Resolve prefix to check if this is a method. *)
-          let base_type =
-            match resolve ~resolution base with
-            | Some annotation when Type.is_meta annotation ->
-                (* If it is a call to a class method or static method, `Foo.my_class_method()`, the
-                   resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-                Some (Type.single_parameter annotation)
-            | annotation -> annotation
-          in
-          let parent_class_summary =
-            base_type
-            >>= (fun parent ->
-                  GlobalResolution.attribute_from_annotation
-                    (Resolution.global_resolution resolution)
-                    ~parent
-                    ~name:attribute)
-            >>| AnnotatedAttribute.parent
-            >>= GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
-            >>| Node.value
-          in
-          match parent_class_summary with
-          | Some ({ ClassSummary.qualifier; _ } as base_class_summary) ->
-              base_class_summary
-              |> ClassSummary.attributes
-              |> Identifier.SerializableMap.find_opt attribute
-              >>| Node.location
-              >>| Location.with_module ~module_reference:qualifier
-          | None -> None))
-  | _ -> None
+  | Expression.Name (Name.Identifier identifier) -> begin
+      let reference = Reference.create identifier in
+      match find_definition reference with
+      | Some definition -> Ok definition
+      | None -> Error (IdentifierDefinitionNotFound (Reference.delocalize reference))
+    end
+  | Expression.Name (Name.Attribute { base; attribute; _ } as name) ->
+      let resolve_definition_attribute =
+        let reference = name_to_reference name in
+        let definition = reference >>= find_definition in
+        match definition with
+        | Some definition -> Some definition
+        | None -> (
+            (* Resolve prefix to check if this is a method. *)
+            let base_type =
+              match resolve ~resolution base with
+              | Some annotation when Type.is_meta annotation ->
+                  (* If it is a call to a class method or static method, `Foo.my_class_method()`,
+                     the resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
+                  Some (Type.single_parameter annotation)
+              | annotation -> annotation
+            in
+            let parent_class_summary =
+              base_type
+              >>= (fun parent ->
+                    GlobalResolution.attribute_from_annotation
+                      (Resolution.global_resolution resolution)
+                      ~parent
+                      ~name:attribute)
+              >>| AnnotatedAttribute.parent
+              >>= GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
+              >>| Node.value
+            in
+            match parent_class_summary with
+            | Some ({ ClassSummary.qualifier; _ } as base_class_summary) ->
+                base_class_summary
+                |> ClassSummary.attributes
+                |> Identifier.SerializableMap.find_opt attribute
+                >>| Node.location
+                >>| Location.with_module ~module_reference:qualifier
+            | None -> None)
+      in
+      begin
+        match resolve_definition_attribute with
+        | Some definition -> Ok definition
+        | None ->
+            Error
+              (AttributeDefinitionNotFound
+                 (name_to_reference name
+                 >>= fun name -> Some (Reference.show (Reference.delocalize name))))
+      end
+  | _ -> Error (UnsupportedExpression (get_expression_constructor expression.value))
 
 
 let resolve_attributes_for_expression ~resolution expression =
@@ -932,20 +984,22 @@ let resolve_definition_for_symbol
     ~section:`Performance
     "locationBasedLookup: Resolve definition for symbol: %d ms"
     (Timer.stop_in_ms timer);
-  definition_location
+  match definition_location with
+  | Ok location -> Ok location
+  | Error e -> Error e
 
 
 let location_of_definition ~type_environment ~module_reference position =
   let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   let location =
-    symbol_data >>= resolve_definition_for_symbol ~type_environment ~module_reference
+    Result.bind symbol_data ~f:(resolve_definition_for_symbol ~type_environment ~module_reference)
   in
   Log.log
     ~section:`Server
     "Definition for symbol at position `%s:%s`: %s"
     (Reference.show module_reference)
     ([%show: Location.position] position)
-    ([%show: Location.WithModule.t option] location);
+    ([%show: (Location.WithModule.t, lookup_error) result] location);
   location
 
 
@@ -985,7 +1039,9 @@ let completion_info_for_position ~type_environment ~module_reference position =
       right_inclusive_cursor_position
   in
   let completions =
-    symbol_data >>| resolve_completions_for_symbol ~type_environment |> Option.value ~default:[]
+    Result.ok symbol_data
+    >>| resolve_completions_for_symbol ~type_environment
+    |> Option.value ~default:[]
   in
   Log.log
     ~section:`Server
@@ -1156,11 +1212,11 @@ let document_symbol_info ~source =
 let hover_info_for_position ~type_environment ~module_reference position =
   let symbol_data = find_narrowest_spanning_symbol ~type_environment ~module_reference position in
   let type_ =
-    symbol_data
+    Result.ok symbol_data
     >>= resolve_type_for_symbol ~type_environment
     >>| fun type_ -> show_type_for_hover type_
   in
-  let docstring = symbol_data >>= find_docstring_for_symbol ~type_environment in
+  let docstring = Result.ok symbol_data >>= find_docstring_for_symbol ~type_environment in
   Log.log
     ~section:`Server
     "Hover info for symbol at position `%s:%s`: %s"
