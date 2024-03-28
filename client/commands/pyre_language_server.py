@@ -56,6 +56,10 @@ from . import (
 
 from .daemon_querier import DaemonQuerierSource, DaemonQueryFailure
 from .document_formatter import AbstractDocumentFormatter
+from .pyre_language_server_error import (
+    getLanguageServerErrorFromDaemonError,
+    PyreLanguageServerError,
+)
 
 from .server_state import OpenedDocumentState
 
@@ -321,6 +325,22 @@ def log_exceptions_factory(
         ) -> T:
             try:
                 return await func(self_, *args, **kwargs)
+            except json_rpc.InvalidRequestError as exception:
+                await self_.write_telemetry(
+                    {
+                        "type": "LSP",
+                        "operation": operation,
+                        "server_state_open_documents_count": len(
+                            self_.server_state.opened_documents
+                        ),
+                        "error_message": f"exception occurred in handling request: {traceback.format_exception(exception)}",
+                        **self_.server_state.status_tracker.get_status().as_telemetry_dict(),
+                        "error_type": PyreLanguageServerError.DOCUMENT_PATH_IS_NULL,
+                    },
+                    activity_key=None,
+                )
+                raise exception
+
             except Exception as exception:
                 await self_.write_telemetry(
                     {
@@ -847,6 +867,20 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
+            await self.write_telemetry(
+                {
+                    "type": "LSP",
+                    "operation": "definition",
+                    "filePath": str(document_path),
+                    "server_state_open_documents_count": len(
+                        self.server_state.opened_documents
+                    ),
+                    "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
+                    "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
+                    "error_type": PyreLanguageServerError.DOCUMENT_PATH_MISSING_IN_SERVER_STATE,
+                },
+                activity_key,
+            )
             return None
         daemon_status_before = self.server_state.status_tracker.get_status()
         shadow_mode = self.get_language_server_features().definition.is_shadow()
@@ -922,6 +956,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                 "character_at_position": character_at_position,
                 **daemon_status_before.as_telemetry_dict(),
+                "error_type": getLanguageServerErrorFromDaemonError(error_message),
             },
             activity_key,
         )
