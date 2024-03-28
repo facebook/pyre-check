@@ -39,6 +39,7 @@ class TaskManager:
 
     _task: Task
     _ongoing: "Optional[asyncio.Future[None]]"
+    _lock: asyncio.Lock
 
     def __init__(self, task: Task) -> None:
         """
@@ -51,6 +52,7 @@ class TaskManager:
         """
         self._task = task
         self._ongoing = None
+        self._lock = asyncio.Lock()
 
     async def _run_task(self) -> None:
         try:
@@ -73,21 +75,25 @@ class TaskManager:
         yield to the event loop from the current task (e.g. via an `await` on
         something).
         """
-        if self._ongoing is None:
-            self._ongoing = asyncio.create_task(self._run_task())
+        async with self._lock:
+            if self._ongoing is None:
+                self._ongoing = asyncio.create_task(self._run_task())
 
     async def ensure_task_stop(self) -> None:
         """
         If the background task is running actively, make sure it gets stopped.
         """
-        ongoing = self._ongoing
-        if ongoing is not None:
-            try:
-                ongoing.cancel()
-                await ongoing
-            except asyncio.CancelledError:
-                # This catch is needed when `ongoing.cancel` is called before
-                # `_run_task` gets a chance to execute.
-                LOG.info("Terminate background task on explicit cancelling request.")
-            finally:
-                self._ongoing = None
+        async with self._lock:
+            ongoing = self._ongoing
+            if ongoing is not None:
+                try:
+                    ongoing.cancel()
+                    await ongoing
+                except asyncio.CancelledError:
+                    # This catch is needed when `ongoing.cancel` is called before
+                    # `_run_task` gets a chance to execute.
+                    LOG.info(
+                        "Terminate background task on explicit cancelling request."
+                    )
+                finally:
+                    self._ongoing = None
