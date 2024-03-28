@@ -524,7 +524,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
         client_register_event = self.server_state.client_register_event
-        if client_register_event is None or not client_register_event.is_set():
+        if client_register_event is not None and not client_register_event.is_set():
             return
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
