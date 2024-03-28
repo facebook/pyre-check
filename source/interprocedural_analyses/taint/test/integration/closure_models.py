@@ -127,3 +127,15 @@ def captured_variable_models():
         complicated_name
 
     _test_sink(model_all_captured_as_tito())
+
+def some_decorator(func):
+    def wrapper_func():
+        func()
+    return wrapper_func
+
+def test_dsl_source(some_data: str) -> None:
+
+    # Should be found, but is not currently
+    @some_decorator
+    def decorated_local_function_capturing_local_variable():
+        _test_sink(some_data)

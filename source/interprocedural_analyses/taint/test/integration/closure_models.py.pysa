@@ -37,3 +37,11 @@ ModelQuery(
     where = fully_qualified_name.matches("closure_models.test_tito_transform.return_model_query_tito"),
     model = CapturedVariables(TaintInTaintOut[Transform[ReclassificationFakeTITO]])
 )
+
+
+ModelQuery(
+    name = "mark_captured_locals_as_tainted",
+    find = "functions",
+    where = Decorator(fully_qualified_callee.matches("closure_models.some_decorator")),
+    model = CapturedVariables(TaintSource[Test])
+)
