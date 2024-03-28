@@ -2158,8 +2158,6 @@ let test_class_with_same_name_as_local_variable =
               reveal_type(y.x)
             |}
            [
-             "Undefined import [21]: Could not find a module corresponding to import \
-              `some_module.Foo`. A definition with that name exists but it's a class.";
              "Undefined or invalid type [11]: Annotation `Foo.Foo` is not defined as a type.";
              "Revealed type [-1]: Revealed type for `y` is `typing.Any`.";
              "Revealed type [-1]: Revealed type for `y.x` is `unknown`.";

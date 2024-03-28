@@ -5309,26 +5309,28 @@ module State (Context : Context) = struct
           | ResolvedReference.Exported export -> Some export
           | ResolvedReference.FromModuleGetattr -> None
         in
+        let get_undefined_module_error name =
+          match GlobalResolution.module_exists global_resolution name with
+          | true -> None
+          | false -> (
+              (* check for getattr-any and placeholder stubs *)
+              match GlobalResolution.resolve_exports global_resolution name with
+              | Some (PlaceholderStub _) -> None
+              | None
+              | Some (Module _) ->
+                  Some (Error.UndefinedModule { name; kind = None })
+              | Some (ModuleAttribute { export; _ }) ->
+                  Some (Error.UndefinedModule { name; kind = get_export_kind export }))
+        in
         let undefined_imports =
           match from with
           | None ->
               List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
-                  match GlobalResolution.resolve_exports global_resolution name with
-                  | None -> Some (Error.UndefinedModule { name; kind = None })
-                  | Some (ModuleAttribute { export; _ }) ->
-                      Some (Error.UndefinedModule { name; kind = get_export_kind export })
-                  | Some (Module _)
-                  | Some (PlaceholderStub _) ->
-                      None)
+                  get_undefined_module_error name)
           | Some { Node.value = from; _ } -> (
-              match GlobalResolution.resolve_exports global_resolution from with
-              | None -> [Error.UndefinedModule { name = from; kind = None }]
-              | Some (ModuleAttribute { export; _ }) ->
-                  [Error.UndefinedModule { name = from; kind = get_export_kind export }]
-              | Some (PlaceholderStub _) ->
-                  (* Anything goes for placeholder stubs *)
-                  []
-              | Some (Module _) ->
+              match get_undefined_module_error from with
+              | Some error -> [error]
+              | None ->
                   List.filter_map imports ~f:(fun { Node.value = { Import.name; _ }; _ } ->
                       match GlobalResolution.resolve_exports global_resolution ~from name with
                       | None ->

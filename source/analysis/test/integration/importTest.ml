@@ -157,6 +157,22 @@ let test_check_imports context =
     ]
     context;
   assert_type_errors
+    ~other_sources:[{ handle = "a/b.py"; source = "def b() -> None: pass" }]
+    ~handle:"a/__init__.py"
+    {|
+      from .b import b
+    |}
+    []
+    context;
+  assert_type_errors
+    ~other_sources:
+      [{ handle = "a/__init__.py"; source = "import .b as c" }; { handle = "a/b.py"; source = "" }]
+    {|
+      import a.c
+    |}
+    ["Undefined import [21]: Could not find a module corresponding to import `a.c`."]
+    context;
+  assert_type_errors
     ~other_sources:
       [
         {
