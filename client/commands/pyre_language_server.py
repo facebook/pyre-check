@@ -523,7 +523,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         document_path: Path,
         activity_key: Optional[Dict[str, object]] = None,
     ) -> None:
-
+        client_register_event = self.server_state.client_register_event
+        if client_register_event is None or not client_register_event.is_set():
+            return
         daemon_status_before = self.server_state.status_tracker.get_status()
         type_errors_timer = timer.Timer()
         await self.update_overlay_if_needed(document_path)
@@ -1708,8 +1710,11 @@ class PyreLanguageServerDispatcher:
     async def dispatch_nonblocking_request(self, request: json_rpc.Request) -> None:
         if request.method == "exit" or request.method == "shutdown":
             raise Exception("Exit and shutdown requests should be blocking")
-        elif request.method == "textDocument/definition":
-            await self._restart_if_needed()
+
+        await self._restart_if_needed()
+        if self.server_state.client_register_event is not None:
+            await self.server_state.client_register_event.wait()
+        if request.method == "textDocument/definition":
             error_source = await self.api.process_definition_request(
                 lsp.DefinitionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1720,7 +1725,6 @@ class PyreLanguageServerDispatcher:
             await self._restart_if_needed(error_source)
         elif request.method == "textDocument/completion":
             LOG.debug("Received 'textDocument/completion' request.")
-            await self._restart_if_needed()
             error_source = await self.api.process_completion_request(
                 lsp.CompletionParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1730,7 +1734,6 @@ class PyreLanguageServerDispatcher:
             )
             await self._restart_if_needed(error_source)
         elif request.method == "textDocument/didOpen":
-            await self._restart_if_needed()
             await self.api.process_open_request(
                 lsp.DidOpenTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1739,7 +1742,6 @@ class PyreLanguageServerDispatcher:
             )
             await self._restart_if_needed()
         elif request.method == "textDocument/didChange":
-            await self._restart_if_needed()
             await self.api.process_did_change_request(
                 lsp.DidChangeTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1753,7 +1755,6 @@ class PyreLanguageServerDispatcher:
                 )
             )
         elif request.method == "textDocument/didSave":
-            await self._restart_if_needed()
             await self.api.process_did_save_request(
                 lsp.DidSaveTextDocumentParameters.from_json_rpc_parameters(
                     request.extract_parameters()
@@ -1868,8 +1869,6 @@ class PyreLanguageServerDispatcher:
             await self.api.process_shutdown_request(request.id)
             return await self.wait_for_exit()
         else:
-            if self.server_state.client_register_event is not None:
-                await self.server_state.client_register_event.wait()
             request_task = asyncio.create_task(
                 self.dispatch_nonblocking_request(request)
             )
