@@ -3935,6 +3935,23 @@ let test_expand_typed_dictionaries _ =
     |};
   assert_expand
     {|
+      if foo:
+        class Movie(typing.TypedDict):
+          name: str
+      else:
+        class Movie2(typing.TypedDict):
+          year: int
+    |}
+    {|
+      if foo:
+        class Movie(TypedDictionary):
+          name: str
+      else:
+        class Movie2(TypedDictionary):
+          year: int
+    |};
+  assert_expand
+    {|
       class Movie(mypy_extensions.TypedDict):
         name: str
         year: int

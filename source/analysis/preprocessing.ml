@@ -2434,6 +2434,13 @@ let expand_typed_dictionary_declarations
               base_arguments = List.filter_map base_arguments ~f:replace_totality;
               body = List.map body ~f:expand_typed_dictionaries;
             }
+      | If { test; body; orelse } ->
+          If
+            {
+              test;
+              body = List.map body ~f:expand_typed_dictionaries;
+              orelse = List.map orelse ~f:expand_typed_dictionaries;
+            }
       | _ -> value
     in
     { statement with Node.value = expanded_declaration }
