@@ -14,10 +14,15 @@ class PyreLanguageServerError(str, enum.Enum):
     DOCUMENT_PATH_IS_NULL = "DOCUMENT_PATH_IS_NULL"
 
     # Daemon Errors
+    ATTRIBUTE_DEFINITION_NOT_FOUND = "ATTRIBUTE_DEFINITION_NOT_FOUND"
     CLIENT_ALREADY_REGISTERED = "CLIENT_ALREADY_REGISTERED"
     CLIENT_NOT_REGISTERED = "CLIENT_NOT_REGISTERED"
     FILE_NOT_OPENED = "FILE_NOT_OPENED"
+    IDENTIFIER_DEFINITION_NOT_FOUND = "IDENTIFIER_DEFINITION_NOT_FOUND"
     MODULE_NOT_TRACKED = "MODULE_NOT_TRACKED"
+    SOURCE_PATH_NOT_FOUND = "SOURCE_PATH_NOT_FOUND"
+    SYMBOL_NOT_FOUND = "SYMBOL_NOT_FOUND"
+    UNSUPPORTED_EXPRESSION = "UNSUPPORTED_EXPRESSION"
     GENERIC_DAEMON_QUERY_FAILURE = "GENERIC_DAEMON_QUERY_FAILURE"
 
 
@@ -38,5 +43,15 @@ def getLanguageServerErrorFromDaemonError(
         return PyreLanguageServerError.FILE_NOT_OPENED
     elif "ModuleNotTracked" in error:
         return PyreLanguageServerError.MODULE_NOT_TRACKED
+    elif "SourcePathNotFound" in error:
+        return PyreLanguageServerError.SOURCE_PATH_NOT_FOUND
+    elif "SymbolNotFound" in error:
+        return PyreLanguageServerError.SYMBOL_NOT_FOUND
+    elif "UnsupportedExpression" in error:
+        return PyreLanguageServerError.UNSUPPORTED_EXPRESSION
+    elif "AttributeDefinitionNotFound" in error:
+        return PyreLanguageServerError.ATTRIBUTE_DEFINITION_NOT_FOUND
+    elif "IdentifierDefinitionNotFound" in error:
+        return PyreLanguageServerError.IDENTIFIER_DEFINITION_NOT_FOUND
     else:
         return PyreLanguageServerError.GENERIC_DAEMON_QUERY_FAILURE
