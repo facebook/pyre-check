@@ -13,6 +13,7 @@ should be aware a change to this state could affect other modules that interact 
 
 from __future__ import annotations
 
+import asyncio
 import dataclasses
 import enum
 from pathlib import Path
@@ -100,3 +101,5 @@ class ServerState:
     status_tracker: Final[DaemonStatusTracker] = dataclasses.field(
         default_factory=DaemonStatusTracker
     )
+
+    client_register_event: Optional[asyncio.Event] = None

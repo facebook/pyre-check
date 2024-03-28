@@ -65,7 +65,6 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: type_error_handler.ClientTypeErrorHandler,
         queriers: List[daemon_querier.AbstractDaemonQuerier],
-        client_register_event: asyncio.Event,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -75,7 +74,6 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             client_type_error_handler,
             PyreCodeNavigationSubscriptionResponseParser(),
             remote_logging,
-            client_register_event,
         )
         self.queriers = queriers
 
@@ -245,6 +243,7 @@ async def async_run_code_navigation_client(
     server_state = state.ServerState(
         client_capabilities=client_capabilities,
         server_options=initial_server_options,
+        client_register_event=asyncio.Event(),
     )
 
     codenav_querier = daemon_querier.CodeNavigationDaemonQuerier(
@@ -255,7 +254,6 @@ async def async_run_code_navigation_client(
     client_type_error_handler = type_error_handler.ClientTypeErrorHandler(
         stdout, server_state, remote_logging
     )
-    client_register_event = asyncio.Event()
     server = pyre_language_server.PyreLanguageServerDispatcher(
         input_channel=stdin,
         output_channel=stdout,
@@ -270,7 +268,6 @@ async def async_run_code_navigation_client(
                 ),
                 queriers=[codenav_querier, index_querier],
                 client_type_error_handler=client_type_error_handler,
-                client_register_event=client_register_event,
             )
         ),
         api=pyre_language_server.PyreLanguageServer(
@@ -281,7 +278,6 @@ async def async_run_code_navigation_client(
             document_formatter=document_formatter,
             client_type_error_handler=client_type_error_handler,
         ),
-        client_register_event=client_register_event,
     )
     return await server.run()
 
