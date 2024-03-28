@@ -758,19 +758,25 @@ let resolve ~resolution expression =
   | ClassHierarchy.Untracked _ -> None
 
 
-let look_up_local_definition ~resolution ~define_name ~statement_key identifier =
+let look_up_local_definition ~resolution ~define_name identifier =
   GlobalResolution.get_define_body (Resolution.global_resolution resolution) define_name
-  >>| UninitializedLocalCheck.defined_locals_at_each_statement
-  >>= (fun defined_locals_at_each_statement ->
-        Map.find defined_locals_at_each_statement statement_key)
-  >>= fun (_, locals_map) -> Map.find locals_map identifier
+  >>= fun define ->
+  let scope =
+    match Scope.Scope.of_define define.value with
+    | Some scope -> scope
+    | None ->
+        (* Module toplevel *)
+        Scope.Scope.of_source (Source.create define.value.body)
+  in
+  let local_bindings = UninitializedLocalCheck.local_bindings scope in
+  Map.find local_bindings identifier
 
 
-let find_definition ~resolution ~module_reference ~define_name ~statement_key reference =
+let find_definition ~resolution ~module_reference ~define_name reference =
   let local_definition =
     Reference.single reference
     >>| Identifier.sanitized
-    >>= look_up_local_definition ~resolution ~define_name ~statement_key
+    >>= look_up_local_definition ~resolution ~define_name
     >>= function
     | { Scope.Binding.kind = ImportName _; _ } ->
         (* If we import `import foo`, go-to-def on uses of `foo` should go to the module `foo`, not
@@ -824,9 +830,8 @@ let find_definition ~resolution ~module_reference ~define_name ~statement_key re
   definition_location >>= sanitize_location
 
 
-let resolve_definition_for_name ~resolution ~module_reference ~define_name ~statement_key expression
-  =
-  let find_definition = find_definition ~resolution ~module_reference ~define_name ~statement_key in
+let resolve_definition_for_name ~resolution ~module_reference ~define_name expression =
+  let find_definition = find_definition ~resolution ~module_reference ~define_name in
   match Node.value expression with
   | Expression.Name (Name.Identifier identifier) -> find_definition (Reference.create identifier)
   | Expression.Name (Name.Attribute { base; attribute; _ } as name) -> (
@@ -910,23 +915,17 @@ let resolution_from_cfg_data
 let resolve_definition_for_symbol
     ~type_environment
     ~module_reference
-    {
-      symbol_with_definition;
-      cfg_data = { define_name; node_id; statement_index } as cfg_data;
-      use_postcondition_info;
-    }
+    { symbol_with_definition; cfg_data = { define_name; _ } as cfg_data; use_postcondition_info }
   =
   let timer = Timer.start () in
   let definition_location =
     match symbol_with_definition with
     | Expression expression
     | TypeAnnotation expression ->
-        let statement_key = [%hash: int * int] (node_id, statement_index) in
         resolve_definition_for_name
           ~resolution:(resolution_from_cfg_data ~type_environment ~use_postcondition_info cfg_data)
           ~module_reference
           ~define_name
-          ~statement_key
           expression
   in
   Log.log

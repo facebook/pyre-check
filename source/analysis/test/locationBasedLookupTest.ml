@@ -1184,13 +1184,12 @@ let test_resolve_definition_for_symbol context =
 
           return 42          # stop line
     |};
-  assert_resolved_definition
-    {|
+  assert_resolved_definition_with_location_string
+    ~source:{|
         def foo(a: int, b: str) -> None: ...
           #             ^- cursor
-
-        # No definition found.
-    |};
+    |}
+    (Some "test:2:16-2:22");
   assert_resolved_definition
     {|
         def foo(x: str) -> None:
@@ -1720,6 +1719,28 @@ let test_resolve_definition_for_symbol context =
         #                 ^- cursor
       |}
     (Some "library:6:0-7:18");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        def foo() -> None:
+          if derp:
+            x = 42
+
+          print(x)
+          #     ^- cursor
+      |}
+    (Some "test:4:4-4:5");
+  assert_resolved_definition_with_location_string
+    ~source:
+      {|
+        def foo() -> None:
+          if derp:
+            x = 42
+        #   ^- cursor
+
+          print(x)
+      |}
+    (Some "test:4:4-4:5");
   ()
 
 
