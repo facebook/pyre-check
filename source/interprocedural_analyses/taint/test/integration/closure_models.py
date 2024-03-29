@@ -103,31 +103,6 @@ def test_tito_transform():
     )
     value.reclassify(feature="breadcrumb2")
 
-
-def captured_variable_models():
-    complicated_name = ...
-    # complicated_name has no taint outside nested functions, no issue
-    _test_sink(complicated_name)
-
-    def model_all_captured_as_sources():
-        # TODO(T180817012): Support capturing all variables as sources in nested functions
-        _test_sink(complicated_name)
-
-    def model_all_captured_as_sink():
-        # TODO(T180817051): Support making all writes to captured variables as sinks
-        nonlocal complicated_name
-        complicated_name = "tainted"
-
-    model_all_captured_as_sink()
-    # TODO(T180817051): Support making all writes to captured variables as sinks
-    _test_sink(complicated_name)
-
-    complicated_name = _test_source()
-    def model_all_captured_as_tito():
-        complicated_name
-
-    _test_sink(model_all_captured_as_tito())
-
 def some_decorator(func):
     def wrapper_func():
         func()
@@ -135,7 +110,48 @@ def some_decorator(func):
 
 def test_dsl_source(some_data: str) -> None:
 
-    # Should be found, but is not currently
+    # TODO(T180817012): Should be found, but is not currently
     @some_decorator
     def decorated_local_function_capturing_local_variable():
         _test_sink(some_data)
+
+
+def captured_variable_model_tito():
+    complicated_name = _test_source()
+
+    # model simulates captured variables returned
+    def model_all_captured_as_tito():
+        complicated_name
+
+    _test_sink(model_all_captured_as_tito())
+
+
+def captured_variable_model_parameter_source():
+    complicated_name = ...
+    # complicated_name has no taint outside nested functions, no issue
+    _test_sink(complicated_name)
+
+    def model_all_captured_as_parameter_sources():
+        # TODO(T180817012): Support capturing all variables as parameter sources in nested functions
+        _test_sink(complicated_name)
+
+
+def captured_variable_model_generation_source():
+    complicated_name = ...
+
+    # model simulates writing taint to nonlocal
+    def model_all_captured_as_generation_sources():
+        complicated_name
+
+    model_all_captured_as_generation_sources()
+    _test_sink(complicated_name)
+
+
+def captured_variable_model_sink():
+    complicated_name = _test_source()
+
+    # model simulates sink on each captured variable
+    def model_all_captured_as_sinks():
+        complicated_name
+
+    model_all_captured_as_sinks()
