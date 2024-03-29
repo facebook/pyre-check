@@ -201,12 +201,6 @@ class PyreLanguageServerApi(abc.ABC):
         raise NotImplementedError()
 
     @abc.abstractmethod
-    async def _get_definition_result(
-        self, document_path: Path, position: lsp.LspPosition
-    ) -> QueryResultWithDurations[List[Dict[str, object]]]:
-        raise NotImplementedError()
-
-    @abc.abstractmethod
     async def process_definition_request(
         self,
         parameters: lsp.DefinitionParameters,

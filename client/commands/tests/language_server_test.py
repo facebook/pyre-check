@@ -107,11 +107,6 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
     ) -> None:
         raise NotImplementedError()
 
-    async def _get_definition_result(
-        self, document_path: Path, position: lsp.LspPosition
-    ) -> pyre_language_server.QueryResultWithDurations[List[Dict[str, object]]]:
-        raise NotImplementedError()
-
     async def process_completion_request(
         self,
         parameters: lsp.CompletionParameters,
