@@ -39,7 +39,7 @@ def getLanguageServerErrorFromDaemonError(
         return PyreLanguageServerError.CLIENT_ALREADY_REGISTERED
     elif "ClientNotRegistered" in error:
         return PyreLanguageServerError.CLIENT_NOT_REGISTERED
-    elif "FileNotOpened":
+    elif "FileNotOpened" in error:
         return PyreLanguageServerError.FILE_NOT_OPENED
     elif "ModuleNotTracked" in error:
         return PyreLanguageServerError.MODULE_NOT_TRACKED
