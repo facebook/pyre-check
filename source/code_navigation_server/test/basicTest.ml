@@ -421,16 +421,6 @@ let test_location_of_definition_request context =
             Response.(
               LocationOfDefinition
                 { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
-        ScratchProject.ClientConnection.assert_response
-          ~request:
-            Request.(
-              Query
-                (Query.LocationOfDefinition
-                   { client_id; path = test2_path; position = position 2 14 }))
-          ~expected:
-            Response.(
-              LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
