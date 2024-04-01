@@ -384,11 +384,16 @@ let test_location_of_definition_request context =
     ScratchProject.setup
       ~context
       ~include_typeshed_stubs:false
-      ["test.py", "x: int = 42"; "test2.py", "import test\ny: int = test.x"]
+      [
+        "test.py", "x: int = 42";
+        "test2.py", "import test\ny: int = test.x";
+        "test3.py", "from test import x";
+      ]
   in
   let root = ScratchProject.source_root_of project in
   let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
   let test2_path = PyrePath.create_relative ~root ~relative:"test2.py" |> PyrePath.absolute in
+  let test3_path = PyrePath.create_relative ~root ~relative:"test3.py" |> PyrePath.absolute in
   let open TestHelper in
   let client_id = "foo" in
   ScratchProject.test_server_with
@@ -417,6 +422,17 @@ let test_location_of_definition_request context =
               Query
                 (Query.LocationOfDefinition
                    { client_id; path = test2_path; position = position 2 14 }))
+          ~expected:
+            Response.(
+              LocationOfDefinition
+                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              (* This location points to `x` in `from test import x` *)
+              Query
+                (Query.LocationOfDefinition
+                   { client_id; path = test3_path; position = position 1 17 }))
           ~expected:
             Response.(
               LocationOfDefinition
