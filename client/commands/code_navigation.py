@@ -19,7 +19,7 @@ import json
 import logging
 import traceback
 
-from typing import List, Optional
+from typing import Optional
 
 from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
 from ..language_server import connections, features, protocol as lsp, remote_index
@@ -56,7 +56,7 @@ class PyreCodeNavigationSubscriptionResponseParser(
 class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler
 ):
-    queriers: List[daemon_querier.AbstractDaemonQuerier]
+    querier: daemon_querier.AbstractDaemonQuerier
 
     def __init__(
         self,
@@ -64,7 +64,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         server_state: state.ServerState,
         client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: type_error_handler.ClientTypeErrorHandler,
-        queriers: List[daemon_querier.AbstractDaemonQuerier],
+        querier: daemon_querier.AbstractDaemonQuerier,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -75,7 +75,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             PyreCodeNavigationSubscriptionResponseParser(),
             remote_logging,
         )
-        self.queriers = queriers
+        self.querier = querier
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors
@@ -153,30 +153,20 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         )
 
     async def client_setup(self) -> None:
+        await self.querier.handle_register_client()
+        LOG.info("Registered daemon querier.")
         results = await asyncio.gather(
-            *[querier.handle_register_client() for querier in self.queriers]
+            *[
+                self.querier.handle_file_opened(path, document.code)
+                for path, document in self.server_state.opened_documents.items()
+            ]
         )
         if len(results) > 0:
-            LOG.info(f"Registered {len(results)} queriers.")
-        LOG.info(f"Queriers: {self.queriers}")
-        for querier in self.queriers:
-            results = await asyncio.gather(
-                *[
-                    querier.handle_file_opened(path, document.code)
-                    for path, document in self.server_state.opened_documents.items()
-                ]
-            )
-            if len(results) > 0:
-                LOG.info(
-                    f"Sent {len(results)} open messages to daemon for existing state."
-                )
+            LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
 
     async def client_teardown(self) -> None:
-        results = await asyncio.gather(
-            *[querier.handle_dispose_client() for querier in self.queriers]
-        )
-        if len(results) > 0:
-            LOG.info(f"Disposed {len(results)} queriers.")
+        await self.querier.handle_dispose_client()
+        LOG.info("Disposed daemon querier.")
 
 
 def process_initialize_request(
@@ -266,7 +256,7 @@ async def async_run_code_navigation_client(
                 client_status_message_handler=status_message_handler.ClientStatusMessageHandler(
                     stdout, server_state
                 ),
-                queriers=[codenav_querier, index_querier],
+                querier=codenav_querier,
                 client_type_error_handler=client_type_error_handler,
             )
         ),
