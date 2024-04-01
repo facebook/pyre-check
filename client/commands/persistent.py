@@ -290,7 +290,7 @@ async def run_persistent(
             output_channel=stdout,
             server_state=server_state,
             querier=querier,
-            index_querier=daemon_querier.EmptyQuerier(server_state=server_state),
+            index_querier=daemon_querier.EmptyQuerier(),
             document_formatter=None,
             client_type_error_handler=client_type_error_handler,
         ),

@@ -397,6 +397,7 @@ class DaemonQuerierTest(testslide.TestCase):
             )
             base_querier.server_state.status_tracker.set_status(fallbackable_state)
             querier = RemoteIndexBackedQuerier(
+                daemon_status_tracker=base_querier.server_state.status_tracker,
                 base_querier=base_querier,
                 index=remote_index.EmptyRemoteIndex(),
             )
@@ -426,6 +427,7 @@ class DaemonQuerierTest(testslide.TestCase):
             state.ConnectionStatus.DISCONNECTED
         )
         querier = RemoteIndexBackedQuerier(
+            daemon_status_tracker=base_querier.server_state.status_tracker,
             base_querier=base_querier,
             index=remote_index.EmptyRemoteIndex(),
         )
@@ -705,8 +707,11 @@ class DaemonQuerierTest(testslide.TestCase):
     @setup.async_test
     async def test_query_definition_fall_back_to_glean_on_pyre_exception(self) -> None:
         mock_querier = GoToDefinitionExceptionDaemonQuerier()
+        fake_status_tracker = state.DaemonStatusTracker()
+        fake_status_tracker.set_status(state.ConnectionStatus.READY)
 
         querier = RemoteIndexBackedQuerier(
+            daemon_status_tracker=fake_status_tracker,
             base_querier=mock_querier,
             index=remote_index.EmptyRemoteIndex(),
         )

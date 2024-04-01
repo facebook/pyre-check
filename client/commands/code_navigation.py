@@ -240,7 +240,9 @@ async def async_run_code_navigation_client(
         server_state=server_state
     )
 
-    index_querier = daemon_querier.RemoteIndexBackedQuerier(codenav_querier, index)
+    index_querier = daemon_querier.RemoteIndexBackedQuerier(
+        server_state.status_tracker, codenav_querier, index
+    )
     client_type_error_handler = type_error_handler.ClientTypeErrorHandler(
         stdout, server_state, remote_logging
     )

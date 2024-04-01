@@ -354,7 +354,7 @@ def create_pyre_language_server_api(
     daemon_querier: querier.AbstractDaemonQuerier,
     index_querier: Optional[querier.AbstractDaemonQuerier] = None,
 ) -> ls.PyreLanguageServerApi:
-    index_querier = index_querier or querier.EmptyQuerier(server_state)
+    index_querier = index_querier or querier.EmptyQuerier()
     return ls.PyreLanguageServer(
         output_channel=output_channel,
         server_state=server_state,
