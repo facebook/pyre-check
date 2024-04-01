@@ -24,12 +24,12 @@ from .identifiers import PyreFlavor
 
 # Socket path logic ---
 
-MD5_LENGTH = 32
+HASH_LENGTH = 16
 
 
-def get_md5(identifier_string: str) -> str:
+def get_md5_short(identifier_string: str) -> str:
     identifier_bytes = identifier_string.encode("utf-8")
-    return hashlib.md5(identifier_bytes).hexdigest()
+    return hashlib.md5(identifier_bytes).hexdigest()[:HASH_LENGTH]
 
 
 def _get_socket_path_in_root(
@@ -42,7 +42,7 @@ def _get_socket_path_in_root(
     `log_directory` because of the ~100 character length limit on Unix socket
     file paths.
     """
-    project_hash = get_md5(project_identifier)
+    project_hash = get_md5_short(project_identifier)
     flavor_suffix = flavor.path_suffix()
     return socket_root / f"pyre_server_{project_hash}{flavor_suffix}.sock"
 
@@ -65,7 +65,7 @@ def get_socket_path(
 
 
 def socket_file_glob_pattern() -> str:
-    md5_hash_pattern = "[0-9a-f]" * MD5_LENGTH
+    md5_hash_pattern = "[0-9a-f]" * HASH_LENGTH
     return f"pyre_server_{md5_hash_pattern}*.sock"
 
 

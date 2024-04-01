@@ -14,32 +14,36 @@ import testslide
 from ..daemon_socket import (
     _get_socket_path_in_root,
     find_socket_files,
-    get_md5,
-    MD5_LENGTH,
+    get_md5_short,
+    HASH_LENGTH,
 )
 
 from ..identifiers import get_project_identifier, PyreFlavor
 
 
 class SocketTest(testslide.TestCase):
-    def test_get_md5(self) -> None:
+    def test_get_md5_short(self) -> None:
         # Test different servers are differentiable
         project_root = Path("project_root")
         relative_local_root_a = Path("my/project")
         relative_local_root_b = Path("my/otherproject")
-        md5_hash_a = get_md5((str(project_root) + "//" + str(relative_local_root_a)))
-        md5_hash_a_recomputed = get_md5(
+        md5_hash_a = get_md5_short(
             (str(project_root) + "//" + str(relative_local_root_a))
         )
-        md5_hash_b = get_md5((str(project_root) + "//" + str(relative_local_root_b)))
+        md5_hash_a_recomputed = get_md5_short(
+            (str(project_root) + "//" + str(relative_local_root_a))
+        )
+        md5_hash_b = get_md5_short(
+            (str(project_root) + "//" + str(relative_local_root_b))
+        )
         self.assertTrue(md5_hash_a == md5_hash_a_recomputed)
         self.assertFalse(md5_hash_a == md5_hash_b)
 
         # Test socket name length
         project_root = Path("project_root" * 100)
         relative_local_root = Path("my/project")
-        md5_hash = get_md5((str(project_root) + "//" + str(relative_local_root)))
-        self.assertTrue(len(md5_hash) == MD5_LENGTH)
+        md5_hash = get_md5_short((str(project_root) + "//" + str(relative_local_root)))
+        self.assertTrue(len(md5_hash) == HASH_LENGTH)
 
     def test_get_project_identifier(self) -> None:
         project_root = Path("project_root")
@@ -60,7 +64,9 @@ class SocketTest(testslide.TestCase):
         flavor: PyreFlavor = PyreFlavor.CLASSIC,
         suffix: str = "",
     ) -> None:
-        md5_hash = get_md5(get_project_identifier(project_root, relative_local_root))
+        md5_hash = get_md5_short(
+            get_project_identifier(project_root, relative_local_root)
+        )
         self.assertEqual(
             _get_socket_path_in_root(
                 socket_root,
