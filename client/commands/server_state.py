@@ -78,6 +78,13 @@ class DaemonStatusTracker:
             ),
         )
 
+    def is_unavailable(self) -> bool:
+        return self._connection_status in {
+            ConnectionStatus.NOT_CONNECTED,
+            ConnectionStatus.DISCONNECTED,
+            ConnectionStatus.SUSPENDED,
+        }
+
 
 @dataclasses.dataclass
 class ServerState:

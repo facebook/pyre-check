@@ -146,13 +146,6 @@ def path_to_expression_coverage_response(
     )
 
 
-def is_server_unavailable(server_state: state.ServerState) -> bool:
-    return server_state.status_tracker.get_status().connection_status in {
-        state.ConnectionStatus.DISCONNECTED,
-        state.ConnectionStatus.NOT_CONNECTED,
-    }
-
-
 class AbstractDaemonQuerier(abc.ABC):
     def __init__(
         self,
@@ -914,7 +907,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetHoverResponse]:
-        if is_server_unavailable(self.base_querier.server_state):
+        if self.base_querier.server_state.status_tracker.is_unavailable():
             index_result = await self.index.hover(path, position)
             return GetHoverResponse(
                 source=DaemonQuerierSource.GLEAN_INDEXER, data=index_result
@@ -958,7 +951,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         path: Path,
         position: lsp.PyrePosition,
     ) -> Union[DaemonQueryFailure, GetDefinitionLocationsResponse]:
-        if is_server_unavailable(self.base_querier.server_state):
+        if self.base_querier.server_state.status_tracker.is_unavailable():
             return await self.get_definition_locations_from_glean(path, position)
         base_results = await self.base_querier.get_definition_locations(path, position)
 
