@@ -3047,15 +3047,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Some expression ->
             analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression
       in
-      let root = AccessPath.Root.Variable qualified_name in
-      let taint =
-        ForwardState.assign
-          ~root
-          ~path:[]
-          (ForwardState.Tree.join prime default_value_taint)
-          state.taint
-      in
-      { taint }
+      store_taint
+        ~root:(AccessPath.Root.Variable qualified_name)
+        ~path:[]
+        (ForwardState.Tree.join prime default_value_taint)
+        state
     in
     List.fold parameters ~init:bottom ~f:prime_parameter
 
