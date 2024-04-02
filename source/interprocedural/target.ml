@@ -198,7 +198,7 @@ let method_name = function
       None
 
 
-let is_method = function
+let is_method_or_override = function
   | Method _
   | Override _ ->
       true

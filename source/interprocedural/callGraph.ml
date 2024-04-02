@@ -1139,7 +1139,7 @@ module CallTargetIndexer = struct
       else if is_class_method then
         true
       else
-        (not explicit_receiver) && Target.is_method target_for_index
+        (not explicit_receiver) && Target.is_method_or_override target_for_index
     in
     {
       CallTarget.target = original_target;
