@@ -126,7 +126,11 @@ module Heap = struct
 
   let skip_overrides ~to_skip overrides =
     Target.Map.Tree.filter_keys
-      ~f:(fun override -> not (Reference.SerializableSet.mem (Target.define_name override) to_skip))
+      ~f:(fun override ->
+        not
+          (Reference.SerializableSet.mem
+             (Target.define_name (Target.override_to_method override))
+             to_skip))
       overrides
 
 

@@ -394,6 +394,7 @@ let matches_callee_constraint ~pyre_api ~name_captures ~name_constraint callee =
   let call_target_to_string call_target =
     call_target
     |> CallGraph.CallTarget.target
+    |> Interprocedural.Target.override_to_method
     |> Interprocedural.Target.define_name
     |> Reference.show
   in

@@ -19,7 +19,8 @@ module File = struct
   module Set = SerializableSet.Make (T)
 
   let from_callable ~pyre_api ~resolve_module_path callable =
-    Interprocedural.Target.get_module_and_definition callable ~pyre_api
+    Option.some_if (Interprocedural.Target.is_function_or_method callable) callable
+    >>= Interprocedural.Target.get_module_and_definition ~pyre_api
     >>| fst
     >>= resolve_module_path
     >>= function

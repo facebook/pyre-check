@@ -735,7 +735,7 @@ module Modelable = struct
 
 
   let name = function
-    | Callable { target; _ } -> Target.define_name target
+    | Callable { target; _ } -> target |> Target.override_to_method |> Target.define_name
     | Attribute { name; _ }
     | Global { name; _ } ->
         name
