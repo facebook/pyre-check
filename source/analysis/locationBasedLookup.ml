@@ -61,10 +61,23 @@ type hover_info = {
 }
 [@@deriving sexp, show, compare, yojson { strict = false }]
 
+type resolution_error =
+  | ResolvedTop
+  | ResolvedUnbound
+  | UntrackedType of string
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
+type attribute_lookup_error =
+  | ReferenceNotFoundAndBaseUnresolved of resolution_error
+  | AttributeUnresolved
+  | ClassSummaryNotFound
+  | ClassSummaryAttributeNotFound
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
 type lookup_error =
   | SymbolNotFound
   | IdentifierDefinitionNotFound of Reference.t
-  | AttributeDefinitionNotFound of string option
+  | AttributeDefinitionNotFound of string option * attribute_lookup_error
   | UnsupportedExpression of string
 [@@deriving sexp, show, compare, to_yojson { strict = false }]
 
@@ -770,9 +783,14 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
 let resolve ~resolution expression =
   try
     let resolved = Resolution.resolve_expression_to_type resolution expression in
-    Option.some_if ((not (Type.is_top resolved)) && not (Type.is_unbound resolved)) resolved
+    if Type.is_top resolved then
+      Error ResolvedTop
+    else if Type.is_unbound resolved then
+      Error ResolvedUnbound
+    else
+      Ok resolved
   with
-  | ClassHierarchy.Untracked _ -> None
+  | ClassHierarchy.Untracked annotation -> Error (UntrackedType annotation)
 
 
 let look_up_local_definition ~resolution ~define_name identifier =
@@ -883,49 +901,52 @@ let resolve_definition_for_name ~resolution ~module_reference ~define_name expre
       | None -> Error (IdentifierDefinitionNotFound (Reference.delocalize reference))
     end
   | Expression.Name (Name.Attribute { base; attribute; _ } as name) ->
+      let reference = name_to_reference name in
+      let definition = reference >>= find_definition in
       let resolve_definition_attribute =
-        let reference = name_to_reference name in
-        let definition = reference >>= find_definition in
         match definition with
-        | Some definition -> Some definition
+        | Some definition -> Ok definition
         | None -> (
             (* Resolve prefix to check if this is a method. *)
             let base_type =
               match resolve ~resolution base with
-              | Some annotation when Type.is_meta annotation ->
+              | Ok annotation as resolved ->
                   (* If it is a call to a class method or static method, `Foo.my_class_method()`,
                      the resolved base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-                  Some (Type.single_parameter annotation)
-              | annotation -> annotation
+                  if Type.is_meta annotation then
+                    Ok (Type.single_parameter annotation)
+                  else
+                    resolved
+              | Error resolution_error ->
+                  Error (ReferenceNotFoundAndBaseUnresolved resolution_error)
             in
-            let parent_class_summary =
-              base_type
-              >>= (fun parent ->
-                    GlobalResolution.attribute_from_annotation
-                      (Resolution.global_resolution resolution)
-                      ~parent
-                      ~name:attribute)
-              >>| AnnotatedAttribute.parent
-              >>= GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
-              >>| Node.value
+            let open Result.Monad_infix in
+            base_type
+            >>= (fun parent ->
+                  GlobalResolution.attribute_from_annotation
+                    (Resolution.global_resolution resolution)
+                    ~parent
+                    ~name:attribute
+                  |> Result.of_option ~error:AttributeUnresolved)
+            >>= (fun attribute ->
+                  AnnotatedAttribute.parent attribute
+                  |> GlobalResolution.get_class_summary (Resolution.global_resolution resolution)
+                  |> Result.of_option ~error:ClassSummaryNotFound)
+            >>= fun class_summary ->
+            let ({ ClassSummary.qualifier = module_reference; _ } as base_class_summary) =
+              Node.value class_summary
             in
-            match parent_class_summary with
-            | Some ({ ClassSummary.qualifier; _ } as base_class_summary) ->
-                base_class_summary
-                |> ClassSummary.attributes
-                |> Identifier.SerializableMap.find_opt attribute
-                >>| Node.location
-                >>| Location.with_module ~module_reference:qualifier
-            | None -> None)
+            let attributes = ClassSummary.attributes base_class_summary in
+            match Identifier.SerializableMap.find_opt attribute attributes with
+            | Some node -> Ok (Node.location node |> Location.with_module ~module_reference)
+            | None -> Error ClassSummaryAttributeNotFound)
       in
       begin
         match resolve_definition_attribute with
-        | Some definition -> Ok definition
-        | None ->
-            Error
-              (AttributeDefinitionNotFound
-                 (name_to_reference name
-                 >>= fun name -> Some (Reference.show (Reference.delocalize name))))
+        | Ok _ as definition -> definition
+        | Error attribute_lookup_error ->
+            let reference = reference >>| fun name -> Reference.show (Reference.delocalize name) in
+            Error (AttributeDefinitionNotFound (reference, attribute_lookup_error))
       end
   | _ -> Error (UnsupportedExpression (get_expression_constructor expression.value))
 
@@ -934,11 +955,14 @@ let resolve_attributes_for_expression ~resolution expression =
   (* Resolve prefix to check if this is a method. *)
   let base_type =
     match resolve ~resolution expression with
-    | Some annotation when Type.is_meta annotation ->
+    | Ok annotation ->
         (* If it is a call to a class method or static method, `Foo.my_class_method()`, the resolved
            base type will be `Type[Foo]`. Extract the class type `Foo`. *)
-        Some (Type.single_parameter annotation)
-    | annotation -> annotation
+        if Type.is_meta annotation then
+          Some (Type.single_parameter annotation)
+        else
+          Some annotation
+    | Error _ -> None
   in
   base_type
   >>| Type.split
@@ -1183,7 +1207,7 @@ let resolve_type_for_symbol
     ~section:`Performance
     "locationBasedLookup: Resolve type for symbol: %d ms"
     (Timer.stop_in_ms timer);
-  type_
+  Result.ok type_
 
 
 let format_method_name name annotation =

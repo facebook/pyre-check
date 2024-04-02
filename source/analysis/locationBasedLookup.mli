@@ -39,10 +39,23 @@ type coverage_gap_by_location = {
 }
 [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
+type resolution_error =
+  | ResolvedTop
+  | ResolvedUnbound
+  | UntrackedType of string
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
+type attribute_lookup_error =
+  | ReferenceNotFoundAndBaseUnresolved of resolution_error
+  | AttributeUnresolved
+  | ClassSummaryNotFound
+  | ClassSummaryAttributeNotFound
+[@@deriving sexp, show, compare, to_yojson { strict = false }]
+
 type lookup_error =
   | SymbolNotFound
   | IdentifierDefinitionNotFound of Ast.Reference.t
-  | AttributeDefinitionNotFound of string option
+  | AttributeDefinitionNotFound of string option * attribute_lookup_error
   | UnsupportedExpression of string
 [@@deriving sexp, show, compare, to_yojson { strict = false }]
 

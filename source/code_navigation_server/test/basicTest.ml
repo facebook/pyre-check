@@ -457,6 +457,84 @@ let test_location_of_definition_request context =
       ]
 
 
+let test_location_of_definition_attribute_not_found context =
+  let project =
+    ScratchProject.setup ~context ~include_typeshed_stubs:false ["test.py", "foo.bar"]
+  in
+  let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
+  let open TestHelper in
+  let client_id = "foo" in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        register_client ~client_id;
+        open_file ~client_id ~path:test_path;
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Query
+                (Query.LocationOfDefinition { client_id; path = test_path; position = position 1 4 }))
+          ~expected:
+            (Error
+               (Response.ErrorKind.LocationBasedLookupError
+                  Analysis.LocationBasedLookup.(
+                    AttributeDefinitionNotFound
+                      (Some "foo.bar", ReferenceNotFoundAndBaseUnresolved ResolvedTop))));
+        close_file ~client_id ~path:test_path;
+        dispose_client ~client_id;
+      ]
+
+
+let test_location_of_definition_attribute_unannotated_class_property context =
+  let project =
+    ScratchProject.setup
+      ~context
+      ~include_typeshed_stubs:false
+      ["test.py", "class Foo:\n  foo = f()\n  def m(self):\n    self.foo.bar"]
+  in
+  let root = ScratchProject.source_root_of project in
+  let test_path = PyrePath.create_relative ~root ~relative:"test.py" |> PyrePath.absolute in
+  let open TestHelper in
+  let client_id = "foo" in
+  ScratchProject.test_server_with
+    project
+    ~style:ScratchProject.ClientConnection.Style.Sequential
+    ~clients:
+      [
+        register_client ~client_id;
+        open_file ~client_id ~path:test_path;
+        (* self.|foo.bar *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Query
+                (Query.LocationOfDefinition { client_id; path = test_path; position = position 4 9 }))
+          ~expected:
+            Response.(
+              LocationOfDefinition
+                { definitions = [{ DefinitionLocation.path = test_path; range = range 2 2 2 11 }] });
+        (* self.foo.|bar *)
+        ScratchProject.ClientConnection.assert_response
+          ~request:
+            Request.(
+              Query
+                (Query.LocationOfDefinition
+                   { client_id; path = test_path; position = position 4 13 }))
+          ~expected:
+            (Error
+               (Response.ErrorKind.LocationBasedLookupError
+                  Analysis.LocationBasedLookup.(
+                    AttributeDefinitionNotFound
+                      ( Some "$parameter$self.foo.bar",
+                        ReferenceNotFoundAndBaseUnresolved ResolvedTop ))));
+        close_file ~client_id ~path:test_path;
+        dispose_client ~client_id;
+      ]
+
+
 let test_get_info_request context =
   let project = ScratchProject.setup ~context ~include_typeshed_stubs:false [] in
   let root = ScratchProject.source_root_of project in
@@ -701,6 +779,10 @@ let () =
          "file_and_local_update" >:: test_file_and_local_update;
          "hover_request" >:: test_hover_request;
          "location_of_definition_request" >:: test_location_of_definition_request;
+         "location_of_definition_attribute_not_found"
+         >:: test_location_of_definition_attribute_not_found;
+         "location_of_definition_attribute_unannotated_class_property"
+         >:: test_location_of_definition_attribute_unannotated_class_property;
          "superclasses" >:: test_superclasses;
          "watchman_integration" >:: test_watchman_integration;
          "watchman_failure" >:: test_watchman_failure;
