@@ -447,19 +447,20 @@ let create_of_module type_environment qualifier =
   coverage_data_lookup
 
 
+let location_contains_position
+    {
+      Location.start = { Location.column = start_column; line = start_line };
+      stop = { Location.column = stop_column; line = stop_line };
+      _;
+    }
+    { Location.column; line }
+  =
+  let start_ok = start_line < line || (start_line = line && start_column <= column) in
+  let stop_ok = stop_line > line || (stop_line = line && stop_column > column) in
+  start_ok && stop_ok
+
+
 let get_best_location lookup_table ~position =
-  let location_contains_position
-      {
-        Location.start = { Location.column = start_column; line = start_line };
-        stop = { Location.column = stop_column; line = stop_line };
-        _;
-      }
-      { Location.column; line }
-    =
-    let start_ok = start_line < line || (start_line = line && start_column <= column) in
-    let stop_ok = stop_line > line || (stop_line = line && stop_column > column) in
-    start_ok && stop_ok
-  in
   let weight
       {
         Location.start = { Location.column = start_column; line = start_line };
@@ -536,7 +537,7 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
 
   let node_common ~use_postcondition_info state = function
     | Visit.Expression ({ Node.location; _ } as expression)
-      when Location.contains ~location PositionData.position ->
+      when location_contains_position location PositionData.position ->
         {
           symbol_with_definition = Expression expression;
           cfg_data = PositionData.cfg_data;
@@ -544,7 +545,7 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
         }
         :: state
     | Visit.Argument { argument = { location; _ }; callee }
-      when Location.contains ~location PositionData.position ->
+      when location_contains_position location PositionData.position ->
         {
           symbol_with_definition = Expression callee;
           cfg_data = PositionData.cfg_data;
@@ -597,7 +598,7 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
         visit_expression ~state ~visitor_override:Visitor.node_using_postcondition
       in
       let store_type_annotation ({ Node.location; _ } as annotation_expression) =
-        if Location.contains ~location PositionData.position then
+        if location_contains_position location PositionData.position then
           state := collect_type_annotation_symbols annotation_expression @ !state
       in
       if covers_position ~position:PositionData.position statement then
