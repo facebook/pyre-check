@@ -4,8 +4,8 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_sink, _test_source
-from typing import List, Optional, Union
-
+from typing import Any, Dict, List, MutableMapping, Optional, TypeVar, Union
+from dataclasses import dataclass
 
 class Token:
     token: str = ""
@@ -112,3 +112,43 @@ class D:
 
 def test_issue_with_update_to_self_attribute(d: D):
     d.buffer.append(_test_source())
+
+
+
+def tito_copy_dict(d: Any):
+    return d.copy()
+
+
+def test_issue_with_tito_copy_dict():
+    d = {"tainted": _test_source()}
+    copied_d = tito_copy_dict(d)
+    # TODO(T184001071): This should be caught, but it's not.
+    _test_sink(copied_d["tainted"])
+
+@dataclass(frozen=True)
+class PartiallyZonedDict(MutableMapping[str, str]):
+    def copy(self) -> PartiallyZonedDict:
+        return self
+
+@dataclass(frozen=True)
+class ZonedForm:
+    def __init__(self, data: PartiallyZonedDict):
+        self._data: PartiallyZonedDict = data
+
+    @property
+    def data(self) -> PartiallyZonedDict:
+        return self._data
+
+class RegularForm:
+    def __init__(self, data: Dict[str, str]):
+        self.data: Dict[str, str] = data
+
+def tito_copy_multiple_possible_dictlike_objects(d: RegularForm | ZonedForm) -> Dict[str, str]:
+    # pyre-ignore[16]: For some reason Pyre doesn't understand that Dict.copy() is a valid method: D55542716
+    return d.data.copy()
+
+def test_issue_with_tito_copy_multiple_possible_dictlike_objects():
+    d = RegularForm({"tainted": _test_source()})
+    copied_d = tito_copy_multiple_possible_dictlike_objects(d)
+    # TODO(T184001071,T184018510): This should be caught, but it's not.
+    _test_sink(copied_d["tainted"])
