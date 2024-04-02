@@ -250,6 +250,8 @@
   "kind": "model",
   "data": {
     "callable": "long_access_path_taint.C.__init__",
+    "filename": "long_access_path_taint.py",
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(request, position=4)",
@@ -333,6 +335,8 @@
   "kind": "model",
   "data": {
     "callable": "long_access_path_taint.C.async_create",
+    "filename": "long_access_path_taint.py",
+    "callable_line": 21,
     "tito": [
       {
         "port": "formal(request, position=3)",

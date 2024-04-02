@@ -536,6 +536,8 @@
   "kind": "model",
   "data": {
     "callable": "entrypoint.transitive_call_with_globals_passed_in",
+    "filename": "entrypoint.py",
+    "callable_line": 39,
     "sinks": [
       {
         "port": "formal(local_list, position=0)",

@@ -97,6 +97,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.taint_parameter",
+    "filename": "obscure_tito.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(tainted_parameter, position=1)",
@@ -110,6 +112,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.C.update",
+    "filename": "obscure_tito.py",
+    "callable_line": 10,
     "tito": [
       {
         "port": "formal(parameter, position=1)",
@@ -130,6 +134,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.test_obscure_return",
+    "filename": "obscure_tito.py",
+    "callable_line": 31,
     "sources": [
       {
         "port": "result",
@@ -164,6 +170,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.test_obscure_sink",
+    "filename": "obscure_tito.py",
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -198,6 +206,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_tito.test_obscure_tito",
+    "filename": "obscure_tito.py",
+    "callable_line": 25,
     "sources": [
       {
         "port": "result",

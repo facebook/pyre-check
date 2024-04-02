@@ -99,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "select.first_index",
+    "filename": "select.py",
+    "callable_line": 20,
     "sources": [
       {
         "port": "result",
@@ -132,6 +134,8 @@
   "kind": "model",
   "data": {
     "callable": "select.first_index_numeric",
+    "filename": "select.py",
+    "callable_line": 25,
     "sources": [
       {
         "port": "result",
@@ -165,6 +169,8 @@
   "kind": "model",
   "data": {
     "callable": "select.first_index_unknown",
+    "filename": "select.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -198,6 +204,8 @@
   "kind": "model",
   "data": {
     "callable": "select.return_is_RCE",
+    "filename": "select.py",
+    "callable_line": 40,
     "sources": [
       {
         "port": "result",
@@ -354,6 +362,8 @@
   "kind": "model",
   "data": {
     "callable": "select.view_entry_field",
+    "filename": "select.py",
+    "callable_line": 12,
     "sources": [
       {
         "port": "formal(request, position=0)",
@@ -458,6 +468,8 @@
   "kind": "model",
   "data": {
     "callable": "select.view_entry_get",
+    "filename": "select.py",
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(request, position=0)[GET][payload]",
@@ -559,6 +571,8 @@
   "kind": "model",
   "data": {
     "callable": "select.view_entry_index",
+    "filename": "select.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "formal(request, position=0)",

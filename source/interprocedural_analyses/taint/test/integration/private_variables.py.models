@@ -1470,6 +1470,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Other.private_into_sink",
+    "filename": "private_variables.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(s, position=0)[_Other__value]",
@@ -1498,6 +1500,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.__init__",
+    "filename": "private_variables.py",
+    "callable_line": 116,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1515,6 +1519,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_mangled",
+    "filename": "private_variables.py",
+    "callable_line": 122,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1549,6 +1555,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_query",
+    "filename": "private_variables.py",
+    "callable_line": 128,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1583,6 +1591,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSinkModels.set_model_unmangled",
+    "filename": "private_variables.py",
+    "callable_line": 125,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1617,6 +1627,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.__init__",
+    "filename": "private_variables.py",
+    "callable_line": 90,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1634,6 +1646,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_mangled",
+    "filename": "private_variables.py",
+    "callable_line": 96,
     "sources": [
       {
         "port": "result",
@@ -1679,6 +1693,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_query",
+    "filename": "private_variables.py",
+    "callable_line": 102,
     "sources": [
       {
         "port": "result",
@@ -1724,6 +1740,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.PrivateAttributeSourceModels.get_model_unmangled",
+    "filename": "private_variables.py",
+    "callable_line": 99,
     "sources": [
       {
         "port": "result",
@@ -1769,6 +1787,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.__init__",
+    "filename": "private_variables.py",
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(public, position=2)",
@@ -1811,6 +1831,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.expand_subexpression",
+    "filename": "private_variables.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(values, position=0)[0][_Simple__value]",
@@ -1842,6 +1864,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.getattr_invalid",
+    "filename": "private_variables.py",
+    "callable_line": 32,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1869,6 +1893,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.getattr_private",
+    "filename": "private_variables.py",
+    "callable_line": 29,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1896,6 +1922,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.getattr_public",
+    "filename": "private_variables.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1923,6 +1951,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.private_into_sink",
+    "filename": "private_variables.py",
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(self, position=0)[_Simple__value]",
@@ -1953,6 +1983,8 @@
   "kind": "model",
   "data": {
     "callable": "private_variables.Simple.public_into_sink",
+    "filename": "private_variables.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(self, position=0)[value]",

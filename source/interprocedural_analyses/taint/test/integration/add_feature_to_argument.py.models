@@ -125,6 +125,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_argument_accumulates_features",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 76,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -164,6 +166,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_first",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 9,
     "sinks": [
       {
         "port": "formal(first, position=0)",
@@ -186,6 +190,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.add_feature_to_second",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(second, position=1)",
@@ -208,6 +214,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.add_via_value_of",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(first, position=0)",
@@ -232,6 +240,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.adds_and_taints",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result",
@@ -263,6 +273,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.dict_test_add_via_value_of_second",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 37,
     "sources": [
       {
         "port": "result",
@@ -299,6 +311,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.propagate_add_feature",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -332,6 +346,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.propagate_multiple_add_feature",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[bar]",
@@ -390,6 +406,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.source_add_feature_to_argument_accumulates_features",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 81,
     "sources": [
       {
         "port": "result",
@@ -426,6 +444,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_to_sink",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 43,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -475,6 +495,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.test_add_feature_to_sink_in_comprehension",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 54,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -524,6 +546,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.test_add_multiple_feature",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 66,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -607,6 +631,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.test_add_via_value_of_second",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 31,
     "sources": [
       {
         "port": "result",
@@ -638,6 +664,8 @@
   "kind": "model",
   "data": {
     "callable": "add_feature_to_argument.tito_with_feature",
+    "filename": "add_feature_to_argument.py",
+    "callable_line": 71,
     "tito": [
       {
         "port": "formal(x, position=0)",

@@ -631,6 +631,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_annotated.test3_alarm1",
+    "filename": "model_query_annotated.py",
+    "callable_line": 76,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -736,6 +738,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_annotated.test3_alarm2",
+    "filename": "model_query_annotated.py",
+    "callable_line": 82,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -841,6 +845,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_annotated.test3_noalarm1",
+    "filename": "model_query_annotated.py",
+    "callable_line": 68,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -869,6 +875,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_annotated.test3_noalarm2",
+    "filename": "model_query_annotated.py",
+    "callable_line": 72,
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -900,6 +908,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_annotated.test3_noalarm3",
+    "filename": "model_query_annotated.py",
+    "callable_line": 88,
     "sources": [
       {
         "port": "formal(c, position=2)",

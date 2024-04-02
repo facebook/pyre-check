@@ -332,6 +332,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_global_variable.fun",
+    "filename": "model_query_global_variable.py",
+    "callable_line": 48,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -387,6 +389,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_global_variable.returns_any",
+    "filename": "model_query_global_variable.py",
+    "callable_line": 37,
     "sources": [
       {
         "port": "result",

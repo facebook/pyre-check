@@ -2300,6 +2300,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.MyDict.__setitem__",
+    "filename": "dictionary.py",
+    "callable_line": 408,
     "tito": [
       {
         "port": "formal(value, position=2)",
@@ -2328,6 +2330,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_dict",
+    "filename": "dictionary.py",
+    "callable_line": 304,
     "tito": [
       {
         "port": "formal(key, position=1)",
@@ -2361,6 +2365,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_many_dict",
+    "filename": "dictionary.py",
+    "callable_line": 301,
     "tito": [
       {
         "port": "formal(keys, position=1)[*]",
@@ -2387,6 +2393,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.Service.async_get_mapping",
+    "filename": "dictionary.py",
+    "callable_line": 307,
     "tito": [
       {
         "port": "formal(key, position=1)",
@@ -2421,6 +2429,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.SpecialSetitemDict.__setitem__",
+    "filename": "dictionary.py",
+    "callable_line": 174,
     "sinks": [
       {
         "port": "formal(key, position=1)",
@@ -2462,6 +2472,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.analyze_getitem_index_backward",
+    "filename": "dictionary.py",
+    "callable_line": 455,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2490,6 +2502,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.backward_weak_update",
+    "filename": "dictionary.py",
+    "callable_line": 427,
     "sinks": [
       {
         "port": "formal(d, position=0).**keys",
@@ -2518,6 +2532,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.backwards_field_assignment",
+    "filename": "dictionary.py",
+    "callable_line": 278,
     "tito": [
       {
         "port": "formal(external, position=0)",
@@ -2537,6 +2553,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.backwards_model_for_dictionary_comprehension",
+    "filename": "dictionary.py",
+    "callable_line": 250,
     "sinks": [
       {
         "port": "formal(d, position=0)[*]",
@@ -2569,6 +2587,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.copy_untainted_values_with_tainted_keys",
+    "filename": "dictionary.py",
+    "callable_line": 213,
     "sources": [
       {
         "port": "result.**keys",
@@ -2599,6 +2619,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_get_foo",
+    "filename": "dictionary.py",
+    "callable_line": 515,
     "tito": [
       {
         "port": "formal(d, position=0)[foo]",
@@ -2620,6 +2642,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_get_foo_with_default",
+    "filename": "dictionary.py",
+    "callable_line": 519,
     "tito": [
       {
         "port": "formal(default, position=1)",
@@ -2651,6 +2675,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_only_key_of_parameter_sink",
+    "filename": "dictionary.py",
+    "callable_line": 160,
     "sinks": [
       {
         "port": "formal(x, position=0)[A]",
@@ -2702,6 +2728,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_update_cycle",
+    "filename": "dictionary.py",
+    "callable_line": 122,
     "sources": [
       {
         "port": "result[a]",
@@ -2736,6 +2764,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_update_keys",
+    "filename": "dictionary.py",
+    "callable_line": 505,
     "tito": [
       {
         "port": "formal(arg, position=0)[*]",
@@ -2755,6 +2785,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_update_multiple",
+    "filename": "dictionary.py",
+    "callable_line": 134,
     "sources": [
       {
         "port": "result[b]",
@@ -2831,6 +2863,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_update_sinks",
+    "filename": "dictionary.py",
+    "callable_line": 106,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -2886,6 +2920,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dict_update_taint",
+    "filename": "dictionary.py",
+    "callable_line": 128,
     "sources": [
       {
         "port": "result[a]",
@@ -2917,6 +2953,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_assign_to_index",
+    "filename": "dictionary.py",
+    "callable_line": 46,
     "sources": [
       {
         "port": "result[a]",
@@ -2947,6 +2985,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_assignment_source",
+    "filename": "dictionary.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -2980,6 +3020,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_entry_sink",
+    "filename": "dictionary.py",
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -3008,6 +3050,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_keys_and_any_index_bug",
+    "filename": "dictionary.py",
+    "callable_line": 509,
     "tito": [
       {
         "port": "formal(arg, position=0)[*]",
@@ -3033,6 +3077,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_nested_assignment_1",
+    "filename": "dictionary.py",
+    "callable_line": 52,
     "sources": [
       {
         "port": "result",
@@ -3066,6 +3112,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_nested_assignment_2",
+    "filename": "dictionary.py",
+    "callable_line": 58,
     "sources": [
       {
         "port": "result[b]",
@@ -3099,6 +3147,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_source",
+    "filename": "dictionary.py",
+    "callable_line": 20,
     "sources": [
       {
         "port": "result[a]",
@@ -3129,6 +3179,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_tito",
+    "filename": "dictionary.py",
+    "callable_line": 29,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -3148,6 +3200,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.dictionary_tito_any_index",
+    "filename": "dictionary.py",
+    "callable_line": 467,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -3167,6 +3221,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_key_sink",
+    "filename": "dictionary.py",
+    "callable_line": 197,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -3195,6 +3251,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_key_source",
+    "filename": "dictionary.py",
+    "callable_line": 188,
     "sources": [
       {
         "port": "result.**keys",
@@ -3225,6 +3283,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_value_sink",
+    "filename": "dictionary.py",
+    "callable_line": 193,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -3253,6 +3313,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_comprehension_value_source",
+    "filename": "dictionary.py",
+    "callable_line": 183,
     "sources": [
       {
         "port": "result[*]",
@@ -3283,6 +3345,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.forward_weak_update",
+    "filename": "dictionary.py",
+    "callable_line": 442,
     "sources": [
       {
         "port": "result.**keys",
@@ -3313,6 +3377,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.get_keys",
+    "filename": "dictionary.py",
+    "callable_line": 236,
     "tito": [
       {
         "port": "formal(d, position=0).**keys",
@@ -3332,6 +3398,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.return_comprehension_with_tained_keys",
+    "filename": "dictionary.py",
+    "callable_line": 240,
     "sources": [
       {
         "port": "result[*]",
@@ -3362,6 +3430,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.return_tito_literally",
+    "filename": "dictionary.py",
+    "callable_line": 284,
     "tito": [
       {
         "port": "formal(external, position=0)",
@@ -3381,6 +3451,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.setitem_models",
+    "filename": "dictionary.py",
+    "callable_line": 412,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -3416,6 +3488,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.sink_dictionary_through_keys",
+    "filename": "dictionary.py",
+    "callable_line": 232,
     "sinks": [
       {
         "port": "formal(d, position=0).**keys",
@@ -3444,6 +3518,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.tainted_setitem",
+    "filename": "dictionary.py",
+    "callable_line": 178,
     "tito": [
       {
         "port": "formal(d, position=0)",
@@ -3537,6 +3613,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_dict_sanitize_get",
+    "filename": "dictionary.py",
+    "callable_line": 372,
     "sinks": [
       {
         "port": "formal(d, position=0)[*]",
@@ -3571,6 +3649,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_dict_sanitize_getitem",
+    "filename": "dictionary.py",
+    "callable_line": 376,
     "sinks": [
       {
         "port": "formal(d, position=0)[*]",
@@ -3602,6 +3682,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_items_backward_keys",
+    "filename": "dictionary.py",
+    "callable_line": 347,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3630,6 +3712,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_items_backward_values",
+    "filename": "dictionary.py",
+    "callable_line": 357,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -3658,6 +3742,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_mapping_sanitize_get",
+    "filename": "dictionary.py",
+    "callable_line": 380,
     "sinks": [
       {
         "port": "formal(d, position=0)[*]",
@@ -3692,6 +3778,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_mapping_sanitize_getitem",
+    "filename": "dictionary.py",
+    "callable_line": 384,
     "sinks": [
       {
         "port": "formal(d, position=0)[*]",
@@ -3723,6 +3811,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.test_with_issue_in_dict_items_comprehension",
+    "filename": "dictionary.py",
+    "callable_line": 367,
     "sources": [
       {
         "port": "result[*]",
@@ -3753,6 +3843,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.tito_with_index",
+    "filename": "dictionary.py",
+    "callable_line": 321,
     "tito": [
       {
         "port": "formal(d, position=0)[a]",
@@ -3773,6 +3865,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.to_map",
+    "filename": "dictionary.py",
+    "callable_line": 296,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3790,6 +3884,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.update_dictionary_indirectly",
+    "filename": "dictionary.py",
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(arg, position=0)[*]",
@@ -3850,6 +3946,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.update_tainted_dictionary_sink",
+    "filename": "dictionary.py",
+    "callable_line": 77,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3899,6 +3997,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary.walrus_operator",
+    "filename": "dictionary.py",
+    "callable_line": 434,
     "sources": [
       {
         "port": "result[0].**keys",

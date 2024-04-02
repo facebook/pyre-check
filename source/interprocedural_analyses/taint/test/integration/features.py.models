@@ -522,6 +522,8 @@
   "kind": "model",
   "data": {
     "callable": "features.SetItemClass.__setitem__",
+    "filename": "features.py",
+    "callable_line": 114,
     "tito": [
       {
         "port": "formal(value, position=2)",
@@ -554,6 +556,8 @@
   "kind": "model",
   "data": {
     "callable": "features.always_feature_for_duplicate_models",
+    "filename": "features.py",
+    "callable_line": 108,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -580,6 +584,8 @@
   "kind": "model",
   "data": {
     "callable": "features.async_tuple_of_bools",
+    "filename": "features.py",
+    "callable_line": 89,
     "sources": [
       {
         "port": "result[0]",
@@ -638,6 +644,8 @@
   "kind": "model",
   "data": {
     "callable": "features.dynamic_feature_tito",
+    "filename": "features.py",
+    "callable_line": 98,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -661,6 +669,8 @@
   "kind": "model",
   "data": {
     "callable": "features.len",
+    "filename": "features.py",
+    "callable_line": 10,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -686,6 +696,8 @@
   "kind": "model",
   "data": {
     "callable": "features.min",
+    "filename": "features.py",
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -720,6 +732,8 @@
   "kind": "model",
   "data": {
     "callable": "features.named",
+    "filename": "features.py",
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(named_parameter)",
@@ -745,6 +759,8 @@
   "kind": "model",
   "data": {
     "callable": "features.no_always_when_calling_setitem",
+    "filename": "features.py",
+    "callable_line": 118,
     "sources": [
       {
         "port": "result",
@@ -779,6 +795,8 @@
   "kind": "model",
   "data": {
     "callable": "features.return_tuple_of_bools",
+    "filename": "features.py",
+    "callable_line": 73,
     "sources": [
       {
         "port": "result[0]",
@@ -837,6 +855,8 @@
   "kind": "model",
   "data": {
     "callable": "features.returns_tainted_object",
+    "filename": "features.py",
+    "callable_line": 63,
     "sources": [
       {
         "port": "result",
@@ -867,6 +887,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_constructor",
+    "filename": "features.py",
+    "callable_line": 45,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -897,6 +919,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_len",
+    "filename": "features.py",
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -926,6 +950,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_left",
+    "filename": "features.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -955,6 +981,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_or_not",
+    "filename": "features.py",
+    "callable_line": 38,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -976,6 +1004,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_min_right",
+    "filename": "features.py",
+    "callable_line": 30,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -1001,6 +1031,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_via_named",
+    "filename": "features.py",
+    "callable_line": 34,
     "tito": [
       {
         "port": "formal(o, position=0)",
@@ -1030,6 +1062,8 @@
   "kind": "model",
   "data": {
     "callable": "features.tito_with_tuple",
+    "filename": "features.py",
+    "callable_line": 82,
     "tito": [
       {
         "port": "formal(o, position=0)",

@@ -3,6 +3,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.a_sink",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -18,6 +20,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.a_source",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -33,6 +37,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.b_sink",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -48,6 +54,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.sanitize_a_sink_tito",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 25,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -71,6 +79,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.sanitize_a_source_tito",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 21,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -94,6 +104,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.sanitize_b_sink_tito",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 29,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -117,6 +129,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_discard_flows.test_source_a_sanitize_a_kept",
+    "filename": "sanitize_discard_flows.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result",

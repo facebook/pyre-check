@@ -859,6 +859,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping._asdict_inner",
+    "filename": "model_shaping.py",
+    "callable_line": 37,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -1068,6 +1070,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.asdict",
+    "filename": "model_shaping.py",
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -1155,6 +1159,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.asdict_test",
+    "filename": "model_shaping.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -1221,6 +1227,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.obscure_test",
+    "filename": "model_shaping.py",
+    "callable_line": 78,
     "sources": [
       {
         "port": "result",
@@ -1279,6 +1287,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.shape_multi_sink",
+    "filename": "model_shaping.py",
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -1363,6 +1373,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.shape_multi_source",
+    "filename": "model_shaping.py",
+    "callable_line": 89,
     "sources": [
       {
         "port": "result[a]",
@@ -1453,6 +1465,8 @@
   "kind": "model",
   "data": {
     "callable": "model_shaping.tito_shaping",
+    "filename": "model_shaping.py",
+    "callable_line": 102,
     "tito": [
       {
         "port": "formal(parameters, position=0)",

@@ -135,6 +135,8 @@ val get_module_and_definition
   t ->
   (Reference.t * Define.t Node.t) option
 
+val get_callable_location : pyre_api:PyrePysaApi.ReadOnly.t -> t -> Ast.Location.WithModule.t option
+
 val resolve_method
   :  pyre_api:PyrePysaApi.ReadOnly.t ->
   class_type:Type.t ->

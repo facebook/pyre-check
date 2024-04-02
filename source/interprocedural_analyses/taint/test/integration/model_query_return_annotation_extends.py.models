@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.Test2.test2_alarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 74,
     "sources": [
       {
         "port": "result",
@@ -153,6 +155,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.Test2.test2_alarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 77,
     "sources": [
       {
         "port": "result",
@@ -257,6 +261,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.Test2.test2_noalarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 68,
     "sources": [
       {
         "port": "result",
@@ -289,6 +295,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.Test2.test2_noalarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 71,
     "sources": [
       {
         "port": "result",
@@ -321,6 +329,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 31,
     "sources": [
       {
         "port": "result",
@@ -421,6 +431,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -521,6 +533,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm3",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -621,6 +635,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_alarm4",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 43,
     "sources": [
       {
         "port": "result",
@@ -721,6 +737,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test1_noalarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 47,
     "sources": [
       {
         "port": "result",
@@ -751,6 +769,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 101,
     "sources": [
       {
         "port": "result",
@@ -851,6 +871,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm2",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 105,
     "sources": [
       {
         "port": "result",
@@ -951,6 +973,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm3",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 109,
     "sources": [
       {
         "port": "result",
@@ -1051,6 +1075,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_alarm4",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 113,
     "sources": [
       {
         "port": "result",
@@ -1151,6 +1177,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_return_annotation_extends.test3_noalarm1",
+    "filename": "model_query_return_annotation_extends.py",
+    "callable_line": 117,
     "sources": [
       {
         "port": "result",

@@ -333,6 +333,8 @@
   "kind": "model",
   "data": {
     "callable": "unknown_callee.should_collapse_depth_zero",
+    "filename": "unknown_callee.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(o, position=1)[method]",
@@ -362,6 +364,8 @@
   "kind": "model",
   "data": {
     "callable": "unknown_callee.test_collapse_source",
+    "filename": "unknown_callee.py",
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(o, position=0)[method]",
@@ -478,6 +482,8 @@
   "kind": "model",
   "data": {
     "callable": "unknown_callee.test_issue",
+    "filename": "unknown_callee.py",
+    "callable_line": 9,
     "sinks": [
       {
         "port": "formal(o, position=0)[method]",
@@ -578,6 +584,8 @@
   "kind": "model",
   "data": {
     "callable": "unknown_callee.test_sink_collapse",
+    "filename": "unknown_callee.py",
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(o, position=1)[method]",

@@ -240,6 +240,8 @@
   "kind": "model",
   "data": {
     "callable": "class_attribute.A.__init__",
+    "filename": "class_attribute.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "result[d]",
@@ -294,6 +296,8 @@
   "kind": "model",
   "data": {
     "callable": "class_attribute.A.sink_c",
+    "filename": "class_attribute.py",
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(self, position=0)[c]",
@@ -324,6 +328,8 @@
   "kind": "model",
   "data": {
     "callable": "class_attribute.A.sink_d",
+    "filename": "class_attribute.py",
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(self, position=0)[d]",

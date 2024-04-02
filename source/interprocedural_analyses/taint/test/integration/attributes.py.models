@@ -459,6 +459,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.UseViaDict.__init__",
+    "filename": "attributes.py",
+    "callable_line": 60,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -498,6 +500,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_attribute",
+    "filename": "attributes.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -541,6 +545,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_attribute_union_source",
+    "filename": "attributes.py",
+    "callable_line": 77,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -733,6 +739,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_backwards",
+    "filename": "attributes.py",
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -761,6 +769,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_backwards_default",
+    "filename": "attributes.py",
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(t, position=0)[token]",
@@ -789,6 +799,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_default",
+    "filename": "attributes.py",
+    "callable_line": 47,
     "sources": [
       {
         "port": "result",
@@ -830,6 +842,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_getattr_forward",
+    "filename": "attributes.py",
+    "callable_line": 43,
     "sources": [
       {
         "port": "result",
@@ -873,6 +887,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_issue_with_text_key_of_dictionary",
+    "filename": "attributes.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(c, position=0)[dictionary][text]",
@@ -978,6 +994,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_no_issue_with_other_key_of_dictionary",
+    "filename": "attributes.py",
+    "callable_line": 105,
     "sinks": [
       {
         "port": "formal(c, position=0)[dictionary][other]",
@@ -1009,6 +1027,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_via_non_optional",
+    "filename": "attributes.py",
+    "callable_line": 32,
     "sources": [
       {
         "port": "result",
@@ -1052,6 +1072,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.test_via_optional",
+    "filename": "attributes.py",
+    "callable_line": 23,
     "sources": [
       {
         "port": "result",

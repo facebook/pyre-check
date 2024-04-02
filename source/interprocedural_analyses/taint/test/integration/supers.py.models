@@ -697,6 +697,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.A.__init__",
+    "filename": "supers.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result[attribute]",
@@ -740,6 +742,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.A.f1",
+    "filename": "supers.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -770,6 +774,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.A.f2",
+    "filename": "supers.py",
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -800,6 +806,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.A.f3",
+    "filename": "supers.py",
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -832,6 +840,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.B.f4",
+    "filename": "supers.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result",
@@ -864,6 +874,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.B.f5",
+    "filename": "supers.py",
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -915,6 +927,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.B.g1",
+    "filename": "supers.py",
+    "callable_line": 39,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -1055,6 +1069,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.C.g1",
+    "filename": "supers.py",
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",
@@ -1090,6 +1106,8 @@
   "kind": "model",
   "data": {
     "callable": "supers.D.g1",
+    "filename": "supers.py",
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute]",

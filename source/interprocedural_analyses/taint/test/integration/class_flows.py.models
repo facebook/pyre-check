@@ -633,6 +633,8 @@
   "kind": "model",
   "data": {
     "callable": "class_flows.HasClassmethods._async_results_for_non_empty_query_from_db",
+    "filename": "class_flows.py",
+    "callable_line": 62,
     "sinks": [
       {
         "port": "formal(locale, position=1)",
@@ -670,6 +672,8 @@
   "kind": "model",
   "data": {
     "callable": "class_flows.HasClassmethods._get_multi_word_results",
+    "filename": "class_flows.py",
+    "callable_line": 69,
     "sinks": [
       {
         "port": "formal(locale, position=1)",
@@ -700,6 +704,8 @@
   "kind": "model",
   "data": {
     "callable": "class_flows.HasDecoratedClassmethod.to_sink",
+    "filename": "class_flows.py",
+    "callable_line": 85,
     "sinks": [
       {
         "port": "formal(x, position=1)",

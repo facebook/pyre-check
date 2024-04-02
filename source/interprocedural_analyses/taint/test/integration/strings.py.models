@@ -588,6 +588,8 @@
   "kind": "model",
   "data": {
     "callable": "strings.concatenate_lhs",
+    "filename": "strings.py",
+    "callable_line": 9,
     "tito": [
       {
         "port": "formal(source, position=0)",
@@ -615,6 +617,8 @@
   "kind": "model",
   "data": {
     "callable": "strings.concatenate_rhs",
+    "filename": "strings.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(source, position=0)",
@@ -642,6 +646,8 @@
   "kind": "model",
   "data": {
     "callable": "strings.format_sink",
+    "filename": "strings.py",
+    "callable_line": 67,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -675,6 +681,8 @@
   "kind": "model",
   "data": {
     "callable": "strings.format_source",
+    "filename": "strings.py",
+    "callable_line": 62,
     "sources": [
       {
         "port": "result",
@@ -709,6 +717,8 @@
   "kind": "model",
   "data": {
     "callable": "strings.format_tito",
+    "filename": "strings.py",
+    "callable_line": 58,
     "tito": [
       {
         "port": "formal(x, position=0)",

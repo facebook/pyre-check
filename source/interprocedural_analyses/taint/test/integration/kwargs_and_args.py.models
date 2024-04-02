@@ -250,6 +250,8 @@
   "kind": "model",
   "data": {
     "callable": "kwargs_and_args.args_sink",
+    "filename": "kwargs_and_args.py",
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(*args, position=0)[1]",
@@ -281,6 +283,8 @@
   "kind": "model",
   "data": {
     "callable": "kwargs_and_args.async_distillery_render",
+    "filename": "kwargs_and_args.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[request]",
@@ -322,6 +326,8 @@
   "kind": "model",
   "data": {
     "callable": "kwargs_and_args.async_render_to_response",
+    "filename": "kwargs_and_args.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(context, position=1)",

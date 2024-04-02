@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.HasMethods.method_with_optionals",
+    "filename": "attach_features.py",
+    "callable_line": 58,
     "sinks": [
       {
         "port": "formal(b, position=2)",
@@ -97,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_to_returned_sink",
+    "filename": "attach_features.py",
+    "callable_line": 62,
     "sources": [
       {
         "port": "result",
@@ -216,6 +220,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_to_returned_source",
+    "filename": "attach_features.py",
+    "callable_line": 67,
     "sources": [
       {
         "port": "result",
@@ -242,6 +248,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_to_returned_source_2",
+    "filename": "attach_features.py",
+    "callable_line": 71,
     "sources": [
       {
         "port": "result",
@@ -264,6 +272,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.attach_without_tito",
+    "filename": "attach_features.py",
+    "callable_line": 45,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -286,6 +296,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.inferred_is_propagated",
+    "filename": "attach_features.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",
@@ -318,6 +330,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.inferred_sink",
+    "filename": "attach_features.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(taint_without_feature, position=2)",
@@ -406,6 +420,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.modeled_sink_with_optionals",
+    "filename": "attach_features.py",
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -452,6 +468,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.sink_is_propagated",
+    "filename": "attach_features.py",
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(argument, position=0)",
@@ -487,6 +505,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.source",
+    "filename": "attach_features.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -499,6 +519,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.source_with_inferred",
+    "filename": "attach_features.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -538,6 +560,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.taint_in_taint_out",
+    "filename": "attach_features.py",
+    "callable_line": 32,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -565,6 +589,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_and_sink",
+    "filename": "attach_features.py",
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -624,6 +650,8 @@
   "kind": "model",
   "data": {
     "callable": "attach_features.tito_is_propagated",
+    "filename": "attach_features.py",
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(arg, position=0)",

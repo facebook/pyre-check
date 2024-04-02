@@ -26,6 +26,8 @@
   "kind": "model",
   "data": {
     "callable": "return_sinks.propagate_returned_sink_to_arg",
+    "filename": "return_sinks.py",
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -58,6 +60,8 @@
   "kind": "model",
   "data": {
     "callable": "return_sinks.sink_on_return",
+    "filename": "return_sinks.py",
+    "callable_line": 9,
     "sinks": [
       {
         "port": "result",
@@ -70,6 +74,8 @@
   "kind": "model",
   "data": {
     "callable": "return_sinks.sink_on_return_and_tito",
+    "filename": "return_sinks.py",
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(arg, position=0)",

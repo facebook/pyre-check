@@ -1434,6 +1434,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A0.m1",
+    "filename": "class_interval.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1469,6 +1471,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A1.m1",
+    "filename": "class_interval.py",
+    "callable_line": 49,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1504,6 +1508,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A10.object_target",
+    "filename": "class_interval.py",
+    "callable_line": 343,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1538,6 +1544,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A12.f",
+    "filename": "class_interval.py",
+    "callable_line": 349,
     "tito": [
       {
         "port": "formal(self, position=0)[g]",
@@ -1556,6 +1564,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A13.f",
+    "filename": "class_interval.py",
+    "callable_line": 371,
     "sources": [
       {
         "port": "result",
@@ -1591,6 +1601,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A14.m1",
+    "filename": "class_interval.py",
+    "callable_line": 410,
     "sources": [
       {
         "port": "result",
@@ -1628,6 +1640,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A15.m1",
+    "filename": "class_interval.py",
+    "callable_line": 439,
     "sources": [
       {
         "port": "result",
@@ -1665,6 +1679,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A16.m1",
+    "filename": "class_interval.py",
+    "callable_line": 472,
     "sources": [
       {
         "port": "result",
@@ -1700,6 +1716,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A17.m0",
+    "filename": "class_interval.py",
+    "callable_line": 511,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1749,6 +1767,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A17.m2",
+    "filename": "class_interval.py",
+    "callable_line": 519,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1778,6 +1798,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A19.m0",
+    "filename": "class_interval.py",
+    "callable_line": 583,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1813,6 +1835,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A19.m1",
+    "filename": "class_interval.py",
+    "callable_line": 589,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1843,6 +1867,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A19.m2",
+    "filename": "class_interval.py",
+    "callable_line": 592,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1878,6 +1904,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A19.m3",
+    "filename": "class_interval.py",
+    "callable_line": 597,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1908,6 +1936,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A2.m1",
+    "filename": "class_interval.py",
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1943,6 +1973,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A3.m1",
+    "filename": "class_interval.py",
+    "callable_line": 119,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1978,6 +2010,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A4.m2",
+    "filename": "class_interval.py",
+    "callable_line": 161,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2013,6 +2047,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A5.m1",
+    "filename": "class_interval.py",
+    "callable_line": 197,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2048,6 +2084,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A6.m1",
+    "filename": "class_interval.py",
+    "callable_line": 236,
     "sources": [
       {
         "port": "result",
@@ -2083,6 +2121,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A7.bar",
+    "filename": "class_interval.py",
+    "callable_line": 285,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -2100,6 +2140,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A7.f",
+    "filename": "class_interval.py",
+    "callable_line": 288,
     "sources": [
       {
         "port": "result",
@@ -2135,6 +2177,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A8.bar",
+    "filename": "class_interval.py",
+    "callable_line": 311,
     "sources": [
       {
         "port": "result",
@@ -2225,6 +2269,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A8.baz",
+    "filename": "class_interval.py",
+    "callable_line": 327,
     "sources": [
       {
         "port": "result",
@@ -2257,6 +2303,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.A9.f",
+    "filename": "class_interval.py",
+    "callable_line": 332,
     "sources": [
       {
         "port": "result",
@@ -2289,6 +2337,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B16.m0",
+    "filename": "class_interval.py",
+    "callable_line": 485,
     "sources": [
       {
         "port": "result",
@@ -2324,6 +2374,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B18.m",
+    "filename": "class_interval.py",
+    "callable_line": 561,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -2353,6 +2405,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B2.m0",
+    "filename": "class_interval.py",
+    "callable_line": 91,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2388,6 +2442,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B3.m0",
+    "filename": "class_interval.py",
+    "callable_line": 127,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2423,6 +2479,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B6.m0",
+    "filename": "class_interval.py",
+    "callable_line": 244,
     "sources": [
       {
         "port": "result",
@@ -2477,6 +2535,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B7.bar",
+    "filename": "class_interval.py",
+    "callable_line": 280,
     "sources": [
       {
         "port": "result",
@@ -2509,6 +2569,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B7.foo",
+    "filename": "class_interval.py",
+    "callable_line": 277,
     "sources": [
       {
         "port": "result",
@@ -2544,6 +2606,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.B8.foo",
+    "filename": "class_interval.py",
+    "callable_line": 301,
     "sources": [
       {
         "port": "result",
@@ -2576,6 +2640,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C0.m2",
+    "filename": "class_interval.py",
+    "callable_line": 33,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2606,6 +2672,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C1.m2",
+    "filename": "class_interval.py",
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2636,6 +2704,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C12.g",
+    "filename": "class_interval.py",
+    "callable_line": 359,
     "sources": [
       {
         "port": "result",
@@ -2668,6 +2738,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C13.g",
+    "filename": "class_interval.py",
+    "callable_line": 385,
     "sources": [
       {
         "port": "result",
@@ -2700,6 +2772,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C14.m2",
+    "filename": "class_interval.py",
+    "callable_line": 418,
     "sources": [
       {
         "port": "result",
@@ -2734,6 +2808,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C17.m1",
+    "filename": "class_interval.py",
+    "callable_line": 531,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -2765,6 +2841,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C18.m",
+    "filename": "class_interval.py",
+    "callable_line": 567,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -2791,6 +2869,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C20.m0",
+    "filename": "class_interval.py",
+    "callable_line": 624,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -2823,6 +2903,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C3.m0",
+    "filename": "class_interval.py",
+    "callable_line": 132,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2858,6 +2940,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C3.m2",
+    "filename": "class_interval.py",
+    "callable_line": 135,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2888,6 +2972,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.C4.m3",
+    "filename": "class_interval.py",
+    "callable_line": 174,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -2918,6 +3004,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.D16.m2",
+    "filename": "class_interval.py",
+    "callable_line": 493,
     "sources": [
       {
         "port": "result",
@@ -2950,6 +3038,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.D17.m1",
+    "filename": "class_interval.py",
+    "callable_line": 537,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -2981,6 +3071,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.D2.m2",
+    "filename": "class_interval.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -3011,6 +3103,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.D5.m2",
+    "filename": "class_interval.py",
+    "callable_line": 214,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -3041,6 +3135,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.E15.m2",
+    "filename": "class_interval.py",
+    "callable_line": 447,
     "sources": [
       {
         "port": "result",
@@ -3075,6 +3171,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.E6.m3",
+    "filename": "class_interval.py",
+    "callable_line": 262,
     "sources": [
       {
         "port": "result",
@@ -3107,6 +3205,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.call_method_via_class_name",
+    "filename": "class_interval.py",
+    "callable_line": 336,
     "sources": [
       {
         "port": "result",
@@ -3139,6 +3239,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.sink_b",
+    "filename": "class_interval.py",
+    "callable_line": 501,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -3153,6 +3255,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.sink_c",
+    "filename": "class_interval.py",
+    "callable_line": 505,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -3167,6 +3271,8 @@
   "kind": "model",
   "data": {
     "callable": "class_interval.undetected_issue",
+    "filename": "class_interval.py",
+    "callable_line": 363,
     "sinks": [
       {
         "port": "formal(c, position=0)[g]",

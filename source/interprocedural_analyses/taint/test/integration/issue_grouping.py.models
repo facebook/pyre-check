@@ -155,6 +155,8 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.multi_sink",
+    "filename": "issue_grouping.py",
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(d, position=0)[a]",
@@ -211,6 +213,8 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.sink_a",
+    "filename": "issue_grouping.py",
+    "callable_line": 7,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -225,6 +229,8 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.sink_b",
+    "filename": "issue_grouping.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -239,6 +245,8 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.source_a",
+    "filename": "issue_grouping.py",
+    "callable_line": 15,
     "sources": [
       {
         "port": "result",
@@ -253,6 +261,8 @@
   "kind": "model",
   "data": {
     "callable": "issue_grouping.source_b",
+    "filename": "issue_grouping.py",
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",

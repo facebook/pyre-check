@@ -203,6 +203,8 @@
   "kind": "model",
   "data": {
     "callable": "first_index.alternate_fields",
+    "filename": "first_index.py",
+    "callable_line": 11,
     "sources": [
       {
         "port": "result",
@@ -350,6 +352,8 @@
   "kind": "model",
   "data": {
     "callable": "first_index.local_fields",
+    "filename": "first_index.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -392,6 +396,8 @@
   "kind": "model",
   "data": {
     "callable": "first_index.local_fields_hop",
+    "filename": "first_index.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",

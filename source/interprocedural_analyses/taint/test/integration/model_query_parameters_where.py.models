@@ -29,6 +29,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.Test5.test5_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -41,6 +43,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.Test5.test5_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -53,6 +57,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.Test5.test5_alarm3",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 85,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -65,6 +71,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.Test5.test5_alarm4",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 88,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -77,6 +85,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.Test7.test7_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 112,
     "sources": [
       {
         "port": "formal(x, position=1)",
@@ -89,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test10_f",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 139,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -146,6 +158,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 14,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -278,6 +292,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -401,6 +417,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm3",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 22,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -524,6 +542,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_alarm4",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 26,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -647,6 +667,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_args_kwargs",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "formal(**kwargs, excluded=[a])",
@@ -775,6 +797,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test1_positional_arguments",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "formal(b, position=1)",
@@ -899,6 +923,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test2_noalarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(foo_1, position=0)",
@@ -926,6 +952,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test2_noalarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 42,
     "sinks": [
       {
         "port": "formal(foo_2, position=1)",
@@ -953,6 +981,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test3_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 54,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -1056,6 +1086,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test3_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 58,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -1159,6 +1191,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test3_noalarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 46,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -1199,6 +1233,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test3_noalarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 50,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -1236,6 +1272,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test4_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 62,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1339,6 +1377,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test4_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 70,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1438,6 +1478,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test4_noalarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 66,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1475,6 +1517,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test4_noalarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 74,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1508,6 +1552,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test6_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 95,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1611,6 +1657,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test6_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 103,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1714,6 +1762,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test6_noalarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 99,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1751,6 +1801,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test6_noalarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 107,
     "sources": [
       {
         "port": "formal(c, position=2)",
@@ -1788,6 +1840,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm1",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 119,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -1899,6 +1953,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm2",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 123,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -2010,6 +2066,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm3",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 127,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -2121,6 +2179,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test8_alarm4",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 131,
     "sources": [
       {
         "port": "formal(d, position=3)",
@@ -2232,6 +2292,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_where.test9_f",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 135,
     "sources": [
       {
         "port": "formal(b, position=1)",

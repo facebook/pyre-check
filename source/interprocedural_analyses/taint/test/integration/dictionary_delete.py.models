@@ -185,6 +185,8 @@
   "kind": "model",
   "data": {
     "callable": "dictionary_delete.pop_key",
+    "filename": "dictionary_delete.py",
+    "callable_line": 34,
     "tito": [
       {
         "port": "formal(my_dict, position=0)[key]",

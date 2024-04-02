@@ -735,6 +735,8 @@
   "kind": "model",
   "data": {
     "callable": "port.Foo.some_source",
+    "filename": "port.py",
+    "callable_line": 60,
     "sources": [
       {
         "port": "result",
@@ -767,6 +769,8 @@
   "kind": "model",
   "data": {
     "callable": "port.sink_field",
+    "filename": "port.py",
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(arg, position=0)[a]",
@@ -795,6 +799,8 @@
   "kind": "model",
   "data": {
     "callable": "port.source_field",
+    "filename": "port.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result[a]",
@@ -825,6 +831,8 @@
   "kind": "model",
   "data": {
     "callable": "port.star_arg",
+    "filename": "port.py",
+    "callable_line": 24,
     "sinks": [
       {
         "port": "formal(*args, position=1)[1][a]",
@@ -860,6 +868,8 @@
   "kind": "model",
   "data": {
     "callable": "port.star_arg_wrapper",
+    "filename": "port.py",
+    "callable_line": 28,
     "sinks": [
       {
         "port": "formal(*args, position=1)[1][a]",
@@ -896,6 +906,8 @@
   "kind": "model",
   "data": {
     "callable": "port.star_star_arg",
+    "filename": "port.py",
+    "callable_line": 41,
     "sinks": [
       {
         "port": "formal(**kwargs, excluded=[x])[arg][a]",
@@ -931,6 +943,8 @@
   "kind": "model",
   "data": {
     "callable": "port.star_star_arg_wrapper",
+    "filename": "port.py",
+    "callable_line": 45,
     "sinks": [
       {
         "port": "formal(**kwargs, excluded=[x])[arg][a]",

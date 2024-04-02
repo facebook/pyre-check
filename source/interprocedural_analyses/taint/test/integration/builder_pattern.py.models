@@ -395,6 +395,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.__init__",
+    "filename": "builder_pattern.py",
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -412,6 +414,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.async_save",
+    "filename": "builder_pattern.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(self, position=0)[_saved]",
@@ -442,6 +446,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.return_self",
+    "filename": "builder_pattern.py",
+    "callable_line": 37,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -459,6 +465,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved",
+    "filename": "builder_pattern.py",
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(not_saved, position=1)",
@@ -490,6 +498,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_not_saved_through_typevar",
+    "filename": "builder_pattern.py",
+    "callable_line": 33,
     "tito": [
       {
         "port": "formal(not_saved, position=1)",
@@ -521,6 +531,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved",
+    "filename": "builder_pattern.py",
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(saved, position=1)",
@@ -549,6 +561,8 @@
   "kind": "model",
   "data": {
     "callable": "builder_pattern.Builder.set_saved_through_typevar",
+    "filename": "builder_pattern.py",
+    "callable_line": 29,
     "tito": [
       {
         "port": "formal(saved, position=1)",

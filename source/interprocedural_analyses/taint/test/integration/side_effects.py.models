@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.MyList.append",
+    "filename": "side_effects.py",
+    "callable_line": 71,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -68,6 +70,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.change_arg0",
+    "filename": "side_effects.py",
+    "callable_line": 62,
     "tito": [
       {
         "port": "formal(arg1, position=1)",
@@ -88,6 +92,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.change_arg1",
+    "filename": "side_effects.py",
+    "callable_line": 66,
     "tito": [
       {
         "port": "formal(arg0, position=0)",
@@ -108,6 +114,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.dict_to_sink_via_side_effect",
+    "filename": "side_effects.py",
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -138,6 +146,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.test_from_0_to_1",
+    "filename": "side_effects.py",
+    "callable_line": 15,
     "sources": [
       {
         "port": "result",
@@ -174,6 +184,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.test_from_1_to_0",
+    "filename": "side_effects.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -210,6 +222,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.test_from_1_to_0_nested",
+    "filename": "side_effects.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -246,6 +260,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.test_list_append",
+    "filename": "side_effects.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result",
@@ -278,6 +294,8 @@
   "kind": "model",
   "data": {
     "callable": "side_effects.to_sink_via_side_effect",
+    "filename": "side_effects.py",
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(y, position=0)",

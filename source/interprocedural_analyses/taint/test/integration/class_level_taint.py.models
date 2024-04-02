@@ -3,6 +3,8 @@
   "kind": "model",
   "data": {
     "callable": "class_level_taint.ClassSink.sink",
+    "filename": "class_level_taint.py",
+    "callable_line": 8,
     "sinks": [
       {
         "port": "formal(argument, position=1)",
@@ -19,6 +21,8 @@
   "kind": "model",
   "data": {
     "callable": "class_level_taint.ClassSource.source",
+    "filename": "class_level_taint.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -31,6 +35,8 @@
   "kind": "model",
   "data": {
     "callable": "class_level_taint.test",
+    "filename": "class_level_taint.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(class_sink, position=0)",

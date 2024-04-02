@@ -295,6 +295,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_collapse_sink_width",
+    "filename": "taint_broadening.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -968,6 +970,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_collapse_source_width",
+    "filename": "taint_broadening.py",
+    "callable_line": 41,
     "sources": [
       {
         "port": "result",
@@ -1641,6 +1645,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_no_collapse_sink_width",
+    "filename": "taint_broadening.py",
+    "callable_line": 360,
     "sinks": [
       {
         "port": "formal(parameter, position=0)['i1.1']",
@@ -2340,6 +2346,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_no_collapse_source_width",
+    "filename": "taint_broadening.py",
+    "callable_line": 322,
     "sources": [
       {
         "port": "result['o1.1']",
@@ -3009,6 +3017,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_sink_no_collapse_depth",
+    "filename": "taint_broadening.py",
+    "callable_line": 134,
     "sinks": [
       {
         "port": "formal(parameter, position=1)[a][a][a][a][1]",
@@ -3063,6 +3073,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.model_broadening_source_no_collapse_depth",
+    "filename": "taint_broadening.py",
+    "callable_line": 115,
     "sources": [
       {
         "port": "result[a][a][a][a][1]",
@@ -3115,6 +3127,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.random_tito",
+    "filename": "taint_broadening.py",
+    "callable_line": 204,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",
@@ -3159,6 +3173,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.recursive_sink_parent",
+    "filename": "taint_broadening.py",
+    "callable_line": 150,
     "sinks": [
       {
         "port": "formal(obj, position=0)",
@@ -3216,6 +3232,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.recursive_sink_parent_attribute",
+    "filename": "taint_broadening.py",
+    "callable_line": 157,
     "sinks": [
       {
         "port": "formal(obj, position=0)[attribute]",
@@ -3379,6 +3397,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.sink_a",
+    "filename": "taint_broadening.py",
+    "callable_line": 14,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -3410,6 +3430,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.sink_taint_widening_collapse_depth",
+    "filename": "taint_broadening.py",
+    "callable_line": 143,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a][a][a][a]",
@@ -3536,6 +3558,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.skip_model_broadening",
+    "filename": "taint_broadening.py",
+    "callable_line": 317,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -3553,6 +3577,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.source_taint_widening_collapse_depth",
+    "filename": "taint_broadening.py",
+    "callable_line": 126,
     "sources": [
       {
         "port": "result[a][a][a][a]",
@@ -3674,6 +3700,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_input_and_output_paths",
+    "filename": "taint_broadening.py",
+    "callable_line": 164,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -3696,6 +3724,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_input_and_output_paths_single_statement",
+    "filename": "taint_broadening.py",
+    "callable_line": 256,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3718,6 +3748,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_input_path_common_prefix",
+    "filename": "taint_broadening.py",
+    "callable_line": 273,
     "tito": [
       {
         "port": "formal(x, position=0)[y]",
@@ -3740,6 +3772,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_input_paths_but_not_output_path",
+    "filename": "taint_broadening.py",
+    "callable_line": 184,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -3778,6 +3812,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_output_path_common_prefix",
+    "filename": "taint_broadening.py",
+    "callable_line": 291,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -3802,6 +3838,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_broaden_output_paths_but_not_input_path",
+    "filename": "taint_broadening.py",
+    "callable_line": 215,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",
@@ -3942,6 +3980,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_collapse_sink",
+    "filename": "taint_broadening.py",
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -3979,6 +4019,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_collapse_source",
+    "filename": "taint_broadening.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -4016,6 +4058,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_broadening.tito_no_broadening_input_and_output_paths",
+    "filename": "taint_broadening.py",
+    "callable_line": 396,
     "tito": [
       {
         "port": "formal(parameter, position=0)[i1]",

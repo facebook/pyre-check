@@ -235,6 +235,8 @@
   "kind": "model",
   "data": {
     "callable": "constructor_inheritance.MyBaseClass.__init__",
+    "filename": "constructor_inheritance.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(argument, position=1)",

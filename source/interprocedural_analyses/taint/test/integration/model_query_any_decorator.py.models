@@ -3,6 +3,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.decorator_ignored",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 138,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -21,6 +23,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.source_on_decorator_ignored",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 143,
     "sources": [
       {
         "port": "result",
@@ -44,6 +48,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test1_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 36,
     "sources": [
       {
         "port": "result",
@@ -56,6 +62,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test2_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -68,6 +76,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test3_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 59,
     "sources": [
       {
         "port": "result",
@@ -80,6 +90,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test3_alarm2",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 64,
     "sources": [
       {
         "port": "result",
@@ -92,6 +104,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test3_alarm3",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 69,
     "sources": [
       {
         "port": "result",
@@ -104,6 +118,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test4_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 84,
     "sources": [
       {
         "port": "result",
@@ -116,6 +132,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test5_alarm1",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 104,
     "sources": [
       {
         "port": "result",
@@ -128,6 +146,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test5_alarm2",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 109,
     "sources": [
       {
         "port": "result",
@@ -140,6 +160,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_any_decorator.test_local_variable_method_decorator",
+    "filename": "model_query_any_decorator.py",
+    "callable_line": 132,
     "sources": [
       {
         "port": "result",

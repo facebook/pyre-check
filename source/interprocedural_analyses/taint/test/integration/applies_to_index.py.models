@@ -331,6 +331,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.issue_only_with_nested_first",
+    "filename": "applies_to_index.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result[0][1]",
@@ -430,6 +432,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.only_applies_to_a_key",
+    "filename": "applies_to_index.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result[a]",
@@ -442,6 +446,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.only_applies_to_a_member",
+    "filename": "applies_to_index.py",
+    "callable_line": 54,
     "sources": [
       {
         "port": "result[a]",
@@ -455,6 +461,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.only_applies_to_first",
+    "filename": "applies_to_index.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result[0]",
@@ -467,6 +475,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.only_applies_to_nested",
+    "filename": "applies_to_index.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[0][1]",
@@ -479,6 +489,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.only_applies_to_second",
+    "filename": "applies_to_index.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result[1]",
@@ -491,6 +503,8 @@
   "kind": "model",
   "data": {
     "callable": "applies_to_index.tito",
+    "filename": "applies_to_index.py",
+    "callable_line": 64,
     "tito": [
       {
         "port": "formal(x, position=0)[a]",

@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.A.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 97,
     "tito": [
       {
         "port": "formal(a, position=1)",
@@ -80,6 +82,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.C.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 106,
     "tito": [
       {
         "port": "formal(c, position=2)",
@@ -134,6 +138,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.D.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 114,
     "tito": [
       {
         "port": "formal(d, position=2)",
@@ -218,6 +224,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.Empty.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 160,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -235,6 +243,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.RegularClass.__init__",
+    "filename": "all_static_fields.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -277,6 +287,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_b",
+    "filename": "all_static_fields.py",
+    "callable_line": 119,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -289,6 +301,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_builtin_parameters",
+    "filename": "all_static_fields.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(t, position=3)",
@@ -337,6 +351,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_c",
+    "filename": "all_static_fields.py",
+    "callable_line": 127,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -353,6 +369,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_d",
+    "filename": "all_static_fields.py",
+    "callable_line": 135,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -369,6 +387,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_dataclass",
+    "filename": "all_static_fields.py",
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[c]",
@@ -385,6 +405,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_empty",
+    "filename": "all_static_fields.py",
+    "callable_line": 164,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -397,6 +419,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_optional_dataclass",
+    "filename": "all_static_fields.py",
+    "callable_line": 52,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[c]",
@@ -413,6 +437,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_optional_regular_class",
+    "filename": "all_static_fields.py",
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -429,6 +455,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_regular_class",
+    "filename": "all_static_fields.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -445,6 +473,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_type",
+    "filename": "all_static_fields.py",
+    "callable_line": 151,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -457,6 +487,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_union_c_d",
+    "filename": "all_static_fields.py",
+    "callable_line": 143,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -477,6 +509,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_union_dataclass_regular",
+    "filename": "all_static_fields.py",
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(parameter, position=0)[a]",
@@ -501,6 +535,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.parameter_sink_unnannotated",
+    "filename": "all_static_fields.py",
+    "callable_line": 85,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -513,6 +549,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_async",
+    "filename": "all_static_fields.py",
+    "callable_line": 172,
     "sources": [
       {
         "port": "result",
@@ -525,6 +563,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_b",
+    "filename": "all_static_fields.py",
+    "callable_line": 123,
     "sources": [
       {
         "port": "result[a]",
@@ -537,6 +577,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_builtin_int",
+    "filename": "all_static_fields.py",
+    "callable_line": 76,
     "sources": [
       {
         "port": "result",
@@ -561,6 +603,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_builtin_list",
+    "filename": "all_static_fields.py",
+    "callable_line": 80,
     "sources": [
       {
         "port": "result",
@@ -573,6 +617,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_c",
+    "filename": "all_static_fields.py",
+    "callable_line": 131,
     "sources": [
       {
         "port": "result[a]",
@@ -589,6 +635,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_d",
+    "filename": "all_static_fields.py",
+    "callable_line": 139,
     "sources": [
       {
         "port": "result[a]",
@@ -605,6 +653,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_dataclass",
+    "filename": "all_static_fields.py",
+    "callable_line": 48,
     "sources": [
       {
         "port": "result[c]",
@@ -621,6 +671,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_empty",
+    "filename": "all_static_fields.py",
+    "callable_line": 168,
     "sources": [
       {
         "port": "result",
@@ -633,6 +685,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_optional_dataclass",
+    "filename": "all_static_fields.py",
+    "callable_line": 56,
     "sources": [
       {
         "port": "result[c]",
@@ -649,6 +703,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_optional_regular_class",
+    "filename": "all_static_fields.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "result[a]",
@@ -665,6 +721,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_regular_class",
+    "filename": "all_static_fields.py",
+    "callable_line": 26,
     "sources": [
       {
         "port": "result[a]",
@@ -681,6 +739,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_type",
+    "filename": "all_static_fields.py",
+    "callable_line": 155,
     "sources": [
       {
         "port": "result",
@@ -693,6 +753,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_union_c_d",
+    "filename": "all_static_fields.py",
+    "callable_line": 147,
     "sources": [
       {
         "port": "result[a]",
@@ -713,6 +775,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_union_dataclass_regular",
+    "filename": "all_static_fields.py",
+    "callable_line": 66,
     "sources": [
       {
         "port": "result[a]",
@@ -737,6 +801,8 @@
   "kind": "model",
   "data": {
     "callable": "all_static_fields.return_source_unnannotated",
+    "filename": "all_static_fields.py",
+    "callable_line": 90,
     "sources": [
       {
         "port": "result",

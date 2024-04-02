@@ -506,6 +506,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassSwapArguments.__init__",
+    "filename": "dataclass_taint.py",
+    "callable_line": 139,
     "tito": [
       {
         "port": "formal(bar, position=2)",
@@ -551,6 +553,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.DataClassWIthInit.__init__",
+    "filename": "dataclass_taint.py",
+    "callable_line": 33,
     "sinks": [
       {
         "port": "formal(bad, position=1)",
@@ -770,6 +774,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.WeirdDataClass.__init__",
+    "filename": "dataclass_taint.py",
+    "callable_line": 50,
     "sources": [
       {
         "port": "formal(bad, position=1)",
@@ -912,6 +918,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.bad_is_tainted",
+    "filename": "dataclass_taint.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[bad]",
@@ -1021,6 +1029,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.benign_is_untainted",
+    "filename": "dataclass_taint.py",
+    "callable_line": 23,
     "sources": [
       {
         "port": "result[bad]",
@@ -1053,6 +1063,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_constructor_tito",
+    "filename": "dataclass_taint.py",
+    "callable_line": 130,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -1099,6 +1111,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_parameter_path",
+    "filename": "dataclass_taint.py",
+    "callable_line": 144,
     "sources": [
       {
         "port": "formal(dc, position=0)[*]",
@@ -1209,6 +1223,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_positional_parameter",
+    "filename": "dataclass_taint.py",
+    "callable_line": 148,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -1265,6 +1281,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_other_source",
+    "filename": "dataclass_taint.py",
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(context, position=0)[not_tainted]",
@@ -1380,6 +1398,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_dataclass_with_source",
+    "filename": "dataclass_taint.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(context, position=0)[not_tainted]",
@@ -1495,6 +1515,8 @@
   "kind": "model",
   "data": {
     "callable": "dataclass_taint.test_weird_dataclass_taint",
+    "filename": "dataclass_taint.py",
+    "callable_line": 55,
     "sources": [
       {
         "port": "result[bad]",

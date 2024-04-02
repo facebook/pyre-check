@@ -275,6 +275,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.sink_distance_one",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -301,6 +303,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.sink_distance_zero",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -328,6 +332,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.source_distance_one",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -354,6 +360,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_trace_length.source_distance_zero",
+    "filename": "maximum_trace_length.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",

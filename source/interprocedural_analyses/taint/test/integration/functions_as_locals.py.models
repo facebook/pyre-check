@@ -646,6 +646,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.C.m",
+    "filename": "functions_as_locals.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -676,6 +678,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barA",
+    "filename": "functions_as_locals.py",
+    "callable_line": 43,
     "sinks": [
       {
         "port": "formal(arg1, position=0)",
@@ -704,6 +708,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.barB",
+    "filename": "functions_as_locals.py",
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -735,6 +741,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.foo",
+    "filename": "functions_as_locals.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -763,6 +771,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.local_tito",
+    "filename": "functions_as_locals.py",
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -795,6 +805,8 @@
   "kind": "model",
   "data": {
     "callable": "functions_as_locals.method_tito",
+    "filename": "functions_as_locals.py",
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(arg, position=1)",

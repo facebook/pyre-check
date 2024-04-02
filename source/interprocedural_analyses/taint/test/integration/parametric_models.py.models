@@ -180,6 +180,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.f",
+    "filename": "parametric_models.py",
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",
@@ -195,6 +197,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.g",
+    "filename": "parametric_models.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "result",
@@ -210,6 +214,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.inferred_sink",
+    "filename": "parametric_models.py",
+    "callable_line": 41,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -261,6 +267,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink",
+    "filename": "parametric_models.py",
+    "callable_line": 20,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -276,6 +284,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_a",
+    "filename": "parametric_models.py",
+    "callable_line": 33,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -294,6 +304,8 @@
   "kind": "model",
   "data": {
     "callable": "parametric_models.sink_subkind_b",
+    "filename": "parametric_models.py",
+    "callable_line": 37,
     "sinks": [
       {
         "port": "formal(x, position=0)",

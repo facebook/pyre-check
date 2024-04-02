@@ -194,6 +194,8 @@
   "kind": "model",
   "data": {
     "callable": "locals.named_sink",
+    "filename": "locals.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -222,6 +224,8 @@
   "kind": "model",
   "data": {
     "callable": "locals.source_parameter_to_sink",
+    "filename": "locals.py",
+    "callable_line": 28,
     "sources": [
       {
         "port": "formal(x, position=0)",

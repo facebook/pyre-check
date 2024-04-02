@@ -470,6 +470,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.MyNamedTuple.__init__",
+    "filename": "named_tuples.py",
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -512,6 +514,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.NamedTupleWithTaintedAttribute.__init__",
+    "filename": "named_tuples.py",
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(bad, position=2)",
@@ -582,6 +586,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.OldSchoolNamedTuple.__init__",
+    "filename": "named_tuples.py",
+    "callable_line": 30,
     "tito": [
       {
         "port": "formal(bad, position=2)",
@@ -621,6 +627,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.aliased_indicies_backward",
+    "filename": "named_tuples.py",
+    "callable_line": 77,
     "sinks": [
       {
         "port": "formal(a, position=0)[bad]",
@@ -669,6 +677,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.aliased_indicies_backward_unknown_attribute",
+    "filename": "named_tuples.py",
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(a, position=0)[*]",
@@ -700,6 +710,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.aliased_indicies_forward_unknown_attribute",
+    "filename": "named_tuples.py",
+    "callable_line": 72,
     "sources": [
       {
         "port": "result",
@@ -738,6 +750,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.inherited_tuple",
+    "filename": "named_tuples.py",
+    "callable_line": 51,
     "sources": [
       {
         "port": "result[bad]",
@@ -770,6 +784,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.tainted_old_tuple",
+    "filename": "named_tuples.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result[bad]",
@@ -802,6 +818,8 @@
   "kind": "model",
   "data": {
     "callable": "named_tuples.tainted_tuple",
+    "filename": "named_tuples.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "result[bad]",

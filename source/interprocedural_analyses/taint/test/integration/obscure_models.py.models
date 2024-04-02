@@ -108,6 +108,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.C.obscure_with_multiple_models",
+    "filename": "obscure_models.py",
+    "callable_line": 28,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -126,6 +128,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.C.obscure_with_skip_obscure_and_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 25,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -144,6 +148,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.C.obscure_with_source",
+    "filename": "obscure_models.py",
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -159,6 +165,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.C.obscure_with_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 31,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -183,6 +191,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.should_collapse_depth_zero",
+    "filename": "obscure_models.py",
+    "callable_line": 84,
     "tito": [
       {
         "port": "formal(c, position=1)",
@@ -229,6 +239,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_collapse_source",
+    "filename": "obscure_models.py",
+    "callable_line": 73,
     "sinks": [
       {
         "port": "formal(c, position=0)",
@@ -344,6 +356,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_issue",
+    "filename": "obscure_models.py",
+    "callable_line": 67,
     "sinks": [
       {
         "port": "formal(c, position=0)",
@@ -444,6 +458,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure",
+    "filename": "obscure_models.py",
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -498,6 +514,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_multiple_models",
+    "filename": "obscure_models.py",
+    "callable_line": 59,
     "sources": [
       {
         "port": "result",
@@ -529,6 +547,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_skip_inlining",
+    "filename": "obscure_models.py",
+    "callable_line": 43,
     "sources": [
       {
         "port": "result",
@@ -583,6 +603,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_skip_obscure_and_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 55,
     "sources": [
       {
         "port": "result",
@@ -614,6 +636,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_skip_overrides",
+    "filename": "obscure_models.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -668,6 +692,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_source",
+    "filename": "obscure_models.py",
+    "callable_line": 47,
     "sources": [
       {
         "port": "result",
@@ -743,6 +769,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_obscure_with_tito",
+    "filename": "obscure_models.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(c, position=0)",
@@ -847,6 +875,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_sink_collapse",
+    "filename": "obscure_models.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(c, position=1)",
@@ -911,6 +941,8 @@
   "kind": "model",
   "data": {
     "callable": "obscure_models.test_skip_obscure_via_model_query",
+    "filename": "obscure_models.py",
+    "callable_line": 94,
     "tito": [
       {
         "port": "formal(arg, position=0)",

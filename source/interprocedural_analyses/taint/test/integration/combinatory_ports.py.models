@@ -14277,6 +14277,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.A.__init__",
+    "filename": "combinatory_ports.py",
+    "callable_line": 24,
     "tito": [
       {
         "port": "formal(base, position=1)",
@@ -14305,6 +14307,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.A.method",
+    "filename": "combinatory_ports.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(self, position=0)[a][a][a]",
@@ -16653,6 +16657,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.B.__init__",
+    "filename": "combinatory_ports.py",
+    "callable_line": 32,
     "tito": [
       {
         "port": "formal(base, position=1)",
@@ -16681,6 +16687,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.B.method",
+    "filename": "combinatory_ports.py",
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(self, position=0)[b][a][a]",
@@ -19029,6 +19037,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.C.__init__",
+    "filename": "combinatory_ports.py",
+    "callable_line": 40,
     "tito": [
       {
         "port": "formal(x, position=2)",
@@ -19068,6 +19078,8 @@
   "kind": "model",
   "data": {
     "callable": "combinatory_ports.C.method",
+    "filename": "combinatory_ports.py",
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(self, position=0)[c][a][a]",

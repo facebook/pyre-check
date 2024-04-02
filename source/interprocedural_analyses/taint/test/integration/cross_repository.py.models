@@ -189,6 +189,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.cross_repository_anchor_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(sink_parameter, position=0)",
@@ -216,6 +218,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.cross_repository_source",
+    "filename": "cross_repository.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "formal(source_parameter, position=0)",
@@ -338,6 +342,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.reaches_crtex_sink",
+    "filename": "cross_repository.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -367,6 +373,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.returns_crtex_source",
+    "filename": "cross_repository.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -396,6 +404,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_once",
+    "filename": "cross_repository.py",
+    "callable_line": 43,
     "sinks": [
       {
         "port": "formal(y, position=0)",
@@ -430,6 +440,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_sink_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(z, position=0)",
@@ -464,6 +476,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_once",
+    "filename": "cross_repository.py",
+    "callable_line": 35,
     "sources": [
       {
         "port": "result",
@@ -498,6 +512,8 @@
   "kind": "model",
   "data": {
     "callable": "cross_repository.test_propagate_cross_repository_source_twice",
+    "filename": "cross_repository.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",

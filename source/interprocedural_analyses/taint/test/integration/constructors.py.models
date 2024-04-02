@@ -492,6 +492,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.BaseConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 79,
     "sources": [
       {
         "port": "result[x]",
@@ -535,6 +537,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.BothNewAndInit.__init__",
+    "filename": "constructors.py",
+    "callable_line": 70,
     "sinks": [
       {
         "port": "formal(self, position=0)[foo]",
@@ -576,6 +580,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.BothNewAndInit.__new__",
+    "filename": "constructors.py",
+    "callable_line": 65,
     "sources": [
       {
         "port": "result[foo]",
@@ -606,6 +612,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.ChildWithNew.__new__",
+    "filename": "constructors.py",
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(input, position=1)",
@@ -655,6 +663,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.DerivedConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 84,
     "sources": [
       {
         "port": "result[x]",
@@ -717,6 +727,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.InitWithModel.__init__",
+    "filename": "constructors.py",
+    "callable_line": 90,
     "tito": [
       {
         "port": "formal(tito, position=1)",
@@ -735,6 +747,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.NewWithModel.__new__",
+    "filename": "constructors.py",
+    "callable_line": 100,
     "tito": [
       {
         "port": "formal(tito, position=1)",
@@ -753,6 +767,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.ParentWithInit.__init__",
+    "filename": "constructors.py",
+    "callable_line": 50,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -770,6 +786,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.__init__",
+    "filename": "constructors.py",
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(oauth_token_secret, position=2)",
@@ -815,6 +833,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.async_get_authenticated_user",
+    "filename": "constructors.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(self, position=0)[AUTHENTICATE_URL]",
@@ -844,6 +864,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SomeAPI.from_default_keys",
+    "filename": "constructors.py",
+    "callable_line": 19,
     "tito": [
       {
         "port": "formal(oauth_token_secret, position=2)",
@@ -886,6 +908,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.SourceInConstructor.__init__",
+    "filename": "constructors.py",
+    "callable_line": 38,
     "sources": [
       {
         "port": "result[x]",
@@ -929,6 +953,8 @@
   "kind": "model",
   "data": {
     "callable": "constructors.test_construction",
+    "filename": "constructors.py",
+    "callable_line": 30,
     "tito": [
       {
         "port": "formal(request, position=0)[POST][1]",

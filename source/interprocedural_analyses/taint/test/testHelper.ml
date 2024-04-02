@@ -821,6 +821,7 @@ let end_to_end_integration_test path context =
         ~taint_configuration
         ~fixpoint_state
         ~resolve_module_path
+        ~resolve_callable_location:(Target.get_callable_location ~pyre_api)
         ~override_graph:override_graph_shared_memory_read_only
         ~dump_override_models:true
         callable

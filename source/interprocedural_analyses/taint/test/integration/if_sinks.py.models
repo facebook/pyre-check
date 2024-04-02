@@ -250,6 +250,8 @@
   "kind": "model",
   "data": {
     "callable": "if_sinks.no_if",
+    "filename": "if_sinks.py",
+    "callable_line": 9,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -278,6 +280,8 @@
   "kind": "model",
   "data": {
     "callable": "if_sinks.with_if",
+    "filename": "if_sinks.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(x, position=0)",

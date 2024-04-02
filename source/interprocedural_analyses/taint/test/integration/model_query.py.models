@@ -343,6 +343,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass1.__init__",
+    "filename": "model_query.py",
+    "callable_line": 74,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -360,6 +362,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass2.__init__",
+    "filename": "model_query.py",
+    "callable_line": 81,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -377,6 +381,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass3.__init__",
+    "filename": "model_query.py",
+    "callable_line": 88,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -394,6 +400,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass4.__init__",
+    "filename": "model_query.py",
+    "callable_line": 95,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -411,6 +419,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass5.__init__",
+    "filename": "model_query.py",
+    "callable_line": 102,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -428,6 +438,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass6.__init__",
+    "filename": "model_query.py",
+    "callable_line": 109,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -445,6 +457,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass7.__init__",
+    "filename": "model_query.py",
+    "callable_line": 116,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -462,6 +476,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.AttributeTestClass8.__init__",
+    "filename": "model_query.py",
+    "callable_line": 123,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -479,6 +495,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.Base.foo",
+    "filename": "model_query.py",
+    "callable_line": 43,
     "sources": [
       {
         "port": "formal(x, position=1)",
@@ -509,6 +527,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.C.foo",
+    "filename": "model_query.py",
+    "callable_line": 19,
     "sources": [
       {
         "port": "result",
@@ -531,6 +551,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.C.positional_method",
+    "filename": "model_query.py",
+    "callable_line": 22,
     "sources": [
       {
         "port": "formal(x, position=1)",
@@ -557,6 +579,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.Child.bar",
+    "filename": "model_query.py",
+    "callable_line": 53,
     "sources": [
       {
         "port": "formal(y, position=1)",
@@ -569,6 +593,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.ClassTest1.method_test1_alarm1",
+    "filename": "model_query.py",
+    "callable_line": 214,
     "sources": [
       {
         "port": "result",
@@ -583,6 +609,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.ClassTest2_Alarm1.$class_toplevel",
+    "filename": "model_query.py",
+    "callable_line": 225,
     "sources": [
       {
         "port": "result",
@@ -597,6 +625,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.ClassTest2_Alarm1.method1",
+    "filename": "model_query.py",
+    "callable_line": 226,
     "sources": [
       {
         "port": "result",
@@ -611,6 +641,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.ClassTest2_Alarm1.method2",
+    "filename": "model_query.py",
+    "callable_line": 229,
     "sources": [
       {
         "port": "result",
@@ -625,6 +657,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.ClassTest3_Alarm1.method1",
+    "filename": "model_query.py",
+    "callable_line": 242,
     "sources": [
       {
         "port": "result",
@@ -639,6 +673,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.NotBase.foo",
+    "filename": "model_query.py",
+    "callable_line": 48,
     "sources": [
       {
         "port": "result",
@@ -661,6 +697,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_1",
+    "filename": "model_query.py",
+    "callable_line": 127,
     "sinks": [
       {
         "port": "formal(x, position=0)[attribute]",
@@ -754,6 +792,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_10",
+    "filename": "model_query.py",
+    "callable_line": 172,
     "sinks": [
       {
         "port": "formal(x, position=0)[foo_instance]",
@@ -847,6 +887,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_11",
+    "filename": "model_query.py",
+    "callable_line": 177,
     "sinks": [
       {
         "port": "formal(x, position=0)[foo_attribute]",
@@ -940,6 +982,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_12",
+    "filename": "model_query.py",
+    "callable_line": 182,
     "sinks": [
       {
         "port": "formal(x, position=0)[foo_instance]",
@@ -1033,6 +1077,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_2",
+    "filename": "model_query.py",
+    "callable_line": 132,
     "sinks": [
       {
         "port": "formal(x, position=0)[instance]",
@@ -1126,6 +1172,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_3",
+    "filename": "model_query.py",
+    "callable_line": 137,
     "sinks": [
       {
         "port": "formal(x, position=0)[attribute]",
@@ -1219,6 +1267,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_4",
+    "filename": "model_query.py",
+    "callable_line": 142,
     "sinks": [
       {
         "port": "formal(x, position=0)[instance]",
@@ -1312,6 +1362,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_5",
+    "filename": "model_query.py",
+    "callable_line": 147,
     "sources": [
       {
         "port": "formal(source, position=1)",
@@ -1493,6 +1545,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_7",
+    "filename": "model_query.py",
+    "callable_line": 157,
     "sources": [
       {
         "port": "result",
@@ -1699,6 +1753,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_8",
+    "filename": "model_query.py",
+    "callable_line": 162,
     "sinks": [
       {
         "port": "formal(x, position=0)[instance]",
@@ -1858,6 +1914,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.alarm_9",
+    "filename": "model_query.py",
+    "callable_line": 167,
     "sinks": [
       {
         "port": "formal(x, position=0)[foo_attribute]",
@@ -1951,6 +2009,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.barfoo",
+    "filename": "model_query.py",
+    "callable_line": 14,
     "sources": [
       {
         "port": "result",
@@ -1973,6 +2033,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.foo",
+    "filename": "model_query.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result",
@@ -1995,6 +2057,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.function_test1_alarm1",
+    "filename": "model_query.py",
+    "callable_line": 197,
     "sources": [
       {
         "port": "result",
@@ -2009,6 +2073,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.function_test1_alarm2",
+    "filename": "model_query.py",
+    "callable_line": 201,
     "sources": [
       {
         "port": "result",
@@ -2023,6 +2089,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_1",
+    "filename": "model_query.py",
+    "callable_line": 187,
     "sinks": [
       {
         "port": "formal(x, position=0)[nomatch_attribute1]",
@@ -2069,6 +2137,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.no_alarm_2",
+    "filename": "model_query.py",
+    "callable_line": 192,
     "sinks": [
       {
         "port": "formal(x, position=0)[nomatch_instance2]",
@@ -2110,6 +2180,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.positional_a",
+    "filename": "model_query.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "formal(x, position=0)",
@@ -2122,6 +2194,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.positional_b",
+    "filename": "model_query.py",
+    "callable_line": 38,
     "sources": [
       {
         "port": "formal(y, position=0)",
@@ -2134,6 +2208,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.positional_decorated",
+    "filename": "model_query.py",
+    "callable_line": 63,
     "sources": [
       {
         "port": "formal(x, position=0)",
@@ -2147,6 +2223,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.three_parameters",
+    "filename": "model_query.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "formal(y, position=1)",
@@ -2173,6 +2251,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query.two_parameters",
+    "filename": "model_query.py",
+    "callable_line": 26,
     "sources": [
       {
         "port": "formal(y, position=1)",

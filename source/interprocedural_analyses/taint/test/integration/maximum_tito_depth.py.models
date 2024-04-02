@@ -94,6 +94,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_max_consecutive",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -123,6 +125,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_min_disjoint",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 33,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -151,6 +155,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_min_disjoint_max_consecutive",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -181,6 +187,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_obscure",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 56,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -208,6 +216,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_one",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -233,6 +243,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_three",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 22,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -258,6 +270,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_two",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -283,6 +297,8 @@
   "kind": "model",
   "data": {
     "callable": "maximum_tito_depth.tito_zero",
+    "filename": "maximum_tito_depth.py",
+    "callable_line": 10,
     "tito": [
       {
         "port": "formal(x, position=0)",

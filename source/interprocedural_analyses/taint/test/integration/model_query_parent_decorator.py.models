@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parent_decorator.TestC_1.__init__",
+    "filename": "model_query_parent_decorator.py",
+    "callable_line": 23,
     "sources": [
       {
         "port": "formal(bar, position=2)",
@@ -286,6 +288,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parent_decorator.TestC_2.__init__",
+    "filename": "model_query_parent_decorator.py",
+    "callable_line": 31,
     "sinks": [
       {
         "port": "formal(baz, position=3)",
@@ -371,6 +375,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parent_decorator.TestC_3.__init__",
+    "filename": "model_query_parent_decorator.py",
+    "callable_line": 40,
     "sources": [
       {
         "port": "formal(bar, position=2)",

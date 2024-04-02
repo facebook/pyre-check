@@ -682,6 +682,8 @@
   "kind": "model",
   "data": {
     "callable": "iterators.CustomGetItem.__getitem__",
+    "filename": "iterators.py",
+    "callable_line": 51,
     "sources": [
       {
         "port": "result",
@@ -714,6 +716,8 @@
   "kind": "model",
   "data": {
     "callable": "iterators.CustomIter.__iter__",
+    "filename": "iterators.py",
+    "callable_line": 41,
     "sources": [
       {
         "port": "result",

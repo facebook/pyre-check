@@ -111,6 +111,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.branch_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 66,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -169,6 +171,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.branch_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 56,
     "sources": [
       {
         "port": "result",
@@ -242,6 +246,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.double_nested_transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 37,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -287,6 +293,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.loop_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 81,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -330,6 +338,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.loop_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 74,
     "sources": [
       {
         "port": "result",
@@ -377,6 +387,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.nested_transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 33,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -425,6 +437,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.sequential_tito_backward",
+    "filename": "extra_trace.py",
+    "callable_line": 49,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -483,6 +497,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.sequential_tito_forward",
+    "filename": "extra_trace.py",
+    "callable_line": 41,
     "sources": [
       {
         "port": "result",
@@ -543,6 +559,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.source_transform_nested_x_y",
+    "filename": "extra_trace.py",
+    "callable_line": 91,
     "sources": [
       {
         "port": "result",
@@ -589,6 +607,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.tito",
+    "filename": "extra_trace.py",
+    "callable_line": 9,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -606,6 +626,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.transform_nested_x_y",
+    "filename": "extra_trace.py",
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -687,6 +709,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.transform_x",
+    "filename": "extra_trace.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -717,6 +741,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.transform_y",
+    "filename": "extra_trace.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -747,6 +773,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.transform_yz",
+    "filename": "extra_trace.py",
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -835,6 +863,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.transform_z",
+    "filename": "extra_trace.py",
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(arg, position=0)",

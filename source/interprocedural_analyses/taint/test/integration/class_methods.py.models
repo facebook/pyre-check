@@ -569,6 +569,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.class_method",
+    "filename": "class_methods.py",
+    "callable_line": 34,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -598,6 +600,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.my_abstract_property@setter",
+    "filename": "class_methods.py",
+    "callable_line": 75,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -615,6 +619,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.one_hop_abstract_class_method",
+    "filename": "class_methods.py",
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -643,6 +649,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.one_hop_class_abstractmethod",
+    "filename": "class_methods.py",
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -671,6 +679,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.one_hop_class_method",
+    "filename": "class_methods.py",
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -699,6 +709,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.one_hop_static_abstractmethod",
+    "filename": "class_methods.py",
+    "callable_line": 64,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -727,6 +739,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.C.static_abstractmethod",
+    "filename": "class_methods.py",
+    "callable_line": 60,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -754,6 +768,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.D.abstract_class_method",
+    "filename": "class_methods.py",
+    "callable_line": 81,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -783,6 +799,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.D.abstract_method",
+    "filename": "class_methods.py",
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -812,6 +830,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.D.class_abstractmethod",
+    "filename": "class_methods.py",
+    "callable_line": 88,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -841,6 +861,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.D.my_abstract_property",
+    "filename": "class_methods.py",
+    "callable_line": 92,
     "tito": [
       {
         "port": "formal(self, position=0)[_my_abstract_property]",
@@ -858,6 +880,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.D.my_abstract_property@setter",
+    "filename": "class_methods.py",
+    "callable_line": 96,
     "tito": [
       {
         "port": "formal(my_abstract_property, position=1)",
@@ -889,6 +913,8 @@
   "kind": "model",
   "data": {
     "callable": "class_methods.Test.foo",
+    "filename": "class_methods.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(x, position=1)",

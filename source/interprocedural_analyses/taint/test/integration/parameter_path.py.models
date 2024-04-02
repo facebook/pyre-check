@@ -1126,6 +1126,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.complex_tito",
+    "filename": "parameter_path.py",
+    "callable_line": 172,
     "tito": [
       {
         "port": "formal(arg, position=0)[a][*].**keys",
@@ -1145,6 +1147,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.issue_only_with_source_nested_first",
+    "filename": "parameter_path.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result[0][1]",
@@ -1244,6 +1248,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.sink_on_0_1",
+    "filename": "parameter_path.py",
+    "callable_line": 72,
     "sinks": [
       {
         "port": "formal(arg, position=0)[0][1]",
@@ -1256,6 +1262,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.sink_on_first",
+    "filename": "parameter_path.py",
+    "callable_line": 64,
     "sinks": [
       {
         "port": "formal(arg, position=0)[0]",
@@ -1268,6 +1276,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.sink_on_key_a",
+    "filename": "parameter_path.py",
+    "callable_line": 93,
     "sinks": [
       {
         "port": "formal(arg, position=0)[a]",
@@ -1280,6 +1290,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.sink_on_member_a",
+    "filename": "parameter_path.py",
+    "callable_line": 97,
     "sinks": [
       {
         "port": "formal(arg, position=0)[a]",
@@ -1292,6 +1304,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.sink_on_second",
+    "filename": "parameter_path.py",
+    "callable_line": 68,
     "sinks": [
       {
         "port": "formal(arg, position=0)[1]",
@@ -1304,6 +1318,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.source_on_0_1",
+    "filename": "parameter_path.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[0][1]",
@@ -1316,6 +1332,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.source_on_first",
+    "filename": "parameter_path.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result[0]",
@@ -1328,6 +1346,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.source_on_key_a",
+    "filename": "parameter_path.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result[a]",
@@ -1340,6 +1360,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.source_on_member_a",
+    "filename": "parameter_path.py",
+    "callable_line": 54,
     "sources": [
       {
         "port": "result[a]",
@@ -1353,6 +1375,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.source_on_second",
+    "filename": "parameter_path.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result[1]",
@@ -1365,6 +1389,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.tito_from_a_to_self_b",
+    "filename": "parameter_path.py",
+    "callable_line": 156,
     "tito": [
       {
         "port": "formal(arg, position=1)[a]",
@@ -1384,6 +1410,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.tito_from_b_to_a",
+    "filename": "parameter_path.py",
+    "callable_line": 145,
     "tito": [
       {
         "port": "formal(arg, position=0)[b]",
@@ -1403,6 +1431,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.tito_from_first",
+    "filename": "parameter_path.py",
+    "callable_line": 116,
     "tito": [
       {
         "port": "formal(arg, position=0)[0]",
@@ -1420,6 +1450,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.tito_from_first_to_second",
+    "filename": "parameter_path.py",
+    "callable_line": 134,
     "tito": [
       {
         "port": "formal(arg, position=0)[0]",
@@ -1439,6 +1471,8 @@
   "kind": "model",
   "data": {
     "callable": "parameter_path.tito_from_second",
+    "filename": "parameter_path.py",
+    "callable_line": 120,
     "tito": [
       {
         "port": "formal(arg, position=0)[1]",

@@ -11,6 +11,7 @@ val externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
   fixpoint_state:TaintFixpoint.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
+  resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   Target.t ->
   Issue.t list ->
@@ -21,6 +22,7 @@ val fetch_and_externalize
   :  taint_configuration:TaintConfiguration.Heap.t ->
   fixpoint_state:TaintFixpoint.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
+  resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   dump_override_models:bool ->
   Target.t ->
@@ -43,6 +45,7 @@ val save_results_to_directory
   output_format:Configuration.TaintOutputFormat.t ->
   local_root:PyrePath.t ->
   resolve_module_path:(Ast.Reference.t -> RepositoryPath.t option) ->
+  resolve_callable_location:(Target.t -> Ast.Location.WithModule.t option) ->
   override_graph:OverrideGraph.SharedMemory.ReadOnly.t ->
   skipped_overrides:Target.t list ->
   callables:Target.Set.t ->

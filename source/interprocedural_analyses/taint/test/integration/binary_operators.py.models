@@ -309,6 +309,8 @@
   "kind": "model",
   "data": {
     "callable": "binary_operators.Add.__add__",
+    "filename": "binary_operators.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(other, position=1)",

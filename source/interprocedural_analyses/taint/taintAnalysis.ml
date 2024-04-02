@@ -868,6 +868,7 @@ let run_taint_analysis
           ~output_format
           ~local_root
           ~resolve_module_path
+          ~resolve_callable_location:(Target.get_callable_location ~pyre_api)
           ~override_graph:override_graph_shared_memory_read_only
           ~callables
           ~skipped_overrides

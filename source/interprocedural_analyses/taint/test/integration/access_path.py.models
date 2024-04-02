@@ -484,6 +484,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.SpecialDict.__getitem__",
+    "filename": "access_path.py",
+    "callable_line": 21,
     "tito": [
       {
         "port": "formal(key, position=1)",
@@ -536,6 +538,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.SpecialDict.__init__",
+    "filename": "access_path.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -553,6 +557,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.positional_and_variadic1",
+    "filename": "access_path.py",
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(*args, position=2)",
@@ -581,6 +587,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.positional_and_variadic2",
+    "filename": "access_path.py",
+    "callable_line": 42,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -609,6 +617,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.sink_on_keyword_only",
+    "filename": "access_path.py",
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(y)",
@@ -621,6 +631,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.sink_on_non_positional_only",
+    "filename": "access_path.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -633,6 +645,8 @@
   "kind": "model",
   "data": {
     "callable": "access_path.sink_on_positional_only",
+    "filename": "access_path.py",
+    "callable_line": 58,
     "sinks": [
       {
         "port": "formal(__x, position=0)",

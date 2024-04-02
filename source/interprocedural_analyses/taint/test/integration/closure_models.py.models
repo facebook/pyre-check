@@ -949,6 +949,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.Reclassification.__init__",
+    "filename": "closure_models.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(feature, position=2)",
@@ -988,6 +990,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.Reclassification.reclassify",
+    "filename": "closure_models.py",
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -1028,6 +1032,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources",
+    "filename": "closure_models.py",
+    "callable_line": 143,
     "sources": [
       {
         "port": "captured_variable($local_closure_models?captured_variable_model_generation_source$complicated_name)",
@@ -1040,6 +1046,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources",
+    "filename": "closure_models.py",
+    "callable_line": 134,
     "sources": [
       {
         "port": "captured_variable($local_closure_models?captured_variable_model_parameter_source$complicated_name)",
@@ -1075,6 +1083,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_sink.model_all_captured_as_sinks",
+    "filename": "closure_models.py",
+    "callable_line": 154,
     "sinks": [
       {
         "port": "captured_variable($local_closure_models?captured_variable_model_sink$complicated_name)",
@@ -1087,6 +1097,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.captured_variable_model_tito.model_all_captured_as_tito",
+    "filename": "closure_models.py",
+    "callable_line": 123,
     "tito": [
       {
         "port": "captured_variable($local_closure_models?captured_variable_model_tito$complicated_name)",
@@ -1104,6 +1116,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.inner_sink_wrapper.inner_sink",
+    "filename": "closure_models.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1127,6 +1141,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.outer",
+    "filename": "closure_models.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -1139,6 +1155,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.reclassify",
+    "filename": "closure_models.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(inner, position=0)",
@@ -1168,6 +1186,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test.return_model_query_tito",
+    "filename": "closure_models.py",
+    "callable_line": 51,
     "tito": [
       {
         "port": "captured_variable($local_closure_models?test$source)",
@@ -1185,6 +1205,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test.return_model_taint",
+    "filename": "closure_models.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result",
@@ -1209,6 +1231,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test.return_model_taint_tito",
+    "filename": "closure_models.py",
+    "callable_line": 48,
     "tito": [
       {
         "port": "captured_variable($local_closure_models?test$source)",
@@ -1226,6 +1250,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test.return_taint",
+    "filename": "closure_models.py",
+    "callable_line": 41,
     "sources": [
       {
         "port": "result",
@@ -1256,6 +1282,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test_tito_transform.return_model_query_tito",
+    "filename": "closure_models.py",
+    "callable_line": 91,
     "sinks": [
       {
         "port": "captured_variable($local_closure_models?test_tito_transform$source)",
@@ -1291,6 +1319,8 @@
   "kind": "model",
   "data": {
     "callable": "closure_models.test_tito_transform.return_model_taint_tito",
+    "filename": "closure_models.py",
+    "callable_line": 88,
     "sinks": [
       {
         "port": "captured_variable($local_closure_models?test_tito_transform$source)",

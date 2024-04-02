@@ -99,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.test_unknown_source_attribute",
+    "filename": "missing_type.py",
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(x, position=0)[unknown]",
@@ -200,6 +202,8 @@
   "kind": "model",
   "data": {
     "callable": "missing_type.test_unknown_source_def",
+    "filename": "missing_type.py",
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(x, position=0)[unknown]",

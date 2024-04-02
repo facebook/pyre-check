@@ -284,6 +284,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.Query.params",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 60,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -312,6 +314,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.Query.send",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 57,
     "sinks": [
       {
         "port": "formal(self, position=0)[_params]",
@@ -381,6 +385,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.log_call",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(response, position=1)",
@@ -447,6 +453,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.sinkA",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -473,6 +481,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.sinkB",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -499,6 +509,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.sinkC",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 19,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -525,6 +537,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.sinkD",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -547,6 +561,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.source",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 7,
     "sources": [
       {
         "port": "result",
@@ -569,6 +585,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.split",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(x, position=0)[_params]",
@@ -664,6 +682,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.splitwrapper",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 45,
     "sinks": [
       {
         "port": "formal(x, position=0)[_params]",
@@ -731,6 +751,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.wrapper",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -829,6 +851,8 @@
   "kind": "model",
   "data": {
     "callable": "multi_sink_ports.wrapper2",
+    "filename": "multi_sink_ports.py",
+    "callable_line": 70,
     "sinks": [
       {
         "port": "formal(x, position=0)",

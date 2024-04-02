@@ -1704,6 +1704,8 @@
   "kind": "model",
   "data": {
     "callable": "closure._test_source2",
+    "filename": "closure.py",
+    "callable_line": 285,
     "sources": [
       {
         "port": "result",
@@ -1719,6 +1721,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_ignore_decorator",
+    "filename": "closure.py",
+    "callable_line": 388,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -1862,6 +1866,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.async_nonlocal_closure_tito_ignore_decorator.inner",
+    "filename": "closure.py",
+    "callable_line": 391,
     "tito": [
       {
         "port": "captured_variable($parameter$y)",
@@ -1906,6 +1912,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.async_tito",
+    "filename": "closure.py",
+    "callable_line": 373,
     "tito": [
       {
         "port": "formal(function, position=0)",
@@ -1924,6 +1932,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.closure.sink",
+    "filename": "closure.py",
+    "callable_line": 106,
     "sinks": [
       {
         "port": "captured_variable($local_closure?closure$obj)[x]",
@@ -1953,6 +1963,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.decorator.wrapper",
+    "filename": "closure.py",
+    "callable_line": 362,
     "tito": [
       {
         "port": "captured_variable($parameter$function)",
@@ -1996,6 +2008,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.ignored_decorator.wrapper",
+    "filename": "closure.py",
+    "callable_line": 368,
     "tito": [
       {
         "port": "captured_variable($parameter$function)",
@@ -2039,6 +2053,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_conditional_write.conditional_write",
+    "filename": "closure.py",
+    "callable_line": 291,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_conditional_write$obj)",
@@ -2069,6 +2085,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_flow.sink",
+    "filename": "closure.py",
+    "callable_line": 192,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)",
@@ -2098,6 +2116,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_flow.source",
+    "filename": "closure.py",
+    "callable_line": 188,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_flow$obj)",
@@ -2129,6 +2149,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_inner_flow.flow",
+    "filename": "closure.py",
+    "callable_line": 216,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_inner_flow$obj)",
@@ -2227,6 +2249,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_multiple_reads.conditional_read",
+    "filename": "closure.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_multiple_reads$x)",
@@ -2256,6 +2280,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_multiple_writes.conditional_write",
+    "filename": "closure.py",
+    "callable_line": 166,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_multiple_writes$x)",
@@ -2287,6 +2313,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow.source1",
+    "filename": "closure.py",
+    "callable_line": 254,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_nested_flow$outer)",
@@ -2388,6 +2416,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow.source1.source2",
+    "filename": "closure.py",
+    "callable_line": 256,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
@@ -2512,6 +2542,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_nested_flow.source1.source2.source3",
+    "filename": "closure.py",
+    "callable_line": 257,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_nested_flow?source1$inner)",
@@ -2543,6 +2575,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_no_flow.sink",
+    "filename": "closure.py",
+    "callable_line": 206,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_no_flow$obj)",
@@ -2572,6 +2606,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_no_flow.source",
+    "filename": "closure.py",
+    "callable_line": 202,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_no_flow$obj)",
@@ -2603,6 +2639,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_obscure.sink",
+    "filename": "closure.py",
+    "callable_line": 231,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_obscure$obj)",
@@ -2632,6 +2670,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_obscure.source",
+    "filename": "closure.py",
+    "callable_line": 227,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_obscure$obj)",
@@ -2663,6 +2703,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_read_reduction.inner",
+    "filename": "closure.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_read_reduction$x)",
@@ -2712,6 +2754,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_reduction.sink",
+    "filename": "closure.py",
+    "callable_line": 155,
     "sinks": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj3)",
@@ -2782,6 +2826,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_reduction.source",
+    "filename": "closure.py",
+    "callable_line": 142,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
@@ -2835,6 +2881,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_reduction.tito",
+    "filename": "closure.py",
+    "callable_line": 148,
     "tito": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_reduction$obj1)",
@@ -2866,6 +2914,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_tito.inner",
+    "filename": "closure.py",
+    "callable_line": 313,
     "tito": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_tito$x)",
@@ -2884,6 +2934,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.source",
+    "filename": "closure.py",
+    "callable_line": 274,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
@@ -2915,6 +2967,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_wrapper_flow.wrapper",
+    "filename": "closure.py",
+    "callable_line": 278,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_wrapper_flow$obj)",
@@ -2946,6 +3000,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.nonlocal_closure_write_reduction.source",
+    "filename": "closure.py",
+    "callable_line": 129,
     "sources": [
       {
         "port": "captured_variable($local_closure?nonlocal_closure_write_reduction$x)",
@@ -2999,6 +3055,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap",
+    "filename": "closure.py",
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -3088,6 +3146,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap.inner",
+    "filename": "closure.py",
+    "callable_line": 51,
     "sinks": [
       {
         "port": "captured_variable($parameter$z)",
@@ -3159,6 +3219,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap_different_variable_names",
+    "filename": "closure.py",
+    "callable_line": 58,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -3254,6 +3316,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap_different_variable_names.inner",
+    "filename": "closure.py",
+    "callable_line": 61,
     "sinks": [
       {
         "port": "captured_variable($local_closure?parameter_order_swap_different_variable_names$c)",
@@ -3325,6 +3389,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap_tito",
+    "filename": "closure.py",
+    "callable_line": 346,
     "sinks": [
       {
         "port": "formal(z, position=2)",
@@ -3360,6 +3426,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.parameter_order_swap_tito.inner",
+    "filename": "closure.py",
+    "callable_line": 347,
     "tito": [
       {
         "port": "captured_variable($parameter$z)",
@@ -3404,6 +3472,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.tito_hof",
+    "filename": "closure.py",
+    "callable_line": 342,
     "sinks": [
       {
         "port": "formal(f, position=0)",
@@ -3433,6 +3503,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_taint_propagation",
+    "filename": "closure.py",
+    "callable_line": 25,
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -3496,6 +3568,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_taint_propagation.inner",
+    "filename": "closure.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "captured_variable($parameter$x)",
@@ -3545,6 +3619,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_taint_propagation_hof",
+    "filename": "closure.py",
+    "callable_line": 38,
     "sinks": [
       {
         "port": "formal(z, position=1)",
@@ -3609,6 +3685,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_taint_propagation_hof.inner",
+    "filename": "closure.py",
+    "callable_line": 39,
     "sinks": [
       {
         "port": "captured_variable($parameter$x)",
@@ -3658,6 +3736,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_tito_propagation",
+    "filename": "closure.py",
+    "callable_line": 324,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3690,6 +3770,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_tito_propagation.inner",
+    "filename": "closure.py",
+    "callable_line": 325,
     "tito": [
       {
         "port": "captured_variable($parameter$x)",
@@ -3708,6 +3790,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_tito_propagation_hof",
+    "filename": "closure.py",
+    "callable_line": 335,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -3747,6 +3831,8 @@
   "kind": "model",
   "data": {
     "callable": "closure.wrapper_for_tito_propagation_hof.inner",
+    "filename": "closure.py",
+    "callable_line": 336,
     "tito": [
       {
         "port": "captured_variable($parameter$x)",

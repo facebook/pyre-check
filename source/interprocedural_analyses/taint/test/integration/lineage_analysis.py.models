@@ -697,6 +697,8 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.DataFrame.__init__",
+    "filename": "lineage_analysis.py",
+    "callable_line": 15,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -714,6 +716,8 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.DataFrame.__setitem__",
+    "filename": "lineage_analysis.py",
+    "callable_line": 37,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -731,6 +735,8 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.Series.__init__",
+    "filename": "lineage_analysis.py",
+    "callable_line": 10,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -748,6 +754,8 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.sink",
+    "filename": "lineage_analysis.py",
+    "callable_line": 44,
     "sinks": [
       {
         "port": "formal(arg, position=0)[a]",
@@ -768,6 +776,8 @@
   "kind": "model",
   "data": {
     "callable": "lineage_analysis.source",
+    "filename": "lineage_analysis.py",
+    "callable_line": 48,
     "sources": [
       {
         "port": "result[a]",

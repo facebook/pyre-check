@@ -156,6 +156,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.__init__",
+    "filename": "readonly.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -173,6 +175,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.readonly_tito",
+    "filename": "readonly.py",
+    "callable_line": 38,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -190,6 +194,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_readonly_map",
+    "filename": "readonly.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(self, position=0)[mapping][]",
@@ -303,6 +309,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_readonly_str",
+    "filename": "readonly.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(self, position=0)[B]",
@@ -401,6 +409,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_untyped_map",
+    "filename": "readonly.py",
+    "callable_line": 33,
     "sinks": [
       {
         "port": "formal(self, position=0)[mapping][]",
@@ -514,6 +524,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.A.self_untyped_str",
+    "filename": "readonly.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(self, position=0)[B]",
@@ -612,6 +624,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.readonly_foo_not_tainted",
+    "filename": "readonly.py",
+    "callable_line": 57,
     "sinks": [
       {
         "port": "formal(foo, position=0)[not_tainted]",
@@ -640,6 +654,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.readonly_foo_tainted",
+    "filename": "readonly.py",
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",
@@ -735,6 +751,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.regular_foo_not_tainted",
+    "filename": "readonly.py",
+    "callable_line": 65,
     "sinks": [
       {
         "port": "formal(foo, position=0)[not_tainted]",
@@ -763,6 +781,8 @@
   "kind": "model",
   "data": {
     "callable": "readonly.regular_foo_tainted",
+    "filename": "readonly.py",
+    "callable_line": 61,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",

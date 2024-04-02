@@ -327,6 +327,8 @@
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.bad",
+    "filename": "source_sink_flow.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -359,6 +361,8 @@
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.bar",
+    "filename": "source_sink_flow.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -389,6 +393,8 @@
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.qux",
+    "filename": "source_sink_flow.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -417,6 +423,8 @@
   "kind": "model",
   "data": {
     "callable": "source_sink_flow.some_source",
+    "filename": "source_sink_flow.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",

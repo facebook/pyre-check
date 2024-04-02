@@ -1200,6 +1200,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.DatabaseSchemaEditor.string_operations",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(self, position=0)[attribute_query]",
@@ -1230,6 +1232,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_multiple_triggered_user_controlled",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -1286,6 +1290,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_sql",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 77,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1405,6 +1411,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.format_string_triggered_user_controlled",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 67,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1437,6 +1445,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.nested_stradd_and_fstring",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 97,
     "sources": [
       {
         "port": "result",
@@ -1480,6 +1490,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.stradd_triggered_user_controlled",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 103,
     "sinks": [
       {
         "port": "formal(arg, position=0)[f]",
@@ -1512,6 +1524,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources_string_operations.user_controlled_input",
+    "filename": "multiple_sources_string_operations.py",
+    "callable_line": 12,
     "sources": [
       {
         "port": "result",

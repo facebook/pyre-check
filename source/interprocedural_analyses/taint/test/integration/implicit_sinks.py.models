@@ -483,6 +483,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_add_global",
+    "filename": "implicit_sinks.py",
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -507,6 +509,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_dot_format",
+    "filename": "implicit_sinks.py",
+    "callable_line": 21,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -533,6 +537,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_format_string",
+    "filename": "implicit_sinks.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -559,6 +565,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_lhs_add_literal",
+    "filename": "implicit_sinks.py",
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -585,6 +593,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_percent_format",
+    "filename": "implicit_sinks.py",
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -611,6 +621,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.propagate_sink_rhs_add_literal",
+    "filename": "implicit_sinks.py",
+    "callable_line": 39,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -637,6 +649,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sinks.string_literal_arguments_sink",
+    "filename": "implicit_sinks.py",
+    "callable_line": 92,
     "sinks": [
       {
         "port": "formal(template, position=0)",

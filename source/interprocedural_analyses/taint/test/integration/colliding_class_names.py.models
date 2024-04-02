@@ -161,6 +161,8 @@
   "kind": "model",
   "data": {
     "callable": "colliding_class_names.C.also_tainted_but_missing_from_analysis",
+    "filename": "colliding_class_names.py",
+    "callable_line": 15,
     "sources": [
       {
         "port": "result",
@@ -193,6 +195,8 @@
   "kind": "model",
   "data": {
     "callable": "colliding_class_names.C.foo",
+    "filename": "colliding_class_names.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result",

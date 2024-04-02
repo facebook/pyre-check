@@ -389,6 +389,8 @@
   "kind": "model",
   "data": {
     "callable": "top_level.foo",
+    "filename": "top_level.py",
+    "callable_line": 12,
     "sinks": [
       {
         "port": "formal(x, position=0)",

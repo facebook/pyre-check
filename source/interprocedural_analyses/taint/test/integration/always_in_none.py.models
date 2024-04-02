@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "always_in_none.ComplicatedService.serve_tainted_request",
+    "filename": "always_in_none.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -78,6 +80,8 @@
   "kind": "model",
   "data": {
     "callable": "always_in_none.test",
+    "filename": "always_in_none.py",
+    "callable_line": 17,
     "sinks": [
       {
         "port": "formal(complicated_service, position=0)",

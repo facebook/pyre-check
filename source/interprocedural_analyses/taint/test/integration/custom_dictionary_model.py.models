@@ -333,6 +333,8 @@
   "kind": "model",
   "data": {
     "callable": "custom_dictionary_model._test_source_2",
+    "filename": "custom_dictionary_model.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",

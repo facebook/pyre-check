@@ -117,6 +117,8 @@
   "kind": "model",
   "data": {
     "callable": "conditional.some_source",
+    "filename": "conditional.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",

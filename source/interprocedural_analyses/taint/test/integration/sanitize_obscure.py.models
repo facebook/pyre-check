@@ -29,6 +29,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.a_sink",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 52,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -43,6 +45,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.a_source",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result",
@@ -57,6 +61,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.b_sink",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 56,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -71,6 +77,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.b_source",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 48,
     "sources": [
       {
         "port": "result",
@@ -85,6 +93,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_a_sink_via_other_parameter_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 132,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -118,6 +128,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_a_source_via_other_parameter_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 113,
     "sources": [
       {
         "port": "result",
@@ -154,6 +166,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 85,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -187,6 +201,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 193,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -220,6 +236,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_parameter_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 137,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -253,6 +271,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 221,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -286,6 +306,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_sink_via_return_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 165,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -319,6 +341,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 99,
     "sources": [
       {
         "port": "result",
@@ -355,6 +379,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_parameter",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 179,
     "sources": [
       {
         "port": "result",
@@ -391,6 +417,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_parameter_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 118,
     "sources": [
       {
         "port": "result",
@@ -427,6 +455,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_return",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 207,
     "sources": [
       {
         "port": "result",
@@ -463,6 +493,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_source_via_return_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 151,
     "sources": [
       {
         "port": "result",
@@ -499,6 +531,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.propagation_of_b_with_sanitize_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 70,
     "sources": [
       {
         "port": "result",
@@ -535,6 +569,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_sink_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 76,
     "global_sanitizer": { "tito": { "sinks": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -543,6 +579,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_source_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 90,
     "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -551,6 +589,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 60,
     "global_sanitizer": { "tito": { "sources": [ "TestA" ] } },
     "modes": [ "Obscure" ]
   }
@@ -559,6 +599,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_all",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 14,
     "global_sanitizer": {
       "sources": "All",
       "sinks": "All",
@@ -571,6 +613,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_obscure_single_argument",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 226,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -601,6 +645,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_obscure_single_argument_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 230,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -647,6 +693,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 184,
     "sanitizers": [
       { "port": "formal(x, position=0)", "sinks": [ "TestA" ] }
     ],
@@ -657,6 +705,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_sink_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 123,
     "sanitizers": [
       { "port": "formal(x, position=0)", "tito": { "sinks": [ "TestA" ] } }
     ],
@@ -667,6 +717,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 170,
     "sanitizers": [
       { "port": "formal(x, position=0)", "sources": [ "TestA" ] }
     ],
@@ -677,6 +729,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_parameter_source_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 104,
     "sanitizers": [
       { "port": "formal(x, position=0)", "tito": { "sources": [ "TestA" ] } }
     ],
@@ -687,6 +741,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 212,
     "sanitizers": [ { "port": "result", "sinks": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
@@ -695,6 +751,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_return_sink_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 156,
     "sanitizers": [ { "port": "result", "tito": { "sinks": [ "TestA" ] } } ],
     "modes": [ "Obscure" ]
   }
@@ -703,6 +761,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_return_source_a",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 198,
     "sanitizers": [ { "port": "result", "sources": [ "TestA" ] } ],
     "modes": [ "Obscure" ]
   }
@@ -711,6 +771,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_return_source_a_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 142,
     "sanitizers": [
       { "port": "result", "tito": { "sources": [ "TestA" ] } }
     ],
@@ -721,6 +783,8 @@
   "kind": "model",
   "data": {
     "callable": "sanitize_obscure.sanitize_tito",
+    "filename": "sanitize_obscure.py",
+    "callable_line": 29,
     "global_sanitizer": { "tito": { "sources": "All", "sinks": "All" } },
     "modes": [ "Obscure" ]
   }

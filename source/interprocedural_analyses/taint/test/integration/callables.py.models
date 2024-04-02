@@ -361,6 +361,8 @@
   "kind": "model",
   "data": {
     "callable": "callables.AbstractEventProcessor.__init__",
+    "filename": "callables.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(benign, position=2)",
@@ -400,6 +402,8 @@
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_call_tainted",
+    "filename": "callables.py",
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -430,6 +434,8 @@
   "kind": "model",
   "data": {
     "callable": "callables.ConcreteEventProcessor.async_run",
+    "filename": "callables.py",
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(self, position=0)[benign]",
@@ -460,6 +466,8 @@
   "kind": "model",
   "data": {
     "callable": "callables.ProcessorInfo.__init__",
+    "filename": "callables.py",
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(processor_type, position=1)",

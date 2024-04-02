@@ -29,6 +29,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.attach_to_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 99,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -70,6 +72,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.attach_to_source",
+    "filename": "via_value_of.py",
+    "callable_line": 91,
     "sources": [
       {
         "port": "result",
@@ -113,6 +117,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.meta",
+    "filename": "via_value_of.py",
+    "callable_line": 38,
     "sources": [
       {
         "port": "result",
@@ -148,6 +154,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.meta_named",
+    "filename": "via_value_of.py",
+    "callable_line": 42,
     "sources": [
       {
         "port": "result",
@@ -181,6 +189,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.meta_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -216,6 +226,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.meta_sink_args",
+    "filename": "via_value_of.py",
+    "callable_line": 75,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -249,6 +261,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.meta_sink_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -282,6 +296,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.return_including_name",
+    "filename": "via_value_of.py",
+    "callable_line": 107,
     "sources": [
       {
         "port": "result",
@@ -310,6 +326,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.return_via_keyword_only",
+    "filename": "via_value_of.py",
+    "callable_line": 205,
     "sources": [
       {
         "port": "result",
@@ -338,6 +356,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.return_via_parameter_name",
+    "filename": "via_value_of.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result",
@@ -362,6 +382,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.return_via_second_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 115,
     "sources": [
       {
         "port": "result",
@@ -386,6 +408,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.sink_via_value_of",
+    "filename": "via_value_of.py",
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -410,6 +434,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_args_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 137,
     "sources": [
       {
         "port": "result",
@@ -445,6 +471,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_args_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 127,
     "sources": [
       {
         "port": "result",
@@ -478,6 +506,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_attach_to_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 103,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -505,6 +535,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_attach_to_source",
+    "filename": "via_value_of.py",
+    "callable_line": 95,
     "sources": [
       {
         "port": "result",
@@ -534,6 +566,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_backwards_tito",
+    "filename": "via_value_of.py",
+    "callable_line": 67,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -562,6 +596,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_bool",
+    "filename": "via_value_of.py",
+    "callable_line": 26,
     "sources": [
       {
         "port": "result",
@@ -595,6 +631,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_enums",
+    "filename": "via_value_of.py",
+    "callable_line": 30,
     "sources": [
       {
         "port": "result",
@@ -628,6 +666,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 132,
     "sources": [
       {
         "port": "result",
@@ -661,6 +701,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_missing",
+    "filename": "via_value_of.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -694,6 +736,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_named_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 148,
     "sources": [
       {
         "port": "result",
@@ -727,6 +771,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_numerals",
+    "filename": "via_value_of.py",
+    "callable_line": 22,
     "sources": [
       {
         "port": "result",
@@ -760,6 +806,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_positional_kwargs_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 143,
     "sources": [
       {
         "port": "result",
@@ -793,6 +841,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_return_including_name",
+    "filename": "via_value_of.py",
+    "callable_line": 111,
     "sources": [
       {
         "port": "result",
@@ -828,6 +878,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_return_second_parameter",
+    "filename": "via_value_of.py",
+    "callable_line": 119,
     "sources": [
       {
         "port": "result",
@@ -861,6 +913,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_return_second_parameter_keyword",
+    "filename": "via_value_of.py",
+    "callable_line": 123,
     "sources": [
       {
         "port": "result",
@@ -894,6 +948,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_return_via_keyword_only",
+    "filename": "via_value_of.py",
+    "callable_line": 209,
     "sources": [
       {
         "port": "result",
@@ -927,6 +983,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_sink",
+    "filename": "via_value_of.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(element, position=0)",
@@ -960,6 +1018,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_sinks_do_not_propagate",
+    "filename": "via_value_of.py",
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(parameter, position=0)",
@@ -994,6 +1054,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_string_literals",
+    "filename": "via_value_of.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",
@@ -1027,6 +1089,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_tito",
+    "filename": "via_value_of.py",
+    "callable_line": 54,
     "sources": [
       {
         "port": "result",
@@ -1060,6 +1124,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_named_args",
+    "filename": "via_value_of.py",
+    "callable_line": 153,
     "sources": [
       {
         "port": "result",
@@ -1095,6 +1161,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_named_args_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 193,
     "sources": [
       {
         "port": "result",
@@ -1130,6 +1198,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_named_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 158,
     "sources": [
       {
         "port": "result",
@@ -1163,6 +1233,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_args",
+    "filename": "via_value_of.py",
+    "callable_line": 163,
     "sources": [
       {
         "port": "result",
@@ -1198,6 +1270,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_kwargs",
+    "filename": "via_value_of.py",
+    "callable_line": 168,
     "sources": [
       {
         "port": "result",
@@ -1233,6 +1307,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_named_args1",
+    "filename": "via_value_of.py",
+    "callable_line": 173,
     "sources": [
       {
         "port": "result",
@@ -1268,6 +1344,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_named_args2",
+    "filename": "via_value_of.py",
+    "callable_line": 178,
     "sources": [
       {
         "port": "result",
@@ -1303,6 +1381,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_named_args_kwargs1",
+    "filename": "via_value_of.py",
+    "callable_line": 199,
     "sources": [
       {
         "port": "result",
@@ -1338,6 +1418,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_named_kwargs1",
+    "filename": "via_value_of.py",
+    "callable_line": 183,
     "sources": [
       {
         "port": "result",
@@ -1371,6 +1453,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_unknown_positional_named_kwargs2",
+    "filename": "via_value_of.py",
+    "callable_line": 188,
     "sources": [
       {
         "port": "result",
@@ -1406,6 +1490,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.test_via_value_of_does_not_propagate",
+    "filename": "via_value_of.py",
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",
@@ -1440,6 +1526,8 @@
   "kind": "model",
   "data": {
     "callable": "via_value_of.tito",
+    "filename": "via_value_of.py",
+    "callable_line": 50,
     "tito": [
       {
         "port": "formal(parameter, position=0)",

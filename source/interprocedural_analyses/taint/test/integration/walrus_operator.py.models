@@ -250,6 +250,8 @@
   "kind": "model",
   "data": {
     "callable": "walrus_operator.walrus_operator_backward",
+    "filename": "walrus_operator.py",
+    "callable_line": 16,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -269,6 +271,8 @@
   "kind": "model",
   "data": {
     "callable": "walrus_operator.walrus_operator_forward",
+    "filename": "walrus_operator.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result[1]",

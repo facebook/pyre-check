@@ -93,6 +93,7 @@ let externalize
     ~taint_configuration
     ~fixpoint_state
     ~resolve_module_path
+    ~resolve_callable_location
     ~override_graph
     callable
     result
@@ -111,6 +112,7 @@ let externalize
           ~expand_overrides:(Some override_graph)
           ~is_valid_callee:(has_significant_summary ~fixpoint_state)
           ~resolve_module_path:(Some resolve_module_path)
+          ~resolve_callable_location:(Some resolve_callable_location)
           ~export_leaf_names:Domains.ExportLeafNames.OnlyOnLeaves
           callable
           model;
@@ -122,6 +124,7 @@ let fetch_and_externalize
     ~taint_configuration
     ~fixpoint_state
     ~resolve_module_path
+    ~resolve_callable_location
     ~override_graph
     ~dump_override_models
   = function
@@ -137,6 +140,7 @@ let fetch_and_externalize
         ~taint_configuration
         ~fixpoint_state
         ~resolve_module_path
+        ~resolve_callable_location
         ~override_graph
         callable
         result
@@ -150,6 +154,7 @@ let save_results_to_directory
     ~output_format
     ~local_root
     ~resolve_module_path
+    ~resolve_callable_location
     ~override_graph
     ~skipped_overrides
     ~callables
@@ -173,6 +178,7 @@ let save_results_to_directory
         ~taint_configuration
         ~fixpoint_state
         ~resolve_module_path
+        ~resolve_callable_location
         ~override_graph
         ~dump_override_models:false
         callable

@@ -962,6 +962,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_field",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 174,
     "tito": [
       {
         "port": "formal(field, position=1)",
@@ -980,6 +982,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 180,
     "tito": [
       {
         "port": "formal(payload, position=1)[items]",
@@ -1011,6 +1015,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.ComplexEvaluator.evaluate_lazy_payload._evaluate",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 181,
     "tito": [
       {
         "port": "formal(field, position=0)",
@@ -1046,6 +1052,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.Data.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 23,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -1085,6 +1093,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.GetQuery.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 151,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1113,6 +1123,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.GetUser.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 156,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1149,6 +1161,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.Recursive.__init__",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 63,
     "tito": [
       {
         "port": "formal(select, position=1)[*][*][0][target]",
@@ -1194,6 +1208,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.add_feature",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 132,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1221,6 +1237,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.adds_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 78,
     "sources": [
       {
         "port": "formal(x, position=0)",
@@ -1276,6 +1294,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.adds_tito_inherited",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 86,
     "sources": [
       {
         "port": "formal(x, position=0)",
@@ -1331,6 +1351,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.adds_tito_with_indirect_sink",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 90,
     "sinks": [
       {
         "port": "formal(src, position=0)[add_tito]",
@@ -1366,6 +1388,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.approximate_return_access_paths",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 103,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1388,6 +1412,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.collapse_two_then_into_deep_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 317,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1413,6 +1439,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.collapse_two_then_into_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 307,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1438,6 +1466,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 322,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1466,6 +1496,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_one_and_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 354,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1494,6 +1526,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_three",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 338,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1522,6 +1556,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 330,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1550,6 +1586,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.combine_collapse_two_and_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 346,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1578,6 +1616,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.evaluate_lazy",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 165,
     "tito": [
       {
         "port": "formal(payload, position=0)[*]",
@@ -1608,6 +1648,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.get_data",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 28,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1630,6 +1672,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.get_related",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 70,
     "tito": [
       {
         "port": "formal(select, position=0)[*][*][0][target]",
@@ -1665,6 +1709,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.indirect_sink",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 94,
     "sinks": [
       {
         "port": "formal(x, position=0)[add_tito]",
@@ -1694,6 +1740,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 302,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1719,6 +1767,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 226,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1744,6 +1794,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.into_dict_then_tito_collapse",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 200,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1771,6 +1823,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_1",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 383,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1799,6 +1853,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_2",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 392,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1827,6 +1883,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.join_tito_collapse_test_3",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 415,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1855,6 +1913,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.loop_perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 362,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1885,6 +1945,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.loop_tito_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 369,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1906,6 +1968,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.loop_tito_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 376,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1930,6 +1994,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.no_tito_init_then_overwrite",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 457,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1949,6 +2015,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.perfect_tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 222,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1966,6 +2034,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_then_into_deep_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 312,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1991,6 +2061,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_then_into_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 231,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2016,6 +2088,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.perfect_tito_with_tree_manipulation",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 270,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2036,6 +2110,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.product_data",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 32,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2086,6 +2162,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.product_data_wrapper",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 50,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2128,6 +2206,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.return_taint",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 119,
     "tito": [
       {
         "port": "formal(b2, position=2)",
@@ -2169,6 +2249,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.return_taint_in_list",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 128,
     "tito": [
       {
         "port": "formal(b, position=2)",
@@ -2210,6 +2292,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 54,
     "sources": [
       {
         "port": "result[id]",
@@ -2518,6 +2602,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 279,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2547,6 +2633,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_append_a_b_c",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 275,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2566,6 +2654,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 401,
     "tito": [
       {
         "port": "formal(x, position=0)[a][b]",
@@ -2595,6 +2685,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_one_with_input_path_with_hop",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 405,
     "tito": [
       {
         "port": "formal(x, position=0)[a][b]",
@@ -2620,6 +2712,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_then_into_dict",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 205,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2647,6 +2741,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_three",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 297,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2676,6 +2772,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_three_append_a",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 293,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2695,6 +2793,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_two",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 288,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2724,6 +2824,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_collapse_two_append_a_b",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 284,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -2743,6 +2845,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_with_feature",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 136,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2773,6 +2877,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.tito_with_sink",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 468,
     "sinks": [
       {
         "port": "formal(d, position=0)[a]",
@@ -2818,6 +2924,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.user_declared_tito_collapse_one",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 438,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2835,6 +2943,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.user_declared_tito_no_collapse",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 428,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -2854,6 +2964,8 @@
   "kind": "model",
   "data": {
     "callable": "taint_in_taint_out.via_getattr",
+    "filename": "taint_in_taint_out.py",
+    "callable_line": 58,
     "tito": [
       {
         "port": "formal(y, position=1)",

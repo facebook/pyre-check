@@ -603,6 +603,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.A.multi_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 155,
     "sinks": [
       {
         "port": "formal(permissive_context, position=2)",
@@ -629,6 +631,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.B.multi_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 160,
     "sinks": [
       {
         "port": "formal(permissive_context, position=2)",
@@ -655,6 +659,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.__init__",
+    "filename": "multiple_sources.py",
+    "callable_line": 10,
     "tito": [
       {
         "port": "formal(id, position=1)",
@@ -683,6 +689,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.get",
+    "filename": "multiple_sources.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(id, position=1)",
@@ -708,6 +716,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.Node.send",
+    "filename": "multiple_sources.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(vc, position=1)",
@@ -735,6 +745,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.a_sink",
+    "filename": "multiple_sources.py",
+    "callable_line": 93,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -749,6 +761,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.a_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 80,
     "sources": [
       {
         "port": "result",
@@ -763,6 +777,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.b_source",
+    "filename": "multiple_sources.py",
+    "callable_line": 84,
     "sources": [
       {
         "port": "result",
@@ -777,6 +793,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.combines_tests_and_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 76,
     "sinks": [
       {
         "port": "formal(vc, position=1)",
@@ -803,6 +821,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
@@ -934,6 +954,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_context_more_hops",
+    "filename": "multiple_sources.py",
+    "callable_line": 143,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
@@ -1072,6 +1094,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.demonstrate_triggered_input",
+    "filename": "multiple_sources.py",
+    "callable_line": 40,
     "sinks": [
       {
         "port": "formal(id, position=0)",
@@ -1115,6 +1139,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.multiple_triggered_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 175,
     "sinks": [
       {
         "port": "formal(vc, position=0)",
@@ -1364,6 +1390,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.permissive_context",
+    "filename": "multiple_sources.py",
+    "callable_line": 25,
     "sources": [
       {
         "port": "result",
@@ -1381,6 +1409,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.sanitize_sink_a_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 113,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1406,6 +1436,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.sanitize_source_a_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 105,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1431,6 +1463,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.sanitize_source_b_tito",
+    "filename": "multiple_sources.py",
+    "callable_line": 109,
     "tito": [
       {
         "port": "formal(arg, position=0)",
@@ -1456,6 +1490,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.transform_t",
+    "filename": "multiple_sources.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -1486,6 +1522,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.user_controlled_input",
+    "filename": "multiple_sources.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -1500,6 +1538,8 @@
   "kind": "model",
   "data": {
     "callable": "multiple_sources.user_controlled_input_wrapper",
+    "filename": "multiple_sources.py",
+    "callable_line": 139,
     "sources": [
       {
         "port": "result",

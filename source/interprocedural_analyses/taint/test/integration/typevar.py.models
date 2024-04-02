@@ -61,6 +61,8 @@
   "kind": "model",
   "data": {
     "callable": "typevar.Foo.__init__",
+    "filename": "typevar.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(tainted, position=1)",
@@ -89,6 +91,8 @@
   "kind": "model",
   "data": {
     "callable": "typevar.issue",
+    "filename": "typevar.py",
+    "callable_line": 16,
     "sinks": [
       {
         "port": "formal(foo, position=0)[tainted]",

@@ -45,35 +45,35 @@ let location_to_json
       Location.start = { line = start_line; column = start_column };
       stop = { line = end_line; column = end_column };
     }
-    : Yojson.Safe.t
+    : (string * Yojson.Safe.t) list
   =
   (* If the location spans multiple lines, we only return the position of the first character. *)
-  `Assoc
-    [
-      "line", `Int start_line;
-      "start", `Int start_column;
-      "end", `Int (if start_line = end_line then end_column else start_column);
-    ]
+  [
+    "line", `Int start_line;
+    "start", `Int start_column;
+    "end", `Int (if start_line = end_line then end_column else start_column);
+  ]
 
 
-let location_with_module_to_json ~resolve_module_path location_with_module : Yojson.Safe.t =
-  let add_path fields =
-    match resolve_module_path with
-    | Some resolve_module_path -> (
-        (* SAPP expects filenames to be relative to the repository root.
-         * When the file is outside the repository, uses `*` as the filename
-         * and add the full path under the `path` key for debugging purposes. *)
-        match resolve_module_path location_with_module.Location.WithModule.module_reference with
-        | Some { RepositoryPath.filename = Some filename; _ } ->
-            ("filename", `String filename) :: fields
-        | Some { RepositoryPath.filename = None; path } ->
-            ("filename", `String "*") :: ("path", `String (PyrePath.absolute path)) :: fields
-        | None -> ("filename", `String "*") :: fields)
-    | None -> fields
-  in
-  match location_to_json (Location.strip_module location_with_module) with
-  | `Assoc fields -> `Assoc (add_path fields)
-  | _ -> failwith "unreachable"
+let module_path_to_json ~resolve_module_path module_reference : (string * Yojson.Safe.t) list =
+  match resolve_module_path with
+  | Some resolve_module_path -> (
+      (* SAPP expects filenames to be relative to the repository root.
+       * When the file is outside the repository, uses `*` as the filename
+       * and add the full path under the `path` key for debugging purposes. *)
+      match resolve_module_path module_reference with
+      | Some { RepositoryPath.filename = Some filename; _ } -> ["filename", `String filename]
+      | Some { RepositoryPath.filename = None; path } ->
+          ["filename", `String "*"; "path", `String (PyrePath.absolute path)]
+      | None -> ["filename", `String "*"])
+  | None -> []
+
+
+let location_with_module_to_json ~resolve_module_path location_with_module
+    : (string * Yojson.Safe.t) list
+  =
+  module_path_to_json ~resolve_module_path location_with_module.Location.WithModule.module_reference
+  @ location_to_json (Location.strip_module location_with_module)
 
 
 (* Class intervals reduce false positives by removing traces in which the taint is propagated along
@@ -252,7 +252,7 @@ module CallInfo = struct
     | Origin { location; class_intervals } ->
         let location_json = location_with_module_to_json ~resolve_module_path location in
         let class_intervals_json_list = class_intervals_to_json class_intervals in
-        ("origin", location_json) :: class_intervals_json_list
+        ("origin", `Assoc location_json) :: class_intervals_json_list
     | CallSite { location; callees; port; path; class_intervals } ->
         let callee_json =
           callees |> List.map ~f:(fun callable -> `String (Target.external_name callable))
@@ -262,7 +262,7 @@ module CallInfo = struct
         let call_json =
           `Assoc
             [
-              "position", location_json;
+              "position", `Assoc location_json;
               "resolves_to", `List callee_json;
               "port", `String (AccessPath.show full_port);
             ]
@@ -778,6 +778,7 @@ end = struct
         LocalTaintDomain.get LocalTaintDomain.Slots.TitoPosition local_taint
         |> TitoPositionSet.elements
         |> List.map ~f:location_to_json
+        |> List.map ~f:(fun elements -> `Assoc elements)
       in
       let json = cons_if_non_empty "tito_positions" tito_positions json in
 

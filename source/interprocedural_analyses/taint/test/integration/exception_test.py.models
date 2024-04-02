@@ -142,6 +142,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.none_throws",
+    "filename": "exception_test.py",
+    "callable_line": 25,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -159,6 +161,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_before_try_to_finally",
+    "filename": "exception_test.py",
+    "callable_line": 38,
     "sources": [
       {
         "port": "result",
@@ -258,6 +262,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_caught_exception",
+    "filename": "exception_test.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",
@@ -287,6 +293,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_constructed_exception",
+    "filename": "exception_test.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -316,6 +324,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_parameter_flow",
+    "filename": "exception_test.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -366,6 +376,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_return_finally",
+    "filename": "exception_test.py",
+    "callable_line": 66,
     "sources": [
       {
         "port": "result",
@@ -396,6 +408,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_return_overrides_finally",
+    "filename": "exception_test.py",
+    "callable_line": 80,
     "sources": [
       {
         "port": "result",
@@ -426,6 +440,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_return_twice_finally",
+    "filename": "exception_test.py",
+    "callable_line": 73,
     "sources": [
       {
         "port": "result",
@@ -456,6 +472,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_sink_in_finally",
+    "filename": "exception_test.py",
+    "callable_line": 31,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -503,6 +521,8 @@
   "kind": "model",
   "data": {
     "callable": "exception_test.test_within_try_to_finally",
+    "filename": "exception_test.py",
+    "callable_line": 46,
     "sources": [
       {
         "port": "result",

@@ -1252,6 +1252,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.Test1_C.__init__",
+    "filename": "via_type_of.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(z, position=3)",
@@ -1504,6 +1506,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.meta",
+    "filename": "via_type_of.py",
+    "callable_line": 165,
     "sources": [
       {
         "port": "result",
@@ -1537,6 +1541,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.return_via_parameter_type",
+    "filename": "via_type_of.py",
+    "callable_line": 149,
     "sources": [
       {
         "port": "result",
@@ -1561,6 +1567,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.sink_via_type_of",
+    "filename": "via_type_of.py",
+    "callable_line": 182,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1589,6 +1597,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm1",
+    "filename": "via_type_of.py",
+    "callable_line": 100,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -1687,6 +1697,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm2",
+    "filename": "via_type_of.py",
+    "callable_line": 105,
     "sinks": [
       {
         "port": "formal(c, position=0)[y]",
@@ -1783,6 +1795,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm3",
+    "filename": "via_type_of.py",
+    "callable_line": 110,
     "sinks": [
       {
         "port": "formal(c, position=0)[z]",
@@ -1881,6 +1895,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test3_alarm4",
+    "filename": "via_type_of.py",
+    "callable_line": 115,
     "sinks": [
       {
         "port": "formal(c, position=0)[x]",
@@ -2063,6 +2079,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_backwards_tito",
+    "filename": "via_type_of.py",
+    "callable_line": 190,
     "tito": [
       {
         "port": "formal(parameter, position=0)",
@@ -2090,6 +2108,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_lists",
+    "filename": "via_type_of.py",
+    "callable_line": 161,
     "sources": [
       {
         "port": "result",
@@ -2123,6 +2143,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_numerals",
+    "filename": "via_type_of.py",
+    "callable_line": 157,
     "sources": [
       {
         "port": "result",
@@ -2156,6 +2178,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_sink",
+    "filename": "via_type_of.py",
+    "callable_line": 186,
     "sinks": [
       {
         "port": "formal(element, position=0)",
@@ -2189,6 +2213,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_strings",
+    "filename": "via_type_of.py",
+    "callable_line": 153,
     "sources": [
       {
         "port": "result",
@@ -2222,6 +2248,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_tito",
+    "filename": "via_type_of.py",
+    "callable_line": 177,
     "sources": [
       {
         "port": "result",
@@ -2256,6 +2284,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.test_via_type_of_does_not_propagate",
+    "filename": "via_type_of.py",
+    "callable_line": 169,
     "sources": [
       {
         "port": "result",
@@ -2288,6 +2318,8 @@
   "kind": "model",
   "data": {
     "callable": "via_type_of.tito",
+    "filename": "via_type_of.py",
+    "callable_line": 173,
     "tito": [
       {
         "port": "formal(parameter, position=0)",

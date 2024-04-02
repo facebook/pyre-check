@@ -3,6 +3,8 @@
   "kind": "model",
   "data": {
     "callable": "callable_classes.CallableProtocol.__call__",
+    "filename": "callable_classes.py",
+    "callable_line": 26,
     "sources": [
       {
         "port": "result",
@@ -28,6 +30,8 @@
   "kind": "model",
   "data": {
     "callable": "callable_classes.P.__call__",
+    "filename": "callable_classes.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result",
@@ -53,6 +57,8 @@
   "kind": "model",
   "data": {
     "callable": "callable_classes.bar",
+    "filename": "callable_classes.py",
+    "callable_line": 34,
     "sources": [
       {
         "port": "result",
@@ -88,6 +94,8 @@
   "kind": "model",
   "data": {
     "callable": "callable_classes.foo",
+    "filename": "callable_classes.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",

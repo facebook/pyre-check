@@ -192,6 +192,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.Test1_C.__init__",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 12,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -209,6 +211,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.Test1_C1.__init__",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 19,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -226,6 +230,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.Test1_C2.__init__",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 26,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -243,6 +249,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.Test1_D.__init__",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 33,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -260,6 +268,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.Test2_D.foo",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 53,
     "sinks": [
       {
         "port": "formal(attribute, position=1)",
@@ -273,6 +283,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.UnrelatedClass.__init__",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 60,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -290,6 +302,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.misc_noalarm1",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 115,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -318,6 +332,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.misc_noalarm2",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 119,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -346,6 +362,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm1",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 67,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -445,6 +463,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm2",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -544,6 +564,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm3",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 75,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -647,6 +669,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm4",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -750,6 +774,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm5",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -845,6 +871,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_alarm6",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 87,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",
@@ -940,6 +968,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_noalarm1",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 91,
     "sinks": [
       {
         "port": "formal(c, position=0)[attribute]",
@@ -968,6 +998,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_transitive_extends.test1_noalarm2",
+    "filename": "model_query_transitive_extends.py",
+    "callable_line": 95,
     "sinks": [
       {
         "port": "formal(c, position=0)[instance]",

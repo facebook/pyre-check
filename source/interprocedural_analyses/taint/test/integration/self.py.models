@@ -2247,6 +2247,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.__init__",
+    "filename": "self.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "formal(tainted_instance, position=1)",
@@ -2348,6 +2350,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_access_other",
+    "filename": "self.py",
+    "callable_line": 97,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2365,6 +2369,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_access_self",
+    "filename": "self.py",
+    "callable_line": 94,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2382,6 +2388,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_access_untyped_self",
+    "filename": "self.py",
+    "callable_line": 100,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2399,6 +2407,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_self_class",
+    "filename": "self.py",
+    "callable_line": 76,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -2440,6 +2450,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_self_class_direct",
+    "filename": "self.py",
+    "callable_line": 72,
     "sinks": [
       {
         "port": "formal(self, position=0)[__class__][tainted_class]",
@@ -2481,6 +2493,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_self_extra_instance",
+    "filename": "self.py",
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2522,6 +2536,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_self_instance",
+    "filename": "self.py",
+    "callable_line": 80,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -2563,6 +2579,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.selftype_self_not_tainted",
+    "filename": "self.py",
+    "callable_line": 88,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",
@@ -2648,6 +2666,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_access_other",
+    "filename": "self.py",
+    "callable_line": 68,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2665,6 +2685,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_access_self",
+    "filename": "self.py",
+    "callable_line": 65,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2682,6 +2704,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_class",
+    "filename": "self.py",
+    "callable_line": 47,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -2723,6 +2747,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_class_direct",
+    "filename": "self.py",
+    "callable_line": 43,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -2842,6 +2868,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_extra_instance",
+    "filename": "self.py",
+    "callable_line": 55,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -2883,6 +2911,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_instance",
+    "filename": "self.py",
+    "callable_line": 51,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -2924,6 +2954,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.typevar_self_not_tainted",
+    "filename": "self.py",
+    "callable_line": 59,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",
@@ -3009,6 +3041,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_access_self",
+    "filename": "self.py",
+    "callable_line": 40,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -3026,6 +3060,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_self_class",
+    "filename": "self.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_class]",
@@ -3056,6 +3092,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_self_class_direct",
+    "filename": "self.py",
+    "callable_line": 23,
     "sinks": [
       {
         "port": "formal(self, position=0)",
@@ -3164,6 +3202,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_self_extra_instance",
+    "filename": "self.py",
+    "callable_line": 32,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_extra_instance]",
@@ -3194,6 +3234,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_self_instance",
+    "filename": "self.py",
+    "callable_line": 29,
     "sinks": [
       {
         "port": "formal(self, position=0)[tainted_instance]",
@@ -3224,6 +3266,8 @@
   "kind": "model",
   "data": {
     "callable": "self.Foo.untyped_self_not_tainted",
+    "filename": "self.py",
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(self, position=0)[not_tainted_class]",

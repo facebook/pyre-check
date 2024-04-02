@@ -874,6 +874,8 @@
   "kind": "model",
   "data": {
     "callable": "overmatching.sink_on_0",
+    "filename": "overmatching.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(x, position=0)[0]",
@@ -905,6 +907,8 @@
   "kind": "model",
   "data": {
     "callable": "overmatching.sink_on_0_and_star",
+    "filename": "overmatching.py",
+    "callable_line": 14,
     "sinks": [
       {
         "port": "formal(x, position=0)[*]",

@@ -466,6 +466,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.NestedDefineConstructor.__init__",
+    "filename": "partial.py",
+    "callable_line": 87,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -505,6 +507,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.NestedDefineDecorator.__call__",
+    "filename": "partial.py",
+    "callable_line": 80,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -556,6 +560,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.NestedDefineDecorator.__get__.wrapper",
+    "filename": "partial.py",
+    "callable_line": 74,
     "tito": [
       {
         "port": "captured_variable($parameter$self)[_func]",
@@ -646,6 +652,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.NestedDefineDecorator.__init__",
+    "filename": "partial.py",
+    "callable_line": 70,
     "tito": [
       {
         "port": "formal(func, position=1)",
@@ -674,6 +682,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.PartialConstructor.__init__",
+    "filename": "partial.py",
+    "callable_line": 59,
     "tito": [
       {
         "port": "formal(y, position=2)",
@@ -713,6 +723,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.PartialDecorator.__call__",
+    "filename": "partial.py",
+    "callable_line": 52,
     "tito": [
       {
         "port": "formal(**kwargs, excluded=[self])[*]",
@@ -764,6 +776,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.PartialDecorator.__get__",
+    "filename": "partial.py",
+    "callable_line": 49,
     "tito": [
       {
         "port": "formal(instance, position=1)",
@@ -812,6 +826,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.PartialDecorator.__init__",
+    "filename": "partial.py",
+    "callable_line": 46,
     "tito": [
       {
         "port": "formal(func, position=1)",
@@ -840,6 +856,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.a_flows_to_sink",
+    "filename": "partial.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -868,6 +886,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.dunder_call_nested_define_constructor",
+    "filename": "partial.py",
+    "callable_line": 92,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -898,6 +918,8 @@
   "kind": "model",
   "data": {
     "callable": "partial.dunder_call_partial_constructor",
+    "filename": "partial.py",
+    "callable_line": 64,
     "tito": [
       {
         "port": "formal(y, position=1)",

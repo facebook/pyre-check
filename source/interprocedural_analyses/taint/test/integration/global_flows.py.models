@@ -581,6 +581,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.MyList.append",
+    "filename": "global_flows.py",
+    "callable_line": 57,
     "tito": [
       {
         "port": "formal(item, position=1)",
@@ -601,6 +603,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.append_argument",
+    "filename": "global_flows.py",
+    "callable_line": 68,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -632,6 +636,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.indirectly_update_x_arg1",
+    "filename": "global_flows.py",
+    "callable_line": 36,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -663,6 +669,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.indirectly_update_x_arg2",
+    "filename": "global_flows.py",
+    "callable_line": 48,
     "sinks": [
       {
         "port": "formal(arg, position=0)",
@@ -694,6 +702,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.update_arg1",
+    "filename": "global_flows.py",
+    "callable_line": 9,
     "tito": [
       {
         "port": "formal(arg2, position=1)",
@@ -714,6 +724,8 @@
   "kind": "model",
   "data": {
     "callable": "global_flows.update_arg2",
+    "filename": "global_flows.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(arg1, position=0)",

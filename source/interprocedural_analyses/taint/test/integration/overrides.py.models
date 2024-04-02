@@ -1219,6 +1219,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.__init__",
+    "filename": "overrides.py",
+    "callable_line": 31,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1255,6 +1257,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.A.methodA",
+    "filename": "overrides.py",
+    "callable_line": 34,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1285,6 +1289,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.AnalyzeAllOverridesChild3.return_source",
+    "filename": "overrides.py",
+    "callable_line": 202,
     "sources": [
       {
         "port": "result",
@@ -1317,6 +1323,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.B.__init__",
+    "filename": "overrides.py",
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1353,6 +1361,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.B.classMethod",
+    "filename": "overrides.py",
+    "callable_line": 48,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1383,6 +1393,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.B.methodB",
+    "filename": "overrides.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result",
@@ -1415,6 +1427,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.Base.__init__",
+    "filename": "overrides.py",
+    "callable_line": 14,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1443,6 +1457,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.BaseWithDeclaration.return_source",
+    "filename": "overrides.py",
+    "callable_line": 237,
     "sources": [
       {
         "port": "result",
@@ -1455,6 +1471,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.C.__init__",
+    "filename": "overrides.py",
+    "callable_line": 55,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1491,6 +1509,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.__init__",
+    "filename": "overrides.py",
+    "callable_line": 67,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1527,6 +1547,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.methodA",
+    "filename": "overrides.py",
+    "callable_line": 70,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1557,6 +1579,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.D.methodB",
+    "filename": "overrides.py",
+    "callable_line": 73,
     "sources": [
       {
         "port": "result",
@@ -1589,6 +1613,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.DerivedWithDeclaration.return_source",
+    "filename": "overrides.py",
+    "callable_line": 242,
     "sources": [
       {
         "port": "result",
@@ -1601,6 +1627,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.ExtendsSkipped.method",
+    "filename": "overrides.py",
+    "callable_line": 180,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -1631,6 +1659,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.OverloadedOverride.methodA",
+    "filename": "overrides.py",
+    "callable_line": 170,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1648,6 +1678,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.SkippedOverrides.method",
+    "filename": "overrides.py",
+    "callable_line": 175,
     "tito": [
       {
         "port": "formal(arg, position=1)",
@@ -1666,6 +1698,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.TooManyOverridesChild3.return_source",
+    "filename": "overrides.py",
+    "callable_line": 228,
     "sources": [
       {
         "port": "result",
@@ -1698,6 +1732,8 @@
   "kind": "model",
   "data": {
     "callable": "overrides.constructorTest",
+    "filename": "overrides.py",
+    "callable_line": 157,
     "sources": [
       {
         "port": "result[r]",

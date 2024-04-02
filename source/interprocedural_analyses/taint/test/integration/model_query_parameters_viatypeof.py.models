@@ -961,6 +961,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_viatypeof.Test2_C.f1",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 34,
     "sinks": [
       {
         "port": "formal(c, position=3)",
@@ -1017,6 +1019,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_viatypeof.Test2_C.f2",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 37,
     "sinks": [
       {
         "port": "formal(c, position=3)",
@@ -1073,6 +1077,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_viatypeof.test1_f1",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 10,
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -1129,6 +1135,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_parameters_viatypeof.test3_f1",
+    "filename": "model_query_parameters_viatypeof.py",
+    "callable_line": 83,
     "sinks": [
       {
         "port": "formal(c, position=2)",

@@ -288,6 +288,12 @@ let get_module_and_definition ~pyre_api callable =
   Map.find_opt callable callables >>| fun define -> qualifier, define
 
 
+let get_callable_location ~pyre_api callable =
+  get_module_and_definition ~pyre_api callable
+  >>| fun (module_reference, { Node.location; _ }) ->
+  Location.with_module ~module_reference location
+
+
 let resolve_method ~pyre_api ~class_type ~method_name =
   let callable_implementation =
     Type.split class_type

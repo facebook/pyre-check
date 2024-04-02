@@ -676,6 +676,7 @@ let to_json
     ~expand_overrides
     ~is_valid_callee
     ~resolve_module_path
+    ~resolve_callable_location
     ~export_leaf_names
     callable
     {
@@ -688,6 +689,19 @@ let to_json
   =
   let callable_name = Target.external_name callable in
   let model_json = ["callable", `String callable_name] in
+  let model_json =
+    match resolve_callable_location with
+    | Some resolve_callable_location when Target.is_function_or_method callable ->
+        let location_json =
+          resolve_callable_location callable
+          >>| (fun { Ast.Location.WithModule.module_reference; start = { line; _ }; _ } ->
+                Domains.module_path_to_json ~resolve_module_path module_reference
+                @ ["callable_line", `Int line])
+          |> Option.value ~default:[]
+        in
+        model_json @ location_json
+    | _ -> model_json
+  in
   let model_json =
     if not (ForwardState.is_empty source_taint) then
       model_json

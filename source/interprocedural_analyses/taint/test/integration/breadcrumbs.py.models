@@ -49,6 +49,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.TpmRequest.__init__",
+    "filename": "breadcrumbs.py",
+    "callable_line": 38,
     "tito": [
       {
         "port": "formal(ids_list, position=2)",
@@ -89,6 +91,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.bool_parameter",
+    "filename": "breadcrumbs.py",
+    "callable_line": 30,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -120,6 +124,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.bool_source",
+    "filename": "breadcrumbs.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",
@@ -153,6 +159,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.float_parameter",
+    "filename": "breadcrumbs.py",
+    "callable_line": 26,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -182,6 +190,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.float_source",
+    "filename": "breadcrumbs.py",
+    "callable_line": 14,
     "sources": [
       {
         "port": "result",
@@ -213,6 +223,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.int_parameter",
+    "filename": "breadcrumbs.py",
+    "callable_line": 22,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -244,6 +256,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.int_source",
+    "filename": "breadcrumbs.py",
+    "callable_line": 10,
     "sources": [
       {
         "port": "result",
@@ -277,6 +291,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.scalar_attribute_backward",
+    "filename": "breadcrumbs.py",
+    "callable_line": 50,
     "sinks": [
       {
         "port": "formal(request, position=0)[id_float]",
@@ -365,6 +381,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.scalar_attribute_forward",
+    "filename": "breadcrumbs.py",
+    "callable_line": 64,
     "sources": [
       {
         "port": "result",
@@ -412,6 +430,8 @@
   "kind": "model",
   "data": {
     "callable": "breadcrumbs.tpm_request",
+    "filename": "breadcrumbs.py",
+    "callable_line": 47,
     "sources": [
       {
         "port": "result",

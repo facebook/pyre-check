@@ -3,6 +3,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.bar_dot_format",
+    "filename": "implicit_sources.py",
+    "callable_line": 23,
     "sources": [
       {
         "port": "result",
@@ -25,6 +27,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.bar_format_strings",
+    "filename": "implicit_sources.py",
+    "callable_line": 13,
     "sources": [
       {
         "port": "result",
@@ -47,6 +51,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.bar_percent_format",
+    "filename": "implicit_sources.py",
+    "callable_line": 18,
     "sources": [
       {
         "port": "result",
@@ -69,6 +75,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.foo",
+    "filename": "implicit_sources.py",
+    "callable_line": 9,
     "sources": [
       {
         "port": "result",
@@ -91,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.multiple_patterns",
+    "filename": "implicit_sources.py",
+    "callable_line": 32,
     "sources": [
       {
         "port": "result",
@@ -113,6 +123,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.string_literal_arguments_source",
+    "filename": "implicit_sources.py",
+    "callable_line": 55,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -162,6 +174,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.string_source_not_top_level",
+    "filename": "implicit_sources.py",
+    "callable_line": 44,
     "sources": [
       {
         "port": "result[key]",
@@ -184,6 +198,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.string_source_top_level",
+    "filename": "implicit_sources.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result[key]",
@@ -206,6 +222,8 @@
   "kind": "model",
   "data": {
     "callable": "implicit_sources.toplevel_simultaneous_assignment",
+    "filename": "implicit_sources.py",
+    "callable_line": 65,
     "sources": [
       {
         "port": "result",

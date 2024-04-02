@@ -1023,6 +1023,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.__init__",
+    "filename": "properties.py",
+    "callable_line": 13,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1040,6 +1042,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.my_property",
+    "filename": "properties.py",
+    "callable_line": 18,
     "tito": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -1057,6 +1061,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.uses_other",
+    "filename": "properties.py",
+    "callable_line": 29,
     "sources": [
       {
         "port": "result",
@@ -1110,6 +1116,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.uses_property",
+    "filename": "properties.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -1165,6 +1173,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Class.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 25,
     "sources": [
       {
         "port": "result",
@@ -1218,6 +1228,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.ClassProperty.my_class_property",
+    "filename": "properties.py",
+    "callable_line": 124,
     "sources": [
       {
         "port": "result",
@@ -1240,6 +1252,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.CollidePropertySetterName.collided_property@setter",
+    "filename": "properties.py",
+    "callable_line": 255,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1257,6 +1271,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Derived.uses_property",
+    "filename": "properties.py",
+    "callable_line": 37,
     "sources": [
       {
         "port": "result",
@@ -1291,6 +1307,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.Derived.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 41,
     "tito": [
       {
         "port": "formal(self, position=0)[tainted]",
@@ -1316,6 +1334,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.DerivedTaintedSetter.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 82,
     "sinks": [
       {
         "port": "formal(value, position=1)",
@@ -1357,6 +1377,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.GrandDerived.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 92,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1374,6 +1396,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.OtherDerived.my_property",
+    "filename": "properties.py",
+    "callable_line": 48,
     "sources": [
       {
         "port": "result",
@@ -1406,6 +1430,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.OtherDerived.uses_property_but_no_tito_taint",
+    "filename": "properties.py",
+    "callable_line": 51,
     "sources": [
       {
         "port": "result",
@@ -1440,6 +1466,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertyCallable.__init__",
+    "filename": "properties.py",
+    "callable_line": 176,
     "tito": [
       {
         "port": "formal(z, position=1)",
@@ -1468,6 +1496,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertyCallable.attribute",
+    "filename": "properties.py",
+    "callable_line": 180,
     "sources": [
       {
         "port": "result[x]",
@@ -1526,6 +1556,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertyCallableReturn.__call__",
+    "filename": "properties.py",
+    "callable_line": 169,
     "sinks": [
       {
         "port": "formal(y, position=1)",
@@ -1578,6 +1610,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertyCallableReturn.__init__",
+    "filename": "properties.py",
+    "callable_line": 166,
     "tito": [
       {
         "port": "formal(x, position=1)",
@@ -1606,6 +1640,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.__init__",
+    "filename": "properties.py",
+    "callable_line": 146,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -1642,6 +1678,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x",
+    "filename": "properties.py",
+    "callable_line": 151,
     "tito": [
       {
         "port": "formal(self, position=0)[underlying]",
@@ -1659,6 +1697,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.PropertySetterInConstructor.x@setter",
+    "filename": "properties.py",
+    "callable_line": 155,
     "tito": [
       {
         "port": "formal(x_value, position=1)",
@@ -1690,6 +1730,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.RegularAttribute.__init__",
+    "filename": "properties.py",
+    "callable_line": 191,
     "tito": [
       {
         "port": "formal(my_property, position=1)",
@@ -1721,6 +1763,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.__init__",
+    "filename": "properties.py",
+    "callable_line": 101,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -1738,6 +1782,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p",
+    "filename": "properties.py",
+    "callable_line": 105,
     "tito": [
       {
         "port": "formal(self, position=0)[_p]",
@@ -1755,6 +1801,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.SetterMutatesValue.p@setter",
+    "filename": "properties.py",
+    "callable_line": 109,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -1783,6 +1831,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.TaintedGetterAndSetter.my_property",
+    "filename": "properties.py",
+    "callable_line": 59,
     "sources": [
       {
         "port": "result",
@@ -1819,6 +1869,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.TaintedGetterAndSetter.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 66,
     "sources": [
       {
         "port": "formal(self, position=0)",
@@ -1883,6 +1935,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.TaintedGetterAndSetter.uses_property",
+    "filename": "properties.py",
+    "callable_line": 69,
     "sources": [
       {
         "port": "result",
@@ -1947,6 +2001,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.function_with_nested_properties.my_property@setter",
+    "filename": "properties.py",
+    "callable_line": 233,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -2031,6 +2087,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.test_getattr_on_property",
+    "filename": "properties.py",
+    "callable_line": 213,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2132,6 +2190,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.test_type_variable_properties_are_resolved",
+    "filename": "properties.py",
+    "callable_line": 141,
     "tito": [
       {
         "port": "formal(x, position=0)[tainted]",
@@ -2157,6 +2217,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.test_union_property_attribute_sink",
+    "filename": "properties.py",
+    "callable_line": 204,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -2277,6 +2339,8 @@
   "kind": "model",
   "data": {
     "callable": "properties.test_union_property_attribute_source",
+    "filename": "properties.py",
+    "callable_line": 195,
     "sources": [
       {
         "port": "result",

@@ -29,6 +29,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.A.bar",
+    "filename": "model_query_cache.py",
+    "callable_line": 17,
     "sources": [
       {
         "port": "result[get_A_bar]",
@@ -41,6 +43,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.B.bar",
+    "filename": "model_query_cache.py",
+    "callable_line": 25,
     "sources": [
       {
         "port": "result[get_AnyOf_BC_bar]",
@@ -53,6 +57,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.B.foo",
+    "filename": "model_query_cache.py",
+    "callable_line": 22,
     "sources": [
       {
         "port": "result[get_B_foo]",
@@ -65,6 +71,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.BarTable.attribute_x",
+    "filename": "model_query_cache.py",
+    "callable_line": 88,
     "sources": [
       {
         "port": "result[get_table_Bar_x]",
@@ -77,6 +85,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.C.bar",
+    "filename": "model_query_cache.py",
+    "callable_line": 33,
     "sources": [
       {
         "port": "result[get_AnyOf_BC_bar]",
@@ -89,6 +99,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.FooTable.attribute_x",
+    "filename": "model_query_cache.py",
+    "callable_line": 80,
     "sources": [
       {
         "port": "result[get_invalid_table]",
@@ -101,6 +113,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.FooTable.attribute_y",
+    "filename": "model_query_cache.py",
+    "callable_line": 83,
     "sources": [
       {
         "port": "result[get_invalid_table]",
@@ -117,6 +131,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.X.foo",
+    "filename": "model_query_cache.py",
+    "callable_line": 51,
     "sources": [
       {
         "port": "result[get_decorated_foo]",
@@ -129,6 +145,8 @@
   "kind": "model",
   "data": {
     "callable": "model_query_cache.Y.foo",
+    "filename": "model_query_cache.py",
+    "callable_line": 60,
     "sources": [
       {
         "port": "result[get_decorated_foo]",

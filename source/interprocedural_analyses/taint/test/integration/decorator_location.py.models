@@ -691,6 +691,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.Foo.return_source",
+    "filename": "decorator_location.py",
+    "callable_line": 121,
     "sources": [
       {
         "port": "result",
@@ -726,6 +728,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator",
+    "filename": "decorator_location.py",
+    "callable_line": 79,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -757,6 +761,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator_class",
+    "filename": "decorator_location.py",
+    "callable_line": 89,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -788,6 +794,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_ignore_this_decorator_factory",
+    "filename": "decorator_location.py",
+    "callable_line": 84,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -819,6 +827,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging2_skip_this_decorator",
+    "filename": "decorator_location.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -860,6 +870,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging2_skip_this_decorator._inlined_with_logging2",
+    "filename": "decorator_location.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -919,6 +931,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging2_skip_this_decorator._original_function",
+    "filename": "decorator_location.py",
+    "callable_line": 74,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -950,6 +964,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_ignore_this_decorator",
+    "filename": "decorator_location.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -991,6 +1007,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging",
+    "filename": "decorator_location.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1078,6 +1096,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._inlined_with_logging.some_helper",
+    "filename": "decorator_location.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1109,6 +1129,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_ignore_this_decorator._original_function",
+    "filename": "decorator_location.py",
+    "callable_line": 101,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1140,6 +1162,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_logging2",
+    "filename": "decorator_location.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1181,6 +1205,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging",
+    "filename": "decorator_location.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1268,6 +1294,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging.some_helper",
+    "filename": "decorator_location.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1299,6 +1327,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_logging2._inlined_with_logging2",
+    "filename": "decorator_location.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1358,6 +1388,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.decorated_logging_logging2._original_function",
+    "filename": "decorator_location.py",
+    "callable_line": 63,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1389,6 +1421,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.handle_request",
+    "filename": "decorator_location.py",
+    "callable_line": 116,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -1423,6 +1457,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.handle_request._inlined_pass_local_variable_to_x",
+    "filename": "decorator_location.py",
+    "callable_line": 116,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -1451,6 +1487,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.handle_request._original_function",
+    "filename": "decorator_location.py",
+    "callable_line": 116,
     "sinks": [
       {
         "port": "formal(x, position=1)",
@@ -1482,6 +1520,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.identity.inner",
+    "filename": "decorator_location.py",
+    "callable_line": 128,
     "tito": [
       {
         "port": "captured_variable($parameter$f)",
@@ -1525,6 +1565,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.ignore_this_decorator",
+    "filename": "decorator_location.py",
+    "callable_line": 42,
     "tito": [
       {
         "port": "formal(f, position=0)",
@@ -1543,6 +1585,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.ignore_this_decorator_class.__call__",
+    "filename": "decorator_location.py",
+    "callable_line": 57,
     "tito": [
       {
         "port": "formal(f, position=1)",
@@ -1561,6 +1605,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.pass_local_variable_to_x.inner",
+    "filename": "decorator_location.py",
+    "callable_line": 107,
     "sinks": [
       {
         "port": "formal(request, position=0)",
@@ -1589,6 +1635,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.skip_this_decorator.inner",
+    "filename": "decorator_location.py",
+    "callable_line": 35,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1620,6 +1668,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.inner",
+    "filename": "decorator_location.py",
+    "callable_line": 18,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1679,6 +1729,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging.some_helper",
+    "filename": "decorator_location.py",
+    "callable_line": 14,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1710,6 +1762,8 @@
   "kind": "model",
   "data": {
     "callable": "decorator_location.with_logging2.inner",
+    "filename": "decorator_location.py",
+    "callable_line": 27,
     "sinks": [
       {
         "port": "formal(x, position=0)",

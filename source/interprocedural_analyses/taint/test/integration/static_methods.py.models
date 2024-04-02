@@ -322,6 +322,8 @@
   "kind": "model",
   "data": {
     "callable": "static_methods.StaticClass.sink",
+    "filename": "static_methods.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(oops, position=0)",
@@ -350,6 +352,8 @@
   "kind": "model",
   "data": {
     "callable": "static_methods.test",
+    "filename": "static_methods.py",
+    "callable_line": 15,
     "sinks": [
       {
         "port": "formal(source, position=0)",

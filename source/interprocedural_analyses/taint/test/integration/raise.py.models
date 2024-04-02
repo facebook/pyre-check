@@ -384,6 +384,8 @@
   "kind": "model",
   "data": {
     "callable": "raise.backward",
+    "filename": "raise.py",
+    "callable_line": 13,
     "sinks": [
       {
         "port": "formal(x, position=0)",

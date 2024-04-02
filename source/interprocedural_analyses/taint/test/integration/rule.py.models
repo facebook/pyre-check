@@ -66,6 +66,8 @@
   "kind": "model",
   "data": {
     "callable": "rule.sink",
+    "filename": "rule.py",
+    "callable_line": 11,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -80,6 +82,8 @@
   "kind": "model",
   "data": {
     "callable": "rule.source",
+    "filename": "rule.py",
+    "callable_line": 7,
     "sources": [
       {
         "port": "result",

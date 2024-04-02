@@ -1069,6 +1069,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.A.__init__",
+    "filename": "string_conversion.py",
+    "callable_line": 56,
     "tito": [
       {
         "port": "formal(value, position=1)",
@@ -1097,6 +1099,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.A.__str__",
+    "filename": "string_conversion.py",
+    "callable_line": 59,
     "tito": [
       {
         "port": "formal(self, position=0)[value]",
@@ -1114,6 +1118,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.B.__str__",
+    "filename": "string_conversion.py",
+    "callable_line": 79,
     "tito": [
       {
         "port": "formal(self, position=0)[f]",
@@ -1131,6 +1137,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.C.__str__",
+    "filename": "string_conversion.py",
+    "callable_line": 86,
     "sources": [
       {
         "port": "result",
@@ -1176,6 +1184,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.OverrideStr.__str__",
+    "filename": "string_conversion.py",
+    "callable_line": 168,
     "sources": [
       {
         "port": "result",
@@ -1212,6 +1222,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.ReprIsTainted.__repr__",
+    "filename": "string_conversion.py",
+    "callable_line": 21,
     "sources": [
       {
         "port": "result",
@@ -1249,6 +1261,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.StrIsTainted.__str__",
+    "filename": "string_conversion.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "result",
@@ -1286,6 +1300,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.any_type",
+    "filename": "string_conversion.py",
+    "callable_line": 159,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1307,6 +1323,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.backward_unioned_callees",
+    "filename": "string_conversion.py",
+    "callable_line": 151,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1330,6 +1348,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.backward_unioned_callees_2",
+    "filename": "string_conversion.py",
+    "callable_line": 155,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1351,6 +1371,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.base_exception",
+    "filename": "string_conversion.py",
+    "callable_line": 173,
     "tito": [
       {
         "port": "formal(e, position=0)",
@@ -1383,6 +1405,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.compute_tito",
+    "filename": "string_conversion.py",
+    "callable_line": 131,
     "tito": [
       {
         "port": "formal(y, position=1)",
@@ -1435,6 +1459,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.forward_unioned_callees",
+    "filename": "string_conversion.py",
+    "callable_line": 141,
     "sources": [
       {
         "port": "result",
@@ -1471,6 +1497,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.forward_unioned_callees_2",
+    "filename": "string_conversion.py",
+    "callable_line": 146,
     "sources": [
       {
         "port": "result",
@@ -1505,6 +1533,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.multiple_callees_same_location",
+    "filename": "string_conversion.py",
+    "callable_line": 185,
     "sources": [
       {
         "port": "result",
@@ -1545,6 +1575,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression",
+    "filename": "string_conversion.py",
+    "callable_line": 71,
     "sinks": [
       {
         "port": "formal(x, position=0)",
@@ -1657,6 +1689,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression_2",
+    "filename": "string_conversion.py",
+    "callable_line": 98,
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -1764,6 +1798,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.multiple_targets_for_single_expression_3",
+    "filename": "string_conversion.py",
+    "callable_line": 117,
     "sources": [
       {
         "port": "result",
@@ -1825,6 +1861,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.object_type",
+    "filename": "string_conversion.py",
+    "callable_line": 163,
     "sources": [
       {
         "port": "result",
@@ -1877,6 +1915,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.tito_f",
+    "filename": "string_conversion.py",
+    "callable_line": 123,
     "tito": [
       {
         "port": "formal(x, position=0)",
@@ -1894,6 +1934,8 @@
   "kind": "model",
   "data": {
     "callable": "string_conversion.tito_g",
+    "filename": "string_conversion.py",
+    "callable_line": 127,
     "tito": [
       {
         "port": "formal(y, position=0)",

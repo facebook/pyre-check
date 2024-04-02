@@ -161,6 +161,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.test_untracked_constant",
+    "filename": "constant_fields.py",
+    "callable_line": 51,
     "sources": [
       {
         "port": "result",
@@ -194,6 +196,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.tracked_constant_A",
+    "filename": "constant_fields.py",
+    "callable_line": 39,
     "sources": [
       {
         "port": "result",
@@ -227,6 +231,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.tracked_constant_B",
+    "filename": "constant_fields.py",
+    "callable_line": 45,
     "sources": [
       {
         "port": "result",
@@ -260,6 +266,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.tracked_index",
+    "filename": "constant_fields.py",
+    "callable_line": 16,
     "sources": [
       {
         "port": "result",
@@ -293,6 +301,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.untracked_index_a",
+    "filename": "constant_fields.py",
+    "callable_line": 22,
     "sources": [
       {
         "port": "result",
@@ -326,6 +336,8 @@
   "kind": "model",
   "data": {
     "callable": "constant_fields.untracked_index_b",
+    "filename": "constant_fields.py",
+    "callable_line": 28,
     "sources": [
       {
         "port": "result",

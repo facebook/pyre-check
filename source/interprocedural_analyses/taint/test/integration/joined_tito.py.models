@@ -250,6 +250,8 @@
   "kind": "model",
   "data": {
     "callable": "joined_tito.C.__init__",
+    "filename": "joined_tito.py",
+    "callable_line": 17,
     "tito": [
       {
         "port": "formal(wrapper, position=1)",
@@ -289,6 +291,8 @@
   "kind": "model",
   "data": {
     "callable": "joined_tito.Wrapper.__init__",
+    "filename": "joined_tito.py",
+    "callable_line": 11,
     "tito": [
       {
         "port": "formal(b, position=2)",
