@@ -41,6 +41,7 @@ class BlockingPyreLanguageServer(pyre_language_server.PyreLanguageServerApi):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
+        dispatch_request_duration: Optional[float] = None,
     ) -> Optional[Exception]:
         await asyncio.Event().wait()
         return None

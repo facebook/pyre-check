@@ -206,6 +206,8 @@ class PyreLanguageServerApi(abc.ABC):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
+        # TODO(T184349028) Remove hacky funnel logging
+        dispatch_request_duration: Optional[float] = None,
     ) -> Optional[Exception]:
         raise NotImplementedError()
 
@@ -800,7 +802,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         )
 
     async def _get_definition_result(
-        self, document_path: Path, position: lsp.LspPosition
+        self,
+        document_path: Path,
+        position: lsp.LspPosition,
     ) -> QueryResultWithDurations[List[lsp.LspLocation]]:
         """
         Helper function to call the querier. Exists only to reduce code duplication
@@ -842,7 +846,9 @@ class PyreLanguageServer(PyreLanguageServerApi):
         parameters: lsp.DefinitionParameters,
         request_id: Union[int, str, None],
         activity_key: Optional[Dict[str, object]] = None,
+        dispatch_request_duration: Optional[float] = None,
     ) -> Optional[Exception]:
+        process_request_time = timer.Timer()
         document_path: Optional[Path] = (
             parameters.text_document.document_uri().to_file_path()
         )
@@ -871,6 +877,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "overlays_enabled": self.server_state.server_options.language_server_features.unsaved_changes.is_enabled(),
                     "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                     "error_type": PyreLanguageServerError.DOCUMENT_PATH_MISSING_IN_SERVER_STATE,
+                    "dispatch_request_duration": dispatch_request_duration,
+                    "process_request_duration": process_request_time.stop_in_millisecond(),
+                    "overlay_update_duration": 0.0,
+                    "query_duration": 0.0,
+                    "marshalling_response_duration": 0.0,
+                    "write_response_duration": 0.0,
+                    "sample_source_code_duration": 0.0,
                 },
                 activity_key,
             )
@@ -887,6 +900,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=lsp.LspLocation.cached_schema().dump([], many=True),
                 ),
             )
+        process_request_duration = process_request_time.stop_in_millisecond()
         # Regardless of the mode, we want to get the actual result
         result_with_durations = await self._get_definition_result(
             document_path=document_path,
@@ -905,10 +919,13 @@ class PyreLanguageServer(PyreLanguageServerApi):
             error_message = None
             output_result = result
             error_source = None
+        marshalling_response_timer = timer.Timer()
         # Unless we are in shadow mode, we send the response as output
         output_result_json = lsp.LspLocation.cached_schema().dump(
             output_result, many=True
         )
+        marshalling_response_duration = marshalling_response_timer.stop_in_millisecond()
+        write_response_timer = timer.Timer()
         if not shadow_mode:
             await lsp.write_json_rpc(
                 self.output_channel,
@@ -918,6 +935,8 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=output_result_json,
                 ),
             )
+        write_response_duration = write_response_timer.stop_in_millisecond()
+        sample_source_code_timer = timer.Timer()
         # Only sample if response is empty
         source_code_if_sampled = (
             self.sample_source_code(
@@ -930,6 +949,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         character_at_position = SourceCodeContext.character_at_position(
             self.server_state.opened_documents[document_path].code, parameters.position
         )
+        sample_source_code_duration = sample_source_code_timer.stop_in_millisecond()
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -937,10 +957,15 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "filePath": str(document_path),
                 "count": len(output_result_json),
                 "response": output_result_json,
-                "duration_ms": result_with_durations.overall_duration,
                 "query_source": result_with_durations.source,
+                "duration_ms": result_with_durations.overall_duration,
+                "dispatch_request_duration": dispatch_request_duration,
+                "process_request_duration": process_request_duration,
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
+                "marshalling_response_duration": marshalling_response_duration,
+                "write_response_duration": write_response_duration,
+                "sample_source_code_duration": sample_source_code_duration,
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
                 ),
@@ -1705,7 +1730,9 @@ class PyreLanguageServerDispatcher:
         if request.method == "exit" or request.method == "shutdown":
             raise Exception("Exit and shutdown requests should be blocking")
 
+        dispatch_request_timer = timer.Timer()
         await self._restart_if_needed()
+        dispatch_request_duration = dispatch_request_timer.stop_in_millisecond()
         if self.server_state.client_register_event is not None:
             await self.server_state.client_register_event.wait()
         if request.method == "textDocument/definition":
@@ -1715,6 +1742,7 @@ class PyreLanguageServerDispatcher:
                 ),
                 request.id,
                 request.activity_key,
+                dispatch_request_duration,
             )
             await self._restart_if_needed(error_source)
         elif request.method == "textDocument/completion":
