@@ -2240,185 +2240,184 @@ let test_lookup_dataclass_attributes context =
   ()
 
 
-let test_lookup_comprehensions context =
-  let source = {|
-       def foo() -> None:
-         a = [x for x in [1.0]]
-    |} in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
+let test_lookup_comprehensions =
+  let assert_annotation_list source expected context =
+    assert_annotation_list ~lookup:(generate_lookup ~context source) expected
+  in
+  test_list
     [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing.List[float]";
-      "3:6-3:24/typing.List[float]";
-      "3:7-3:8/float";
-      "3:13-3:14/float";
-      "3:18-3:23/typing.List[float]";
-      "3:19-3:22/float";
-    ];
-  let source =
-    {|
-       class Foo:
-         def __init__(self, x: int) -> None:
-           pass
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                a = [x for x in [1.0]]
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing.List[float]";
+             "3:6-3:24/typing.List[float]";
+             "3:7-3:8/float";
+             "3:13-3:14/float";
+             "3:18-3:23/typing.List[float]";
+             "3:19-3:22/float";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              class Foo:
+                def __init__(self, x: int) -> None:
+                  pass
 
-       def foo() -> None:
-         a = [Foo(x) for x in [1]]
-    |}
-  in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:6-2:9/typing.Type[test.Foo]";
-      "3:6-3:14/typing.Callable(test.Foo.__init__)[[Named(self, test.Foo), Named(x, int)], None]";
-      "3:15-3:19/test.Foo";
-      "3:21-3:22/int";
-      "3:24-3:27/typing.Type[int]";
-      "3:32-3:36/typing.Type[None]";
-      "6:4-6:7/typing.Callable(test.foo)[[], None]";
-      "6:13-6:17/typing.Type[None]";
-      "7:2-7:3/typing.List[test.Foo]";
-      "7:6-7:27/typing.List[test.Foo]";
-      "7:7-7:10/typing.Type[test.Foo]";
-      "7:7-7:13/test.Foo";
-      (* TODO(T60237096): "7:11-7:12/int" should be a valid lookup. *)
-      "7:18-7:19/int";
-      "7:23-7:26/typing.List[int]";
-      "7:24-7:25/typing_extensions.Literal[1]";
-    ];
-  let source = {|
-       def foo() -> None:
-         x = 1
-         a = [x for x in [1.0]]
-    |} in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing_extensions.Literal[1]";
-      "3:6-3:7/typing_extensions.Literal[1]";
-      "4:2-4:3/typing.List[float]";
-      "4:6-4:24/typing.List[float]";
-      "4:7-4:8/float";
-      "4:13-4:14/float";
-      "4:18-4:23/typing.List[float]";
-      "4:19-4:22/float";
-    ];
-  let source = {|
-       def foo() -> None:
-         a = [a for a in [None, 1.0] if a]
-    |} in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing.List[float]";
-      "3:6-3:35/typing.List[float]";
-      "3:7-3:8/float";
-      "3:13-3:14/float";
-      "3:18-3:29/typing.List[typing.Optional[float]]";
-      "3:19-3:23/None";
-      "3:25-3:28/float";
-      "3:33-3:34/typing.Optional[float]";
-    ];
-  let source =
-    {|
-       def foo() -> None:
-         a = [(a, b) for a in [1.0, 2.0] for b in [1, 2]]
-    |}
-  in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing.List[typing.Tuple[float, int]]";
-      "3:6-3:50/typing.List[typing.Tuple[float, int]]";
-      "3:7-3:13/typing.Tuple[float, int]";
-      "3:18-3:19/float";
-      "3:23-3:33/typing.List[float]";
-      "3:24-3:27/float";
-      "3:29-3:32/float";
-      "3:38-3:39/int";
-      "3:43-3:49/typing.List[int]";
-      "3:44-3:45/typing_extensions.Literal[1]";
-      "3:47-3:48/typing_extensions.Literal[2]";
-    ];
-  let source = {|
-       def foo() -> None:
-         x = 1
-         a = {x for x in [1.0]}
-    |} in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing_extensions.Literal[1]";
-      "3:6-3:7/typing_extensions.Literal[1]";
-      "4:2-4:3/typing.Set[float]";
-      "4:6-4:24/typing.Set[float]";
-      "4:7-4:8/float";
-      "4:13-4:14/float";
-      "4:18-4:23/typing.List[float]";
-      "4:19-4:22/float";
-    ];
-  let source =
-    {|
-       def foo() -> None:
-         a = 1
-         b = 1
-         c = {a: b for a in [1.0]}
-    |}
-  in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing_extensions.Literal[1]";
-      "3:6-3:7/typing_extensions.Literal[1]";
-      "4:2-4:3/typing_extensions.Literal[1]";
-      "4:6-4:7/typing_extensions.Literal[1]";
-      "5:2-5:3/typing.Dict[float, int]";
-      "5:6-5:27/typing.Dict[float, int]";
-      "5:7-5:8/float";
-      "5:10-5:11/typing_extensions.Literal[1]";
-      "5:16-5:17/float";
-      "5:21-5:26/typing.List[float]";
-      "5:22-5:25/float";
-    ];
-  let source =
-    {|
-       def foo() -> None:
-         a = 1
-         b = 1
-         c = {a: b for a in [1.0] for b in [1, 2]}
-    |}
-  in
-  assert_annotation_list
-    ~lookup:(generate_lookup ~context source)
-    [
-      "2:4-2:7/typing.Callable(test.foo)[[], None]";
-      "2:13-2:17/typing.Type[None]";
-      "3:2-3:3/typing_extensions.Literal[1]";
-      "3:6-3:7/typing_extensions.Literal[1]";
-      "4:2-4:3/typing_extensions.Literal[1]";
-      "4:6-4:7/typing_extensions.Literal[1]";
-      "5:2-5:3/typing.Dict[float, int]";
-      "5:6-5:43/typing.Dict[float, int]";
-      "5:7-5:8/float";
-      "5:10-5:11/int";
-      "5:16-5:17/float";
-      "5:21-5:26/typing.List[float]";
-      "5:22-5:25/float";
-      "5:31-5:32/int";
-      "5:36-5:42/typing.List[int]";
-      "5:37-5:38/typing_extensions.Literal[1]";
-      "5:40-5:41/typing_extensions.Literal[2]";
+              def foo() -> None:
+                a = [Foo(x) for x in [1]]
+            |}
+           [
+             "2:6-2:9/typing.Type[test.Foo]";
+             "3:6-3:14/typing.Callable(test.Foo.__init__)[[Named(self, test.Foo), Named(x, int)], \
+              None]";
+             "3:15-3:19/test.Foo";
+             "3:21-3:22/int";
+             "3:24-3:27/typing.Type[int]";
+             "3:32-3:36/typing.Type[None]";
+             "6:4-6:7/typing.Callable(test.foo)[[], None]";
+             "6:13-6:17/typing.Type[None]";
+             "7:2-7:3/typing.List[test.Foo]";
+             "7:6-7:27/typing.List[test.Foo]";
+             "7:7-7:10/typing.Type[test.Foo]";
+             "7:7-7:13/test.Foo";
+             (* TODO(T60237096): "7:11-7:12/int" should be a valid lookup. *)
+             "7:18-7:19/int";
+             "7:23-7:26/typing.List[int]";
+             "7:24-7:25/typing_extensions.Literal[1]";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                x = 1
+                a = [x for x in [1.0]]
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing_extensions.Literal[1]";
+             "3:6-3:7/typing_extensions.Literal[1]";
+             "4:2-4:3/typing.List[float]";
+             "4:6-4:24/typing.List[float]";
+             "4:7-4:8/float";
+             "4:13-4:14/float";
+             "4:18-4:23/typing.List[float]";
+             "4:19-4:22/float";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+               def foo() -> None:
+                 a = [a for a in [None, 1.0] if a]
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing.List[float]";
+             "3:6-3:35/typing.List[float]";
+             "3:7-3:8/float";
+             "3:13-3:14/float";
+             "3:18-3:29/typing.List[typing.Optional[float]]";
+             "3:19-3:23/None";
+             "3:25-3:28/float";
+             "3:33-3:34/typing.Optional[float]";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                a = [(a, b) for a in [1.0, 2.0] for b in [1, 2]]
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing.List[typing.Tuple[float, int]]";
+             "3:6-3:50/typing.List[typing.Tuple[float, int]]";
+             "3:7-3:13/typing.Tuple[float, int]";
+             "3:18-3:19/float";
+             "3:23-3:33/typing.List[float]";
+             "3:24-3:27/float";
+             "3:29-3:32/float";
+             "3:38-3:39/int";
+             "3:43-3:49/typing.List[int]";
+             "3:44-3:45/typing_extensions.Literal[1]";
+             "3:47-3:48/typing_extensions.Literal[2]";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                x = 1
+                a = {x for x in [1.0]}
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing_extensions.Literal[1]";
+             "3:6-3:7/typing_extensions.Literal[1]";
+             "4:2-4:3/typing.Set[float]";
+             "4:6-4:24/typing.Set[float]";
+             "4:7-4:8/float";
+             "4:13-4:14/float";
+             "4:18-4:23/typing.List[float]";
+             "4:19-4:22/float";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                a = 1
+                b = 1
+                c = {a: b for a in [1.0]}
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing_extensions.Literal[1]";
+             "3:6-3:7/typing_extensions.Literal[1]";
+             "4:2-4:3/typing_extensions.Literal[1]";
+             "4:6-4:7/typing_extensions.Literal[1]";
+             "5:2-5:3/typing.Dict[float, int]";
+             "5:6-5:27/typing.Dict[float, int]";
+             "5:7-5:8/float";
+             "5:10-5:11/typing_extensions.Literal[1]";
+             "5:16-5:17/float";
+             "5:21-5:26/typing.List[float]";
+             "5:22-5:25/float";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_annotation_list
+           {|
+              def foo() -> None:
+                a = 1
+                b = 1
+                c = {a: b for a in [1.0] for b in [1, 2]}
+            |}
+           [
+             "2:4-2:7/typing.Callable(test.foo)[[], None]";
+             "2:13-2:17/typing.Type[None]";
+             "3:2-3:3/typing_extensions.Literal[1]";
+             "3:6-3:7/typing_extensions.Literal[1]";
+             "4:2-4:3/typing_extensions.Literal[1]";
+             "4:6-4:7/typing_extensions.Literal[1]";
+             "5:2-5:3/typing.Dict[float, int]";
+             "5:6-5:43/typing.Dict[float, int]";
+             "5:7-5:8/float";
+             "5:10-5:11/int";
+             "5:16-5:17/float";
+             "5:21-5:26/typing.List[float]";
+             "5:22-5:25/float";
+             "5:31-5:32/int";
+             "5:36-5:42/typing.List[int]";
+             "5:37-5:38/typing_extensions.Literal[1]";
+             "5:40-5:41/typing_extensions.Literal[2]";
+           ];
     ]
 
 
@@ -3972,7 +3971,6 @@ let test_hover_info_for_position context =
         def bar(self) -> None:
           self.foo()
               # ^- cursor
-  |}
     { value = Some "def foo() -> None: ..."; docstring = None };
   assert_hover_info_for_position
     {|
@@ -4007,7 +4005,7 @@ let () =
          "lookup_class_attributes" >:: test_lookup_class_attributes;
          "lookup_class_attributes_nested" >:: test_lookup_class_attributes_nested;
          "lookup_dataclass_attributes" >:: test_lookup_dataclass_attributes;
-         "lookup_comprehensions" >:: test_lookup_comprehensions;
+         test_lookup_comprehensions;
          "lookup_if_statements" >:: test_lookup_if_statements;
          "lookup_imports" >:: test_lookup_imports;
          "lookup_string_annotations" >:: test_lookup_string_annotations;
