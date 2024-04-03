@@ -2249,18 +2249,15 @@ let test_lookup_comprehensions =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_annotation_list
            {|
-              def foo() -> None:
-                a = [x for x in [1.0]]
+              a = [x for x in [1.0]]
             |}
            [
-             "2:4-2:7/typing.Callable(test.foo)[[], None]";
-             "2:13-2:17/typing.Type[None]";
-             "3:2-3:3/typing.List[float]";
-             "3:6-3:24/typing.List[float]";
-             "3:7-3:8/float";
-             "3:13-3:14/float";
-             "3:18-3:23/typing.List[float]";
-             "3:19-3:22/float";
+             "2:0-2:1/typing.List[float]";
+             "2:4-2:22/typing.List[float]";
+             "2:5-2:6/float";
+             "2:11-2:12/float";
+             "2:16-2:21/typing.List[float]";
+             "2:17-2:20/float";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_annotation_list
