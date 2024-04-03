@@ -96,3 +96,19 @@ def extra_trace_sink_as_origin():
     source = _test_source()
     source_x = transform_x(source)
     _test_sink(source_x)
+
+
+class TransformBase:
+    def transform(self, arg):
+        return arg
+
+
+class OverrideTransform(TransformBase):
+    def transform(self, arg):
+        return transform_x(arg)
+
+
+def extra_trace_through_override(o: TransformBase):
+    source = _test_source()
+    source_x = o.transform(source)
+    _test_sink(source_x)
