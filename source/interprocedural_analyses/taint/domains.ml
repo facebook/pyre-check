@@ -330,6 +330,13 @@ module ExtraTraceFirstHop = struct
       | Sink _ -> "sink"
 
 
+    let expand_overrides ~override_graph ~is_valid_callee ({ call_info; _ } as extra_trace) =
+      {
+        extra_trace with
+        call_info = CallInfo.expand_overrides ~override_graph ~is_valid_callee call_info;
+      }
+
+
     let to_json { call_info; leaf_kind; message } =
       let json =
         List.append
@@ -352,7 +359,15 @@ module ExtraTraceFirstHop = struct
   module Set = struct
     include Abstract.SetDomain.Make (T)
 
-    let to_json set = elements set |> List.map ~f:(fun e -> T.to_json e)
+    let to_json ~expand_overrides ~is_valid_callee set =
+      let extra_traces = elements set in
+      let extra_traces =
+        match expand_overrides with
+        | Some override_graph ->
+            List.map ~f:(T.expand_overrides ~override_graph ~is_valid_callee) extra_traces
+        | None -> extra_traces
+      in
+      List.map ~f:T.to_json extra_traces
   end
 end
 
@@ -853,7 +868,7 @@ end = struct
       let json = cons_if_non_empty "kinds" kinds json in
       let extra_traces =
         LocalTaintDomain.get LocalTaintDomain.Slots.ExtraTraceFirstHopSet local_taint
-        |> ExtraTraceFirstHop.Set.to_json
+        |> ExtraTraceFirstHop.Set.to_json ~expand_overrides ~is_valid_callee
       in
       let json = cons_if_non_empty "extra_traces" extra_traces json in
       `Assoc json

@@ -99,7 +99,7 @@
                 "call": {
                   "position": { "line": 113, "start": 27, "end": 33 },
                   "resolves_to": [
-                    "Overrides{extra_trace.TransformBase.transform}"
+                    "extra_trace.OverrideTransform.transform"
                   ],
                   "port": "formal(arg, position=1)"
                 },
