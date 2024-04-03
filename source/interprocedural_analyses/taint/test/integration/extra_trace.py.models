@@ -295,6 +295,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.OverrideTransform.transform",
+    "filename": "extra_trace.py",
+    "callable_line": 107,
     "sinks": [
       {
         "port": "formal(arg, position=1)",
@@ -345,6 +347,8 @@
   "kind": "model",
   "data": {
     "callable": "extra_trace.TransformBase.transform",
+    "filename": "extra_trace.py",
+    "callable_line": 102,
     "tito": [
       {
         "port": "formal(arg, position=1)",

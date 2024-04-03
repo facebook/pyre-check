@@ -459,6 +459,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.PartiallyZonedDict.copy",
+    "filename": "attributes.py",
+    "callable_line": 130,
     "tito": [
       {
         "port": "formal(self, position=0)",
@@ -476,6 +478,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.RegularForm.__init__",
+    "filename": "attributes.py",
+    "callable_line": 143,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -545,6 +549,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.ZonedForm.__init__",
+    "filename": "attributes.py",
+    "callable_line": 135,
     "tito": [
       {
         "port": "formal(data, position=1)",
@@ -573,6 +579,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.ZonedForm.data",
+    "filename": "attributes.py",
+    "callable_line": 139,
     "tito": [
       {
         "port": "formal(self, position=0)[_data]",
@@ -1207,6 +1215,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.tito_copy_dict",
+    "filename": "attributes.py",
+    "callable_line": 118,
     "tito": [
       {
         "port": "formal(d, position=0)[copy]",
@@ -1225,6 +1235,8 @@
   "kind": "model",
   "data": {
     "callable": "attributes.tito_copy_multiple_possible_dictlike_objects",
+    "filename": "attributes.py",
+    "callable_line": 146,
     "tito": [
       {
         "port": "formal(d, position=0)[_data][copy]",
