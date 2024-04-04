@@ -109,8 +109,11 @@ def some_decorator(func):
     return wrapper_func
 
 def test_dsl_source(some_data: str) -> None:
+    def decorated_local_function_capturing_local_variable():
+        _test_sink(some_data)
 
-    # TODO(T180817012): Should be found, but is not currently
+def test_dsl_decorator_source(some_data: str) -> None:
+    # TODO(T184343924): Fix bug with DSL decorator parameter sources
     @some_decorator
     def decorated_local_function_capturing_local_variable():
         _test_sink(some_data)

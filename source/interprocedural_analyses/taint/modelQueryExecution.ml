@@ -1568,7 +1568,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                  >>| fun taint ->
                  ModelParseResult.ModelAnnotation.ParameterAnnotation
                    ( AccessPath.Root.CapturedVariable
-                       { name = capture.Statement.Define.Capture.name; user_defined = false },
+                       { name = capture.Statement.Define.Capture.name; user_defined = true },
                      taint ))
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =

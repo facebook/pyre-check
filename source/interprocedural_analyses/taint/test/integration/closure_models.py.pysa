@@ -44,6 +44,13 @@ ModelQuery(
 ModelQuery(
     name = "mark_captured_locals_as_tainted",
     find = "functions",
+    where = fully_qualified_name.matches("closure_models.test_dsl_source.decorated_local_function_capturing_local_variable"),
+    model = CapturedVariables(TaintSource[Test])
+)
+
+ModelQuery(
+    name = "mark_captured_locals_from_decorator_as_tainted",
+    find = "functions",
     where = Decorator(fully_qualified_callee.matches("closure_models.some_decorator")),
     model = CapturedVariables(TaintSource[Test])
 )
