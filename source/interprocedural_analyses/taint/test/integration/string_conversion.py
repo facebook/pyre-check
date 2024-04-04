@@ -4,7 +4,7 @@
 # LICENSE file in the root directory of this source tree.
 
 from builtins import _test_source
-from typing import Any, Type, Union
+from typing import Any, Type, Union, Optional
 
 from django.http import Request
 
@@ -186,3 +186,10 @@ def multiple_callees_same_location():
     s = StrIsTainted()
     # The call to str() and the attribute access to str.__add__ have the same location in the AST.
     return str(s) + "hello"
+
+
+def optional_str(condition: bool):
+    s: Optional[StrIsTainted] = None
+    if condition:
+        s = StrIsTainted()
+    eval(str(s))

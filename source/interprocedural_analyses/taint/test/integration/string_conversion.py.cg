@@ -23,6 +23,7 @@ string_conversion.implicit_str (fun) -> [<format-string> (object) eval (fun) obj
 string_conversion.joined_base (fun) -> [<format-string> (object) dict.__getitem__ (method) django.http.Request.GET (object) eval (fun) str.__str__ (method) string_conversion.request (object)]
 string_conversion.not_propagate_taint (fun) -> [<format-string> (object) eval (fun) object.__new__ (method) string_conversion.A.__init__ (method) string_conversion.A.__str__ (method)]
 string_conversion.object_type (fun) -> [<format-string> (object) object.__repr__ (override)]
+string_conversion.optional_str (fun) -> [eval (fun) object.__init__ (method) object.__new__ (method) object.__repr__ (method)]
 string_conversion.propagate_taint (fun) -> [<format-string> (object) dict.__getitem__ (method) django.http.Request.GET (object) eval (fun) object.__new__ (method) string_conversion.A.__init__ (method) string_conversion.A.__str__ (method) string_conversion.request (object)]
 string_conversion.repr_is_tainted (fun) -> [eval (fun) object.__init__ (method) object.__new__ (method) string_conversion.ReprIsTainted.__repr__ (method)]
 string_conversion.str_is_tainted (fun) -> [eval (fun) object.__init__ (method) object.__new__ (method) string_conversion.StrIsTainted.__str__ (method)]
