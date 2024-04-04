@@ -909,16 +909,18 @@ class PyreLanguageServer(PyreLanguageServerApi):
         result = result_with_durations.result
         if isinstance(result, DaemonQueryFailure):
             error_message = result.error_message
-            output_result: List[lsp.LspLocation] = (
-                result.fallback_result.data
-                if result.fallback_result is not None
-                else []
-            )
             error_source = result.error_source
+            if result.fallback_result is None:
+                output_result = []
+                query_source = None
+            else:
+                output_result = result.fallback_result.data
+                query_source = result.fallback_result.source
         else:
             error_message = None
-            output_result = result
             error_source = None
+            output_result = result
+            query_source = result_with_durations.source
         marshalling_response_timer = timer.Timer()
         # Unless we are in shadow mode, we send the response as output
         output_result_json = lsp.LspLocation.cached_schema().dump(
@@ -957,7 +959,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "filePath": str(document_path),
                 "count": len(output_result_json),
                 "response": output_result_json,
-                "query_source": result_with_durations.source,
+                "query_source": query_source,
                 "duration_ms": result_with_durations.overall_duration,
                 "dispatch_request_duration": dispatch_request_duration,
                 "process_request_duration": process_request_duration,
