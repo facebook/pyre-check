@@ -330,6 +330,7 @@ class DaemonQuerierTest(testslide.TestCase):
                         ),
                     )
                 ],
+                empty_reason=None,
             ),
         )
 
@@ -411,6 +412,7 @@ class DaemonQuerierTest(testslide.TestCase):
                 GetDefinitionLocationsResponse(
                     source=DaemonQuerierSource.GLEAN_INDEXER,
                     data=[],
+                    empty_reason=None,
                 ),
             )
 
@@ -441,6 +443,7 @@ class DaemonQuerierTest(testslide.TestCase):
             GetDefinitionLocationsResponse(
                 source=DaemonQuerierSource.GLEAN_INDEXER,
                 data=[],
+                empty_reason=None,
             ),
         )
 
@@ -724,7 +727,9 @@ class DaemonQuerierTest(testslide.TestCase):
             response,
             DaemonQueryFailure(
                 fallback_result=GetDefinitionLocationsResponse(
-                    source=DaemonQuerierSource.GLEAN_INDEXER, data=[]
+                    source=DaemonQuerierSource.GLEAN_INDEXER,
+                    data=[],
+                    empty_reason=None,
                 ),
                 error_message=_DaemonQuerier_Failure_Message,
                 error_source=None,

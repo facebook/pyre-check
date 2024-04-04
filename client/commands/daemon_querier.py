@@ -75,6 +75,7 @@ class QueryModulesOfPathResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 class GetDefinitionLocationsResponse:
     source: DaemonQuerierSource
     data: List[lsp.LspLocation]
+    empty_reason: Optional[object]
 
 
 @dataclasses.dataclass(frozen=True)
@@ -508,6 +509,7 @@ class PersistentDaemonQuerier(ServerStateBackedDaemonQuerier):
                     response.to_lsp_definition_response()
                     for response in daemon_response.response
                 ],
+                empty_reason=None,
             )
 
     async def get_document_symbols(
@@ -727,6 +729,7 @@ class CodeNavigationDaemonQuerier(ServerStateBackedDaemonQuerier):
                 definition_location.to_lsp_definition_response()
                 for definition_location in response.definitions
             ],
+            empty_reason=response.empty_reason,
         )
 
     async def get_document_symbols(
@@ -946,6 +949,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
         return GetDefinitionLocationsResponse(
             source=(DaemonQuerierSource.GLEAN_INDEXER),
             data=indexed_result,
+            empty_reason=None,
         )
 
     async def get_definition_locations(

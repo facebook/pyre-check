@@ -2078,6 +2078,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            empty_reason=None,
         )
         for telemetry in (
             features.TelemetryAvailability.ENABLED,
@@ -2157,6 +2158,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            empty_reason=None,
         )
         for telemetry in (
             features.TelemetryAvailability.ENABLED,
@@ -2239,6 +2241,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            empty_reason=None,
         )
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,
@@ -2343,6 +2346,7 @@ class DefinitionTest(ApiTestCase):
                     ),
                 )
             ],
+            empty_reason=None,
         )
         querier = server_setup.MockDaemonQuerier(
             mock_definition_response=expected_telemetry_response,

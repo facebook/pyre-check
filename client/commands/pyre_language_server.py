@@ -906,14 +906,17 @@ class PyreLanguageServer(PyreLanguageServerApi):
             if result.fallback_result is None:
                 output_result = []
                 query_source = None
+                empty_reason = None
             else:
                 output_result = result.fallback_result.data
                 query_source = result.fallback_result.source
+                empty_reason = result.fallback_result.empty_reason
         else:
             error_message = None
             error_source = None
             output_result = result.data
             query_source = result.source
+            empty_reason = result.empty_reason
         marshalling_response_timer = timer.Timer()
         # Unless we are in shadow mode, we send the response as output
         output_result_json = lsp.LspLocation.cached_schema().dump(
@@ -973,6 +976,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "character_at_position": character_at_position,
                 **daemon_status_before.as_telemetry_dict(),
                 "error_type": getLanguageServerErrorFromDaemonError(error_message),
+                "empty_reason": empty_reason,
             },
             activity_key,
         )

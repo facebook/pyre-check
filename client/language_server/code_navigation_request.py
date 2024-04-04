@@ -125,8 +125,9 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 
 
 @dataclasses.dataclass(frozen=True)
-class LocationOfDefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
+class LocationOfDefinitionResponse(json_mixins.SnakeCaseAndExcludeJsonMixin):
     definitions: List[DefinitionResponse]
+    empty_reason: Optional[object] = None
 
 
 @dataclasses.dataclass(frozen=True)
@@ -401,7 +402,13 @@ def invalid_response(response: str, raw_request: str) -> ErrorResponse:
     )
 
 
-ResponseKind = TypeVar("ResponseKind", bound=json_mixins.CamlCaseAndExcludeJsonMixin)
+ResponseKind = TypeVar(
+    "ResponseKind",
+    bound=Union[
+        json_mixins.CamlCaseAndExcludeJsonMixin,
+        json_mixins.SnakeCaseAndExcludeJsonMixin,
+    ],
+)
 
 
 def parse_response(
