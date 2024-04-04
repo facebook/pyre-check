@@ -16,8 +16,6 @@ module ErrorKind = struct
     | ClientAlreadyRegistered of { client_id: string }
     | ClientNotRegistered of { client_id: string }
     | FileNotOpened of { path: string }
-    | SourcePathNotFound of { module_reference: Ast.Reference.t }
-    | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
   [@@deriving sexp, compare, to_yojson { strict = false }]
 end
 
@@ -145,12 +143,20 @@ module Status = struct
   [@@deriving sexp, compare, yojson { strict = false }]
 end
 
+type empty_reason =
+  | SourcePathNotFound of { module_reference: Ast.Reference.t }
+  | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
+[@@deriving sexp, compare, to_yojson { strict = false }]
+
 type t =
   | Ok
   | Error of ErrorKind.t
   | TypeErrors of { errors: Analysis.AnalysisError.Instantiated.t list }
   | Hover of { contents: HoverContent.t list }
-  | LocationOfDefinition of { definitions: DefinitionLocation.t list }
+  | LocationOfDefinition of {
+      definitions: DefinitionLocation.t list;
+      empty_reason: empty_reason option;
+    }
   | DocumentSymbol of { symbols: DocumentSymbolItem.t list }
   | Completion of { completions: CompletionItem.t list }
   | ServerStatus of Status.t

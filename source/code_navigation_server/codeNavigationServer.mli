@@ -449,13 +449,6 @@ module Testing : sig
         | FileNotOpened of { path: string }
             (** This error occurs when the client has send a command on a file not tracked by the
                 server. NOTE: certain queries can bypass tracking and not require file opens. *)
-        | SourcePathNotFound of { module_reference: Ast.Reference.t }
-            (** This error occurs when the server can not find the source file for the result. For
-                example, if a go-to-def result's module reference is foo.bar, but foo/bar.py can't
-                be found *)
-        | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
-            (** This error occurs when the server can't extract a location for the given position.
-                This might be the correct result (for example, if the given position is whitespace) *)
       [@@deriving sexp, compare, to_yojson { strict = false }]
     end
 
@@ -578,6 +571,15 @@ module Testing : sig
       [@@deriving sexp, compare, yojson { strict = false }]
     end
 
+    type empty_reason =
+      | SourcePathNotFound of { module_reference: Ast.Reference.t }
+          (** This error occurs when the server can not find the source file for the result. For
+              example, if a go-to-def result's module reference is foo.bar, but foo/bar.py can't be
+              found *)
+      | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
+          (** This error occurs when the server can't extract a location for the given position.
+              This might be the correct result (for example, if the given position is whitespace) *)
+
     (** A type representing responses sent from the server to its clients.
 
         If a client establishes a connection with the code navigation server and sends a
@@ -593,7 +595,10 @@ module Testing : sig
           (** Response for {!Request.Hover}. [contents] contains a list of items that will be shown
               to the user (there can be many because build system may map the same file to multiple
               modules). TODO: Add an optional [range] field used to visualize a hover. *)
-      | LocationOfDefinition of { definitions: DefinitionLocation.t list }
+      | LocationOfDefinition of {
+          definitions: DefinitionLocation.t list;
+          empty_reason: empty_reason option;
+        }
           (** Response for {!Request.LocationOfDefinition}. The associated value is a list since
               there can be many potential definitions for a given item, either because build system
               may map the same file to multiple modules, or because the same name may get redefined

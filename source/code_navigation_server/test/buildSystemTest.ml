@@ -294,7 +294,10 @@ let test_build_system_path_lookup context =
           ~expected:
             Response.(
               LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }] });
+                {
+                  definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }];
+                  empty_reason = None;
+                });
         (* Try open `a.py` (no artifact path), `b.py` (artifact path), and `c.py` (nonexistent) *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -322,7 +325,10 @@ let test_build_system_path_lookup context =
           ~expected:
             Response.(
               LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }] });
+                {
+                  definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }];
+                  empty_reason = None;
+                });
       ]
 
 

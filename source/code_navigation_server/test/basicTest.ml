@@ -412,9 +412,13 @@ let test_location_of_definition_request context =
                 (Query.LocationOfDefinition
                    { client_id; path = test2_path; position = position 2 8 }))
           ~expected:
-            (Error
-               (Response.ErrorKind.LocationBasedLookupError
-                  Analysis.LocationBasedLookup.SymbolNotFound));
+            Response.(
+              LocationOfDefinition
+                {
+                  definitions = [];
+                  empty_reason =
+                    Some (LocationBasedLookupError Analysis.LocationBasedLookup.SymbolNotFound);
+                });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -425,7 +429,10 @@ let test_location_of_definition_request context =
           ~expected:
             Response.(
               LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
+                {
+                  definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }];
+                  empty_reason = None;
+                });
         ScratchProject.ClientConnection.assert_response
           ~request:
             Request.(
@@ -436,7 +443,10 @@ let test_location_of_definition_request context =
           ~expected:
             Response.(
               LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }] });
+                {
+                  definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }];
+                  empty_reason = None;
+                });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
             Request.(
@@ -478,11 +488,17 @@ let test_location_of_definition_attribute_not_found context =
               Query
                 (Query.LocationOfDefinition { client_id; path = test_path; position = position 1 4 }))
           ~expected:
-            (Error
-               (Response.ErrorKind.LocationBasedLookupError
-                  Analysis.LocationBasedLookup.(
-                    AttributeDefinitionNotFound
-                      (Some "foo.bar", ReferenceNotFoundAndBaseUnresolved ResolvedTop))));
+            Response.(
+              LocationOfDefinition
+                {
+                  definitions = [];
+                  empty_reason =
+                    Some
+                      (LocationBasedLookupError
+                         Analysis.LocationBasedLookup.(
+                           AttributeDefinitionNotFound
+                             (Some "foo.bar", ReferenceNotFoundAndBaseUnresolved ResolvedTop)));
+                });
         close_file ~client_id ~path:test_path;
         dispose_client ~client_id;
       ]
@@ -515,7 +531,10 @@ let test_location_of_definition_attribute_unannotated_class_property context =
           ~expected:
             Response.(
               LocationOfDefinition
-                { definitions = [{ DefinitionLocation.path = test_path; range = range 2 2 2 11 }] });
+                {
+                  definitions = [{ DefinitionLocation.path = test_path; range = range 2 2 2 11 }];
+                  empty_reason = None;
+                });
         (* self.foo.|bar *)
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -524,12 +543,18 @@ let test_location_of_definition_attribute_unannotated_class_property context =
                 (Query.LocationOfDefinition
                    { client_id; path = test_path; position = position 4 13 }))
           ~expected:
-            (Error
-               (Response.ErrorKind.LocationBasedLookupError
-                  Analysis.LocationBasedLookup.(
-                    AttributeDefinitionNotFound
-                      ( Some "$parameter$self.foo.bar",
-                        ReferenceNotFoundAndBaseUnresolved ResolvedTop ))));
+            Response.(
+              LocationOfDefinition
+                {
+                  definitions = [];
+                  empty_reason =
+                    Some
+                      (LocationBasedLookupError
+                         Analysis.LocationBasedLookup.(
+                           AttributeDefinitionNotFound
+                             ( Some "$parameter$self.foo.bar",
+                               ReferenceNotFoundAndBaseUnresolved ResolvedTop )));
+                });
         close_file ~client_id ~path:test_path;
         dispose_client ~client_id;
       ]

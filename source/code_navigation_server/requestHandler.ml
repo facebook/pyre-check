@@ -229,7 +229,7 @@ let get_location_of_definition_for_module ~overlay ~build_system ~position modul
   let type_environment = ErrorsEnvironment.ReadOnly.type_environment overlay in
   let source_code_api = TypeEnvironment.ReadOnly.get_untracked_source_code_api type_environment in
   match LocationBasedLookup.location_of_definition ~type_environment ~module_reference position with
-  | Error error -> Error (Response.ErrorKind.LocationBasedLookupError error)
+  | Error error -> Error (Response.LocationBasedLookupError error)
   | Ok { Ast.Location.WithModule.module_reference; start; stop } -> (
       match
         Analysis.SourcePaths.absolute_source_path_of_qualifier
@@ -238,7 +238,7 @@ let get_location_of_definition_for_module ~overlay ~build_system ~position modul
           module_reference
       with
       | Some path -> Ok { Response.DefinitionLocation.path; range = { Ast.Location.start; stop } }
-      | None -> Error (Response.ErrorKind.SourcePathNotFound { module_reference }))
+      | None -> Error (Response.SourcePathNotFound { module_reference }))
 
 
 let get_location_of_definition_in_overlay ~overlay ~build_system ~position path =
@@ -259,10 +259,13 @@ let handle_location_of_definition
   >>= fun overlay_id ->
   let overlay = get_or_create_overlay ~environment overlay_id in
   get_location_of_definition_in_overlay ~overlay ~build_system ~position path
-  >>= fun definitions ->
-  match List.partition_map ~f:Result.to_either definitions with
-  | definitions, [] -> Ok Response.(LocationOfDefinition { definitions })
-  | _, error :: _ -> Error error
+  >>| fun definitions ->
+  let definitions, empty_reason =
+    match List.partition_map ~f:Result.to_either definitions with
+    | [], errors -> [], List.hd errors
+    | definitions, _ -> definitions, None
+  in
+  Response.(LocationOfDefinition { definitions; empty_reason })
 
 
 let get_completion_for_module ~overlay ~position module_reference =
