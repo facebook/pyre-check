@@ -35,7 +35,10 @@ module Root = struct
       | StarParameter of { position: int }
       | StarStarParameter of { excluded: Identifier.t list }
       | Variable of Identifier.t
-      | CapturedVariable of Identifier.t
+      | CapturedVariable of {
+          name: Identifier.t;
+          user_defined: bool;
+        }
     [@@deriving compare, eq, hash, sexp]
 
     let chop_parameter_prefix name =
@@ -71,7 +74,12 @@ module Root = struct
             "formal(**kwargs, excluded=[%s])"
             (String.concat ~sep:"," excluded)
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable name -> Format.fprintf formatter "captured_variable(%s)" name
+      | CapturedVariable { name; user_defined } ->
+          Format.fprintf
+            formatter
+            "captured_variable(%s%s)"
+            name
+            (if user_defined then ", user_defined" else "")
 
 
     let show = Format.asprintf "%a" pp
@@ -84,7 +92,12 @@ module Root = struct
       | StarParameter { position } -> Format.fprintf formatter "formal(*rest%d)" position
       | StarStarParameter _ -> Format.fprintf formatter "formal(**kw)"
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable name -> Format.fprintf formatter "captured_variable(%s)" name
+      | CapturedVariable { name; user_defined } ->
+          Format.fprintf
+            formatter
+            "captured_variable(%s%s)"
+            name
+            (if user_defined then ", user_defined" else "")
 
 
     let show_for_issue_handle = Format.asprintf "%a" pp_for_issue_handle
@@ -95,17 +108,27 @@ module Root = struct
     let show_for_via_breadcrumb = Format.asprintf "%a" pp_for_via_breadcrumb
 
     let variable_to_captured_variable = function
-      | Variable name -> CapturedVariable name
+      | Variable name -> CapturedVariable { name; user_defined = false }
       | root -> root
 
 
     let captured_variable_to_variable = function
-      | CapturedVariable name -> Variable name
+      | CapturedVariable { name; _ } -> Variable name
       | root -> root
 
 
     let is_captured_variable = function
       | CapturedVariable _ -> true
+      | _ -> false
+
+
+    let is_captured_variable_inferred = function
+      | CapturedVariable { user_defined = false; _ } -> true
+      | _ -> false
+
+
+    let is_captured_variable_user_defined = function
+      | CapturedVariable { user_defined = true; _ } -> true
       | _ -> false
   end
 

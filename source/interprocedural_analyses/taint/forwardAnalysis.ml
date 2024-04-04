@@ -745,7 +745,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
         match root with
-        | AccessPath.Root.CapturedVariable variable ->
+        | AccessPath.Root.CapturedVariable { name = variable; _ } ->
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
             let define_reference =
               Reference.delocalize FunctionContext.definition.value.signature.name
@@ -2846,7 +2846,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
-                ~root:(AccessPath.Root.CapturedVariable identifier)
+                ~root:(AccessPath.Root.CapturedVariable { name = identifier; user_defined = false })
                 ~path:fields
                 (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
@@ -3011,9 +3011,27 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         state
 
 
-  let create ~existing_model parameters =
+  let create ~existing_model parameters define_location =
     (* Use primed sources to populate initial state of parameters *)
     let forward_primed_taint = existing_model.Model.forward.source_taint in
+    let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
+    let apply_call ~location ~root =
+      ForwardState.read ~root ~path:[] forward_primed_taint
+      |> ForwardState.Tree.apply_call
+           ~pyre_in_context
+           ~location
+           ~callee:(Some FunctionContext.callable)
+             (* Provide leaf callable names when sources originate from parameters. *)
+           ~arguments:[]
+           ~port:root
+           ~is_class_method:false
+           ~is_static_method:false
+           ~call_info_intervals:
+             {
+               Domains.ClassIntervals.top with
+               caller_interval = FunctionContext.caller_class_interval;
+             }
+    in
     let prime_parameter
         state
         {
@@ -3022,24 +3040,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           original = { Node.location; value = { Parameter.value; _ } };
         }
       =
-      let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
       let prime =
         let location = Location.with_module ~module_reference:FunctionContext.qualifier location in
-        ForwardState.read ~root:parameter_root ~path:[] forward_primed_taint
-        |> ForwardState.Tree.apply_call
-             ~pyre_in_context
-             ~location
-             ~callee:(Some FunctionContext.callable)
-               (* Provide leaf callable names when sources originate from parameters. *)
-             ~arguments:[]
-             ~port:parameter_root
-             ~is_class_method:false
-             ~is_static_method:false
-             ~call_info_intervals:
-               {
-                 Domains.ClassIntervals.top with
-                 caller_interval = FunctionContext.caller_class_interval;
-               }
+        apply_call ~location ~root:parameter_root
       in
       let default_value_taint, state =
         match value with
@@ -3053,7 +3056,32 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (ForwardState.Tree.join prime default_value_taint)
         state
     in
-    List.fold parameters ~init:bottom ~f:prime_parameter
+    let add_captured_variables_paramater_sources state =
+      let store_captured_variable_taint state root =
+        if AccessPath.Root.is_captured_variable_user_defined root then
+          (* The origin for captured variables taint is at the inner function boundry due to there
+             being no explicit parameter to mark as location *)
+          let location =
+            Location.with_module ~module_reference:FunctionContext.qualifier define_location
+          in
+          let taint = apply_call ~location ~root in
+          store_taint
+            ~root:(AccessPath.Root.captured_variable_to_variable root)
+            ~path:[]
+            taint
+            state
+        else
+          state
+      in
+      List.fold
+        ~init:state
+        ~f:store_captured_variable_taint
+        (ForwardState.roots forward_primed_taint)
+    in
+
+    parameters
+    |> List.fold ~init:bottom ~f:prime_parameter
+    |> add_captured_variables_paramater_sources
 
 
   let forward ~statement_key state ~statement =
@@ -3179,7 +3207,13 @@ let run
     ~existing_model
     ()
   =
-  let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } = define in
+  let {
+    Node.value = { Statement.Define.signature = { parameters; _ }; _ };
+    location = define_location;
+  }
+    =
+    define
+  in
   let module FunctionContext = struct
     let qualifier = qualifier
 
@@ -3230,7 +3264,7 @@ let run
   let initial =
     TaintProfiler.track_duration ~profiler ~name:"Forward analysis - initial state" ~f:(fun () ->
         let normalized_parameters = AccessPath.normalize_parameters parameters in
-        State.create ~existing_model normalized_parameters)
+        State.create ~existing_model normalized_parameters define_location)
   in
   let () = State.log "Processing CFG:@.%a" Analysis.Cfg.pp cfg in
   let exit_state =

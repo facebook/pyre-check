@@ -21,7 +21,10 @@ module Root : sig
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-    | CapturedVariable of Identifier.t
+    | CapturedVariable of {
+        name: Identifier.t;
+        user_defined: bool; (* whether this access path came from a user defined model *)
+      }
   [@@deriving compare, eq, hash, sexp, show]
 
   val parameter_name : t -> string option
@@ -39,6 +42,10 @@ module Root : sig
   val captured_variable_to_variable : t -> t
 
   val is_captured_variable : t -> bool
+
+  val is_captured_variable_inferred : t -> bool
+
+  val is_captured_variable_user_defined : t -> bool
 
   module Set : Stdlib.Set.S with type elt = t
 end

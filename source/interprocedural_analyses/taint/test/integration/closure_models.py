@@ -131,8 +131,8 @@ def captured_variable_model_parameter_source():
     # complicated_name has no taint outside nested functions, no issue
     _test_sink(complicated_name)
 
+    # model capturing all variables as parameter sources in nested functions
     def model_all_captured_as_parameter_sources():
-        # TODO(T180817012): Support capturing all variables as parameter sources in nested functions
         _test_sink(complicated_name)
 
 

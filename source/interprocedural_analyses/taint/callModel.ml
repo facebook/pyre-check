@@ -53,7 +53,7 @@ end
 
 let match_captures ~model ~captures_taint ~location =
   let collect_capture = function
-    | AccessPath.Root.CapturedVariable name as capture ->
+    | AccessPath.Root.CapturedVariable { name; _ } as capture ->
         Some
           ( ( Node.create
               (* captured variables are not present at call site, so location of call expression

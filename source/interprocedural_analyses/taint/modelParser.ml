@@ -2903,24 +2903,6 @@ let adjust_sanitize_and_modes_and_skipped_override
     let original_expression =
       create_function_call ~location:decorator_location name (Option.value ~default:[] arguments)
     in
-    let validate_captured_variables_decorator () =
-      let annotation_error reason =
-        model_verification_error
-          ~path
-          ~location:decorator_location
-          (InvalidTaintAnnotation { taint_annotation = original_expression; reason })
-      in
-      match arguments with
-      | Some [_] -> Ok ()
-      | Some _ ->
-          Error
-            (annotation_error
-               "`@CapturedVariables(...)` takes only one Taint Annotation as argument.")
-      | None ->
-          Error
-            (annotation_error "`@CapturedVariables(...)` needs one Taint Annotation as argument.")
-    in
-
     match name with
     | "Sanitize" ->
         join_with_sanitize_decorator
@@ -2936,8 +2918,6 @@ let adjust_sanitize_and_modes_and_skipped_override
           ~original_expression
           arguments
         >>| fun sanitizers -> sanitizers, modes
-    | "CapturedVariables" ->
-        validate_captured_variables_decorator () >>| fun () -> sanitizers, modes
     | _ -> (
         match Model.Mode.from_string name with
         | Some mode ->
@@ -3151,42 +3131,63 @@ let create_model_from_signature
       ~top_level_decorators
       model
     =
-    let is_captured_variables { Decorator.name = { Node.value = name; _ }; arguments } =
-      match Reference.show name, arguments with
-      | "CapturedVariables", Some [_] -> true
+    let annotation_error reason arguments =
+      let taint_annotation =
+        Ast.Expression.Expression.Call
+          {
+            callee = { Node.location; value = Name (Name.Identifier "CapturedVariables") };
+            arguments = Option.value ~default:[] arguments;
+          }
+        |> Node.create ~location
+      in
+      model_verification_error (InvalidTaintAnnotation { taint_annotation; reason })
+    in
+    let is_captured_variables { Decorator.name = { Node.value = name; _ }; _ } =
+      match Reference.show name with
+      | "CapturedVariables" -> true
       | _ -> false
     in
+    let add_taint taint_annotation =
+      let captured_variables =
+        match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
+        | Some { Node.value = { Define.captures; _ }; _ } ->
+            List.map ~f:(fun capture -> capture.Define.Capture.name) captures
+        | _ -> []
+      in
+      callable_annotation
+      >>= fun callable_annotation ->
+      taint_annotation
+      |> parse_annotations
+           ~path
+           ~location
+           ~origin
+           ~taint_configuration
+           ~parameters:[]
+           ~callable_parameter_names_to_roots:None
+      >>= List.fold_result ~init:model ~f:(fun model annotation ->
+              List.fold_result captured_variables ~init:model ~f:(fun model captured_variable ->
+                  add_taint_annotation_to_model
+                    ~path
+                    ~location
+                    ~model_name:(Reference.show callable_name)
+                    ~pyre_api
+                    ~callable_annotation
+                    ~source_sink_filter
+                    model
+                    (ModelAnnotation.ParameterAnnotation
+                       ( AccessPath.Root.CapturedVariable
+                           { name = captured_variable; user_defined = true },
+                         annotation ))))
+    in
     match List.find ~f:is_captured_variables top_level_decorators with
-    | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
-        let captured_variables =
-          match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
-          | Some { Node.value = { Define.captures; _ }; _ } ->
-              List.map ~f:(fun capture -> capture.Define.Capture.name) captures
-          | _ -> []
-        in
-        callable_annotation
-        >>= fun callable_annotation ->
-        value
-        |> parse_annotations
-             ~path
-             ~location
-             ~origin
-             ~taint_configuration
-             ~parameters:[]
-             ~callable_parameter_names_to_roots:None
-        >>= List.fold_result ~init:model ~f:(fun model annotation ->
-                List.fold_result captured_variables ~init:model ~f:(fun model captured_variable ->
-                    add_taint_annotation_to_model
-                      ~path
-                      ~location
-                      ~model_name:(Reference.show callable_name)
-                      ~pyre_api
-                      ~callable_annotation
-                      ~source_sink_filter
-                      model
-                      (ModelAnnotation.ParameterAnnotation
-                         (AccessPath.Root.CapturedVariable captured_variable, annotation))))
-    | _ -> Ok model
+    | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } -> add_taint value
+    | Some { Decorator.arguments = Some _ as arguments; _ } ->
+        annotation_error
+          "`@CapturedVariables(...)` takes only one Taint Annotation as argument."
+          arguments
+    | Some { Decorator.arguments = None; _ } ->
+        annotation_error "`@CapturedVariables(...)` needs one Taint Annotation as argument." None
+    | None -> Ok model
   in
   let model =
     callable_annotation

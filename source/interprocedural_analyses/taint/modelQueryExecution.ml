@@ -1567,7 +1567,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                  production_to_taint return_annotation ~production
                  >>| fun taint ->
                  ModelParseResult.ModelAnnotation.ParameterAnnotation
-                   (AccessPath.Root.CapturedVariable capture.Statement.Define.Capture.name, taint))
+                   ( AccessPath.Root.CapturedVariable
+                       { name = capture.Statement.Define.Capture.name; user_defined = false },
+                     taint ))
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =
             List.find_map
