@@ -460,8 +460,7 @@ let create_of_module type_environment qualifier =
   coverage_data_lookup
 
 
-let location_contains_position_gen
-    stop_column_condition
+let location_contains_position
     {
       Location.start = { Location.column = start_column; line = start_line };
       stop = { Location.column = stop_column; line = stop_line };
@@ -470,15 +469,9 @@ let location_contains_position_gen
     { Location.column; line }
   =
   let start_ok = start_line < line || (start_line = line && start_column <= column) in
-  let stop_ok =
-    stop_line > line || (stop_line = line && stop_column_condition column stop_column)
-  in
+  let stop_ok = stop_line > line || (stop_line = line && stop_column >= column) in
   start_ok && stop_ok
 
-
-let location_contains_position_inclusive = location_contains_position_gen ( <= )
-
-let location_contains_position = location_contains_position_gen ( < )
 
 let get_best_location lookup_table ~position =
   let weight
@@ -546,6 +539,19 @@ let location_insensitive_compare_symbol_and_cfg_data
     first_result
 
 
+let covers_position ~position = function
+  | {
+      Node.value =
+        ( Statement.Class { Class.decorators; _ }
+        | Statement.Define { Define.signature = { Define.Signature.decorators; _ }; _ } );
+      location;
+    } ->
+      location_contains_position location position
+      || List.exists decorators ~f:(fun { Node.location = decorator_location; _ } ->
+             location_contains_position decorator_location position)
+  | { Node.location; _ } -> location_contains_position location position
+
+
 module type PositionData = sig
   val position : Location.position
 
@@ -557,7 +563,7 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
 
   let node_common ~use_postcondition_info state = function
     | Visit.Expression ({ Node.location; _ } as expression)
-      when location_contains_position_inclusive location PositionData.position ->
+      when location_contains_position location PositionData.position ->
         {
           symbol_with_definition = Expression expression;
           cfg_data = PositionData.cfg_data;
@@ -565,7 +571,7 @@ module FindNarrowestSpanningExpression (PositionData : PositionData) = struct
         }
         :: state
     | Visit.Argument { argument = { location; _ }; callee }
-      when location_contains_position_inclusive location PositionData.position ->
+      when location_contains_position location PositionData.position ->
         {
           symbol_with_definition = Expression callee;
           cfg_data = PositionData.cfg_data;

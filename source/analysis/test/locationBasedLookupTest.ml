@@ -155,15 +155,12 @@ let test_lookup_pick_narrowest context =
       "2:28-2:49/typing.Type[typing.Optional[bool]]";
       "2:54-2:58/typing.Type[None]";
       "3:7-3:11/bool";
-      (* TODO (T68817342): Should be `bool` *)
       "3:7-3:27/typing.Optional[bool]";
       "3:17-3:27/bool";
       "3:21-3:27/typing.Optional[bool]";
     ];
   let assert_annotation = assert_annotation ~lookup in
-  assert_annotation
-    ~position:{ Location.line = 3; column = 11 } (* TODO (T68817342): Should be `bool` *)
-    ~annotation:(Some "3:7-3:27/typing.Optional[bool]");
+  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:(Some "3:7-3:11/bool");
   assert_annotation
     ~position:{ Location.line = 3; column = 16 } (* TODO (T68817342): Should be `bool` *)
     ~annotation:(Some "3:7-3:27/typing.Optional[bool]");
@@ -2076,12 +2073,14 @@ let test_lookup_attributes context =
     ];
   assert_annotation ~position:{ Location.line = 5; column = 8 } ~annotation:(Some "5:8-5:12/test.A");
   assert_annotation ~position:{ Location.line = 5; column = 13 } ~annotation:(Some "5:8-5:14/int");
-  assert_annotation ~position:{ Location.line = 5; column = 14 } ~annotation:None;
+  assert_annotation ~position:{ Location.line = 5; column = 14 } ~annotation:(Some "5:8-5:14/int");
   assert_annotation ~position:{ Location.line = 5; column = 17 } ~annotation:(Some "5:17-5:18/int");
   assert_annotation
     ~position:{ Location.line = 9; column = 11 }
     ~annotation:(Some "9:11-9:12/test.A");
-  assert_annotation ~position:{ Location.line = 9; column = 12 } ~annotation:(Some "9:11-9:14/int");
+  assert_annotation
+    ~position:{ Location.line = 9; column = 12 }
+    ~annotation:(Some "9:11-9:12/test.A");
   assert_annotation ~position:{ Location.line = 9; column = 13 } ~annotation:(Some "9:11-9:14/int");
 
   let source =
@@ -2141,14 +2140,16 @@ let test_lookup_attributes context =
     ~annotation:(Some "13:12-13:13/test.A");
   assert_annotation
     ~position:{ Location.line = 13; column = 13 }
-    ~annotation:(Some "13:12-14:13/int");
+    ~annotation:(Some "13:12-13:13/test.A");
   assert_annotation
     ~position:{ Location.line = 14; column = 4 }
     ~annotation:(Some "13:12-14:13/int");
   assert_annotation
     ~position:{ Location.line = 14; column = 12 }
     ~annotation:(Some "13:12-14:13/int");
-  assert_annotation ~position:{ Location.line = 14; column = 13 } ~annotation:None;
+  assert_annotation
+    ~position:{ Location.line = 14; column = 13 }
+    ~annotation:(Some "13:12-14:13/int");
   assert_annotation
     ~position:{ Location.line = 18; column = 0 }
     ~annotation:(Some "17:12-19:13/int")
@@ -2199,7 +2200,7 @@ let test_lookup_call_arguments context =
     ~annotation:(Some "2:4-2:6/typing_extensions.Literal[12]");
   assert_annotation
     ~position:{ Location.line = 2; column = 6 }
-    ~annotation:(Some "2:0-5:15/typing.Any");
+    ~annotation:(Some "2:4-2:6/typing_extensions.Literal[12]");
   assert_annotation
     ~position:{ Location.line = 3; column = 3 }
     ~annotation:(Some "2:0-5:15/typing.Any");
@@ -2214,7 +2215,7 @@ let test_lookup_call_arguments context =
     ~annotation:(Some "3:12-3:20/typing_extensions.Literal['argval']");
   assert_annotation
     ~position:{ Location.line = 3; column = 20 }
-    ~annotation:(Some "2:0-5:15/typing.Any");
+    ~annotation:(Some "3:12-3:20/typing_extensions.Literal['argval']");
   assert_annotation
     ~position:{ Location.line = 4; column = 3 }
     ~annotation:(Some "2:0-5:15/typing.Any");
@@ -2232,7 +2233,7 @@ let test_lookup_call_arguments context =
     ~annotation:(Some "5:4-5:14/typing_extensions.Literal['nextline']");
   assert_annotation
     ~position:{ Location.line = 5; column = 14 }
-    ~annotation:(Some "2:0-5:15/typing.Any")
+    ~annotation:(Some "5:4-5:14/typing_extensions.Literal['nextline']")
 
 
 let test_lookup_class_attributes context =
@@ -2594,7 +2595,9 @@ let test_lookup_string_annotations context =
   assert_annotation
     ~position:{ Location.line = 3; column = 10 }
     ~annotation:(Some "3:6-3:11/typing.Type[int]");
-  assert_annotation ~position:{ Location.line = 3; column = 11 } ~annotation:None;
+  assert_annotation
+    ~position:{ Location.line = 3; column = 11 }
+    ~annotation:(Some "3:6-3:11/typing.Type[int]");
   assert_annotation ~position:{ Location.line = 4; column = 3 } ~annotation:(Some "4:3-4:4/str");
   assert_annotation
     ~position:{ Location.line = 4; column = 6 }
@@ -2605,7 +2608,9 @@ let test_lookup_string_annotations context =
   assert_annotation
     ~position:{ Location.line = 4; column = 10 }
     ~annotation:(Some "4:6-4:11/typing.Type[str]");
-  assert_annotation ~position:{ Location.line = 4; column = 11 } ~annotation:None
+  assert_annotation
+    ~position:{ Location.line = 4; column = 11 }
+    ~annotation:(Some "4:6-4:11/typing.Type[str]")
 
 
 let test_lookup_unbound context =
@@ -4065,6 +4070,59 @@ let test_hover_info_for_position context =
   ()
 
 
+let test_contains _ =
+  let contains ~location position =
+    LocationBasedLookup.location_contains_position
+      (parse_location location)
+      (parse_position position)
+  in
+  let assert_contains ~location position = assert_true (contains ~location position) in
+  let assert_not_contains ~location position = assert_false (contains ~location position) in
+  assert_not_contains ~location:"1:3-2:14" "1:2";
+  assert_contains ~location:"1:3-2:14" "1:3";
+  assert_contains ~location:"1:3-2:14" "1:99";
+  assert_contains ~location:"1:3-2:14" "2:0";
+  assert_contains ~location:"1:3-2:14" "2:13";
+  assert_contains ~location:"1:3-2:14" "2:14";
+  ()
+
+
+let test_covers_position _ =
+  let assert_covers ~source ~position expected =
+    LocationBasedLookup.covers_position ~position (parse_single_statement source)
+    |> assert_bool_equals ~expected
+  in
+  let source =
+    {|
+      @my_decorator
+      class Foo:
+        def __init__(self) -> None:
+          pass
+    |}
+  in
+  (* Positions before the class are not covered. *)
+  assert_covers ~source ~position:{ Location.line = 1; column = 0 } false;
+  assert_covers ~source ~position:{ Location.line = 2; column = 0 } false;
+  (* The decorator is covered. *)
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
+  (* The class is covered. *)
+  assert_covers ~source ~position:{ Location.line = 3; column = 0 } true;
+  (* The position beyond the end of the class is covered. *)
+  assert_covers ~source ~position:{ Location.line = 5; column = 8 } true;
+  let source = {|
+      @my_decorator
+      def foo() -> None: ...
+    |} in
+  (* The decorator is covered. *)
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
+  assert_covers ~source ~position:{ Location.line = 3; column = 1 } true;
+  let source = {|
+      x = 1
+    |} in
+  assert_covers ~source ~position:{ Location.line = 2; column = 1 } true;
+  ()
+
+
 let () =
   "lookup"
   >::: [
@@ -4093,5 +4151,7 @@ let () =
          "coverage_gaps_in_module" >:: test_coverage_gaps_in_module;
          "resolve_type_for_symbol" >:: test_resolve_type_for_symbol;
          "hover_info_for_position" >:: test_hover_info_for_position;
+         "covers_position" >:: test_covers_position;
+         "contains" >:: test_contains;
        ]
   |> Test.run

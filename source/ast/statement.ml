@@ -2056,16 +2056,3 @@ let is_generator statements =
         false
   and is_statements_generator statements = List.exists statements ~f:is_statement_generator in
   is_statements_generator statements
-
-
-let covers_position ~position = function
-  | {
-      Node.value =
-        ( Statement.Class { Class.decorators; _ }
-        | Statement.Define { Define.signature = { Define.Signature.decorators; _ }; _ } );
-      location;
-    } ->
-      Location.contains ~location position
-      || List.exists decorators ~f:(fun { Node.location = decorator_location; _ } ->
-             Location.contains ~location:decorator_location position)
-  | { Node.location; _ } -> Location.contains ~location position

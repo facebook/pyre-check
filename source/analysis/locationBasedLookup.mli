@@ -124,6 +124,8 @@ val get_coverage_data
   position:Location.position ->
   (Location.t * coverage_data) option
 
+val covers_position : position:Location.position -> Statement.t -> bool
+
 val get_all_nodes_and_coverage_data : coverage_data_lookup -> (Location.t * coverage_data) list
 
 type symbol_with_definition =
@@ -203,6 +205,8 @@ val document_symbol_info : source:Ast.Source.t -> DocumentSymbolItem.t list
 val parameter_is_any_message : string list
 
 val expression_is_any_message : string list
+
+val location_contains_position : Location.t -> Location.position -> bool
 
 val container_parameter_is_any_message : string list
 

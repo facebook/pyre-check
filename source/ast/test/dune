@@ -2,7 +2,6 @@
  (names
   expressionTest
   identifierTest
-  locationTest
   moduleTest
   modulePathTest
   nodeTest
