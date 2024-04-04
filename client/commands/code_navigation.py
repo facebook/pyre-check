@@ -19,10 +19,23 @@ import json
 import logging
 import traceback
 
-from typing import Optional
+from typing import Dict, Optional
 
-from .. import backend_arguments, background_tasks, log_lsp_event, timer, version
-from ..language_server import connections, features, protocol as lsp, remote_index
+from .. import (
+    backend_arguments,
+    background_tasks,
+    json_rpc,
+    log_lsp_event,
+    timer,
+    version,
+)
+from ..language_server import (
+    connections,
+    daemon_connection,
+    features,
+    protocol as lsp,
+    remote_index,
+)
 from . import (
     daemon_querier,
     document_formatter,
@@ -57,6 +70,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
     launch_and_subscribe_handler.PyreDaemonLaunchAndSubscribeHandler
 ):
     querier: daemon_querier.AbstractDaemonQuerier
+    output_channel: connections.AsyncTextWriter
 
     def __init__(
         self,
@@ -65,6 +79,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         client_status_message_handler: status_message_handler.ClientStatusMessageHandler,
         client_type_error_handler: type_error_handler.ClientTypeErrorHandler,
         querier: daemon_querier.AbstractDaemonQuerier,
+        output_channel: connections.AsyncTextWriter,
         remote_logging: Optional[backend_arguments.RemoteLogging] = None,
     ) -> None:
         super().__init__(
@@ -76,6 +91,31 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             remote_logging,
         )
         self.querier = querier
+        self.output_channel = output_channel
+
+    async def write_telemetry(
+        self,
+        parameters: Dict[str, object],
+    ) -> None:
+        should_write_telemetry = (
+            self.server_state.server_options.language_server_features.telemetry.is_enabled()
+        )
+        if should_write_telemetry:
+            parameters = dict(parameters)
+            parameters["project_identifier"] = (
+                self.server_state.server_options.project_identifier
+            )
+            parameters["enabled_features"] = {
+                "type_errors_enabled": self.server_state.server_options.language_server_features.type_errors.is_enabled()
+            }
+            await lsp.write_json_rpc_ignore_connection_error(
+                self.output_channel,
+                json_rpc.Request(
+                    activity_key=None,
+                    method="telemetry/event",
+                    parameters=json_rpc.ByNameParameters(parameters),
+                ),
+            )
 
     def get_type_errors_availability(self) -> features.TypeErrorsAvailability:
         return self.server_state.server_options.language_server_features.type_errors
@@ -153,8 +193,26 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
         )
 
     async def client_setup(self) -> None:
-        await self.querier.handle_register_client()
-        LOG.info("Registered daemon querier.")
+        register_client_request = await self.querier.handle_register_client()
+        if isinstance(
+            register_client_request, daemon_connection.DaemonConnectionFailure
+        ):
+            error_message = (
+                f"error occurred in client_setup request: {register_client_request}"
+            )
+            LOG.warn(f"Failed to register daemon querier: {register_client_request}")
+        else:
+            error_message = None
+            LOG.info("Registered daemon querier.")
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "clientSetup",
+                "error_message": error_message,
+                **self.server_state.status_tracker.get_status().as_telemetry_dict(),
+            }
+        )
+
         results = await asyncio.gather(
             *[
                 self.querier.handle_file_opened(path, document.code)
@@ -165,8 +223,25 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             LOG.info(f"Sent {len(results)} open messages to daemon for existing state.")
 
     async def client_teardown(self) -> None:
-        await self.querier.handle_dispose_client()
-        LOG.info("Disposed daemon querier.")
+        dispose_client_request = await self.querier.handle_dispose_client()
+        if isinstance(
+            dispose_client_request, daemon_connection.DaemonConnectionFailure
+        ):
+            error_message = (
+                f"error occurred in client_teardown request: {dispose_client_request}"
+            )
+            LOG.warn(f"Failed to dispose of daemon querier: {dispose_client_request}")
+        else:
+            error_message = None
+            LOG.info("Disposed daemon querier.")
+        await self.write_telemetry(
+            {
+                "type": "LSP",
+                "operation": "clientSetup",
+                "error_message": error_message,
+                **self.server_state.status_tracker.get_status().as_telemetry_dict(),
+            }
+        )
 
 
 def process_initialize_request(
@@ -260,6 +335,7 @@ async def async_run_code_navigation_client(
                 ),
                 querier=codenav_querier,
                 client_type_error_handler=client_type_error_handler,
+                output_channel=stdout,
             )
         ),
         api=pyre_language_server.PyreLanguageServer(
