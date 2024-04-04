@@ -367,8 +367,6 @@ module InContext = struct
 
   let redirect_special_calls { resolution; _ } = AnnotatedCall.redirect_special_calls ~resolution
 
-  let resolve_stringify_call { resolution; _ } = AnnotatedCall.resolve_stringify_call ~resolution
-
   let resolve_generators pyre_in_context generators =
     let resolve_generator pyre_in_context generator =
       resolve_assignment pyre_in_context (Ast.Statement.Statement.generator_assignment generator)

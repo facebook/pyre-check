@@ -1701,6 +1701,23 @@ let resolve_callee_from_defining_expression
       | _ -> None)
 
 
+let resolve_stringify_call ~pyre_in_context expression =
+  let string_callee =
+    Node.create_with_default_location
+      (Expression.Name (Name.Attribute { base = expression; attribute = "__str__"; special = true }))
+  in
+  try
+    match
+      CallResolution.resolve_ignoring_errors ~pyre_in_context string_callee |> Type.callable_name
+    with
+    | Some name when Reference.equal name (Reference.create "object.__str__") ->
+        (* Call resolved to object.__str__, fallback to calling __repr__ if it exists. *)
+        "__repr__"
+    | _ -> "__str__"
+  with
+  | Analysis.ClassHierarchy.Untracked _ -> "__str__"
+
+
 (* Rewrite certain calls for the interprocedural analysis (e.g, pysa).
  * This may or may not be sound depending on the analysis performed. *)
 let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
@@ -1712,6 +1729,11 @@ let transform_special_calls ~pyre_in_context { Call.callee; arguments } =
     }
   in
   match Node.value callee, arguments with
+  | Name (Name.Identifier "str"), [{ Call.Argument.value; _ }] ->
+      (* str() takes an optional encoding and errors - if these are present, the call shouldn't be
+         redirected: https://docs.python.org/3/library/stdtypes.html#str *)
+      let callee = attribute_access value (resolve_stringify_call ~pyre_in_context value) in
+      Some { Call.callee; arguments = [] }
   | Name (Name.Identifier "iter"), [{ Call.Argument.value; _ }] ->
       (* Only handle `iter` with a single argument here. *)
       Some { Call.callee = attribute_access value "__iter__"; arguments = [] }
@@ -2524,9 +2546,7 @@ struct
                 | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
                     let { CallCallees.call_targets; _ } =
                       let callee =
-                        let method_name =
-                          PyrePysaApi.InContext.resolve_stringify_call pyre_in_context expression
-                        in
+                        let method_name = resolve_stringify_call ~pyre_in_context expression in
                         {
                           Node.value =
                             Expression.Name

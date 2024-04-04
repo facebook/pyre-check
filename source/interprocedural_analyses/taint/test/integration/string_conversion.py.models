@@ -593,6 +593,82 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "string_conversion.optional_str",
+    "callable_line": 191,
+    "code": 5001,
+    "line": 195,
+    "start": 9,
+    "end": 15,
+    "filename": "string_conversion.py",
+    "message": "Possible remote code execution due to [UserControlled] data reaching [RemoteCodeExecution] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "has": "first-index" }, { "first-index": "tainted" }
+                ],
+                "leaves": [
+                  {
+                    "name": "Obj{django.http.Request.GET}",
+                    "port": "leaf:return"
+                  }
+                ],
+                "length": 1,
+                "kind": "UserControlled"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "string_conversion.py",
+                "line": 195,
+                "start": 9,
+                "end": 15
+              },
+              "resolves_to": [ "string_conversion.StrIsTainted.__str__" ],
+              "port": "result"
+            },
+            "receiver_interval": [ { "lower": 16, "upper": 17 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "eval", "port": "leaf:arg" } ],
+                "kind": "RemoteCodeExecution"
+              }
+            ],
+            "origin": {
+              "filename": "string_conversion.py",
+              "line": 195,
+              "start": 9,
+              "end": 15
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "has": "first-index" }, { "first-index": "tainted" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "eval",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "string_conversion.optional_str:5001:0:Call|eval|0|formal(arg):7c4ba72a7224bd43f4615f63ac4877f7"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "string_conversion.propagate_taint",
     "callable_line": 63,
     "code": 5001,

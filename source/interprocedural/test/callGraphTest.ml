@@ -3544,10 +3544,11 @@ let test_call_graph_of_define context =
                         [
                           (* TODO(T112761296): Probably wrong call resolution *)
                           CallTarget.create
+                            ~index:1
                             (Target.Method
                                {
                                  class_name = "BaseException";
-                                 method_name = "__repr__";
+                                 method_name = "__str__";
                                  kind = Normal;
                                });
                         ]) );
@@ -3631,7 +3632,7 @@ let test_call_graph_of_define context =
                     (* TODO(T112761296): Wrong call resolution *)
                     CallTarget.create
                       (Target.Method
-                         { class_name = "BaseException"; method_name = "__repr__"; kind = Normal });
+                         { class_name = "BaseException"; method_name = "__str__"; kind = Normal });
                   ])) );
       ]
     ();
@@ -3722,7 +3723,7 @@ let test_call_graph_of_define context =
                           (* TODO(T112761296): Probably wrong call resolution *)
                           CallTarget.create
                             (Target.Method
-                               { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                               { class_name = "test.A"; method_name = "__str__"; kind = Normal });
                         ]) );
                  ( "__class__",
                    ExpressionCallees.from_attribute_access

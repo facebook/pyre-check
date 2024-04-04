@@ -186,7 +186,5 @@ module InContext : sig
 
   val redirect_special_calls : t -> Ast.Expression.Call.t -> Ast.Expression.Call.t
 
-  val resolve_stringify_call : t -> Ast.Expression.t -> string
-
   val resolve_generators : t -> Ast.Expression.Comprehension.Generator.t list -> t
 end
