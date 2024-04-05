@@ -520,6 +520,7 @@ module Heap = struct
           name = "Possible shell injection.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -529,6 +530,7 @@ module Heap = struct
           code = 5002;
           name = "Test flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -538,6 +540,7 @@ module Heap = struct
           code = 5005;
           name = "User controlled data to SQL execution.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -550,6 +553,7 @@ module Heap = struct
           code = 5006;
           name = "Restricted data being logged.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -559,6 +563,7 @@ module Heap = struct
           code = 5007;
           name = "User data to XML Parser.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -568,6 +573,7 @@ module Heap = struct
           code = 5008;
           name = "XSS";
           message_format = "Possible XSS due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -577,6 +583,7 @@ module Heap = struct
           code = 5009;
           name = "Demo flow.";
           message_format = "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -586,6 +593,7 @@ module Heap = struct
           code = 5010;
           name = "User data to getattr.";
           message_format = "Attacker may control at least one argument to getattr(,).";
+          filters = None;
           location = None;
         };
         {
@@ -596,6 +604,7 @@ module Heap = struct
           name = "Flow with one transform.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -606,6 +615,7 @@ module Heap = struct
           name = "Flow with two transforms.";
           message_format =
             "Data from [{$sources}] source(s) via [{$transforms}] may reach [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
         {
@@ -616,6 +626,7 @@ module Heap = struct
           name = "Duplicate demo flow.";
           message_format =
             "Possible remote code execution due to [{$sources}] data reaching [{$sinks}] sink(s)";
+          filters = None;
           location = None;
         };
       ]
@@ -946,6 +957,22 @@ let from_json_list source_json_list =
         let location = JsonAst.Json.Util.to_location_exn node in
         Result.return (value, location))
   in
+  let json_optional_int_member ~path key value =
+    let node = JsonAst.Json.Util.member key value in
+    match node.JsonAst.Node.value with
+    | `Null -> Result.Ok None
+    | `Int value -> Result.Ok (Some value)
+    | `Float value -> Result.Ok (Some (int_of_float value))
+    | _ ->
+        Result.Error
+          [
+            Error.create
+              ~path
+              ~kind:
+                (Error.UnexpectedJsonType
+                   { json = value; message = "Expected optional integer"; section = Some key });
+          ]
+  in
   let array_member ~path ?section name json =
     let node = JsonAst.Json.Util.member name json in
     match node.JsonAst.Node.value with
@@ -1068,23 +1095,60 @@ let from_json_list source_json_list =
       name: string;
       message_format: string;
       code: int;
+      filters: Rule.filters option;
       location: JsonAst.LocationWithPath.t;
     }
+
+    let parse_filters ~path json =
+      let filters_node = JsonAst.Json.Util.member "filters" json in
+      match filters_node.JsonAst.Node.value with
+      | `Null -> Result.Ok None
+      | `Assoc _ ->
+          check_keys
+            ~path
+            ~section:"filters"
+            ~required_keys:[]
+            ~current_keys:(JsonAst.Json.Util.keys filters_node)
+            ~valid_keys:["maximum_source_distance"; "maximum_sink_distance"; "comment"]
+          >>= fun () ->
+          json_optional_int_member ~path "maximum_source_distance" filters_node
+          >>= fun maximum_source_distance ->
+          json_optional_int_member ~path "maximum_sink_distance" filters_node
+          >>| fun maximum_sink_distance ->
+          Some { Rule.maximum_source_distance; maximum_sink_distance }
+      | _ ->
+          Error
+            [
+              Error.create
+                ~path
+                ~kind:
+                  (Error.UnexpectedJsonType
+                     { json = filters_node; message = "Unexpected filters"; section = None });
+            ]
+
 
     let parse ~path json =
       json_string_member ~path "name" json
       >>= fun name ->
       json_string_member ~path "message_format" json
       >>= fun message_format ->
+      parse_filters ~path json
+      >>= fun filters ->
       json_integer_member_with_location ~path "code" json
       >>| fun (code, location) ->
-      { name; message_format; code; location = JsonAst.LocationWithPath.create ~path ~location }
+      {
+        name;
+        message_format;
+        code;
+        filters;
+        location = JsonAst.LocationWithPath.create ~path ~location;
+      }
   end
   in
   let parse_rules ~allowed_sources ~allowed_sinks ~allowed_transforms (path, json) =
     let parse_rule json =
       let required_keys = ["name"; "code"; "sources"; "sinks"; "message_format"] in
-      let valid_keys = "oncall" :: "comment" :: "transforms" :: required_keys in
+      let valid_keys = "oncall" :: "comment" :: "transforms" :: "filters" :: required_keys in
       check_keys
         ~path
         ~section:"rules"
@@ -1112,8 +1176,17 @@ let from_json_list source_json_list =
       |> Result.combine_errors
       >>= fun transforms ->
       RuleCommonAttributes.parse ~path json
-      >>| fun { name; message_format; code; location } ->
-      { Rule.sources; sinks; transforms; name; code; message_format; location = Some location }
+      >>| fun { name; message_format; code; filters; location } ->
+      {
+        Rule.sources;
+        sinks;
+        transforms;
+        name;
+        code;
+        message_format;
+        filters;
+        location = Some location;
+      }
     in
     array_member ~path "rules" json
     >>= fun rules ->
@@ -1191,7 +1264,8 @@ let from_json_list source_json_list =
       ~partial_sink
       ~partial_sink_converter
       ~partial_sink_labels
-      ~rule_common_attributues:{ RuleCommonAttributes.name; message_format; code; location }
+      ~rule_common_attributues:
+        { RuleCommonAttributes.name; message_format; code; filters; location }
       ~combined_source_rule_sources:
         { CombinedSourceRuleSources.main_sources; secondary_sources; main_label; secondary_label }
       ~path
@@ -1238,6 +1312,7 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        filters;
         location = Some location;
       }
     in
@@ -1249,6 +1324,7 @@ let from_json_list source_json_list =
         name;
         code;
         message_format;
+        filters;
         location = Some location;
       }
     in
@@ -1684,6 +1760,7 @@ let obscure_flows_configuration configuration =
         code = 9001;
         name = "Obscure flow.";
         message_format = "Data from [{$sources}] source(s) may reach an obscure model";
+        filters = None;
         location = None;
       };
     ]
@@ -1715,6 +1792,7 @@ let missing_type_flows_configuration configuration =
         code = 9002;
         name = "Unknown callee flow.";
         message_format = "Data from [{$sources}] source(s) may flow to an unknown callee";
+        filters = None;
         location = None;
       };
     ]

@@ -87,6 +87,7 @@ let set_up_environment
               code = 1;
               name = "rule 1";
               message_format = "";
+              filters = None;
               location = None;
             };
           ]
@@ -2994,6 +2995,7 @@ let test_partial_sinks context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          filters = None;
           location = None;
         };
         {
@@ -3003,6 +3005,7 @@ let test_partial_sinks context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3046,6 +3049,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3069,6 +3073,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3092,6 +3097,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3115,6 +3121,7 @@ let test_filter_by_rules context =
           code = 5021;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3138,6 +3145,7 @@ let test_filter_by_rules context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          filters = None;
           location = None;
         };
         {
@@ -3147,6 +3155,7 @@ let test_filter_by_rules context =
           code = 4321;
           message_format = "";
           name = "test multiple sources rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3174,6 +3183,7 @@ let test_filter_by_rules context =
           code = 5022;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]
@@ -3197,6 +3207,7 @@ let test_filter_by_rules context =
           code = 5023;
           message_format = "";
           name = "test rule";
+          filters = None;
           location = None;
         };
       ]

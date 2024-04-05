@@ -35,6 +35,7 @@ let test_covered_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -51,6 +52,7 @@ let test_covered_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -67,6 +69,7 @@ let test_covered_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -82,6 +85,7 @@ let test_covered_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -98,6 +102,7 @@ let test_covered_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -145,6 +150,7 @@ let test_rule_coverage _ =
       code = 1000;
       name = "Rule 1";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -156,6 +162,7 @@ let test_rule_coverage _ =
       code = 1001;
       name = "Rule 2";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -168,6 +175,7 @@ let test_rule_coverage _ =
       code = 1002;
       name = "Rule 3";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -180,6 +188,7 @@ let test_rule_coverage _ =
       code = 1004;
       name = "Rule 5";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -191,6 +200,7 @@ let test_rule_coverage _ =
       code = 1003;
       name = "Rule 4";
       message_format = "";
+      filters = None;
       location = None;
     }
   in
@@ -202,6 +212,7 @@ let test_rule_coverage _ =
       code = 1003;
       name = "Rule 4";
       message_format = "";
+      filters = None;
       location = None;
     }
   in

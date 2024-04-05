@@ -363,6 +363,7 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          filters = None;
           location =
             Some
               {
@@ -381,6 +382,7 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          filters = None;
           location =
             Some
               {
@@ -434,6 +436,7 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          filters = None;
           location =
             Some
               {
@@ -452,6 +455,7 @@ let test_combined_source_rules _ =
           transforms = [];
           code = 2001;
           message_format = "some form";
+          filters = None;
           location =
             Some
               {
@@ -588,6 +592,7 @@ let test_string_combine_rules _ =
           transforms = [];
           code = 2001;
           message_format = "rule message";
+          filters = None;
           location =
             Some
               {
@@ -607,6 +612,7 @@ let test_string_combine_rules _ =
           transforms = [];
           code = 2001;
           message_format = "rule message";
+          filters = None;
           location =
             Some
               {
@@ -1959,6 +1965,44 @@ let test_matching_kinds _ =
   ()
 
 
+let test_filters _ =
+  let configuration =
+    assert_parse
+      {|
+    { "sources": [
+        { "name": "A" },
+        { "name": "B" }
+      ],
+      "sinks": [
+        { "name": "C" },
+        { "name": "D" }
+      ],
+      "rules": [
+        {
+           "name": "test rule",
+           "sources": ["A"],
+           "sinks": ["D"],
+           "code": 1001,
+           "message_format": "whatever",
+           "filters": {
+             "maximum_source_distance": 2,
+             "maximum_sink_distance": 3
+           }
+        }
+      ]
+    }
+  |}
+  in
+  assert_equal (without_locations configuration.sources) [named "A"; named "B"];
+  assert_equal (without_locations configuration.sinks) [named "C"; named "D"];
+  assert_equal (List.length configuration.rules) 1;
+  assert_equal (List.hd_exn configuration.rules).code 1001;
+  assert_equal
+    ~cmp:(Option.equal Rule.equal_filters)
+    (List.hd_exn configuration.rules).filters
+    (Some { Rule.maximum_source_distance = Some 2; maximum_sink_distance = Some 3 })
+
+
 let () =
   "configuration"
   >::: [
@@ -1977,5 +2021,6 @@ let () =
          "transform_splits" >:: test_transform_splits;
          "validate" >:: test_validate;
          "matching_kinds" >:: test_matching_kinds;
+         "filters" >:: test_filters;
        ]
   |> Test.run

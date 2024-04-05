@@ -244,6 +244,7 @@ let test_from_rule _ =
       code = 1234;
       name = "Test Rule";
       message_format = "";
+      filters = None;
       location = None;
     }
   in

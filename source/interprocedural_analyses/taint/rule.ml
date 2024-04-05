@@ -11,6 +11,12 @@
 
 open Core
 
+type filters = {
+  maximum_source_distance: int option;
+  maximum_sink_distance: int option;
+}
+[@@deriving eq, compare, show]
+
 type t = {
   sources: Sources.t list;
   sinks: Sinks.t list;
@@ -18,6 +24,7 @@ type t = {
   code: int;
   name: string;
   message_format: string; (* format *)
+  filters: filters option;
   location: JsonParsing.JsonAst.LocationWithPath.t option; (* location where the rule was defined *)
 }
 [@@deriving compare, show]
