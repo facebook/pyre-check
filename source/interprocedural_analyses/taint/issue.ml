@@ -151,7 +151,7 @@ let generate_issues
     List.map flows ~f:partition
   in
   let apply_rule_on_flow
-      { Rule.sources; sinks; transforms; _ }
+      { Rule.sources; sinks; transforms; filters; _ }
       { PartitionedFlow.source_partition; sink_partition }
     =
     let add_source_taint source_taint source =
@@ -304,7 +304,22 @@ let generate_issues
       in
       Rule.transform_splits transforms |> List.fold ~init:Flow.bottom ~f:add_and_sanitize_flow
     in
-    let partition_flow = apply_transforms { source_taint; sink_taint } in
+    let apply_filters { Flow.source_taint; sink_taint } =
+      let source_taint =
+        match filters with
+        | Some { maximum_source_distance = Some maximum_source_distance; _ } ->
+            ForwardTaint.prune_maximum_length maximum_source_distance source_taint
+        | _ -> source_taint
+      in
+      let sink_taint =
+        match filters with
+        | Some { maximum_sink_distance = Some maximum_sink_distance; _ } ->
+            BackwardTaint.prune_maximum_length maximum_sink_distance sink_taint
+        | _ -> sink_taint
+      in
+      { Flow.source_taint; sink_taint }
+    in
+    let partition_flow = { source_taint; sink_taint } |> apply_transforms |> apply_filters in
     if Flow.is_bottom partition_flow then
       None
     else

@@ -1,0 +1,365 @@
+@generated
+{
+  "kind": "issue",
+  "data": {
+    "callable": "rule_with_filters.test_source_one_sink_one",
+    "callable_line": 29,
+    "code": 5002,
+    "line": 30,
+    "start": 22,
+    "end": 43,
+    "filename": "rule_with_filters.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 30,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "rule_with_filters.source_distance_one" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 30,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "rule_with_filters.sink_distance_one" ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "rule_with_filters.sink_distance_one",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "rule_with_filters.test_source_one_sink_one:5002:0:Call|rule_with_filters.sink_distance_one|0|formal(x):1e65cc7c5deb7bac5ca562b42f536c09"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "rule_with_filters.test_source_one_sink_two",
+    "callable_line": 38,
+    "code": 5002,
+    "line": 39,
+    "start": 22,
+    "end": 43,
+    "filename": "rule_with_filters.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 39,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "rule_with_filters.source_distance_one" ],
+              "port": "result"
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 39,
+                "start": 22,
+                "end": 43
+              },
+              "resolves_to": [ "rule_with_filters.sink_distance_two" ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "rule_with_filters.sink_distance_two",
+      "index": 0,
+      "parameter": "formal(x)"
+    },
+    "master_handle": "rule_with_filters.test_source_one_sink_two:5002:0:Call|rule_with_filters.sink_distance_two|0|formal(x):79c3c4e04673e23a23b6cf85767446ae"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_sink",
+    "sinks": [
+      {
+        "port": "formal(arg, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "_test_source",
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      }
+    ],
+    "modes": [ "Obscure" ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule_with_filters.sink_distance_one",
+    "filename": "rule_with_filters.py",
+    "callable_line": 17,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "rule_with_filters.py",
+              "line": 18,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule_with_filters.sink_distance_three",
+    "filename": "rule_with_filters.py",
+    "callable_line": 25,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 2,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 26,
+                "start": 22,
+                "end": 23
+              },
+              "resolves_to": [ "rule_with_filters.sink_distance_two" ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule_with_filters.sink_distance_two",
+    "filename": "rule_with_filters.py",
+    "callable_line": 21,
+    "sinks": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 22,
+                "start": 22,
+                "end": 23
+              },
+              "resolves_to": [ "rule_with_filters.sink_distance_one" ],
+              "port": "formal(x, position=0)"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule_with_filters.source_distance_one",
+    "filename": "rule_with_filters.py",
+    "callable_line": 9,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "rule_with_filters.py",
+              "line": 10,
+              "start": 11,
+              "end": 25
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "rule_with_filters.source_distance_two",
+    "filename": "rule_with_filters.py",
+    "callable_line": 13,
+    "sources": [
+      {
+        "port": "result",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "length": 1,
+                "kind": "Test"
+              }
+            ],
+            "call": {
+              "position": {
+                "filename": "rule_with_filters.py",
+                "line": 14,
+                "start": 11,
+                "end": 32
+              },
+              "resolves_to": [ "rule_with_filters.source_distance_one" ],
+              "port": "result"
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
