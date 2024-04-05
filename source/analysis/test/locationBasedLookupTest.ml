@@ -1115,20 +1115,16 @@ let test_resolve_definition_for_symbol =
       in
       type_environment
     in
-    let symbol_data =
-      LocationBasedLookup.find_narrowest_spanning_symbol
-        ~type_environment
-        ~module_reference
-        (find_indicator_position ~source "cursor")
+    let actual =
+      find_indicator_position ~source "cursor"
+      |> LocationBasedLookup.location_of_definition ~type_environment ~module_reference
+      |> Result.ok
     in
-    let open Result in
     assert_equal
       ~cmp:[%compare.equal: Location.WithModule.t option]
       ~printer:[%show: Location.WithModule.t option]
       expected
-      (symbol_data
-      >>= LocationBasedLookup.resolve_definition_for_symbol ~type_environment ~module_reference
-      |> ok)
+      actual
   in
   let assert_resolved_definition source context =
     let expected_definition_location =
