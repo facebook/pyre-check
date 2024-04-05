@@ -65,21 +65,21 @@ type resolution_error =
   | ResolvedTop
   | ResolvedUnbound
   | UntrackedType of string
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 type attribute_lookup_error =
   | ReferenceNotFoundAndBaseUnresolved of resolution_error
   | AttributeUnresolved
   | ClassSummaryNotFound
   | ClassSummaryAttributeNotFound
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 type lookup_error =
   | SymbolNotFound
   | IdentifierDefinitionNotFound of Reference.t
   | AttributeDefinitionNotFound of string option * attribute_lookup_error
   | UnsupportedExpression of string
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 (* Please view diff D53973886 to to understand how this data structure maps to the corresponding
    Python data structure for document symbols *)

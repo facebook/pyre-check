@@ -297,6 +297,7 @@ let test_build_system_path_lookup context =
                 {
                   definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }];
                   empty_reason = None;
+                  duration = 0.;
                 });
         (* Try open `a.py` (no artifact path), `b.py` (artifact path), and `c.py` (nonexistent) *)
         ScratchProject.ClientConnection.assert_response
@@ -328,6 +329,7 @@ let test_build_system_path_lookup context =
                 {
                   definitions = [{ DefinitionLocation.path = path_b; range = range 1 0 1 1 }];
                   empty_reason = None;
+                  duration = 0.;
                 });
       ]
 

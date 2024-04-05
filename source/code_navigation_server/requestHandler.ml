@@ -249,6 +249,7 @@ let get_location_of_definition_in_overlay ~overlay ~build_system ~position path 
 
 
 let handle_location_of_definition
+    ~timer
     ~path
     ~position
     ~client_id
@@ -265,7 +266,9 @@ let handle_location_of_definition
     | [], errors -> [], List.hd errors
     | definitions, _ -> definitions, None
   in
-  Response.(LocationOfDefinition { definitions; empty_reason })
+  let duration_us = Timer.stop_in_us timer in
+  let duration = Float.of_int duration_us /. 1000. in
+  Response.(LocationOfDefinition { definitions; empty_reason; duration })
 
 
 let get_completion_for_module ~overlay ~position module_reference =
@@ -700,6 +703,7 @@ let handle_query
           };
         _;
       }
+    ~timer
   = function
   | Request.Query.GetTypeErrors { paths; client_id } ->
       let f state =
@@ -714,7 +718,8 @@ let handle_query
   | Request.Query.LocationOfDefinition { path; position; client_id } ->
       let state = Server.ExclusiveLock.unsafe_read state in
       let response =
-        handle_location_of_definition ~path ~position ~client_id state |> response_from_result
+        handle_location_of_definition ~timer ~path ~position ~client_id state
+        |> response_from_result
       in
       Lwt.return response
   | Request.Query.DocumentSymbol { path; client_id } ->

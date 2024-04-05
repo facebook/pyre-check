@@ -418,6 +418,7 @@ let test_location_of_definition_request context =
                   definitions = [];
                   empty_reason =
                     Some (LocationBasedLookupError Analysis.LocationBasedLookup.SymbolNotFound);
+                  duration = 0.;
                 });
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -432,6 +433,7 @@ let test_location_of_definition_request context =
                 {
                   definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }];
                   empty_reason = None;
+                  duration = 0.;
                 });
         ScratchProject.ClientConnection.assert_response
           ~request:
@@ -446,6 +448,7 @@ let test_location_of_definition_request context =
                 {
                   definitions = [{ DefinitionLocation.path = test_path; range = range 1 0 1 1 }];
                   empty_reason = None;
+                  duration = 0.;
                 });
         ScratchProject.ClientConnection.assert_error_response
           ~request:
@@ -498,6 +501,7 @@ let test_location_of_definition_attribute_not_found context =
                          Analysis.LocationBasedLookup.(
                            AttributeDefinitionNotFound
                              (Some "foo.bar", ReferenceNotFoundAndBaseUnresolved ResolvedTop)));
+                  duration = 0.;
                 });
         close_file ~client_id ~path:test_path;
         dispose_client ~client_id;
@@ -534,6 +538,7 @@ let test_location_of_definition_attribute_unannotated_class_property context =
                 {
                   definitions = [{ DefinitionLocation.path = test_path; range = range 2 2 2 11 }];
                   empty_reason = None;
+                  duration = 0.;
                 });
         (* self.foo.|bar *)
         ScratchProject.ClientConnection.assert_response
@@ -554,6 +559,7 @@ let test_location_of_definition_attribute_unannotated_class_property context =
                            AttributeDefinitionNotFound
                              ( Some "$parameter$self.foo.bar",
                                ReferenceNotFoundAndBaseUnresolved ResolvedTop )));
+                  duration = 0.;
                 });
         close_file ~client_id ~path:test_path;
         dispose_client ~client_id;

@@ -332,6 +332,7 @@ class DaemonQuerierTest(testslide.TestCase):
                 ],
                 empty_reason=None,
                 daemon_duration=0,
+                daemon_inner_duration=0,
                 glean_duration=0,
             ),
         )
@@ -416,6 +417,7 @@ class DaemonQuerierTest(testslide.TestCase):
                     data=[],
                     empty_reason=None,
                     daemon_duration=0,
+                    daemon_inner_duration=0,
                     glean_duration=0,
                 ),
             )
@@ -449,6 +451,7 @@ class DaemonQuerierTest(testslide.TestCase):
                 data=[],
                 empty_reason=None,
                 daemon_duration=0,
+                daemon_inner_duration=0,
                 glean_duration=0,
             ),
         )
@@ -737,6 +740,7 @@ class DaemonQuerierTest(testslide.TestCase):
                     data=[],
                     empty_reason=None,
                     daemon_duration=0,
+                    daemon_inner_duration=0,
                     glean_duration=0,
                 ),
                 error_message=_DaemonQuerier_Failure_Message,

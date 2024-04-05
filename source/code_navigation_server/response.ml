@@ -16,7 +16,7 @@ module ErrorKind = struct
     | ClientAlreadyRegistered of { client_id: string }
     | ClientNotRegistered of { client_id: string }
     | FileNotOpened of { path: string }
-  [@@deriving sexp, compare, to_yojson { strict = false }]
+  [@@deriving sexp, compare, yojson { strict = false }]
 end
 
 module HoverContent = struct
@@ -146,7 +146,7 @@ end
 type empty_reason =
   | SourcePathNotFound of { module_reference: Ast.Reference.t }
   | LocationBasedLookupError of Analysis.LocationBasedLookup.lookup_error
-[@@deriving sexp, compare, to_yojson { strict = false }]
+[@@deriving sexp, compare, yojson { strict = false }]
 
 type t =
   | Ok
@@ -156,6 +156,7 @@ type t =
   | LocationOfDefinition of {
       definitions: DefinitionLocation.t list;
       empty_reason: empty_reason option;
+      duration: float;
     }
   | DocumentSymbol of { symbols: DocumentSymbolItem.t list }
   | Completion of { completions: CompletionItem.t list }
@@ -169,6 +170,6 @@ type t =
       relative_local_root: string option;
     }
   | Superclasses of { superclasses: Request.ClassExpression.t list }
-[@@deriving sexp, compare, to_yojson { strict = false }]
+[@@deriving sexp, compare, yojson { strict = false }]
 
 let to_string response = to_yojson response |> Yojson.Safe.to_string

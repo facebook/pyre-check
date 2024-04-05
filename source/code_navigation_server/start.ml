@@ -62,9 +62,9 @@ let handle_command_and_stop_if_necessary ~server command =
   | Result.Ok response -> Lwt.return response
 
 
-let handle_query ~server ~output_channel query =
+let handle_query ~server ~output_channel ~timer query =
   Log.info "Processing query `%a`" Sexp.pp (Request.Query.sexp_of_t query);
-  let%lwt response = RequestHandler.handle_query ~server query in
+  let%lwt response = RequestHandler.handle_query ~server ~timer query in
   let raw_response = Response.to_string response in
   Log.info "Query processed. Response: `%s`" raw_response;
   LwtInputOutput.write_line_ignoring_errors ~output_channel raw_response
@@ -89,12 +89,13 @@ let handle_connection ~server _client_address (input_channel, output_channel) =
     | None -> Lwt.return_unit
     | Some message -> (
         Log.info "Processing message `%s`" (Log.truncate message ~size:400);
+        let timer = Timer.start () in
         match parse_json message with
         | Result.Error message -> handle_invalid_request ~output_channel message
         | Result.Ok json -> (
             match Request.of_yojson json with
             | Result.Error _ -> handle_invalid_request ~output_channel "Unrecognized request JSON"
-            | Result.Ok (Request.Query query) -> handle_query ~server ~output_channel query
+            | Result.Ok (Request.Query query) -> handle_query ~server ~output_channel ~timer query
             | Result.Ok (Request.Command command) -> handle_command ~server ~output_channel command
             | Result.Ok (Request.Subscription subscription) ->
                 handle_subscription ~server ~input_channel ~output_channel subscription))

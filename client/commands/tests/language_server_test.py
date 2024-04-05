@@ -2080,6 +2080,7 @@ class DefinitionTest(ApiTestCase):
             ],
             empty_reason=None,
             daemon_duration=0,
+            daemon_inner_duration=0,
             glean_duration=0,
         )
         for telemetry in (
@@ -2162,6 +2163,7 @@ class DefinitionTest(ApiTestCase):
             ],
             empty_reason=None,
             daemon_duration=0,
+            daemon_inner_duration=0,
             glean_duration=0,
         )
         for telemetry in (
@@ -2247,6 +2249,7 @@ class DefinitionTest(ApiTestCase):
             ],
             empty_reason=None,
             daemon_duration=0,
+            daemon_inner_duration=0,
             glean_duration=0,
         )
         querier = server_setup.MockDaemonQuerier(
@@ -2354,6 +2357,7 @@ class DefinitionTest(ApiTestCase):
             ],
             empty_reason=None,
             daemon_duration=0,
+            daemon_inner_duration=0,
             glean_duration=0,
         )
         querier = server_setup.MockDaemonQuerier(

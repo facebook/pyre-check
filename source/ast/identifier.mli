@@ -7,10 +7,10 @@
 
 open Core
 
-type t = string [@@deriving compare, sexp, hash, to_yojson]
+type t = string [@@deriving compare, sexp, hash, yojson]
 
 module T : sig
-  type nonrec t = t [@@deriving compare, sexp, hash, to_yojson]
+  type nonrec t = t [@@deriving compare, sexp, hash, yojson]
 end
 
 module Map : sig

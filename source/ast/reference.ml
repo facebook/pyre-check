@@ -12,7 +12,7 @@ open Pyre
 open Sexplib.Conv
 
 module T = struct
-  type t = Identifier.t list [@@deriving compare, sexp, hash, to_yojson]
+  type t = Identifier.t list [@@deriving compare, sexp, hash, yojson]
 
   let pp format reference = reference |> String.concat ~sep:"." |> Format.fprintf format "%s"
 

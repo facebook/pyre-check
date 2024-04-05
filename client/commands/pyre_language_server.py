@@ -904,6 +904,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             error_message = result.error_message
             error_source = result.error_source
             daemon_duration = result.duration
+            daemon_inner_duration = 0
             if result.fallback_result is None:
                 output_result = []
                 query_source = None
@@ -921,6 +922,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             query_source = result.source
             empty_reason = result.empty_reason
             daemon_duration = result.daemon_duration
+            daemon_inner_duration = result.daemon_inner_duration
             glean_duration = result.glean_duration
         marshalling_response_timer = timer.Timer()
         # Unless we are in shadow mode, we send the response as output
@@ -967,6 +969,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "query_daemon_duration": daemon_duration,
+                "query_daemon_inner_duration": daemon_inner_duration,
                 "query_glean_duration": glean_duration,
                 "marshalling_response_duration": marshalling_response_duration,
                 "write_response_duration": write_response_duration,

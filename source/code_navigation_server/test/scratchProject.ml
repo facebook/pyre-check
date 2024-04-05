@@ -13,6 +13,16 @@ open CodeNavigationServer
 module Request = CodeNavigationServer.Testing.Request
 module Response = CodeNavigationServer.Testing.Response
 
+(* Clear non-deterministic values from responses so that expect-style tests can use Response values.
+   For example, timings which observe the system clock can lead to unpredictable values. *)
+let scrub_nondeterministic response =
+  let open Response in
+  match response with
+  | LocationOfDefinition { definitions; empty_reason; _ } ->
+      LocationOfDefinition { definitions; empty_reason; duration = 0. }
+  | _ -> response
+
+
 module ClientConnection = struct
   module Style = struct
     type t =
@@ -41,6 +51,14 @@ module ClientConnection = struct
 
   let assert_response_equal ~expected ~actual { context; _ } =
     let expected = Response.to_yojson expected |> Yojson.Safe.to_string in
+    let actual =
+      Yojson.Safe.from_string actual
+      |> Response.of_yojson
+      |> Result.ok_or_failwith
+      |> scrub_nondeterministic
+      |> Response.to_yojson
+      |> Yojson.Safe.to_string
+    in
     assert_equal ~ctxt:context ~cmp:String.equal ~printer:Fn.id expected actual
 
 

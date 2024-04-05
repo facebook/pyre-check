@@ -449,7 +449,7 @@ module Testing : sig
         | FileNotOpened of { path: string }
             (** This error occurs when the client has send a command on a file not tracked by the
                 server. NOTE: certain queries can bypass tracking and not require file opens. *)
-      [@@deriving sexp, compare, to_yojson { strict = false }]
+      [@@deriving sexp, compare, yojson { strict = false }]
     end
 
     module HoverContent : sig
@@ -598,6 +598,7 @@ module Testing : sig
       | LocationOfDefinition of {
           definitions: DefinitionLocation.t list;
           empty_reason: empty_reason option;
+          duration: float;
         }
           (** Response for {!Request.LocationOfDefinition}. The associated value is a list since
               there can be many potential definitions for a given item, either because build system
@@ -624,7 +625,7 @@ module Testing : sig
           (** Response for {!Request.Superclasses}. Does not return full types, instead opting to
               return only the names of a given class' bases. Creates a mapping from each requested
               class to its superclasses. *)
-    [@@deriving sexp, compare, to_yojson { strict = false }]
+    [@@deriving sexp, compare, yojson { strict = false }]
   end
 
   (** A utility module that helps the code navigation to keep track of established subscriptions in

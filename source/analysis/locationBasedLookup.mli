@@ -43,21 +43,21 @@ type resolution_error =
   | ResolvedTop
   | ResolvedUnbound
   | UntrackedType of string
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 type attribute_lookup_error =
   | ReferenceNotFoundAndBaseUnresolved of resolution_error
   | AttributeUnresolved
   | ClassSummaryNotFound
   | ClassSummaryAttributeNotFound
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 type lookup_error =
   | SymbolNotFound
   | IdentifierDefinitionNotFound of Ast.Reference.t
   | AttributeDefinitionNotFound of string option * attribute_lookup_error
   | UnsupportedExpression of string
-[@@deriving sexp, show, compare, to_yojson { strict = false }]
+[@@deriving sexp, show, compare, yojson { strict = false }]
 
 module DocumentSymbolItem : sig
   (** A type a document symbol response *)

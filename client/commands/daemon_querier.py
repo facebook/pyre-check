@@ -77,6 +77,7 @@ class GetDefinitionLocationsResponse:
     data: List[lsp.LspLocation]
     empty_reason: Optional[object]
     daemon_duration: float
+    daemon_inner_duration: float
     glean_duration: float
 
 
@@ -515,6 +516,7 @@ class PersistentDaemonQuerier(ServerStateBackedDaemonQuerier):
                 ],
                 empty_reason=None,
                 daemon_duration=0,
+                daemon_inner_duration=0,
                 glean_duration=0,
             )
 
@@ -741,6 +743,7 @@ class CodeNavigationDaemonQuerier(ServerStateBackedDaemonQuerier):
             ],
             empty_reason=response.empty_reason,
             daemon_duration=daemon_duration,
+            daemon_inner_duration=response.duration,
             glean_duration=0,
         )
 
@@ -963,6 +966,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
             data=indexed_result.definitions,
             empty_reason=None,
             daemon_duration=0,
+            daemon_inner_duration=0,
             glean_duration=indexed_result.duration,
         )
 

@@ -128,6 +128,7 @@ class DefinitionResponse(json_mixins.CamlCaseAndExcludeJsonMixin):
 class LocationOfDefinitionResponse(json_mixins.SnakeCaseAndExcludeJsonMixin):
     definitions: List[DefinitionResponse]
     empty_reason: Optional[object] = None
+    duration: float = 0
 
 
 @dataclasses.dataclass(frozen=True)
