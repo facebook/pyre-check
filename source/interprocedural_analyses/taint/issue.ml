@@ -325,21 +325,6 @@ let generate_issues
     else
       Some partition_flow
   in
-  let apply_rule_separate_access_path issues_so_far (rule : Rule.t) =
-    let fold_partitions issues candidate =
-      match apply_rule_on_flow rule candidate with
-      | Some flow ->
-          {
-            flow;
-            handle = { code = rule.code; callable = Target.create define; sink = sink_handle };
-            locations = LocationSet.singleton location;
-            define;
-          }
-          :: issues
-      | None -> issues
-    in
-    List.fold partitions ~init:issues_so_far ~f:fold_partitions
-  in
   let apply_rule_merge_access_path rule =
     let fold_partitions flow_so_far candidate =
       match apply_rule_on_flow rule candidate with
@@ -373,15 +358,10 @@ let generate_issues
     in
     IssueHandle.SerializableMap.update issue.handle update map
   in
-  if taint_configuration.TaintConfiguration.Heap.lineage_analysis then
-    (* Create different issues for same access path, e.g, Issue{[a] -> [b]}, Issue {[c] -> [d]}. *)
-    (* Note that this breaks a SAPP invariant because there might be multiple issues with the same
-       handle. This is fine because in that configuration we do not use SAPP. *)
-    List.fold taint_configuration.rules ~init:[] ~f:apply_rule_separate_access_path
-  else (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
-    List.filter_map ~f:apply_rule_merge_access_path taint_configuration.rules
-    |> List.fold ~init:IssueHandle.SerializableMap.empty ~f:group_by_handle
-    |> IssueHandle.SerializableMap.data
+  (* Create single issue for same access path, e.g, Issue{[a],[c] -> [b], [d]}. *)
+  List.filter_map ~f:apply_rule_merge_access_path taint_configuration.TaintConfiguration.Heap.rules
+  |> List.fold ~init:IssueHandle.SerializableMap.empty ~f:group_by_handle
+  |> IssueHandle.SerializableMap.data
 
 
 (* A map from triggered sink kinds (which is a string) to the handles of the flows that are detected

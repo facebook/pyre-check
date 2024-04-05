@@ -92,7 +92,6 @@ module Heap : sig
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
-    lineage_analysis: bool;
     source_sink_filter: SourceSinkFilter.t;
   }
 

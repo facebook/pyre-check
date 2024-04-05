@@ -458,7 +458,6 @@ module Heap = struct
     find_missing_flows: Configuration.MissingFlowKind.t option;
     dump_model_query_results_path: PyrePath.t option;
     analysis_model_constraints: ModelConstraints.t;
-    lineage_analysis: bool;
     source_sink_filter: SourceSinkFilter.t;
   }
 
@@ -481,7 +480,6 @@ module Heap = struct
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
-      lineage_analysis = false;
       source_sink_filter = SourceSinkFilter.all;
     }
 
@@ -658,7 +656,6 @@ module Heap = struct
       find_missing_flows = None;
       dump_model_query_results_path = None;
       analysis_model_constraints = ModelConstraints.default;
-      lineage_analysis = false;
       source_sink_filter =
         SourceSinkFilter.create
           ~rules
@@ -931,13 +928,6 @@ let from_json_list source_json_list =
     | JsonAst.Json.TypeError { json; message } ->
         Result.Error
           [Error.create ~path ~kind:(Error.UnexpectedJsonType { json; message; section })]
-  in
-  let json_bool_member ~path key value ~default =
-    json_exception_to_error ~path ~section:key (fun () ->
-        JsonAst.Json.Util.member_exn key value
-        |> JsonAst.Json.Util.to_bool
-        |> Option.value ~default
-        |> Result.return)
   in
   let json_string_member ~path key value =
     json_exception_to_error ~path ~section:key (fun () ->
@@ -1606,15 +1596,7 @@ let from_json_list source_json_list =
   |> Result.combine_errors
   |> Result.map_error ~f:List.concat
   >>| List.fold ~init:empty_implicit_sources ~f:merge_implicit_sources
-  >>= fun implicit_sources ->
-  let parse_lineage_analysis (path, json) =
-    json_bool_member ~path "lineage_analysis" json ~default:false
-  in
-  List.map ~f:parse_lineage_analysis source_json_list
-  |> Result.combine_errors
-  |> Result.map_error ~f:List.concat
-  >>| List.exists ~f:Fn.id
-  >>| fun lineage_analysis ->
+  >>| fun implicit_sources ->
   let rules = List.rev_append rules generated_combined_rules in
   {
     Heap.sources;
@@ -1647,7 +1629,6 @@ let from_json_list source_json_list =
         ~maximum_trace_length
         ~maximum_tito_depth
         ModelConstraints.default;
-    lineage_analysis;
     source_sink_filter =
       SourceSinkFilter.create
         ~rules

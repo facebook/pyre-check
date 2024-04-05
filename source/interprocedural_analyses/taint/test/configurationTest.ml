@@ -632,30 +632,6 @@ let test_string_combine_rules _ =
     (TaintConfiguration.StringOperationPartialSinks.singleton "UserDefinedPartialSink")
 
 
-let test_lineage_analysis _ =
-  let configuration =
-    assert_parse
-      {|
-        { "sources":[],
-          "sinks": [],
-          "rules": []
-         }
-      |}
-  in
-  assert_equal configuration.lineage_analysis false;
-  let configuration =
-    assert_parse
-      {|
-          { "sources":[],
-            "sinks": [],
-            "rules": [],
-            "lineage_analysis": true
-          }
-      |}
-  in
-  assert_equal configuration.lineage_analysis true
-
-
 let test_partial_sink_converter _ =
   let assert_triggered_sinks configuration ~partial_sink ~source ~expected_sink =
     let configuration = assert_parse configuration in
@@ -2013,7 +1989,6 @@ let () =
          "invalid_sink" >:: test_invalid_sink;
          "invalid_source" >:: test_invalid_source;
          "invalid_transform" >:: test_invalid_transform;
-         "lineage_analysis" >:: test_lineage_analysis;
          "multiple_configurations" >:: test_multiple_configurations;
          "partial_sink_converter" >:: test_partial_sink_converter;
          "simple" >:: test_simple;

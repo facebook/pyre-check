@@ -2288,29 +2288,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | None -> taint, state
     in
 
-    if not FunctionContext.taint_configuration.lineage_analysis then
-      taint, state
-    else
-      let analyze_expression_unwrap ~pyre_in_context ~state ~expression =
-        let taint, state =
-          analyze_expression
-            ~pyre_in_context
-            ~state:{ taint = state }
-            ~is_result_used:true
-            ~expression
-        in
-        taint, state.taint
-      in
-      let taint, forward_state =
-        LineageAnalysis.forward_analyze_call
-          ~analyze_expression:analyze_expression_unwrap
-          ~pyre_in_context
-          ~callee
-          ~arguments
-          ~taint
-          ~state:state.taint
-      in
-      taint, { taint = forward_state }
+    taint, state
 
 
   and analyze_attribute_access
