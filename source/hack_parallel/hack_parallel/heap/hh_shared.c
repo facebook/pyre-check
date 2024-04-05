@@ -2120,15 +2120,16 @@ void hh_save_table(value out_filename) {
     uintptr_t remaining = *heap - chunk_start;
     uintptr_t chunk_size =
         LZ4_MAX_INPUT_SIZE < remaining ? LZ4_MAX_INPUT_SIZE : remaining;
+    uintptr_t max_compression_size = LZ4_compressBound(chunk_size);
 
-    char* compressed = malloc(chunk_size * sizeof(char));
+    char* compressed = malloc(max_compression_size * sizeof(char));
     assert(compressed != NULL);
 
     compressed_size = LZ4_compress_default(
         chunk_start, /* source */
         compressed, /* destination */
         chunk_size, /* bytes to write from source */
-        chunk_size); /* maximum amount to write */
+        max_compression_size); /* maximum amount to write */
     assert(compressed_size > 0);
 
     fwrite_no_fail(&compressed_size, sizeof compressed_size, 1, fp);
