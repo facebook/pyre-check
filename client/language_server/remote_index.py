@@ -11,10 +11,17 @@ from a remote code index/database.
 """
 
 import abc
+import dataclasses
 from pathlib import Path
 from typing import List, Optional
 
 from . import protocol as lsp
+
+
+@dataclasses.dataclass(frozen=True)
+class DefinitionResponse:
+    definitions: List[lsp.LspLocation]
+    duration: float
 
 
 class AbstractRemoteIndex(abc.ABC):
@@ -26,7 +33,7 @@ class AbstractRemoteIndex(abc.ABC):
     @abc.abstractmethod
     async def definition(
         self, path: Path, position: lsp.PyrePosition
-    ) -> List[lsp.LspLocation]:
+    ) -> DefinitionResponse:
         raise NotImplementedError()
 
     @abc.abstractmethod
@@ -67,8 +74,8 @@ class AbstractRemoteIndex(abc.ABC):
 class EmptyRemoteIndex(AbstractRemoteIndex):
     async def definition(
         self, path: Path, position: lsp.PyrePosition
-    ) -> List[lsp.LspLocation]:
-        return []
+    ) -> DefinitionResponse:
+        return DefinitionResponse(definitions=[], duration=0)
 
     async def references(
         self, path: Path, position: lsp.PyrePosition

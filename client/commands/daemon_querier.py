@@ -23,7 +23,7 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Union
 
-from .. import dataclasses_json_extensions as json_mixins, error
+from .. import dataclasses_json_extensions as json_mixins, error, timer
 
 from ..language_server import (
     code_navigation_request,
@@ -76,6 +76,8 @@ class GetDefinitionLocationsResponse:
     source: DaemonQuerierSource
     data: List[lsp.LspLocation]
     empty_reason: Optional[object]
+    daemon_duration: float
+    glean_duration: float
 
 
 @dataclasses.dataclass(frozen=True)
@@ -101,6 +103,7 @@ class DaemonQueryFailure(json_mixins.CamlCaseAndExcludeJsonMixin):
     error_message: str
     error_source: Optional[Exception] = None
     fallback_result: Optional[GetDefinitionLocationsResponse] = None
+    duration: float = 0
 
 
 def file_not_typechecked_coverage_result() -> lsp.TypeCoverageResponse:
@@ -388,6 +391,7 @@ class ServerStateBackedDaemonQuerier(AbstractDaemonQuerier):
         )
 
 
+# TODO(T184611575) Clean up dead code in PersistentDaemonQuerier
 class PersistentDaemonQuerier(ServerStateBackedDaemonQuerier):
 
     async def _query_modules_of_path(
@@ -510,6 +514,8 @@ class PersistentDaemonQuerier(ServerStateBackedDaemonQuerier):
                     for response in daemon_response.response
                 ],
                 empty_reason=None,
+                daemon_duration=0,
+                glean_duration=0,
             )
 
     async def get_document_symbols(
@@ -715,13 +721,17 @@ class CodeNavigationDaemonQuerier(ServerStateBackedDaemonQuerier):
             client_id=self._get_client_id(),
             position=position,
         )
+        daemon_timer = timer.Timer()
         response = await code_navigation_request.async_handle_definition_request(
             self.get_socket_path(),
             definition_request,
         )
+        daemon_duration = daemon_timer.stop_in_millisecond()
         if isinstance(response, code_navigation_request.ErrorResponse):
             return DaemonQueryFailure(
-                response.message, error_source=response.error_source
+                response.message,
+                error_source=response.error_source,
+                duration=daemon_duration,
             )
         return GetDefinitionLocationsResponse(
             source=DaemonQuerierSource.PYRE_DAEMON,
@@ -730,6 +740,8 @@ class CodeNavigationDaemonQuerier(ServerStateBackedDaemonQuerier):
                 for definition_location in response.definitions
             ],
             empty_reason=response.empty_reason,
+            daemon_duration=daemon_duration,
+            glean_duration=0,
         )
 
     async def get_document_symbols(
@@ -948,8 +960,10 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
 
         return GetDefinitionLocationsResponse(
             source=(DaemonQuerierSource.GLEAN_INDEXER),
-            data=indexed_result,
+            data=indexed_result.definitions,
             empty_reason=None,
+            daemon_duration=0,
+            glean_duration=indexed_result.duration,
         )
 
     async def get_definition_locations(
@@ -973,7 +987,10 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
                 path, position
             )
             return DaemonQueryFailure(
-                base_results.error_message, base_results.error_source, fallback_result
+                base_results.error_message,
+                base_results.error_source,
+                fallback_result,
+                base_results.duration,
             )
 
         return base_results

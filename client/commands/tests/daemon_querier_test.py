@@ -331,6 +331,8 @@ class DaemonQuerierTest(testslide.TestCase):
                     )
                 ],
                 empty_reason=None,
+                daemon_duration=0,
+                glean_duration=0,
             ),
         )
 
@@ -413,6 +415,8 @@ class DaemonQuerierTest(testslide.TestCase):
                     source=DaemonQuerierSource.GLEAN_INDEXER,
                     data=[],
                     empty_reason=None,
+                    daemon_duration=0,
+                    glean_duration=0,
                 ),
             )
 
@@ -444,6 +448,8 @@ class DaemonQuerierTest(testslide.TestCase):
                 source=DaemonQuerierSource.GLEAN_INDEXER,
                 data=[],
                 empty_reason=None,
+                daemon_duration=0,
+                glean_duration=0,
             ),
         )
 
@@ -730,6 +736,8 @@ class DaemonQuerierTest(testslide.TestCase):
                     source=DaemonQuerierSource.GLEAN_INDEXER,
                     data=[],
                     empty_reason=None,
+                    daemon_duration=0,
+                    glean_duration=0,
                 ),
                 error_message=_DaemonQuerier_Failure_Message,
                 error_source=None,
@@ -763,8 +771,10 @@ class MockGleanRemoteIndex(remote_index.AbstractRemoteIndex):
 
     async def definition(
         self, path: Path, position: lsp.PyrePosition
-    ) -> List[lsp.LspLocation]:
-        return self.definition_response
+    ) -> remote_index.DefinitionResponse:
+        return remote_index.DefinitionResponse(
+            definitions=self.definition_response, duration=0
+        )
 
     async def hover(
         self, path: Path, position: lsp.PyrePosition
