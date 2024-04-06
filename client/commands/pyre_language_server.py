@@ -1895,7 +1895,7 @@ class PyreLanguageServerDispatcher:
             LOG.info(
                 "Received exit request without a shutdown request, exiting as FAILURE."
             )
-            return commands.ExitCode.FAILURE
+            return commands.ExitCode.LANGUAGE_SERVER_EXIT
         elif request.method == "shutdown":
             await self.api.process_shutdown_request(request.id)
             return await self.wait_for_exit()

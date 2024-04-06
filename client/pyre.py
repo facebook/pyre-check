@@ -1615,7 +1615,7 @@ def main(argv: List[str] = sys.argv[1:]) -> int:
             return commands.ExitCode.CONFIGURATION_ERROR
         except click.ClickException as error:
             error.show()
-            return_code = commands.ExitCode.FAILURE
+            return_code = commands.ExitCode.CLICK_EXCEPTION
         except commands.ClientException as error:
             for line in str(error).split("\n"):
                 LOG.error(line)
