@@ -21,7 +21,7 @@ let create_environment_controls ~root ~python_version () =
       ~project_root:root
       ~search_paths:[]
       ~taint_model_paths:[]
-      ~strict:true
+      ~strict:false
       ~debug:false
       ~show_error_traces:false
       ~excludes:[]
