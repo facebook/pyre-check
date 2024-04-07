@@ -1348,7 +1348,111 @@
 {
   "kind": "model",
   "data": {
-    "callable": "closure_models.test_dsl_source.decorated_local_function_capturing_local_variable",
+    "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+    "filename": "closure_models.py",
+    "callable_line": 118,
+    "sources": [
+      {
+        "port": "captured_variable($parameter$some_data, user_defined)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ],
+    "sinks": [
+      {
+        "port": "captured_variable($parameter$some_data)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [ { "always-via": "captured-variable" } ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 119,
+              "start": 19,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "issue",
+  "data": {
+    "callable": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+    "callable_line": 118,
+    "code": 5002,
+    "line": 119,
+    "start": 19,
+    "end": 28,
+    "filename": "closure_models.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable",
+                    "port": "leaf:$parameter$some_data"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 118,
+              "start": 4,
+              "end": 4
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "closure_models.py",
+              "line": 119,
+              "start": 19,
+              "end": 28
+            }
+          }
+        ]
+      }
+    ],
+    "features": [ { "always-via": "special_sink" } ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "closure_models.test_dsl_decorator_source.decorated_local_function_capturing_local_variable:5002:0:Call|_test_sink|0|formal(arg):bc83c42fb3522f1666af9a49b7af98f7"
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
     "filename": "closure_models.py",
     "callable_line": 112,
     "sources": [
@@ -1385,7 +1489,7 @@
 {
   "kind": "issue",
   "data": {
-    "callable": "closure_models.test_dsl_source.decorated_local_function_capturing_local_variable",
+    "callable": "closure_models.test_dsl_source.local_function_capturing_local_variable",
     "callable_line": 112,
     "code": 5002,
     "line": 113,
@@ -1402,7 +1506,7 @@
               {
                 "leaves": [
                   {
-                    "name": "closure_models.test_dsl_source.decorated_local_function_capturing_local_variable",
+                    "name": "closure_models.test_dsl_source.local_function_capturing_local_variable",
                     "port": "leaf:$parameter$some_data"
                   }
                 ],
@@ -1446,7 +1550,7 @@
       "index": 0,
       "parameter": "formal(arg)"
     },
-    "master_handle": "closure_models.test_dsl_source.decorated_local_function_capturing_local_variable:5002:0:Call|_test_sink|0|formal(arg):9fbae7012899c07e7f8f4afaa6faa74f"
+    "master_handle": "closure_models.test_dsl_source.local_function_capturing_local_variable:5002:0:Call|_test_sink|0|formal(arg):957a7606ec7aa86b5573f5613e6f214b"
   }
 }
 {

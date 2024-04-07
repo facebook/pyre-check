@@ -44,9 +44,14 @@ ModelQuery(
 ModelQuery(
     name = "mark_captured_locals_as_tainted",
     find = "functions",
-    where = fully_qualified_name.matches("closure_models.test_dsl_source.decorated_local_function_capturing_local_variable"),
+    where = fully_qualified_name.matches("closure_models.test_dsl_source.local_function_capturing_local_variable"),
     model = CapturedVariables(TaintSource[Test])
 )
+
+# TODO(T171117938): Decorator inlining causes unignored decorators to break closure taint flows
+# Remove `@IgnoreDecorator` when fixed
+@IgnoreDecorator
+def closure_models.some_decorator(): ...
 
 ModelQuery(
     name = "mark_captured_locals_from_decorator_as_tainted",
