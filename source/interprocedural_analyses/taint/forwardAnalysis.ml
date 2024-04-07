@@ -3039,6 +3039,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         if AccessPath.Root.is_captured_variable_user_defined root then
           (* The origin for captured variables taint is at the inner function boundry due to there
              being no explicit parameter to mark as location *)
+          (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
           let location =
             Location.with_module ~module_reference:FunctionContext.qualifier define_location
           in
