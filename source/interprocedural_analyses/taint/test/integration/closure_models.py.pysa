@@ -24,8 +24,15 @@ def closure_models.captured_variable_model_tito.model_all_captured_as_tito(): ..
 @CapturedVariables(TaintSource[Test])
 def closure_models.captured_variable_model_parameter_source.model_all_captured_as_parameter_sources(): ...
 
-@CapturedVariables(TaintSource[Test])
+@CapturedVariables(TaintSource[Test], generation=True)
 def closure_models.captured_variable_model_generation_source.model_all_captured_as_generation_sources(): ...
+
+
+@CapturedVariables(TaintSource[Test], generation=True)
+def closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources(): ...
+
+@CapturedVariables(TaintSource[Test])
+def closure_models.captured_variable_model_both_generation_parameter_source.model_all_captured_as_generation_and_parameter_sources(): ...
 
 @CapturedVariables(TaintSink[Test])
 def closure_models.captured_variable_model_sink.model_all_captured_as_sinks(): ...

@@ -2653,7 +2653,7 @@ let extract_tito_and_sink_models
   in
   let captures =
     List.map captures ~f:(fun capture ->
-        ( AccessPath.Root.CapturedVariable { name = capture.name; user_defined = false },
+        ( AccessPath.Root.CapturedVariable { name = capture.name; generation_if_source = true },
           capture.name,
           None ))
   in

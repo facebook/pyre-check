@@ -2235,7 +2235,11 @@ let test_query_parsing_captured_variables context =
           models =
             [
               CapturedVariables
-                [TaintAnnotation (ModelParseResult.TaintAnnotation.from_tito Sinks.LocalReturn)];
+                {
+                  taint =
+                    [TaintAnnotation (ModelParseResult.TaintAnnotation.from_tito Sinks.LocalReturn)];
+                  generation_if_source = false;
+                };
             ];
           expected_models = [];
           unexpected_models = [];
@@ -2265,18 +2269,59 @@ let test_query_parsing_captured_variables context =
           models =
             [
               CapturedVariables
-                [
-                  TaintAnnotation
-                    (ModelParseResult.TaintAnnotation.from_tito
-                       (Sinks.Transform
-                          {
-                            local =
-                              TaintTransforms.of_named_transforms
-                                [TaintTransform.Named "TestTransform"];
-                            global = TaintTransforms.empty;
-                            base = Sinks.LocalReturn;
-                          }));
-                ];
+                {
+                  taint =
+                    [
+                      TaintAnnotation
+                        (ModelParseResult.TaintAnnotation.from_tito
+                           (Sinks.Transform
+                              {
+                                local =
+                                  TaintTransforms.of_named_transforms
+                                    [TaintTransform.Named "TestTransform"];
+                                global = TaintTransforms.empty;
+                                base = Sinks.LocalReturn;
+                              }));
+                    ];
+                  generation_if_source = false;
+                };
+            ];
+          expected_models = [];
+          unexpected_models = [];
+        };
+      ]
+    ();
+  assert_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "create_tito_for_captured_variables",
+     find = "functions",
+     where = name.matches("foo"),
+     model = CapturedVariables(TaintSource[Test], generation=True)
+    )
+  |}
+    ~expect:
+      [
+        {
+          location = { start = { line = 2; column = 0 }; stop = { line = 7; column = 1 } };
+          name = "create_tito_for_captured_variables";
+          logging_group_name = None;
+          path = None;
+          where = [NameConstraint (Matches (Re2.create_exn "foo"))];
+          find = Function;
+          models =
+            [
+              CapturedVariables
+                {
+                  taint =
+                    [
+                      TaintAnnotation
+                        (ModelParseResult.TaintAnnotation.from_source (Sources.NamedSource "Test"));
+                    ];
+                  generation_if_source = true;
+                };
             ];
           expected_models = [];
           unexpected_models = [];

@@ -37,7 +37,7 @@ module Root = struct
       | Variable of Identifier.t
       | CapturedVariable of {
           name: Identifier.t;
-          user_defined: bool;
+          generation_if_source: bool;
         }
     [@@deriving compare, eq, hash, sexp]
 
@@ -74,12 +74,12 @@ module Root = struct
             "formal(**kwargs, excluded=[%s])"
             (String.concat ~sep:"," excluded)
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable { name; user_defined } ->
+      | CapturedVariable { name; generation_if_source } ->
           Format.fprintf
             formatter
             "captured_variable(%s%s)"
             name
-            (if user_defined then ", user_defined" else "")
+            (if generation_if_source then ", generation_if_source" else "")
 
 
     let show = Format.asprintf "%a" pp
@@ -92,12 +92,12 @@ module Root = struct
       | StarParameter { position } -> Format.fprintf formatter "formal(*rest%d)" position
       | StarStarParameter _ -> Format.fprintf formatter "formal(**kw)"
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable { name; user_defined } ->
+      | CapturedVariable { name; generation_if_source } ->
           Format.fprintf
             formatter
             "captured_variable(%s%s)"
             name
-            (if user_defined then ", user_defined" else "")
+            (if generation_if_source then ", generation_if_source" else "")
 
 
     let show_for_issue_handle = Format.asprintf "%a" pp_for_issue_handle
@@ -108,7 +108,7 @@ module Root = struct
     let show_for_via_breadcrumb = Format.asprintf "%a" pp_for_via_breadcrumb
 
     let variable_to_captured_variable = function
-      | Variable name -> CapturedVariable { name; user_defined = false }
+      | Variable name -> CapturedVariable { name; generation_if_source = true }
       | root -> root
 
 
@@ -122,13 +122,13 @@ module Root = struct
       | _ -> false
 
 
-    let is_captured_variable_inferred = function
-      | CapturedVariable { user_defined = false; _ } -> true
+    let is_captured_variable_not_generation_if_source = function
+      | CapturedVariable { generation_if_source = false; _ } -> true
       | _ -> false
 
 
-    let is_captured_variable_user_defined = function
-      | CapturedVariable { user_defined = true; _ } -> true
+    let is_captured_variable_generation_if_source = function
+      | CapturedVariable { generation_if_source = true; _ } -> true
       | _ -> false
   end
 

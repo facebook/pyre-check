@@ -745,7 +745,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
         match root with
-        | AccessPath.Root.CapturedVariable { name = variable; _ } ->
+        | AccessPath.Root.CapturedVariable { name = variable; generation_if_source = true } ->
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
             let define_reference =
               Reference.delocalize FunctionContext.definition.value.signature.name
@@ -2824,7 +2824,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
-                ~root:(AccessPath.Root.CapturedVariable { name = identifier; user_defined = false })
+                ~root:
+                  (AccessPath.Root.CapturedVariable
+                     { name = identifier; generation_if_source = true })
                 ~path:fields
                 (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
@@ -3036,7 +3038,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let add_captured_variables_paramater_sources state =
       let store_captured_variable_taint state root =
-        if AccessPath.Root.is_captured_variable_user_defined root then
+        if AccessPath.Root.is_captured_variable_not_generation_if_source root then
           (* The origin for captured variables taint is at the inner function boundry due to there
              being no explicit parameter to mark as location *)
           (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
@@ -3157,7 +3159,7 @@ let extract_source_model
   in
   let captured_variables_model =
     ForwardState.roots exit_taint
-    |> List.filter ~f:AccessPath.Root.is_captured_variable
+    |> List.filter ~f:AccessPath.Root.is_captured_variable_generation_if_source
     |> List.fold ~init:ForwardState.bottom ~f:(fun state root ->
            let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint in
            let captured_variable_model =

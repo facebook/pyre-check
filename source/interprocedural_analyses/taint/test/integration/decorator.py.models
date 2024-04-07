@@ -2898,7 +2898,7 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner._original_function.inner"
               ],
-              "port": "captured_variable($parameter$arg2)"
+              "port": "captured_variable($parameter$arg2, generation_if_source)"
             }
           }
         ]
@@ -2914,7 +2914,7 @@
     "callable_line": 263,
     "sinks": [
       {
-        "port": "captured_variable($parameter$arg2)",
+        "port": "captured_variable($parameter$arg2, generation_if_source)",
         "taint": [
           {
             "kinds": [

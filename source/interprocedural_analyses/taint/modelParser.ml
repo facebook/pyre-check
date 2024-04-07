@@ -2229,7 +2229,24 @@ let parse_model_clause
         check_find ~callee ModelQuery.Find.is_callable
         >>= fun () ->
         parse_taint ~origin:ModelQueryCapturedVariables taint
-        >>| fun taint -> ModelQuery.Model.CapturedVariables taint
+        >>| fun taint -> ModelQuery.Model.CapturedVariables { taint; generation_if_source = false }
+    | Expression.Call
+        {
+          Call.callee = { Node.value = Name (Name.Identifier "CapturedVariables"); _ } as callee;
+          arguments =
+            [
+              { Call.Argument.value = taint; _ };
+              (* TODO(T165056052): Update syntax when general parameter source modeling is done *)
+              {
+                Call.Argument.name = Some { value = "generation"; _ };
+                value = { Node.value = Expression.Constant Constant.True; _ };
+              };
+            ];
+        } ->
+        check_find ~callee ModelQuery.Find.is_callable
+        >>= fun () ->
+        parse_taint ~origin:ModelQueryCapturedVariables taint
+        >>| fun taint -> ModelQuery.Model.CapturedVariables { taint; generation_if_source = true }
     | Expression.Call
         {
           Call.callee = { Node.value = Name (Name.Identifier "AttributeModel"); _ } as callee;
@@ -3147,7 +3164,7 @@ let create_model_from_signature
       | "CapturedVariables" -> true
       | _ -> false
     in
-    let add_taint taint_annotation =
+    let add_taint ~generation_if_source taint_annotation =
       let captured_variables =
         match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
         | Some { Node.value = { Define.captures; _ }; _ } ->
@@ -3176,11 +3193,41 @@ let create_model_from_signature
                     model
                     (ModelAnnotation.ParameterAnnotation
                        ( AccessPath.Root.CapturedVariable
-                           { name = captured_variable; user_defined = true },
+                           { name = captured_variable; generation_if_source },
                          annotation ))))
     in
     match List.find ~f:is_captured_variables top_level_decorators with
-    | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } -> add_taint value
+    | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
+        add_taint ~generation_if_source:false value
+    | Some
+        {
+          Decorator.arguments =
+            Some
+              [
+                { Call.Argument.value; _ };
+                (* TODO(T165056052): Update syntax when general parameter source modeling is done *)
+                {
+                  Call.Argument.name = Some { value = "generation"; _ };
+                  value = { Node.value = Expression.Constant Constant.True; _ };
+                };
+              ] as arguments;
+          _;
+        } ->
+        if String.is_substring ~substring:"TaintSource" (Expression.show value) then
+          add_taint ~generation_if_source:true value
+        else
+          annotation_error
+            "`@CapturedVariables(..., generation=True)` must be used only on `TaintSource`s."
+            arguments
+    | Some
+        {
+          Decorator.arguments =
+            Some [_; { Call.Argument.name = Some { value = "generation"; _ }; _ }] as arguments;
+          _;
+        } ->
+        annotation_error
+          "Use `@CapturedVariables(..., generation=True)` to specify generation source."
+          arguments
     | Some { Decorator.arguments = Some _ as arguments; _ } ->
         annotation_error
           "`@CapturedVariables(...)` takes only one Taint Annotation as argument."

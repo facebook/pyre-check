@@ -23,7 +23,13 @@ module Root : sig
     | Variable of Identifier.t
     | CapturedVariable of {
         name: Identifier.t;
-        user_defined: bool; (* whether this access path came from a user defined model *)
+        (* Sources for captured variables are `nonlocal` writes that change values outside the inner
+           function. This generates a new source at callsite. The default for inferred models is
+           `generation_if_source = true`. When creating a user defined model, the default is an
+           implicit parameter source for that captured variable to be tainted only inside the
+           function, `generation_if_source = false`. Invariant: This is only ever false for user
+           defined captured variable models on Taint Sources. *)
+        generation_if_source: bool;
       }
   [@@deriving compare, eq, hash, sexp, show]
 
@@ -43,9 +49,9 @@ module Root : sig
 
   val is_captured_variable : t -> bool
 
-  val is_captured_variable_inferred : t -> bool
+  val is_captured_variable_not_generation_if_source : t -> bool
 
-  val is_captured_variable_user_defined : t -> bool
+  val is_captured_variable_generation_if_source : t -> bool
 
   module Set : Stdlib.Set.S with type elt = t
 end

@@ -564,7 +564,7 @@
     "callable_line": 74,
     "tito": [
       {
-        "port": "captured_variable($parameter$self)[_func]",
+        "port": "captured_variable($parameter$self, generation_if_source)[_func]",
         "taint": [
           {
             "kinds": [
@@ -585,7 +585,7 @@
         ]
       },
       {
-        "port": "captured_variable($parameter$instance)",
+        "port": "captured_variable($parameter$instance, generation_if_source)",
         "taint": [
           {
             "kinds": [

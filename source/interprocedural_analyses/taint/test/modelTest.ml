@@ -2456,6 +2456,52 @@ let test_closure_models context =
       "`CapturedVariables()` is an invalid taint annotation: `@CapturedVariables(...)` needs one \
        Taint Annotation as argument."
     ();
+  assert_model
+    ~context
+    ~model_source:
+      {|
+      @CapturedVariables(TaintSource[Test], generation=True)
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
+    ~expect:[outcome ~kind:`Function "$local_test?outer$inner"]
+    ();
+  assert_invalid_model
+    ~context
+    ~model_source:
+      {|
+      @CapturedVariables(TaintSource[Test], generation=1)
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
+    ~expect:
+      "`CapturedVariables(TaintSource[Test], generation = 1)` is an invalid taint annotation: Use \
+       `@CapturedVariables(..., generation=True)` to specify generation source."
+    ();
+  assert_invalid_model
+    ~context
+    ~model_source:
+      {|
+      @CapturedVariables(TaintSink[Test], generation=True)
+      def test.outer.inner(): ...
+    |}
+    ~source:{|
+      def outer():
+        def inner():
+          pass
+    |}
+    ~expect:
+      "`CapturedVariables(TaintSink[Test], generation = True)` is an invalid taint annotation: \
+       `@CapturedVariables(..., generation=True)` must be used only on `TaintSource`s."
+    ();
   assert_invalid_model
     ~context
     ~model_source:

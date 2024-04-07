@@ -138,6 +138,9 @@ def captured_variable_model_parameter_source():
     def model_all_captured_as_parameter_sources():
         _test_sink(complicated_name)
 
+    model_all_captured_as_parameter_sources()
+    _test_sink(complicated_name) # no issue
+
 
 def captured_variable_model_generation_source():
     complicated_name = ...
@@ -145,8 +148,20 @@ def captured_variable_model_generation_source():
     # model simulates writing taint to nonlocal
     def model_all_captured_as_generation_sources():
         complicated_name
+        _test_sink(complicated_name) # no issue
 
     model_all_captured_as_generation_sources()
+    _test_sink(complicated_name)
+
+
+def captured_variable_model_both_generation_parameter_source():
+    complicated_name = ...
+
+    # model simulates writing taint to nonlocal and parameter sources
+    def model_all_captured_as_generation_and_parameter_sources():
+        _test_sink(complicated_name)
+
+    model_all_captured_as_generation_and_parameter_sources()
     _test_sink(complicated_name)
 
 

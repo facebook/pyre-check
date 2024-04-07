@@ -1561,14 +1561,14 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           List.filter_map productions ~f:(fun production ->
               production_to_taint return_annotation ~production
               >>| fun taint -> ModelParseResult.ModelAnnotation.ReturnAnnotation taint)
-      | ModelQuery.Model.CapturedVariables productions ->
+      | ModelQuery.Model.CapturedVariables { taint = productions; generation_if_source } ->
           List.cartesian_product productions captures
           |> List.filter_map ~f:(fun (production, capture) ->
                  production_to_taint return_annotation ~production
                  >>| fun taint ->
                  ModelParseResult.ModelAnnotation.ParameterAnnotation
                    ( AccessPath.Root.CapturedVariable
-                       { name = capture.Statement.Define.Capture.name; user_defined = true },
+                       { name = capture.Statement.Define.Capture.name; generation_if_source },
                      taint ))
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =
