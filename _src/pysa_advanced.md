@@ -766,6 +766,34 @@ This option can also be added in the `taint.config` as follows:
 Note that this is not a silver bullet and that this might hide security
 vulnerabilities. Use it with caution.
 
+## Limit the trace length for a given rule
+
+Similarly to the option described above, one can limit the trace length
+for a given rule, using the `filters` option:
+
+```
+"rules": [
+  {
+    "name": "SQL injection.",
+    "code": 1,
+    "sources": [ "UserControlled" ],
+    "sinks": [ "SQL" ],
+    "message_format": "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)",
+    "filters": {
+      "maximum_source_distance": 10,
+      "maximum_sink_distance": 5
+    }
+  }
+]
+```
+
+This will limit the trace length from the root to the source by 10, and the
+trace length from the root to the sink by 5, only for that specific rule.
+
+**Note**: This is meant to be used to limit the number of issues written to the
+database. Prefer using [SAPP](https://github.com/facebook/sapp#readme) to
+filter out false positives.
+
 ## Limit the tito depth for better signal and performance
 
 Pysa automatically infers when a function propagate the taint from one argument
