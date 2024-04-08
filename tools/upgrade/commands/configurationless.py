@@ -82,12 +82,19 @@ class ConfigurationlessOptions:
 
 class Configurationless(Command):
     def __init__(
-        self, *, repository: Repository, path: Path, includes: List[str], commit: bool
+        self,
+        *,
+        repository: Repository,
+        path: Path,
+        includes: List[str],
+        commit: bool,
+        force_remigrate: bool,
     ) -> None:
         super().__init__(repository)
         self._path: Path = path
         self._includes: List[str] = includes
         self._commit: bool = commit
+        self._force_remigrate: bool = force_remigrate
 
     @staticmethod
     def from_arguments(
@@ -98,6 +105,7 @@ class Configurationless(Command):
             path=arguments.path.resolve(),
             includes=arguments.include_file_suffixes,
             commit=(not arguments.no_commit),
+            force_remigrate=arguments.force_remigrate,
         )
 
     @classmethod
@@ -121,6 +129,11 @@ class Configurationless(Command):
             type=str,
             default=["**.py"],
             help="The suffixes to search for and include in the codemod. Default is '**.py'.",
+        )
+        parser.add_argument(
+            "--force-remigrate",
+            help="Remigrate all files, even if they already have a mode header present",
+            action="store_true",
         )
 
     def get_file_mode_to_apply(

@@ -25,6 +25,7 @@ class TestConfigurationless(TestCase):
             path=Path("."),
             includes=["**.py"],
             commit=False,
+            force_remigrate=False,
         )
 
     @classmethod
