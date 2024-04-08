@@ -231,7 +231,7 @@ class Configurationless(Command):
                 cwd=self._path,
             ).strip()
 
-            LOG.debug(f"Found files:\n`{result}`")
+            LOG.debug(f"Found files from applicable targets:\n`{result}`")
 
             return {(buck_root / file.strip()).resolve() for file in result.split("\n")}
 
@@ -353,7 +353,7 @@ class Configurationless(Command):
 
     def _get_files_to_migrate_from_source_directories(
         self, source_directories: List[Path]
-    ) -> Collection[Path]:
+    ) -> Set[Path]:
         LOG.debug(f"Finding files with filesystem under {source_directories}")
         file_system = filesystem.get_filesystem()
 
@@ -363,9 +363,9 @@ class Configurationless(Command):
             for file in file_system.list(str(source_directory), patterns=self._includes)
         }
 
-    def get_files_to_migrate(
+    def get_files_from_local_configuration(
         self, local_configuration: Configuration
-    ) -> Collection[Path]:
+    ) -> Set[Path]:
         if local_configuration.targets is not None:
             files = self._get_files_to_migrate_from_targets(local_configuration.targets)
         elif local_configuration.source_directories is not None:
@@ -378,7 +378,9 @@ class Configurationless(Command):
             raise ValueError(
                 "Could not find `targets` or `source_directories` keys in local configuration"
             )
-        LOG.info(f"Found {len(files)} files to migrate")
+        LOG.debug(
+            f"Found {len(files)} files in local configuration {local_configuration.get_path()}"
+        )
         return files
 
     def get_options(
@@ -408,17 +410,27 @@ class Configurationless(Command):
 
         return options
 
+    def migrate_files(
+        self, options: ConfigurationlessOptions, files_to_migrate: Set[Path]
+    ) -> None:
+        for file in files_to_migrate:
+            file_mode = self.get_file_mode_to_apply(file, options)
+            if file_mode is not None:
+                filesystem.add_local_mode(str(file), file_mode, ignore_empty_files=True)
+
     def run(self) -> None:
         options = self.get_options()
         if options.no_changes_to_make():
             return
 
-        files_to_migrate = self.get_files_to_migrate(options.local_configuration)
+        files_to_migrate = self.get_files_from_local_configuration(
+            options.local_configuration
+        )
 
-        for file in files_to_migrate:
-            file_mode = self.get_file_mode_to_apply(file, options)
-            if file_mode is not None:
-                filesystem.add_local_mode(str(file), file_mode, ignore_empty_files=True)
+        LOG.info(f"Found {len(files_to_migrate)} files to migrate")
+        LOG.debug(f"Files to migrate\n:{[str(file) for file in files_to_migrate]}")
+
+        self.migrate_files(options, files_to_migrate)
 
         options.local_configuration.original_contents["migration_status"] = "mode"
         options.local_configuration.write()
