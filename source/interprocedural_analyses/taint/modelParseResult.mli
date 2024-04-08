@@ -227,15 +227,7 @@ module ModelQuery : sig
     [@@deriving equal, show]
   end
 
-  module ReadFromCache : sig
-    type t = {
-      kind: string;
-      name: string;
-    }
-    [@@deriving equal, show]
-  end
-
-  module WriteToCache : sig
+  module FormatString : sig
     module Substring : sig
       type t =
         | Literal of string
@@ -246,9 +238,21 @@ module ModelQuery : sig
       [@@deriving equal, show]
     end
 
+    type t = Substring.t list [@@deriving equal, show]
+  end
+
+  module ReadFromCache : sig
     type t = {
       kind: string;
-      name: Substring.t list;
+      name: string;
+    }
+    [@@deriving equal, show]
+  end
+
+  module WriteToCache : sig
+    type t = {
+      kind: string;
+      name: FormatString.t;
     }
     [@@deriving equal, show]
   end
@@ -415,11 +419,11 @@ module Modelable : sig
 
   val matches_find : t -> ModelQuery.Find.t -> bool
 
-  val expand_write_to_cache
+  val expand_format_string
     :  name_captures:NameCaptures.t ->
     t ->
-    ModelQuery.WriteToCache.Substring.t list ->
-    string
+    ModelQuery.FormatString.t ->
+    (string, string) Result.t
 end
 
 type t = {

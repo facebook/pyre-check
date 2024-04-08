@@ -33,6 +33,19 @@ module IncompatibleModelError : sig
   val strip_overload : t -> t
 end
 
+module FormatStringError : sig
+  type t =
+    | InvalidExpression of Expression.t
+    | InvalidIdentifier of string
+    | InvalidIdentifierForFind of {
+        identifier: string;
+        find: string;
+      }
+  [@@deriving sexp, equal, compare, show]
+
+  val description : t -> string
+end
+
 type kind =
   | ParseError
   | UnexpectedStatement of Statement.t
@@ -162,12 +175,7 @@ type kind =
   | InvalidReadFromCacheArguments of Expression.t
   | InvalidReadFromCacheConstraint of Expression.t
   | InvalidWriteToCacheArguments of Expression.t
-  | InvalidWriteToCacheNameExpression of Expression.t
-  | InvalidWriteToCacheNameIdentifier of Identifier.t
-  | InvalidWriteToCacheIdentifierForFind of {
-      identifier: string;
-      find: string;
-    }
+  | InvalidWriteToCacheName of FormatStringError.t
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
 [@@deriving sexp, equal, compare]

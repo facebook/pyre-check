@@ -4752,9 +4752,9 @@ let test_partition_cache_queries _ =
               ModelQuery.WriteToCache.kind = "thrift";
               name =
                 [
-                  ModelQuery.WriteToCache.Substring.ClassName;
-                  ModelQuery.WriteToCache.Substring.Literal ":";
-                  ModelQuery.WriteToCache.Substring.MethodName;
+                  ModelQuery.FormatString.Substring.ClassName;
+                  ModelQuery.FormatString.Substring.Literal ":";
+                  ModelQuery.FormatString.Substring.MethodName;
                 ];
             };
         ];
@@ -4838,7 +4838,7 @@ let test_generated_cache context =
               WriteToCache
                 {
                   ModelQuery.WriteToCache.kind = "thrift";
-                  name = [ModelQuery.WriteToCache.Substring.FunctionName];
+                  name = [ModelQuery.FormatString.Substring.FunctionName];
                 };
             ];
           find = Function;
@@ -4875,9 +4875,9 @@ let test_generated_cache context =
                   ModelQuery.WriteToCache.kind = "thrift";
                   name =
                     [
-                      ModelQuery.WriteToCache.Substring.ClassName;
-                      ModelQuery.WriteToCache.Substring.Literal ":";
-                      ModelQuery.WriteToCache.Substring.MethodName;
+                      ModelQuery.FormatString.Substring.ClassName;
+                      ModelQuery.FormatString.Substring.Literal ":";
+                      ModelQuery.FormatString.Substring.MethodName;
                     ];
                 };
             ];
@@ -4922,7 +4922,7 @@ let test_generated_cache context =
               WriteToCache
                 {
                   ModelQuery.WriteToCache.kind = "thrift";
-                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                  name = [ModelQuery.FormatString.Substring.MethodName];
                 };
             ];
           find = Method;
@@ -4962,12 +4962,12 @@ let test_generated_cache context =
               WriteToCache
                 {
                   ModelQuery.WriteToCache.kind = "a";
-                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                  name = [ModelQuery.FormatString.Substring.MethodName];
                 };
               WriteToCache
                 {
                   ModelQuery.WriteToCache.kind = "b";
-                  name = [ModelQuery.WriteToCache.Substring.MethodName];
+                  name = [ModelQuery.FormatString.Substring.MethodName];
                 };
             ];
           find = Method;

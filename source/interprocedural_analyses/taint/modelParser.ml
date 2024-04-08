@@ -1707,37 +1707,33 @@ let parse_read_from_cache_constraint ~path ~location ~constraint_expression ~arg
            (InvalidReadFromCacheArguments constraint_expression))
 
 
-let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~arguments =
+let parse_format_string ~find_clause substrings =
   let open Core.Result in
   let check_find_is ~identifier expected =
     if ModelQuery.Find.equal find_clause expected then
       Ok ()
     else
       Error
-        (model_verification_error
-           ~path
-           ~location
-           (InvalidWriteToCacheIdentifierForFind
-              { identifier; find = ModelQuery.Find.show find_clause }))
+        (ModelVerificationError.FormatStringError.InvalidIdentifierForFind
+           { identifier; find = ModelQuery.Find.show find_clause })
   in
   let parse_substring = function
     | Ast.Expression.Substring.Literal { Node.value; _ } ->
-        Ok (ModelQuery.WriteToCache.Substring.Literal value)
+        Ok (ModelQuery.FormatString.Substring.Literal value)
     | Ast.Expression.Substring.Format
         { Node.value = Expression.Name (Identifier ("class_name" as identifier)); _ } ->
         check_find_is ~identifier ModelQuery.Find.Method
-        >>| fun () -> ModelQuery.WriteToCache.Substring.ClassName
+        >>| fun () -> ModelQuery.FormatString.Substring.ClassName
     | Ast.Expression.Substring.Format
         { Node.value = Expression.Name (Identifier ("function_name" as identifier)); _ } ->
         check_find_is ~identifier ModelQuery.Find.Function
-        >>| fun () -> ModelQuery.WriteToCache.Substring.FunctionName
+        >>| fun () -> ModelQuery.FormatString.Substring.FunctionName
     | Ast.Expression.Substring.Format
         { Node.value = Expression.Name (Identifier ("method_name" as identifier)); _ } ->
         check_find_is ~identifier ModelQuery.Find.Method
-        >>| fun () -> ModelQuery.WriteToCache.Substring.MethodName
+        >>| fun () -> ModelQuery.FormatString.Substring.MethodName
     | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier identifier); _ } ->
-        Error
-          (model_verification_error ~path ~location (InvalidWriteToCacheNameIdentifier identifier))
+        Error (ModelVerificationError.FormatStringError.InvalidIdentifier identifier)
     | Ast.Expression.Substring.Format
         {
           Node.value =
@@ -1754,11 +1750,14 @@ let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~a
               };
           _;
         } ->
-        Ok (ModelQuery.WriteToCache.Substring.Capture name)
+        Ok (ModelQuery.FormatString.Substring.Capture name)
     | Ast.Expression.Substring.Format expression ->
-        Error
-          (model_verification_error ~path ~location (InvalidWriteToCacheNameExpression expression))
+        Error (ModelVerificationError.FormatStringError.InvalidExpression expression)
   in
+  List.map ~f:parse_substring substrings |> Result.all
+
+
+let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~arguments =
   match arguments with
   | [
    {
@@ -1770,10 +1769,11 @@ let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~a
      Call.Argument.name = Some { Node.value = "name"; _ };
      value = { Node.value = Expression.FormatString substrings; _ };
    };
-  ] ->
-      List.map ~f:parse_substring substrings
-      |> all
-      >>= fun substrings -> Ok (ModelQuery.Model.WriteToCache { kind; name = substrings })
+  ] -> (
+      match parse_format_string ~find_clause substrings with
+      | Ok name -> Ok (ModelQuery.Model.WriteToCache { kind; name })
+      | Error error ->
+          Error (model_verification_error ~path ~location (InvalidWriteToCacheName error)))
   | _ ->
       Error
         (model_verification_error ~path ~location (InvalidWriteToCacheArguments model_expression))

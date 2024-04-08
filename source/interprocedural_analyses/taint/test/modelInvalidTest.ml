@@ -1645,7 +1645,7 @@ let test_invalid_model_queries context =
       )
     |}
     ~expect:
-      {|Invalid identifier `function_name` for parameter `name` of `WriteToCache` for find="methods"|}
+      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `function_name` for find="methods"|}
     ();
   assert_invalid_model
     ~model_source:
@@ -1658,7 +1658,7 @@ let test_invalid_model_queries context =
       )
     |}
     ~expect:
-      {|Invalid identifier `method_name` for parameter `name` of `WriteToCache` for find="functions"|}
+      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `method_name` for find="functions"|}
     ();
   assert_invalid_model
     ~model_source:
@@ -1671,7 +1671,7 @@ let test_invalid_model_queries context =
       )
     |}
     ~expect:
-      {|Invalid identifier `class_name` for parameter `name` of `WriteToCache` for find="functions"|}
+      {|Invalid argument for the parameter `name` of `WriteToCache`: invalid identifier `class_name` for find="functions"|}
     ();
   assert_invalid_model
     ~model_source:

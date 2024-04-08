@@ -2078,9 +2078,9 @@ let test_query_parsing_cache context =
                   WriteToCache.kind = "thrift";
                   name =
                     [
-                      WriteToCache.Substring.ClassName;
-                      WriteToCache.Substring.Literal ":";
-                      WriteToCache.Substring.MethodName;
+                      FormatString.Substring.ClassName;
+                      FormatString.Substring.Literal ":";
+                      FormatString.Substring.MethodName;
                     ];
                 };
             ];
@@ -2112,7 +2112,7 @@ let test_query_parsing_cache context =
           models =
             [
               WriteToCache
-                { WriteToCache.kind = "thrift"; name = [WriteToCache.Substring.FunctionName] };
+                { WriteToCache.kind = "thrift"; name = [FormatString.Substring.FunctionName] };
             ];
           expected_models = [];
           unexpected_models = [];
@@ -2146,9 +2146,9 @@ let test_query_parsing_cache context =
                   WriteToCache.kind = "thrift";
                   name =
                     [
-                      WriteToCache.Substring.Capture "x";
-                      WriteToCache.Substring.Literal ":";
-                      WriteToCache.Substring.Capture "y";
+                      FormatString.Substring.Capture "x";
+                      FormatString.Substring.Literal ":";
+                      FormatString.Substring.Capture "y";
                     ];
                 };
             ];

@@ -1160,12 +1160,10 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
     let name_captures = NameCaptures.create () in
     let modelable = QueryKind.make_modelable ~pyre_api target in
     let write_to_cache cache = function
-      | ModelQuery.Model.WriteToCache { kind; name } ->
-          ReadWriteCache.write
-            cache
-            ~kind
-            ~name:(Modelable.expand_write_to_cache ~name_captures modelable name)
-            ~target
+      | ModelQuery.Model.WriteToCache { kind; name } -> (
+          match Modelable.expand_format_string ~name_captures modelable name with
+          | Ok name -> ReadWriteCache.write cache ~kind ~name ~target
+          | Error error -> Format.asprintf "unexpected WriteToCache name: %s" error |> failwith)
       | model ->
           Format.asprintf
             "unexpected model in generate_cache_from_query_on_target for model query `%s`, \

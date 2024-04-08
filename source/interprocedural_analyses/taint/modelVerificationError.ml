@@ -37,6 +37,24 @@ module IncompatibleModelError = struct
   let strip_overload { reason; _ } = { reason; overload = None }
 end
 
+module FormatStringError = struct
+  type t =
+    | InvalidExpression of Expression.t
+    | InvalidIdentifier of string
+    | InvalidIdentifierForFind of {
+        identifier: string;
+        find: string;
+      }
+  [@@deriving sexp, equal, compare, show]
+
+  let description = function
+    | InvalidExpression expression ->
+        Format.asprintf "expected identifier, got `%a`" Expression.pp expression
+    | InvalidIdentifier identifier -> Format.asprintf "unknown identifier `%s`" identifier
+    | InvalidIdentifierForFind { identifier; find } ->
+        Format.asprintf "invalid identifier `%s` for find=\"%s\"" identifier find
+end
+
 type kind =
   | ParseError
   | UnexpectedStatement of Statement.t
@@ -166,12 +184,7 @@ type kind =
   | InvalidReadFromCacheArguments of Expression.t
   | InvalidReadFromCacheConstraint of Expression.t
   | InvalidWriteToCacheArguments of Expression.t
-  | InvalidWriteToCacheNameExpression of Expression.t
-  | InvalidWriteToCacheNameIdentifier of string
-  | InvalidWriteToCacheIdentifierForFind of {
-      identifier: string;
-      find: string;
-    }
+  | InvalidWriteToCacheName of FormatStringError.t
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
 [@@deriving sexp, equal, compare, show]
@@ -487,20 +500,10 @@ let description error =
          `%a`"
         Expression.pp
         model_expression
-  | InvalidWriteToCacheNameExpression expression ->
+  | InvalidWriteToCacheName error ->
       Format.asprintf
-        "Invalid argument for the parameter `name` of `WriteToCache`: expected identifier, got `%a`"
-        Expression.pp
-        expression
-  | InvalidWriteToCacheNameIdentifier identifier ->
-      Format.asprintf
-        "Invalid argument for the parameter `name` of `WriteToCache`: unknown identifier `%s`"
-        identifier
-  | InvalidWriteToCacheIdentifierForFind { identifier; find } ->
-      Format.asprintf
-        "Invalid identifier `%s` for parameter `name` of `WriteToCache` for find=\"%s\""
-        identifier
-        find
+        "Invalid argument for the parameter `name` of `WriteToCache`: %s"
+        (FormatStringError.description error)
   | MutuallyExclusiveReadWriteToCache ->
       "WriteToCache and read_from_cache cannot be used in the same model query"
   | MutuallyExclusiveTaintWriteToCache ->
@@ -561,9 +564,8 @@ let code { kind; _ } =
   | UnsupportedDecoratorConstraintCallee _ -> 52
   | InvalidReadFromCacheArguments _ -> 53
   | InvalidWriteToCacheArguments _ -> 54
-  | InvalidWriteToCacheNameExpression _ -> 55
-  | InvalidWriteToCacheNameIdentifier _ -> 56
-  | InvalidWriteToCacheIdentifierForFind _ -> 57
+  | InvalidWriteToCacheName _ -> 55
+  (* 56-57: unused *)
   | InvalidReadFromCacheConstraint _ -> 58
   | MutuallyExclusiveReadWriteToCache -> 59
   | MutuallyExclusiveTaintWriteToCache -> 60

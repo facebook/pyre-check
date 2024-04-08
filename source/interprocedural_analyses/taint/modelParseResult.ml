@@ -463,15 +463,7 @@ module ModelQuery = struct
     [@@deriving equal, show]
   end
 
-  module ReadFromCache = struct
-    type t = {
-      kind: string;
-      name: string;
-    }
-    [@@deriving equal, show]
-  end
-
-  module WriteToCache = struct
+  module FormatString = struct
     module Substring = struct
       type t =
         | Literal of string
@@ -482,9 +474,21 @@ module ModelQuery = struct
       [@@deriving equal, show]
     end
 
+    type t = Substring.t list [@@deriving equal, show]
+  end
+
+  module ReadFromCache = struct
     type t = {
       kind: string;
-      name: Substring.t list;
+      name: string;
+    }
+    [@@deriving equal, show]
+  end
+
+  module WriteToCache = struct
+    type t = {
+      kind: string;
+      name: FormatString.t;
     }
     [@@deriving equal, show]
   end
@@ -797,24 +801,29 @@ module Modelable = struct
     | _ -> false
 
 
-  let expand_write_to_cache ~name_captures modelable name =
+  let expand_format_string ~name_captures modelable name =
     let expand_substring modelable substring =
       match substring, modelable with
-      | ModelQuery.WriteToCache.Substring.Literal value, _ -> value
+      | ModelQuery.FormatString.Substring.Literal value, _ -> Ok value
       | FunctionName, Callable { target = Target.Function { name; _ }; _ } ->
-          Reference.create name |> Reference.last
-      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> method_name
+          Reference.create name |> Reference.last |> Result.return
+      | FunctionName, _ -> Error "`function_name` can only be used on functions"
+      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> Ok method_name
+      | MethodName, _ -> Error "`method_name` can only be used on methods"
       | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
-          Reference.create class_name |> Reference.last
+          Reference.create class_name |> Reference.last |> Result.return
+      | ClassName, _ -> Error "`class_name` can only be used on methods"
       | Capture identifier, _ -> (
           match NameCaptures.get name_captures identifier with
-          | Some value -> value
+          | Some value -> Ok value
           | None ->
               let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
-              "")
-      | _ -> failwith "unreachable"
+              Ok "")
     in
-    name |> List.map ~f:(expand_substring modelable) |> String.concat ~sep:""
+    name
+    |> List.map ~f:(expand_substring modelable)
+    |> Result.all
+    |> Result.map ~f:(String.concat ~sep:"")
 end
 
 type t = {
