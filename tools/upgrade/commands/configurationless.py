@@ -6,6 +6,7 @@
 # pyre-strict
 
 import argparse
+import glob
 import json
 import logging
 import re
@@ -383,6 +384,27 @@ class Configurationless(Command):
         )
         return files
 
+    def _get_already_migrated_files(
+        self, local_configuration: Configuration
+    ) -> Set[Path]:
+        downward_search_start = str(local_configuration.get_path().resolve().parent)
+        if not downward_search_start.endswith("/"):
+            downward_search_start += "/"
+        already_migrated_files: Set[Path] = set()
+        nested_configurations = glob.glob(
+            f"{downward_search_start}*/**/.pyre_configuration.local",
+            recursive=True,
+        )
+        LOG.info(f"Found {len(nested_configurations)} nested configurations")
+        LOG.debug(f"Nested configurations found: {nested_configurations}")
+        for configuration_path in nested_configurations:
+            nested_local_configuration = Configuration(Path(configuration_path))
+            migrated_files = self.get_files_from_local_configuration(
+                nested_local_configuration
+            )
+            already_migrated_files |= migrated_files
+        return already_migrated_files
+
     def get_options(
         self,
     ) -> ConfigurationlessOptions:
@@ -415,7 +437,16 @@ class Configurationless(Command):
     ) -> None:
         for file in files_to_migrate:
             file_mode = self.get_file_mode_to_apply(file, options)
-            if file_mode is not None:
+            existing_modes = set(
+                filesystem.get_lines_with_modes(
+                    file.read_text().split("\n"), list(filesystem.LocalMode)
+                ).values()
+            )
+            if file_mode is not None and (
+                len(existing_modes) != 1 or file_mode not in existing_modes
+            ):
+                if self._force_remigrate:
+                    filesystem.remove_local_mode(file, list(filesystem.LocalMode))
                 filesystem.add_local_mode(str(file), file_mode, ignore_empty_files=True)
 
     def run(self) -> None:
@@ -426,9 +457,20 @@ class Configurationless(Command):
         files_to_migrate = self.get_files_from_local_configuration(
             options.local_configuration
         )
+        already_migrated_files = self._get_already_migrated_files(
+            options.local_configuration
+        )
 
         LOG.info(f"Found {len(files_to_migrate)} files to migrate")
         LOG.debug(f"Files to migrate\n:{[str(file) for file in files_to_migrate]}")
+        LOG.info(f"Found {len(already_migrated_files)} already migrated files")
+        LOG.debug(
+            f"Files already migrated\n:{[str(file) for file in already_migrated_files]}"
+        )
+        files_to_migrate -= already_migrated_files
+        LOG.info(
+            f"Found {len(files_to_migrate)} files to migrate, not including files already migrated"
+        )
 
         self.migrate_files(options, files_to_migrate)
 
