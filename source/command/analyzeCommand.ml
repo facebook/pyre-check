@@ -349,7 +349,7 @@ let with_performance_tracking ~debug ~f =
 
 let verify_configuration ~static_analysis_configuration () =
   let (_ : Taint.TaintConfiguration.Heap.t) =
-    TaintAnalysis.initialize_configuration ~static_analysis_configuration
+    TaintAnalysis.initialize_and_verify_configuration ~static_analysis_configuration
   in
   ()
 

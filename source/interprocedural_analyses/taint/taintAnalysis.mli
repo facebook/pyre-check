@@ -12,6 +12,6 @@ val run_taint_analysis
   unit ->
   unit
 
-val initialize_configuration
+val initialize_and_verify_configuration
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   Taint.TaintConfiguration.Heap.t

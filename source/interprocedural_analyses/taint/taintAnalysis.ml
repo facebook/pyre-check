@@ -13,7 +13,7 @@ open Taint
 module Target = Interprocedural.Target
 module PyrePysaApi = Analysis.PyrePysaApi
 
-let initialize_configuration
+let initialize_and_verify_configuration
     ~static_analysis_configuration:
       {
         Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
@@ -37,7 +37,7 @@ let initialize_configuration
         _;
       }
   =
-  Log.info "Verifying taint configuration.";
+  Log.info "Initializing and verifying taint configuration.";
   let timer = Timer.start () in
   let open Core.Result in
   let taint_configuration =
@@ -64,8 +64,8 @@ let initialize_configuration
   in
   let () =
     Statistics.performance
-      ~name:"Verified taint configuration"
-      ~phase_name:"Verifying taint configuration"
+      ~name:"Initialized and verified taint configuration"
+      ~phase_name:"Initializing and verifying taint configuration"
       ~timer
       ()
   in
@@ -509,7 +509,7 @@ let run_taint_analysis
     ~scheduler
     ()
   =
-  let taint_configuration = initialize_configuration ~static_analysis_configuration in
+  let taint_configuration = initialize_and_verify_configuration ~static_analysis_configuration in
 
   (* In order to save time, sanity check models before starting the analysis. *)
   let () = verify_model_syntax ~static_analysis_configuration in
