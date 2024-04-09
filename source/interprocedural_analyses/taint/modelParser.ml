@@ -980,37 +980,10 @@ let rec parse_annotations
             ];
         _;
       } ->
-        let add_cross_repository_information annotation =
-          let leaf_name =
-            Features.LeafName.
-              { leaf = canonical_name; port = Features.LeafPort.Anchor { port = canonical_port } }
-          in
-          match annotation with
-          | TaintAnnotation.Source { source; features } ->
-              TaintAnnotation.Source
-                {
-                  source;
-                  features =
-                    {
-                      features with
-                      leaf_names = leaf_name :: features.leaf_names;
-                      leaf_name_provided = true;
-                    };
-                }
-          | TaintAnnotation.Sink { sink; features } ->
-              TaintAnnotation.Sink
-                {
-                  sink;
-                  features =
-                    {
-                      features with
-                      leaf_names = leaf_name :: features.leaf_names;
-                      leaf_name_provided = true;
-                    };
-                }
-          | _ -> annotation
-        in
-        parse_annotation taint |> map ~f:(List.map ~f:add_cross_repository_information)
+        let open Core.Result in
+        parse_annotation taint
+        >>| List.map
+              ~f:(TaintAnnotation.add_cross_repository_anchor ~canonical_name ~canonical_port)
     | _ ->
         Error
           (annotation_error
@@ -2189,6 +2162,69 @@ let parse_model_clause
                      ~path
                      ~location
                      (UnexpectedTaintAnnotation parametric_annotation)))
+        | Expression.Call
+            {
+              Call.callee =
+                {
+                  Node.value =
+                    Expression.Name
+                      (Name.Attribute
+                        {
+                          base =
+                            { Node.value = Name (Name.Identifier "CrossRepositoryTaintAnchor"); _ };
+                          attribute = "__getitem__";
+                          special = true;
+                        });
+                  _;
+                };
+              arguments =
+                [
+                  {
+                    value =
+                      {
+                        Node.value =
+                          Expression.Tuple [taint_expression; canonical_name; canonical_port];
+                        _;
+                      };
+                    _;
+                  };
+                ];
+            } ->
+            let parse_string_argument parameter_name argument =
+              match Node.value argument with
+              | Expression.Constant (Constant.String { StringLiteral.value; _ }) ->
+                  Ok [ModelQuery.FormatString.Substring.Literal value]
+              | Expression.FormatString substrings ->
+                  parse_format_string ~find_clause substrings
+                  |> Result.map_error ~f:(fun error ->
+                         model_verification_error
+                           ~path
+                           ~location
+                           (InvalidCrossRepositoryTaintAnchorFormatString
+                              { argument = parameter_name; error }))
+              | _ ->
+                  Error
+                    (model_verification_error
+                       ~path
+                       ~location
+                       (InvalidCrossRepositoryTaintAnchorString
+                          { argument = parameter_name; value = argument }))
+            in
+            parse_string_argument "canonical name" canonical_name
+            >>= fun canonical_name ->
+            parse_string_argument "canonical port" canonical_port
+            >>= fun canonical_port ->
+            parse_annotations
+              ~path
+              ~location
+              ~origin
+              ~taint_configuration
+              ~parameters:[]
+              ~callable_parameter_names_to_roots:None
+              taint_expression
+            >>| List.map ~f:(fun annotation ->
+                    ModelQuery.QueryTaintAnnotation.CrossRepositoryTaintAnchor
+                      { annotation; canonical_name; canonical_port })
         | _ ->
             parse_annotations
               ~path

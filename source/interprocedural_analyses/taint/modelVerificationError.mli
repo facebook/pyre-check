@@ -178,6 +178,14 @@ type kind =
   | InvalidWriteToCacheName of FormatStringError.t
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
+  | InvalidCrossRepositoryTaintAnchorString of {
+      argument: string;
+      value: Expression.t;
+    }
+  | InvalidCrossRepositoryTaintAnchorFormatString of {
+      argument: string;
+      error: FormatStringError.t;
+    }
 [@@deriving sexp, equal, compare]
 
 type t = {

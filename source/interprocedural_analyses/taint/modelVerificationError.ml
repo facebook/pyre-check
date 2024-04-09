@@ -187,6 +187,14 @@ type kind =
   | InvalidWriteToCacheName of FormatStringError.t
   | MutuallyExclusiveReadWriteToCache
   | MutuallyExclusiveTaintWriteToCache
+  | InvalidCrossRepositoryTaintAnchorString of {
+      argument: string;
+      value: Expression.t;
+    }
+  | InvalidCrossRepositoryTaintAnchorFormatString of {
+      argument: string;
+      error: FormatStringError.t;
+    }
 [@@deriving sexp, equal, compare, show]
 
 type t = {
@@ -508,6 +516,17 @@ let description error =
       "WriteToCache and read_from_cache cannot be used in the same model query"
   | MutuallyExclusiveTaintWriteToCache ->
       "WriteToCache cannot be used with other taint annotations in the same model query"
+  | InvalidCrossRepositoryTaintAnchorString { argument; value } ->
+      Format.asprintf
+        "Expected string for %s of CrossRepositoryTaintAnchor, got `%a`"
+        argument
+        Expression.pp
+        value
+  | InvalidCrossRepositoryTaintAnchorFormatString { argument; error } ->
+      Format.asprintf
+        "Invalid %s for CrossRepositoryTaintAnchor: %s"
+        argument
+        (FormatStringError.description error)
 
 
 let code { kind; _ } =
@@ -579,6 +598,8 @@ let code { kind; _ } =
   | UnsupportedIfCondition _ -> 68
   | UnsupportedVersionConstant _ -> 69
   | UnsupportedComparisonOperator _ -> 70
+  | InvalidCrossRepositoryTaintAnchorString _ -> 71
+  | InvalidCrossRepositoryTaintAnchorFormatString _ -> 72
 
 
 let display { kind = error; path; location } =

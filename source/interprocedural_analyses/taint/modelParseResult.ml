@@ -314,6 +314,37 @@ module TaintAnnotation = struct
 
   let from_tito tito = Tito { tito; features = TaintFeatures.empty }
 
+  let add_cross_repository_anchor ~canonical_name ~canonical_port annotation =
+    let leaf_name =
+      Features.LeafName.
+        { leaf = canonical_name; port = Features.LeafPort.Anchor { port = canonical_port } }
+    in
+    match annotation with
+    | Source { source; features } ->
+        Source
+          {
+            source;
+            features =
+              {
+                features with
+                leaf_names = leaf_name :: features.leaf_names;
+                leaf_name_provided = true;
+              };
+          }
+    | Sink { sink; features } ->
+        Sink
+          {
+            sink;
+            features =
+              {
+                features with
+                leaf_names = leaf_name :: features.leaf_names;
+                leaf_name_provided = true;
+              };
+          }
+    | _ -> annotation
+
+
   let pp formatter = function
     | Sink { sink; features } ->
         Format.fprintf
@@ -581,6 +612,11 @@ module ModelQuery = struct
       | ParametricSinkFromAnnotation of {
           sink_pattern: string;
           kind: string;
+        }
+      | CrossRepositoryTaintAnchor of {
+          annotation: TaintAnnotation.t;
+          canonical_name: FormatString.t;
+          canonical_port: FormatString.t;
         }
     [@@deriving show, equal]
   end

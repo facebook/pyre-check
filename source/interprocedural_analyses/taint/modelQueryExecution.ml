@@ -372,10 +372,10 @@ let matches_name_constraint ~name_captures ~name_constraint name =
   | ModelQuery.NameConstraint.Equals string -> String.equal string name
   | ModelQuery.NameConstraint.Matches pattern ->
       let is_match = Re2.matches pattern name in
-      (match name_captures with
-      | Some name_captures when is_match ->
+      let () =
+        if is_match then
           NameCaptures.add name_captures (Re2.first_match_exn pattern name)
-      | _ -> ());
+      in
       is_match
 
 
@@ -962,6 +962,7 @@ module type QUERY_KIND = sig
   val generate_annotations_from_query_models
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     class_hierarchy_graph:ClassHierarchyGraph.SharedMemory.t ->
+    name_captures:NameCaptures.t ->
     modelable:Modelable.t ->
     ModelQuery.Model.t list ->
     annotation list
@@ -1012,18 +1013,20 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
       ~modelable
       ({ ModelQuery.models; _ } as query)
     =
+    let name_captures = NameCaptures.create () in
     if
       matches_query_constraints
         ~verbose
         ~pyre_api
         ~class_hierarchy_graph
-        ~name_captures:None
+        ~name_captures
         ~modelable
         query
     then
       QueryKind.generate_annotations_from_query_models
         ~pyre_api
         ~class_hierarchy_graph
+        ~name_captures
         ~modelable
         models
     else
@@ -1178,7 +1181,7 @@ module MakeQueryExecutor (QueryKind : QUERY_KIND) = struct
         ~verbose
         ~pyre_api
         ~class_hierarchy_graph
-        ~name_captures:(Some name_captures)
+        ~name_captures
         ~modelable
         query
     then
@@ -1435,7 +1438,13 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
     Modelable.Callable { target = callable; define }
 
 
-  let generate_annotations_from_query_models ~pyre_api ~class_hierarchy_graph ~modelable models =
+  let generate_annotations_from_query_models
+      ~pyre_api
+      ~class_hierarchy_graph
+      ~name_captures
+      ~modelable
+      models
+    =
     let production_to_taint ?(parameter = None) ~production annotation =
       let open Expression in
       let get_subkind_from_annotation ~pattern annotation =
@@ -1553,6 +1562,21 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               sink = Sinks.ParametricSink { sink_name = kind; subkind };
               features = ModelParseResult.TaintFeatures.empty;
             }
+      | ModelQuery.QueryTaintAnnotation.CrossRepositoryTaintAnchor
+          { annotation; canonical_name; canonical_port } ->
+          let expand_format_string format_string =
+            match Modelable.expand_format_string ~name_captures modelable format_string with
+            | Ok name -> name
+            | Error error ->
+                Format.asprintf "unexpected CrossRepositoryTaintAnchor argument: %s" error
+                |> failwith
+          in
+          annotation
+          |> update_placeholder_via_features
+          |> TaintAnnotation.add_cross_repository_anchor
+               ~canonical_name:(expand_format_string canonical_name)
+               ~canonical_port:(expand_format_string canonical_port)
+          |> Option.some
     in
     let apply_model ~normalized_parameters ~captures ~return_annotation = function
       | ModelQuery.Model.Return productions ->
@@ -1650,7 +1674,7 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                   (normalized_parameter_matches_constraint
                      ~pyre_api
                      ~class_hierarchy_graph
-                     ~name_captures:None
+                     ~name_captures
                      ~parameter)
             then
               production_to_taint annotation ~production ~parameter:(Some root)
@@ -1762,6 +1786,7 @@ module AttributeQueryExecutor = struct
     let generate_annotations_from_query_models
         ~pyre_api:_
         ~class_hierarchy_graph:_
+        ~name_captures:_
         ~modelable:_
         models
       =
@@ -1829,6 +1854,7 @@ module GlobalVariableQueryExecutor = struct
     let generate_annotations_from_query_models
         ~pyre_api:_
         ~class_hierarchy_graph:_
+        ~name_captures:_
         ~modelable:_
         models
       =

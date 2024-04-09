@@ -140,6 +140,8 @@ module TaintAnnotation : sig
   val from_sink : Sinks.t -> t
 
   val from_tito : Sinks.t -> t
+
+  val add_cross_repository_anchor : canonical_name:string -> canonical_port:string -> t -> t
 end
 
 module ModelAnnotation : sig
@@ -307,6 +309,11 @@ module ModelQuery : sig
       | ParametricSinkFromAnnotation of {
           sink_pattern: string;
           kind: string;
+        }
+      | CrossRepositoryTaintAnchor of {
+          annotation: TaintAnnotation.t;
+          canonical_name: FormatString.t;
+          canonical_port: FormatString.t;
         }
     [@@deriving show, equal]
   end

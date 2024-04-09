@@ -36,3 +36,14 @@ def cross_repository.cross_repository_anchor_sink(
     'formal(0)'
   ]
 ): ...
+
+
+ModelQuery(
+  name = "cross_repository_taint_anchor",
+  find = "methods",
+  where = cls.name.matches("Anchor"),
+  model = Parameters(
+    CrossRepositoryTaintAnchor[TaintSink[Test], f"{class_name}:{method_name}", f"formal(1).{capture(name)}"],
+    where = name.matches("^crtex_(?P<name>.*)$")
+  )
+)

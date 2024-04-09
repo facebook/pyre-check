@@ -46,3 +46,11 @@ def test_propagate_cross_repository_sink_once(y):
 
 def test_propagate_cross_repository_sink_twice(z):
     test_propagate_cross_repository_sink_once(z)
+
+
+class TestDSLAnchor:
+    def foo(self, crtex_a):
+        pass
+
+    def bar(self, crtex_b):
+        pass
