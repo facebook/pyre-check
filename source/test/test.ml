@@ -3480,11 +3480,11 @@ let assert_instantiated_attribute_equal expected actual =
    This is useful when Pyre adds, removes, or modifies the original class's attributes, e.g., by
    adding dunder methods. *)
 let assert_equivalent_attributes
-    ~context
     ?(assert_attribute_equal = assert_instantiated_attribute_equal)
     ~source
     ~class_name
     expected_equivalent_class_source
+    context
   =
   let module_name = "test" in
   let attributes source =
