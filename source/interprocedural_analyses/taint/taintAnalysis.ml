@@ -540,14 +540,6 @@ let run_taint_analysis
   in
   let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
-  let resolve_module_path =
-    resolve_module_path
-      ~lookup_source
-      ~absolute_source_path_of_qualifier:
-        (PyrePysaApi.ReadOnly.absolute_source_path_of_qualifier pyre_api)
-      ~static_analysis_configuration
-  in
-
   if compact_ocaml_heap_flag then
     compact_ocaml_heap ~name:"after type check";
 
@@ -673,6 +665,14 @@ let run_taint_analysis
     ~phase_name:"Indexing global constants"
     ~timer
     ();
+
+  let resolve_module_path =
+    resolve_module_path
+      ~lookup_source
+      ~absolute_source_path_of_qualifier:
+        (PyrePysaApi.ReadOnly.absolute_source_path_of_qualifier pyre_api)
+      ~static_analysis_configuration
+  in
 
   Log.info "Building call graph...";
   let timer = Timer.start () in
