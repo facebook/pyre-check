@@ -2164,6 +2164,8 @@ let parse_parameter_where_clause ~path ({ Node.value; location } as expression) 
             };
           ] ) ->
           Ok (ModelQuery.ParameterConstraint.IndexConstraint index)
+      | ["has_position"], [] -> Ok ModelQuery.ParameterConstraint.HasPosition
+      | ["has_name"], [] -> Ok ModelQuery.ParameterConstraint.HasName
       | _ ->
           Error
             (model_verification_error

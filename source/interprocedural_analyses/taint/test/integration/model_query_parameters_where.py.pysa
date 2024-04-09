@@ -251,3 +251,35 @@ ModelQuery(
     )
   ]
 )
+
+ModelQuery(
+  name = "get_model_query_parameters_test11_source",
+  find = "functions",
+  where = [
+    name.matches("test11_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        has_position()
+      ]
+    )
+  ]
+)
+
+ModelQuery(
+  name = "get_model_query_parameters_test12_source",
+  find = "functions",
+  where = [
+    name.matches("test12_")
+  ],
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        has_name()
+      ]
+    )
+  ]
+)

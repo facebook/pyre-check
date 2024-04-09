@@ -138,3 +138,11 @@ def test9_f(a, b):
 
 def test10_f(a: Annotated[int, "foo"], b: str, c_foo, d: List[str]):
     pass
+
+
+def test11_f(a, /, b, *args, c, **kwargs):
+    pass
+
+
+def test12_f(a, /, b, *args, c, **kwargs):
+    pass

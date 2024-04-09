@@ -584,6 +584,16 @@ let rec normalized_parameter_matches_constraint
       match root with
       | AccessPath.Root.PositionalParameter { position; _ } when position = index -> true
       | _ -> false)
+  | ModelQuery.ParameterConstraint.HasPosition -> (
+      match root with
+      | AccessPath.Root.PositionalParameter _ -> true
+      | _ -> false)
+  | ModelQuery.ParameterConstraint.HasName -> (
+      match root with
+      | AccessPath.Root.PositionalParameter _
+      | AccessPath.Root.NamedParameter _ ->
+          true
+      | _ -> false)
   | ModelQuery.ParameterConstraint.AnyOf constraints ->
       List.exists
         constraints

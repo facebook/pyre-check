@@ -447,6 +447,8 @@ module ModelQuery = struct
       | AnnotationConstraint of AnnotationConstraint.t
       | NameConstraint of NameConstraint.t
       | IndexConstraint of int
+      | HasPosition
+      | HasName
       | AnyOf of t list
       | AllOf of t list
       | Not of t

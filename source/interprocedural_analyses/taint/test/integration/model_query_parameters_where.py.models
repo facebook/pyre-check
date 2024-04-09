@@ -157,6 +157,46 @@
 {
   "kind": "model",
   "data": {
+    "callable": "model_query_parameters_where.test11_f",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 143,
+    "sources": [
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "model_query_parameters_where.test12_f",
+    "filename": "model_query_parameters_where.py",
+    "callable_line": 147,
+    "sources": [
+      {
+        "port": "formal(c)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "model_query_parameters_where.test1_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 14,
