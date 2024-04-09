@@ -1679,6 +1679,19 @@ let test_invalid_model_queries context =
       ModelQuery(
         name = "invalid_model",
         find = "functions",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{parameter_name}")
+      )
+    |}
+    ~expect:
+      {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_name` is invalid in this context|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
         where = read_from_cache(kind="first", name="foo"),
         model = WriteToCache(kind="second", name=f"{function_name}")
       )

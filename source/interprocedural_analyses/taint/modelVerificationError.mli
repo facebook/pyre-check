@@ -41,6 +41,7 @@ module FormatStringError : sig
         identifier: string;
         find: string;
       }
+    | InvalidIdentifierForContext of { identifier: string }
   [@@deriving sexp, equal, compare, show]
 
   val description : t -> string

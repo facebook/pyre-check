@@ -45,6 +45,7 @@ module FormatStringError = struct
         identifier: string;
         find: string;
       }
+    | InvalidIdentifierForContext of { identifier: string }
   [@@deriving sexp, equal, compare, show]
 
   let description = function
@@ -53,6 +54,8 @@ module FormatStringError = struct
     | InvalidIdentifier identifier -> Format.asprintf "unknown identifier `%s`" identifier
     | InvalidIdentifierForFind { identifier; find } ->
         Format.asprintf "invalid identifier `%s` for find=\"%s\"" identifier find
+    | InvalidIdentifierForContext { identifier } ->
+        Format.asprintf "identifier `%s` is invalid in this context" identifier
 end
 
 type kind =

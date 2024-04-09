@@ -1680,7 +1680,7 @@ let parse_read_from_cache_constraint ~path ~location ~constraint_expression ~arg
            (InvalidReadFromCacheArguments constraint_expression))
 
 
-let parse_format_string ~find_clause substrings =
+let parse_format_string ~find_clause ~allow_parameter_name substrings =
   let open Core.Result in
   let check_find_is ~identifier expected =
     if ModelQuery.Find.equal find_clause expected then
@@ -1705,6 +1705,14 @@ let parse_format_string ~find_clause substrings =
         { Node.value = Expression.Name (Identifier ("method_name" as identifier)); _ } ->
         check_find_is ~identifier ModelQuery.Find.Method
         >>| fun () -> ModelQuery.FormatString.Substring.MethodName
+    | Ast.Expression.Substring.Format
+        { Node.value = Expression.Name (Identifier "parameter_name"); _ } ->
+        if allow_parameter_name then
+          Ok ModelQuery.FormatString.Substring.ParameterName
+        else
+          Error
+            (ModelVerificationError.FormatStringError.InvalidIdentifierForContext
+               { identifier = "parameter_name" })
     | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier identifier); _ } ->
         Error (ModelVerificationError.FormatStringError.InvalidIdentifier identifier)
     | Ast.Expression.Substring.Format
@@ -1743,7 +1751,7 @@ let parse_write_to_cache_model ~path ~location ~find_clause ~model_expression ~a
      value = { Node.value = Expression.FormatString substrings; _ };
    };
   ] -> (
-      match parse_format_string ~find_clause substrings with
+      match parse_format_string ~find_clause ~allow_parameter_name:false substrings with
       | Ok name -> Ok (ModelQuery.Model.WriteToCache { kind; name })
       | Error error ->
           Error (model_verification_error ~path ~location (InvalidWriteToCacheName error)))
@@ -2195,7 +2203,11 @@ let parse_model_clause
               | Expression.Constant (Constant.String { StringLiteral.value; _ }) ->
                   Ok [ModelQuery.FormatString.Substring.Literal value]
               | Expression.FormatString substrings ->
-                  parse_format_string ~find_clause substrings
+                  parse_format_string
+                    ~find_clause
+                    ~allow_parameter_name:
+                      (AnnotationOrigin.equal origin AnnotationOrigin.ModelQueryParameter)
+                    substrings
                   |> Result.map_error ~f:(fun error ->
                          model_verification_error
                            ~path

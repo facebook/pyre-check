@@ -502,6 +502,7 @@ module ModelQuery = struct
         | FunctionName
         | MethodName
         | ClassName
+        | ParameterName
       [@@deriving equal, show]
     end
 
@@ -837,29 +838,53 @@ module Modelable = struct
     | _ -> false
 
 
-  let expand_format_string ~name_captures modelable name =
-    let expand_substring modelable substring =
-      match substring, modelable with
-      | ModelQuery.FormatString.Substring.Literal value, _ -> Ok value
-      | FunctionName, Callable { target = Target.Function { name; _ }; _ } ->
+  let expand_format_string ~name_captures ~parameter modelable name =
+    let expand_function_name () =
+      match modelable with
+      | Callable { target = Target.Function { name; _ }; _ } ->
           Reference.create name |> Reference.last |> Result.return
-      | FunctionName, _ -> Error "`function_name` can only be used on functions"
-      | MethodName, Callable { target = Target.Method { method_name; _ }; _ } -> Ok method_name
-      | MethodName, _ -> Error "`method_name` can only be used on methods"
-      | ClassName, Callable { target = Target.Method { class_name; _ }; _ } ->
-          Reference.create class_name |> Reference.last |> Result.return
-      | ClassName, _ -> Error "`class_name` can only be used on methods"
-      | Capture identifier, _ -> (
-          match NameCaptures.get name_captures identifier with
-          | Some value -> Ok value
-          | None ->
-              let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
-              Ok "")
+      | _ -> Error "`function_name` can only be used on functions"
     in
-    name
-    |> List.map ~f:(expand_substring modelable)
-    |> Result.all
-    |> Result.map ~f:(String.concat ~sep:"")
+    let expand_method_name () =
+      match modelable with
+      | Callable { target = Target.Method { method_name; _ }; _ } -> Ok method_name
+      | _ -> Error "`method_name` can only be used on methods"
+    in
+    let expand_class_name () =
+      match modelable with
+      | Callable { target = Target.Method { class_name; _ }; _ } ->
+          Reference.create class_name |> Reference.last |> Result.return
+      | _ -> Error "`class_name` can only be used on methods"
+    in
+    let expand_capture identifier =
+      match NameCaptures.get name_captures identifier with
+      | Some value -> Ok value
+      | None ->
+          let () = Log.warning "No match for capture `%s` in WriteToCache query" identifier in
+          Ok ""
+    in
+    let expand_parameter_name () =
+      match parameter with
+      | None
+      | Some AccessPath.Root.LocalResult
+      | Some (AccessPath.Root.Variable _)
+      | Some (AccessPath.Root.CapturedVariable _) ->
+          Error "`parameter_name` can only be used on parameters"
+      | Some (AccessPath.Root.PositionalParameter { name; _ }) -> Ok name
+      | Some (AccessPath.Root.NamedParameter { name }) -> Ok name
+      | Some (AccessPath.Root.StarParameter _) -> Ok "*args"
+      | Some (AccessPath.Root.StarStarParameter _) -> Ok "**kwargs"
+    in
+    let expand_substring substring =
+      match substring with
+      | ModelQuery.FormatString.Substring.Literal value -> Ok value
+      | FunctionName -> expand_function_name ()
+      | MethodName -> expand_method_name ()
+      | ClassName -> expand_class_name ()
+      | Capture identifier -> expand_capture identifier
+      | ParameterName -> expand_parameter_name ()
+    in
+    name |> List.map ~f:expand_substring |> Result.all |> Result.map ~f:(String.concat ~sep:"")
 end
 
 type t = {

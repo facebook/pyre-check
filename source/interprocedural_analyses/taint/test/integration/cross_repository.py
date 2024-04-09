@@ -49,8 +49,8 @@ def test_propagate_cross_repository_sink_twice(z):
 
 
 class TestDSLAnchor:
-    def foo(self, crtex_a):
+    def foo(self, crtex_a, other_b, *args, **kwargs):
         pass
 
-    def bar(self, crtex_b):
+    def bar(self, crtex_b, yet_another_c):
         pass

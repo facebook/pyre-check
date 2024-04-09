@@ -193,6 +193,25 @@
     "callable_line": 55,
     "sinks": [
       {
+        "port": "formal(yet_another_c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:yet_another_c",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
         "port": "formal(crtex_b, position=1)",
         "taint": [
           {
@@ -200,8 +219,31 @@
               {
                 "leaves": [
                   {
-                    "name": "TestDSLAnchor:bar",
+                    "name": "test_2:TestDSLAnchor:crtex_b",
+                    "port": "anchor:formal(1)"
+                  },
+                  {
+                    "name": "test_1:TestDSLAnchor:bar",
                     "port": "anchor:formal(1).b"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:self",
+                    "port": "anchor:formal(1)"
                   }
                 ],
                 "kind": "Test"
@@ -222,6 +264,63 @@
     "callable_line": 52,
     "sinks": [
       {
+        "port": "formal(**kwargs, excluded=[other_b,crtex_a,self])",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:**kwargs",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(*args, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:*args",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(other_b, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:other_b",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
         "port": "formal(crtex_a, position=1)",
         "taint": [
           {
@@ -229,8 +328,31 @@
               {
                 "leaves": [
                   {
-                    "name": "TestDSLAnchor:foo",
+                    "name": "test_1:TestDSLAnchor:foo",
                     "port": "anchor:formal(1).a"
+                  },
+                  {
+                    "name": "test_2:TestDSLAnchor:crtex_a",
+                    "port": "anchor:formal(1)"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
+          }
+        ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "test_2:TestDSLAnchor:self",
+                    "port": "anchor:formal(1)"
                   }
                 ],
                 "kind": "Test"

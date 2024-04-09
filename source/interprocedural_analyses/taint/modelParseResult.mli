@@ -237,6 +237,7 @@ module ModelQuery : sig
         | FunctionName
         | MethodName
         | ClassName
+        | ParameterName
       [@@deriving equal, show]
     end
 
@@ -428,6 +429,7 @@ module Modelable : sig
 
   val expand_format_string
     :  name_captures:NameCaptures.t ->
+    parameter:AccessPath.Root.t option ->
     t ->
     ModelQuery.FormatString.t ->
     (string, string) Result.t

@@ -47,6 +47,15 @@ module Root = struct
       | None -> name
 
 
+    let is_parameter = function
+      | PositionalParameter _
+      | NamedParameter _
+      | StarParameter _
+      | StarStarParameter _ ->
+          true
+      | _ -> false
+
+
     let parameter_name = function
       | PositionalParameter { name; _ }
       | NamedParameter { name } ->

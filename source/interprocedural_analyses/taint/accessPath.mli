@@ -33,6 +33,8 @@ module Root : sig
       }
   [@@deriving compare, eq, hash, sexp, show]
 
+  val is_parameter : t -> bool
+
   val parameter_name : t -> string option
 
   val pp_for_issue_handle : Format.formatter -> t -> unit
