@@ -103,7 +103,7 @@ let gather_raw_definitions ~pyre_api ~source:{ Source.module_path = { ModulePath
       callables_left
       callables_right
   in
-  PyrePysaApi.ReadOnly.get_define_names pyre_api qualifier
+  PyrePysaApi.ReadOnly.get_define_names_for_qualifier pyre_api qualifier
   |> Reference.Set.of_list
   |> Set.elements
   |> List.filter ~f:filter_parameters

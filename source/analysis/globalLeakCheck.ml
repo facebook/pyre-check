@@ -678,7 +678,7 @@ let global_leak_errors ~type_environment ~qualifier define =
 
 let check_qualifier ~type_environment qualifier =
   let global_resolution = TypeEnvironment.ReadOnly.global_resolution type_environment in
-  match GlobalResolution.get_define_body global_resolution qualifier with
+  match GlobalResolution.get_define_body_in_project global_resolution qualifier with
   | Some define -> Some (global_leak_errors ~type_environment ~qualifier define)
   | None ->
       (* assume the target is a nested definition and see if we can find it by performing name
@@ -689,6 +689,6 @@ let check_qualifier ~type_environment qualifier =
               Preprocessing.qualify_local_identifier ~qualifier:prefix (Reference.last qualifier)
               |> Reference.create
             in
-            GlobalResolution.get_define_body global_resolution qualifier
+            GlobalResolution.get_define_body_in_project global_resolution qualifier
             >>| global_leak_errors ~type_environment ~qualifier)
       |> Option.join

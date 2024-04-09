@@ -191,16 +191,20 @@ module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
       class_exists: string -> bool;
-      get_define_names: Reference.t -> Reference.t list;
+      get_define_names_for_qualifier_in_project: Reference.t -> Reference.t list;
       get_class_summary: string -> ClassSummary.t Node.t option;
       get_unannotated_global: Reference.t -> UnannotatedGlobal.t option;
-      get_function_definition: Reference.t -> FunctionDefinition.t option;
+      get_function_definition_in_project: Reference.t -> FunctionDefinition.t option;
       get_module_metadata: Reference.t -> Module.t option;
       module_exists: Reference.t -> bool;
     }
   end
 
-  let get_define_names Queries.{ get_define_names; _ } = get_define_names
+  let get_define_names_for_qualifier_in_project
+      Queries.{ get_define_names_for_qualifier_in_project; _ }
+    =
+    get_define_names_for_qualifier_in_project
+
 
   let get_module_metadata Queries.{ get_module_metadata; _ } = get_module_metadata
 
@@ -210,13 +214,11 @@ module OutgoingDataComputation = struct
 
   let class_exists Queries.{ class_exists; _ } = class_exists
 
-  let get_function_definition Queries.{ get_function_definition; _ } = get_function_definition
+  let get_function_definition_in_project Queries.{ get_function_definition_in_project; _ } =
+    get_function_definition_in_project
+
 
   let get_unannotated_global Queries.{ get_unannotated_global; _ } = get_unannotated_global
-
-  let get_define_body Queries.{ get_function_definition; _ } name =
-    get_function_definition name >>= fun { FunctionDefinition.body; _ } -> body
-
 
   let primitive_name annotation =
     let primitive, _ = Type.split annotation in
@@ -448,10 +450,6 @@ module ReadOnly = struct
 
   let unannotated_global_environment = Fn.id
 
-  let get_define_names { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_define_names
-
-
   let get_module_metadata { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.get_module_metadata
 
@@ -468,16 +466,20 @@ module ReadOnly = struct
     get_queries ~dependency |> OutgoingDataComputation.class_exists
 
 
-  let get_function_definition { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_function_definition
+  (* This will return an empty list if the qualifier isn't part of the project we are type
+     checking. *)
+  let get_define_names_for_qualifier_in_project { get_queries; _ } ?dependency =
+    get_queries ~dependency |> OutgoingDataComputation.get_define_names_for_qualifier_in_project
+
+
+  (* This will return None if called on a function definition that is not part of the project we are
+     type checking (i.e. defined in dependencies). *)
+  let get_function_definition_in_project { get_queries; _ } ?dependency =
+    get_queries ~dependency |> OutgoingDataComputation.get_function_definition_in_project
 
 
   let get_unannotated_global { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.get_unannotated_global
-
-
-  let get_define_body { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.get_define_body
 
 
   let is_protocol { get_queries; _ } ?dependency =
@@ -690,7 +692,7 @@ module FromReadOnlyUpstream = struct
 
     let key_to_reference = Fn.id
 
-    let get_define_names define_names qualifiers =
+    let get_define_names_for_qualifier_in_project define_names qualifiers =
       get_batch define_names (KeySet.of_list qualifiers)
       |> KeyMap.values
       |> List.filter_opt
@@ -1093,11 +1095,11 @@ module FromReadOnlyUpstream = struct
     in
     let get_class_summary = ClassSummaryTable.get class_summary_table ?dependency in
     let class_exists = ClassSummaryTable.mem class_summary_table ?dependency in
-    let get_function_definition =
+    let get_function_definition_in_project =
       FunctionDefinitionTable.get function_definition_table ?dependency
     in
     let get_unannotated_global = UnannotatedGlobalTable.get unannotated_global_table ?dependency in
-    let get_define_names qualifier =
+    let get_define_names_for_qualifier_in_project qualifier =
       DefineNames.get define_names ?dependency qualifier |> Option.value ~default:[]
     in
     OutgoingDataComputation.Queries.
@@ -1106,9 +1108,9 @@ module FromReadOnlyUpstream = struct
         module_exists;
         get_class_summary;
         class_exists;
-        get_function_definition;
+        get_function_definition_in_project;
         get_unannotated_global;
-        get_define_names;
+        get_define_names_for_qualifier_in_project;
       }
 
 
@@ -1155,7 +1157,9 @@ module FromReadOnlyUpstream = struct
       =
       KeyTracker.get_previous_keys_and_clear key_tracker invalidated_modules
     in
-    let previous_defines_list = DefineNames.get_define_names define_names invalidated_modules in
+    let previous_defines_list =
+      DefineNames.get_define_names_for_qualifier_in_project define_names invalidated_modules
+    in
     let triggered_dependencies =
       PyreProfiling.track_duration_and_shared_memory_with_dynamic_tags
         "TableUpdate(Unannotated globals)"
@@ -1174,7 +1178,8 @@ module FromReadOnlyUpstream = struct
             KeyTracker.get_class_keys key_tracker invalidated_modules |> Type.Primitive.Set.of_list
           in
           let current_defines =
-            DefineNames.get_define_names define_names invalidated_modules |> Reference.Set.of_list
+            DefineNames.get_define_names_for_qualifier_in_project define_names invalidated_modules
+            |> Reference.Set.of_list
           in
           let current_unannotated_globals =
             KeyTracker.get_unannotated_global_keys key_tracker invalidated_modules
@@ -1292,13 +1297,16 @@ module Overlay = struct
         module_exists = if_owns ~owns:owns_qualifier ~f:OutgoingDataComputation.module_exists;
         get_module_metadata =
           if_owns ~owns:owns_qualifier ~f:OutgoingDataComputation.get_module_metadata;
-        get_define_names = if_owns ~owns:owns_qualifier ~f:OutgoingDataComputation.get_define_names;
+        get_define_names_for_qualifier_in_project =
+          if_owns
+            ~owns:owns_qualifier
+            ~f:OutgoingDataComputation.get_define_names_for_qualifier_in_project;
         class_exists =
           if_owns ~owns:owns_qualified_class_name ~f:OutgoingDataComputation.class_exists;
         get_class_summary =
           if_owns ~owns:owns_qualified_class_name ~f:OutgoingDataComputation.get_class_summary;
-        get_function_definition =
-          if_owns ~owns:owns_reference ~f:OutgoingDataComputation.get_function_definition;
+        get_function_definition_in_project =
+          if_owns ~owns:owns_reference ~f:OutgoingDataComputation.get_function_definition_in_project;
         get_unannotated_global =
           if_owns ~owns:owns_reference ~f:OutgoingDataComputation.get_unannotated_global;
       }

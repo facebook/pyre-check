@@ -48,7 +48,11 @@ let test_define_registration context =
       ScratchProject.errors_environment project
       |> ErrorsEnvironment.Testing.ReadOnly.unannotated_global_environment
     in
-    let actual = UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only !&"test" in
+    let actual =
+      UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
+        read_only
+        !&"test"
+    in
     let expected = List.sort expected ~compare:Reference.compare in
     assert_equal
       ~cmp:(List.equal Reference.equal)
@@ -838,7 +842,7 @@ let assert_update
         |> assert_equal ~cmp ~printer expectation
     | `Define (define_name, dependency, expectation) ->
         let actual =
-          UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+          UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
             read_only
             define_name
             ~dependency
@@ -859,7 +863,11 @@ let assert_update
           actual
     | `DefineBody (define_name, dependency, expectation) ->
         let actual =
-          UnannotatedGlobalEnvironment.ReadOnly.get_define_body read_only define_name ~dependency
+          UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
+            read_only
+            define_name
+            ~dependency
+          >>= fun { FunctionDefinition.body; _ } -> body
         in
         let cmp = [%compare.equal: Statement.Define.t Node.t option] in
         assert_equal
@@ -872,7 +880,10 @@ let assert_update
         let printer number =
           Format.sprintf "number of define names: %d (expected %d)" number expected_number_of_names
         in
-        UnannotatedGlobalEnvironment.ReadOnly.get_define_names read_only ~dependency qualifier
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
+          read_only
+          ~dependency
+          qualifier
         |> List.length
         |> assert_equal ~printer expected_number_of_names
     | `GetRawSource (qualifier, dependency) ->
@@ -2531,7 +2542,7 @@ let test_get_define_body context =
   ()
 
 
-let test_get_define_names context =
+let test_get_define_names_for_qualifier_in_project context =
   let assert_update = assert_update ~context in
   let dependency = alias_dependency in
   assert_update
@@ -2639,7 +2650,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
       qualifier;
     assert_is_overlaid
       ~cmp:[%equal: Reference.t list]
-      UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+      UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
       qualifier;
     assert_is_overlaid
       ~cmp:(equal [%compare: ClassSummary.t Node.t option])
@@ -2647,7 +2658,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
       class_name;
     assert_is_overlaid
       ~cmp:(equal [%compare: FunctionDefinition.t option])
-      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
       function_name;
     ()
   in
@@ -2662,7 +2673,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
       qualifier;
     assert_not_overlaid
       ~cmp:[%equal: Reference.t list]
-      UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+      UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
       qualifier;
     assert_not_overlaid
       ~cmp:(equal [%compare: ClassSummary.t Node.t option])
@@ -2670,7 +2681,7 @@ let create_overlay_test_functions ~project ~parent ~environment =
       class_name;
     assert_not_overlaid
       ~cmp:(equal [%compare: FunctionDefinition.t option])
-      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
+      UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
       function_name;
     ()
   in
@@ -2934,7 +2945,8 @@ let () =
          "get_unannotated_global" >:: test_get_unannotated_global;
          "dependencies_and_new_values" >:: test_dependencies_and_new_values;
          "get_define_body" >:: test_get_define_body;
-         "get_define_names" >:: test_get_define_names;
+         "get_define_names_for_qualifier_in_project"
+         >:: test_get_define_names_for_qualifier_in_project;
          "overlay_basic" >:: test_overlay_basic;
          "overlay_update_filters" >:: test_overlay_update_filters;
          "overlay_propagation" >:: test_overlay_propagation;

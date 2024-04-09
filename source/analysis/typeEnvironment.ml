@@ -148,7 +148,7 @@ let collect_definitions ~scheduler environment qualifiers =
   in
   let map qualifiers =
     List.concat_map qualifiers ~f:(fun qualifier ->
-        UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
           unannotated_global_environment
           qualifier)
   in

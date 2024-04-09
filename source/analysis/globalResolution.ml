@@ -99,22 +99,26 @@ let get_class_summary ({ dependency; _ } as resolution) =
     ?dependency
 
 
-let get_define_body ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_define_body
+(* This will return an empty list if the qualifier isn't part of the project we are type
+   checking. *)
+let get_define_names_for_qualifier_in_project ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
     ?dependency
     (unannotated_global_environment resolution)
 
 
-let get_define_names ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+(* This will return None if called on a function definition that is not part of the project we are
+   type checking (i.e. defined in dependencies). *)
+let get_function_definition_in_project ({ dependency; _ } as resolution) =
+  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition_in_project
     ?dependency
     (unannotated_global_environment resolution)
 
 
-let get_function_definition ({ dependency; _ } as resolution) =
-  UnannotatedGlobalEnvironment.ReadOnly.get_function_definition
-    ?dependency
-    (unannotated_global_environment resolution)
+(* This will return None if called on a function definition that is not part of the project we are
+   type checking (i.e. defined in dependencies). *)
+let get_define_body_in_project resolution name =
+  get_function_definition_in_project resolution name >>= fun { FunctionDefinition.body; _ } -> body
 
 
 let module_exists ({ dependency; _ } as resolution) =

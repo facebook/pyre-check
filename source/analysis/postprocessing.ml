@@ -213,7 +213,7 @@ let run_on_qualifier environment ~dependency qualifier =
         TypeEnvironment.ReadOnly.unannotated_global_environment environment
       in
       let errors_by_define =
-        UnannotatedGlobalEnvironment.ReadOnly.get_define_names
+        UnannotatedGlobalEnvironment.ReadOnly.get_define_names_for_qualifier_in_project
           ?dependency
           unannotated_global_environment
           qualifier

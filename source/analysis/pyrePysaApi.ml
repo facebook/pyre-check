@@ -223,7 +223,10 @@ module ReadOnly = struct
 
   let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
-  let get_define_names api = global_resolution api |> GlobalResolution.get_define_names
+  let get_define_names_for_qualifier api =
+    (* In Pysa, all qualifiers are "in project" so this is always safe to use. *)
+    global_resolution api |> GlobalResolution.get_define_names_for_qualifier_in_project
+
 
   let parse_reference api = global_resolution api |> GlobalResolution.parse_reference
 
@@ -231,7 +234,10 @@ module ReadOnly = struct
 
   let class_exists api = global_resolution api |> GlobalResolution.class_exists
 
-  let get_define_body api = global_resolution api |> GlobalResolution.get_define_body
+  let get_define_body api =
+    (* In Pysa, all qualifiers are "in project" so this is always safe to use. *)
+    global_resolution api |> GlobalResolution.get_define_body_in_project
+
 
   let resolve_define api = global_resolution api |> GlobalResolution.resolve_define
 
@@ -252,7 +258,8 @@ module ReadOnly = struct
   let location_of_global api = global_resolution api |> GlobalResolution.location_of_global
 
   let get_function_definition api =
-    global_resolution api |> GlobalResolution.get_function_definition
+    (* In Pysa, all qualifiers are "in project" so this is always safe to use. *)
+    global_resolution api |> GlobalResolution.get_function_definition_in_project
 
 
   let attribute_from_class_name api =

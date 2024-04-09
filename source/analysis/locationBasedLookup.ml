@@ -453,8 +453,8 @@ let create_of_module type_environment qualifier =
     walk_statement Cfg.entry_index 0 define_signature
   in
   let define_names =
-    GlobalResolution.get_define_names global_resolution qualifier
-    |> List.filter_map ~f:(GlobalResolution.get_define_body global_resolution)
+    GlobalResolution.get_define_names_for_qualifier_in_project global_resolution qualifier
+    |> List.filter_map ~f:(GlobalResolution.get_define_body_in_project global_resolution)
   in
   List.iter define_names ~f:walk_define;
   coverage_data_lookup
@@ -765,8 +765,8 @@ let find_narrowest_spanning_symbol ~type_environment ~module_reference position 
     Hashtbl.fold cfg ~init:names_so_far ~f:walk_cfg_node |> walk_define_signature ~define_signature
   in
   let all_defines =
-    GlobalResolution.get_define_names global_resolution module_reference
-    |> List.filter_map ~f:(GlobalResolution.get_define_body global_resolution)
+    GlobalResolution.get_define_names_for_qualifier_in_project global_resolution module_reference
+    |> List.filter_map ~f:(GlobalResolution.get_define_body_in_project global_resolution)
   in
   let timer = Timer.start () in
   let symbols_covering_position = List.fold all_defines ~init:[] ~f:walk_define in
@@ -800,7 +800,7 @@ let resolve ~resolution expression =
 
 
 let look_up_local_definition ~resolution ~define_name identifier =
-  GlobalResolution.get_define_body (Resolution.global_resolution resolution) define_name
+  GlobalResolution.get_define_body_in_project (Resolution.global_resolution resolution) define_name
   >>= fun define ->
   let scope =
     match Scope.Scope.of_define define.value with
@@ -1189,7 +1189,9 @@ let find_docstring_for_symbol
           in
           name_to_reference name
           >>= fun define_name ->
-          GlobalResolution.get_define_body (Resolution.global_resolution resolution) define_name
+          GlobalResolution.get_define_body_in_project
+            (Resolution.global_resolution resolution)
+            define_name
           >>| Node.value
           >>= get_docstring_from_define
       | _ -> None)
