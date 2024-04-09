@@ -503,6 +503,7 @@ module ModelQuery = struct
         | MethodName
         | ClassName
         | ParameterName
+        | ParameterPosition
       [@@deriving equal, show]
     end
 
@@ -875,6 +876,22 @@ module Modelable = struct
       | Some (AccessPath.Root.StarParameter _) -> Ok "*args"
       | Some (AccessPath.Root.StarStarParameter _) -> Ok "**kwargs"
     in
+    let expand_parameter_position () =
+      match parameter with
+      | None
+      | Some AccessPath.Root.LocalResult
+      | Some (AccessPath.Root.Variable _)
+      | Some (AccessPath.Root.CapturedVariable _) ->
+          Error "`parameter_position` can only be used on parameters"
+      | Some (AccessPath.Root.PositionalParameter { position; _ }) -> Ok (string_of_int position)
+      | Some (AccessPath.Root.StarParameter { position }) -> Ok (string_of_int position)
+      | Some (AccessPath.Root.NamedParameter _)
+      | Some (AccessPath.Root.StarStarParameter _) ->
+          (* These don't have a position, let's use -1. Do not throw an error since this can easily
+             be triggered on code changes. To prevent issues, the user should use a model query
+             constraint to match on positional parameters only. *)
+          Ok "-1"
+    in
     let expand_substring substring =
       match substring with
       | ModelQuery.FormatString.Substring.Literal value -> Ok value
@@ -883,6 +900,7 @@ module Modelable = struct
       | ClassName -> expand_class_name ()
       | Capture identifier -> expand_capture identifier
       | ParameterName -> expand_parameter_name ()
+      | ParameterPosition -> expand_parameter_position ()
     in
     name |> List.map ~f:expand_substring |> Result.all |> Result.map ~f:(String.concat ~sep:"")
 end

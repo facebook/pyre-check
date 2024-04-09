@@ -2435,11 +2435,39 @@ let test_query_parsing_cross_repository_taint_anchor context =
      name = "invalid_cross_repository_taint_anchor",
      find = "functions",
      where = name.matches("foo"),
+     model = Returns(CrossRepositoryTaintAnchor[TaintSink[Test], f"{parameter_position}", "formal(0)"])
+    )
+  |}
+    ~expect:
+      {|Invalid canonical name for CrossRepositoryTaintAnchor: identifier `parameter_position` is invalid in this context|}
+    ();
+  assert_invalid_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "invalid_cross_repository_taint_anchor",
+     find = "functions",
+     where = name.matches("foo"),
      model = CapturedVariables(CrossRepositoryTaintAnchor[TaintSink[Test], f"{parameter_name}", "formal(0)"])
     )
   |}
     ~expect:
       {|Invalid canonical name for CrossRepositoryTaintAnchor: identifier `parameter_name` is invalid in this context|}
+    ();
+  assert_invalid_queries
+    ~context
+    ~model_source:
+      {|
+    ModelQuery(
+     name = "invalid_cross_repository_taint_anchor",
+     find = "functions",
+     where = name.matches("foo"),
+     model = CapturedVariables(CrossRepositoryTaintAnchor[TaintSink[Test], f"{parameter_position}", "formal(0)"])
+    )
+  |}
+    ~expect:
+      {|Invalid canonical name for CrossRepositoryTaintAnchor: identifier `parameter_position` is invalid in this context|}
     ();
   assert_queries
     ~context

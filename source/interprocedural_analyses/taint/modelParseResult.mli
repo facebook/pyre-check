@@ -238,6 +238,7 @@ module ModelQuery : sig
         | MethodName
         | ClassName
         | ParameterName
+        | ParameterPosition
       [@@deriving equal, show]
     end
 

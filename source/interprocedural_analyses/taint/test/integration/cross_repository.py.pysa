@@ -43,7 +43,7 @@ ModelQuery(
   find = "methods",
   where = cls.name.matches("Anchor"),
   model = Parameters(
-    CrossRepositoryTaintAnchor[TaintSink[Test], f"test_1:{class_name}:{method_name}", f"formal(1).{capture(name)}"],
+    CrossRepositoryTaintAnchor[TaintSink[Test], f"test_1:{class_name}:{method_name}", f"formal({parameter_position}).{capture(name)}"],
     where = name.matches("^crtex_(?P<name>.*)$")
   )
 )
@@ -53,6 +53,6 @@ ModelQuery(
   find = "methods",
   where = cls.name.matches("Anchor"),
   model = AllParameters(
-    CrossRepositoryTaintAnchor[TaintSink[Test], f"test_2:{class_name}:{parameter_name}", f"formal(1)"]
+    CrossRepositoryTaintAnchor[TaintSink[Test], f"test_2:{class_name}:{parameter_name}", f"formal({parameter_position})"]
   )
 )

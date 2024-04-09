@@ -201,7 +201,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:yet_another_c",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(2)"
                   }
                 ],
                 "kind": "Test"
@@ -243,7 +243,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:self",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(0)"
                   }
                 ],
                 "kind": "Test"
@@ -272,7 +272,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:**kwargs",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(-1)"
                   }
                 ],
                 "kind": "Test"
@@ -291,7 +291,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:*args",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(3)"
                   }
                 ],
                 "kind": "Test"
@@ -310,7 +310,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:other_b",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(2)"
                   }
                 ],
                 "kind": "Test"
@@ -352,7 +352,7 @@
                 "leaves": [
                   {
                     "name": "test_2:TestDSLAnchor:self",
-                    "port": "anchor:formal(1)"
+                    "port": "anchor:formal(0)"
                   }
                 ],
                 "kind": "Test"
