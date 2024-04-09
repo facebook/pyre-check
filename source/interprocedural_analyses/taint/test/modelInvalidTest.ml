@@ -1615,11 +1615,11 @@ let test_invalid_model_queries context =
         name = "invalid_model",
         find = "methods",
         where = name.matches("foo"),
-        model = WriteToCache(kind="thrift", name=f"{1+2}")
+        model = WriteToCache(kind="thrift", name=f"{func()}")
       )
     |}
     ~expect:
-      {|Invalid argument for the parameter `name` of `WriteToCache`: expected identifier, got `1.__add__(2)`|}
+      {|Invalid argument for the parameter `name` of `WriteToCache`: unsupported expression `func()`|}
     ();
   assert_invalid_model
     ~model_source:
@@ -1694,6 +1694,19 @@ let test_invalid_model_queries context =
         find = "functions",
         where = name.matches("foo"),
         model = WriteToCache(kind="thrift", name=f"{parameter_position}")
+      )
+    |}
+    ~expect:
+      {|Invalid argument for the parameter `name` of `WriteToCache`: identifier `parameter_position` is invalid in this context|}
+    ();
+  assert_invalid_model
+    ~model_source:
+      {|
+      ModelQuery(
+        name = "invalid_model",
+        find = "functions",
+        where = name.matches("foo"),
+        model = WriteToCache(kind="thrift", name=f"{parameter_position * 2}")
       )
     |}
     ~expect:

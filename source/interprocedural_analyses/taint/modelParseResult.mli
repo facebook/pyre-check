@@ -230,6 +230,25 @@ module ModelQuery : sig
   end
 
   module FormatString : sig
+    module IntegerExpression : sig
+      type t =
+        | Constant of int
+        | ParameterPosition
+        | Add of {
+            left: t;
+            right: t;
+          }
+        | Sub of {
+            left: t;
+            right: t;
+          }
+        | Mul of {
+            left: t;
+            right: t;
+          }
+      [@@deriving equal, show]
+    end
+
     module Substring : sig
       type t =
         | Literal of string
@@ -238,7 +257,7 @@ module ModelQuery : sig
         | MethodName
         | ClassName
         | ParameterName
-        | ParameterPosition
+        | Integer of IntegerExpression.t
       [@@deriving equal, show]
     end
 

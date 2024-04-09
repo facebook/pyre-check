@@ -45,17 +45,20 @@ module FormatStringError = struct
         identifier: string;
         find: string;
       }
-    | InvalidIdentifierForContext of { identifier: string }
+    | InvalidIdentifierForContext of string
+    | InvalidIdentifierInIntegerExpression of string
   [@@deriving sexp, equal, compare, show]
 
   let description = function
     | InvalidExpression expression ->
-        Format.asprintf "expected identifier, got `%a`" Expression.pp expression
+        Format.asprintf "unsupported expression `%a`" Expression.pp expression
     | InvalidIdentifier identifier -> Format.asprintf "unknown identifier `%s`" identifier
     | InvalidIdentifierForFind { identifier; find } ->
         Format.asprintf "invalid identifier `%s` for find=\"%s\"" identifier find
-    | InvalidIdentifierForContext { identifier } ->
+    | InvalidIdentifierForContext identifier ->
         Format.asprintf "identifier `%s` is invalid in this context" identifier
+    | InvalidIdentifierInIntegerExpression identifier ->
+        Format.asprintf "identifier `%s` cannot be used in an integer expression" identifier
 end
 
 type kind =

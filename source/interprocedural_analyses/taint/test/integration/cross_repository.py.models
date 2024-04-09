@@ -200,6 +200,10 @@
               {
                 "leaves": [
                   {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(7)"
+                  },
+                  {
                     "name": "test_2:TestDSLAnchor:yet_another_c",
                     "port": "anchor:formal(2)"
                   }
@@ -225,6 +229,10 @@
                   {
                     "name": "test_1:TestDSLAnchor:bar",
                     "port": "anchor:formal(1).b"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(4)"
                   }
                 ],
                 "kind": "Test"
@@ -244,6 +252,10 @@
                   {
                     "name": "test_2:TestDSLAnchor:self",
                     "port": "anchor:formal(0)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:bar",
+                    "port": "anchor:formal(1)"
                   }
                 ],
                 "kind": "Test"
@@ -273,6 +285,10 @@
                   {
                     "name": "test_2:TestDSLAnchor:**kwargs",
                     "port": "anchor:formal(-1)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(-2)"
                   }
                 ],
                 "kind": "Test"
@@ -289,6 +305,10 @@
             "kinds": [
               {
                 "leaves": [
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(10)"
+                  },
                   {
                     "name": "test_2:TestDSLAnchor:*args",
                     "port": "anchor:formal(3)"
@@ -308,6 +328,10 @@
             "kinds": [
               {
                 "leaves": [
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(7)"
+                  },
                   {
                     "name": "test_2:TestDSLAnchor:other_b",
                     "port": "anchor:formal(2)"
@@ -332,6 +356,10 @@
                     "port": "anchor:formal(1).a"
                   },
                   {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(4)"
+                  },
+                  {
                     "name": "test_2:TestDSLAnchor:crtex_a",
                     "port": "anchor:formal(1)"
                   }
@@ -353,6 +381,10 @@
                   {
                     "name": "test_2:TestDSLAnchor:self",
                     "port": "anchor:formal(0)"
+                  },
+                  {
+                    "name": "test_3:TestDSLAnchor:foo",
+                    "port": "anchor:formal(1)"
                   }
                 ],
                 "kind": "Test"

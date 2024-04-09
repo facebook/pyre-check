@@ -495,6 +495,25 @@ module ModelQuery = struct
   end
 
   module FormatString = struct
+    module IntegerExpression = struct
+      type t =
+        | Constant of int
+        | ParameterPosition
+        | Add of {
+            left: t;
+            right: t;
+          }
+        | Sub of {
+            left: t;
+            right: t;
+          }
+        | Mul of {
+            left: t;
+            right: t;
+          }
+      [@@deriving equal, show]
+    end
+
     module Substring = struct
       type t =
         | Literal of string
@@ -503,7 +522,7 @@ module ModelQuery = struct
         | MethodName
         | ClassName
         | ParameterName
-        | ParameterPosition
+        | Integer of IntegerExpression.t
       [@@deriving equal, show]
     end
 
@@ -840,6 +859,7 @@ module Modelable = struct
 
 
   let expand_format_string ~name_captures ~parameter modelable name =
+    let open Core.Result in
     let expand_function_name () =
       match modelable with
       | Callable { target = Target.Function { name; _ }; _ } ->
@@ -883,24 +903,36 @@ module Modelable = struct
       | Some (AccessPath.Root.Variable _)
       | Some (AccessPath.Root.CapturedVariable _) ->
           Error "`parameter_position` can only be used on parameters"
-      | Some (AccessPath.Root.PositionalParameter { position; _ }) -> Ok (string_of_int position)
-      | Some (AccessPath.Root.StarParameter { position }) -> Ok (string_of_int position)
+      | Some (AccessPath.Root.PositionalParameter { position; _ }) -> Ok position
+      | Some (AccessPath.Root.StarParameter { position }) -> Ok position
       | Some (AccessPath.Root.NamedParameter _)
       | Some (AccessPath.Root.StarStarParameter _) ->
           (* These don't have a position, let's use -1. Do not throw an error since this can easily
              be triggered on code changes. To prevent issues, the user should use a model query
              constraint to match on positional parameters only. *)
-          Ok "-1"
+          Ok (-1)
     in
-    let expand_substring substring =
-      match substring with
+    let rec expand_integer_expression = function
+      | ModelQuery.FormatString.IntegerExpression.Constant value -> Ok value
+      | ParameterPosition -> expand_parameter_position ()
+      | Add { left; right } ->
+          expand_integer_expression left
+          >>= fun left -> expand_integer_expression right >>| fun right -> left + right
+      | Sub { left; right } ->
+          expand_integer_expression left
+          >>= fun left -> expand_integer_expression right >>| fun right -> left - right
+      | Mul { left; right } ->
+          expand_integer_expression left
+          >>= fun left -> expand_integer_expression right >>| fun right -> left * right
+    in
+    let expand_substring = function
       | ModelQuery.FormatString.Substring.Literal value -> Ok value
       | FunctionName -> expand_function_name ()
       | MethodName -> expand_method_name ()
       | ClassName -> expand_class_name ()
       | Capture identifier -> expand_capture identifier
       | ParameterName -> expand_parameter_name ()
-      | ParameterPosition -> expand_parameter_position ()
+      | Integer expression -> expression |> expand_integer_expression >>| string_of_int
     in
     name |> List.map ~f:expand_substring |> Result.all |> Result.map ~f:(String.concat ~sep:"")
 end
