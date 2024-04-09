@@ -1310,6 +1310,65 @@ let test_dataclass_transform =
                     self.x = x
                   def __eq__(self, o: object) -> bool: ...
               |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~external_sources:["custom_dataclass_transform.py", {|
+            |}]
+           ~source:
+             {|
+              @__dataclass_transform__(eq_default=False, order_default=True)
+              class Bar:
+                def __init_subclass__(
+                    cls,
+                    *,
+                    init: bool = True,
+                    frozen: bool = False,
+                    eq: bool = False,
+                    order: bool = True,
+                ) -> None: ...
+
+              class Foo(Bar, eq=True, order=False):
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+                  def __eq__(self, o: object) -> bool: ...
+              |};
+      (* TODO(T178998636) Fix bug when the transform is defined outside the project *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~external_sources:
+             [
+               ( "custom_dataclass_transform.py",
+                 {|
+              @__dataclass_transform__
+              def mytransform():
+                ...
+
+            |}
+               );
+             ]
+           ~source:
+             {|
+              from custom_dataclass_transform import mytransform
+
+              @mytransform
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  # TODO: Uncomment this when the bugfix is in.
+                  # def __init__(self, x: int) -> None:
+                  #   self.x = x
+                  # def __eq__(self, o: object) -> bool: ...
+              |};
     ]
 
 

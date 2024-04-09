@@ -3481,6 +3481,7 @@ let assert_instantiated_attribute_equal expected actual =
    adding dunder methods. *)
 let assert_equivalent_attributes
     ?(assert_attribute_equal = assert_instantiated_attribute_equal)
+    ?external_sources
     ~source
     ~class_name
     expected_equivalent_class_source
@@ -3490,7 +3491,7 @@ let assert_equivalent_attributes
   let attributes source =
     Memory.reset_shared_memory ();
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context [Format.asprintf "%s.py" module_name, source]
+      ScratchProject.setup ~context ?external_sources [Format.asprintf "%s.py" module_name, source]
       |> ScratchProject.build_global_environment
     in
     let global_resolution = GlobalResolution.create global_environment in
