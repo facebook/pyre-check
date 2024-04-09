@@ -14,6 +14,15 @@ class PyreLanguageServerError(str, enum.Enum):
     DAEMON_QUERY_FAILURE = "DAEMON_QUERY_FAILURE"
     DOCUMENT_PATH_MISSING_IN_SERVER_STATE = "DOCUMENT_PATH_MISSING_IN_SERVER_STATE"
     DOCUMENT_PATH_IS_NULL = "DOCUMENT_PATH_IS_NULL"
+    PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN = (
+        "PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN"
+    )
+    DID_NOT_FALLBACK_TO_GLEAN_AFTER_PYRE_FAILURE = (
+        "DID_NOT_FALLBACK_TO_GLEAN_AFTER_PYRE_FAILURE"
+    )
+    PYRE_DAEMON_UNAVAILABLE_AND_FAILED_TO_FALLBACK_TO_GLEAN = (
+        "PYRE_DAEMON_UNAVAILABLE_AND_FAILED_TO_FALLBACK_TO_GLEAN"
+    )
 
     # Daemon Errors
     ATTRIBUTE_DEFINITION_NOT_FOUND = "ATTRIBUTE_DEFINITION_NOT_FOUND"
@@ -37,6 +46,9 @@ def getLanguageServerError(
     query_source: Optional[DaemonQuerierSource],
 ) -> Optional[PyreLanguageServerError]:
     if error_message is not None:
+        # By default, glean should handle result if pyre has an error
+        if query_source != DaemonQuerierSource.GLEAN_INDEXER:
+            return PyreLanguageServerError.DID_NOT_FALLBACK_TO_GLEAN_AFTER_PYRE_FAILURE
         # TOOD (T184657347): use predefined error and empty enum instead of performing a substring match
         if "Could not establish connection" in error_message:
             return PyreLanguageServerError.COULD_NOT_ESTABLISH_CONNECTION
@@ -78,3 +90,12 @@ def getLanguageServerError(
             return PyreLanguageServerError.ATTRIBUTE_DEFINITION_NOT_FOUND
         elif "IdentifierDefinitionNotFound" in empty_reason_str:
             return PyreLanguageServerError.IDENTIFIER_DEFINITION_NOT_FOUND
+
+    # We assume that Pyre daemon always returns an empty reason or error when it returns an empty response
+    # This case would only cover the case when pyre daemon is unavailable: https://fburl.com/code/a2ilz0iw
+    elif query_source == DaemonQuerierSource.GLEAN_INDEXER:
+        return PyreLanguageServerError.PYRE_DAEMON_UNAVAILABLE_AND_FELLBACK_TO_GLEAN
+    else:
+        return (
+            PyreLanguageServerError.PYRE_DAEMON_UNAVAILABLE_AND_FAILED_TO_FALLBACK_TO_GLEAN
+        )

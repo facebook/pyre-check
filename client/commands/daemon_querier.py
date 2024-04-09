@@ -991,10 +991,10 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
                 path, position
             )
             return DaemonQueryFailure(
-                base_results.error_message,
-                base_results.error_source,
-                fallback_result,
-                base_results.duration,
+                error_message=base_results.error_message,
+                error_source=base_results.error_source,
+                fallback_result=fallback_result,
+                duration=base_results.duration,
             )
 
         return base_results
