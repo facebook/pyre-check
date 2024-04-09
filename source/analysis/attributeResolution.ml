@@ -284,7 +284,6 @@ module Queries = struct
     resolve_exports: ?from:Ast.Reference.t -> Ast.Reference.t -> ResolvedReference.t option;
     is_protocol: Type.t -> bool;
     get_unannotated_global: Ast.Reference.t -> Ast.UnannotatedGlobal.t option;
-    get_function_definition: Ast.Reference.t -> FunctionDefinition.t option;
     get_class_summary: string -> ClassSummary.t Ast.Node.t option;
     first_matching_class_decorator:
       names:string list -> ClassSummary.t Ast.Node.t -> Ast.Statement.Decorator.t option;
@@ -508,36 +507,47 @@ module ClassDecorators = struct
 
   (* TODO(T129464224) Support `keyword_only_default` in Data Class Transforms *)
   let find_dataclass_transform_decorator_with_default
-      ~queries:Queries.{ get_function_definition; _ }
+      ~queries:Queries.{ get_unannotated_global; _ }
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
-    let get_dataclass_transform_decorator_with_default decorator =
-      let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
-      let lookup_function reference =
-        get_function_definition reference
-        >>= fun { FunctionDefinition.body; _ } -> body >>| Node.value
-      in
-      let function_decorators { Define.signature = { Define.Signature.decorators; _ }; _ } =
-        decorators
-      in
-      decorator_reference decorator
-      |> lookup_function
-      >>| function_decorators
-      >>= List.find ~f:is_dataclass_transform
-      >>= Decorator.from_expression
-      >>| extract_options
-            ~default:dataclass_transform_default
-            ~init:""
-            ~repr:""
-            ~eq:"eq_default"
-            ~order:"order_default"
-            ~keyword_only:"kw_only"
-            ~has_slots:"slots"
-      >>| fun default -> decorator, default
+    (* Given the name of a decorator of a class, find the function definition (we're assuming
+     * for now that the decorator is a plain function, not a class) and search *it's* decorators
+     * to determine whether any of them mark it as a dataclass transform decorator.
+     * - If yes, produce a pair (the decorator expression, the default dataclass tranform options);
+     *   we need both of these (the specific call to the dataclass transform and the default
+     *   behavior for the transform) to properly determine what attributes it defines on the class.
+     * - Otherwise, return `None`. We will `find_map` this over all of the class decorators, so
+     *   we keep going until we find a dataclass transform or have checked all decorators.
+     *)
+    let get_dataclass_transform_decorator_with_default_options decorator =
+      let { Decorator.name = { Node.value = decorator_reference; _ }; _ } = decorator in
+      get_unannotated_global decorator_reference
+      >>= function
+      | UnannotatedGlobal.Define definitions ->
+          (* Grab the implementation signature, which will be the last definition if there are
+             overloads. *)
+          let { UnannotatedGlobal.UnannotatedDefine.define = { Define.Signature.decorators; _ }; _ }
+            =
+            List.last_exn definitions
+          in
+
+          (* Determine whether any decorators are marking this function as a dataclass transform *)
+          List.find decorators ~f:is_dataclass_transform
+          >>= Decorator.from_expression
+          >>| extract_options
+                ~default:dataclass_transform_default
+                ~init:""
+                ~repr:""
+                ~eq:"eq_default"
+                ~order:"order_default"
+                ~keyword_only:"kw_only"
+                ~has_slots:"slots"
+          >>| fun default -> decorator, default
+      | _ -> None
     in
     decorators
     |> List.filter_map ~f:Decorator.from_expression
-    |> List.find_map ~f:get_dataclass_transform_decorator_with_default
+    |> List.find_map ~f:get_dataclass_transform_decorator_with_default_options
 
 
   let dataclass_transform_options ~queries class_summary =
@@ -4889,9 +4899,6 @@ let create_queries ~class_metadata_environment ~dependency =
       get_unannotated_global =
         unannotated_global_environment class_metadata_environment
         |> UnannotatedGlobalEnvironment.ReadOnly.get_unannotated_global ?dependency;
-      get_function_definition =
-        unannotated_global_environment class_metadata_environment
-        |> UnannotatedGlobalEnvironment.ReadOnly.get_function_definition ?dependency;
       get_class_summary =
         unannotated_global_environment class_metadata_environment
         |> UnannotatedGlobalEnvironment.ReadOnly.get_class_summary ?dependency;

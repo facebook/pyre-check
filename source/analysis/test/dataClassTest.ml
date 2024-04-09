@@ -1338,7 +1338,6 @@ let test_dataclass_transform =
                     self.x = x
                   def __eq__(self, o: object) -> bool: ...
               |};
-      (* TODO(T178998636) Fix bug when the transform is defined outside the project *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~external_sources:
@@ -1364,10 +1363,46 @@ let test_dataclass_transform =
            {|
                 class Foo:
                   x: int
-                  # TODO: Uncomment this when the bugfix is in.
-                  # def __init__(self, x: int) -> None:
-                  #   self.x = x
-                  # def __eq__(self, o: object) -> bool: ...
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+                  def __eq__(self, o: object) -> bool: ...
+              |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~external_sources:
+             [
+               ( "custom_dataclass_transform.py",
+                 {|
+              from typing import Literal, overload
+
+              @overload
+              def overloaded_transform(eq: Literal[false]): Any
+
+              @overload
+              def overloaded_transform(eq: Literal[true]): Any
+
+              @__dataclass_transform__
+              def overloaded_transform():
+                ...
+
+            |}
+               );
+             ]
+           ~source:
+             {|
+              from custom_dataclass_transform import overloaded_transform
+
+              @overloaded_transform
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+                  def __eq__(self, o: object) -> bool: ...
               |};
     ]
 
