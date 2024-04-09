@@ -1069,6 +1069,50 @@ ModelQuery(
 )
 ```
 
+#### `has_position` clause
+
+To match on parameters that have a position, the `has_position()` clause can be used. This is mostly used to exclude keyword-only parameters, `*args` and `**kwargs`.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_index_sources",
+  find = "methods",
+  where = ...,
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        has_position()
+      ]
+    )
+  ]
+)
+```
+
+#### `has_name` clause
+
+To match on parameters that have a name, the `has_name()` clause can be used. This is mostly used to exclude `*args` and `**kwargs`.
+
+Example:
+
+```python
+ModelQuery(
+  name = "get_index_sources",
+  find = "methods",
+  where = ...,
+  model = [
+    Parameters(
+      TaintSource[Test],
+      where=[
+        has_name()
+      ]
+    )
+  ]
+)
+```
+
 #### `type_annotation` clause
 
 This clause is used to specify a constraint on parameter type annotation. Currently the clauses supported are: `type_annotation.equals()`, which takes the fully-qualified name of a Python type or class and matches when there is an exact match, `type_annotation.matches()`, which takes a regex pattern to match type annotations against, and `type_annotation.is_annotated_type()`, which will match parameters of type [`typing.Annotated`](https://docs.python.org/3/library/typing.html#typing.Annotated).
@@ -1430,13 +1474,7 @@ In terms of time complexity, if the number of entities (methods here) is `N`, th
 
 `WriteToCache` is a model clause that is used to store entities into a cache. It takes the following arguments:
 * A `kind`, which is the name of the cache.
-* A `name` as an f-string, which will be the key for the entity in the cache.
-
-The name can use the following variables:
-* `function_name`: The (non-qualified) name of the function.
-* `method_name`: The (non-qualified) name of the method.
-* `class_name`: The (non-qualified) name of the class.
-* `capture(identifier)`: The regular expression capture group called `identifier`. See documentation below.
+* A `name` as a [format string](#format-strings), which will be the key for the entity in the cache.
 
 For instance:
 ```python
@@ -1477,6 +1515,25 @@ ModelQuery(
   model = ...
 )
 ```
+
+## Format strings
+
+Format strings can be used to craft a string using information from the matched entity.
+They can be used in the `WriteToCache` name argument as well as the `CrossRepositoryTaintAnchor` canonical name and port arguments.
+
+For instance:
+* `WriteToCache(kind="cache_name", name=f"{class_name}:{function_name}")`
+* `CrossRepositoryTaintAnchor[TaintSink[Thrift], f"{class_name}:{function_mame}", f"formal({parameter_position + 1})"]`
+
+The following variables can be used:
+* `function_name`: The (non-qualified) name of the function;
+* `method_name`: The (non-qualified) name of the method;
+* `class_name`: The (non-qualified) name of the class;
+* `parameter_name`: The parameter name, when used within the `Parameters` clause;
+* `parameter_position`: The parameter position, when used within the `Parameters` clause. This will give -1 for keyword only parameters;
+* `capture(identifier)`: The regular expression capture group called `identifier`. See documentation below.
+
+Math operators such as `+`, `-` and `*` can be used on `parameter_position` and integer literals, such as `f"{parameter_position * 2 + 1}"`.
 
 ### Regular expression capture
 
