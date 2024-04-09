@@ -56,10 +56,7 @@ from . import (
 
 from .daemon_querier import DaemonQueryFailure, GetDefinitionLocationsResponse
 from .document_formatter import AbstractDocumentFormatter
-from .pyre_language_server_error import (
-    getLanguageServerErrorFromDaemonError,
-    PyreLanguageServerError,
-)
+from .pyre_language_server_error import getLanguageServerError, PyreLanguageServerError
 
 from .server_state import OpenedDocumentState
 
@@ -940,6 +937,10 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     result=output_result_json,
                 ),
             )
+        is_empty_result = len(output_result) == 0
+        error_type = getLanguageServerError(
+            error_message, is_empty_result, empty_reason, query_source
+        )
         write_response_duration = write_response_timer.stop_in_millisecond()
         sample_source_code_timer = timer.Timer()
         # Only sample if response is empty
@@ -948,7 +949,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 document_path,
                 parameters.position,
             )
-            if len(output_result) == 0
+            if is_empty_result
             else None
         )
         character_at_position = SourceCodeContext.character_at_position(
@@ -985,7 +986,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                 "character_at_position": character_at_position,
                 **daemon_status_before.as_telemetry_dict(),
-                "error_type": getLanguageServerErrorFromDaemonError(error_message),
+                "error_type": error_type,
                 "empty_reason": empty_reason,
             },
             activity_key,
