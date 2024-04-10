@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* API to allow for efficient map reduce multiprocessing using Shared Memory. *)
 
 open Core
 module Worker = Hack_parallel.Std.Worker
