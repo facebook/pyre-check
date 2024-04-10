@@ -1163,7 +1163,7 @@ let test_dataclass_transform =
                 class Foo:
                   x: int
                   # OOPS! Here `x` should be keyword-only
-                  def __init__(self, x: int) -> None:
+                  def __init__(self, *, x: int) -> None:
                     self.x = x
               |};
       (* TODO(T129464224) Fix kw_only / kw_only_default support in dataclass transforms *)
@@ -1184,7 +1184,7 @@ let test_dataclass_transform =
                 class Foo:
                   x: int
                   # OOPS! Here `x` should be keyword-only
-                  def __init__(self, x: int) -> None:
+                  def __init__(self, *, x: int) -> None:
                     self.x = x
               |};
       labeled_test_case __FUNCTION__ __LINE__

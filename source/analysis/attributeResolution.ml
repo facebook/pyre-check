@@ -483,6 +483,12 @@ module ClassDecorators = struct
           ~has_slots:"slots"
 
 
+  (* Is a decorator one of the spec-defined dataclass transform decorators.
+
+     This does *not* answer whether a decorator is a custom dataclass transform, it rather asks
+     whether a decorator (which will be applied either to a decorator or a class, for either
+     decorator- or base-class style dataclass transforms) is marking a custom dataclass transform
+     definition. *)
   let is_dataclass_transform decorator =
     let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
     Decorator.from_expression decorator
@@ -492,33 +498,68 @@ module ClassDecorators = struct
     |> Option.value ~default:false
 
 
-  let dataclass_transform_default =
-    {
-      init = true;
-      repr = false;
-      eq = true;
-      order = false;
-      match_args = false;
-      field_descriptors = [];
-      keyword_only = false;
-      has_slots = false;
-    }
+  (* Determine based on the use of one of the spec-defined dataclass transform decorators what the
+     default options are for the custom transform being defined.
+
+     Here we are looking at the use of `@dataclass_transform` itself when *defining* a dataclass
+     transform, not to the use of the custom transform thus defined; that's handled downstream. *)
+  let dataclass_transform_default_options decorator =
+    let default_options =
+      {
+        init = true;
+        repr = false;
+        eq = true;
+        order = false;
+        match_args = false;
+        field_descriptors = [];
+        keyword_only = false;
+        has_slots = false;
+      }
+    in
+    extract_options
+      ~default:default_options
+      ~init:""
+      ~repr:""
+      ~eq:"eq_default"
+      ~order:"order_default"
+      ~keyword_only:"kw_only_default"
+      ~has_slots:"slots"
+      decorator
 
 
-  (* TODO(T129464224) Support `keyword_only_default` in Data Class Transforms *)
-  let find_dataclass_transform_decorator_with_default
+  (* Given a particular use of a custom dataclass transform decorator, determine the use-specific
+     options. The defaults come from where the custom transform was defined, and were produced by
+     running `extract_dataclass_transform_default_options` above.
+
+     This requires knowing the default options for the custom dataclass transform being used, which
+     will be determined by `extract_dataclass_transform_default_options` above.
+
+     It determines the options based the use of the custom dataclass. It accepts that use as a
+     `Decorator.t` which is suitable for decorator-style dataclass transforms; we use an adapter for
+     base-class style transforms. *)
+  let dataclass_transform_options_from_decorator decorator default_options_for_custom_transform =
+    extract_options
+      ~default:default_options_for_custom_transform
+      ~init:"init"
+      ~repr:"repr"
+      ~eq:"eq"
+      ~order:"order"
+      ~keyword_only:"kw_only"
+      ~has_slots:"slots"
+      decorator
+
+
+  (* Check all decorators of a class to see if any of them is a custom dataclass transform. If so,
+     determine the options specified by that decorator (which will depend on both the default
+     options defined for the custom transform and any options defined in this specific use).
+
+     This function only handles "decorator-style" dataclass transforms that work like the
+     `@dataclass` decorator itself. Transforms defined as base classes are handled separately in
+     `options_from_custom_dataclass_transform_base_class`. *)
+  let options_from_custom_dataclass_transform_decorator
       ~queries:Queries.{ get_unannotated_global; _ }
       { Node.value = { ClassSummary.decorators; _ }; _ }
     =
-    (* Given the name of a decorator of a class, find the function definition (we're assuming
-     * for now that the decorator is a plain function, not a class) and search *it's* decorators
-     * to determine whether any of them mark it as a dataclass transform decorator.
-     * - If yes, produce a pair (the decorator expression, the default dataclass tranform options);
-     *   we need both of these (the specific call to the dataclass transform and the default
-     *   behavior for the transform) to properly determine what attributes it defines on the class.
-     * - Otherwise, return `None`. We will `find_map` this over all of the class decorators, so
-     *   we keep going until we find a dataclass transform or have checked all decorators.
-     *)
     let get_dataclass_transform_decorator_with_default_options decorator =
       let { Decorator.name = { Node.value = decorator_reference; _ }; _ } = decorator in
       get_unannotated_global decorator_reference
@@ -534,15 +575,9 @@ module ClassDecorators = struct
           (* Determine whether any decorators are marking this function as a dataclass transform *)
           List.find decorators ~f:is_dataclass_transform
           >>= Decorator.from_expression
-          >>| extract_options
-                ~default:dataclass_transform_default
-                ~init:""
-                ~repr:""
-                ~eq:"eq_default"
-                ~order:"order_default"
-                ~keyword_only:"kw_only"
-                ~has_slots:"slots"
-          >>| fun default -> decorator, default
+          >>| dataclass_transform_default_options
+          >>| fun default_options_for_custom_transform ->
+          dataclass_transform_options_from_decorator decorator default_options_for_custom_transform
       | _ -> None
     in
     decorators
@@ -550,21 +585,7 @@ module ClassDecorators = struct
     |> List.find_map ~f:get_dataclass_transform_decorator_with_default_options
 
 
-  let dataclass_transform_options ~queries class_summary =
-    find_dataclass_transform_decorator_with_default ~queries class_summary
-    >>| fun (decorator, default) ->
-    extract_options
-      ~default
-      ~init:"init"
-      ~repr:"repr"
-      ~eq:"eq"
-      ~order:"order"
-      ~keyword_only:"kw_only_default"
-      ~has_slots:"slots"
-      decorator
-
-
-  let find_dataclass_transform_class_as_decorator_with_default
+  let options_from_custom_dataclass_transform_base_class
       ~queries:Queries.{ get_class_summary; successors; _ }
       { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
     =
@@ -575,38 +596,25 @@ module ClassDecorators = struct
       >>| class_decorators
       >>= List.find ~f:is_dataclass_transform
       >>= Decorator.from_expression
-      >>| extract_options
-            ~default:dataclass_transform_default
-            ~init:""
-            ~repr:""
-            ~eq:"eq_default"
-            ~order:"order_default"
-            ~keyword_only:"kw_only_default"
-            ~has_slots:"slots"
+      >>| dataclass_transform_default_options
     in
     Reference.show name
     |> successors
     |> List.find_map ~f:get_dataclass_transform_default
-    >>| fun default ->
-    ( {
+    >>| fun default_options_for_custom_transform ->
+    (* For historical reasons, extracting options is done by processing decorator callsites. But
+       base class options are instead defined via keyword arguments to the class definition itself,
+       which become `init_subclass_options`. Here we construct a "decorator" so we can use the
+       preexisting option extraction. *)
+    let synthetic_decorator =
+      {
         Decorator.name = Node.create_with_default_location name;
         arguments = Some init_subclass_arguments;
-      },
-      default )
-
-
-  let dataclass_transform_class_options ~queries class_summary =
-    find_dataclass_transform_class_as_decorator_with_default ~queries class_summary
-    >>| fun (decorator, default) ->
-    extract_options
-      ~default
-      ~init:"init"
-      ~repr:"repr"
-      ~eq:"eq"
-      ~order:"order"
-      ~keyword_only:"kw_only_default"
-      ~has_slots:"slots"
-      decorator
+      }
+    in
+    dataclass_transform_options_from_decorator
+      synthetic_decorator
+      default_options_for_custom_transform
 
 
   let apply
@@ -1021,10 +1029,10 @@ module ClassDecorators = struct
       generate_attributes ~options:(attrs_attributes ~queries)
     in
     let dataclass_transform_attributes () =
-      generate_attributes ~options:(dataclass_transform_options ~queries)
+      generate_attributes ~options:(options_from_custom_dataclass_transform_decorator ~queries)
     in
     let dataclass_transform_class_attributes () =
-      generate_attributes ~options:(dataclass_transform_class_options ~queries)
+      generate_attributes ~options:(options_from_custom_dataclass_transform_base_class ~queries)
     in
     dataclass_attributes ()
     @ attrs_attributes ()
