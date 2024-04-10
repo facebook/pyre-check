@@ -1312,20 +1312,26 @@ let test_dataclass_transform =
               |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
-           ~external_sources:["custom_dataclass_transform.py", {|
-            |}]
+           ~external_sources:
+             [
+               ( "custom_dataclass_transform.py",
+                 {|
+                   @__dataclass_transform__(eq_default=False, order_default=True)
+                   class Bar:
+                     def __init_subclass__(
+                         cls,
+                         *,
+                         init: bool = True,
+                         frozen: bool = False,
+                         eq: bool = False,
+                         order: bool = True,
+                     ) -> None: ...
+                 |}
+               );
+             ]
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False, order_default=True)
-              class Bar:
-                def __init_subclass__(
-                    cls,
-                    *,
-                    init: bool = True,
-                    frozen: bool = False,
-                    eq: bool = False,
-                    order: bool = True,
-                ) -> None: ...
+              from custom_dataclass_transform import Bar
 
               class Foo(Bar, eq=True, order=False):
                 x: int
@@ -1344,11 +1350,11 @@ let test_dataclass_transform =
              [
                ( "custom_dataclass_transform.py",
                  {|
-              @__dataclass_transform__
-              def mytransform():
-                ...
+                  @__dataclass_transform__
+                  def mytransform():
+                    ...
 
-            |}
+                |}
                );
              ]
            ~source:
