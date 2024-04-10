@@ -11,28 +11,27 @@
   astEnvironmentTest
   attributeResolutionTest
   attrsTest
-  unawaitedAwaitableCheckTest
   callgraphTest
   cfgTest
-  classHierarchyTest
   classHierarchyEnvironmentTest
+  classHierarchyTest
   classSuccessorMetadataEnvironmentTest
   classSummaryTest
   constraintsSetTest
   dataClassTest
-  errorsEnvironmentTest
+  decoratorPreprocessingTest
   environmentTest
+  errorsEnvironmentTest
   fixpointTest
   globalLeakCheckTest
   globalResolutionTest
-  decoratorPreprocessingTest
   latticeOfMapsTest
-  matchTranslateTest
   locationBasedLookupTest
+  matchTranslateTest
   moduleTrackerTest
-  overlaidEnvironmentTest
-  newTypeTest
   namedTupleTest
+  newTypeTest
+  overlaidEnvironmentTest
   preprocessingTest
   refinementTest
   resolutionTest
@@ -41,14 +40,15 @@
   sqlAlchemyTest
   typeCheckTest
   typeConstraintsTest
-  typedDictionaryAttributeTest
   typeOperationTest
   typeOrderTest
   typeTest
+  typedDictionaryAttributeTest
   unannotatedGlobalEnvironmentTest
+  unawaitedAwaitableCheckTest
   uninitializedLocalCheckTest
-  weakenMutableLiteralsTest
-  weakTopologicalOrderTest)
+  weakTopologicalOrderTest
+  weakenMutableLiteralsTest)
  (preprocess
   (pps
    ppx_deriving.eq
