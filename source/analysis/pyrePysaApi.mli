@@ -6,7 +6,7 @@
  *)
 
 module ReadWrite : sig
-  type t = { type_environment: TypeEnvironment.t }
+  type t
 
   val load_from_cache : configuration:Configuration.Analysis.t -> t
 
@@ -37,10 +37,7 @@ module ReadWrite : sig
 end
 
 module ReadOnly : sig
-  type t = {
-    type_environment: TypeEnvironment.TypeEnvironmentReadOnly.t;
-    global_module_paths_api: GlobalModulePathsApi.t;
-  }
+  type t
 
   val of_read_write_api : ReadWrite.t -> t
 
@@ -151,10 +148,7 @@ module ReadOnly : sig
 end
 
 module InContext : sig
-  type t = {
-    pyre_api: ReadOnly.t;
-    resolution: Resolution.t;
-  }
+  type t
 
   val create_at_global_scope : ReadOnly.t -> t
 
