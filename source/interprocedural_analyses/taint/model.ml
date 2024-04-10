@@ -48,19 +48,22 @@ let json_to_string ~indent json =
 module Forward = struct
   type t = { source_taint: ForwardState.t }
 
-  let pp formatter { source_taint } =
-    Format.fprintf
-      formatter
-      "  Sources: %s"
-      (json_to_string
-         ~indent:"    "
-         (ForwardState.to_json
-            ~expand_overrides:None
-            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~resolve_module_path:None
-            ~export_leaf_names:ExportLeafNames.Always
-            source_taint))
+  let pp_inner formatter { source_taint } =
+    if not (ForwardState.is_empty source_taint) then
+      Format.fprintf
+        formatter
+        "\n  Sources: %s"
+        (json_to_string
+           ~indent:"    "
+           (ForwardState.to_json
+              ~expand_overrides:None
+              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+              ~resolve_module_path:None
+              ~export_leaf_names:ExportLeafNames.Always
+              source_taint))
 
+
+  let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
 
   let show = Format.asprintf "%a" pp
 
@@ -88,27 +91,39 @@ module Backward = struct
     sink_taint: BackwardState.t;
   }
 
-  let pp formatter { taint_in_taint_out; sink_taint } =
-    Format.fprintf
-      formatter
-      "  Taint-in-taint-out: %s\n  Sinks: %s"
-      (json_to_string
-         ~indent:"    "
-         (BackwardState.to_json
-            ~expand_overrides:None
-            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~resolve_module_path:None
-            ~export_leaf_names:ExportLeafNames.Always
-            taint_in_taint_out))
-      (json_to_string
-         ~indent:"    "
-         (BackwardState.to_json
-            ~expand_overrides:None
-            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
-            ~resolve_module_path:None
-            ~export_leaf_names:ExportLeafNames.Always
-            sink_taint))
+  let pp_inner formatter { taint_in_taint_out; sink_taint } =
+    let () =
+      if not (BackwardState.is_empty sink_taint) then
+        Format.fprintf
+          formatter
+          "\n  Sinks: %s"
+          (json_to_string
+             ~indent:"    "
+             (BackwardState.to_json
+                ~expand_overrides:None
+                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                ~resolve_module_path:None
+                ~export_leaf_names:ExportLeafNames.Always
+                sink_taint))
+    in
+    let () =
+      if not (BackwardState.is_empty taint_in_taint_out) then
+        Format.fprintf
+          formatter
+          "\n  Taint-in-taint-out: %s"
+          (json_to_string
+             ~indent:"    "
+             (BackwardState.to_json
+                ~expand_overrides:None
+                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                ~resolve_module_path:None
+                ~export_leaf_names:ExportLeafNames.Always
+                taint_in_taint_out))
+    in
+    ()
 
+
+  let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
 
   let show = Format.asprintf "%a" pp
 
@@ -166,14 +181,32 @@ module Sanitizers = struct
     roots: Sanitize.RootMap.t;
   }
 
-  let pp formatter { global; parameters; roots } =
-    Format.fprintf
-      formatter
-      "  Global Sanitizer: %s\n  Parameters Sanitizer: %s\n  Sanitizers: %s"
-      (json_to_string ~indent:"    " (Sanitize.to_json global))
-      (json_to_string ~indent:"    " (Sanitize.to_json parameters))
-      (json_to_string ~indent:"    " (Sanitize.RootMap.to_json roots))
+  let pp_inner formatter { global; parameters; roots } =
+    let () =
+      if not (Sanitize.is_empty global) then
+        Format.fprintf
+          formatter
+          "\n  Global Sanitizer: %s"
+          (json_to_string ~indent:"    " (Sanitize.to_json global))
+    in
+    let () =
+      if not (Sanitize.is_empty parameters) then
+        Format.fprintf
+          formatter
+          "\n  Parameters Sanitizer: %s"
+          (json_to_string ~indent:"    " (Sanitize.to_json parameters))
+    in
+    let () =
+      if not (Sanitize.RootMap.is_bottom roots) then
+        Format.fprintf
+          formatter
+          "\n  Sanitizers: %s"
+          (json_to_string ~indent:"    " (Sanitize.RootMap.to_json roots))
+    in
+    ()
 
+
+  let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
 
   let show = Format.asprintf "%a" pp
 
@@ -264,9 +297,12 @@ module ModeSet = struct
 
   let to_json modes = `List (modes |> T.elements |> List.map ~f:Mode.to_json)
 
-  let pp formatter modes =
-    Format.fprintf formatter "  Modes: %s" (json_to_string ~indent:"    " (to_json modes))
+  let pp_inner formatter modes =
+    if not (is_empty modes) then
+      Format.fprintf formatter "\n  Modes: %s" (json_to_string ~indent:"    " (to_json modes))
 
+
+  let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
 
   let resolve_conflicting_modes result =
     let resolve_conflicts ~to_keep ~to_discard result =
@@ -295,14 +331,14 @@ type t = {
 let pp formatter { forward; backward; sanitizers; modes } =
   Format.fprintf
     formatter
-    "%a\n%a\n%a\n%a"
-    Forward.pp
+    "{%a%a%a%a\n}"
+    Forward.pp_inner
     forward
-    Backward.pp
+    Backward.pp_inner
     backward
-    Sanitizers.pp
+    Sanitizers.pp_inner
     sanitizers
-    ModeSet.pp
+    ModeSet.pp_inner
     modes
 
 
