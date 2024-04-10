@@ -638,7 +638,6 @@ let run_taint_analysis
           ~static_analysis_configuration
           ~scheduler
           ~pyre_api
-          ~include_unit_tests:false
           ~skip_overrides_targets
           ~maximum_overrides
           ~analyze_all_overrides_targets

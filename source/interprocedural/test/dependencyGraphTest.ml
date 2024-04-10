@@ -34,7 +34,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
     setup ~other_sources ~context ~handle:"test.py" source_text
   in
   let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-  let override_graph = OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:true ~source in
+  let override_graph = OverrideGraph.Heap.from_source ~pyre_api ~source in
   let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph in
   let () =
     let errors = TypeEnvironment.ReadOnly.get_errors environment !&"test" in

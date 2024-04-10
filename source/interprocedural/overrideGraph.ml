@@ -46,8 +46,8 @@ module Heap = struct
 
   let show = Format.asprintf "%a" pp
 
-  let from_source ~pyre_api ~include_unit_tests ~source =
-    if (not include_unit_tests) && PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
+  let from_source ~pyre_api ~source =
+    if PyrePysaApi.ReadOnly.source_is_unit_test pyre_api ~source then
       Target.Map.Tree.empty
     else
       let timer = Timer.start () in
@@ -256,7 +256,6 @@ let build_whole_program_overrides
     ~scheduler
     ~static_analysis_configuration
     ~pyre_api
-    ~include_unit_tests
     ~skip_overrides_targets
     ~maximum_overrides
     ~analyze_all_overrides_targets
@@ -269,7 +268,7 @@ let build_whole_program_overrides
       | None -> overrides
       | Some source ->
           let new_overrides =
-            Heap.from_source ~pyre_api ~include_unit_tests ~source
+            Heap.from_source ~pyre_api ~source
             |> Heap.skip_overrides ~to_skip:skip_overrides_targets
           in
           Target.Map.Tree.merge_skewed ~combine overrides new_overrides

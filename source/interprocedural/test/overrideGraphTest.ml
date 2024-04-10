@@ -36,9 +36,7 @@ let test_method_overrides context =
       List.map expected ~f:create_callables
     in
     let source, pyre_api, _ = setup ~other_sources ~context ~handle source in
-    let overrides_map =
-      OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:false ~source
-    in
+    let overrides_map = OverrideGraph.Heap.from_source ~pyre_api ~source in
     let expected_overrides = OverrideGraph.Heap.of_alist_exn expected in
     assert_equal
       ~cmp:OverrideGraph.Heap.equal

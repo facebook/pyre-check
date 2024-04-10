@@ -69,9 +69,7 @@ let test_call_graph_of_define context =
         ScratchProject.configuration_of project )
     in
     let static_analysis_configuration = Configuration.StaticAnalysis.create configuration () in
-    let override_graph_heap =
-      OverrideGraph.Heap.from_source ~pyre_api ~include_unit_tests:false ~source:test_source
-    in
+    let override_graph_heap = OverrideGraph.Heap.from_source ~pyre_api ~source:test_source in
     let override_graph_shared_memory = OverrideGraph.SharedMemory.from_heap override_graph_heap in
     let () =
       assert_equal

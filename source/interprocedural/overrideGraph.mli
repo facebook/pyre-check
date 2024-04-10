@@ -24,11 +24,7 @@ module Heap : sig
 
   val show : t -> string
 
-  val from_source
-    :  pyre_api:PyrePysaApi.ReadOnly.t ->
-    include_unit_tests:bool ->
-    source:Source.t ->
-    t
+  val from_source : pyre_api:PyrePysaApi.ReadOnly.t -> source:Source.t -> t
 
   val skip_overrides : to_skip:Reference.SerializableSet.t -> t -> t
 
@@ -91,7 +87,6 @@ val build_whole_program_overrides
   :  scheduler:Scheduler.t ->
   static_analysis_configuration:Configuration.StaticAnalysis.t ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
-  include_unit_tests:bool ->
   skip_overrides_targets:Reference.SerializableSet.t ->
   maximum_overrides:int option ->
   analyze_all_overrides_targets:Target.Set.t ->
