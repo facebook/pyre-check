@@ -1145,6 +1145,48 @@ let test_dataclass_transform =
                     self.x = x
                   def __eq__(self, o: object) -> bool: ...
               |};
+      (* TODO(T129464224) Fix kw_only / kw_only_default support in dataclass transforms *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+              @__dataclass_transform__
+              def mytransform(kw_only: bool = False):
+                ...
+
+              @mytransform(kw_only=True, eq=False)
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  # OOPS! Here `x` should be keyword-only
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+              |};
+      (* TODO(T129464224) Fix kw_only / kw_only_default support in dataclass transforms *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+              @__dataclass_transform__(kw_only_default=True, eq_default=False)
+              def mytransform(kw_only: bool = True):
+                ...
+
+              @mytransform(eq=False)
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  # OOPS! Here `x` should be keyword-only
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+              |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~source:
