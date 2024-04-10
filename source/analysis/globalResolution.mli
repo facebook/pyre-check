@@ -238,8 +238,6 @@ val is_consistent_with
   expression:Ast.Expression.t option ->
   bool
 
-val source_is_unit_test : t -> source:Ast.Source.t -> bool
-
 (* If the given type is a subtype of generic type `AsName[X]`, return X *)
 val extract_type_parameters : t -> source:Type.t -> target:string -> Type.t list option
 

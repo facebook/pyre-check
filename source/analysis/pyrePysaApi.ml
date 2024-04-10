@@ -219,8 +219,6 @@ module ReadOnly = struct
 
   let class_hierarchy api = global_resolution api |> GlobalResolution.class_hierarchy
 
-  let source_is_unit_test api = global_resolution api |> GlobalResolution.source_is_unit_test
-
   let immediate_parents api = global_resolution api |> GlobalResolution.immediate_parents
 
   let get_define_names_for_qualifier api =
@@ -266,8 +264,56 @@ module ReadOnly = struct
     global_resolution api |> GlobalResolution.attribute_from_class_name
 
 
-  let has_transitive_successor api =
-    global_resolution api |> GlobalResolution.has_transitive_successor
+  let has_transitive_successor api ?(placeholder_subclass_extends_all = true) =
+    global_resolution api
+    |> GlobalResolution.has_transitive_successor ~placeholder_subclass_extends_all
+
+
+  (* There isn't a great way of testing whether a file only contains tests in Python.
+   * We currently use the following heuristics:
+   * - If a class inherits from `unittest.TestCase`, we assume this is a test file.
+   * - If `pytest` is imported and at least one function starts with `test_`, we assume this is a test file.
+   *)
+  let source_is_unit_test api ~source =
+    let open Ast in
+    let open Statement in
+    let is_unittest () =
+      let is_unittest_class { Node.value = { Class.name; _ }; _ } =
+        try
+          has_transitive_successor
+            ~placeholder_subclass_extends_all:false
+            api
+            ~successor:"unittest.case.TestCase"
+            (Reference.show name)
+        with
+        | ClassHierarchy.Untracked _ -> false
+      in
+      List.exists (Preprocessing.classes source) ~f:is_unittest_class
+    in
+    let is_pytest () =
+      let imports_pytest () =
+        let has_pytest_prefix = Reference.is_prefix ~prefix:(Reference.create "pytest") in
+        let is_pytest_import { Node.value; _ } =
+          match value with
+          | Statement.Import { from = Some { Node.value; _ }; _ } when has_pytest_prefix value ->
+              true
+          | Statement.Import { imports; _ }
+            when List.exists imports ~f:(fun { Node.value = { name; _ }; _ } ->
+                     has_pytest_prefix name) ->
+              true
+          | _ -> false
+        in
+        List.exists source.statements ~f:is_pytest_import
+      in
+      let has_test_function () =
+        let is_test_function { Node.value = { Define.signature = { name; _ }; _ }; _ } =
+          Reference.last name |> String.is_prefix ~prefix:"test_"
+        in
+        List.exists (Preprocessing.defines source) ~f:is_test_function
+      in
+      imports_pytest () && has_test_function ()
+    in
+    is_unittest () || is_pytest ()
 
 
   let exists_matching_class_decorator api =

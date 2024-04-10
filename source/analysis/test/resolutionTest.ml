@@ -444,39 +444,6 @@ let test_get_typed_dictionary context =
 
 (* We don't reverse order when returning the classes. *)
 
-let test_source_is_unit_test context =
-  let assert_is_unit_test ?(expected = true) ?(extra_sources = []) source =
-    let project = ScratchProject.setup ~context (["test.py", source] @ extra_sources) in
-    let source =
-      SourceCodeApi.source_of_qualifier
-        (Test.ScratchProject.get_untracked_source_code_api project)
-        (Reference.create "test")
-      |> fun option -> Option.value_exn option
-    in
-    let resolution = Test.ScratchProject.build_global_resolution project in
-    assert_equal expected (GlobalResolution.source_is_unit_test resolution ~source)
-  in
-  let assert_not_unit_test = assert_is_unit_test ~expected:false in
-  assert_is_unit_test "class C(unittest.case.TestCase): ...";
-  assert_not_unit_test {|
-    from unittest import TestCase
-    class C: pass
-  |};
-  assert_is_unit_test
-    {|
-    class C:
-      def foo():
-        class Nested(unittest.case.TestCase): ...
-  |};
-  assert_not_unit_test
-    ~extra_sources:["placeholder.py", "# pyre-placeholder-stub"]
-    {|
-    import placeholder
-    class C(placeholder.Missing):
-      ...
-  |}
-
-
 let test_fallback_attribute context =
   let assert_fallback_attribute ?(instantiated = None) ~name source annotation =
     let project = ScratchProject.setup ~context ["test.py", source] in
@@ -675,7 +642,6 @@ let () =
          "resolve_literal" >:: test_resolve_literal;
          "resolve_exports" >:: test_resolve_exports;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
-         "source_is_unit_test" >:: test_source_is_unit_test;
          "fallback_attribute" >:: test_fallback_attribute;
        ]
   |> Test.run
