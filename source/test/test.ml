@@ -1812,6 +1812,7 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         sep: str
         |}
     );
+    "pytest.pyi", "";
     ( "os/__init__.pyi",
       {|
     from builtins import _PathLike as PathLike
