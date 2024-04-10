@@ -127,6 +127,14 @@ class QueryResultWithDurations(Generic[QueryResultType]):
     overall_duration: float
 
 
+@dataclasses.dataclass(frozen=True)
+class DefinitionTimingData:
+    dispatch_request_duration: Optional[float]
+    process_request_duration: float
+    marshalling_response_duration: float
+    write_response_duration: float
+
+
 class PyreLanguageServerApi(abc.ABC):
     @abc.abstractmethod
     async def write_telemetry(
@@ -801,7 +809,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
             activity_key,
         )
 
-    async def _get_definition_result(
+    async def _get_definition_result_from_daemon_querier(
         self,
         document_path: Path,
         position: lsp.LspPosition,
@@ -842,7 +850,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
         activity_key: Optional[Dict[str, object]] = None,
         dispatch_request_duration: Optional[float] = None,
     ) -> Optional[Exception]:
-        process_request_time = timer.Timer()
+        process_request_timer = timer.Timer()
         document_path: Optional[Path] = (
             parameters.text_document.document_uri().to_file_path()
         )
@@ -872,7 +880,7 @@ class PyreLanguageServer(PyreLanguageServerApi):
                     "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                     "error_type": PyreLanguageServerError.DOCUMENT_PATH_MISSING_IN_SERVER_STATE,
                     "dispatch_request_duration": dispatch_request_duration,
-                    "process_request_duration": process_request_time.stop_in_millisecond(),
+                    "process_request_duration": process_request_timer.stop_in_millisecond(),
                     "overlay_update_duration": 0.0,
                     "query_duration": 0.0,
                     "marshalling_response_duration": 0.0,
@@ -882,74 +890,147 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 activity_key,
             )
             return None
-        daemon_status_before = self.server_state.status_tracker.get_status()
+
         shadow_mode = self.get_language_server_features().definition.is_shadow()
+
         # In shadow mode, we need to return an empty response immediately
         if shadow_mode:
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=lsp.LspLocation.cached_schema().dump([], many=True),
-                ),
+            return await self._process_definitions_for_shadow_mode(
+                document_path,
+                parameters,
+                request_id,
+                activity_key,
             )
-        process_request_duration = process_request_time.stop_in_millisecond()
-        # Regardless of the mode, we want to get the actual result
-        result_with_durations = await self._get_definition_result(
+        else:
+            return await self._process_definitions_for_codenav(
+                document_path,
+                parameters,
+                request_id,
+                activity_key,
+                process_request_timer,
+                dispatch_request_duration,
+            )
+
+    async def _process_definitions_for_codenav(
+        self,
+        document_path: Path,
+        parameters: lsp.DefinitionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]],
+        process_request_timer: timer.Timer,
+        dispatch_request_duration: Optional[float],
+    ) -> Optional[Exception]:
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        process_request_duration = process_request_timer.stop_in_millisecond()
+        result_with_durations = await self._get_definition_result_from_daemon_querier(
             document_path=document_path,
             position=parameters.position,
         )
-        result = result_with_durations.result
-        if isinstance(result, DaemonQueryFailure):
-            error_message = result.error_message
-            error_source = result.error_source
-            daemon_duration = result.duration
-            daemon_inner_duration = 0
-            if result.fallback_result is None:
-                output_result = []
-                query_source = None
-                empty_reason = None
-                glean_duration = 0
-            else:
-                output_result = result.fallback_result.data
-                query_source = result.fallback_result.source
-                empty_reason = result.fallback_result.empty_reason
-                glean_duration = result.fallback_result.glean_duration
-        else:
-            error_message = None
-            error_source = None
-            output_result = result.data
-            query_source = result.source
-            empty_reason = result.empty_reason
-            daemon_duration = result.daemon_duration
-            daemon_inner_duration = result.daemon_inner_duration
-            glean_duration = result.glean_duration
         marshalling_response_timer = timer.Timer()
-        # Unless we are in shadow mode, we send the response as output
-        output_result_json = lsp.LspLocation.cached_schema().dump(
-            output_result, many=True
+        output_result_json = self._get_output_result_json_from_result_with_durations(
+            result_with_durations
         )
         marshalling_response_duration = marshalling_response_timer.stop_in_millisecond()
+
+        # send response as output
         write_response_timer = timer.Timer()
-        if not shadow_mode:
-            await lsp.write_json_rpc(
-                self.output_channel,
-                json_rpc.SuccessResponse(
-                    id=request_id,
-                    activity_key=activity_key,
-                    result=output_result_json,
-                ),
-            )
-        is_empty_result = len(output_result) == 0
-        error_type = get_language_server_error(error_message, query_source)
-        empty_reason_to_log = (
-            get_language_server_empty_reason(empty_reason, error_message, query_source)
-            if is_empty_result
-            else None
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=output_result_json,
+            ),
         )
         write_response_duration = write_response_timer.stop_in_millisecond()
-        sample_source_code_timer = timer.Timer()
+
+        await self._log_telemetry_for_definitions(
+            document_path,
+            parameters,
+            activity_key,
+            daemon_status_before,
+            result_with_durations,
+            DefinitionTimingData(
+                dispatch_request_duration=dispatch_request_duration,
+                process_request_duration=process_request_duration,
+                marshalling_response_duration=marshalling_response_duration,
+                write_response_duration=write_response_duration,
+            ),
+        )
+
+        return self._get_error_source_from_result_with_duration(result_with_durations)
+
+    async def _process_definitions_for_shadow_mode(
+        self,
+        document_path: Path,
+        parameters: lsp.DefinitionParameters,
+        request_id: Union[int, str, None],
+        activity_key: Optional[Dict[str, object]],
+    ) -> Optional[Exception]:
+        # In shadow mode, we need to return an empty response immediately
+        await lsp.write_json_rpc(
+            self.output_channel,
+            json_rpc.SuccessResponse(
+                id=request_id,
+                activity_key=activity_key,
+                result=lsp.LspLocation.cached_schema().dump([], many=True),
+            ),
+        )
+
+        daemon_status_before = self.server_state.status_tracker.get_status()
+        result_with_durations = await self._get_definition_result_from_daemon_querier(
+            document_path=document_path,
+            position=parameters.position,
+        )
+
+        await self._log_telemetry_for_definitions(
+            document_path,
+            parameters,
+            activity_key,
+            daemon_status_before,
+            result_with_durations,
+            None,
+        )
+
+        return self._get_error_source_from_result_with_duration(result_with_durations)
+
+    def _get_error_source_from_result_with_duration(
+        self,
+        result_with_durations: QueryResultWithDurations[GetDefinitionLocationsResponse],
+    ) -> Optional[Exception]:
+        result = result_with_durations.result
+        return result.error_source if isinstance(result, DaemonQueryFailure) else None
+
+    def _get_output_result_json_from_result_with_durations(
+        self,
+        result_with_durations: QueryResultWithDurations[GetDefinitionLocationsResponse],
+    ) -> List[Dict[str, object]]:
+        result = result_with_durations.result
+        if isinstance(result, DaemonQueryFailure):
+            output_result = (
+                result.fallback_result.data
+                if result.fallback_result is not None
+                else []
+            )
+        else:
+            output_result = result.data
+
+        return lsp.LspLocation.cached_schema().dump(output_result, many=True)
+
+    async def _log_telemetry_for_definitions(
+        self,
+        document_path: Path,
+        parameters: lsp.DefinitionParameters,
+        activity_key: Optional[Dict[str, object]],
+        daemon_status_before: state.DaemonStatus,
+        result_with_durations: QueryResultWithDurations[GetDefinitionLocationsResponse],
+        definition_timing_data: Optional[DefinitionTimingData],
+    ) -> None:
+        output_result_json = self._get_output_result_json_from_result_with_durations(
+            result_with_durations
+        )
+        is_empty_result = len(output_result_json) == 0
+
         # Only sample if response is empty
         source_code_if_sampled = (
             self.sample_source_code(
@@ -959,10 +1040,48 @@ class PyreLanguageServer(PyreLanguageServerApi):
             if is_empty_result
             else None
         )
+
+        result = result_with_durations.result
+        if isinstance(result, DaemonQueryFailure):
+            error_message = result.error_message
+            daemon_duration = result.duration
+            daemon_inner_duration = 0
+            if result.fallback_result is None:
+                query_source = None
+                empty_reason = None
+                glean_duration = 0
+            else:
+                query_source = result.fallback_result.source
+                empty_reason = result.fallback_result.empty_reason
+                glean_duration = result.fallback_result.glean_duration
+        else:
+            error_message = None
+            query_source = result.source
+            empty_reason = result.empty_reason
+            daemon_duration = result.daemon_duration
+            daemon_inner_duration = result.daemon_inner_duration
+            glean_duration = result.glean_duration
+
+        error_type_to_log = get_language_server_error(error_message, query_source)
+        empty_reason_to_log = (
+            get_language_server_empty_reason(empty_reason, error_message, query_source)
+            if is_empty_result
+            else None
+        )
+        sample_source_code_timer = timer.Timer()
         character_at_position = SourceCodeContext.character_at_position(
             self.server_state.opened_documents[document_path].code, parameters.position
         )
         sample_source_code_duration = sample_source_code_timer.stop_in_millisecond()
+
+        if definition_timing_data is None:
+            definition_timing_data = DefinitionTimingData(
+                dispatch_request_duration=0.0,
+                process_request_duration=0.0,
+                marshalling_response_duration=0.0,
+                write_response_duration=0.0,
+            )
+
         await self.write_telemetry(
             {
                 "type": "LSP",
@@ -972,15 +1091,23 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "response": output_result_json,
                 "query_source": query_source,
                 "duration_ms": result_with_durations.overall_duration,
-                "dispatch_request_duration": dispatch_request_duration,
-                "process_request_duration": process_request_duration,
+                "dispatch_request_duration": (
+                    definition_timing_data.dispatch_request_duration
+                ),
+                "process_request_duration": (
+                    definition_timing_data.process_request_duration
+                ),
                 "overlay_update_duration": result_with_durations.overlay_update_duration,
                 "query_duration": result_with_durations.query_duration,
                 "query_daemon_duration": daemon_duration,
                 "query_daemon_inner_duration": daemon_inner_duration,
                 "query_glean_duration": glean_duration,
-                "marshalling_response_duration": marshalling_response_duration,
-                "write_response_duration": write_response_duration,
+                "marshalling_response_duration": (
+                    definition_timing_data.marshalling_response_duration
+                ),
+                "write_response_duration": (
+                    definition_timing_data.write_response_duration
+                ),
                 "sample_source_code_duration": sample_source_code_duration,
                 "server_state_open_documents_count": len(
                     self.server_state.opened_documents
@@ -993,13 +1120,11 @@ class PyreLanguageServer(PyreLanguageServerApi):
                 "using_errpy_parser": self.server_state.server_options.using_errpy_parser,
                 "character_at_position": character_at_position,
                 **daemon_status_before.as_telemetry_dict(),
-                "error_type": error_type,
+                "error_type": error_type_to_log,
                 "empty_reason": empty_reason_to_log,
             },
             activity_key,
         )
-
-        return error_source
 
     async def process_symbol_search_request(
         self,
