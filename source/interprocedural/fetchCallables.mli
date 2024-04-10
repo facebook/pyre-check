@@ -13,7 +13,6 @@ type t
 val from_source
   :  configuration:Configuration.Analysis.t ->
   pyre_api:Analysis.PyrePysaApi.ReadOnly.t ->
-  include_unit_tests:bool ->
   source:Source.t ->
   t
 
@@ -21,7 +20,6 @@ val from_qualifiers
   :  scheduler:Scheduler.t ->
   pyre_api:Analysis.PyrePysaApi.ReadOnly.t ->
   configuration:Configuration.Analysis.t ->
-  include_unit_tests:bool ->
   qualifiers:Reference.t list ->
   t
 

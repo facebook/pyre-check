@@ -27,7 +27,6 @@ let get_stubs_and_definitions ~source_file_name ~project =
     Interprocedural.FetchCallables.from_source
       ~configuration:(Test.ScratchProject.configuration_of project)
       ~pyre_api
-      ~include_unit_tests:false
       ~source:ast_source
   in
   ( Interprocedural.FetchCallables.get_stubs initial_callables,

@@ -543,7 +543,6 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
             ~scheduler
             ~configuration
             ~pyre_api
-            ~include_unit_tests:false
             ~qualifiers
         in
         let class_hierarchy_graph =

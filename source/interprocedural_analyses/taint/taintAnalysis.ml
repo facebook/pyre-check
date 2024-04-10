@@ -594,7 +594,6 @@ let run_taint_analysis
             ~scheduler
             ~configuration
             ~pyre_api
-            ~include_unit_tests:false
             ~qualifiers
         in
         Statistics.performance

@@ -47,8 +47,7 @@ let create_call_graph ?(other_sources = []) ~context source_text =
       |> failwith
   in
   let definitions =
-    FetchCallables.from_source ~configuration ~pyre_api ~include_unit_tests:true ~source
-    |> FetchCallables.get_definitions
+    FetchCallables.from_source ~configuration ~pyre_api ~source |> FetchCallables.get_definitions
   in
   let fold call_graph callable =
     let callees =

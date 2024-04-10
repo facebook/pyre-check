@@ -23,7 +23,7 @@ let test_callables context =
       Analysis.SourceCodeApi.source_of_qualifier source_code_api (Ast.Reference.create "test")
       |> Option.value_exn
     in
-    FetchCallables.from_source ~configuration ~pyre_api ~include_unit_tests:false ~source
+    FetchCallables.from_source ~configuration ~pyre_api ~source
     |> FetchCallables.get ~definitions:true ~stubs:true
     |> List.sort ~compare:Target.compare
     |> assert_equal

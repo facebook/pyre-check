@@ -484,9 +484,7 @@ let initialize
      in
      failwithf "Pyre errors were found in `%s`:\n%s" handle errors ());
 
-  let initial_callables =
-    FetchCallables.from_source ~configuration ~pyre_api ~include_unit_tests:false ~source
-  in
+  let initial_callables = FetchCallables.from_source ~configuration ~pyre_api ~source in
   let stubs = FetchCallables.get_stubs initial_callables in
   let definitions = FetchCallables.get_definitions initial_callables in
   let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
