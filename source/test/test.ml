@@ -1501,6 +1501,15 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         if sys.version_info >= (3, 11):
           def reveal_type(__obj: _T) -> _T: ...
           def assert_type(__val: _T, __typ: Any) -> _T: ...
+          def dataclass_transform(
+            *,
+            eq_default: bool = True,
+            order_default: bool = False,
+            kw_only_default: bool = False,
+            frozen_default: bool = False,  # on 3.11, runtime accepts it as part of kwargs
+            field_specifiers: tuple[type[Any] | Callable[..., Any], ...] = (),
+            **kwargs: Any,
+          ) -> IdentityFunction: ...
       |}
     );
     "asyncio/coroutines.pyi", {|
@@ -1700,6 +1709,22 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
         NotRequired: _SpecialForm = ...
 
         Self: _SpecialForm = ...
+
+        if sys.version_info >= (3, 11):
+          dataclass_transform = typing.dataclass_transform
+        else:
+          def dataclass_transform(
+              *,
+              eq_default: bool = True,
+              order_default: bool = False,
+              kw_only_default: bool = False,
+              frozen_default: bool = False,
+              field_specifiers: typing.Tuple[
+                  typing.Union[typing.Type[typing.Any], typing.Callable[..., typing.Any]],
+                  ...
+              ] = (),
+              **kwargs: typing.Any,
+          ) -> typing.Callable[[T], T]:
         |}
     );
     ( "collections.pyi",
@@ -3483,6 +3508,7 @@ let assert_instantiated_attribute_equal expected actual =
 let assert_equivalent_attributes
     ?(assert_attribute_equal = assert_instantiated_attribute_equal)
     ?external_sources
+    ?python_version
     ~source
     ~class_name
     expected_equivalent_class_source
@@ -3492,7 +3518,11 @@ let assert_equivalent_attributes
   let attributes source =
     Memory.reset_shared_memory ();
     let { ScratchProject.BuiltGlobalEnvironment.global_environment; _ } =
-      ScratchProject.setup ~context ?external_sources [Format.asprintf "%s.py" module_name, source]
+      ScratchProject.setup
+        ~context
+        ?external_sources
+        ?python_version
+        [Format.asprintf "%s.py" module_name, source]
       |> ScratchProject.build_global_environment
     in
     let global_resolution = GlobalResolution.create global_environment in

@@ -896,13 +896,23 @@ let test_match_args =
 
 
 let test_dataclass_transform =
+  let assert_equivalent_attributes_3_10 =
+    assert_equivalent_attributes
+      ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:10 ())
+  in
+  let assert_equivalent_attributes =
+    assert_equivalent_attributes
+      ~python_version:(Configuration.PythonVersion.create ~major:3 ~minor:11 ())
+  in
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform():
                 ...
 
@@ -922,7 +932,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform():
                 ...
 
@@ -942,7 +954,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform():
                 ...
 
@@ -961,7 +975,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform():
                 ...
 
@@ -985,7 +1001,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform():
                 ...
 
@@ -1003,7 +1021,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False)
               def mytransform():
                 ...
 
@@ -1022,7 +1042,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False)
               def mytransform():
                 ...
 
@@ -1042,7 +1064,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False)
               def mytransform():
                 ...
 
@@ -1065,7 +1089,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False)
               def mytransform():
                 ...
 
@@ -1082,7 +1108,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(order_default=True)
               def mytransform():
                 ...
 
@@ -1106,7 +1134,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(order_default=True)
               def mytransform():
                 ...
 
@@ -1129,7 +1159,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(order_default=True)
               def mytransform():
                 ...
 
@@ -1150,7 +1182,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               def mytransform(kw_only: bool = False):
                 ...
 
@@ -1171,7 +1205,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(kw_only_default=True, eq_default=False)
+              from typing import dataclass_transform
+
+              @dataclass_transform(kw_only_default=True, eq_default=False)
               def mytransform(kw_only: bool = True):
                 ...
 
@@ -1191,7 +1227,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(order_default=True)
               def mytransform():
                 ...
 
@@ -1222,7 +1260,9 @@ let test_dataclass_transform =
               ):
                 ...
 
-              @__dataclass_transform__(field_descriptors=(myfield,))
+              from typing import dataclass_transform
+
+              @dataclass_transform(field_descriptors=(myfield,))
               def mytransform():
                 ...
 
@@ -1253,7 +1293,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               class Bar:
                 ...
 
@@ -1272,7 +1314,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__
+              from typing import dataclass_transform
+
+              @dataclass_transform
               class Bar:
                 def __init_subclass__(
                     cls,
@@ -1301,7 +1345,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False, order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False, order_default=True)
               class Bar:
                 def __init_subclass__(
                     cls,
@@ -1330,7 +1376,9 @@ let test_dataclass_transform =
       @@ assert_equivalent_attributes
            ~source:
              {|
-              @__dataclass_transform__(eq_default=False, order_default=True)
+              from typing import dataclass_transform
+
+              @dataclass_transform(eq_default=False, order_default=True)
               class Bar:
                 def __init_subclass__(
                     cls,
@@ -1358,7 +1406,9 @@ let test_dataclass_transform =
              [
                ( "custom_dataclass_transform.py",
                  {|
-                   @__dataclass_transform__(eq_default=False, order_default=True)
+                   from typing import dataclass_transform
+
+                   @dataclass_transform(eq_default=False, order_default=True)
                    class Bar:
                      def __init_subclass__(
                          cls,
@@ -1392,7 +1442,9 @@ let test_dataclass_transform =
              [
                ( "custom_dataclass_transform.py",
                  {|
-                  @__dataclass_transform__
+                  from typing import dataclass_transform
+
+                  @dataclass_transform
                   def mytransform():
                     ...
 
@@ -1421,7 +1473,7 @@ let test_dataclass_transform =
              [
                ( "custom_dataclass_transform.py",
                  {|
-              from typing import Literal, overload
+              from typing import Literal, overload, dataclass_transform
 
               @overload
               def overloaded_transform(eq: Literal[false]): Any
@@ -1429,7 +1481,7 @@ let test_dataclass_transform =
               @overload
               def overloaded_transform(eq: Literal[true]): Any
 
-              @__dataclass_transform__
+              @dataclass_transform
               def overloaded_transform():
                 ...
 
@@ -1441,6 +1493,51 @@ let test_dataclass_transform =
               from custom_dataclass_transform import overloaded_transform
 
               @overloaded_transform
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+                  def __eq__(self, o: object) -> bool: ...
+              |};
+      (* Verify that we handle the typing_extensions and legacy variants. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes_3_10
+           ~source:
+             {|
+              from typing_extensions import dataclass_transform
+
+              @dataclass_transform
+              def mytransform():
+                ...
+
+              @mytransform
+              class Foo:
+                x: int
+            |}
+           ~class_name:"Foo"
+           {|
+                class Foo:
+                  x: int
+                  def __init__(self, x: int) -> None:
+                    self.x = x
+                  def __eq__(self, o: object) -> bool: ...
+              |};
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes_3_10
+           ~source:
+             {|
+              def __dataclass_transform__(): ...
+
+              @__dataclass_transform__
+              def mytransform():
+                ...
+
+              @mytransform
               class Foo:
                 x: int
             |}

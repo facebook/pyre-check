@@ -489,13 +489,15 @@ module ClassDecorators = struct
      whether a decorator (which will be applied either to a decorator or a class, for either
      decorator- or base-class style dataclass transforms) is marking a custom dataclass transform
      definition. *)
-  let is_dataclass_transform decorator =
-    let decorator_reference { Decorator.name = { Node.value; _ }; _ } = value in
-    Decorator.from_expression decorator
-    >>| decorator_reference
-    >>| Reference.last
-    >>| String.equal "__dataclass_transform__"
-    |> Option.value ~default:false
+  let is_dataclass_transform decorator_expression =
+    match Decorator.from_expression decorator_expression with
+    | None -> false
+    | Some { Decorator.name = { Node.value = decorator_reference; _ }; _ } -> (
+        match Reference.show decorator_reference with
+        | "typing.dataclass_transform"
+        | "typing_extensions.dataclass_transform" ->
+            true
+        | _ -> String.equal (Reference.last decorator_reference) "__dataclass_transform__")
 
 
   (* Determine based on the use of one of the spec-defined dataclass transform decorators what the
