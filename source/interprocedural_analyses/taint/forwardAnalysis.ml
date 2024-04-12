@@ -687,7 +687,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let result_taint =
       if is_result_used then
-        ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
+        ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.generations
         |> ForwardState.Tree.apply_call
              ~pyre_in_context
              ~location:
@@ -759,7 +759,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~weak:true
                 ~root:(AccessPath.Root.captured_variable_to_variable root)
                 ~path:[]
-                (ForwardState.read ~root ~path:[] forward.source_taint)
+                (ForwardState.read ~root ~path:[] forward.generations)
                 state
             in
             (* Propagate captured variable taint up until the function where the nonlocal variable
@@ -769,16 +769,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~weak:true
                 ~root
                 ~path:[]
-                (ForwardState.read ~root ~path:[] forward.source_taint)
+                (ForwardState.read ~root ~path:[] forward.generations)
                 state
             else
               state
         | _ -> state
       in
-      List.fold
-        ~init:state
-        ~f:propagate_captured_variables
-        (ForwardState.roots forward.source_taint)
+      List.fold ~init:state ~f:propagate_captured_variables (ForwardState.roots forward.generations)
     in
     let returned_taint =
       result_taint
@@ -2993,7 +2990,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let create ~existing_model parameters define_location =
     (* Use primed sources to populate initial state of parameters *)
-    let forward_primed_taint = existing_model.Model.forward.source_taint in
+    (* TODO(T183767549): This should be parameter sources. *)
+    let forward_primed_taint = existing_model.Model.forward.generations in
     let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
     let apply_call ~location ~root =
       ForwardState.read ~root ~path:[] forward_primed_taint
@@ -3264,15 +3262,16 @@ let run
   in
   let extract_model { State.taint; _ } =
     let breadcrumbs_to_attach, via_features_to_attach =
+      (* TODO(T183767549): This should be using parameter sources. *)
       ForwardState.extract_features_to_attach
         ~root:AccessPath.Root.LocalResult
         ~attach_to_kind:Sources.Attach
-        existing_model.forward.source_taint
+        existing_model.forward.generations
     in
     let apply_broadening =
       not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.modes)
     in
-    let source_taint =
+    let generations =
       TaintProfiler.track_duration ~profiler ~name:"Forward analysis - extract model" ~f:(fun () ->
           extract_source_model
             ~define:define.value
@@ -3283,7 +3282,7 @@ let run
             ~apply_broadening
             taint)
     in
-    let model = Model.Forward.{ source_taint } in
+    let model = Model.Forward.{ generations } in
     let () = State.log "Forward Model:@,%a" Model.Forward.pp model in
     model
   in

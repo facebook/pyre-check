@@ -64,8 +64,9 @@ let empty =
 
 let from_model
     {
-      Model.forward = { source_taint };
+      Model.forward = { generations };
       Model.backward = { taint_in_taint_out; sink_taint };
+      Model.parameter_sources = { parameter_sources };
       Model.sanitizers = _;
       Model.modes = _;
     }
@@ -76,12 +77,14 @@ let from_model
       ~f:(fun sink so_far -> Sinks.Set.add sink so_far)
       ~init:Sinks.Set.empty
   in
-  let sources =
+  let collect_sources =
     Domains.ForwardState.fold
       Domains.ForwardTaint.kind
       ~f:(fun source so_far -> Sources.Set.add source so_far)
       ~init:Sources.Set.empty
-      source_taint
+  in
+  let sources =
+    Sources.Set.union (collect_sources generations) (collect_sources parameter_sources)
   in
   let sinks = Sinks.Set.union (collect_sinks taint_in_taint_out) (collect_sinks sink_taint) in
   let source_transforms =

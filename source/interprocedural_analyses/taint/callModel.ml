@@ -22,7 +22,13 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
   | None -> Model.obscure_model
   | Some model ->
       let expand_model_via_features
-          { Model.forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
+          {
+            Model.forward;
+            backward = { sink_taint; taint_in_taint_out };
+            parameter_sources;
+            sanitizers;
+            modes;
+          }
         =
         let expand_frame_via_features frame =
           let breadcrumbs =
@@ -36,7 +42,13 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
         let taint_in_taint_out =
           BackwardState.transform Frame.Self Map ~f:expand_frame_via_features taint_in_taint_out
         in
-        { Model.forward; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
+        {
+          Model.forward;
+          backward = { sink_taint; taint_in_taint_out };
+          parameter_sources;
+          sanitizers;
+          modes;
+        }
       in
       expand_model_via_features model
 

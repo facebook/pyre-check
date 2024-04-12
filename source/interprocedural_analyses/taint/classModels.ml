@@ -202,6 +202,7 @@ let infer ~pyre_api ~user_models =
         {
           Model.forward = Model.Forward.empty;
           backward = { Model.Backward.taint_in_taint_out; sink_taint };
+          parameter_sources = Model.ParameterSources.empty;
           sanitizers = Model.Sanitizers.empty;
           modes = Model.ModeSet.empty;
         } );
@@ -221,6 +222,7 @@ let infer ~pyre_api ~user_models =
           {
             Model.forward = Model.Forward.empty;
             backward = Model.Backward.empty;
+            parameter_sources = Model.ParameterSources.empty;
             sanitizers = Model.Sanitizers.empty;
             modes = Model.ModeSet.empty;
           } );
@@ -276,6 +278,7 @@ let infer ~pyre_api ~user_models =
         {
           Model.forward = Model.Forward.empty;
           backward = { Model.Backward.taint_in_taint_out; sink_taint };
+          parameter_sources = Model.ParameterSources.empty;
           sanitizers = Model.Sanitizers.empty;
           modes = Model.ModeSet.empty;
         } );

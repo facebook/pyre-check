@@ -174,7 +174,15 @@ module Analysis = struct
       else
         forward, backward
     in
-    let model = { Model.forward; backward; sanitizers; modes } in
+    let model =
+      {
+        Model.forward;
+        backward;
+        parameter_sources = previous_model.parameter_sources;
+        sanitizers;
+        modes;
+      }
+    in
     let model =
       TaintProfiler.track_duration ~profiler ~name:"Sanitize" ~f:(fun () ->
           Model.apply_sanitizers ~taint_configuration model)

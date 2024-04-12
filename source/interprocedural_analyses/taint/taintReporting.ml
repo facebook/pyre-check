@@ -24,7 +24,7 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
               ~use_precise_labels:true
               ~root
               ~path
-              forward.source_taint
+              forward.generations
           in
           let taint = Domains.ForwardState.Tree.get_root tree in
           not (Domains.ForwardTaint.is_bottom taint)

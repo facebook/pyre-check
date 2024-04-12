@@ -1088,7 +1088,7 @@ let test_construction context =
       outcome
         ~kind:`Method
         ~returns:[]
-        ~tito_parameters:[{ name = "capture"; sinks = [Sinks.LocalReturn] }]
+        ~parameter_titos:[{ name = "capture"; titos = [Sinks.LocalReturn] }]
         "qualifier.Data.__init__";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_capture";
       outcome ~kind:`Function ~returns:[] "qualifier.test_no_capture";
@@ -1110,12 +1110,12 @@ let test_composed_models context =
       outcome
         ~kind:`Function
         ~returns:[Sources.NamedSource "UserControlled"]
-        ~sink_parameters:
+        ~parameter_sinks:
           [
             { name = "x"; sinks = [Taint.Sinks.NamedSink "Test"] };
             { name = "y"; sinks = [Taint.Sinks.NamedSink "Demo"] };
           ]
-        ~tito_parameters:[{ name = "z"; sinks = [Sinks.LocalReturn] }]
+        ~parameter_titos:[{ name = "z"; titos = [Sinks.LocalReturn] }]
         "models.composed_model";
     ]
 
@@ -1180,7 +1180,7 @@ let test_tito_side_effects context =
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_weak_assign";
       outcome
         ~kind:`Method
-        ~tito_parameters:[{ name = "arg"; sinks = [Sinks.ParameterUpdate 0] }]
+        ~parameter_titos:[{ name = "arg"; titos = [Sinks.ParameterUpdate 0] }]
         "qualifier.MyList.append";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_list_append";
     ]

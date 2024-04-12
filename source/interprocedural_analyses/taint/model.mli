@@ -9,7 +9,7 @@ open Interprocedural
 open Domains
 
 module Forward : sig
-  type t = { source_taint: ForwardState.t } [@@deriving show]
+  type t = { generations: ForwardState.t } [@@deriving show]
 
   val empty : t
 end
@@ -20,6 +20,12 @@ module Backward : sig
     sink_taint: BackwardState.t;
   }
   [@@deriving show]
+
+  val empty : t
+end
+
+module ParameterSources : sig
+  type t = { parameter_sources: ForwardState.t } [@@deriving show]
 
   val empty : t
 end
@@ -81,6 +87,7 @@ end
 type t = {
   forward: Forward.t;
   backward: Backward.t;
+  parameter_sources: ParameterSources.t;
   sanitizers: Sanitizers.t;
   modes: ModeSet.t;
 }

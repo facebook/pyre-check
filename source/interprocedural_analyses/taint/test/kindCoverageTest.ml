@@ -117,10 +117,11 @@ let test_from_transform _ =
 
 
 let test_from_model _ =
-  let create_model ~source_taint ~taint_in_taint_out ~sink_taint =
+  let create_model ~generations ~taint_in_taint_out ~sink_taint =
     {
-      Model.forward = { source_taint };
+      Model.forward = { generations };
       backward = { taint_in_taint_out; sink_taint };
+      parameter_sources = Model.ParameterSources.empty;
       sanitizers =
         { global = Sanitize.bottom; parameters = Sanitize.bottom; roots = Sanitize.RootMap.bottom };
       modes = Model.ModeSet.empty;
@@ -136,7 +137,7 @@ let test_from_model _ =
   in
   let model =
     create_model
-      ~source_taint:
+      ~generations:
         (Domains.ForwardState.of_list
            [
              AccessPath.Root.Variable "x1", create_source_tree (Sources.NamedSource "SourceA");

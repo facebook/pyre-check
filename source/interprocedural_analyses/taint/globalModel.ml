@@ -65,11 +65,11 @@ let get_source { models; pyre_in_context; location; interval } =
       existing
       {
         Model.WithCallTarget.call_target = { target; _ };
-        model = { Model.forward = { Model.Forward.source_taint }; _ };
+        model = { Model.forward = { Model.Forward.generations }; _ };
         _;
       }
     =
-    ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] source_taint
+    ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] generations
     |> ForwardState.Tree.apply_call
          ~pyre_in_context
          ~location

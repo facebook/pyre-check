@@ -45,14 +45,31 @@ let json_to_string ~indent json =
       |> fun content -> "\n" ^ content
 
 
+(*
+ * Represents the result of the forward analysis. This contains "generations", i.e sources that
+ * must be propagated to callers.
+ *
+ * For instance:
+ * ```
+ * def foo():
+ *   return source()
+ * ```
+ * would generate: `Forward { LocalResult -> Source }`
+ *
+ * ```
+ * def bar(l):
+ *   l.append(source())
+ * ```
+ * would generate: `Forward { PositionalParameter(l) -> Source }`
+ *)
 module Forward = struct
-  type t = { source_taint: ForwardState.t }
+  type t = { generations: ForwardState.t }
 
-  let pp_inner formatter { source_taint } =
-    if not (ForwardState.is_empty source_taint) then
+  let pp_inner formatter { generations } =
+    if not (ForwardState.is_empty generations) then
       Format.fprintf
         formatter
-        "\n  Sources: %s"
+        "\n  Generations: %s"
         (json_to_string
            ~indent:"    "
            (ForwardState.to_json
@@ -60,31 +77,33 @@ module Forward = struct
               ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
               ~resolve_module_path:None
               ~export_leaf_names:ExportLeafNames.Always
-              source_taint))
+              generations))
 
 
   let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
 
   let show = Format.asprintf "%a" pp
 
-  let empty = { source_taint = ForwardState.empty }
+  let empty = { generations = ForwardState.empty }
 
-  let is_empty { source_taint } = ForwardState.is_empty source_taint
+  let is_empty { generations } = ForwardState.is_empty generations
 
   let obscure = empty
 
-  let join { source_taint = left } { source_taint = right } =
-    { source_taint = ForwardState.join left right }
+  let join { generations = left } { generations = right } =
+    { generations = ForwardState.join left right }
 
 
-  let widen ~iteration ~previous:{ source_taint = prev } ~next:{ source_taint = next } =
-    { source_taint = ForwardState.widen ~iteration ~prev ~next }
+  let widen ~iteration ~previous:{ generations = prev } ~next:{ generations = next } =
+    { generations = ForwardState.widen ~iteration ~prev ~next }
 
 
-  let less_or_equal ~left:{ source_taint = left } ~right:{ source_taint = right } =
+  let less_or_equal ~left:{ generations = left } ~right:{ generations = right } =
     ForwardState.less_or_equal ~left ~right
 end
 
+(** Represents the result of the backward analysis. This contains sinks that must be propagated to
+    callers, as well as taint-in-taint-out information. *)
 module Backward = struct
   type t = {
     taint_in_taint_out: BackwardState.t;
@@ -163,6 +182,59 @@ module Backward = struct
     =
     BackwardState.less_or_equal ~left:sink_taint_left ~right:sink_taint_right
     && BackwardState.less_or_equal ~left:tito_left ~right:tito_right
+end
+
+(* Represents "parameter sources", i.e sources that must be instantiated on the
+ * body of the modeled function. Those can only be provided by user models.
+ *
+ * For instance:
+ * ```
+ * # .pysa
+ * def foo(x: TaintSource[Test]): ...
+ * ```
+ *
+ * ```
+ * # .py
+ * def foo(x):
+ *   sink(x) # Issue since x is tainted
+ * ```
+ *)
+module ParameterSources = struct
+  type t = { parameter_sources: ForwardState.t }
+
+  let pp_inner formatter { parameter_sources } =
+    if not (ForwardState.is_empty parameter_sources) then
+      Format.fprintf
+        formatter
+        "\n  Parameter Sources: %s"
+        (json_to_string
+           ~indent:"    "
+           (ForwardState.to_json
+              ~expand_overrides:None
+              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+              ~resolve_module_path:None
+              ~export_leaf_names:ExportLeafNames.Always
+              parameter_sources))
+
+
+  let pp formatter = Format.fprintf formatter "{%a\n}" pp_inner
+
+  let show = Format.asprintf "%a" pp
+
+  let empty = { parameter_sources = ForwardState.empty }
+
+  let is_empty { parameter_sources } = ForwardState.is_empty parameter_sources
+
+  let join { parameter_sources = left } { parameter_sources = right } =
+    { parameter_sources = ForwardState.join left right }
+
+
+  let widen ~iteration ~previous:{ parameter_sources = prev } ~next:{ parameter_sources = next } =
+    { parameter_sources = ForwardState.widen ~iteration ~prev ~next }
+
+
+  let less_or_equal ~left:{ parameter_sources = left } ~right:{ parameter_sources = right } =
+    ForwardState.less_or_equal ~left ~right
 end
 
 module Sanitizers = struct
@@ -324,18 +396,21 @@ end
 type t = {
   forward: Forward.t;
   backward: Backward.t;
+  parameter_sources: ParameterSources.t;
   sanitizers: Sanitizers.t;
   modes: ModeSet.t;
 }
 
-let pp formatter { forward; backward; sanitizers; modes } =
+let pp formatter { forward; backward; parameter_sources; sanitizers; modes } =
   Format.fprintf
     formatter
-    "{%a%a%a%a\n}"
+    "{%a%a%a%a%a\n}"
     Forward.pp_inner
     forward
     Backward.pp_inner
     backward
+    ParameterSources.pp_inner
+    parameter_sources
     Sanitizers.pp_inner
     sanitizers
     ModeSet.pp_inner
@@ -344,9 +419,10 @@ let pp formatter { forward; backward; sanitizers; modes } =
 
 let show = Format.asprintf "%a" pp
 
-let is_empty ~with_modes { forward; backward; sanitizers; modes } =
+let is_empty ~with_modes { forward; backward; parameter_sources; sanitizers; modes } =
   Forward.is_empty forward
   && Backward.is_empty backward
+  && ParameterSources.is_empty parameter_sources
   && Sanitizers.is_empty sanitizers
   && ModeSet.equal with_modes modes
 
@@ -355,6 +431,7 @@ let empty_model =
   {
     forward = Forward.empty;
     backward = Backward.empty;
+    parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
     modes = ModeSet.empty;
   }
@@ -364,6 +441,7 @@ let empty_skip_model =
   {
     forward = Forward.empty;
     backward = Backward.empty;
+    parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
     modes = ModeSet.singleton SkipAnalysis;
   }
@@ -373,6 +451,7 @@ let obscure_model =
   {
     forward = Forward.obscure;
     backward = Backward.obscure;
+    parameter_sources = ParameterSources.empty;
     sanitizers = Sanitizers.empty;
     modes = ModeSet.singleton Obscure;
   }
@@ -421,6 +500,7 @@ let join left right =
   {
     forward = Forward.join left.forward right.forward;
     backward = Backward.join left.backward right.backward;
+    parameter_sources = ParameterSources.join left.parameter_sources right.parameter_sources;
     sanitizers = Sanitizers.join left.sanitizers right.sanitizers;
     modes = ModeSet.join left.modes right.modes;
   }
@@ -430,6 +510,11 @@ let widen ~iteration ~previous ~next =
   {
     forward = Forward.widen ~iteration ~previous:previous.forward ~next:next.forward;
     backward = Backward.widen ~iteration ~previous:previous.backward ~next:next.backward;
+    parameter_sources =
+      ParameterSources.widen
+        ~iteration
+        ~previous:previous.parameter_sources
+        ~next:next.parameter_sources;
     sanitizers = Sanitizers.widen ~iteration ~previous:previous.sanitizers ~next:next.sanitizers;
     modes = ModeSet.widen ~iteration ~prev:previous.modes ~next:next.modes;
   }
@@ -438,21 +523,30 @@ let widen ~iteration ~previous ~next =
 let less_or_equal ~left ~right =
   Forward.less_or_equal ~left:left.forward ~right:right.forward
   && Backward.less_or_equal ~left:left.backward ~right:right.backward
+  && ParameterSources.less_or_equal ~left:left.parameter_sources ~right:right.parameter_sources
   && Sanitizers.less_or_equal ~left:left.sanitizers ~right:right.sanitizers
   && ModeSet.less_or_equal ~left:left.modes ~right:right.modes
 
 
 let for_override_model
     ~callable
-    { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
+    {
+      forward = { generations };
+      backward = { sink_taint; taint_in_taint_out };
+      parameter_sources = { parameter_sources };
+      sanitizers;
+      modes;
+    }
   =
   {
-    forward = { source_taint = ForwardState.for_override_model ~callable source_taint };
+    forward = { generations = ForwardState.for_override_model ~callable generations };
     backward =
       {
         sink_taint = BackwardState.for_override_model ~callable sink_taint;
         taint_in_taint_out = BackwardState.for_override_model ~callable taint_in_taint_out;
       };
+    parameter_sources =
+      { parameter_sources = ForwardState.for_override_model ~callable parameter_sources };
     sanitizers;
     modes;
   }
@@ -461,8 +555,9 @@ let for_override_model
 let apply_sanitizers
     ~taint_configuration
     {
-      forward = { source_taint };
+      forward = { generations };
       backward = { taint_in_taint_out; sink_taint };
+      parameter_sources;
       sanitizers = { global; parameters; roots } as sanitizers;
       modes;
     }
@@ -470,13 +565,13 @@ let apply_sanitizers
   (* Apply the global sanitizer. *)
   (* Here, we are applying the legacy behavior of sanitizers, where we only
    * sanitize the forward trace or the backward trace. *)
-  let source_taint =
+  let generations =
     (* @SanitizeSingleTrace(TaintSource[...]) *)
     ForwardState.apply_sanitizers
       ~taint_configuration
       ~sanitize_source:true
       ~sanitizer:global
-      source_taint
+      generations
   in
   let taint_in_taint_out =
     (* @SanitizeSingleTrace(TaintInTaintOut[...]) *)
@@ -546,14 +641,14 @@ let apply_sanitizers
   in
 
   (* Apply the return sanitizer. *)
-  let sanitize_return sanitizer (source_taint, taint_in_taint_out, sink_taint) =
-    let source_taint =
+  let sanitize_return sanitizer (generations, taint_in_taint_out, sink_taint) =
+    let generations =
       (* def foo() -> Sanitize[TaintSource[...]] *)
       ForwardState.apply_sanitizers
         ~taint_configuration
         ~sanitize_source:true
         ~sanitizer
-        source_taint
+        generations
     in
     let taint_in_taint_out =
       (* def foo() -> Sanitize[TaintSource[...]] *)
@@ -573,14 +668,14 @@ let apply_sanitizers
         ~sanitizer
         taint_in_taint_out
     in
-    let source_taint =
+    let generations =
       (* def foo() -> Sanitize[TaintSink[...]] *)
       ForwardState.apply_sanitizers
         ~taint_configuration
         ~sanitize_sink:true
         ~ignore_if_sanitize_all:true
         ~sanitizer
-        source_taint
+        generations
     in
     let taint_in_taint_out =
       (* def foo() -> Sanitize[TaintSink[...]] *)
@@ -591,11 +686,11 @@ let apply_sanitizers
         ~sanitizer
         taint_in_taint_out
     in
-    source_taint, taint_in_taint_out, sink_taint
+    generations, taint_in_taint_out, sink_taint
   in
 
   (* Apply the parameter-specific sanitizers. *)
-  let sanitize_parameter (parameter, sanitizer) (source_taint, taint_in_taint_out, sink_taint) =
+  let sanitize_parameter (parameter, sanitizer) (generations, taint_in_taint_out, sink_taint) =
     let sink_taint =
       (* def foo(x: Sanitize[TaintSource[...]]): ... *)
       BackwardState.apply_sanitizers
@@ -645,59 +740,94 @@ let apply_sanitizers
         ~sanitizer
         taint_in_taint_out
     in
-    source_taint, taint_in_taint_out, sink_taint
+    generations, taint_in_taint_out, sink_taint
   in
 
-  let sanitize_root (root, sanitizer) (source_taint, taint_in_taint_out, sink_taint) =
+  let sanitize_root (root, sanitizer) (generations, taint_in_taint_out, sink_taint) =
     match root with
     | AccessPath.Root.LocalResult ->
-        sanitize_return sanitizer (source_taint, taint_in_taint_out, sink_taint)
+        sanitize_return sanitizer (generations, taint_in_taint_out, sink_taint)
     | PositionalParameter _
     | NamedParameter _
     | StarParameter _
     | StarStarParameter _ ->
-        sanitize_parameter (root, sanitizer) (source_taint, taint_in_taint_out, sink_taint)
+        sanitize_parameter (root, sanitizer) (generations, taint_in_taint_out, sink_taint)
     | Variable _
     | CapturedVariable _ ->
         failwith "unexpected"
   in
-  let source_taint, taint_in_taint_out, sink_taint =
+  let generations, taint_in_taint_out, sink_taint =
     Sanitize.RootMap.fold
       Sanitize.RootMap.KeyValue
       ~f:sanitize_root
-      ~init:(source_taint, taint_in_taint_out, sink_taint)
+      ~init:(generations, taint_in_taint_out, sink_taint)
       roots
   in
-  { forward = { source_taint }; backward = { sink_taint; taint_in_taint_out }; sanitizers; modes }
+  {
+    forward = { generations };
+    backward = { sink_taint; taint_in_taint_out };
+    parameter_sources;
+    sanitizers;
+    modes;
+  }
 
 
-let should_externalize { forward; backward; sanitizers; _ } =
+let should_externalize { forward; backward; parameter_sources; sanitizers; _ } =
   (not (Forward.is_empty forward))
   || (not (Backward.is_empty backward))
+  || (not (ParameterSources.is_empty parameter_sources))
   || not (Sanitizers.is_empty sanitizers)
 
 
 (* For every frame, convert the may breadcrumbs into must breadcrumbs. *)
 let may_breadcrumbs_to_must
-    { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+    {
+      forward = { generations };
+      backward = { taint_in_taint_out; sink_taint };
+      parameter_sources = { parameter_sources };
+      sanitizers;
+      modes;
+    }
   =
-  let source_taint = ForwardState.may_breadcrumbs_to_must source_taint in
+  let generations = ForwardState.may_breadcrumbs_to_must generations in
+  let parameter_sources = ForwardState.may_breadcrumbs_to_must parameter_sources in
   let taint_in_taint_out = BackwardState.may_breadcrumbs_to_must taint_in_taint_out in
   let sink_taint = BackwardState.may_breadcrumbs_to_must sink_taint in
-  { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+  {
+    forward = { generations };
+    backward = { taint_in_taint_out; sink_taint };
+    parameter_sources = { parameter_sources };
+    sanitizers;
+    modes;
+  }
 
 
 (* Within every local taint, join every frame with the frame in the same local taint of the `Attach`
    kind. *)
 let join_every_frame_with_attach
-    { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+    {
+      forward = { generations };
+      backward = { taint_in_taint_out; sink_taint };
+      parameter_sources = { parameter_sources };
+      sanitizers;
+      modes;
+    }
   =
-  let source_taint = ForwardState.join_every_frame_with source_taint ~frame_kind:Sources.Attach in
+  let generations = ForwardState.join_every_frame_with generations ~frame_kind:Sources.Attach in
+  let parameter_sources =
+    ForwardState.join_every_frame_with parameter_sources ~frame_kind:Sources.Attach
+  in
   let taint_in_taint_out =
     BackwardState.join_every_frame_with taint_in_taint_out ~frame_kind:Sinks.Attach
   in
   let sink_taint = BackwardState.join_every_frame_with sink_taint ~frame_kind:Sinks.Attach in
-  { forward = { source_taint }; backward = { taint_in_taint_out; sink_taint }; sanitizers; modes }
+  {
+    forward = { generations };
+    backward = { taint_in_taint_out; sink_taint };
+    parameter_sources = { parameter_sources };
+    sanitizers;
+    modes;
+  }
 
 
 (* A special case of join, only used for user-provided models. *)
@@ -716,8 +846,9 @@ let to_json
     ~export_leaf_names
     callable
     {
-      forward = { source_taint };
+      forward = { generations };
       backward = { sink_taint; taint_in_taint_out };
+      parameter_sources = { parameter_sources };
       sanitizers =
         { global = global_sanitizer; parameters = parameters_sanitizer; roots = root_sanitizers };
       modes;
@@ -739,16 +870,17 @@ let to_json
     | _ -> model_json
   in
   let model_json =
-    if not (ForwardState.is_empty source_taint) then
+    if not (ForwardState.is_empty generations) then
       model_json
       @ [
-          ( "sources",
+          ( (* Use "sources" instead of "generations" for backward compatibility. *)
+            "sources",
             ForwardState.to_json
               ~expand_overrides
               ~is_valid_callee
               ~resolve_module_path
               ~export_leaf_names
-              source_taint );
+              generations );
         ]
     else
       model_json
@@ -779,6 +911,21 @@ let to_json
               ~resolve_module_path
               ~export_leaf_names
               taint_in_taint_out );
+        ]
+    else
+      model_json
+  in
+  let model_json =
+    if not (ForwardState.is_empty parameter_sources) then
+      model_json
+      @ [
+          ( "parameter_sources",
+            ForwardState.to_json
+              ~expand_overrides
+              ~is_valid_callee
+              ~resolve_module_path
+              ~export_leaf_names
+              parameter_sources );
         ]
     else
       model_json

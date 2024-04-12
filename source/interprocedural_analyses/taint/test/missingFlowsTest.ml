@@ -145,15 +145,15 @@ let test_obscure context =
           [
             outcome
               ~kind:`Function
-              ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
+              ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
               "test_obscure.to_obscure_x";
             outcome
               ~kind:`Function
-              ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "Obscure"] }]
+              ~parameter_sinks:[{ name = "y"; sinks = [Sinks.NamedSink "Obscure"] }]
               "test_obscure.to_obscure_y";
             outcome
               ~kind:`Function
-              ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
+              ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "Obscure"] }]
               "test_obscure.obscure";
             outcome
               ~kind:`Function
@@ -217,11 +217,11 @@ let test_type context =
           [
             outcome
               ~kind:`Function
-              ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
+              ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
               "test_type.to_unknown_callee_x";
             outcome
               ~kind:`Function
-              ~sink_parameters:[{ name = "y"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
+              ~parameter_sinks:[{ name = "y"; sinks = [Sinks.NamedSink "UnknownCallee"] }]
               "test_type.to_unknown_callee_y";
             outcome
               ~kind:`Function

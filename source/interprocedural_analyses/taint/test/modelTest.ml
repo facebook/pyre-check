@@ -275,7 +275,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -295,7 +295,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -315,7 +315,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -335,7 +335,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -355,7 +355,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -375,7 +375,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -395,7 +395,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -415,7 +415,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -435,7 +435,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -455,7 +455,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -479,7 +479,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -502,7 +502,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -603,7 +603,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Object
-          ~sink_parameters:[{ name = "$global"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "$global"; sinks = [Sinks.NamedSink "Test"] }]
           "os.environ";
       ]
     ();
@@ -785,7 +785,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -799,7 +799,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -1852,7 +1852,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -1863,7 +1863,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -1874,7 +1874,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
@@ -1889,7 +1889,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
@@ -1905,7 +1905,7 @@ let test_sink_models context =
         outcome
           ~kind:`Function
           ~returns:[Sources.NamedSource "Demo"]
-          ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.NamedSink "Demo"] }]
+          ~parameter_sinks:[{ name = "parameter0"; sinks = [Sinks.NamedSink "Demo"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.both";
       ]
@@ -1922,7 +1922,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "parameter0"; sinks = [Sinks.NamedSink "Test"] };
               { name = "parameter1"; sinks = [Sinks.NamedSink "Test"] };
@@ -1943,7 +1943,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -1960,7 +1960,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -1977,7 +1977,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter1"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -1988,7 +1988,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.xss";
       ]
@@ -1999,7 +1999,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
@@ -2011,7 +2011,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
@@ -2023,7 +2023,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [{ name = "parameter"; sinks = [Sinks.NamedSink "Demo"; Sinks.NamedSink "XSS"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.multiple";
@@ -2036,7 +2036,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter0"; sinks = [Sinks.NamedSink "XSS"] }]
+          ~parameter_sinks:[{ name = "parameter0"; sinks = [Sinks.NamedSink "XSS"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -2051,7 +2051,7 @@ let test_sink_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               {
                 name = "parameter";
@@ -2108,7 +2108,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:
+          ~parameter_generations:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
@@ -2133,7 +2133,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:
+          ~parameter_generations:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
@@ -2156,7 +2156,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~source_parameters:
+          ~parameter_generations:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
@@ -2179,7 +2179,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_sink";
       ]
@@ -2200,12 +2200,12 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.Sink.method";
         outcome
           ~kind:`Method
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "first"; sinks = [Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "TestSink"] };
@@ -2226,7 +2226,7 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               {
                 name = "parameter";
@@ -2237,7 +2237,7 @@ let test_class_models context =
           "test.Sink.method";
         outcome
           ~kind:`Method
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "first"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
               { name = "second"; sinks = [Sinks.NamedSink "OtherSink"; Sinks.NamedSink "TestSink"] };
@@ -2256,7 +2256,7 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~returns:[Sources.NamedSource "TestTest"]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.SinkAndSource.method";
@@ -2299,7 +2299,7 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.AnnotatedSink.method";
       ]
@@ -2331,7 +2331,7 @@ let test_class_models context =
       [
         outcome
           ~kind:`Method
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.SourceWithDefault.method";
       ]
@@ -2542,7 +2542,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2554,7 +2554,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2566,7 +2566,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2578,7 +2578,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2591,7 +2591,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2605,7 +2605,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2619,7 +2619,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2633,7 +2633,7 @@ let test_taint_in_taint_out_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2649,7 +2649,7 @@ let test_taint_in_taint_out_models_alternate context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2664,11 +2664,11 @@ let test_taint_in_taint_out_transform context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:
+          ~parameter_titos:
             [
               {
                 name = "parameter";
-                sinks =
+                titos =
                   [
                     Sinks.Transform
                       {
@@ -2680,7 +2680,7 @@ let test_taint_in_taint_out_transform context =
                   ];
               };
             ]
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               {
                 name = "parameter";
@@ -2824,7 +2824,7 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.ParameterUpdate 0] }]
+          ~parameter_titos:[{ name = "arg1"; titos = [Sinks.ParameterUpdate 0] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2835,8 +2835,8 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:
-            [{ name = "arg2"; sinks = [Sinks.ParameterUpdate 0; Sinks.ParameterUpdate 1] }]
+          ~parameter_titos:
+            [{ name = "arg2"; titos = [Sinks.ParameterUpdate 0; Sinks.ParameterUpdate 1] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2847,7 +2847,7 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~parameter_titos:[{ name = "self"; titos = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2860,7 +2860,7 @@ let test_taint_in_taint_out_update_models context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "arg1"; sinks = [Sinks.ParameterUpdate 0] }]
+          ~parameter_titos:[{ name = "arg1"; titos = [Sinks.ParameterUpdate 0] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]
@@ -2876,8 +2876,8 @@ let test_union_models context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "XSS"] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.both";
       ]
@@ -2945,7 +2945,7 @@ let test_sink_breadcrumbs context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -2957,7 +2957,7 @@ let test_sink_breadcrumbs context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
+          ~parameter_sinks:[{ name = "parameter"; sinks = [Sinks.NamedSink "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -2972,7 +2972,7 @@ let test_tito_breadcrumbs context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -2984,7 +2984,7 @@ let test_tito_breadcrumbs context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -3010,7 +3010,7 @@ let test_attach_features context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~parameter_sinks:[{ name = "arg"; sinks = [Sinks.Attach] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -3021,7 +3021,7 @@ let test_attach_features context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~parameter_titos:[{ name = "arg"; titos = [Sinks.Attach] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -3058,7 +3058,7 @@ let test_partial_sinks context =
     ~expect:
       [
         outcome
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "x"; sinks = [Sinks.PartialSink { kind = "Test"; label = "a" }] };
               { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
@@ -3151,7 +3151,7 @@ let test_filter_by_rules context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
@@ -3175,7 +3175,7 @@ let test_filter_by_rules context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[]
+          ~parameter_sinks:[]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
@@ -3209,7 +3209,7 @@ let test_filter_by_rules context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               { name = "x"; sinks = [Sinks.PartialSink { kind = "Test"; label = "a" }] };
               { name = "y"; sinks = [Sinks.PartialSink { kind = "Test"; label = "b" }] };
@@ -3261,7 +3261,7 @@ let test_filter_by_rules context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               {
                 name = "x";
@@ -3418,7 +3418,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
+          ~parameter_sinks:[{ name = "x"; sinks = [Sinks.NamedSink "TestSink"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
@@ -3430,7 +3430,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[]
+          ~parameter_sinks:[]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
@@ -3442,7 +3442,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:
+          ~parameter_sinks:
             [
               {
                 name = "x";
@@ -3460,7 +3460,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[]
+          ~parameter_sinks:[]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.taint";
       ]
@@ -3473,7 +3473,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~sink_parameters:[{ name = "arg"; sinks = [Sinks.Attach] }]
+          ~parameter_sinks:[{ name = "arg"; sinks = [Sinks.Attach] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.sink";
       ]
@@ -3485,7 +3485,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "parameter"; sinks = [Sinks.LocalReturn] }]
+          ~parameter_titos:[{ name = "parameter"; titos = [Sinks.LocalReturn] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.tito";
       ]
@@ -3497,7 +3497,7 @@ let test_filter_by_sinks context =
       [
         outcome
           ~kind:`Function
-          ~tito_parameters:[{ name = "self"; sinks = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
+          ~parameter_titos:[{ name = "self"; titos = [Sinks.LocalReturn; Sinks.ParameterUpdate 1] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.update";
       ]

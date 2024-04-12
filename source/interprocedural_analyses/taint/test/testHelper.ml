@@ -18,14 +18,19 @@ open Pyre
 open Taint
 open Interprocedural
 
-type parameter_taint = {
+type parameter_sinks = {
   name: string;
   sinks: Sinks.t list;
 }
 
-type parameter_source_taint = {
+type parameter_sources = {
   name: string;
   sources: Sources.t list;
+}
+
+type parameter_titos = {
+  name: string;
+  titos: Sinks.t list;
 }
 
 type parameter_sanitize = {
@@ -41,9 +46,9 @@ type error_expectation = {
 type expectation = {
   kind: [ `Function | `Method | `Override | `Object | `PropertySetter ];
   define_name: string;
-  source_parameters: parameter_source_taint list;
-  sink_parameters: parameter_taint list;
-  tito_parameters: parameter_taint list;
+  parameter_generations: parameter_sources list;
+  parameter_sinks: parameter_sinks list;
+  parameter_titos: parameter_titos list;
   returns: Sources.t list;
   return_sinks: Sinks.t list;
   errors: error_expectation list;
@@ -64,9 +69,9 @@ let print_parameter_taint ~print_taint map =
 
 let outcome
     ~kind
-    ?(source_parameters = [])
-    ?(sink_parameters = [])
-    ?(tito_parameters = [])
+    ?(parameter_generations = [])
+    ?(parameter_sinks = [])
+    ?(parameter_titos = [])
     ?(returns = [])
     ?(return_sinks = [])
     ?(errors = [])
@@ -80,9 +85,9 @@ let outcome
   {
     kind;
     define_name;
-    source_parameters;
-    sink_parameters;
-    tito_parameters;
+    parameter_generations;
+    parameter_sinks;
+    parameter_titos;
     returns;
     return_sinks;
     errors;
@@ -112,9 +117,9 @@ let check_expectation
     {
       kind;
       define_name;
-      source_parameters;
-      sink_parameters;
-      tito_parameters;
+      parameter_generations;
+      parameter_sinks;
+      parameter_titos;
       returns;
       return_sinks;
       errors;
@@ -158,7 +163,7 @@ let check_expectation
         Core.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { Model.backward; forward; sanitizers; modes } =
+  let { Model.backward; forward; parameter_sources = _; sanitizers; modes } =
     Option.value_exn
       ~message:(Format.asprintf "Model not found for %a" Target.pp callable)
       (get_model callable)
@@ -171,10 +176,10 @@ let check_expectation
       ~f:extract_sinks_by_parameter_name
       ~init:String.Map.empty
   in
-  let parameter_source_taint_map =
+  let parameter_generation_taint_map =
     Domains.ForwardState.fold
       Domains.ForwardState.KeyValue
-      forward.source_taint
+      forward.generations
       ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
   in
@@ -219,10 +224,10 @@ let check_expectation
           actual
   in
   let expected_sinks =
-    List.map ~f:(fun { name; sinks } -> name, sinks) sink_parameters |> String.Map.of_alist_exn
+    List.map ~f:(fun { name; sinks } -> name, sinks) parameter_sinks |> String.Map.of_alist_exn
   in
-  let expected_parameter_sources =
-    List.map ~f:(fun { name; sources } -> name, sources) source_parameters
+  let expected_parameter_generations =
+    List.map ~f:(fun { name; sources } -> name, sources) parameter_generations
     |> String.Map.of_alist_exn
   in
   let expected_parameter_sanitizers =
@@ -231,7 +236,7 @@ let check_expectation
   in
   (* Check sources. *)
   let returned_sources =
-    Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.source_taint
+    Domains.ForwardState.read ~root:AccessPath.Root.LocalResult ~path:[] forward.generations
     |> Domains.ForwardState.Tree.collapse ~breadcrumbs:Features.BreadcrumbSet.empty
     |> Domains.ForwardTaint.kinds
     |> List.map ~f:Sources.show
@@ -283,13 +288,13 @@ let check_expectation
 
   (* Check parameter sources. *)
   assert_equal
-    expected_parameter_sources
-    parameter_source_taint_map
+    expected_parameter_generations
+    parameter_generation_taint_map
     ~cmp:(Map.equal (List.equal Sources.equal))
     ~printer:(print_parameter_taint ~print_taint:Sources.show);
 
   let expected_tito =
-    List.map ~f:(fun { name; sinks } -> name, sinks) tito_parameters |> String.Map.of_alist_exn
+    List.map ~f:(fun { name; titos } -> name, titos) parameter_titos |> String.Map.of_alist_exn
   in
   assert_equal
     expected_tito

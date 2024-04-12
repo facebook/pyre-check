@@ -1414,7 +1414,7 @@ let introduce_source_taint
          collapse_depth = _;
        } as features)
     ~source_sink_filter
-    ({ Model.forward = { source_taint }; _ } as model)
+    ({ Model.forward = { generations }; _ } as model)
     taint_source_kind
   =
   let open Core.Result in
@@ -1471,11 +1471,12 @@ let introduce_source_taint
     in
     paths_for_source_or_sink ~pyre_api ~kind:"source" ~root ~root_annotations ~features
     >>| fun paths ->
-    let source_taint =
-      List.fold paths ~init:source_taint ~f:(fun source_taint path ->
-          ForwardState.assign ~weak:true ~root ~path leaf_taint source_taint)
+    (* TODO(T183767549): Create generations or parameter sources depending on the port. *)
+    let generations =
+      List.fold paths ~init:generations ~f:(fun generations path ->
+          ForwardState.assign ~weak:true ~root ~path leaf_taint generations)
     in
-    { model with forward = { source_taint } }
+    { model with forward = { generations } }
   else
     Ok model
 
