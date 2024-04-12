@@ -745,7 +745,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
         match root with
-        | AccessPath.Root.CapturedVariable { name = variable; generation_if_source = true } ->
+        | AccessPath.Root.CapturedVariable { name = variable } ->
             let nonlocal_reference = Reference.delocalize (Reference.create variable) in
             let define_reference =
               Reference.delocalize FunctionContext.definition.value.signature.name
@@ -2821,9 +2821,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               (* Propagate taint for nonlocal assignment. *)
               store_taint
                 ~weak
-                ~root:
-                  (AccessPath.Root.CapturedVariable
-                     { name = identifier; generation_if_source = true })
+                ~root:(AccessPath.Root.CapturedVariable { name = identifier })
                 ~path:fields
                 (ForwardState.Tree.add_local_breadcrumb (Features.captured_variable ()) taint)
                 state
@@ -2990,11 +2988,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
 
   let create ~existing_model parameters define_location =
     (* Use primed sources to populate initial state of parameters *)
-    (* TODO(T183767549): This should be parameter sources. *)
-    let forward_primed_taint = existing_model.Model.forward.generations in
+    let parameter_sources = existing_model.Model.parameter_sources.parameter_sources in
     let pyre_in_context = PyrePysaApi.InContext.create_at_global_scope pyre_api in
     let apply_call ~location ~root =
-      ForwardState.read ~root ~path:[] forward_primed_taint
+      ForwardState.read ~root ~path:[] parameter_sources
       |> ForwardState.Tree.apply_call
            ~pyre_in_context
            ~location
@@ -3036,7 +3033,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let add_captured_variables_paramater_sources state =
       let store_captured_variable_taint state root =
-        if AccessPath.Root.is_captured_variable_not_generation_if_source root then
+        if AccessPath.Root.is_captured_variable root then
           (* The origin for captured variables taint is at the inner function boundry due to there
              being no explicit parameter to mark as location *)
           (* TODO(T184561320): Pull in location of `nonlocal` statement if present *)
@@ -3052,10 +3049,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         else
           state
       in
-      List.fold
-        ~init:state
-        ~f:store_captured_variable_taint
-        (ForwardState.roots forward_primed_taint)
+      List.fold ~init:state ~f:store_captured_variable_taint (ForwardState.roots parameter_sources)
     in
 
     parameters
@@ -3157,7 +3151,7 @@ let extract_source_model
   in
   let captured_variables_model =
     ForwardState.roots exit_taint
-    |> List.filter ~f:AccessPath.Root.is_captured_variable_generation_if_source
+    |> List.filter ~f:AccessPath.Root.is_captured_variable
     |> List.fold ~init:ForwardState.bottom ~f:(fun state root ->
            let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint in
            let captured_variable_model =
@@ -3262,7 +3256,6 @@ let run
   in
   let extract_model { State.taint; _ } =
     let breadcrumbs_to_attach, via_features_to_attach =
-      (* TODO(T183767549): This should be using parameter sources. *)
       ForwardState.extract_features_to_attach
         ~root:AccessPath.Root.LocalResult
         ~attach_to_kind:Sources.Attach

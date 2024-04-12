@@ -364,14 +364,6 @@
     "callable": "select.view_entry_field",
     "filename": "select.py",
     "callable_line": 12,
-    "sources": [
-      {
-        "port": "formal(request, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(request, position=0)[payload]",
@@ -390,6 +382,14 @@
               "end": 24
             }
           }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(request, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]
@@ -573,14 +573,6 @@
     "callable": "select.view_entry_index",
     "filename": "select.py",
     "callable_line": 16,
-    "sources": [
-      {
-        "port": "formal(request, position=0)",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(request, position=0)[GET][payload]",
@@ -602,6 +594,14 @@
               "end": 31
             }
           }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(request, position=0)",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]

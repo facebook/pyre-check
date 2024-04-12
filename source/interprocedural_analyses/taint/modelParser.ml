@@ -1400,6 +1400,7 @@ let introduce_source_taint
     ~pyre_api
     ~root
     ~root_annotations
+    ~is_generation
     ~features:
       ({
          TaintFeatures.breadcrumbs;
@@ -1414,7 +1415,7 @@ let introduce_source_taint
          collapse_depth = _;
        } as features)
     ~source_sink_filter
-    ({ Model.forward = { generations }; _ } as model)
+    ({ Model.forward = { generations }; parameter_sources = { parameter_sources }; _ } as model)
     taint_source_kind
   =
   let open Core.Result in
@@ -1471,12 +1472,17 @@ let introduce_source_taint
     in
     paths_for_source_or_sink ~pyre_api ~kind:"source" ~root ~root_annotations ~features
     >>| fun paths ->
-    (* TODO(T183767549): Create generations or parameter sources depending on the port. *)
-    let generations =
-      List.fold paths ~init:generations ~f:(fun generations path ->
-          ForwardState.assign ~weak:true ~root ~path leaf_taint generations)
+    let sources =
+      List.fold paths ~init:ForwardState.empty ~f:(fun sources path ->
+          ForwardState.assign ~weak:true ~root ~path leaf_taint sources)
     in
-    { model with forward = { generations } }
+    let generations, parameter_sources =
+      if is_generation then
+        ForwardState.join generations sources, parameter_sources
+      else
+        generations, ForwardState.join parameter_sources sources
+    in
+    { model with forward = { generations }; parameter_sources = { parameter_sources } }
   else
     Ok model
 
@@ -2612,7 +2618,9 @@ let parse_parameter_taint
         ~callable_parameter_names_to_roots
   |> Option.value ~default:(Ok [])
   |> Core.Result.map
-       ~f:(List.map ~f:(fun annotation -> ModelAnnotation.ParameterAnnotation (root, annotation)))
+       ~f:
+         (List.map ~f:(fun annotation ->
+              ModelAnnotation.ParameterAnnotation { root; annotation; generation_if_source = false }))
 
 
 let add_taint_annotation_to_model
@@ -2653,6 +2661,7 @@ let add_taint_annotation_to_model
             ~pyre_api
             ~root
             ~root_annotations
+            ~is_generation:true
             ~features
             ~source_sink_filter
             model
@@ -2672,7 +2681,7 @@ let add_taint_annotation_to_model
                (InvalidReturnAnnotation { model_name; annotation = "AddFeatureToArgument" }))
       | TaintAnnotation.Sanitize annotations ->
           Ok (introduce_sanitize ~source_sink_filter ~root model annotations))
-  | ModelAnnotation.ParameterAnnotation (root, annotation) -> (
+  | ModelAnnotation.ParameterAnnotation { root; annotation; generation_if_source } -> (
       match annotation with
       | TaintAnnotation.Sink { sink; features } ->
           let root_annotations = port_annotations_from_signature ~root ~callable_annotation in
@@ -2691,6 +2700,7 @@ let add_taint_annotation_to_model
             ~pyre_api
             ~root
             ~root_annotations
+            ~is_generation:generation_if_source
             ~features
             ~source_sink_filter
             model
@@ -3327,9 +3337,11 @@ let create_model_from_signature
                     ~source_sink_filter
                     model
                     (ModelAnnotation.ParameterAnnotation
-                       ( AccessPath.Root.CapturedVariable
-                           { name = captured_variable; generation_if_source },
-                         annotation ))))
+                       {
+                         root = AccessPath.Root.CapturedVariable { name = captured_variable };
+                         annotation;
+                         generation_if_source;
+                       })))
     in
     match List.find ~f:is_captured_variables top_level_decorators with
     | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
@@ -3429,7 +3441,9 @@ let create_model_from_attribute
         | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
         | TaintAnnotation.Sink _
         | TaintAnnotation.Tito _ ->
-            Ok (ModelAnnotation.ParameterAnnotation (attribute_symbolic_parameter, annotation))
+            Ok
+              (ModelAnnotation.ParameterAnnotation
+                 { root = attribute_symbolic_parameter; annotation; generation_if_source = false })
         | _ -> failwith "unreachable"
       in
       model_annotation
@@ -4310,7 +4324,9 @@ let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter 
         | TaintAnnotation.Source _ -> Ok (ModelAnnotation.ReturnAnnotation annotation)
         | TaintAnnotation.Sink _
         | TaintAnnotation.Tito _ ->
-            Ok (ModelAnnotation.ParameterAnnotation (attribute_symbolic_parameter, annotation))
+            Ok
+              (ModelAnnotation.ParameterAnnotation
+                 { root = attribute_symbolic_parameter; annotation; generation_if_source = false })
         | _ ->
             Error
               (invalid_model_query_error

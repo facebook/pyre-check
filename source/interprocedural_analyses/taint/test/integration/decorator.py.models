@@ -2528,12 +2528,6 @@
     "callable": "decorator.second_parameter_source_inlineable_decorator",
     "filename": "decorator.py",
     "callable_line": 255,
-    "sources": [
-      {
-        "port": "formal(arg2, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -2560,6 +2554,12 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(arg2, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2710,12 +2710,6 @@
     "callable": "decorator.second_parameter_source_inlineable_decorator_with_inner",
     "filename": "decorator.py",
     "callable_line": 260,
-    "sources": [
-      {
-        "port": "formal(arg2, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(arg2, position=1)",
@@ -2745,6 +2739,12 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(arg2, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2898,7 +2898,7 @@
               "resolves_to": [
                 "decorator.second_parameter_source_inlineable_decorator_with_inner._original_function.inner"
               ],
-              "port": "captured_variable($parameter$arg2, generation_if_source)"
+              "port": "captured_variable($parameter$arg2)"
             }
           }
         ]
@@ -2914,7 +2914,7 @@
     "callable_line": 263,
     "sinks": [
       {
-        "port": "captured_variable($parameter$arg2, generation_if_source)",
+        "port": "captured_variable($parameter$arg2)",
         "taint": [
           {
             "kinds": [
@@ -2943,7 +2943,7 @@
     "callable": "decorator.second_parameter_source_with_non_inlineable_decorator",
     "filename": "decorator.py",
     "callable_line": 243,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(arg2, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]

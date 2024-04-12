@@ -1613,11 +1613,12 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           List.cartesian_product productions captures
           |> List.filter_map ~f:(fun (production, capture) ->
                  let root =
-                   AccessPath.Root.CapturedVariable
-                     { name = capture.Statement.Define.Capture.name; generation_if_source }
+                   AccessPath.Root.CapturedVariable { name = capture.Statement.Define.Capture.name }
                  in
                  production_to_taint ~root ~production return_annotation
-                 >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint))
+                 >>| fun annotation ->
+                 ModelParseResult.ModelAnnotation.ParameterAnnotation
+                   { root; annotation; generation_if_source })
       | ModelQuery.Model.NamedParameter { name; taint = productions } -> (
           let parameter =
             List.find_map
@@ -1638,8 +1639,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           | Some (parameter, annotation) ->
               List.filter_map productions ~f:(fun production ->
                   production_to_taint ~root:parameter ~production annotation
-                  >>| fun taint ->
-                  ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
+                  >>| fun annotation ->
+                  ModelParseResult.ModelAnnotation.ParameterAnnotation
+                    { root = parameter; annotation; generation_if_source = false })
           | None -> [])
       | ModelQuery.Model.PositionalParameter { index; taint = productions } -> (
           let parameter =
@@ -1661,8 +1663,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
           | Some (parameter, annotation) ->
               List.filter_map productions ~f:(fun production ->
                   production_to_taint ~root:parameter ~production annotation
-                  >>| fun taint ->
-                  ModelParseResult.ModelAnnotation.ParameterAnnotation (parameter, taint))
+                  >>| fun annotation ->
+                  ModelParseResult.ModelAnnotation.ParameterAnnotation
+                    { root = parameter; annotation; generation_if_source = false })
           | None -> [])
       | ModelQuery.Model.AllParameters { excludes; taint } ->
           let apply_parameter_production
@@ -1680,7 +1683,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
               None
             else
               production_to_taint ~root ~production annotation
-              >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
+              >>| fun annotation ->
+              ModelParseResult.ModelAnnotation.ParameterAnnotation
+                { root; annotation; generation_if_source = false }
           in
           List.cartesian_product normalized_parameters taint
           |> List.filter_map ~f:apply_parameter_production
@@ -1704,7 +1709,9 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                      ~parameter)
             then
               production_to_taint ~root ~production annotation
-              >>| fun taint -> ModelParseResult.ModelAnnotation.ParameterAnnotation (root, taint)
+              >>| fun annotation ->
+              ModelParseResult.ModelAnnotation.ParameterAnnotation
+                { root; annotation; generation_if_source = false }
             else
               None
           in

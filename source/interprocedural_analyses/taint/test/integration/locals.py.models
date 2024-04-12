@@ -226,7 +226,7 @@
     "callable": "locals.source_parameter_to_sink",
     "filename": "locals.py",
     "callable_line": 28,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]

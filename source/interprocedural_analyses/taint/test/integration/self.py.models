@@ -2251,10 +2251,6 @@
     "callable_line": 17,
     "sources": [
       {
-        "port": "formal(tainted_instance, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
         "port": "result[tainted_extra_instance]",
         "taint": [
           {
@@ -2342,6 +2338,12 @@
             "tito": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(tainted_instance, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

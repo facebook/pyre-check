@@ -2653,9 +2653,7 @@ let extract_tito_and_sink_models
   in
   let captures =
     List.map captures ~f:(fun capture ->
-        ( AccessPath.Root.CapturedVariable { name = capture.name; generation_if_source = true },
-          capture.name,
-          None ))
+        AccessPath.Root.CapturedVariable { name = capture.name }, capture.name, None)
   in
   List.append normalized_parameters captures
   |> List.fold ~f:split_and_simplify ~init:Model.Backward.empty

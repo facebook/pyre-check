@@ -432,29 +432,6 @@
     "callable": "cross_repository.cross_repository_source",
     "filename": "cross_repository.py",
     "callable_line": 9,
-    "sources": [
-      {
-        "port": "formal(source_parameter, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "crtex" } ],
-                "leaves": [
-                  {
-                    "name": "crossRepositorySource",
-                    "port": "producer:1:formal(0)"
-                  }
-                ],
-                "length": 2,
-                "kind": "UserControlled"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(source_parameter, position=0)",
@@ -473,6 +450,29 @@
               "start": 15,
               "end": 31
             }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(source_parameter, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "crtex" } ],
+                "leaves": [
+                  {
+                    "name": "crossRepositorySource",
+                    "port": "producer:1:formal(0)"
+                  }
+                ],
+                "length": 2,
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
           }
         ]
       }

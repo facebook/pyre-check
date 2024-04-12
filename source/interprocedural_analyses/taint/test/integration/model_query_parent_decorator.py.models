@@ -51,16 +51,6 @@
     "callable": "model_query_parent_decorator.TestC_1.__init__",
     "filename": "model_query_parent_decorator.py",
     "callable_line": 23,
-    "sources": [
-      {
-        "port": "formal(bar, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(foo, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(baz, position=3)",
@@ -138,6 +128,16 @@
             "tito": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(bar, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -377,16 +377,6 @@
     "callable": "model_query_parent_decorator.TestC_3.__init__",
     "filename": "model_query_parent_decorator.py",
     "callable_line": 40,
-    "sources": [
-      {
-        "port": "formal(bar, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(foo, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(baz, position=3)",
@@ -464,6 +454,16 @@
             "tito": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(bar, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(foo, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

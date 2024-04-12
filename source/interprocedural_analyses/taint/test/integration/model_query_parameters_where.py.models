@@ -87,7 +87,7 @@
     "callable": "model_query_parameters_where.Test7.test7_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 112,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(x, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -101,7 +101,7 @@
     "callable": "model_query_parameters_where.test10_f",
     "filename": "model_query_parameters_where.py",
     "callable_line": 139,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(d, position=3)",
         "taint": [
@@ -160,7 +160,7 @@
     "callable": "model_query_parameters_where.test11_f",
     "filename": "model_query_parameters_where.py",
     "callable_line": 143,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(b, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -178,7 +178,7 @@
     "callable": "model_query_parameters_where.test12_f",
     "filename": "model_query_parameters_where.py",
     "callable_line": 147,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(c)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -200,7 +200,31 @@
     "callable": "model_query_parameters_where.test1_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 14,
-    "sources": [
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_where.py",
+              "line": 15,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
       {
         "port": "formal(d, position=3)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -226,30 +250,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "origin": {
-              "filename": "model_query_parameters_where.py",
-              "line": 15,
-              "start": 15,
-              "end": 16
-            }
           }
         ]
       }
@@ -334,7 +334,28 @@
     "callable": "model_query_parameters_where.test1_alarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 18,
-    "sources": [
+    "sinks": [
+      {
+        "port": "formal(b, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_where.py",
+              "line": 19,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
       {
         "port": "formal(d, position=3)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -360,27 +381,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(b, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "model_query_parameters_where.py",
-              "line": 19,
-              "start": 15,
-              "end": 16
-            }
           }
         ]
       }
@@ -459,7 +459,28 @@
     "callable": "model_query_parameters_where.test1_alarm3",
     "filename": "model_query_parameters_where.py",
     "callable_line": 22,
-    "sources": [
+    "sinks": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_where.py",
+              "line": 23,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
       {
         "port": "formal(d, position=3)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -485,27 +506,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "model_query_parameters_where.py",
-              "line": 23,
-              "start": 15,
-              "end": 16
-            }
           }
         ]
       }
@@ -584,7 +584,28 @@
     "callable": "model_query_parameters_where.test1_alarm4",
     "filename": "model_query_parameters_where.py",
     "callable_line": 26,
-    "sources": [
+    "sinks": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_where.py",
+              "line": 27,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
       {
         "port": "formal(d, position=3)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -610,27 +631,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "model_query_parameters_where.py",
-              "line": 27,
-              "start": 15,
-              "end": 16
-            }
           }
         ]
       }
@@ -709,7 +709,31 @@
     "callable": "model_query_parameters_where.test1_args_kwargs",
     "filename": "model_query_parameters_where.py",
     "callable_line": 34,
-    "sources": [
+    "sinks": [
+      {
+        "port": "formal(a, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-type": "integer" }, { "always-type": "scalar" }
+            ],
+            "origin": {
+              "filename": "model_query_parameters_where.py",
+              "line": 35,
+              "start": 15,
+              "end": 16
+            }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
       {
         "port": "formal(**kwargs, excluded=[a])",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -731,30 +755,6 @@
               }
             ],
             "declaration": null
-          }
-        ]
-      }
-    ],
-    "sinks": [
-      {
-        "port": "formal(a, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "local_features": [
-              { "always-type": "integer" }, { "always-type": "scalar" }
-            ],
-            "origin": {
-              "filename": "model_query_parameters_where.py",
-              "line": 35,
-              "start": 15,
-              "end": 16
-            }
           }
         ]
       }
@@ -839,28 +839,6 @@
     "callable": "model_query_parameters_where.test1_positional_arguments",
     "filename": "model_query_parameters_where.py",
     "callable_line": 30,
-    "sources": [
-      {
-        "port": "formal(b, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0, positional_only)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(a, position=0, positional_only)",
@@ -881,6 +859,28 @@
               "start": 15,
               "end": 16
             }
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0, positional_only)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
           }
         ]
       }
@@ -1023,16 +1023,6 @@
     "callable": "model_query_parameters_where.test3_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 54,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -1052,6 +1042,16 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1128,16 +1128,6 @@
     "callable": "model_query_parameters_where.test3_alarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 58,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(d, position=3)",
@@ -1157,6 +1147,16 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1233,16 +1233,6 @@
     "callable": "model_query_parameters_where.test3_noalarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 46,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -1266,6 +1256,16 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1275,16 +1275,6 @@
     "callable": "model_query_parameters_where.test3_noalarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 50,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -1305,6 +1295,16 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1314,16 +1314,6 @@
     "callable": "model_query_parameters_where.test4_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 62,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -1343,6 +1333,16 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1419,12 +1419,6 @@
     "callable": "model_query_parameters_where.test4_alarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 70,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -1444,6 +1438,12 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1520,16 +1520,6 @@
     "callable": "model_query_parameters_where.test4_noalarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 66,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -1550,6 +1540,16 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1559,12 +1559,6 @@
     "callable": "model_query_parameters_where.test4_noalarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 74,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(d, position=3)",
@@ -1585,6 +1579,12 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1594,16 +1594,6 @@
     "callable": "model_query_parameters_where.test6_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 95,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -1623,6 +1613,16 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1699,16 +1699,6 @@
     "callable": "model_query_parameters_where.test6_alarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 103,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -1728,6 +1718,16 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1804,16 +1804,6 @@
     "callable": "model_query_parameters_where.test6_noalarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 99,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -1834,6 +1824,16 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1843,16 +1843,6 @@
     "callable": "model_query_parameters_where.test6_noalarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 107,
-    "sources": [
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(d, position=3)",
@@ -1873,6 +1863,16 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1882,24 +1882,6 @@
     "callable": "model_query_parameters_where.test8_alarm1",
     "filename": "model_query_parameters_where.py",
     "callable_line": 119,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(a, position=0)",
@@ -1919,6 +1901,24 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -1995,24 +1995,6 @@
     "callable": "model_query_parameters_where.test8_alarm2",
     "filename": "model_query_parameters_where.py",
     "callable_line": 123,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(b, position=1)",
@@ -2032,6 +2014,24 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2108,24 +2108,6 @@
     "callable": "model_query_parameters_where.test8_alarm3",
     "filename": "model_query_parameters_where.py",
     "callable_line": 127,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(c, position=2)",
@@ -2145,6 +2127,24 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2221,24 +2221,6 @@
     "callable": "model_query_parameters_where.test8_alarm4",
     "filename": "model_query_parameters_where.py",
     "callable_line": 131,
-    "sources": [
-      {
-        "port": "formal(d, position=3)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(c, position=2)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(b, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(a, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(d, position=3)",
@@ -2258,6 +2240,24 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(d, position=3)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(c, position=2)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(b, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(a, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2334,7 +2334,7 @@
     "callable": "model_query_parameters_where.test9_f",
     "filename": "model_query_parameters_where.py",
     "callable_line": 135,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(b, position=1)",
         "taint": [

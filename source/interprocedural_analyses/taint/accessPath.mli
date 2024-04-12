@@ -21,16 +21,7 @@ module Root : sig
     | StarParameter of { position: int }
     | StarStarParameter of { excluded: Identifier.t list }
     | Variable of Identifier.t
-    | CapturedVariable of {
-        name: Identifier.t;
-        (* Sources for captured variables are `nonlocal` writes that change values outside the inner
-           function. This generates a new source at callsite. The default for inferred models is
-           `generation_if_source = true`. When creating a user defined model, the default is an
-           implicit parameter source for that captured variable to be tainted only inside the
-           function, `generation_if_source = false`. Invariant: This is only ever false for user
-           defined captured variable models on Taint Sources. *)
-        generation_if_source: bool;
-      }
+    | CapturedVariable of { name: Identifier.t }
   [@@deriving compare, eq, hash, sexp, show]
 
   val is_parameter : t -> bool
@@ -50,10 +41,6 @@ module Root : sig
   val captured_variable_to_variable : t -> t
 
   val is_captured_variable : t -> bool
-
-  val is_captured_variable_not_generation_if_source : t -> bool
-
-  val is_captured_variable_generation_if_source : t -> bool
 
   module Set : Stdlib.Set.S with type elt = t
 end

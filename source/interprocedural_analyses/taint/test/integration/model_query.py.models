@@ -499,14 +499,6 @@
     "callable_line": 43,
     "sources": [
       {
-        "port": "formal(x, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
-        "port": "formal(self, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
         "port": "result",
         "taint": [
           {
@@ -519,6 +511,16 @@
             "declaration": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      },
+      {
+        "port": "formal(self, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -553,7 +555,7 @@
     "callable": "model_query.C.positional_method",
     "filename": "model_query.py",
     "callable_line": 22,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(x, position=1)",
         "taint": [
@@ -581,7 +583,7 @@
     "callable": "model_query.Child.bar",
     "filename": "model_query.py",
     "callable_line": 53,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(y, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -1364,12 +1366,6 @@
     "callable": "model_query.alarm_5",
     "filename": "model_query.py",
     "callable_line": 147,
-    "sources": [
-      {
-        "port": "formal(source, position=1)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(source, position=1)",
@@ -1403,6 +1399,12 @@
             }
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(source, position=1)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
@@ -2182,7 +2184,7 @@
     "callable": "model_query.positional_a",
     "filename": "model_query.py",
     "callable_line": 34,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -2196,7 +2198,7 @@
     "callable": "model_query.positional_b",
     "filename": "model_query.py",
     "callable_line": 38,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(y, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -2210,7 +2212,7 @@
     "callable": "model_query.positional_decorated",
     "filename": "model_query.py",
     "callable_line": 63,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(x, position=0)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -2225,7 +2227,7 @@
     "callable": "model_query.three_parameters",
     "filename": "model_query.py",
     "callable_line": 30,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(y, position=1)",
         "taint": [
@@ -2253,7 +2255,7 @@
     "callable": "model_query.two_parameters",
     "filename": "model_query.py",
     "callable_line": 26,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(y, position=1)",
         "taint": [

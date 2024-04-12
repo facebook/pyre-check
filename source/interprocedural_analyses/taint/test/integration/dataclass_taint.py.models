@@ -778,22 +778,6 @@
     "callable_line": 50,
     "sources": [
       {
-        "port": "formal(bad, position=1)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "features": [
-                  { "always-type": "integer" }, { "always-type": "scalar" }
-                ],
-                "kind": "UserControlled"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
         "port": "result[bad]",
         "taint": [
           {
@@ -908,6 +892,24 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": null
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(bad, position=1)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [
+                  { "always-type": "integer" }, { "always-type": "scalar" }
+                ],
+                "kind": "UserControlled"
+              }
+            ],
+            "declaration": null
           }
         ]
       }
@@ -1113,14 +1115,6 @@
     "callable": "dataclass_taint.test_dataclass_parameter_path",
     "filename": "dataclass_taint.py",
     "callable_line": 144,
-    "sources": [
-      {
-        "port": "formal(dc, position=0)[*]",
-        "taint": [
-          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
-        ]
-      }
-    ],
     "sinks": [
       {
         "port": "formal(dc, position=0)[bad]",
@@ -1140,6 +1134,14 @@
               "end": 21
             }
           }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(dc, position=0)[*]",
+        "taint": [
+          { "kinds": [ { "kind": "UserControlled" } ], "declaration": null }
         ]
       }
     ]

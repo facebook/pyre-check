@@ -1241,10 +1241,6 @@
     "callable_line": 78,
     "sources": [
       {
-        "port": "formal(x, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
         "port": "result",
         "taint": [
           {
@@ -1287,6 +1283,12 @@
           }
         ]
       }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
+      }
     ]
   }
 }
@@ -1297,10 +1299,6 @@
     "filename": "taint_in_taint_out.py",
     "callable_line": 86,
     "sources": [
-      {
-        "port": "formal(x, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
       {
         "port": "result",
         "taint": [
@@ -1343,6 +1341,12 @@
             "tito": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(x, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }

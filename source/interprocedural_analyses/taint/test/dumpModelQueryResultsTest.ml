@@ -16,7 +16,7 @@ let assert_model_query_results ?model_path ~context ~models_source ~source ~expe
     let left, right = Yojson.Safe.from_string left, Yojson.Safe.from_string right in
     Yojson.Safe.equal left right
   in
-  assert_equal ~cmp:dumped_models_equal ~printer:Core.Fn.id actual expected
+  assert_equal ~cmp:dumped_models_equal ~printer:Core.Fn.id expected actual
 
 
 let test_dump_model_query_results context =
@@ -166,7 +166,7 @@ let test_dump_model_query_results context =
     "get_Base_child_sources": [
       {
         "callable": "test.Base.baz",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(self, position=0)",
             "taint": [
@@ -177,7 +177,7 @@ let test_dump_model_query_results context =
       },
       {
         "callable": "test.Base.foo",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(self, position=0)",
             "taint": [
@@ -292,7 +292,7 @@ let test_dump_model_query_results context =
     "get_parent_of_baz_class_sources": [
       {
         "callable": "test.Bar.__init__",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(b, position=2)",
             "taint": [
@@ -304,7 +304,7 @@ let test_dump_model_query_results context =
       },
       {
         "callable": "test.Baz.__init__",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(b, position=2)",
             "taint": [
@@ -366,7 +366,7 @@ let test_dump_model_query_results context =
     "get_parent_of_baz_class_transitive_sources": [
       {
         "callable": "test.Bar.__init__",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(b, position=2)",
             "taint": [
@@ -378,7 +378,7 @@ let test_dump_model_query_results context =
       },
       {
         "callable": "test.Baz.__init__",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(b, position=2)",
             "taint": [
@@ -390,7 +390,7 @@ let test_dump_model_query_results context =
       },
       {
         "callable": "test.Foo.__init__",
-        "sources": [
+        "parameter_sources": [
           {
             "port": "formal(b, position=2)",
             "taint": [

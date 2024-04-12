@@ -58,7 +58,7 @@
               "resolves_to": [
                 "nested_callables.access_variables_in_outer_scope_issue.inner"
               ],
-              "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x, generation_if_source)"
+              "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
             }
           }
         ]
@@ -73,9 +73,9 @@
       "kind": "Call",
       "callee": "nested_callables.access_variables_in_outer_scope_issue.inner",
       "index": 0,
-      "parameter": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x, generation_if_source)"
+      "parameter": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)"
     },
-    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x, generatio:43a56c0dd4a03837bd66d95bc1a024a6"
+    "master_handle": "nested_callables.access_variables_in_outer_scope_issue:5002:0:Call|nested_callables.access_variables_in_outer_scope_issue.inner|0|captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x):e2e94a880ca710b3617c4f6867d2a052"
   }
 }
 {
@@ -736,7 +736,7 @@
               "resolves_to": [
                 "nested_callables.access_parameter_in_inner_scope_sink.inner"
               ],
-              "port": "captured_variable($parameter$x, generation_if_source)"
+              "port": "captured_variable($parameter$x)"
             }
           }
         ]
@@ -752,7 +752,7 @@
     "callable_line": 97,
     "sinks": [
       {
-        "port": "captured_variable($parameter$x, generation_if_source)",
+        "port": "captured_variable($parameter$x)",
         "taint": [
           {
             "kinds": [
@@ -812,7 +812,7 @@
     "callable_line": 108,
     "tito": [
       {
-        "port": "captured_variable($parameter$x, generation_if_source)",
+        "port": "captured_variable($parameter$x)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
@@ -832,7 +832,7 @@
     "callable_line": 77,
     "sinks": [
       {
-        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x, generation_if_source)",
+        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_issue$x)",
         "taint": [
           {
             "kinds": [
@@ -899,7 +899,7 @@
     "callable_line": 86,
     "tito": [
       {
-        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_source$x, generation_if_source)",
+        "port": "captured_variable($local_nested_callables?access_variables_in_outer_scope_source$x)",
         "taint": [
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],

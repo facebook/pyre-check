@@ -380,7 +380,14 @@ end
 
 module ModelAnnotation = struct
   type t =
-    | ParameterAnnotation of AccessPath.Root.t * TaintAnnotation.t
+    | ParameterAnnotation of {
+        root: AccessPath.Root.t;
+        annotation: TaintAnnotation.t;
+        (* `generation_if_source = true` means the source is generated in the caller of the modeled
+           callable. `generation_if_source = false` means the source is generated in the body of the
+           callable, on the given parameter (i.e a "parameter sources"). *)
+        generation_if_source: bool;
+      }
     | ReturnAnnotation of TaintAnnotation.t
     | ModeAnnotation of Model.ModeSet.t
   [@@deriving show, equal]

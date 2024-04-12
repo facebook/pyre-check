@@ -275,7 +275,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -295,7 +295,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -315,7 +315,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -335,7 +335,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -355,7 +355,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -375,7 +375,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -395,7 +395,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -415,7 +415,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -435,7 +435,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -455,7 +455,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -479,7 +479,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "x"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -502,7 +502,7 @@ let test_models_with_if context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -785,7 +785,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -799,7 +799,7 @@ let test_source_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+          ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.foo";
       ]
@@ -2108,7 +2108,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:
+          ~parameter_sources:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
@@ -2133,7 +2133,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:
+          ~parameter_sources:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";
@@ -2156,7 +2156,7 @@ let test_cross_repository_models context =
       [
         outcome
           ~kind:`Function
-          ~parameter_generations:
+          ~parameter_sources:
             [{ name = "source_parameter"; sources = [Sources.NamedSource "UserControlled"] }]
           ~analysis_modes:(Model.ModeSet.singleton Obscure)
           "test.cross_repository_source";

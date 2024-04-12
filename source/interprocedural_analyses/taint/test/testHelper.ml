@@ -47,6 +47,7 @@ type expectation = {
   kind: [ `Function | `Method | `Override | `Object | `PropertySetter ];
   define_name: string;
   parameter_generations: parameter_sources list;
+  parameter_sources: parameter_sources list;
   parameter_sinks: parameter_sinks list;
   parameter_titos: parameter_titos list;
   returns: Sources.t list;
@@ -70,6 +71,7 @@ let print_parameter_taint ~print_taint map =
 let outcome
     ~kind
     ?(parameter_generations = [])
+    ?(parameter_sources = [])
     ?(parameter_sinks = [])
     ?(parameter_titos = [])
     ?(returns = [])
@@ -86,6 +88,7 @@ let outcome
     kind;
     define_name;
     parameter_generations;
+    parameter_sources;
     parameter_sinks;
     parameter_titos;
     returns;
@@ -118,6 +121,7 @@ let check_expectation
       kind;
       define_name;
       parameter_generations;
+      parameter_sources = expected_parameter_sources;
       parameter_sinks;
       parameter_titos;
       returns;
@@ -163,7 +167,7 @@ let check_expectation
         Core.Map.set sink_map ~key:name ~data:sinks
     | _ -> sink_map
   in
-  let { Model.backward; forward; parameter_sources = _; sanitizers; modes } =
+  let { Model.backward; forward; parameter_sources = actual_parameter_sources; sanitizers; modes } =
     Option.value_exn
       ~message:(Format.asprintf "Model not found for %a" Target.pp callable)
       (get_model callable)
@@ -180,6 +184,13 @@ let check_expectation
     Domains.ForwardState.fold
       Domains.ForwardState.KeyValue
       forward.generations
+      ~f:extract_sources_by_parameter_name
+      ~init:String.Map.empty
+  in
+  let parameter_source_taint_map =
+    Domains.ForwardState.fold
+      Domains.ForwardState.KeyValue
+      actual_parameter_sources.parameter_sources
       ~f:extract_sources_by_parameter_name
       ~init:String.Map.empty
   in
@@ -228,6 +239,10 @@ let check_expectation
   in
   let expected_parameter_generations =
     List.map ~f:(fun { name; sources } -> name, sources) parameter_generations
+    |> String.Map.of_alist_exn
+  in
+  let expected_parameter_sources =
+    List.map ~f:(fun { name; sources } -> name, sources) expected_parameter_sources
     |> String.Map.of_alist_exn
   in
   let expected_parameter_sanitizers =
@@ -286,10 +301,17 @@ let check_expectation
     ~cmp:(Map.equal (List.equal Sinks.equal))
     ~printer:(print_parameter_taint ~print_taint:Sinks.show);
 
-  (* Check parameter sources. *)
+  (* Check parameter generations. *)
   assert_equal
     expected_parameter_generations
     parameter_generation_taint_map
+    ~cmp:(Map.equal (List.equal Sources.equal))
+    ~printer:(print_parameter_taint ~print_taint:Sources.show);
+
+  (* Check parameter sources. *)
+  assert_equal
+    expected_parameter_sources
+    parameter_source_taint_map
     ~cmp:(Map.equal (List.equal Sources.equal))
     ~printer:(print_parameter_taint ~print_taint:Sources.show);
 

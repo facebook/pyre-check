@@ -332,8 +332,13 @@ let test_generated_annotations context =
       [
         ModelParseResult.ModelAnnotation.ReturnAnnotation (source "Test");
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   (* All parameter taint. *)
   assert_generated_annotations
@@ -357,11 +362,21 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -384,8 +399,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -408,8 +428,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
 
   (* Parameter taint. *)
@@ -441,8 +466,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -472,8 +502,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -507,8 +542,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -543,8 +583,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:
@@ -577,8 +622,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -607,8 +657,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -637,8 +692,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -671,8 +731,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -706,8 +771,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:
@@ -739,8 +809,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -769,8 +844,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -799,8 +879,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -822,11 +907,21 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 0; name = "x"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 0; name = "x"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "y"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "y"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
 
   (* Annotated returns. *)
@@ -1445,8 +1540,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            source ~subkind:"A" "Dynamic" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation = source ~subkind:"A" "Dynamic";
+            generation_if_source = false;
+          };
       ];
   (* Case where we don't match. *)
   assert_generated_annotations
@@ -1588,8 +1688,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            source ~subkind:"A" "Dynamic" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation = source ~subkind:"A" "Dynamic";
+            generation_if_source = false;
+          };
       ];
   (* All parameters taint + parametric source from annotation. *)
   assert_generated_annotations
@@ -1623,8 +1728,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            source ~subkind:"A" "Dynamic" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation = source ~subkind:"A" "Dynamic";
+            generation_if_source = false;
+          };
       ];
   (* Returned taint + parametric source from annotation. *)
   assert_generated_annotations
@@ -1680,9 +1790,15 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            ModelParseResult.TaintAnnotation.from_sink
-              (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" }) );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation =
+              ModelParseResult.TaintAnnotation.from_sink
+                (Sinks.ParametricSink { sink_name = "Dynamic"; subkind = "BSink" });
+            generation_if_source = false;
+          };
       ];
   (* Type annotation constraint for callables *)
   assert_generated_annotations
@@ -1712,8 +1828,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -1746,11 +1867,21 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 1; name = "b"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 1; name = "b"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 2; name = "c"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 2; name = "c"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|
@@ -1779,8 +1910,13 @@ let test_generated_annotations context =
     ~expected:
       [
         ModelParseResult.ModelAnnotation.ParameterAnnotation
-          ( AccessPath.Root.PositionalParameter { position = 3; name = "d"; positional_only = false },
-            source "Test" );
+          {
+            root =
+              AccessPath.Root.PositionalParameter
+                { position = 3; name = "d"; positional_only = false };
+            annotation = source "Test";
+            generation_if_source = false;
+          };
       ];
   assert_generated_annotations
     ~source:{|

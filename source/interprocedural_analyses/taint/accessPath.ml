@@ -35,10 +35,7 @@ module Root = struct
       | StarParameter of { position: int }
       | StarStarParameter of { excluded: Identifier.t list }
       | Variable of Identifier.t
-      | CapturedVariable of {
-          name: Identifier.t;
-          generation_if_source: bool;
-        }
+      | CapturedVariable of { name: Identifier.t }
     [@@deriving compare, eq, hash, sexp]
 
     let chop_parameter_prefix name =
@@ -83,12 +80,7 @@ module Root = struct
             "formal(**kwargs, excluded=[%s])"
             (String.concat ~sep:"," excluded)
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable { name; generation_if_source } ->
-          Format.fprintf
-            formatter
-            "captured_variable(%s%s)"
-            name
-            (if generation_if_source then ", generation_if_source" else "")
+      | CapturedVariable { name } -> Format.fprintf formatter "captured_variable(%s)" name
 
 
     let show = Format.asprintf "%a" pp
@@ -101,12 +93,7 @@ module Root = struct
       | StarParameter { position } -> Format.fprintf formatter "formal(*rest%d)" position
       | StarStarParameter _ -> Format.fprintf formatter "formal(**kw)"
       | Variable name -> Format.fprintf formatter "local(%s)" name
-      | CapturedVariable { name; generation_if_source } ->
-          Format.fprintf
-            formatter
-            "captured_variable(%s%s)"
-            name
-            (if generation_if_source then ", generation_if_source" else "")
+      | CapturedVariable { name } -> Format.fprintf formatter "captured_variable(%s)" name
 
 
     let show_for_issue_handle = Format.asprintf "%a" pp_for_issue_handle
@@ -117,7 +104,7 @@ module Root = struct
     let show_for_via_breadcrumb = Format.asprintf "%a" pp_for_via_breadcrumb
 
     let variable_to_captured_variable = function
-      | Variable name -> CapturedVariable { name; generation_if_source = true }
+      | Variable name -> CapturedVariable { name }
       | root -> root
 
 
@@ -128,16 +115,6 @@ module Root = struct
 
     let is_captured_variable = function
       | CapturedVariable _ -> true
-      | _ -> false
-
-
-    let is_captured_variable_not_generation_if_source = function
-      | CapturedVariable { generation_if_source = false; _ } -> true
-      | _ -> false
-
-
-    let is_captured_variable_generation_if_source = function
-      | CapturedVariable { generation_if_source = true; _ } -> true
       | _ -> false
   end
 

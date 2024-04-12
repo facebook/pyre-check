@@ -77,7 +77,7 @@
     "callable": "model_query_type_annotation.Test2_C.test2_f1",
     "filename": "model_query_type_annotation.py",
     "callable_line": 30,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(taint_2, position=2)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -95,7 +95,7 @@
     "callable": "model_query_type_annotation.Test2_C.test2_f2",
     "filename": "model_query_type_annotation.py",
     "callable_line": 34,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(taint_1, position=1)",
         "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
@@ -137,7 +137,7 @@
     "callable": "model_query_type_annotation.test1_f1",
     "filename": "model_query_type_annotation.py",
     "callable_line": 9,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(taint_3, position=2)",
         "taint": [
@@ -178,7 +178,7 @@
     "callable": "model_query_type_annotation.test3_f1",
     "filename": "model_query_type_annotation.py",
     "callable_line": 43,
-    "sources": [
+    "parameter_sources": [
       {
         "port": "formal(taint_2, position=2)",
         "taint": [

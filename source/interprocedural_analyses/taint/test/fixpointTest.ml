@@ -457,8 +457,7 @@ let test_primed_source_analysis context =
           [
             outcome
               ~kind:`Function
-              ~parameter_generations:
-                [{ name = "y"; sources = [Sources.NamedSource "UserControlled"] }]
+              ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "UserControlled"] }]
               ~parameter_sinks:[{ name = "y"; sinks = [Sinks.NamedSink "RemoteCodeExecution"] }]
               ~errors:[{ code = 5001; pattern = ".*Possible shell injection.*" }]
               "qualifier.primed_model";
@@ -488,7 +487,7 @@ let test_primed_sink_analysis context =
             outcome
               ~kind:`Function
               ~returns:[Sources.NamedSource "Test"]
-              ~parameter_generations:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
+              ~parameter_sources:[{ name = "y"; sources = [Sources.NamedSource "Test"] }]
               ~parameter_sinks:[{ name = "y"; sinks = [Sinks.NamedSink "Test"] }]
                 (* Backward propagation on return sinks *)
               ~return_sinks:[Sinks.NamedSink "Test"]

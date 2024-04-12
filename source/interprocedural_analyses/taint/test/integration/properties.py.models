@@ -825,25 +825,6 @@
     "callable": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
     "sources": [
       {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [
-              {
-                "leaves": [
-                  {
-                    "name": "properties.TaintedGetterAndSetter.my_property@setter",
-                    "port": "leaf:self"
-                  }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "declaration": null
-          }
-        ]
-      },
-      {
         "port": "result",
         "taint": [
           {
@@ -916,6 +897,27 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": null
+          }
+        ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "properties.TaintedGetterAndSetter.my_property@setter",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "declaration": null
           }
         ]
       }
@@ -1873,10 +1875,6 @@
     "callable_line": 66,
     "sources": [
       {
-        "port": "formal(self, position=0)",
-        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
-      },
-      {
         "port": "result",
         "taint": [
           {
@@ -1927,6 +1925,12 @@
             "tito": null
           }
         ]
+      }
+    ],
+    "parameter_sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [ { "kinds": [ { "kind": "Test" } ], "declaration": null } ]
       }
     ]
   }
