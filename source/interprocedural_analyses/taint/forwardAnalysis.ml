@@ -3101,27 +3101,27 @@ let extract_source_model
     >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
     |> Features.type_breadcrumbs_from_annotation ~pyre_api
   in
-  let local_result_model =
-    let simplify tree =
-      let tree =
-        match maximum_trace_length with
-        | Some maximum_trace_length ->
-            (* We limit by maximum_trace_length - 1, since the distance will be incremented by one
-               when the taint is propagated. *)
-            ForwardState.Tree.prune_maximum_length (maximum_trace_length - 1) tree
-        | _ -> tree
-      in
-      if apply_broadening then
-        tree
-        |> ForwardState.Tree.shape
-             ~mold_with_return_access_paths:false
-             ~breadcrumbs:(Features.model_source_shaping_set ())
-        |> ForwardState.Tree.limit_to
-             ~breadcrumbs:(Features.model_source_broadening_set ())
-             ~width:maximum_model_source_tree_width
-      else
-        tree
+  let simplify tree =
+    let tree =
+      match maximum_trace_length with
+      | Some maximum_trace_length ->
+          (* We limit by maximum_trace_length - 1, since the distance will be incremented by one
+             when the taint is propagated. *)
+          ForwardState.Tree.prune_maximum_length (maximum_trace_length - 1) tree
+      | _ -> tree
     in
+    if apply_broadening then
+      tree
+      |> ForwardState.Tree.shape
+           ~mold_with_return_access_paths:false
+           ~breadcrumbs:(Features.model_source_shaping_set ())
+      |> ForwardState.Tree.limit_to
+           ~breadcrumbs:(Features.model_source_broadening_set ())
+           ~width:maximum_model_source_tree_width
+    else
+      tree
+  in
+  let local_result_model =
     let return_taint =
       let return_variable =
         (* Our handling of property setters is counterintuitive.
@@ -3145,7 +3145,6 @@ let extract_source_model
       in
       ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
     in
-
     ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
     |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
   in
@@ -3153,7 +3152,7 @@ let extract_source_model
     ForwardState.roots exit_taint
     |> List.filter ~f:AccessPath.Root.is_captured_variable
     |> List.fold ~init:ForwardState.bottom ~f:(fun state root ->
-           let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint in
+           let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint |> simplify in
            let captured_variable_model =
              ForwardState.assign ~root ~path:[] captured_variable_taint ForwardState.bottom
            in
