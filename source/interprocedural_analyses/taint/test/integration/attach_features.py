@@ -70,3 +70,14 @@ def attach_to_returned_source():
 
 def attach_to_returned_source_2():
     return 0
+
+
+def attach_to_returned_with_captures():
+    x = 0
+
+    def nested():
+        nonlocal x
+        x = _test_source()
+        return 0
+
+    return nested()

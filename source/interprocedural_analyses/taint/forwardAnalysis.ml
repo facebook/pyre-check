@@ -3090,17 +3090,11 @@ let extract_source_model
           { maximum_model_source_tree_width; maximum_trace_length; _ };
         _;
       }
-    ~breadcrumbs_to_attach
-    ~via_features_to_attach
+    ~existing_forward
     ~apply_broadening
     exit_taint
   =
   let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
-  let return_type_breadcrumbs =
-    return_annotation
-    >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-    |> Features.type_breadcrumbs_from_annotation ~pyre_api
-  in
   let simplify tree =
     let tree =
       match maximum_trace_length with
@@ -3123,6 +3117,17 @@ let extract_source_model
   in
   let model =
     let return_taint =
+      let breadcrumbs_to_attach, via_features_to_attach =
+        ForwardState.extract_features_to_attach
+          ~root:AccessPath.Root.LocalResult
+          ~attach_to_kind:Sources.Attach
+          existing_forward.Model.Forward.generations
+      in
+      let return_type_breadcrumbs =
+        return_annotation
+        >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+        |> Features.type_breadcrumbs_from_annotation ~pyre_api
+      in
       let return_variable =
         (* Our handling of property setters is counterintuitive.
          * We treat `a.property = x` as `a = a.property(x)`.
@@ -3143,10 +3148,13 @@ let extract_source_model
         else
           AccessPath.Root.LocalResult
       in
-      ForwardState.read ~root:return_variable ~path:[] exit_taint |> simplify
+      ForwardState.read ~root:return_variable ~path:[] exit_taint
+      |> simplify
+      |> ForwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
+      |> ForwardState.Tree.add_via_features via_features_to_attach
+      |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
     in
     ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
-    |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
   in
   let model =
     ForwardState.roots exit_taint
@@ -3156,8 +3164,6 @@ let extract_source_model
            ForwardState.assign ~root ~path:[] captured_variable_taint model)
   in
   model
-  |> ForwardState.add_local_breadcrumbs breadcrumbs_to_attach
-  |> ForwardState.add_via_features via_features_to_attach
 
 
 let run
@@ -3251,12 +3257,6 @@ let run
     | None -> State.log "No exit state found"
   in
   let extract_model { State.taint; _ } =
-    let breadcrumbs_to_attach, via_features_to_attach =
-      ForwardState.extract_features_to_attach
-        ~root:AccessPath.Root.LocalResult
-        ~attach_to_kind:Sources.Attach
-        existing_model.forward.generations
-    in
     let apply_broadening =
       not (Model.ModeSet.contains Model.Mode.SkipModelBroadening existing_model.modes)
     in
@@ -3266,8 +3266,7 @@ let run
             ~define:define.value
             ~pyre_api
             ~taint_configuration:FunctionContext.taint_configuration
-            ~breadcrumbs_to_attach
-            ~via_features_to_attach
+            ~existing_forward:existing_model.forward
             ~apply_broadening
             taint)
     in
