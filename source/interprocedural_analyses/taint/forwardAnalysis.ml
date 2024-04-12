@@ -3121,7 +3121,7 @@ let extract_source_model
     else
       tree
   in
-  let local_result_model =
+  let model =
     let return_taint =
       let return_variable =
         (* Our handling of property setters is counterintuitive.
@@ -3148,17 +3148,14 @@ let extract_source_model
     ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
     |> ForwardState.add_local_breadcrumbs return_type_breadcrumbs
   in
-  let captured_variables_model =
+  let model =
     ForwardState.roots exit_taint
     |> List.filter ~f:AccessPath.Root.is_captured_variable
-    |> List.fold ~init:ForwardState.bottom ~f:(fun state root ->
+    |> List.fold ~init:model ~f:(fun model root ->
            let captured_variable_taint = ForwardState.read ~root ~path:[] exit_taint |> simplify in
-           let captured_variable_model =
-             ForwardState.assign ~root ~path:[] captured_variable_taint ForwardState.bottom
-           in
-           ForwardState.join state captured_variable_model)
+           ForwardState.assign ~root ~path:[] captured_variable_taint model)
   in
-  ForwardState.join local_result_model captured_variables_model
+  model
   |> ForwardState.add_local_breadcrumbs breadcrumbs_to_attach
   |> ForwardState.add_via_features via_features_to_attach
 
