@@ -93,6 +93,12 @@ module type LOGGER = sig
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
+
+  val on_approaching_max_iterations
+    :  max_iterations:int ->
+    current_iteration:int ->
+    ('a, Format.formatter, unit, unit, unit, unit) format6 ->
+    'a
 end
 
 (** Must be implemented to compute a global fixpoint. *)
@@ -459,6 +465,7 @@ module Make (Analysis : ANALYSIS) = struct
 
 
   let analyze_overrides
+      ~max_iterations
       ~shared_models_handle
       ~override_graph
       ~step:({ iteration; _ } as step)
@@ -474,6 +481,16 @@ module Make (Analysis : ANALYSIS) = struct
     in
     let new_model =
       let lookup override =
+        let () =
+          Logger.on_approaching_max_iterations
+            ~max_iterations
+            ~current_iteration:iteration
+            "Finding model of overriding callable %a (whose base is %a)"
+            Target.pp_pretty
+            override
+            Target.pp_pretty
+            callable
+        in
         match State.get_model shared_models_handle override with
         | None ->
             Format.asprintf
@@ -508,7 +525,7 @@ module Make (Analysis : ANALYSIS) = struct
     state
 
 
-  let analyze_callable ~pyre_api ~override_graph ~context ~step ~callable =
+  let analyze_callable ~max_iterations ~pyre_api ~override_graph ~context ~step ~callable =
     let () =
       (* Verify invariants *)
       match State.get_meta_data callable with
@@ -532,7 +549,8 @@ module Make (Analysis : ANALYSIS) = struct
         | None ->
             Format.asprintf "Found no definition for `%a`" Target.pp_pretty callable |> failwith
         | Some (qualifier, define) -> analyze_define ~context ~step ~callable ~qualifier ~define)
-    | Target.Override _ as callable -> analyze_overrides ~override_graph ~step ~callable
+    | Target.Override _ as callable ->
+        analyze_overrides ~max_iterations ~override_graph ~step ~callable
     | Target.Object _ as target ->
         Format.asprintf "Found object `%a` in fixpoint analysis" Target.pp_pretty target |> failwith
 
@@ -543,11 +561,36 @@ module Make (Analysis : ANALYSIS) = struct
   }
 
   (* Called on a worker with a set of targets to analyze. *)
-  let one_analysis_pass ~shared_models_handle ~pyre_api ~override_graph ~context ~step ~callables =
+  let one_analysis_pass
+      ~max_iterations
+      ~shared_models_handle
+      ~pyre_api
+      ~override_graph
+      ~context
+      ~step:({ iteration; _ } as step)
+      ~callables
+    =
     let analyze_target expensive_callables callable =
       let timer = Timer.start () in
       let result =
-        analyze_callable ~shared_models_handle ~pyre_api ~override_graph ~context ~step ~callable
+        analyze_callable
+          ~max_iterations
+          ~shared_models_handle
+          ~pyre_api
+          ~override_graph
+          ~context
+          ~step
+          ~callable
+      in
+      let () =
+        Logger.on_approaching_max_iterations
+          ~max_iterations
+          ~current_iteration:iteration
+          "New model of %a: %a"
+          Target.pp_pretty
+          callable
+          Model.pp
+          result.State.model
       in
       State.add ~shared_models_handle step callable result;
       (* Log outliers. *)
@@ -638,6 +681,7 @@ module Make (Analysis : ANALYSIS) = struct
         let () = State.oldify shared_models_handle old_batch in
         let map callables =
           one_analysis_pass
+            ~max_iterations
             ~shared_models_handle
             ~pyre_api
             ~override_graph
@@ -714,6 +758,9 @@ module WithoutLogging = struct
   let override_analysis_end ~callable:_ ~timer:_ = ()
 
   let on_analyze_define_exception ~iteration:_ ~callable:_ ~exn:_ = ()
+
+  let on_approaching_max_iterations ~max_iterations:_ ~current_iteration:_ =
+    Format.ifprintf Format.err_formatter
 end
 
 module WithLogging (Config : sig
@@ -823,4 +870,11 @@ struct
         callable
     in
     Log.log_exception message exn (Hack_parallel.Std.Worker.exception_backtrace exn)
+
+
+  let on_approaching_max_iterations ~max_iterations ~current_iteration format =
+    if current_iteration >= max_iterations - 5 then
+      Log.info format
+    else
+      Format.ifprintf Format.err_formatter format
 end

@@ -77,6 +77,12 @@ module type LOGGER = sig
   val override_analysis_end : callable:Target.t -> timer:Timer.t -> unit
 
   val on_analyze_define_exception : iteration:int -> callable:Target.t -> exn:exn -> unit
+
+  val on_approaching_max_iterations
+    :  max_iterations:int ->
+    current_iteration:int ->
+    ('a, Format.formatter, unit, unit, unit, unit) format6 ->
+    'a
 end
 
 (** Must be implemented to perform a global fixpoint. *)
