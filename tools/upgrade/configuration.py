@@ -20,7 +20,7 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Set
 
 from . import UserError
 from .errors import Errors
-from .filesystem import get_filesystem
+from .filesystem import find_files, get_filesystem
 
 
 LOG: Logger = logging.getLogger(__name__)
@@ -290,6 +290,10 @@ class Configuration:
         except subprocess.CalledProcessError as error:
             LOG.warning("Error calling pyre: %s", str(error))
             return None
+
+    def has_nested_configurations(self) -> bool:
+        configurations = find_files(Path(self.root), ".pyre_configuration.local")
+        return len(configurations) > 0
 
     def get_errors(
         self,
