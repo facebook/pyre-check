@@ -1,0 +1,4 @@
+@generated
+Overrides
+mutate_self.Base.__init__ (override) -> [mutate_self.Base.__init__ (method)]
+object.__init__ (override) -> [mutate_self.Base.__init__ (override) object.__init__ (method)]
