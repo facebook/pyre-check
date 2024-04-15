@@ -102,6 +102,8 @@ val method_name : t -> string option
 
 val is_function_or_method : t -> bool
 
+val is_method : t -> bool
+
 val is_method_or_override : t -> bool
 
 val override_to_method : t -> t

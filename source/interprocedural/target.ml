@@ -207,6 +207,11 @@ let is_function_or_method = function
       false
 
 
+let is_method = function
+  | Method _ -> true
+  | _ -> false
+
+
 let is_method_or_override = function
   | Method _
   | Override _ ->

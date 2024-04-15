@@ -3095,6 +3095,7 @@ let extract_source_model
     exit_taint
   =
   let { Statement.Define.signature = { return_annotation; name; parameters; _ }; _ } = define in
+  let normalized_parameters = AccessPath.normalize_parameters parameters in
   let simplify tree =
     let tree =
       match maximum_trace_length with
@@ -3117,18 +3118,7 @@ let extract_source_model
   in
   let model =
     let return_taint =
-      let breadcrumbs_to_attach, via_features_to_attach =
-        ForwardState.extract_features_to_attach
-          ~root:AccessPath.Root.LocalResult
-          ~attach_to_kind:Sources.Attach
-          existing_forward.Model.Forward.generations
-      in
-      let return_type_breadcrumbs =
-        return_annotation
-        >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-        |> Features.type_breadcrumbs_from_annotation ~pyre_api
-      in
-      let return_variable =
+      let return_variable, original_port, annotation =
         (* Our handling of property setters is counterintuitive.
          * We treat `a.property = x` as `a = a.property(x)`.
          *
@@ -3141,12 +3131,32 @@ let extract_source_model
           String.equal (Reference.last name) "__init__"
           || Statement.Define.is_property_setter define
         then
-          match parameters with
-          | { Node.value = { Parameter.name = self_parameter; _ }; _ } :: _ ->
-              AccessPath.Root.Variable self_parameter
-          | [] -> AccessPath.Root.LocalResult
+          match normalized_parameters with
+          | {
+              root = self_port;
+              original =
+                {
+                  Node.value = { Parameter.name = self_parameter; annotation = self_annotation; _ };
+                  _;
+                };
+              _;
+            }
+            :: _ ->
+              AccessPath.Root.Variable self_parameter, self_port, self_annotation
+          | [] -> AccessPath.Root.LocalResult, AccessPath.Root.LocalResult, return_annotation
         else
-          AccessPath.Root.LocalResult
+          AccessPath.Root.LocalResult, AccessPath.Root.LocalResult, return_annotation
+      in
+      let breadcrumbs_to_attach, via_features_to_attach =
+        ForwardState.extract_features_to_attach
+          ~root:original_port
+          ~attach_to_kind:Sources.Attach
+          existing_forward.Model.Forward.generations
+      in
+      let return_type_breadcrumbs =
+        annotation
+        >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+        |> Features.type_breadcrumbs_from_annotation ~pyre_api
       in
       ForwardState.read ~root:return_variable ~path:[] exit_taint
       |> simplify
