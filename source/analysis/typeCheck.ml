@@ -4461,7 +4461,7 @@ module State (Context : Context) = struct
                                    (ClassVariable { class_name = Type.show parent; class_variable }))
                         | _ -> errors
                       in
-                      let check_final_is_outermost_qualifier errors =
+                      let check_final_is_outermost_parametric_type errors =
                         original_annotation
                         >>| (fun annotation ->
                               if Type.contains_final annotation then
@@ -4633,7 +4633,7 @@ module State (Context : Context) = struct
                             check_assignment_compatibility errors
                       in
                       check_assign_class_variable_on_instance errors
-                      |> check_final_is_outermost_qualifier
+                      |> check_final_is_outermost_parametric_type
                       |> check_undefined_attribute_target
                       |> check_nested_explicit_type_alias
                       |> check_enumeration_literal
