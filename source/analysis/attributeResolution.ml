@@ -624,6 +624,7 @@ module ClassDecorators = struct
       ~definition
       ~create_attribute
       ~instantiate_attribute
+      ~class_name
       table
     =
     let open Expression in
@@ -972,7 +973,11 @@ module ClassDecorators = struct
               methods
           in
           let add_order_method methods name =
-            let annotation = Type.object_primitive in
+            let annotation =
+              match name with
+              | "__eq__" -> Type.object_primitive
+              | _ -> Type.Primitive class_name
+            in
             if not (already_in_table name) then
               make_method
                 ~parameters:[{ name = "$parameter$o"; annotation; default = false }]
@@ -3033,6 +3038,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         otherwise result or to somehow separate these results from the main set of
                         attributes *)
                    ~apply_descriptors:false)
+              ~class_name
               table
         in
         table
