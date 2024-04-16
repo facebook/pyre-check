@@ -61,29 +61,29 @@ Notice the following:
 # static_analysis_example/stubs/taint/taint.config
 
 {
-  sources: [
+  "sources": [
     {
-      name: "UserControlled",
-      comment: "use to annotate user input"
+      "name": "UserControlled",
+      "comment": "use to annotate user input"
     }
   ],
 
-  sinks: [
+  "sinks": [
     {
-      name: "RemoteCodeExecution",
-      comment: "use to annotate execution of code"
+      "name": "RemoteCodeExecution",
+      "comment": "use to annotate execution of code"
     }
   ],
 
-  features: [],
+  "features": [],
 
-  rules: [
+  "rules": [
     {
-      name: "Possible shell injection",
-      code: 5001,
-      sources: [ "UserControlled" ],
-      sinks: [ "RemoteCodeExecution" ],
-      message_format: "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
+      "name": "Possible shell injection",
+      "code": 5001,
+      "sources": [ "UserControlled" ],
+      "sinks": [ "RemoteCodeExecution" ],
+      "message_format": "Data from [{$sources}] source(s) may reach [{$sinks}] sink(s)"
     }
   ]
 }
