@@ -578,7 +578,7 @@ def pyre(
     help="Compact OCaml heap during the analysis to save memory.",
 )
 @click.option(
-    "--compute-coverage-metrics",
+    "--compute-coverage",
     is_flag=True,
     default=False,
     help="Whether to compute the file, kind, and rule coverage.",
