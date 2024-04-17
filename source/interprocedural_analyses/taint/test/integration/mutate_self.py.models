@@ -791,10 +791,68 @@
 {
   "kind": "model",
   "data": {
+    "callable": "mutate_self.Base.mutates_foo",
+    "filename": "mutate_self.py",
+    "callable_line": 24,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "mutate_self.py",
+              "line": 25,
+              "start": 19,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "mutate_self.Base.mutates_foo_and_returns",
     "filename": "mutate_self.py",
     "callable_line": 40,
     "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "mutate_self.py",
+              "line": 41,
+              "start": 19,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      },
       {
         "port": "result[foo]",
         "taint": [
@@ -827,6 +885,74 @@
           {
             "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
             "tito": null
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_self_annotation",
+    "filename": "mutate_self.py",
+    "callable_line": 48,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "mutate_self.py",
+              "line": 49,
+              "start": 19,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "mutate_self.Base.mutates_foo_self_typevar",
+    "filename": "mutate_self.py",
+    "callable_line": 56,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "mutate_self.py",
+              "line": 57,
+              "start": 19,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 2, "upper": 3 } ],
+            "is_self_call": false
           }
         ]
       }

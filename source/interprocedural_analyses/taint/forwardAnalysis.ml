@@ -3090,6 +3090,7 @@ let extract_source_model
           { maximum_model_source_tree_width; maximum_trace_length; _ };
         _;
       }
+    ~callable
     ~existing_forward
     ~apply_broadening
     exit_taint
@@ -3116,55 +3117,77 @@ let extract_source_model
     else
       tree
   in
-  let model =
-    let return_taint =
-      let return_variable, original_port, annotation =
-        (* Our handling of property setters is counterintuitive.
-         * We treat `a.property = x` as `a = a.property(x)`.
-         *
-         * This is because the property setter callable can arbitrarily mutate self in
-         * its body, meaning that we can't do a naive join of the taint returned by the property
-         * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
-         * self as implicitly returned here allows this handling to work and simulates runtime
-         * behavior accurately. *)
-        if
-          String.equal (Reference.last name) "__init__"
-          || Statement.Define.is_property_setter define
-        then
-          match normalized_parameters with
-          | {
-              root = self_port;
-              original =
-                {
-                  Node.value = { Parameter.name = self_parameter; annotation = self_annotation; _ };
-                  _;
-                };
-              _;
-            }
-            :: _ ->
-              AccessPath.Root.Variable self_parameter, self_port, self_annotation
-          | [] -> AccessPath.Root.LocalResult, AccessPath.Root.LocalResult, return_annotation
-        else
-          AccessPath.Root.LocalResult, AccessPath.Root.LocalResult, return_annotation
-      in
-      let breadcrumbs_to_attach, via_features_to_attach =
-        ForwardState.extract_features_to_attach
-          ~root:original_port
-          ~attach_to_kind:Sources.Attach
-          existing_forward.Model.Forward.generations
-      in
-      let return_type_breadcrumbs =
-        annotation
-        >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
-        |> Features.type_breadcrumbs_from_annotation ~pyre_api
-      in
-      ForwardState.read ~root:return_variable ~path:[] exit_taint
+  let extract_model_from_variable ~variable ~port ~annotation state =
+    let breadcrumbs_to_attach, via_features_to_attach =
+      ForwardState.extract_features_to_attach
+        ~root:port
+        ~attach_to_kind:Sources.Attach
+        existing_forward.Model.Forward.generations
+    in
+    let type_breadcrumbs =
+      annotation
+      >>| PyrePysaApi.ReadOnly.parse_annotation pyre_api
+      |> Features.type_breadcrumbs_from_annotation ~pyre_api
+    in
+    let taint =
+      ForwardState.read ~root:variable ~path:[] exit_taint
       |> simplify
       |> ForwardState.Tree.add_local_breadcrumbs breadcrumbs_to_attach
       |> ForwardState.Tree.add_via_features via_features_to_attach
-      |> ForwardState.Tree.add_local_breadcrumbs return_type_breadcrumbs
+      |> ForwardState.Tree.add_local_breadcrumbs type_breadcrumbs
     in
-    ForwardState.assign ~root:AccessPath.Root.LocalResult ~path:[] return_taint ForwardState.bottom
+    ForwardState.assign ~root:port ~path:[] taint state
+  in
+  let implicit_returns_self =
+    (* Our handling of property setters is counterintuitive.
+     * We treat `a.property = x` as `a = a.property(x)`.
+     *
+     * This is because the property setter callable can arbitrarily mutate self in
+     * its body, meaning that we can't do a naive join of the taint returned by the property
+     * setter and the pre-existing taint (as we wouldn't know what taint to delete, etc. Marking
+     * self as implicitly returned here allows this handling to work and simulates runtime
+     * behavior accurately.
+     *
+     * TODO(T185804614): Remove the special handling for constructors and property setters. *)
+    String.equal (Reference.last name) "__init__" || Statement.Define.is_property_setter define
+  in
+  let model =
+    match normalized_parameters with
+    | {
+        original =
+          { Node.value = { Parameter.name = self_parameter; annotation = self_annotation; _ }; _ };
+        _;
+      }
+      :: _
+      when implicit_returns_self ->
+        extract_model_from_variable
+          ~variable:(AccessPath.Root.Variable self_parameter)
+          ~port:AccessPath.Root.LocalResult
+          ~annotation:self_annotation
+          ForwardState.bottom
+    | {
+        root = self_port;
+        original =
+          { Node.value = { Parameter.name = self_parameter; annotation = self_annotation; _ }; _ };
+        _;
+      }
+      :: _
+      when Interprocedural.Target.is_method callable && not implicit_returns_self ->
+        ForwardState.bottom
+        |> extract_model_from_variable
+             ~variable:(AccessPath.Root.Variable self_parameter)
+             ~port:self_port
+             ~annotation:self_annotation
+        |> extract_model_from_variable
+             ~variable:AccessPath.Root.LocalResult
+             ~port:AccessPath.Root.LocalResult
+             ~annotation:return_annotation
+    | _ ->
+        extract_model_from_variable
+          ~variable:AccessPath.Root.LocalResult
+          ~port:AccessPath.Root.LocalResult
+          ~annotation:return_annotation
+          ForwardState.bottom
   in
   let model =
     ForwardState.roots exit_taint
@@ -3276,6 +3299,7 @@ let run
             ~define:define.value
             ~pyre_api
             ~taint_configuration:FunctionContext.taint_configuration
+            ~callable
             ~existing_forward:existing_model.forward
             ~apply_broadening
             taint)

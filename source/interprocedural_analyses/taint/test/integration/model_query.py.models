@@ -499,6 +499,29 @@
     "callable_line": 43,
     "sources": [
       {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "model_query.Base.foo", "port": "leaf:self" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query.py",
+              "line": 43,
+              "start": 12,
+              "end": 16
+            },
+            "caller_interval": [ { "lower": 20, "upper": 25 } ],
+            "is_self_call": false
+          }
+        ]
+      },
+      {
         "port": "result",
         "taint": [
           {
@@ -555,6 +578,34 @@
     "callable": "model_query.C.positional_method",
     "filename": "model_query.py",
     "callable_line": 22,
+    "sources": [
+      {
+        "port": "formal(self, position=0)",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  {
+                    "name": "model_query.C.positional_method",
+                    "port": "leaf:self"
+                  }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "model_query.py",
+              "line": 22,
+              "start": 26,
+              "end": 30
+            },
+            "caller_interval": [ { "lower": 26, "upper": 27 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
     "parameter_sources": [
       {
         "port": "formal(x, position=1)",
