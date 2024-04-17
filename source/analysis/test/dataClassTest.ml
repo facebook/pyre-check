@@ -972,6 +972,28 @@ let test_dataclass_transform =
                     self.x = x
               |};
       labeled_test_case __FUNCTION__ __LINE__
+      (* TODO: fully support data classes to fix this testcase T178998636 *)
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+              from typing import dataclass_transform
+
+              @dataclass_transform
+              class ModelMeta(type): ...
+
+              class ModelBase(metaclass=ModelMeta): ...
+
+              class CustomerModel(ModelBase):
+                id: int
+                name: str
+            |}
+           ~class_name:"CustomerModel"
+           {|
+              class CustomerModel(ModelBase):
+                id: int
+                name: str
+              |};
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~source:
              {|
