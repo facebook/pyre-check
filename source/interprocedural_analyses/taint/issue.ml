@@ -646,6 +646,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
     ForwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
+      ~trace_kind:(Some TraceKind.Source)
       ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.source_taint
@@ -654,6 +655,7 @@ let to_json ~taint_configuration ~expand_overrides ~is_valid_callee ~resolve_mod
     BackwardTaint.to_json
       ~expand_overrides
       ~is_valid_callee
+      ~trace_kind:(Some TraceKind.Sink)
       ~resolve_module_path:(Some resolve_module_path)
       ~export_leaf_names:ExportLeafNames.Always
       issue.flow.sink_taint

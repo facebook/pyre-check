@@ -408,9 +408,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | None -> state
 
 
-  (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
-     `Sinks.AddFeatureToArgument`) to a source taint that must be propagated. *)
-  module TaintInTaintOutEffects = struct
+  (* A mapping from a taint-in-taint-out kind (`Sinks.LocalReturn` or `Sinks.ParameterUpdate`) to
+     sources that must be propagated. *)
+  module CallEffects = struct
     type t = (Sinks.t, ForwardState.Tree.t) Map.Poly.t
 
     let empty = (Map.Poly.empty : t) (* use t to silence a warning. *)
@@ -418,9 +418,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     let update map ~kind ~f = Map.Poly.update map kind ~f
 
     let add map ~kind ~taint =
-      update map ~kind ~f:(function
-          | None -> taint
-          | Some previous -> ForwardState.Tree.join previous taint)
+      if not (ForwardState.Tree.is_empty taint) then
+        update map ~kind ~f:(function
+            | None -> taint
+            | Some previous -> ForwardState.Tree.join previous taint)
+      else
+        map
 
 
     let get map ~kind = Map.Poly.find map kind |> Option.value ~default:ForwardState.Tree.empty
@@ -584,7 +587,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~sink_trees
         ~kind
         ~pair:{ CallModel.TaintInTaintOutMap.TreeRootsPair.tree = tito_tree; roots = tito_roots }
-        tito_effects
+        call_effects
       =
       let tito_tree =
         BackwardState.Tree.fold
@@ -593,12 +596,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~init:ForwardState.Tree.empty
           ~f:(convert_tito_path_to_taint ~argument ~argument_taint ~tito_roots ~sink_trees ~kind)
       in
-      TaintInTaintOutEffects.add tito_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
+      CallEffects.add call_effects ~kind:(Sinks.discard_transforms kind) ~taint:tito_tree
     in
-    let compute_argument_tito_effect
-        (tito_effects, state)
+    let analyze_argument_effect
+        argument_position
+        (call_effects, state)
         ( argument_taint,
-          { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches } )
+          {
+            CallModel.ArgumentMatches.argument;
+            generation_source_matches;
+            sink_matches;
+            tito_matches;
+            sanitize_matches;
+          } )
       =
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location
@@ -616,7 +626,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~is_static_method
           ~call_info_intervals
       in
-      let tito_effects =
+      let call_effects =
         if apply_tito then
           CallModel.taint_in_taint_out_mapping
             ~transform_non_leaves:(fun _ tito -> tito)
@@ -626,10 +636,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~tito_matches
             ~sanitize_matches
           |> CallModel.TaintInTaintOutMap.fold
-               ~init:tito_effects
+               ~init:call_effects
                ~f:(convert_tito_tree_to_taint ~argument ~argument_taint ~sink_trees)
         else
-          TaintInTaintOutEffects.empty
+          call_effects
       in
 
       (* Add features to arguments. *)
@@ -670,9 +680,26 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~sink_tree;
             ())
       in
-      tito_effects, state
+
+      let source_trees =
+        CallModel.source_trees_of_argument
+          ~pyre_in_context
+          ~model:taint_model
+          ~location
+          ~call_target
+          ~arguments
+          ~generation_source_matches
+          ~is_class_method
+          ~is_static_method
+          ~call_info_intervals
+      in
+      let call_effects =
+        CallEffects.add ~kind:(ParameterUpdate argument_position) ~taint:source_trees call_effects
+      in
+
+      call_effects, state
     in
-    let tito_effects, state =
+    let call_effects, state =
       let captures_taint, captures =
         CallModel.match_captures
           ~model:taint_model
@@ -681,9 +708,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       CallModel.match_actuals_to_formals ~model:taint_model ~arguments @ captures
       |> List.zip_exn (arguments_taint @ captures_taint)
-      |> List.fold
-           ~f:compute_argument_tito_effect
-           ~init:(TaintInTaintOutEffects.empty, initial_state)
+      |> List.foldi ~f:analyze_argument_effect ~init:(CallEffects.empty, initial_state)
     in
     let result_taint =
       if is_result_used then
@@ -701,7 +726,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       else
         ForwardState.Tree.empty
     in
-    let tito_taint = TaintInTaintOutEffects.get tito_effects ~kind:Sinks.LocalReturn in
+    let tito_taint = CallEffects.get call_effects ~kind:Sinks.LocalReturn in
     let () =
       (* Need to be called after calling `check_triggered_flows` *)
       store_triggered_sinks_to_propagate_for_call
@@ -709,7 +734,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         ~triggered_sinks:triggered_sinks_for_call
         backward.sink_taint
     in
-    let apply_tito_side_effects tito_effects state =
+    let apply_call_effects call_effects state =
       (* We also have to consider the cases when the updated parameter has a global model, in which
          case we need to capture the flow. *)
       let apply_argument_effect ~argument:{ Call.Argument.value = argument; _ } ~source_tree state =
@@ -740,7 +765,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             | Some argument -> apply_argument_effect ~argument ~source_tree:taint state)
         | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp target |> failwith
       in
-      TaintInTaintOutEffects.fold tito_effects ~f:for_each_target ~init:state
+      CallEffects.fold call_effects ~f:for_each_target ~init:state
     in
     let apply_captured_variable_side_effects state =
       let propagate_captured_variables state root =
@@ -783,9 +808,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       |> ForwardState.Tree.add_local_breadcrumbs
            (Features.type_breadcrumbs (Option.value_exn return_type))
     in
-    let state =
-      state |> apply_tito_side_effects tito_effects |> apply_captured_variable_side_effects
-    in
+    let state = state |> apply_call_effects call_effects |> apply_captured_variable_side_effects in
     returned_taint, state
 
 

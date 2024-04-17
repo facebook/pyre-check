@@ -56,6 +56,7 @@ let at_callsite ~pyre_in_context ~get_callee_model ~call_target ~arguments =
 module ArgumentMatches = struct
   type t = {
     argument: Expression.t;
+    generation_source_matches: AccessPath.argument_match list;
     sink_matches: AccessPath.argument_match list;
     tito_matches: AccessPath.argument_match list;
     sanitize_matches: AccessPath.argument_match list;
@@ -92,6 +93,7 @@ let match_captures ~model ~captures_taint ~location =
     List.map sink_captures ~f:(fun (expression, access_path) ->
         {
           ArgumentMatches.argument = expression;
+          generation_source_matches = [];
           sink_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
           tito_matches = [];
           sanitize_matches = [];
@@ -99,6 +101,7 @@ let match_captures ~model ~captures_taint ~location =
     @ List.map tito_captures ~f:(fun (expression, access_path) ->
           {
             ArgumentMatches.argument = expression;
+            generation_source_matches = [];
             sink_matches = [];
             tito_matches = [{ AccessPath.root = access_path; actual_path = []; formal_path = [] }];
             sanitize_matches = [];
@@ -110,7 +113,12 @@ let captures_as_arguments =
       { Call.Argument.name = None; value = capture.ArgumentMatches.argument })
 
 
-let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments =
+let match_actuals_to_formals ~model:{ Model.forward; backward; sanitizers; _ } ~arguments =
+  let generation_argument_matches =
+    ForwardState.roots forward.generations
+    |> AccessPath.match_actuals_to_formals arguments
+    |> List.map ~f:(fun (argument, argument_match) -> argument.Call.Argument.value, argument_match)
+  in
   let sink_argument_matches =
     BackwardState.roots backward.sink_taint
     |> AccessPath.match_actuals_to_formals arguments
@@ -129,8 +137,19 @@ let match_actuals_to_formals ~model:{ Model.backward; sanitizers; _ } ~arguments
   sanitize_argument_matches
   |> List.zip_exn tito_argument_matches
   |> List.zip_exn sink_argument_matches
-  |> List.map ~f:(fun ((argument, sink_matches), ((_, tito_matches), (_, sanitize_matches))) ->
-         { ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches })
+  |> List.zip_exn generation_argument_matches
+  |> List.map
+       ~f:(fun
+            ( (argument, generation_source_matches),
+              ((_, sink_matches), ((_, tito_matches), (_, sanitize_matches))) )
+          ->
+         {
+           ArgumentMatches.argument;
+           generation_source_matches;
+           sink_matches;
+           tito_matches;
+           sanitize_matches;
+         })
 
 
 let tito_sanitize_of_argument ~model:{ Model.sanitizers; _ } ~sanitize_matches =
@@ -324,6 +343,35 @@ let sink_trees_of_argument
     { SinkTreeWithHandle.sink_tree; handle = IssueHandle.Sink.make_call ~call_target ~root }
   in
   List.map sink_matches ~f:to_sink_tree_with_identifier |> Domains.SinkTreeWithHandle.filter_bottom
+
+
+let source_trees_of_argument
+    ~pyre_in_context
+    ~model:{ Model.forward; _ }
+    ~location
+    ~call_target:{ CallGraph.CallTarget.target; _ }
+    ~arguments
+    ~generation_source_matches
+    ~is_class_method
+    ~is_static_method
+    ~call_info_intervals
+  =
+  let to_source_tree sofar { AccessPath.root; actual_path; formal_path } =
+    ForwardState.read ~root ~path:[] forward.generations
+    |> ForwardState.Tree.apply_call
+         ~pyre_in_context
+         ~location
+         ~callee:(Some target)
+         ~arguments
+         ~port:root
+         ~is_class_method
+         ~is_static_method
+         ~call_info_intervals
+    |> ForwardState.Tree.read formal_path
+    |> ForwardState.Tree.prepend actual_path
+    |> ForwardState.Tree.join sofar
+  in
+  List.fold generation_source_matches ~f:to_source_tree ~init:ForwardState.Tree.bottom
 
 
 let type_breadcrumbs_of_calls targets =

@@ -74,7 +74,8 @@ module Forward = struct
            ~indent:"    "
            (ForwardState.to_json
               ~expand_overrides:None
-              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+              ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
+              ~trace_kind:(Some TraceKind.Source)
               ~resolve_module_path:None
               ~export_leaf_names:ExportLeafNames.Always
               generations))
@@ -120,7 +121,8 @@ module Backward = struct
              ~indent:"    "
              (BackwardState.to_json
                 ~expand_overrides:None
-                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
+                ~trace_kind:(Some TraceKind.Sink)
                 ~resolve_module_path:None
                 ~export_leaf_names:ExportLeafNames.Always
                 sink_taint))
@@ -134,7 +136,8 @@ module Backward = struct
              ~indent:"    "
              (BackwardState.to_json
                 ~expand_overrides:None
-                ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
+                ~trace_kind:None
                 ~resolve_module_path:None
                 ~export_leaf_names:ExportLeafNames.Always
                 taint_in_taint_out))
@@ -211,7 +214,8 @@ module ParameterSources = struct
            ~indent:"    "
            (ForwardState.to_json
               ~expand_overrides:None
-              ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+              ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
+              ~trace_kind:None
               ~resolve_module_path:None
               ~export_leaf_names:ExportLeafNames.Always
               parameter_sources))
@@ -878,6 +882,7 @@ let to_json
             ForwardState.to_json
               ~expand_overrides
               ~is_valid_callee
+              ~trace_kind:(Some TraceKind.Source)
               ~resolve_module_path
               ~export_leaf_names
               generations );
@@ -893,6 +898,7 @@ let to_json
             BackwardState.to_json
               ~expand_overrides
               ~is_valid_callee
+              ~trace_kind:(Some TraceKind.Sink)
               ~resolve_module_path
               ~export_leaf_names
               sink_taint );
@@ -907,7 +913,9 @@ let to_json
           ( "tito",
             BackwardState.to_json
               ~expand_overrides
-              ~is_valid_callee
+              ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
+                (* should only contain CallInfo.Tito *)
+              ~trace_kind:None
               ~resolve_module_path
               ~export_leaf_names
               taint_in_taint_out );
@@ -922,7 +930,9 @@ let to_json
           ( "parameter_sources",
             ForwardState.to_json
               ~expand_overrides
-              ~is_valid_callee
+              ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> false)
+                (* should only contain CallInfo.Declaration *)
+              ~trace_kind:None
               ~resolve_module_path
               ~export_leaf_names
               parameter_sources );

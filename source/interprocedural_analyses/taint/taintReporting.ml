@@ -13,12 +13,12 @@ open Pyre
 open Interprocedural
 
 (* Patch the forward reference to access the final summaries in trace info generation. *)
-let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
+let has_significant_summary ~fixpoint_state ~trace_kind ~port:root ~path ~callee =
   match TaintFixpoint.get_model fixpoint_state callee with
   | None -> false
   | Some { Model.forward; backward; _ } -> (
-      match root with
-      | AccessPath.Root.LocalResult ->
+      match trace_kind with
+      | Some Domains.TraceKind.Source ->
           let _, tree =
             Domains.ForwardState.read_tree_raw
               ~use_precise_labels:true
@@ -28,7 +28,7 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
           in
           let taint = Domains.ForwardState.Tree.get_root tree in
           not (Domains.ForwardTaint.is_bottom taint)
-      | _ ->
+      | Some Domains.TraceKind.Sink ->
           let _, tree =
             Domains.BackwardState.read_tree_raw
               ~use_precise_labels:true
@@ -37,7 +37,8 @@ let has_significant_summary ~fixpoint_state ~port:root ~path ~callee =
               backward.sink_taint
           in
           let taint = Domains.BackwardState.Tree.get_root tree in
-          not (Domains.BackwardTaint.is_bottom taint))
+          not (Domains.BackwardTaint.is_bottom taint)
+      | None -> false)
 
 
 let issues_to_json ~taint_configuration ~fixpoint_state ~resolve_module_path ~override_graph issues =

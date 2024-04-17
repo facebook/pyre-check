@@ -39,7 +39,12 @@ val canonical_location : t -> Location.WithModule.t
 val to_json
   :  taint_configuration:TaintConfiguration.Heap.t ->
   expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->
-  is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
+  is_valid_callee:
+    (trace_kind:TraceKind.t option ->
+    port:AccessPath.Root.t ->
+    path:AccessPath.Path.t ->
+    callee:Target.t ->
+    bool) ->
   resolve_module_path:(Reference.t -> RepositoryPath.t option) ->
   t ->
   Yojson.Safe.t

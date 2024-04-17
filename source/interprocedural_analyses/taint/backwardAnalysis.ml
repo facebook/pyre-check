@@ -518,7 +518,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     in
     let analyze_argument
         (arguments_taint, state)
-        { CallModel.ArgumentMatches.argument; sink_matches; tito_matches; sanitize_matches }
+        {
+          CallModel.ArgumentMatches.argument;
+          generation_source_matches = _;
+          sink_matches;
+          tito_matches;
+          sanitize_matches;
+        }
       =
       let location =
         Location.with_module ~module_reference:FunctionContext.qualifier argument.Node.location

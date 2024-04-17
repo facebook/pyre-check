@@ -235,7 +235,7 @@ module DumpModelQueryResults = struct
     let model_to_json (callable, model) =
       Model.to_json
         ~expand_overrides:None
-        ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+        ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
         ~resolve_module_path:None
         ~resolve_callable_location:None
         ~export_leaf_names:Domains.ExportLeafNames.Always

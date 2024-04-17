@@ -227,12 +227,12 @@ module CallInfo = struct
 
 
   (* Only called when emitting models before we compute the json so we can dedup *)
-  let expand_overrides ~override_graph ~is_valid_callee trace =
+  let expand_overrides ~override_graph ~is_valid_callee ~trace_kind trace =
     match trace with
     | CallSite { location; callees; port; path; class_intervals } ->
         let callees =
           OverrideGraph.SharedMemory.ReadOnly.expand_override_targets override_graph callees
-          |> List.filter ~f:(fun callee -> is_valid_callee ~port ~path ~callee)
+          |> List.filter ~f:(fun callee -> is_valid_callee ~trace_kind ~port ~path ~callee)
         in
         CallSite { location; callees; port; path; class_intervals }
     | _ -> trace
@@ -297,6 +297,16 @@ module TraceLength = struct
   let increase n = if n < Int.max_value then n + 1 else n
 end
 
+module TraceKind = struct
+  type t =
+    | Source
+    | Sink
+
+  let show = function
+    | Source -> "source"
+    | Sink -> "sink"
+end
+
 (* This module represents the first hops of the extra traces that are attached to the trace frames
    in Zoncolan UI. *)
 module ExtraTraceFirstHop = struct
@@ -326,14 +336,23 @@ module ExtraTraceFirstHop = struct
     let name = "extra trace"
 
     let trace_kind = function
-      | Source _ -> "source"
-      | Sink _ -> "sink"
+      | Source _ -> TraceKind.Source
+      | Sink _ -> TraceKind.Sink
 
 
-    let expand_overrides ~override_graph ~is_valid_callee ({ call_info; _ } as extra_trace) =
+    let expand_overrides
+        ~override_graph
+        ~is_valid_callee
+        ({ call_info; leaf_kind; _ } as extra_trace)
+      =
       {
         extra_trace with
-        call_info = CallInfo.expand_overrides ~override_graph ~is_valid_callee call_info;
+        call_info =
+          CallInfo.expand_overrides
+            ~override_graph
+            ~trace_kind:(leaf_kind |> trace_kind |> Option.some)
+            ~is_valid_callee
+            call_info;
       }
 
 
@@ -343,7 +362,7 @@ module ExtraTraceFirstHop = struct
           (CallInfo.to_json ~resolve_module_path:None call_info)
           [
             "leaf_kind", `String (show_leaf_kind leaf_kind);
-            "trace_kind", `String (trace_kind leaf_kind);
+            "trace_kind", `String (leaf_kind |> trace_kind |> TraceKind.show);
           ]
       in
       let json =
@@ -559,7 +578,13 @@ module type TAINT_DOMAIN = sig
 
   val to_json
     :  expand_overrides:OverrideGraph.SharedMemory.ReadOnly.t option ->
-    is_valid_callee:(port:AccessPath.Root.t -> path:AccessPath.Path.t -> callee:Target.t -> bool) ->
+    is_valid_callee:
+      (trace_kind:TraceKind.t option ->
+      port:AccessPath.Root.t ->
+      path:AccessPath.Path.t ->
+      callee:Target.t ->
+      bool) ->
+    trace_kind:TraceKind.t option ->
     resolve_module_path:(Reference.t -> RepositoryPath.t option) option ->
     export_leaf_names:ExportLeafNames.t ->
     t ->
@@ -754,7 +779,14 @@ end = struct
     Map.fold kind ~init:[] ~f:List.cons map |> List.dedup_and_sort ~compare:Kind.compare
 
 
-  let to_json ~expand_overrides ~is_valid_callee ~resolve_module_path ~export_leaf_names taint =
+  let to_json
+      ~expand_overrides
+      ~is_valid_callee
+      ~trace_kind
+      ~resolve_module_path
+      ~export_leaf_names
+      taint
+    =
     let cons_if_non_empty key list assoc =
       if List.is_empty list then
         assoc
@@ -879,7 +911,7 @@ end = struct
           Map.transform
             Key
             Map
-            ~f:(CallInfo.expand_overrides ~override_graph ~is_valid_callee)
+            ~f:(CallInfo.expand_overrides ~override_graph ~is_valid_callee ~trace_kind)
             taint
       | None -> taint
     in
@@ -1627,7 +1659,13 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       end)
       (Tree)
 
-  let to_json ~expand_overrides ~is_valid_callee ~resolve_module_path ~export_leaf_names environment
+  let to_json
+      ~expand_overrides
+      ~is_valid_callee
+      ~trace_kind
+      ~resolve_module_path
+      ~export_leaf_names
+      environment
     =
     let element_to_json json_list (root, tree) =
       let path_to_json (path, tip) json_list =
@@ -1639,6 +1677,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
               Taint.to_json
                 ~expand_overrides
                 ~is_valid_callee
+                ~trace_kind
                 ~resolve_module_path
                 ~export_leaf_names
                 tip );

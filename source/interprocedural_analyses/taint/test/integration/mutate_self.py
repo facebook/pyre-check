@@ -29,13 +29,13 @@ class Base:
 
     def isssue_mutates_foo(self) -> None:
         self.mutates_foo()
-        self.foo_sink()  # TODO(T171333442): Issue, currently a false negative.
+        self.foo_sink()  # Issue.
         self.bar_sink()  # Not an issue.
 
     def issue_mutates_foo_with_hop(self) -> None:
         self.mutates_foo_with_hop()
-        self.foo_sink()  # TODO(T171333442): Issue, currently a false negative.
-        self.bar_sink()
+        self.foo_sink()  # Issue.
+        self.bar_sink()  # Not an issue.
 
     def mutates_foo_and_returns(self) -> "Base":
         self.foo = _test_source()
@@ -50,22 +50,22 @@ class Base:
 
     def issue_mutates_foo_self_annotation(self) -> None:
         self.mutates_foo_self_annotation()
-        self.foo_sink()  # TODO(T171333442): Issue, currently a false negative.
-        self.bar_sink()
+        self.foo_sink()  # Issue.
+        self.bar_sink()  # Not an issue.
 
     def mutates_foo_self_typevar(self: MySelf) -> None:
         self.foo = _test_source()
 
     def issue_mutates_foo_self_typevar(self) -> None:
         self.mutates_foo_self_typevar()
-        self.foo_sink()  # TODO(T171333442): Issue, currently a false negative.
-        self.bar_sink()
+        self.foo_sink()  # Issue.
+        self.bar_sink()  # Not an issue.
 
 
 def issue_mutates_foo_instance() -> None:
     b = Base()
     b.mutates_foo()
-    b.foo_sink()  # TODO(T171333442): Issue, currently a false negative.
+    b.foo_sink()  # Issue.
     b.bar_sink()  # Not an issue.
 
 

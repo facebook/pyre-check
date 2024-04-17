@@ -892,7 +892,7 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
                         model =
                           Taint.Model.to_json
                             ~expand_overrides:None
-                            ~is_valid_callee:(fun ~port:_ ~path:_ ~callee:_ -> true)
+                            ~is_valid_callee:(fun ~trace_kind:_ ~port:_ ~path:_ ~callee:_ -> true)
                             ~resolve_module_path:None
                             ~resolve_callable_location:None
                             ~export_leaf_names:Taint.Domains.ExportLeafNames.Always
