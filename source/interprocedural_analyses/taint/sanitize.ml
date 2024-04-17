@@ -138,6 +138,8 @@ module RootMap = struct
       end)
       (T)
 
+  let equal left right = less_or_equal ~left ~right && less_or_equal ~left:right ~right:left
+
   let roots map = fold Key ~f:List.cons ~init:[] map
 
   let to_json map =

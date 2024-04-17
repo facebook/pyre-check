@@ -36,9 +36,15 @@ module Sanitizers : sig
     parameters: Sanitize.t;
     roots: Sanitize.RootMap.t;
   }
-  [@@deriving show]
+  [@@deriving show, equal]
 
   val empty : t
+
+  val from_global : Sanitize.t -> t
+
+  val from_parameters : Sanitize.t -> t
+
+  val join : t -> t -> t
 end
 
 module Mode : sig
@@ -59,13 +65,11 @@ module Mode : sig
 end
 
 module ModeSet : sig
-  type t [@@deriving show]
+  type t [@@deriving show, equal]
 
   val singleton : Mode.t -> t
 
   val empty : t
-
-  val equal : t -> t -> bool
 
   val is_empty : t -> bool
 

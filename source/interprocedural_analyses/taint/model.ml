@@ -256,6 +256,7 @@ module Sanitizers = struct
     (* Map from parameter or return value to sanitizers applying in both traces. *)
     roots: Sanitize.RootMap.t;
   }
+  [@@deriving equal]
 
   let pp_inner formatter { global; parameters; roots } =
     let () =
@@ -293,6 +294,10 @@ module Sanitizers = struct
   let is_empty { global; parameters; roots } =
     Sanitize.is_empty global && Sanitize.is_empty parameters && Sanitize.RootMap.is_bottom roots
 
+
+  let from_global global = { empty with global }
+
+  let from_parameters parameters = { empty with parameters }
 
   let join
       { global = global_left; parameters = parameters_left; roots = roots_left }

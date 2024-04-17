@@ -156,6 +156,7 @@ module ModelAnnotation : sig
       }
     | ReturnAnnotation of TaintAnnotation.t
     | ModeAnnotation of Model.ModeSet.t
+    | SanitizeAnnotation of Model.Sanitizers.t
   [@@deriving show, equal]
 end
 
