@@ -599,12 +599,22 @@ let apply_sanitizers
   (* Here, we apply sanitizers both in the forward and backward trace. *)
   (* Note that by design, sanitizing a specific source or sink also sanitizes
    * taint-in-taint-out for that source/sink. *)
+  let generations =
+    (* Sanitize(Parameters[TaintSource[...]]) *)
+    ForwardState.apply_sanitizers
+      ~taint_configuration
+      ~sanitize_source:true
+      ~roots:RootSelector.AllParameters
+      ~sanitizer:parameters
+      generations
+  in
   let sink_taint =
     (* Sanitize(Parameters[TaintSource[...]]) *)
     BackwardState.apply_sanitizers
       ~taint_configuration
       ~sanitize_source:true
       ~ignore_if_sanitize_all:true
+      ~roots:RootSelector.AllParameters
       ~sanitizer:parameters
       sink_taint
   in
@@ -631,6 +641,7 @@ let apply_sanitizers
     BackwardState.apply_sanitizers
       ~taint_configuration
       ~sanitize_sink:true
+      ~roots:RootSelector.AllParameters
       ~sanitizer:parameters
       sink_taint
   in
@@ -651,6 +662,7 @@ let apply_sanitizers
       ForwardState.apply_sanitizers
         ~taint_configuration
         ~sanitize_source:true
+        ~roots:(RootSelector.Root AccessPath.Root.LocalResult)
         ~sanitizer
         generations
     in
@@ -678,6 +690,7 @@ let apply_sanitizers
         ~taint_configuration
         ~sanitize_sink:true
         ~ignore_if_sanitize_all:true
+        ~roots:(RootSelector.Root AccessPath.Root.LocalResult)
         ~sanitizer
         generations
     in
@@ -695,13 +708,22 @@ let apply_sanitizers
 
   (* Apply the parameter-specific sanitizers. *)
   let sanitize_parameter (parameter, sanitizer) (generations, taint_in_taint_out, sink_taint) =
+    let generations =
+      (* def foo(self: Sanitize[TaintSource[...]]) *)
+      ForwardState.apply_sanitizers
+        ~taint_configuration
+        ~sanitize_source:true
+        ~roots:(RootSelector.Root parameter)
+        ~sanitizer
+        generations
+    in
     let sink_taint =
       (* def foo(x: Sanitize[TaintSource[...]]): ... *)
       BackwardState.apply_sanitizers
         ~taint_configuration
         ~sanitize_source:true
         ~ignore_if_sanitize_all:true
-        ~parameter
+        ~roots:(RootSelector.Root parameter)
         ~sanitizer
         sink_taint
     in
@@ -711,7 +733,7 @@ let apply_sanitizers
         ~taint_configuration
         ~sanitize_source:true
         ~ignore_if_sanitize_all:true
-        ~parameter
+        ~roots:(RootSelector.Root parameter)
         ~sanitizer
         taint_in_taint_out
     in
@@ -721,7 +743,7 @@ let apply_sanitizers
         ~taint_configuration
         ~sanitize_tito:true
         ~insert_location:TaintTransformOperation.InsertLocation.Back
-        ~parameter
+        ~roots:(RootSelector.Root parameter)
         ~sanitizer
         taint_in_taint_out
     in
@@ -730,9 +752,18 @@ let apply_sanitizers
       BackwardState.apply_sanitizers
         ~taint_configuration
         ~sanitize_sink:true
-        ~parameter
+        ~roots:(RootSelector.Root parameter)
         ~sanitizer
         sink_taint
+    in
+    let generations =
+      (* def foo(self: Sanitize[TaintSink[...]]) *)
+      ForwardState.apply_sanitizers
+        ~taint_configuration
+        ~sanitize_sink:true
+        ~roots:(RootSelector.Root parameter)
+        ~sanitizer
+        generations
     in
     let taint_in_taint_out =
       (* def foo(x: Sanitize[TaintSink[...]]): ... *)
@@ -740,7 +771,7 @@ let apply_sanitizers
         ~taint_configuration
         ~sanitize_sink:true
         ~ignore_if_sanitize_all:true
-        ~parameter
+        ~roots:(RootSelector.Root parameter)
         ~sanitizer
         taint_in_taint_out
     in

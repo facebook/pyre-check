@@ -927,3 +927,35 @@ def sanitize_single_argument_tito(x, y):
         return x
     else:
         return y
+
+
+class GenerationOnSelf:
+    def sanitize_sources(self):
+        self.foo = _test_source()
+
+    def sanitize_test_a_source(self):
+        if 1 > 2:
+            self.foo = a_source()
+        else:
+            self.foo = b_source()
+
+    def sanitize_parameter(self):
+        self.foo = _test_source()
+
+    def sanitize_parameter_test_a_source(self):
+        if 1 > 2:
+            self.foo = a_source()
+        else:
+            self.foo = b_source()
+
+    def sanitize_all_parameters(self):
+        self.foo = _test_source()
+
+    def sanitize_all_parameters_test_a_source(self):
+        if 1 > 2:
+            self.foo = a_source()
+        else:
+            self.foo = b_source()
+
+    def sanitize_return(self):
+        self.foo = _test_source()

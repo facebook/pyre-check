@@ -2076,6 +2076,189 @@
 {
   "kind": "model",
   "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters",
+    "filename": "sanitize.py",
+    "callable_line": 951,
+    "parameters_sanitizer": {
+      "sources": "All",
+      "sinks": "All",
+      "tito": { "sources": "All", "sinks": "All" }
+    }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_all_parameters_test_a_source",
+    "filename": "sanitize.py",
+    "callable_line": 954,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "sanitize.b_source", "port": "leaf:return" }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": {
+              "filename": "sanitize.py",
+              "line": 958,
+              "start": 23,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "parameters_sanitizer": { "sources": [ "TestA" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_parameter",
+    "filename": "sanitize.py",
+    "callable_line": 942,
+    "sanitizers": [
+      {
+        "port": "formal(self, position=0)",
+        "sources": "All",
+        "sinks": "All",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_parameter_test_a_source",
+    "filename": "sanitize.py",
+    "callable_line": 945,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "sanitize.b_source", "port": "leaf:return" }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": {
+              "filename": "sanitize.py",
+              "line": 949,
+              "start": 23,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      { "port": "formal(self, position=0)", "sources": [ "TestA" ] }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_return",
+    "filename": "sanitize.py",
+    "callable_line": 960,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "sanitize.py",
+              "line": 961,
+              "start": 19,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "sanitizers": [
+      {
+        "port": "result",
+        "sources": "All",
+        "sinks": "All",
+        "tito": { "sources": "All", "sinks": "All" }
+      }
+    ]
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_sources",
+    "filename": "sanitize.py",
+    "callable_line": 933,
+    "global_sanitizer": { "sources": "All" }
+  }
+}
+{
+  "kind": "model",
+  "data": {
+    "callable": "sanitize.GenerationOnSelf.sanitize_test_a_source",
+    "filename": "sanitize.py",
+    "callable_line": 936,
+    "sources": [
+      {
+        "port": "formal(self, position=0)[foo]",
+        "taint": [
+          {
+            "kinds": [
+              {
+                "leaves": [
+                  { "name": "sanitize.b_source", "port": "leaf:return" }
+                ],
+                "kind": "TestB"
+              }
+            ],
+            "origin": {
+              "filename": "sanitize.py",
+              "line": 940,
+              "start": 23,
+              "end": 33
+            },
+            "caller_interval": [ { "lower": 18, "upper": 19 } ],
+            "is_self_call": false
+          }
+        ]
+      }
+    ],
+    "global_sanitizer": { "sources": [ "TestA" ] }
+  }
+}
+{
+  "kind": "model",
+  "data": {
     "callable": "sanitize.a_sink",
     "filename": "sanitize.py",
     "callable_line": 153,

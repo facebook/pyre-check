@@ -396,6 +396,13 @@ module IssueHandleSet = struct
   let to_json set = elements set |> List.map ~f:(fun e -> `String (IssueHandle.master_handle e))
 end
 
+module RootSelector = struct
+  type t =
+    | All (* All roots *)
+    | Root of AccessPath.Root.t (* The given root *)
+    | AllParameters (* Only parameter roots *)
+end
+
 (* Represents a frame, i.e a single hop between functions. *)
 module Frame = struct
   module Slots = struct
@@ -1782,7 +1789,7 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
       ?(sanitize_tito = false)
       ?(ignore_if_sanitize_all = false)
       ?(insert_location = TaintTransformOperation.InsertLocation.Front)
-      ?parameter
+      ?(roots = RootSelector.All)
       ~sanitizer:{ Sanitize.sources; sinks; tito }
       ~taint_configuration
       taint
@@ -1794,9 +1801,9 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
         (* Not yet support sanitizing all kinds in some situations *)
         taint
       else
-        match parameter with
-        | Some parameter ->
-            let apply_taint_transforms = function
+        match roots with
+        | RootSelector.Root root ->
+            let apply_sanitize_transforms = function
               | None -> Tree.bottom
               | Some taint_tree ->
                   Tree.apply_sanitize_transforms
@@ -1805,13 +1812,25 @@ module MakeTaintEnvironment (Taint : TAINT_DOMAIN) () = struct
                     insert_location
                     taint_tree
             in
-            update taint parameter ~f:apply_taint_transforms
-        | None ->
+            update taint root ~f:apply_sanitize_transforms
+        | RootSelector.All ->
             transform
               Taint.Self
               Map
               ~f:(Taint.apply_sanitize_transforms ~taint_configuration sanitizers insert_location)
               taint
+        | RootSelector.AllParameters ->
+            let apply_sanitize_transforms root taint =
+              if AccessPath.Root.is_parameter root then
+                Taint.apply_sanitize_transforms
+                  ~taint_configuration
+                  sanitizers
+                  insert_location
+                  taint
+              else
+                taint
+            in
+            transform Taint.Self (Context (Key, Map)) ~f:apply_sanitize_transforms taint
     in
     let source_sanitizers =
       if sanitize_source then
