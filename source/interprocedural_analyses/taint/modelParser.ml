@@ -3256,42 +3256,12 @@ let create_model_from_signature
         in
         List.map parameters ~f:adjust_parameter |> all
   in
-  let annotations () =
-    normalized_model_parameters
-    >>= fun normalized_model_parameters ->
-    List.map
-      normalized_model_parameters
-      ~f:
-        (parse_parameter_taint
-           ~path
-           ~location
-           ~origin:DefineParameter
-           ~taint_configuration
-           ~parameters
-           ~callable_parameter_names_to_roots)
-    |> all
-    >>| List.concat
-    >>= fun parameter_taint ->
-    return_annotation
-    |> Option.map
-         ~f:
-           (parse_return_taint
-              ~path
-              ~location
-              ~origin:DefineReturn
-              ~taint_configuration
-              ~parameters
-              ~callable_parameter_names_to_roots)
-    |> Option.value ~default:(Ok [])
-    >>| fun return_taint -> List.rev_append parameter_taint return_taint
-  in
-  let add_captured_variables_taint
+  let parse_captured_variables_decorators
       ~path
       ~location
       ~origin
       ~taint_configuration
       ~top_level_decorators
-      model
     =
     let annotation_error reason arguments =
       let taint_annotation =
@@ -3309,15 +3279,13 @@ let create_model_from_signature
       | "CapturedVariables" -> true
       | _ -> false
     in
-    let add_taint ~generation_if_source taint_annotation =
+    let parse_annotation ~generation_if_source taint_annotation =
       let captured_variables =
         match PyrePysaApi.ReadOnly.get_define_body pyre_api callable_name with
         | Some { Node.value = { Define.captures; _ }; _ } ->
             List.map ~f:(fun capture -> capture.Define.Capture.name) captures
         | _ -> []
       in
-      callable_annotation
-      >>= fun callable_annotation ->
       taint_annotation
       |> parse_annotations
            ~path
@@ -3326,26 +3294,22 @@ let create_model_from_signature
            ~taint_configuration
            ~parameters:[]
            ~callable_parameter_names_to_roots:None
-      >>= List.fold_result ~init:model ~f:(fun model annotation ->
-              List.fold_result captured_variables ~init:model ~f:(fun model captured_variable ->
-                  add_taint_annotation_to_model
-                    ~path
-                    ~location
-                    ~model_name:(Reference.show callable_name)
-                    ~pyre_api
-                    ~callable_annotation
-                    ~source_sink_filter
-                    model
-                    (ModelAnnotation.ParameterAnnotation
-                       {
-                         root = AccessPath.Root.CapturedVariable { name = captured_variable };
-                         annotation;
-                         generation_if_source;
-                       })))
+      >>| List.fold ~init:[] ~f:(fun annotations annotation ->
+              List.fold
+                captured_variables
+                ~init:annotations
+                ~f:(fun annotations captured_variable ->
+                  ModelAnnotation.ParameterAnnotation
+                    {
+                      root = AccessPath.Root.CapturedVariable { name = captured_variable };
+                      annotation;
+                      generation_if_source;
+                    }
+                  :: annotations))
     in
     match List.find ~f:is_captured_variables top_level_decorators with
     | Some { Decorator.arguments = Some [{ Call.Argument.value; _ }]; _ } ->
-        add_taint ~generation_if_source:false value
+        parse_annotation ~generation_if_source:false value
     | Some
         {
           Decorator.arguments =
@@ -3361,7 +3325,7 @@ let create_model_from_signature
           _;
         } ->
         if String.is_substring ~substring:"TaintSource" (Expression.show value) then
-          add_taint ~generation_if_source:true value
+          parse_annotation ~generation_if_source:true value
         else
           annotation_error
             "`@CapturedVariables(..., generation=True)` must be used only on `TaintSource`s."
@@ -3381,46 +3345,73 @@ let create_model_from_signature
           arguments
     | Some { Decorator.arguments = None; _ } ->
         annotation_error "`@CapturedVariables(...)` needs one Taint Annotation as argument." None
-    | None -> Ok model
+    | None -> Ok []
   in
-  let model =
+  callable_annotation
+  >>= fun callable_annotation ->
+  normalized_model_parameters
+  >>= fun normalized_model_parameters ->
+  ModelVerifier.verify_signature
+    ~path
+    ~location
+    ~normalized_model_parameters
+    ~name:callable_name
     callable_annotation
-    >>= fun callable_annotation ->
+  >>= fun () ->
+  List.map
     normalized_model_parameters
-    >>= fun normalized_model_parameters ->
-    ModelVerifier.verify_signature
-      ~path
-      ~location
-      ~normalized_model_parameters
-      ~name:callable_name
-      callable_annotation
-    >>= fun () ->
-    annotations ()
-    >>= fun annotations ->
-    let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
-    List.fold_result annotations ~init:default_model ~f:(fun accumulator annotation ->
-        add_taint_annotation_to_model
-          ~path
-          ~location
-          ~model_name:(Reference.show callable_name)
-          ~pyre_api
-          ~callable_annotation
-          ~source_sink_filter
-          accumulator
-          annotation)
+    ~f:
+      (parse_parameter_taint
+         ~path
+         ~location
+         ~origin:DefineParameter
+         ~taint_configuration
+         ~parameters
+         ~callable_parameter_names_to_roots)
+  |> all
+  >>| List.concat
+  >>= fun parameters_annotations ->
+  return_annotation
+  |> Option.map
+       ~f:
+         (parse_return_taint
+            ~path
+            ~location
+            ~origin:DefineReturn
+            ~taint_configuration
+            ~parameters
+            ~callable_parameter_names_to_roots)
+  |> Option.value ~default:(Ok [])
+  >>= fun return_annotations ->
+  parse_captured_variables_decorators
+    ~path
+    ~location
+    ~taint_configuration
+    ~origin:DefineDecoratorCapturedVariables
+    ~top_level_decorators
+  >>= fun captured_variables_annotations ->
+  let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
+  let all_annotations =
+    return_annotations
+    |> List.rev_append parameters_annotations
+    |> List.rev_append captured_variables_annotations
   in
-  model
+  List.fold_result
+    all_annotations
+    ~init:default_model
+    ~f:
+      (add_taint_annotation_to_model
+         ~path
+         ~location
+         ~model_name:(Reference.show callable_name)
+         ~pyre_api
+         ~callable_annotation
+         ~source_sink_filter)
   >>= adjust_sanitize_and_modes_and_skipped_override
         ~path
         ~taint_configuration
         ~origin:DefineDecorator
         ~source_sink_filter
-        ~top_level_decorators
-  >>= add_captured_variables_taint
-        ~path
-        ~location
-        ~taint_configuration
-        ~origin:DefineDecoratorCapturedVariables
         ~top_level_decorators
   >>| fun model -> Model { Model.WithTarget.model; target = call_target }
 
