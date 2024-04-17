@@ -224,6 +224,30 @@ let test_check_dataclasses =
               `typing.Callable(A.__init__)[[Named(self, A), Named(x, int), KeywordOnly(y, int, \
               default)], None]`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass
+           @dataclass(frozen=True)
+           class A:
+             x: int
+           a = A(x=42)
+           a.x = 43
+         |}
+           ["Invalid assignment [41]: Cannot reassign final attribute `a.x`."];
+      (* TODO(T178998636) Do not allow `frozen` dataclasses to inherit from non-frozen. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass
+           @dataclass(frozen=False)
+           class A:
+             x: int
+           @dataclass(frozen=True)
+           class B:
+             y: str
+         |}
+           [];
     ]
 
 
