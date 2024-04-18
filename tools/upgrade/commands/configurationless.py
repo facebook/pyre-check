@@ -6,7 +6,6 @@
 # pyre-strict
 
 import argparse
-import glob
 import json
 import logging
 import re
@@ -380,16 +379,8 @@ class Configurationless(Command):
     def _get_already_migrated_files(
         self, local_configuration: Configuration
     ) -> Set[Path]:
-        downward_search_start = str(local_configuration.get_path().resolve().parent)
-        if not downward_search_start.endswith("/"):
-            downward_search_start += "/"
         already_migrated_files: Set[Path] = set()
-        nested_configurations = glob.glob(
-            f"{downward_search_start}*/**/.pyre_configuration.local",
-            recursive=True,
-        )
-        LOG.info(f"Found {len(nested_configurations)} nested configurations")
-        LOG.debug(f"Nested configurations found: {nested_configurations}")
+        nested_configurations = local_configuration.get_nested_configuration_paths()
         for configuration_path in nested_configurations:
             nested_local_configuration = Configuration(Path(configuration_path))
             migrated_files = self.get_files_from_local_configuration(

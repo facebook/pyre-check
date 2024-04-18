@@ -10,6 +10,7 @@ TODO(T132414938) Add a module-level docstring
 """
 
 
+import glob
 import json
 import logging
 import re
@@ -291,9 +292,19 @@ class Configuration:
             LOG.warning("Error calling pyre: %s", str(error))
             return None
 
-    def has_nested_configurations(self) -> bool:
-        configurations = find_files(Path(self.root), ".pyre_configuration.local")
-        return len(configurations) > 0
+    def get_nested_configuration_paths(self) -> Set[Path]:
+        downward_search_start = self.root
+        if not downward_search_start.endswith("/"):
+            downward_search_start += "/"
+        nested_configurations = glob.glob(
+            f"{downward_search_start}*/**/.pyre_configuration.local",
+            recursive=True,
+        )
+        LOG.info(f"Found {len(nested_configurations)} nested configurations")
+        LOG.debug(f"Nested configurations found: {nested_configurations}")
+        return {
+            Path(nested_configuration) for nested_configuration in nested_configurations
+        }
 
     def get_errors(
         self,
