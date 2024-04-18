@@ -350,7 +350,7 @@ let test_resolve_exports =
       @@ assert_resolve
            ~sources:
              [
-               "placeholder.py", "# pyre-placeholder-stub";
+               "placeholder.pyi", "# pyre-placeholder-stub";
                "a.py", "from placeholder.nonexistent import foo";
              ]
            "a.foo"
