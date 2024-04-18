@@ -4244,10 +4244,6 @@ let parse
   }
 
 
-let invalid_model_query_error error =
-  model_verification_error ~path:None ~location:Location.any error
-
-
 let create_callable_model_from_annotations
     ~pyre_api
     ~modelable
@@ -4307,7 +4303,9 @@ let create_attribute_model_from_annotations ~pyre_api ~name ~source_sink_filter 
                  { root = attribute_symbolic_parameter; annotation; generation_if_source = false })
         | _ ->
             Error
-              (invalid_model_query_error
+              (model_verification_error
+                 ~path:None
+                 ~location:Location.any
                  (InvalidAnnotationForAttributeModel
                     { name; annotation = TaintAnnotation.show annotation }))
       in
