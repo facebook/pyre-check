@@ -22,7 +22,7 @@ open Core
 type export =
   | FromModuleGetattr
   | Exported of Ast.Module.Export.Name.t
-[@@deriving sexp, compare, hash]
+[@@deriving show, sexp, compare, hash]
 
 type t =
   | Module of Ast.Reference.t
@@ -36,7 +36,7 @@ type t =
       stub_module: Ast.Reference.t;
       remaining: Ast.Identifier.t list;
     }
-[@@deriving sexp, compare, hash]
+[@@deriving show, sexp, compare, hash]
 
 (* In type-checking code, we want to short-circuit recursion for Expression.Name resolution whenever
    the name points to a top-level module attribute. We do not want to short-circuit for nested

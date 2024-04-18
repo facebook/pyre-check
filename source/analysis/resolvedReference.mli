@@ -8,7 +8,7 @@
 type export =
   | FromModuleGetattr
   | Exported of Ast.Module.Export.Name.t
-[@@deriving sexp, compare, hash]
+[@@deriving show, sexp, compare, hash]
 
 type t =
   | Module of Ast.Reference.t
@@ -22,6 +22,6 @@ type t =
       stub_module: Ast.Reference.t;
       remaining: Ast.Identifier.t list;
     }
-[@@deriving sexp, compare, hash]
+[@@deriving show, sexp, compare, hash]
 
 val as_module_toplevel_reference : t -> Ast.Reference.t option
