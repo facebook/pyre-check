@@ -313,47 +313,58 @@ let test_resolve_literal context =
   assert_resolve_literal "1 if i else i" Type.Any
 
 
-let test_resolve_exports context =
-  let assert_resolve ~sources name expected =
+let test_resolve_exports =
+  let assert_resolve ~sources name expected context =
     let resolution =
       ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
     in
     let reference = GlobalResolution.legacy_resolve_exports resolution (Reference.create name) in
     assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
   in
-  assert_resolve ~sources:[] "a.b" "a.b";
-  assert_resolve ~sources:["a.py", "from b import foo"; "b.py", "foo = 1"] "a.foo" "b.foo";
-  assert_resolve
-    ~sources:
-      [
-        "a.py", "from b import foo";
-        "b.py", "from c import bar as foo";
-        "c.py", "from d import cow as bar";
-        "d.py", "cow = 1";
-      ]
-    "a.foo"
-    "d.cow";
-  assert_resolve
-    ~sources:
-      ["qualifier.py", "from qualifier.foo import foo"; "qualifier/foo/__init__.py", "foo = 1"]
-    "qualifier.foo.foo"
-    "qualifier.foo.foo";
-  assert_resolve
-    ~sources:
-      [
-        "placeholder.py", "# pyre-placeholder-stub";
-        "a.py", "from placeholder.nonexistent import foo";
-      ]
-    "a.foo"
-    "placeholder.nonexistent.foo";
-  assert_resolve
-    ~sources:
-      [
-        "qualifier/__init__.py", "from qualifier.a import bar as a";
-        "qualifier/a.py", "foo = 1\nbar = 1";
-      ]
-    "qualifier.a.foo"
-    "qualifier.a.foo"
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__ @@ assert_resolve ~sources:[] "a.b" "a.b";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve ~sources:["a.py", "from b import foo"; "b.py", "foo = 1"] "a.foo" "b.foo";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "a.py", "from b import foo";
+               "b.py", "from c import bar as foo";
+               "c.py", "from d import cow as bar";
+               "d.py", "cow = 1";
+             ]
+           "a.foo"
+           "d.cow";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "qualifier.py", "from qualifier.foo import foo";
+               "qualifier/foo/__init__.py", "foo = 1";
+             ]
+           "qualifier.foo.foo"
+           "qualifier.foo.foo";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "placeholder.py", "# pyre-placeholder-stub";
+               "a.py", "from placeholder.nonexistent import foo";
+             ]
+           "a.foo"
+           "placeholder.nonexistent.foo";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "qualifier/__init__.py", "from qualifier.a import bar as a";
+               "qualifier/a.py", "foo = 1\nbar = 1";
+             ]
+           "qualifier.a.foo"
+           "qualifier.a.foo";
+    ]
 
 
 let test_get_typed_dictionary context =
@@ -444,8 +455,8 @@ let test_get_typed_dictionary context =
 
 (* We don't reverse order when returning the classes. *)
 
-let test_fallback_attribute context =
-  let assert_fallback_attribute ?(instantiated = None) ~name source annotation =
+let test_fallback_attribute =
+  let assert_fallback_attribute ?(instantiated = None) ~name source annotation context =
     let project = ScratchProject.setup ~context ["test.py", source] in
     let global_resolution = Test.ScratchProject.build_global_resolution project in
     let resolution = TypeCheck.resolution global_resolution (module TypeCheck.DummyContext) in
@@ -479,156 +490,178 @@ let test_fallback_attribute context =
       annotation
       (attribute >>| AnnotatedAttribute.annotation >>| Annotation.annotation)
   in
-  assert_fallback_attribute ~name:"attribute" {|
-      class Foo:
-        pass
-    |} None;
-  assert_fallback_attribute
-    ~name:"attribute"
-    {|
-      class Foo:
-        def __getattr__(self, attribute: str) -> int:
-          return 1
-    |}
-    (Some Type.integer);
-  assert_fallback_attribute
-    ~name:"attribute"
-    {|
-      class Foo:
-        def __getattr__(self, attribute: str) -> int: ...
-    |}
-    (Some Type.integer);
-  assert_fallback_attribute
-    ~name:"attribute"
-    {|
-      class Foo:
-        def __getattr__(self, attribute: str) -> int: ...
-      class Bar(Foo):
-        pass
-    |}
-    (Some Type.integer);
-  assert_fallback_attribute
-    ~name:"__iadd__"
-    {|
-      class Foo:
-        def __add__(self, other: Foo) -> int:
-          pass
-    |}
-    (Some
-       (Parametric
-          {
-            name = "BoundMethod";
-            parameters =
-              [
-                Single
-                  (parse_callable
-                     "typing.Callable('test.Foo.__add__')[[Named(self, test.Foo), Named(other, \
-                      test.Foo)], int]");
-                Single (Primitive "test.Foo");
-              ];
-          }));
-  assert_fallback_attribute
-    ~name:"__iadd__"
-    ~instantiated:(Some (Type.parametric "test.Foo" [Single Type.integer]))
-    {|
-      from typing import Generic, TypeVar
-      T = TypeVar("T")
-      class Foo(Generic[T]):
-        def __add__(self, other: Foo[T]) -> Foo[T]:
-          pass
-    |}
-    (Some
-       (Parametric
-          {
-            name = "BoundMethod";
-            parameters =
-              [
-                Single
-                  (parse_callable
-                     "typing.Callable(test.Foo.__add__)[[Named(self, test.Foo[int]), Named(other, \
-                      test.Foo[int])], test.Foo[int]]");
-                Single (Type.parametric "test.Foo" [Single Type.integer]);
-              ];
-          }));
-  assert_fallback_attribute ~name:"__iadd__" {|
-      class Foo:
-        pass
-    |} None;
-  assert_fallback_attribute
-    ~name:"__iadd__"
-    {|
-      class Foo:
-        def __getattr__(self, attribute) -> int: ...
-    |}
-    (Some Type.integer);
-  assert_fallback_attribute
-    ~name:"foo"
-    {|
-      from typing import overload
-      import typing_extensions
-      class Foo:
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
-        @overload
-        def __getattr__(self, attribute: str) -> None: ...
-    |}
-    (Some Type.integer);
-  assert_fallback_attribute
-    ~name:"bar"
-    {|
-      from typing import overload
-      import typing_extensions
-      class Foo:
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
-        @overload
-        def __getattr__(self, attribute: str) -> None: ...
-    |}
-    (Some Type.string);
-  assert_fallback_attribute
-    ~name:"baz"
-    {|
-      from typing import overload
-      import typing_extensions
-      class Foo:
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
-        @overload
-        def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
-        @overload
-        def __getattr__(self, attribute: str) -> None: ...
-    |}
-    (Some Type.none);
-  assert_fallback_attribute
-    ~name:"baz"
-    {|
-      from typing import overload
-      import typing_extensions
-      class Foo:
-        @overload
-        def __getattr__(self: Foo, attribute: str) -> int: ...
-    |}
-    (Some Type.integer);
-  (* Callables on the instance do not get picked up by the runtime. Who knew? *)
-  assert_fallback_attribute
-    ~name:"baz"
-    {|
-      class Foo:
-        __getattr__: typing.Callable[[str], int]
-    |}
-    None;
-  assert_fallback_attribute
-    ~name:"baz"
-    {|
-      class Foo:
-        __getattr__: BoundMethod[typing.Callable[[Foo, str], int], Foo]
-    |}
-    (Some Type.integer);
-  ()
+  test_list
+    [
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"attribute"
+           {|
+              class Foo:
+                pass
+            |}
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"attribute"
+           {|
+              class Foo:
+                def __getattr__(self, attribute: str) -> int:
+                  return 1
+            |}
+           (Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"attribute"
+           {|
+              class Foo:
+                def __getattr__(self, attribute: str) -> int: ...
+            |}
+           (Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"attribute"
+           {|
+              class Foo:
+                def __getattr__(self, attribute: str) -> int: ...
+              class Bar(Foo):
+                pass
+            |}
+           (Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"__iadd__"
+           {|
+              class Foo:
+                def __add__(self, other: Foo) -> int:
+                  pass
+            |}
+           (Some
+              (Parametric
+                 {
+                   name = "BoundMethod";
+                   parameters =
+                     [
+                       Single
+                         (parse_callable
+                            "typing.Callable('test.Foo.__add__')[[Named(self, test.Foo), \
+                             Named(other, test.Foo)], int]");
+                       Single (Primitive "test.Foo");
+                     ];
+                 }));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"__iadd__"
+           ~instantiated:(Some (Type.parametric "test.Foo" [Single Type.integer]))
+           {|
+              from typing import Generic, TypeVar
+              T = TypeVar("T")
+              class Foo(Generic[T]):
+                def __add__(self, other: Foo[T]) -> Foo[T]:
+                  pass
+            |}
+           (Some
+              (Parametric
+                 {
+                   name = "BoundMethod";
+                   parameters =
+                     [
+                       Single
+                         (parse_callable
+                            "typing.Callable(test.Foo.__add__)[[Named(self, test.Foo[int]), \
+                             Named(other, test.Foo[int])], test.Foo[int]]");
+                       Single (Type.parametric "test.Foo" [Single Type.integer]);
+                     ];
+                 }));
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"__iadd__"
+           {|
+              class Foo:
+                pass
+            |}
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"__iadd__"
+           {|
+              class Foo:
+                def __getattr__(self, attribute) -> int: ...
+            |}
+           (Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"foo"
+           {|
+              from typing import overload
+              import typing_extensions
+              class Foo:
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+                @overload
+                def __getattr__(self, attribute: str) -> None: ...
+            |}
+           (Some Type.integer);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"bar"
+           {|
+              from typing import overload
+              import typing_extensions
+              class Foo:
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+                @overload
+                def __getattr__(self, attribute: str) -> None: ...
+            |}
+           (Some Type.string);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"baz"
+           {|
+              from typing import overload
+              import typing_extensions
+              class Foo:
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['foo']) -> int: ...
+                @overload
+                def __getattr__(self, attribute: typing_extensions.Literal['bar']) -> str: ...
+                @overload
+                def __getattr__(self, attribute: str) -> None: ...
+            |}
+           (Some Type.none);
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"baz"
+           {|
+              from typing import overload
+              import typing_extensions
+              class Foo:
+                @overload
+                def __getattr__(self: Foo, attribute: str) -> int: ...
+            |}
+           (Some Type.integer);
+      (* Callables on the instance do not get picked up by the runtime. Who knew? *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"baz"
+           {|
+              class Foo:
+                __getattr__: typing.Callable[[str], int]
+            |}
+           None;
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_fallback_attribute
+           ~name:"baz"
+           {|
+              class Foo:
+                __getattr__: BoundMethod[typing.Callable[[Foo, str], int], Foo]
+            |}
+           (Some Type.integer);
+    ]
 
 
 let () =
@@ -640,8 +673,8 @@ let () =
          >:: test_parse_annotation_for_no_validation_on_class_lookup_failure_environment;
          "parse_reference" >:: test_parse_reference;
          "resolve_literal" >:: test_resolve_literal;
-         "resolve_exports" >:: test_resolve_exports;
+         test_resolve_exports;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
-         "fallback_attribute" >:: test_fallback_attribute;
+         test_fallback_attribute;
        ]
   |> Test.run
