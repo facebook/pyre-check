@@ -1125,13 +1125,13 @@ let test_stub_package_priority context =
        lazy_module_tracker
        (Reference.create "foo.my_stub"))
     ~search_root:local_root
-    ~relative:"foo/my_stub.pyi"
+    ~relative:"foo-stubs/my_stub.pyi"
     ~priority:1
     ~should_type_check:true;
   assert_module_path
     (ReadOnlyHelpers.module_path_of_qualifier_exn lazy_module_tracker (Reference.create "foo.bar"))
     ~search_root:local_root
-    ~relative:"foo/bar.py"
+    ~relative:"foo-stubs/bar.py"
     ~priority:1
     ~should_type_check:true;
   let eager_module_tracker =

@@ -203,20 +203,30 @@ module ModulePaths = struct
 
   module LazyFinder = struct
     let directory_paths ~configuration qualifier =
-      let relative =
+      (* Given a qualifier, check all search roots for relative paths that match it. This *)
+      let possible_relative_paths =
         match Reference.as_list qualifier with
-        | [] -> ""
-        | parts -> Filename.of_parts parts
+        | [] -> [""]
+        | head :: tail as parts_assuming_normal_package ->
+            let parts_assuming_stub_package = (head ^ "-stubs") :: tail in
+            [
+              Filename.of_parts parts_assuming_normal_package;
+              Filename.of_parts parts_assuming_stub_package;
+            ]
       in
-      let find_in_root search_path =
-        let root = SearchPath.get_root search_path in
-        let candidate_path = PyrePath.create_relative ~root ~relative in
-        if PyrePath.directory_exists candidate_path then
-          Some candidate_path
-        else
-          None
+      let find_possible_relative_paths_in_root search_path =
+        let find_relative_path_in_root relative =
+          let root = SearchPath.get_root search_path in
+          let candidate_path = PyrePath.create_relative ~root ~relative in
+          if PyrePath.directory_exists candidate_path then
+            Some candidate_path
+          else
+            None
+        in
+        List.filter_map ~f:find_relative_path_in_root possible_relative_paths
       in
-      Configuration.Analysis.search_paths configuration |> List.filter_map ~f:find_in_root
+      Configuration.Analysis.search_paths configuration
+      |> List.concat_map ~f:find_possible_relative_paths_in_root
 
 
     module Cache =
