@@ -21,7 +21,7 @@ from typing import Any, Dict, Generator, List, Optional, Sequence, Set
 
 from . import UserError
 from .errors import Errors
-from .filesystem import find_files, get_filesystem
+from .filesystem import get_filesystem
 
 
 LOG: Logger = logging.getLogger(__name__)
