@@ -6,3 +6,43 @@ def eval(arg: TaintSink[RemoteCodeExecution]): ...
 def constructors.InitWithModel.__init__(self, tito: TaintInTaintOut): ...
 @SkipObscure
 def constructors.NewWithModel.__new__(cls, tito: TaintInTaintOut): ...
+
+# Annotating the return value of __init__ is equivalent to annotating self.
+def constructors.ConstructorWithSourceModel.__init__() -> TaintSource[Test]: ...
+
+# TaintInTaintOut[LocalResult] on __init__ is treated as TaintInTaintOut[Updates[self]]
+def constructors.ConstructorWithTitoModel.__init__(self, value: TaintInTaintOut[LocalReturn]): ...
+
+ModelQuery(
+  name = "add_tito_init_parameters",
+	find = "methods",
+	where = [
+		name.equals("__init__"),
+		cls.name.equals("ConstructorTitoModelQuery")
+	],
+	model = [
+    Parameters(
+      TaintInTaintOut[LocalReturn, ReturnPath[_.parameter_name()], NoCollapse],
+      where=[
+        Not(name.equals("self"))
+      ]
+    ),
+    Modes([SkipAnalysis])
+  ]
+)
+
+@SanitizeSingleTrace(TaintSource[Test])
+def constructors.SanitizeSingleTraceSource.__init__(): ...
+
+@Sanitize(TaintInTaintOut[TaintSource[Test]])
+def constructors.SanitizeTitoKindSpecific.__init__(): ...
+
+# Sanitizing the return value of __init__ is equivalent to sanitizing self.
+def constructors.SanitizeReturn.__init__() -> Sanitize[TaintSource[Test]]: ...
+
+@Sanitize(TaintInTaintOut[TaintSource[Test]])
+def constructors.SanitizeTaintInTaintOut.__init__(): ...
+@Sanitize(TaintInTaintOut[TaintSink[Test]])
+def constructors.SanitizeTaintInTaintOut.__init__(): ...
+
+def constructors.SanitizeParameterTaintInTaintOut.__init__(foo: Sanitize[TaintInTaintOut[TaintSource[Test]]]): ...

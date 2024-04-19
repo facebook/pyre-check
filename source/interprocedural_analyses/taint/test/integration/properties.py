@@ -254,3 +254,29 @@ class CollidePropertySetterName:
     @collided_property.setter
     def collided_property(self, value):
         self.bar()
+
+
+class PropertySetterTitoModel:
+    @property
+    def my_property(self):
+        return self.foo
+
+    @my_property.setter
+    def my_property(self, value):
+        pass
+
+    def test_tito_property(self):
+        self.my_property = _test_source()
+        _test_sink(self.my_property)
+
+    @property
+    def obscure_property(self):
+        ...
+
+    @obscure_property.setter
+    def obscure_property(self, value):
+        ...
+
+    def test_obscure_property(self):
+        self.obscure_property = _test_source()
+        _test_sink(self)

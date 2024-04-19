@@ -113,3 +113,103 @@ class ClassStub:
 def test_class_stub():
     # Assume anything can happen.
     _test_sink(ClassStub(_test_source()))
+
+
+class ConstructorWithSourceModel:
+    def __init__(self):
+        pass
+
+def test_constructor_with_source_model():
+    _test_sink(ConstructorWithSourceModel())  # Issue.
+    o = ConstructorWithSourceModel()
+    _test_sink(o)  # Issue.
+
+
+class ConstructorWithTitoModel:
+    def __init__(self, value):
+        pass
+
+
+class DerivedConstructorWithTitoModel(ConstructorWithTitoModel):
+    def __init__(self, a, b):
+        super().__init__(b)
+
+
+def test_constructor_with_tito_model():
+    _test_sink(DerivedConstructorWithTitoModel("", ""))  # No issue.
+    _test_sink(DerivedConstructorWithTitoModel(_test_source(), ""))  # No issue.
+    _test_sink(DerivedConstructorWithTitoModel("", _test_source()))  # Issue.
+
+
+class ConstructorTitoModelQuery:
+    def __init__(self, a, b):
+        pass
+
+
+class DerivedConstructorTitoModelQuery(ConstructorTitoModelQuery):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+
+def test_constructor_with_tito_model_query():
+    _test_sink(DerivedConstructorTitoModelQuery("", "").a)  # No issue.
+    _test_sink(DerivedConstructorTitoModelQuery(_test_source(), "").a)  # Issue.
+    _test_sink(DerivedConstructorTitoModelQuery("", _test_source()).a)  # No issue.
+
+
+class ConstructorObscure:
+    def __init__(self, a, b):
+        ...
+
+
+class ParentWithObscureConstructor(ConstructorObscure):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+
+def test_parent_with_obscure_constructor():
+    _test_sink(ParentWithObscureConstructor(_test_source(), ""))  # Issue.
+    _test_sink(ParentWithObscureConstructor("", _test_source()))  # Issue.
+
+
+class NoConstructor:
+    ...
+
+
+class ParentWithNoConstructor(NoConstructor):
+    def __init__(self, a, b):
+        super().__init__(a, b)
+
+
+def test_parent_with_no_constructor():
+    _test_sink(ParentWithNoConstructor(_test_source(), ""))  # Issue.
+    _test_sink(ParentWithNoConstructor("", _test_source()))  # Issue.
+
+
+# Test sanitizers on constructors
+
+class SanitizeSingleTraceSource:
+    def __init__(self):
+        self.foo = _test_source()
+
+
+class SanitizeTitoKindSpecific:
+    def __init__(self, foo):
+        self.foo = foo
+        self.bar = _test_source()
+
+
+class SanitizeReturn:
+    def __init__(self, foo):
+        self.foo = foo
+        self.bar = _test_source()
+
+
+class SanitizeTaintInTaintOut:
+    def __init__(self, foo, baz):
+        self.foo = foo
+
+
+class SanitizeParameterTaintInTaintOut:
+    def __init__(self, foo):
+        self.foo = foo
