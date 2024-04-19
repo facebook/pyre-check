@@ -154,7 +154,7 @@ let create_property_setter_override reference =
   Override (create_method_name ~kind:PropertySetter reference)
 
 
-let create { Node.value = define; _ } =
+let create define =
   let open Define in
   let kind = if Define.is_property_setter define then PropertySetter else Normal in
   let name = define.signature.name in
@@ -269,7 +269,7 @@ let get_definitions ~pyre_api define_name =
     List.filter ~f:(fun { Node.value; _ } -> not (Define.is_overloaded_function value)) bodies
   in
   let fold ({ callables; _ } as result) define =
-    let target = create define in
+    let target = create (Node.value define) in
     match Map.find_opt target callables with
     | None -> { result with callables = Map.add target define callables }
     | Some previous_define -> (

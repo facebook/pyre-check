@@ -86,7 +86,7 @@ val create_property_setter_override : Reference.t -> t
 
 val create_object : Reference.t -> t
 
-val create : Define.t Node.t -> t
+val create : Define.t -> t
 
 val create_derived_override : t -> at_type:Reference.t -> t
 

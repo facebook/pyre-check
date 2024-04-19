@@ -343,7 +343,8 @@ let generate_issues
       Some
         {
           flow;
-          handle = { code = rule.code; callable = Target.create define; sink = sink_handle };
+          handle =
+            { code = rule.code; callable = Target.create (Node.value define); sink = sink_handle };
           locations = LocationSet.singleton location;
           define;
         }

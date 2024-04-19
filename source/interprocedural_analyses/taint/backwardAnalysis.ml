@@ -2713,7 +2713,7 @@ let run
     let caller_class_interval =
       Interprocedural.ClassIntervalSetGraph.SharedMemory.of_definition
         class_interval_graph
-        definition
+        (Node.value definition)
   end
   in
   let module State = State (FunctionContext) in

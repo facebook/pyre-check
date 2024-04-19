@@ -147,7 +147,7 @@ let test_canonical_location _ =
         handle =
           {
             code = 1000;
-            callable = Interprocedural.Target.create define;
+            callable = Interprocedural.Target.create (Node.value define);
             sink = IssueHandle.Sink.Return;
           };
         locations;
