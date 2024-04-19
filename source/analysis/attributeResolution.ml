@@ -557,7 +557,7 @@ module ClassDecorators = struct
 
      This function only handles "decorator-style" dataclass transforms that work like the
      `@dataclass` decorator itself. Transforms defined as base classes are handled separately in
-     `options_from_custom_dataclass_transform_base_class`. *)
+     `options_from_custom_dataclass_transform_base_class_or_metaclass`. *)
   let options_from_custom_dataclass_transform_decorator
       ~queries:Queries.{ get_unannotated_global; _ }
       { Node.value = { ClassSummary.decorators; _ }; _ }
@@ -587,7 +587,28 @@ module ClassDecorators = struct
     |> List.find_map ~f:get_dataclass_transform_decorator_with_default_options
 
 
-  let options_from_custom_dataclass_transform_base_class
+  let get_dataclass_options_from_metaclass
+      name
+      get_dataclass_transform_default
+      successors
+      get_class_summary
+    =
+    let get_metaclass get_class_summary name =
+      let class_summary_option = get_class_summary name in
+      Option.bind
+        ~f:(fun node -> node |> Node.value |> fun class_summary -> class_summary.bases.metaclass)
+        class_summary_option
+    in
+    let metaclass_and_successor_metaclasses = name :: successors name in
+    List.find_map
+      ~f:(fun name ->
+        get_metaclass get_class_summary name
+        |> Option.map ~f:Expression.show
+        |> Option.bind ~f:get_dataclass_transform_default)
+      metaclass_and_successor_metaclasses
+
+
+  let options_from_custom_dataclass_transform_base_class_or_metaclass
       ~queries:Queries.{ get_class_summary; successors; _ }
       { Node.value = { ClassSummary.name; bases = { init_subclass_arguments; _ }; _ }; _ }
     =
@@ -600,22 +621,37 @@ module ClassDecorators = struct
       >>= Decorator.from_expression
       >>| dataclass_transform_default_options
     in
-    Reference.show name
-    |> successors
-    |> List.find_map ~f:get_dataclass_transform_default
-    >>| fun default_options_for_custom_transform ->
-    (* For historical reasons, extracting options is done by processing decorator callsites. But
-       base class options are instead defined via keyword arguments to the class definition itself,
-       which become `init_subclass_options`. Here we construct a "decorator" so we can use the
-       preexisting option extraction. *)
-    let synthetic_decorator =
-      {
-        Decorator.name = Node.create_with_default_location name;
-        arguments = Some init_subclass_arguments;
-      }
+    let metaclass_option =
+      get_dataclass_options_from_metaclass
+        (Reference.show name)
+        get_dataclass_transform_default
+        successors
+        get_class_summary
     in
-    dataclass_transform_options_from_decorator
-      synthetic_decorator
+    let successor_option =
+      Reference.show name |> successors |> List.find_map ~f:get_dataclass_transform_default
+    in
+    let default_options_for_custom_transform =
+      match metaclass_option, successor_option with
+      | _, Some successor_default_options -> Some successor_default_options
+      | Some metaclass_default_options, _ -> Some metaclass_default_options
+      | None, None -> None
+    in
+    Option.map
+      ~f:(fun default_options_for_custom_transform ->
+        (* For historical reasons, extracting options is done by processing decorator callsites. But
+           base class options are instead defined via keyword arguments to the class definition
+           itself, which become `init_subclass_options`. Here we construct a "decorator" so we can
+           use the preexisting option extraction. *)
+        let synthetic_decorator =
+          {
+            Decorator.name = Node.create_with_default_location name;
+            arguments = Some init_subclass_arguments;
+          }
+        in
+        dataclass_transform_options_from_decorator
+          synthetic_decorator
+          default_options_for_custom_transform)
       default_options_for_custom_transform
 
 
@@ -1039,7 +1075,8 @@ module ClassDecorators = struct
       generate_attributes ~options:(options_from_custom_dataclass_transform_decorator ~queries)
     in
     let dataclass_transform_class_attributes () =
-      generate_attributes ~options:(options_from_custom_dataclass_transform_base_class ~queries)
+      generate_attributes
+        ~options:(options_from_custom_dataclass_transform_base_class_or_metaclass ~queries)
     in
     dataclass_attributes ()
     @ attrs_attributes ()
