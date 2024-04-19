@@ -9,8 +9,7 @@ from integration_test.taint import source, sink
 
 
 class ParentWithConstructor:
-    def __init__(self, arg):
-        ...
+    def __init__(self, arg): ...
 
 
 class ChildWithParentConstructor(ParentWithConstructor):
@@ -18,8 +17,7 @@ class ChildWithParentConstructor(ParentWithConstructor):
         super(ChildWithParentConstructor, self).__init__(arg)
 
 
-class ParentWithoutConstructor:
-    ...
+class ParentWithoutConstructor: ...
 
 
 class ChildWithoutParentConstructor(ParentWithoutConstructor):
@@ -30,12 +28,10 @@ class ChildWithoutParentConstructor(ParentWithoutConstructor):
 def test1():
     tainted = source()
     child = ChildWithParentConstructor(tainted)
-    # This IS detected
-    sink(child.arg)
+    sink(child.arg)  # Issue.
 
 
 def test2():
     tainted = source()
     child = ChildWithoutParentConstructor(tainted)
-    # This IS NOT detected
-    sink(child.arg)
+    sink(child.arg)  # Issue.
