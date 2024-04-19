@@ -1113,47 +1113,27 @@ let test_stub_package_priority context =
       ~external_tree:[]
   in
   let assert_module_path = assert_module_path ~configuration in
-  let lazy_module_tracker =
-    EnvironmentControls.create configuration ~use_lazy_module_tracking:true
-    |> ModuleTracker.create
-    |> ModuleTracker.read_only
+  let run_tracker_tests use_lazy_module_tracking =
+    let module_tracker =
+      EnvironmentControls.create configuration ~use_lazy_module_tracking
+      |> ModuleTracker.create
+      |> ModuleTracker.read_only
+    in
+    assert_module_path
+      (ReadOnlyHelpers.module_path_of_qualifier_exn module_tracker (Reference.create "foo.my_stub"))
+      ~search_root:local_root
+      ~relative:"foo-stubs/my_stub.pyi"
+      ~priority:1
+      ~should_type_check:true;
+    assert_module_path
+      (ReadOnlyHelpers.module_path_of_qualifier_exn module_tracker (Reference.create "foo.bar"))
+      ~search_root:local_root
+      ~relative:"foo-stubs/bar.py"
+      ~priority:1
+      ~should_type_check:true;
+    ()
   in
-  (* TODO(T150247738): This is a bug where the lazy tracker doesn't search for paths in the stub
-     package directory. *)
-  assert_module_path
-    (ReadOnlyHelpers.module_path_of_qualifier_exn
-       lazy_module_tracker
-       (Reference.create "foo.my_stub"))
-    ~search_root:local_root
-    ~relative:"foo-stubs/my_stub.pyi"
-    ~priority:1
-    ~should_type_check:true;
-  assert_module_path
-    (ReadOnlyHelpers.module_path_of_qualifier_exn lazy_module_tracker (Reference.create "foo.bar"))
-    ~search_root:local_root
-    ~relative:"foo-stubs/bar.py"
-    ~priority:1
-    ~should_type_check:true;
-  let eager_module_tracker =
-    EnvironmentControls.create configuration ~use_lazy_module_tracking:false
-    |> ModuleTracker.create
-    |> ModuleTracker.read_only
-  in
-  assert_module_path
-    (ReadOnlyHelpers.module_path_of_qualifier_exn
-       eager_module_tracker
-       (Reference.create "foo.my_stub"))
-    ~search_root:local_root
-    ~relative:"foo-stubs/my_stub.pyi"
-    ~priority:1
-    ~should_type_check:true;
-  assert_module_path
-    (ReadOnlyHelpers.module_path_of_qualifier_exn eager_module_tracker (Reference.create "foo.bar"))
-    ~search_root:local_root
-    ~relative:"foo-stubs/bar.py"
-    ~priority:1
-    ~should_type_check:true;
-  ()
+  run_lazy_and_nonlazy ~f:run_tracker_tests
 
 
 module IncrementalTest = struct
