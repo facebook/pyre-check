@@ -29,6 +29,48 @@ let test_transform_environment =
                   def __repr__(self) -> str: ...
                   def __eq__(self, o: object) -> bool: ...
               |};
+      (* TODO T178998636: Support InitVars. The correct behavior should be as follows: 1- In the
+         testcase result, we need to remove x and y from the class fields (so the fields should be
+         a,b and c only) 2- The generated init method should indeed take x and y as parameters but
+         should not initialize them *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+              from dataclasses import dataclass
+              @dataclass
+              class DC1:
+                  a: int
+                  b: int
+                  c: int
+                  x: dataclasses.InitVar[int]
+                  y: dataclasses.InitVar[str]
+
+                  def __post_init__(self, x: int, y: str) -> None:
+                      pass
+            |}
+           ~class_name:"DC1"
+           {|
+                class DC1:
+                  a: int
+                  b: int
+                  c: int
+                  x: dataclasses.InitVar[int]
+                  y: dataclasses.InitVar[str]
+
+                  def __post_init__(self, x: int, y: str) -> None:
+                    pass
+                  __match_args__ = ("a", "b", "c", "x", "y")
+                  def __init__(self, a: int, b:int, c: int, x: int, y: str) -> None:
+                    self.a = a
+                    self.b = b
+                    self.c = c
+                    self.x = x
+                    self.y = y
+
+                  def __repr__(self) -> str: ...
+                  def __eq__(self, o: object) -> bool: ...
+              |};
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~source:
