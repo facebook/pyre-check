@@ -41,6 +41,8 @@ val match_actuals_to_formals
   arguments:Expression.Call.Argument.t list ->
   ArgumentMatches.t list
 
+val treat_tito_return_as_self_update : Target.t -> bool
+
 (* A mapping from a taint-in-taint-out kind (e.g, `Sinks.LocalReturn`, `Sinks.ParameterUpdate` or
    `Sinks.AddFeatureToArgument`) to a tito taint (including features, return paths, depth) and the
    roots in the tito model whose trees contain this sink. *)
@@ -57,11 +59,12 @@ module TaintInTaintOutMap : sig
   val fold : t -> init:'a -> f:(kind:Sinks.t -> pair:TreeRootsPair.t -> 'a -> 'a) -> 'a
 end
 
-val taint_in_taint_out_mapping
+val taint_in_taint_out_mapping_for_argument
   :  transform_non_leaves:(Features.ReturnAccessPath.t -> BackwardTaint.t -> BackwardTaint.t) ->
   taint_configuration:TaintConfiguration.Heap.t ->
   ignore_local_return:bool ->
   model:Model.t ->
+  callable:Target.t ->
   tito_matches:AccessPath.argument_match list ->
   sanitize_matches:AccessPath.argument_match list ->
   TaintInTaintOutMap.t

@@ -102,6 +102,7 @@ let infer ~pyre_api ~user_models =
   let add_tito
       ~input_root
       ~input_path
+      ~output_root
       ~output_path
       ~collapse_depth
       ~breadcrumbs
@@ -109,7 +110,7 @@ let infer ~pyre_api ~user_models =
       existing_state
     =
     let leaf =
-      BackwardTaint.singleton CallInfo.Tito Sinks.LocalReturn Frame.initial
+      BackwardTaint.singleton CallInfo.Tito output_root Frame.initial
       |> BackwardState.Tree.create_leaf
       |> BackwardState.Tree.transform Features.ReturnAccessPathTree.Self Map ~f:(fun _ ->
              Features.ReturnAccessPathTree.create
@@ -119,7 +120,8 @@ let infer ~pyre_api ~user_models =
     in
     BackwardState.assign ~root:input_root ~path:input_path leaf existing_state
   in
-  let add_parameter_to_attribute_tito ~class_name ~positional position existing_state attribute =
+  let add_parameter_to_self_attribute_tito ~class_name ~positional position existing_state attribute
+    =
     let input_root =
       if positional then
         AccessPath.Root.PositionalParameter { position; name = attribute; positional_only = false }
@@ -132,6 +134,7 @@ let infer ~pyre_api ~user_models =
     add_tito
       ~input_root
       ~input_path:[]
+      ~output_root:(Sinks.ParameterUpdate 0)
       ~output_path:[Abstract.TreeDomain.Label.create_name_index attribute]
       ~collapse_depth:Features.CollapseDepth.no_collapse
       ~breadcrumbs
@@ -189,7 +192,7 @@ let infer ~pyre_api ~user_models =
     let taint_in_taint_out =
       List.foldi
         ~f:(fun position ->
-          add_parameter_to_attribute_tito ~class_name ~positional:true (position + 1))
+          add_parameter_to_self_attribute_tito ~class_name ~positional:true (position + 1))
         ~init:BackwardState.empty
         attributes
     in
@@ -237,7 +240,7 @@ let infer ~pyre_api ~user_models =
     in
     let taint_in_taint_out =
       List.foldi
-        ~f:(add_parameter_to_attribute_tito ~class_name ~positional:false)
+        ~f:(add_parameter_to_self_attribute_tito ~class_name ~positional:false)
         ~init:BackwardState.empty
         fields
       (* `TypedDict.__init__ also accepts iterables and **kwargs. *)
@@ -246,6 +249,7 @@ let infer ~pyre_api ~user_models =
              (AccessPath.Root.PositionalParameter
                 { position = 1; name = "__iterable"; positional_only = true })
            ~input_path:[Abstract.TreeDomain.Label.AnyIndex]
+           ~output_root:(Sinks.ParameterUpdate 0)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:0
            ~breadcrumbs:Features.BreadcrumbSet.bottom
@@ -255,6 +259,7 @@ let infer ~pyre_api ~user_models =
              (AccessPath.Root.PositionalParameter
                 { position = 1; name = "__iterable"; positional_only = true })
            ~input_path:[AccessPath.dictionary_keys]
+           ~output_root:(Sinks.ParameterUpdate 0)
            ~output_path:[AccessPath.dictionary_keys]
            ~collapse_depth:Features.CollapseDepth.no_collapse
            ~breadcrumbs:Features.BreadcrumbSet.bottom
@@ -262,6 +267,7 @@ let infer ~pyre_api ~user_models =
       |> add_tito
            ~input_root:(AccessPath.Root.StarStarParameter { excluded = fields })
            ~input_path:[]
+           ~output_root:(Sinks.ParameterUpdate 0)
            ~output_path:[Abstract.TreeDomain.Label.AnyIndex]
            ~collapse_depth:Features.CollapseDepth.no_collapse
            ~breadcrumbs:Features.BreadcrumbSet.bottom

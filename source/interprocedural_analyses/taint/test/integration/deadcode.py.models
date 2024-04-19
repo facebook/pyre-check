@@ -123,7 +123,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

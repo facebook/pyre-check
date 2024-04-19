@@ -116,7 +116,7 @@
                 "end": 7
               },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "result[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             }
           }
         ]
@@ -195,7 +195,7 @@
                 "end": 7
               },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "result[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             }
           }
         ]
@@ -274,7 +274,7 @@
                 "end": 11
               },
               "resolves_to": [ "supers.A.__init__" ],
-              "port": "result[attribute]"
+              "port": "formal(self, position=0)[attribute]"
             }
           }
         ]
@@ -701,7 +701,7 @@
     "callable_line": 10,
     "sources": [
       {
-        "port": "result[attribute]",
+        "port": "formal(self, position=0)[attribute]",
         "taint": [
           {
             "kinds": [
@@ -730,7 +730,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

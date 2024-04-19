@@ -607,7 +607,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -890,7 +892,7 @@
             "kinds": [
               {
                 "return_paths": { "[_my_abstract_property]": 3 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null
@@ -901,7 +903,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

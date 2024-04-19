@@ -1469,8 +1469,9 @@ let test_actual_parameter_matching context =
 
 
 let test_constructor_argument_tito context =
-  let self_tito = { name = "self"; titos = [Sinks.LocalReturn] } in
-  let tito_tito = { name = "tito"; titos = [Sinks.LocalReturn] } in
+  let self_tito = { name = "self"; titos = [Sinks.ParameterUpdate 0] } in
+  let tito_to_return = { name = "tito"; titos = [Sinks.LocalReturn] } in
+  let tito_to_self = { name = "tito"; titos = [Sinks.ParameterUpdate 0] } in
   assert_taint
     ~context
     {|
@@ -1544,28 +1545,40 @@ let test_constructor_argument_tito context =
 
     |}
     [
-      outcome ~kind:`Method ~parameter_titos:[self_tito; tito_tito] "qualifier.Data.__init__";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.tito_via_construction";
+      outcome ~kind:`Method ~parameter_titos:[self_tito; tito_to_self] "qualifier.Data.__init__";
+      outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.tito_via_construction";
       outcome ~kind:`Function ~parameter_titos:[] "qualifier.no_tito_via_construction";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.precise_tito_via_construction";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.deep_tito_via_assignments";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.apply_deep_tito_some";
-      outcome ~kind:`Function ~parameter_titos:[] "qualifier.apply_deep_tito_none";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.deep_tito_via_objects";
       outcome
         ~kind:`Function
-        ~parameter_titos:[tito_tito]
+        ~parameter_titos:[tito_to_return]
+        "qualifier.precise_tito_via_construction";
+      outcome
+        ~kind:`Function
+        ~parameter_titos:[tito_to_return]
+        "qualifier.deep_tito_via_assignments";
+      outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.apply_deep_tito_some";
+      outcome ~kind:`Function ~parameter_titos:[] "qualifier.apply_deep_tito_none";
+      outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.deep_tito_via_objects";
+      outcome
+        ~kind:`Function
+        ~parameter_titos:[tito_to_return]
         "qualifier.apply_deep_tito_via_objects_some";
       outcome ~kind:`Function ~parameter_titos:[] "qualifier.apply_deep_tito_via_objects_none";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.deep_tito_wrapper";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.deep_tito_via_multiple";
-      outcome ~kind:`Function ~parameter_titos:[tito_tito] "qualifier.test_tito_via_multiple_some";
+      outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.deep_tito_wrapper";
+      outcome ~kind:`Function ~parameter_titos:[tito_to_return] "qualifier.deep_tito_via_multiple";
       outcome
         ~kind:`Function
-        ~parameter_titos:[tito_tito]
+        ~parameter_titos:[tito_to_return]
+        "qualifier.test_tito_via_multiple_some";
+      outcome
+        ~kind:`Function
+        ~parameter_titos:[tito_to_return]
         "qualifier.test_tito_via_multiple_some_more";
       outcome ~kind:`Function ~parameter_titos:[] "qualifier.test_tito_via_multiple_none";
-      outcome ~kind:`Method ~parameter_titos:[self_tito; tito_tito] "qualifier.DerivedData.__init__";
+      outcome
+        ~kind:`Method
+        ~parameter_titos:[self_tito; tito_to_self]
+        "qualifier.DerivedData.__init__";
     ]
 
 

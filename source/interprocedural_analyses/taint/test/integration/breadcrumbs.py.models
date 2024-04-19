@@ -57,7 +57,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[ids_list]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[ids_list]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -68,7 +71,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[id_float]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[id_float]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [ { "always-type": "scalar" } ],
             "tito": null
@@ -79,7 +85,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

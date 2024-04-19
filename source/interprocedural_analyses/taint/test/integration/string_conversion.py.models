@@ -1153,7 +1153,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[value]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[value]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1163,7 +1166,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

@@ -158,7 +158,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     CallGraph.DefineCallGraph.resolve_string_format FunctionContext.call_graph_of_define ~location
 
 
-  let is_constructor () =
+  let is_constructor =
     let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
       FunctionContext.definition
     in
@@ -167,20 +167,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ -> false
 
 
-  let is_setitem () =
+  let is_setitem =
     let { Node.value = { Statement.Define.signature = { name; _ }; _ }; _ } =
       FunctionContext.definition
     in
     String.equal (Reference.last name) "__setitem__"
 
 
-  let first_parameter () =
-    let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
-      FunctionContext.definition
-    in
-    match parameters with
-    | { Node.value = { Parameter.name; _ }; _ } :: _ -> Some (AccessPath.Root.Variable name)
-    | _ -> None
+  let self_parameter =
+    if Interprocedural.Target.is_method FunctionContext.callable then
+      let { Node.value = { Statement.Define.signature = { parameters; _ }; _ }; _ } =
+        FunctionContext.definition
+      in
+      match AccessPath.normalize_parameters parameters with
+      | { root = AccessPath.Root.PositionalParameter { position = 0; _ }; qualified_name; _ } :: _
+        ->
+          Some (AccessPath.Root.Variable qualified_name)
+      | _ -> None
+    else
+      None
 
 
   (* This is where we can observe access paths reaching into LocalReturn and record the extraneous
@@ -193,32 +198,40 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       =
       FunctionContext.taint_configuration
     in
-    let local_return_leaf =
+    let make_tito_leaf kind =
       BackwardState.Tree.create_leaf
-        (Domains.local_return_taint ~output_path:[] ~collapse_depth:maximum_tito_collapse_depth)
+        (Domains.BackwardTaint.singleton
+           CallInfo.Tito
+           kind
+           (Domains.local_return_frame ~output_path:[] ~collapse_depth:maximum_tito_collapse_depth))
     in
-    (* We handle constructors, __setitem__ methods, and property setters specially and track
-       effects. *)
+    (* We infer tito to self for constructors, __setitem__ methods, and property setters. *)
     if
-      is_constructor ()
-      || is_setitem ()
+      is_constructor
+      || is_setitem
       || Statement.Define.is_property_setter (Node.value FunctionContext.definition)
     then
-      match first_parameter () with
-      | Some root -> BackwardState.assign ~root ~path:[] local_return_leaf BackwardState.bottom
+      match self_parameter with
+      | Some root ->
+          BackwardState.assign
+            ~root
+            ~path:[]
+            (make_tito_leaf (Sinks.ParameterUpdate 0))
+            BackwardState.bottom
       | _ -> BackwardState.bottom
     else
       BackwardState.assign
         ~root:AccessPath.Root.LocalResult
         ~path:[]
-        local_return_leaf
+        (make_tito_leaf Sinks.LocalReturn)
         BackwardState.bottom
 
 
   let transform_non_leaves new_path taint =
     let infer_output_path sink paths =
       match Sinks.discard_transforms sink with
-      | Sinks.LocalReturn ->
+      | Sinks.LocalReturn
+      | Sinks.ParameterUpdate _ ->
           let open Features.ReturnAccessPathTree in
           fold
             Path
@@ -336,6 +349,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~state:initial_state
       ~call_taint
       ~is_implicit_new
+      ~implicit_returns_self
       ({
          CallGraph.CallTarget.target;
          index = _;
@@ -390,7 +404,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         (Features.type_breadcrumbs (Option.value_exn return_type))
         call_taint
     in
-    let get_argument_taint ~pyre_in_context ~argument:{ Call.Argument.value = argument; _ } =
+    let get_argument_taint
+        ~pyre_in_context
+        ~position
+        ~argument:{ Call.Argument.value = argument; _ }
+      =
       let global_sink =
         GlobalModel.from_expression
           ~pyre_in_context
@@ -402,8 +420,19 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         |> GlobalModel.get_sinks
         |> SinkTreeWithHandle.join
       in
-      let access_path = AccessPath.of_expression argument in
-      get_taint access_path initial_state |> BackwardState.Tree.join global_sink
+      let taint_from_state =
+        let access_path = AccessPath.of_expression ~self_parameter argument in
+        get_taint access_path initial_state
+      in
+      let implicit_self_taint =
+        if implicit_returns_self && Int.equal position 0 then
+          call_taint
+        else
+          BackwardState.Tree.bottom
+      in
+      taint_from_state
+      |> BackwardState.Tree.join global_sink
+      |> BackwardState.Tree.join implicit_self_taint
     in
     let convert_tito_path_to_taint
         ~sink_trees
@@ -424,7 +453,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         | Sinks.ParameterUpdate n -> (
             match List.nth arguments n with
             | None -> BackwardState.Tree.empty
-            | Some argument -> get_argument_taint ~pyre_in_context ~argument)
+            | Some argument -> get_argument_taint ~pyre_in_context ~position:n ~argument)
         | _ -> Format.asprintf "unexpected kind for tito: %a" Sinks.pp kind |> failwith
       in
       let taint_to_propagate =
@@ -461,7 +490,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let transform_existing_tito ~callee_collapse_depth kind frame =
         match Sinks.discard_transforms kind with
-        | Sinks.LocalReturn ->
+        | Sinks.LocalReturn
+        | Sinks.ParameterUpdate _ ->
             frame
             |> Frame.transform TraceLength.Self Map ~f:(fun depth -> max depth (1 + tito_depth))
             |> Frame.transform Features.CollapseDepth.Self Map ~f:(fun collapse_depth ->
@@ -544,11 +574,12 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       in
       let taint_in_taint_out =
         if apply_tito then
-          CallModel.taint_in_taint_out_mapping
+          CallModel.taint_in_taint_out_mapping_for_argument
             ~transform_non_leaves
             ~taint_configuration:FunctionContext.taint_configuration
             ~ignore_local_return:(BackwardState.Tree.is_bottom call_taint)
             ~model:taint_model
+            ~callable:target
             ~tito_matches
             ~sanitize_matches
           |> CallModel.TaintInTaintOutMap.fold
@@ -560,7 +591,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       let sink_taint = SinkTreeWithHandle.join sink_trees in
       let taint = BackwardState.Tree.join sink_taint taint_in_taint_out in
       let state =
-        match AccessPath.of_expression argument with
+        match AccessPath.of_expression ~self_parameter argument with
         | Some { AccessPath.root; path } ->
             let breadcrumbs_to_add =
               BackwardState.Tree.filter_by_kind ~kind:Sinks.AddFeatureToArgument sink_taint
@@ -707,6 +738,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               ~state:initial_state
               ~call_taint
               ~is_implicit_new:false
+              ~implicit_returns_self:true
               target)
         |> List.fold
              ~f:join_call_target_results
@@ -759,6 +791,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 ~state
                 ~call_taint:base_taint
                 ~is_implicit_new:true
+                ~implicit_returns_self:false
                 target)
           |> List.fold
                ~f:join_call_target_results
@@ -816,46 +849,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | _ -> call_taint
     in
 
-    let call_targets, unresolved, call_taint =
-      (* Specially handle super.__init__ calls and explicit calls to superclass' `__init__` in
-         constructors for tito. *)
-      match Node.value callee with
-      | Name (Name.Attribute { base; attribute; _ })
-        when is_constructor ()
-             && String.equal attribute "__init__"
-             && Interprocedural.CallResolution.is_super
-                  ~pyre_in_context
-                  ~define:FunctionContext.definition
-                  base ->
-          (* If the super call is `object.__init__`, this is likely due to a lack of type
-             information for that constructor - we treat that case as obscure to not lose argument
-             taint for these calls. *)
-          let call_targets, unresolved =
-            match call_targets with
-            | [
-             {
-               CallGraph.CallTarget.target =
-                 Interprocedural.Target.Method
-                   { class_name = "object"; method_name = "__init__"; kind = Normal };
-               _;
-             };
-            ] ->
-                [], true
-            | _ -> call_targets, unresolved
-          in
-          let call_taint =
-            BackwardState.Tree.create_leaf
-              (Domains.local_return_taint
-                 ~output_path:[]
-                 ~collapse_depth:
-                   FunctionContext.taint_configuration.analysis_model_constraints
-                     .maximum_tito_collapse_depth)
-            |> BackwardState.Tree.join call_taint
-          in
-          call_targets, unresolved, call_taint
-      | _ -> call_targets, unresolved, call_taint
-    in
-
     (* Extract the implicit self, if any *)
     let self =
       match callee.Node.value with
@@ -881,7 +874,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
              ~arguments
              ~state:initial_state
              ~call_taint
-             ~is_implicit_new:false)
+             ~is_implicit_new:false
+             ~implicit_returns_self:false)
       |> List.fold
            ~f:join_call_target_results
            ~init:
@@ -1428,13 +1422,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           || not (CallGraph.CallCallees.is_partially_resolved callees)
         in
         let state =
-          (* Process the custom model of `__setitem__`. We treat `e.__setitem__(k, v)` as `e =
-             e.__setitem__(k, v)` where method `__setitem__` returns the updated self. Due to
-             modeling with the assignment, the user-provided models of `__setitem__` will be
-             ignored, if they are inconsistent with treating `__setitem__` as returning an updated
-             self. In the case that the call target is a dict or list, only propagate sources and
-             sinks, and ignore tito propagation. *)
-          let taint = compute_assignment_taint ~pyre_in_context base state |> fst in
+          (* Process the custom model for `__setitem__`. Ignore tito if we assume this is a regular
+             dict.__setitem__ call. *)
           apply_callees
             ~apply_tito:(not use_custom_tito)
             ~pyre_in_context
@@ -1975,12 +1964,21 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
           ~increase_trace_length:true
           ~string_literal
           substrings
+    | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
+        match arguments with
+        | [_; Call.Argument.{ value = object_; _ }] ->
+            analyze_expression ~pyre_in_context ~taint ~state ~expression:object_
+        | _ -> (
+            (* Use implicit self *)
+            match self_parameter with
+            | Some root -> store_taint ~weak:true ~root ~path:[] taint state
+            | None -> state))
     | {
      Call.callee = { Node.value = Name (Name.Identifier "reveal_taint"); _ };
      arguments = [{ Call.Argument.value = expression; _ }];
     } ->
         begin
-          match AccessPath.of_expression expression with
+          match AccessPath.of_expression ~self_parameter expression with
           | None ->
               Log.dump
                 "%a: Revealed backward taint for `%s`: expression is too complex"
@@ -1997,15 +1995,6 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                 (BackwardState.Tree.show taint)
         end;
         state
-    | { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments } -> (
-        match arguments with
-        | [_; Call.Argument.{ value = object_; _ }] ->
-            analyze_expression ~pyre_in_context ~taint ~state ~expression:object_
-        | _ -> (
-            (* Use implicit self *)
-            match first_parameter () with
-            | Some root -> store_taint ~weak:true ~root ~path:[] taint state
-            | None -> state))
     | _ ->
         apply_callees
           ~pyre_in_context
@@ -2325,7 +2314,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | _ ->
         let taint =
           let local_taint =
-            let access_path = AccessPath.of_expression target in
+            let access_path = AccessPath.of_expression ~self_parameter target in
             get_taint access_path state
           in
           let global_taint =
@@ -2363,7 +2352,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         match Node.value target with
         | Expression.Tuple items -> List.fold items ~f:clear_taint ~init:state
         | _ -> (
-            match AccessPath.of_expression target with
+            match AccessPath.of_expression ~self_parameter target with
             | Some { root; path } ->
                 {
                   taint =
@@ -2406,14 +2395,13 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             ~expression:value
         else
           match target_value with
-          | Expression.Name (Name.Attribute { base; attribute; _ }) ->
+          | Expression.Name (Name.Attribute { attribute; _ }) ->
               let attribute_access_callees = get_attribute_access_callees ~location ~attribute in
 
               let property_call_state =
                 match attribute_access_callees with
                 | Some { property_targets = _ :: _ as property_targets; _ } ->
-                    (* Treat `a.property = x` as `a = a.property(x)` *)
-                    let taint = compute_assignment_taint ~pyre_in_context base state |> fst in
+                    (* `a.property = x` *)
                     apply_callees
                       ~pyre_in_context
                       ~is_property:true
@@ -2421,7 +2409,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
                       ~call_location:location
                       ~arguments:[{ name = None; value }]
                       ~state
-                      ~call_taint:taint
+                      ~call_taint:BackwardState.Tree.empty
                       (CallGraph.CallCallees.create ~call_targets:property_targets ())
                 | _ -> bottom
               in
@@ -2445,7 +2433,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Define define -> analyze_definition ~define state
     | Delete expressions ->
         let process_expression state expression =
-          match AccessPath.of_expression expression with
+          match AccessPath.of_expression ~self_parameter expression with
           | Some { AccessPath.root; path } ->
               { taint = BackwardState.assign ~root ~path BackwardState.Tree.bottom state.taint }
           | _ -> state
@@ -2572,8 +2560,15 @@ let extract_tito_and_sink_models
           existing_backward.Model.Backward.taint_in_taint_out
       in
       let candidate_tree =
-        Map.Poly.find partition Sinks.LocalReturn
-        |> Option.value ~default:BackwardState.Tree.empty
+        partition
+        |> Map.Poly.filteri ~f:(fun ~key:kind ~data:_ ->
+               match kind with
+               | Sinks.LocalReturn
+               | Sinks.ParameterUpdate _ ->
+                   true
+               | _ -> false)
+        |> Map.Poly.fold ~init:BackwardState.Tree.empty ~f:(fun ~key:_ ~data:taint sofar ->
+               BackwardState.Tree.join taint sofar)
         |> simplify
              ~shape_breadcrumbs:(Features.model_tito_shaping_set ())
              ~limit_breadcrumbs:(Features.model_tito_broadening_set ())
@@ -2602,6 +2597,7 @@ let extract_tito_and_sink_models
       let simplify_sink_taint ~key:sink ~data:sink_tree accumulator =
         match sink with
         | Sinks.LocalReturn
+        | Sinks.ParameterUpdate _
         (* For now, we don't propagate partial sinks at all. *)
         | Sinks.PartialSink _
         | Sinks.Attach ->
@@ -2757,7 +2753,7 @@ let run
       TaintProfiler.track_duration ~profiler ~name:"Backward analysis - extract model" ~f:(fun () ->
           extract_tito_and_sink_models
             ~pyre_api
-            ~is_constructor:(State.is_constructor ())
+            ~is_constructor:State.is_constructor
             ~taint_configuration:FunctionContext.taint_configuration
             ~existing_backward:existing_model.Model.backward
             ~apply_broadening

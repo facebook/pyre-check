@@ -78,7 +78,7 @@ val create : Root.t -> Path.t -> t
 
 val extend : t -> path:Path.t -> t
 
-val of_expression : Expression.t -> t option
+val of_expression : self_parameter:Root.t option -> Expression.t -> t option
 
 val get_index : Expression.t -> Abstract.TreeDomain.Label.t
 

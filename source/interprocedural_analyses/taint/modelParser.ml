@@ -2623,6 +2623,63 @@ let parse_parameter_taint
               ModelAnnotation.ParameterAnnotation { root; annotation; generation_if_source = false }))
 
 
+let convert_return_into_self_annotation ~source_sink_filter annotation =
+  let self_parameter =
+    AccessPath.Root.PositionalParameter { name = "self"; position = 0; positional_only = false }
+  in
+  let rec convert_tito_kind kind =
+    match kind with
+    | Sinks.LocalReturn -> Sinks.ParameterUpdate 0
+    | Sinks.Transform { local; global; base } ->
+        Sinks.Transform { local; global; base = convert_tito_kind base }
+    | _ -> kind
+  in
+  let convert_tito_features ({ TaintFeatures.return_path; _ } as features) =
+    match return_path with
+    | Some _ -> { features with return_path = None; update_path = return_path }
+    | _ -> features
+  in
+  let convert_taint_annotation annotation =
+    match annotation with
+    | TaintAnnotation.Tito { tito; features } ->
+        TaintAnnotation.Tito
+          { tito = convert_tito_kind tito; features = convert_tito_features features }
+    | TaintAnnotation.Sanitize _
+    | TaintAnnotation.Source _
+    | TaintAnnotation.Sink _
+    | TaintAnnotation.AddFeatureToArgument _ ->
+        annotation
+  in
+  match annotation with
+  | ModelAnnotation.ReturnAnnotation (TaintAnnotation.Sanitize sanitizer) ->
+      (* def Foo.__init__() -> Sanitize[..]: .. should be treated as sanitizing all parameters *)
+      ModelAnnotation.SanitizeAnnotation
+        (Model.Sanitizers.from_parameters (sanitize_from_annotations ~source_sink_filter sanitizer))
+  | ModelAnnotation.ReturnAnnotation annotation ->
+      ModelAnnotation.ParameterAnnotation
+        {
+          root = self_parameter;
+          annotation = convert_taint_annotation annotation;
+          generation_if_source = true;
+        }
+  | ModelAnnotation.ParameterAnnotation { root; annotation; generation_if_source } ->
+      ModelAnnotation.ParameterAnnotation
+        { root; annotation = convert_taint_annotation annotation; generation_if_source }
+  | ModelAnnotation.ModeAnnotation _
+  | ModelAnnotation.SanitizeAnnotation _ ->
+      annotation
+
+
+(* We allow users to model constructors, property setters and __setitem__ as if they implicitly
+   returned `self`, for instance `def Foo.__init__() -> TaintSource[..]`. We need to fix those
+   annotations before creating the model. *)
+let fix_constructors_and_property_setters_annotations ~callable ~source_sink_filter annotations =
+  if CallModel.treat_tito_return_as_self_update callable then
+    List.map ~f:(convert_return_into_self_annotation ~source_sink_filter) annotations
+  else
+    annotations
+
+
 let add_taint_annotation_to_model
     ~pyre_api
     ~path
@@ -3387,6 +3444,7 @@ let create_model_from_signature
     |> List.rev_append parameters_annotations
     |> List.rev_append captured_variables_annotations
     |> List.rev_append decorator_annotations
+    |> fix_constructors_and_property_setters_annotations ~callable:call_target ~source_sink_filter
   in
   List.fold_result
     all_annotations
@@ -4254,7 +4312,7 @@ let create_callable_model_from_annotations
   let open Core.Result in
   let open ModelVerifier in
   match modelable with
-  | Modelable.Callable { define; _ } ->
+  | Modelable.Callable { target; define } ->
       define
       |> Lazy.force
       |> (function
@@ -4277,6 +4335,12 @@ let create_callable_model_from_annotations
             | _ -> None)
       >>= fun callable_annotation ->
       let default_model = if is_obscure then Model.obscure_model else Model.empty_model in
+      let annotations =
+        fix_constructors_and_property_setters_annotations
+          ~callable:target
+          ~source_sink_filter
+          annotations
+      in
       List.fold_result annotations ~init:default_model ~f:(fun accumulator model_annotation ->
           add_taint_annotation_to_model
             ~path:None

@@ -106,7 +106,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -192,7 +192,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -275,7 +275,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -361,7 +361,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -450,7 +450,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -488,7 +488,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -575,7 +575,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -661,7 +661,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -769,7 +769,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -807,7 +807,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -900,7 +900,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -938,7 +938,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1025,7 +1025,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1111,7 +1111,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1219,7 +1219,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1257,7 +1257,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1350,7 +1350,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1388,7 +1388,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1475,7 +1475,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1561,7 +1561,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1669,7 +1669,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1707,7 +1707,7 @@
                 "end": 24
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1797,7 +1797,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1832,7 +1832,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1917,7 +1917,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -1999,7 +1999,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -2103,7 +2103,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_extra_instance]"
+              "port": "formal(self, position=0)[tainted_extra_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -2138,7 +2138,7 @@
                 "end": 19
               },
               "resolves_to": [ "self.Foo.__init__" ],
-              "port": "result[tainted_instance]"
+              "port": "formal(self, position=0)[tainted_instance]"
             },
             "caller_interval": [ { "lower": 2, "upper": 3 } ],
             "is_self_call": true
@@ -2251,7 +2251,7 @@
     "callable_line": 17,
     "sources": [
       {
-        "port": "result[tainted_extra_instance]",
+        "port": "formal(self, position=0)[tainted_extra_instance]",
         "taint": [
           {
             "kinds": [
@@ -2275,7 +2275,7 @@
         ]
       },
       {
-        "port": "result[tainted_instance]",
+        "port": "formal(self, position=0)[tainted_instance]",
         "taint": [
           {
             "kinds": [
@@ -2309,7 +2309,7 @@
             "kinds": [
               {
                 "return_paths": { "[not_tainted_instance]": 3 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null
@@ -2323,7 +2323,7 @@
             "kinds": [
               {
                 "return_paths": { "[tainted_instance]": 3 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null
@@ -2334,7 +2334,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

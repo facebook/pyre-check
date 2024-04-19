@@ -1088,7 +1088,7 @@ let test_construction context =
       outcome
         ~kind:`Method
         ~returns:[]
-        ~parameter_titos:[{ name = "capture"; titos = [Sinks.LocalReturn] }]
+        ~parameter_titos:[{ name = "capture"; titos = [Sinks.ParameterUpdate 0] }]
         "qualifier.Data.__init__";
       outcome ~kind:`Function ~returns:[Sources.NamedSource "Test"] "qualifier.test_capture";
       outcome ~kind:`Function ~returns:[] "qualifier.test_no_capture";

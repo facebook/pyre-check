@@ -1615,7 +1615,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1626,7 +1629,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1646,7 +1652,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1657,7 +1666,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[*]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[*]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }

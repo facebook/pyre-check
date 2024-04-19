@@ -33,7 +33,7 @@
                 "end": 7
               },
               "resolves_to": [ "class_attribute.A.__init__" ],
-              "port": "result[d]"
+              "port": "formal(self, position=0)[d]"
             }
           }
         ]
@@ -244,7 +244,7 @@
     "callable_line": 16,
     "sources": [
       {
-        "port": "result[d]",
+        "port": "formal(self, position=0)[d]",
         "taint": [
           {
             "kinds": [
@@ -274,7 +274,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[c]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[c]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -284,7 +284,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

@@ -1086,7 +1086,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1097,7 +1100,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1108,7 +1114,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1127,7 +1136,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1138,7 +1150,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1149,7 +1164,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -1168,7 +1186,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[z]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [ { "always-via-model-query-attribute": "z" } ],
             "tito": null
@@ -1180,7 +1201,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[y]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [ { "always-via-model-query-attribute": "y" } ],
             "tito": null
@@ -1192,7 +1216,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 999999 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[x]": 999999 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [ { "always-via-model-query-attribute": "x" } ],
             "tito": null
@@ -1214,7 +1241,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[z]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -1225,7 +1252,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[y]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[y]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -1236,7 +1263,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[x]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -1246,7 +1273,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

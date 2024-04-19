@@ -402,7 +402,7 @@
               {
                 "features": [ { "always-via": "tito_self" } ],
                 "return_paths": { "": 0 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null

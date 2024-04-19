@@ -258,7 +258,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[request]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[request]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "tito": null
           }
@@ -269,7 +272,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[kind]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[kind]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -280,7 +283,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[app_id]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[app_id]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [
               { "has": "first-index" }, { "first-index": "app_id" }
@@ -295,7 +301,10 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[timestamp]": 3 }, "kind": "LocalReturn" }
+              {
+                "return_paths": { "[timestamp]": 3 },
+                "kind": "ParameterUpdate0"
+              }
             ],
             "local_features": [
               { "has": "first-index" }, { "first-index": "timestamp" }
@@ -310,7 +319,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[id]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[id]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "local_features": [
               { "always-type": "integer" }, { "always-type": "scalar" }
@@ -323,7 +332,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]

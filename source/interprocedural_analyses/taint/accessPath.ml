@@ -371,7 +371,8 @@ let get_index expression =
   | None -> Abstract.TreeDomain.Label.AnyIndex
 
 
-let of_expression expression =
+let of_expression ~self_parameter expression =
+  let open Option.Monad_infix in
   let rec of_expression path = function
     | { Node.value = Expression.Name (Name.Identifier identifier); _ } ->
         Some { root = Root.Variable identifier; path }
@@ -400,6 +401,23 @@ let of_expression expression =
       } ->
         let path = Abstract.TreeDomain.Label.Index value :: path in
         of_expression path base
+    | {
+        Node.value =
+          Call
+            {
+              Call.callee = { Node.value = Name (Name.Identifier "super"); _ };
+              arguments = [_; { Call.Argument.name = None; value = argument }];
+            };
+        _;
+      } ->
+        (* super(Foo, self) *)
+        of_expression path argument
+    | {
+        Node.value =
+          Call { Call.callee = { Node.value = Name (Name.Identifier "super"); _ }; arguments = [] };
+        _;
+      } ->
+        self_parameter >>| fun self_parameter -> { root = self_parameter; path }
     | _ -> None
   in
   of_expression [] expression

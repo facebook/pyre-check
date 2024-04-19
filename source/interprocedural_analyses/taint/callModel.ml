@@ -223,11 +223,21 @@ module TaintInTaintOutMap = struct
   let map map ~f = Map.Poly.map map ~f
 end
 
-let taint_in_taint_out_mapping
+let treat_tito_return_as_self_update target =
+  match Target.override_to_method target with
+  | Target.Method { method_name = "__init__"; _ }
+  | Target.Method { method_name = "__setitem__"; _ }
+  | Target.Method { kind = PropertySetter; _ } ->
+      true
+  | _ -> false
+
+
+let taint_in_taint_out_mapping_for_argument
     ~transform_non_leaves
     ~taint_configuration
     ~ignore_local_return
     ~model:({ Model.backward; modes; _ } as model)
+    ~callable
     ~tito_matches
     ~sanitize_matches
   =
@@ -254,44 +264,51 @@ let taint_in_taint_out_mapping
     |> TaintInTaintOutMap.join sofar
   in
   let mapping = List.fold tito_matches ~f:combine_tito ~init:TaintInTaintOutMap.empty in
+  let treat_obscure_as_self_update = treat_tito_return_as_self_update callable in
   let mapping =
-    if Model.ModeSet.contains Obscure modes && not ignore_local_return then
+    if
+      Model.ModeSet.contains Obscure modes
+      && (treat_obscure_as_self_update || not ignore_local_return)
+    then
       (* Turn source- and sink- specific tito sanitizers into a tito taint with
        * sanitize taint transforms for obscure models. *)
+      let output_kind =
+        if treat_obscure_as_self_update then Sinks.ParameterUpdate 0 else Sinks.LocalReturn
+      in
       let obscure_sanitize = tito_sanitize_of_argument ~model ~sanitize_matches in
       let obscure_breadcrumbs =
-        TaintInTaintOutMap.get_tree mapping ~kind:Sinks.LocalReturn
+        TaintInTaintOutMap.get_tree mapping ~kind:output_kind
         >>| BackwardState.Tree.joined_breadcrumbs
         |> Option.value ~default:Features.BreadcrumbSet.empty
         |> Features.BreadcrumbSet.add (Features.obscure_model ())
       in
-      let mapping = TaintInTaintOutMap.remove mapping ~kind:Sinks.LocalReturn in
+      let mapping = TaintInTaintOutMap.remove mapping ~kind:output_kind in
       if SanitizeTransformSet.is_all obscure_sanitize then
         mapping
       else if SanitizeTransformSet.is_empty obscure_sanitize then
-        let return_tito =
+        let tito =
           Domains.local_return_frame ~output_path:[] ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton CallInfo.declaration Sinks.LocalReturn
+          |> BackwardTaint.singleton CallInfo.declaration output_kind
           |> BackwardState.Tree.create_leaf
         in
-        TaintInTaintOutMap.set_tree mapping ~kind:Sinks.LocalReturn ~tito_tree:return_tito
+        TaintInTaintOutMap.set_tree mapping ~kind:output_kind ~tito_tree:tito
       else
-        let tito_kind =
+        let output_kind =
           Option.value_exn
             (TaintTransformOperation.Sink.apply_sanitize_transforms
                ~taint_configuration
                obscure_sanitize
                TaintTransformOperation.InsertLocation.Front
-               Sinks.LocalReturn)
+               output_kind)
         in
-        let return_tito =
+        let tito =
           Domains.local_return_frame ~output_path:[] ~collapse_depth:0
           |> Frame.update Frame.Slots.Breadcrumb obscure_breadcrumbs
-          |> BackwardTaint.singleton CallInfo.Tito tito_kind
+          |> BackwardTaint.singleton CallInfo.Tito output_kind
           |> BackwardState.Tree.create_leaf
         in
-        TaintInTaintOutMap.set_tree mapping ~kind:tito_kind ~tito_tree:return_tito
+        TaintInTaintOutMap.set_tree mapping ~kind:output_kind ~tito_tree:tito
     else
       mapping
   in

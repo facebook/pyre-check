@@ -2,6 +2,73 @@
 {
   "kind": "issue",
   "data": {
+    "callable": "properties.function_with_nested_properties.my_property@setter",
+    "callable_line": 233,
+    "code": 5002,
+    "line": 234,
+    "start": 19,
+    "end": 33,
+    "filename": "properties.py",
+    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
+    "traces": [
+      {
+        "name": "forward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      },
+      {
+        "name": "backward",
+        "roots": [
+          {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_sink" } ],
+                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
+                "kind": "Test"
+              }
+            ],
+            "origin": {
+              "filename": "properties.py",
+              "line": 234,
+              "start": 19,
+              "end": 33
+            }
+          }
+        ]
+      }
+    ],
+    "features": [
+      { "always-via": "special_source" }, { "always-via": "special_sink" }
+    ],
+    "sink_handle": {
+      "kind": "Call",
+      "callee": "_test_sink",
+      "index": 0,
+      "parameter": "formal(arg)"
+    },
+    "master_handle": "properties.function_with_nested_properties.my_property@setter:5002:0:Call|_test_sink|0|formal(arg):db24ba5edcb59071cfd6efedcae58767"
+  }
+}
+{
+  "kind": "issue",
+  "data": {
     "callable": "properties.property_setter_in_constructor",
     "callable_line": 159,
     "code": 5002,
@@ -684,7 +751,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -701,7 +770,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -747,7 +818,7 @@
     "callable": "Overrides{properties.TaintedGetterAndSetter.my_property@setter}",
     "sources": [
       {
-        "port": "result",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -817,7 +888,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -954,7 +1027,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1231,7 +1306,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1387,7 +1464,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1406,7 +1485,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1520,7 +1601,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[z]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[z]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -1530,7 +1611,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1664,7 +1747,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[x]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[x]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -1674,7 +1757,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1697,7 +1782,7 @@
               {
                 "return_paths": { "[underlying]": 3 },
                 "length": 1,
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "local_features": [ { "always-via": "tito" } ],
@@ -1710,7 +1795,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "local_features": [ { "via": "tito" } ],
             "tito_positions": [ { "line": 148, "start": 8, "end": 12 } ],
             "tito": null
@@ -1753,7 +1840,7 @@
             "kinds": [
               {
                 "return_paths": { "[underlying]": 3 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null
@@ -1764,7 +1851,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1802,7 +1891,9 @@
         "port": "formal(value, position=1)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 0 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 0 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -1811,7 +1902,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -2120,7 +2213,7 @@
             "kinds": [
               {
                 "return_paths": { "[my_property]": 3 },
-                "kind": "LocalReturn"
+                "kind": "ParameterUpdate0"
               }
             ],
             "tito": null
@@ -2131,7 +2224,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -2150,7 +2245,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -2189,7 +2286,7 @@
         "taint": [
           {
             "kinds": [
-              { "return_paths": { "[_p]": 3 }, "kind": "LocalReturn" }
+              { "return_paths": { "[_p]": 3 }, "kind": "ParameterUpdate0" }
             ],
             "tito": null
           }
@@ -2199,7 +2296,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -2253,7 +2352,7 @@
     "callable_line": 66,
     "sources": [
       {
-        "port": "result",
+        "port": "formal(self, position=0)",
         "taint": [
           {
             "kinds": [
@@ -2299,7 +2398,9 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
+            "kinds": [
+              { "return_paths": { "": 4 }, "kind": "ParameterUpdate0" }
+            ],
             "tito": null
           }
         ]
@@ -2390,18 +2491,41 @@
         "port": "formal(self, position=0)",
         "taint": [
           {
+            "kinds": [
+              {
+                "features": [ { "always-via": "special_source" } ],
+                "leaves": [
+                  { "name": "_test_source", "port": "leaf:return" }
+                ],
+                "kind": "Test"
+              }
+            ],
+            "local_features": [
+              { "always-via": "string_concat_lhs" }, { "always-via": "tito" }
+            ],
+            "tito_positions": [ { "line": 73, "start": 27, "end": 41 } ],
+            "origin": {
+              "filename": "properties.py",
+              "line": 73,
+              "start": 27,
+              "end": 41
+            },
+            "caller_interval": [ { "lower": 26, "upper": 31 } ],
+            "is_self_call": false
+          },
+          {
             "kinds": [ { "length": 1, "kind": "Test" } ],
             "call": {
               "position": {
                 "filename": "properties.py",
                 "line": 73,
                 "start": 8,
-                "end": 24
+                "end": 12
               },
               "resolves_to": [
                 "properties.TaintedGetterAndSetter.my_property@setter"
               ],
-              "port": "result"
+              "port": "formal(self, position=0)"
             },
             "caller_interval": [ { "lower": 26, "upper": 31 } ],
             "is_self_call": true
@@ -2487,92 +2611,6 @@
       "parameter": "formal(value)"
     },
     "master_handle": "properties.TaintedGetterAndSetter.writes_to_property:5002:0:Call|properties.TaintedGetterAndSetter.my_property@setter|0|formal(value):d0a28f3539617cc44c0c255f10f0325d"
-  }
-}
-{
-  "kind": "model",
-  "data": {
-    "callable": "properties.function_with_nested_properties.my_property@setter",
-    "filename": "properties.py",
-    "callable_line": 233,
-    "tito": [
-      {
-        "port": "formal(self, position=0)",
-        "taint": [
-          {
-            "kinds": [ { "return_paths": { "": 4 }, "kind": "LocalReturn" } ],
-            "tito": null
-          }
-        ]
-      }
-    ]
-  }
-}
-{
-  "kind": "issue",
-  "data": {
-    "callable": "properties.function_with_nested_properties.my_property@setter",
-    "callable_line": 233,
-    "code": 5002,
-    "line": 234,
-    "start": 19,
-    "end": 33,
-    "filename": "properties.py",
-    "message": "Data from [Test] source(s) may reach [Test] sink(s)",
-    "traces": [
-      {
-        "name": "forward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_source" } ],
-                "leaves": [
-                  { "name": "_test_source", "port": "leaf:return" }
-                ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 234,
-              "start": 19,
-              "end": 33
-            }
-          }
-        ]
-      },
-      {
-        "name": "backward",
-        "roots": [
-          {
-            "kinds": [
-              {
-                "features": [ { "always-via": "special_sink" } ],
-                "leaves": [ { "name": "_test_sink", "port": "leaf:arg" } ],
-                "kind": "Test"
-              }
-            ],
-            "origin": {
-              "filename": "properties.py",
-              "line": 234,
-              "start": 19,
-              "end": 33
-            }
-          }
-        ]
-      }
-    ],
-    "features": [
-      { "always-via": "special_source" }, { "always-via": "special_sink" }
-    ],
-    "sink_handle": {
-      "kind": "Call",
-      "callee": "_test_sink",
-      "index": 0,
-      "parameter": "formal(arg)"
-    },
-    "master_handle": "properties.function_with_nested_properties.my_property@setter:5002:0:Call|_test_sink|0|formal(arg):db24ba5edcb59071cfd6efedcae58767"
   }
 }
 {
