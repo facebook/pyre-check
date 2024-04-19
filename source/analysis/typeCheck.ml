@@ -5304,16 +5304,16 @@ module State (Context : Context) = struct
             return_type
         in
         Value resolution, validate_return expression ~resolution ~errors ~actual ~is_implicit
-    | Define { signature = { Define.Signature.name; _ } as signature; _ } ->
+    | Define { signature = { Define.Signature.name; nesting_define; _ } as signature; _ } ->
         let resolution =
-          if Reference.is_local name then
-            type_of_signature ~resolution signature
-            |> Type.Variable.mark_all_variables_as_bound
-                 ~specific:(Resolution.all_type_variables_in_scope resolution)
-            |> Annotation.create_mutable
-            |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
-          else
-            resolution
+          match nesting_define with
+          | Some _ ->
+              type_of_signature ~resolution signature
+              |> Type.Variable.mark_all_variables_as_bound
+                   ~specific:(Resolution.all_type_variables_in_scope resolution)
+              |> Annotation.create_mutable
+              |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
+          | None -> resolution
         in
         Value resolution, []
     | Import { Import.from; imports } ->
@@ -5652,14 +5652,14 @@ module State (Context : Context) = struct
           |> fun errors -> add_variance_error ~errors annotation
     in
     let add_capture_annotations ~outer_scope_type_variables resolution errors =
-      let process_signature ({ Define.Signature.name; _ } as signature) =
-        if Reference.is_local name then
-          type_of_signature ~resolution signature
-          |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
-          |> Annotation.create_mutable
-          |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
-        else
-          resolution
+      let process_signature ({ Define.Signature.nesting_define; _ } as signature) =
+        match nesting_define with
+        | Some _ ->
+            type_of_signature ~resolution signature
+            |> Type.Variable.mark_all_variables_as_bound ~specific:outer_scope_type_variables
+            |> Annotation.create_mutable
+            |> fun annotation -> Resolution.new_local resolution ~reference:name ~annotation
+        | None -> resolution
       in
       let process_capture (resolution, errors) { Define.Capture.name; kind } =
         let resolution, errors, type_ =

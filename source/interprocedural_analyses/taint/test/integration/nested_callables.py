@@ -47,7 +47,6 @@ def parameter_function(
         def add(x: str, y: str) -> str:
             return x + y
 
-    # pyre-ignore
     return add("/bin/bash", x)
 
 
