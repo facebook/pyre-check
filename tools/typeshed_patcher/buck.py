@@ -72,20 +72,27 @@ class BuckFileContent:
 
 def _strip_toplevel(path: pathlib.Path) -> pathlib.Path:
     parts = path.parts
-    if len(parts) <= 1:
-        raise RuntimeError(
-            f"Unable to strip top-level directory from `{path}`. "
-            "Please double-check if the typeshed directory structure is correct. "
-            "It is expected that `stdlib/` and `stubs/` directories are presented under "
-            "Typeshed root."
-        )
-    else:
-        return pathlib.Path(*parts[1:])
+    if len(parts) > 1:
+        toplevel_name = parts[0]
+        if toplevel_name == "stdlib":
+            return pathlib.Path(*parts[1:])
+        elif toplevel_name == "stubs":
+            return pathlib.Path(*parts[2:])
+    raise RuntimeError(
+        f"Unable to strip top-level directory from `{path}`. "
+        "Please double-check if the typeshed directory structure is correct. "
+        "It is expected that `stdlib/` and `stubs/` directories are presented under "
+        "Typeshed root."
+    )
 
 
 def generate_mapped_source(typeshed: typeshed.Typeshed) -> MappedSource:
     return MappedSource(
-        mapping={_strip_toplevel(path): path for path in typeshed.all_files()}
+        mapping={
+            _strip_toplevel(path): path
+            for path in typeshed.all_files()
+            if path.suffix == ".pyi"
+        }
     )
 
 

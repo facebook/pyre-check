@@ -29,8 +29,8 @@ class BuckTest(testslide.TestCase):
             {
                 Path("math.pyi"): Path("stdlib/math.pyi"),
                 Path("os/path.pyi"): Path("stdlib/os/path.pyi"),
-                Path("ujson/ujson.pyi"): Path("stubs/ujson/ujson.pyi"),
-                Path("mysqlclient/MySQLdb/__init__.pyi"): Path(
+                Path("ujson.pyi"): Path("stubs/ujson/ujson.pyi"),
+                Path("MySQLdb/__init__.pyi"): Path(
                     "stubs/mysqlclient/MySQLdb/__init__.pyi"
                 ),
             },
