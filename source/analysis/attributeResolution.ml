@@ -907,22 +907,25 @@ module ClassDecorators = struct
                old one *)
             let collect_parameters parameters (attribute, value) =
               (* Parameters must be annotated attributes *)
-              let annotation =
+              let original_annotation =
                 instantiate_attribute attribute
                 |> AnnotatedAttribute.annotation
                 |> Annotation.original
-                |> function
+              in
+              let annotation, is_initvar =
+                match original_annotation with
                 | Type.Parametric
                     { name = "dataclasses.InitVar"; parameters = [Single single_parameter] } ->
-                    single_parameter
-                | annotation -> annotation
+                    single_parameter, true
+                | _ -> original_annotation, false
               in
               match AnnotatedAttribute.name attribute with
               | name when not (Type.contains_unknown annotation) ->
-                  if implicitly_initialize then
+                  if implicitly_initialize && not is_initvar then
                     UninstantiatedAttributeTable.mark_as_implicitly_initialized_if_uninitialized
                       table
                       name;
+
                   let name = "$parameter$" ^ name in
                   let init_value = extract_init_value (attribute, value) in
                   let keyword_only =

@@ -65,8 +65,6 @@ let test_transform_environment =
                     self.a = a
                     self.b = b
                     self.c = c
-                    self.x = x
-                    self.y = y
 
                   def __repr__(self) -> str: ...
                   def __eq__(self, o: object) -> bool: ...
@@ -624,7 +622,6 @@ let test_transform_environment =
                   init_variable: dataclasses.InitVar[str]
                   def __init__(self, x: int, init_variable: str) -> None:
                     self.x = x
-                    self.init_variable = init_variable
                   def __repr__(self) -> str: ...
                   def __eq__(self, o: object) -> bool: ...
               |};
