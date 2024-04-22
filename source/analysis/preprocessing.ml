@@ -428,7 +428,7 @@ module Qualify (Context : QualifyContext) = struct
                   };
           }
       in
-      scope, qualify_reference ~suppress_synthetics:true ~scope name
+      scope, qualify_reference ~scope name
 
 
   and qualify_parameters ~scope parameters =
@@ -1030,43 +1030,27 @@ module Qualify (Context : QualifyContext) = struct
     scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
 
 
-  and qualify_reference
-      ?(suppress_synthetics = false)
-      ~scope:{ aliases; use_forward_references; _ }
-      reference
-    =
+  and qualify_reference ~scope:{ aliases; use_forward_references; _ } reference =
     match Reference.as_list reference with
     | [] -> Reference.empty
     | head :: tail -> (
         match Map.find aliases (Reference.create head) with
-        | Some { name; is_forward_reference; qualifier }
+        | Some { name; is_forward_reference; _ }
           when (not is_forward_reference) || use_forward_references ->
-            if Reference.show name |> is_qualified && suppress_synthetics then
-              Reference.combine qualifier reference
-            else
-              Reference.combine name (Reference.create_from_list tail)
+            Reference.combine name (Reference.create_from_list tail)
         | _ -> reference)
 
 
   and qualify_name
-      ?(suppress_synthetics = false)
       ~qualify_strings
       ~location
       ~scope:({ aliases; use_forward_references; _ } as scope)
     = function
     | Name.Identifier identifier -> (
         match Map.find aliases (Reference.create identifier) with
-        | Some { name; is_forward_reference; qualifier }
+        | Some { name; is_forward_reference; _ }
           when (not is_forward_reference) || use_forward_references ->
-            if Reference.show name |> is_qualified && suppress_synthetics then
-              Name.Attribute
-                {
-                  base = from_reference ~location qualifier;
-                  attribute = identifier;
-                  special = false;
-                }
-            else
-              create_name_from_reference ~location name
+            create_name_from_reference ~location name
         | _ -> Name.Identifier identifier)
     | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
       ->
