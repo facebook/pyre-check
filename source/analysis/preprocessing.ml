@@ -276,7 +276,6 @@ module Qualify (Context : QualifyContext) = struct
   type alias = {
     name: Reference.t;
     qualifier: Reference.t;
-    is_forward_reference: bool;
   }
 
   type qualify_strings =
@@ -314,12 +313,7 @@ module Qualify (Context : QualifyContext) = struct
           Map.set
             aliases
             ~key:reference
-            ~data:
-              {
-                name = Reference.create renamed;
-                qualifier = Context.source_qualifier;
-                is_forward_reference = false;
-              };
+            ~data:{ name = Reference.create renamed; qualifier = Context.source_qualifier };
         immutables = Set.add immutables reference;
       },
       stars,
@@ -327,9 +321,7 @@ module Qualify (Context : QualifyContext) = struct
 
 
   let rec explore_scope ~scope statements =
-    let global_alias ~qualifier ~name =
-      { name = Reference.combine qualifier name; qualifier; is_forward_reference = true }
-    in
+    let global_alias ~qualifier ~name = { name = Reference.combine qualifier name; qualifier } in
     let explore_scope
         ({ qualifier; aliases; immutables; skip; is_in_function; _ } as scope)
         { Node.location; value }
@@ -399,11 +391,7 @@ module Qualify (Context : QualifyContext) = struct
           let alias = qualify_local_identifier simple_name ~qualifier |> Reference.create in
           ( {
               scope with
-              aliases =
-                Map.set
-                  aliases
-                  ~key:name
-                  ~data:{ name = alias; qualifier; is_forward_reference = false };
+              aliases = Map.set aliases ~key:name ~data:{ name = alias; qualifier };
               locals = Set.add locals name;
             },
             alias )
@@ -416,15 +404,7 @@ module Qualify (Context : QualifyContext) = struct
           {
             scope with
             aliases =
-              Map.set
-                aliases
-                ~key:name
-                ~data:
-                  {
-                    name = Reference.combine qualifier name;
-                    qualifier;
-                    is_forward_reference = false;
-                  };
+              Map.set aliases ~key:name ~data:{ name = Reference.combine qualifier name; qualifier };
           }
       in
       scope, qualify_reference ~scope name
@@ -493,7 +473,7 @@ module Qualify (Context : QualifyContext) = struct
       ({ Node.location; value } as statement)
     =
     let scope, value =
-      let local_alias ~qualifier ~name = { name; qualifier; is_forward_reference = false } in
+      let local_alias ~qualifier ~name = { name; qualifier } in
       let qualify_assign { Assign.target; annotation; value } =
         let qualify_value ~qualify_potential_alias_strings ~scope = function
           | { Node.value = Expression.Constant (Constant.String _); _ } ->

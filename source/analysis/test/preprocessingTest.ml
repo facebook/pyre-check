@@ -1795,11 +1795,7 @@ let test_qualify_ast _ =
       aliases =
         Reference.Map.singleton
           (Reference.create "a")
-          {
-            Qualify.name = Reference.create "b";
-            qualifier = Reference.empty;
-            is_forward_reference = false;
-          };
+          { Qualify.name = Reference.create "b"; qualifier = Reference.empty };
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
       is_top_level = true;

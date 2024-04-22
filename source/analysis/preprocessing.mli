@@ -116,7 +116,6 @@ module Qualify (_ : QualifyContext) : sig
   type alias = {
     name: Reference.t;
     qualifier: Reference.t;
-    is_forward_reference: bool;
   }
 
   type scope = {
