@@ -65,6 +65,7 @@ module AnalysisSetup = struct
     maximum_overrides: int option;
     analyze_all_overrides_targets: Interprocedural.Target.Set.t;
     attribute_targets: Interprocedural.Target.Set.t;
+    skip_type_checking_callables: Ast.Reference.SerializableSet.t;
     skip_analysis_targets: Interprocedural.Target.Set.t;
     skip_overrides_targets: Ast.Reference.SerializableSet.t;
     skipped_overrides: Interprocedural.OverrideGraph.skipped_overrides;
@@ -77,6 +78,7 @@ module SharedMemoryStatus = struct
   type t =
     | InvalidByDecoratorChange
     | InvalidByCodeChange
+    | InvalidBySkipAnalysisChange
     | TypeEnvironmentLoadError
     | LoadError
     | NotFound
@@ -89,6 +91,7 @@ module SharedMemoryStatus = struct
   let to_json = function
     | InvalidByDecoratorChange -> `String "InvalidByDecoratorChange"
     | InvalidByCodeChange -> `String "InvalidByCodeChange"
+    | InvalidBySkipAnalysisChange -> `String "InvalidBySkipAnalysisChange"
     | TypeEnvironmentLoadError -> `String "TypeEnvironmentLoadError"
     | LoadError -> `String "LoadError"
     | NotFound -> `String "NotFound"
@@ -124,9 +127,8 @@ module PreviousAnalysisSetupSharedMemory = struct
         SharedMemoryStatus.Loaded { entry_status; previous_analysis_setup }
     | Error error ->
         Log.info
-          "Reset shared memory due to failing to load the previous analysis setup: %s"
+          "Failed to load the previous analysis setup: %s"
           (SaveLoadSharedMemory.Usage.show error);
-        Memory.reset_shared_memory ();
         SharedMemoryStatus.LoadError
 
 
@@ -314,7 +316,30 @@ let check_decorator_invalidation ~decorator_configuration:current_configuration 
       Error SharedMemoryStatus.LoadError
 
 
-let try_load ~scheduler ~saved_state ~configuration ~decorator_configuration ~enabled =
+let check_skip_type_checking_invalidation ~skip_type_checking_callables = function
+  | SharedMemoryStatus.Loaded
+      {
+        previous_analysis_setup =
+          { AnalysisSetup.skip_type_checking_callables = previous_skip_type_checking_callables; _ };
+        _;
+      }
+    when not
+           (Ast.Reference.SerializableSet.equal
+              skip_type_checking_callables
+              previous_skip_type_checking_callables) ->
+      Log.info "Changes to SkipAnalysis modes detected. Ignoring existing cache.";
+      SharedMemoryStatus.InvalidBySkipAnalysisChange
+  | status -> status
+
+
+let try_load
+    ~scheduler
+    ~saved_state
+    ~configuration
+    ~decorator_configuration
+    ~skip_type_checking_callables
+    ~enabled
+  =
   let save_cache = enabled in
   if not enabled then
     {
@@ -344,18 +369,27 @@ let try_load ~scheduler ~saved_state ~configuration ~decorator_configuration ~en
         SharedMemoryStatus.InvalidByCodeChange
       else
         match initialize_shared_memory ~path:cache_path ~configuration with
-        | Ok () -> (
-            match check_decorator_invalidation ~decorator_configuration with
-            | Ok () ->
-                let entry_status = EntryStatus.empty in
-                PreviousAnalysisSetupSharedMemory.load_from_cache entry_status
-            | Error error ->
-                (* If there exist updates to certain decorators, it wastes memory and might not be
-                   safe to leave the old type environment in the shared memory. *)
-                Log.info "Resetting shared memory";
-                Memory.reset_shared_memory ();
-                error)
         | Error error -> error
+        | Ok () ->
+            let status =
+              check_decorator_invalidation ~decorator_configuration
+              >>| fun () ->
+              PreviousAnalysisSetupSharedMemory.load_from_cache EntryStatus.empty
+              |> check_skip_type_checking_invalidation ~skip_type_checking_callables
+            in
+            let status =
+              match status with
+              | Ok status -> status
+              | Error status -> status
+            in
+            let () =
+              match status with
+              | Loaded _ -> ()
+              | _ ->
+                  Log.info "Resetting shared memory";
+                  Memory.reset_shared_memory ()
+            in
+            status
     in
     { status; save_cache; scheduler; configuration; no_file_changes_reported_by_watchman }
 
@@ -453,6 +487,7 @@ let save
     ~maximum_overrides
     ~analyze_all_overrides_targets
     ~attribute_targets
+    ~skip_type_checking_callables
     ~skip_analysis_targets
     ~skip_overrides_targets
     ~skipped_overrides
@@ -477,6 +512,7 @@ let save
           AnalysisSetup.maximum_overrides;
           analyze_all_overrides_targets;
           attribute_targets;
+          skip_type_checking_callables;
           skip_analysis_targets;
           skip_overrides_targets;
           skipped_overrides;

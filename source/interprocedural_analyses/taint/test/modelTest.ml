@@ -3703,9 +3703,10 @@ let test_access_path _ =
 let test_parse_decorator_modes _ =
   let open Analysis in
   let assert_decorator_modes source expected =
-    let source = trim_extra_indentation source in
+    let source = Test.trim_extra_indentation source in
     let actual =
-      ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute "/root/test.py") ~source
+      ModelParser.parse_model_modes ~path:(PyrePath.create_absolute "/root/test.py") ~source
+      |> ModelParser.decorator_actions_from_modes
       |> Ast.Reference.SerializableMap.to_alist
     in
     assert_equal
@@ -3745,9 +3746,6 @@ let test_parse_decorator_modes _ =
       !&"foo.ignore_this_decorator", DecoratorPreprocessing.Action.Discard;
       !&"foo.skip_this_decorator", DecoratorPreprocessing.Action.DoNotInline;
     ];
-  assert_decorator_modes {|
-    @CouldNotParse
-  |} [];
   ()
 
 

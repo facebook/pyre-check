@@ -450,7 +450,10 @@ let set_up_decorator_preprocessing ~handle models =
   let decorator_actions =
     models
     >>| (fun models ->
-          ModelParser.parse_decorator_modes ~path:(PyrePath.create_absolute handle) ~source:models)
+          ModelParser.parse_model_modes
+            ~path:(PyrePath.create_absolute handle)
+            ~source:(Test.trim_extra_indentation models)
+          |> ModelParser.decorator_actions_from_modes)
     |> Option.value ~default:Reference.SerializableMap.empty
   in
   Analysis.DecoratorPreprocessing.setup_preprocessing

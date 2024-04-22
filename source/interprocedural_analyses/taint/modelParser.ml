@@ -23,7 +23,6 @@ open Domains
 open ModelParseResult
 module PyrePysaApi = Analysis.PyrePysaApi
 module ClassSummary = Analysis.ClassSummary
-module DecoratorPreprocessing = Analysis.DecoratorPreprocessing
 
 module PythonVersion = struct
   (* Not putting the functions there to prevent circular dependency errors *)
@@ -2855,6 +2854,8 @@ module ParsedStatement : sig
 
   val mangle_top_level_name : Reference.t -> Reference.t
 
+  val partition_taint_decorators : Expression.t list -> Decorator.t list * Expression.t list
+
   val create_parsed_signature_from_name
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     parameters:Ast.Expression.Parameter.t list ->
@@ -4253,61 +4254,6 @@ let create
          | Error error -> Error [error]))
 
 
-let parse_decorator_modes ~path ~source =
-  let open Result in
-  let update_actions actions decorator action =
-    Reference.SerializableMap.update
-      decorator
-      (function
-        | None -> Some action
-        | Some existing_action ->
-            let () =
-              Log.warning
-                "%a: Found multiple modes for decorator `%a`: was @%s, it is now @%s."
-                PyrePath.pp
-                path
-                Reference.pp
-                decorator
-                (DecoratorPreprocessing.Action.to_mode existing_action)
-                (DecoratorPreprocessing.Action.to_mode action)
-            in
-            Some action)
-      actions
-  in
-  let parse_statement actions = function
-    | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ } ->
-        let name = ParsedStatement.mangle_top_level_name name in
-        let name =
-          (* To properly work on a decorator factory implemented with a class, the user needs to
-             model `Class.__call__` (since modeling a class directly is generally not allowed). We
-             need to discard the `__call__` afterward to properly match the decorator. *)
-          match Reference.last name with
-          | "__call__" -> Reference.prefix name |> Option.value ~default:Reference.empty
-          | _ -> name
-        in
-        if List.exists decorators ~f:(name_is ~name:"IgnoreDecorator") then
-          update_actions actions name DecoratorPreprocessing.Action.Discard
-        else if List.exists decorators ~f:(name_is ~name:"SkipDecoratorWhenInlining") then
-          update_actions actions name DecoratorPreprocessing.Action.DoNotInline
-        else
-          actions
-    | _ -> actions
-  in
-  try
-    String.split ~on:'\n' source
-    |> Parser.parse
-    >>| List.fold ~init:Reference.SerializableMap.empty ~f:parse_statement
-    |> Result.ok
-    |> Option.value ~default:Reference.SerializableMap.empty
-  with
-  | exn ->
-      Log.warning
-        "Ignoring `%s` when trying to get decorators to skip because of exception: %s"
-        (PyrePath.show path)
-        (Exn.to_string exn);
-      Reference.SerializableMap.empty
-
-
 let get_model_sources ~paths =
   let path_and_content file =
     match File.content file with
@@ -4319,6 +4265,75 @@ let get_model_sources ~paths =
     "Finding taint models in `%s`."
     (paths |> List.map ~f:PyrePath.show |> String.concat ~sep:", ");
   model_files |> List.map ~f:File.create |> List.filter_map ~f:path_and_content
+
+
+let parse_model_modes ~path ~source =
+  let add_mode ~define_name ~mode =
+    Reference.SerializableMap.update define_name (function
+        | None -> Some (Model.ModeSet.singleton mode)
+        | Some existing -> Some (Model.ModeSet.add mode existing))
+  in
+  let parse_statement modes = function
+    | { Node.value = Statement.Define { signature = { name = define_name; decorators; _ }; _ }; _ }
+      ->
+        let define_name = ParsedStatement.mangle_top_level_name define_name in
+        let taint_decorators, _ = ParsedStatement.partition_taint_decorators decorators in
+        let get_mode modes { Decorator.name = { Node.value = mode_name; _ }; _ } =
+          match Model.Mode.from_string (Reference.show mode_name) with
+          | Some mode -> add_mode ~define_name ~mode modes
+          | None -> modes
+        in
+        List.fold ~init:modes ~f:get_mode taint_decorators
+    | _ -> modes
+  in
+  match String.split ~on:'\n' source |> Parser.parse with
+  | Ok statements -> List.fold ~init:Reference.SerializableMap.empty ~f:parse_statement statements
+  | Error { Parser.Error.location; _ } ->
+      let error = model_verification_error ~path:(Some path) ~location ParseError in
+      raise (ModelVerificationError.ModelVerificationErrors [error])
+
+
+let decorator_actions_from_modes model_modes =
+  let merge_dunder_calls define_name define_modes modes =
+    let define_name =
+      (* To properly work on a decorator factory implemented with a class, the user needs to model
+         `Class.__call__` (since modeling a class directly is generally not allowed). We need to
+         discard the `__call__` afterward to properly match the decorator. *)
+      match Reference.last define_name with
+      | "__call__" -> Reference.prefix define_name |> Option.value ~default:Reference.empty
+      | _ -> define_name
+    in
+    Reference.SerializableMap.update
+      define_name
+      (function
+        | None -> Some define_modes
+        | Some existing -> Some (Model.ModeSet.join_user_modes define_modes existing))
+      modes
+  in
+  let get_decorator_action define_name modes =
+    let has_ignore = Model.ModeSet.contains Model.Mode.IgnoreDecorator modes in
+    let has_skip_decorator = Model.ModeSet.contains Model.Mode.SkipDecoratorWhenInlining modes in
+    if has_ignore && not has_skip_decorator then
+      Some Analysis.DecoratorPreprocessing.Action.Discard
+    else if has_skip_decorator && not has_ignore then
+      Some Analysis.DecoratorPreprocessing.Action.DoNotInline
+    else if has_skip_decorator && has_ignore then
+      let () =
+        Log.warning
+          "Found conflicting modes (IgnoreDecorator, SkipDecoratorWhenInlining) for decorator \
+           `%a`, ignoring"
+          Ast.Reference.pp
+          define_name
+      in
+      None
+    else
+      None
+  in
+  Ast.Reference.SerializableMap.fold
+    merge_dunder_calls
+    model_modes
+    Ast.Reference.SerializableMap.empty
+  |> Ast.Reference.SerializableMap.filter_map get_decorator_action
 
 
 let parse

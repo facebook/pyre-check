@@ -14,6 +14,7 @@ module ReadWrite : sig
     :  scheduler:Scheduler.t ->
     configuration:Configuration.Analysis.t ->
     decorator_configuration:DecoratorPreprocessing.Configuration.t ->
+    skip_type_checking_callables:Ast.Reference.SerializableSet.t ->
     callback_with_qualifiers_and_definitions:
       ((lookup_source:(ArtifactPath.t -> SourcePath.t option) -> Ast.Reference.t -> string option) ->
       Ast.Reference.t list ->

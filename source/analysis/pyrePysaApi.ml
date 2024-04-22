@@ -81,6 +81,7 @@ module ReadWrite = struct
       ~scheduler
       ~configuration
       ~decorator_configuration
+      ~skip_type_checking_callables
       ~callback_with_qualifiers_and_definitions
     =
     let type_environment = PysaTypeEnvironment.create ~configuration ~decorator_configuration in
@@ -91,6 +92,12 @@ module ReadWrite = struct
       callback_with_qualifiers_and_definitions
         (TypeEnvironment.read_only type_environment |> absolute_source_path_of_qualifier)
         qualifiers
+        definitions
+    in
+    let definitions =
+      List.filter
+        ~f:(fun define_name ->
+          not (Ast.Reference.SerializableSet.mem define_name skip_type_checking_callables))
         definitions
     in
     PysaTypeEnvironment.populate ~scheduler type_environment definitions;

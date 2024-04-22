@@ -43,9 +43,13 @@ val parse_access_path
   Ast.Expression.t ->
   (ModelParseResult.TaintPath.t, ModelVerificationError.t) result
 
-val parse_decorator_modes
+val parse_model_modes
   :  path:PyrePath.t ->
   source:string ->
+  Model.ModeSet.t Ast.Reference.SerializableMap.t
+
+val decorator_actions_from_modes
+  :  Model.ModeSet.t Ast.Reference.SerializableMap.t ->
   Analysis.DecoratorPreprocessing.Action.t Ast.Reference.SerializableMap.t
 
 (* Exposed for model queries. *)

@@ -91,7 +91,7 @@ let verify_model_syntax ~static_analysis_configuration =
   ()
 
 
-let parse_decorator_preprocessing_configuration
+let parse_model_modes
     ~static_analysis_configuration:
       {
         Configuration.StaticAnalysis.configuration = { taint_model_paths; _ };
@@ -100,37 +100,39 @@ let parse_decorator_preprocessing_configuration
       }
   =
   let timer = Timer.start () in
-  let () = Log.info "Parsing taint models for decorator modes..." in
-  let decorator_actions =
-    let combine_decorator_modes decorator left right =
-      let () =
-        Log.warning
-          "Found multiple modes for decorator `%a`: was @%s, it is now @%s"
-          Ast.Reference.pp
-          decorator
-          (Analysis.DecoratorPreprocessing.Action.to_mode left)
-          (Analysis.DecoratorPreprocessing.Action.to_mode right)
-      in
-      Some right
-    in
+  let () = Log.info "Parsing taint models modes..." in
+  let model_modes =
     ModelParser.get_model_sources ~paths:taint_model_paths
-    |> List.map ~f:(fun (path, source) -> ModelParser.parse_decorator_modes ~path ~source)
+    |> List.map ~f:(fun (path, source) -> ModelParser.parse_model_modes ~path ~source)
     |> List.fold
          ~init:Ast.Reference.SerializableMap.empty
-         ~f:(Ast.Reference.SerializableMap.union combine_decorator_modes)
+         ~f:
+           (Ast.Reference.SerializableMap.union (fun _ left right ->
+                Some (Model.ModeSet.join_user_modes left right)))
+  in
+  let decorator_preprocessing_configuration =
+    {
+      Analysis.DecoratorPreprocessing.Configuration.actions =
+        ModelParser.decorator_actions_from_modes model_modes;
+      enable_inlining = inline_decorators;
+      enable_discarding = true;
+    }
+  in
+  let skip_type_checking_callables =
+    model_modes
+    |> Ast.Reference.SerializableMap.filter (fun _ modes ->
+           Model.ModeSet.contains Model.Mode.SkipAnalysis modes)
+    |> Ast.Reference.SerializableMap.keys
+    |> Ast.Reference.SerializableSet.of_list
   in
   let () =
     Statistics.performance
-      ~name:"Parsed taint models for decorator modes"
-      ~phase_name:"Parsed taint models for decorator modes"
+      ~name:"Parsed taint models modes"
+      ~phase_name:"Parsed taint models modes"
       ~timer
       ()
   in
-  {
-    Analysis.DecoratorPreprocessing.Configuration.actions = decorator_actions;
-    enable_inlining = inline_decorators;
-    enable_discarding = true;
-  }
+  decorator_preprocessing_configuration, skip_type_checking_callables
 
 
 let resolve_module_path
@@ -220,6 +222,7 @@ let create_pyre_read_write_api_and_perform_type_analysis
       static_analysis_configuration)
     ~lookup_source
     ~decorator_configuration
+    ~skip_type_checking_callables
   =
   let save_qualifiers_and_definitions absolute_source_path_of_qualifier qualifiers definitions =
     match save_results_to with
@@ -241,6 +244,7 @@ let create_pyre_read_write_api_and_perform_type_analysis
     ~scheduler
     ~configuration
     ~decorator_configuration
+    ~skip_type_checking_callables
     ~callback_with_qualifiers_and_definitions:save_qualifiers_and_definitions
 
 
@@ -514,10 +518,14 @@ let run_taint_analysis
   (* In order to save time, sanity check models before starting the analysis. *)
   let () = verify_model_syntax ~static_analysis_configuration in
 
-  (* Parse taint models to find decorators to inline or discard. This must be done early because
-     inlining is a preprocessing phase of type-checking. *)
-  let decorator_configuration =
-    parse_decorator_preprocessing_configuration ~static_analysis_configuration
+  (* Parse taint models to find:
+   * - decorators to inline or discard;
+   * - functions to skip for type checking;
+   *
+   * This must be done early since decorator inlining is a preprocessing phase of
+   * type-checking. *)
+  let decorator_configuration, skip_type_checking_callables =
+    parse_model_modes ~static_analysis_configuration
   in
 
   let cache =
@@ -526,6 +534,7 @@ let run_taint_analysis
       ~saved_state
       ~configuration
       ~decorator_configuration
+      ~skip_type_checking_callables
       ~enabled:use_cache
   in
 
@@ -536,7 +545,8 @@ let run_taint_analysis
           ~scheduler
           ~static_analysis_configuration
           ~lookup_source
-          ~decorator_configuration)
+          ~decorator_configuration
+          ~skip_type_checking_callables)
   in
   let pyre_api = PyrePysaApi.ReadOnly.of_read_write_api pyre_read_write_api in
 
@@ -736,6 +746,7 @@ let run_taint_analysis
     Cache.save
       ~maximum_overrides
       ~attribute_targets
+      ~skip_type_checking_callables
       ~skip_analysis_targets
       ~skip_overrides_targets
       ~analyze_all_overrides_targets

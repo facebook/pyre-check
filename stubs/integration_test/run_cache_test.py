@@ -787,18 +787,7 @@ class Test:
             self.typeshed_path, self.cache_path, self.save_results_to, use_cache=True
         )
         expected_cache_usage = {
-            "shared_memory_status": {
-                "Loaded": {
-                    "CallGraph": "(Unused Stale)",
-                    "ClassHierarchyGraph": "Used",
-                    "ClassIntervalGraph": "Used",
-                    "GlobalConstants": "Used",
-                    "InitialCallables": "Used",
-                    "PreviousAnalysisSetup": "Used",
-                    "OverrideGraph": "Used",
-                    "TypeEnvironment": "Used",
-                }
-            },
+            "shared_memory_status": "InvalidBySkipAnalysisChange",
             "save_cache": True,
         }
         # Expect a new issue due to not skipping analyzing a callable

@@ -17,6 +17,7 @@ val try_load
   saved_state:Configuration.StaticAnalysis.SavedState.t ->
   configuration:Configuration.Analysis.t ->
   decorator_configuration:Analysis.DecoratorPreprocessing.Configuration.t ->
+  skip_type_checking_callables:Ast.Reference.SerializableSet.t ->
   enabled:bool ->
   t
 
@@ -24,6 +25,7 @@ val save
   :  maximum_overrides:int option ->
   analyze_all_overrides_targets:Interprocedural.Target.Set.t ->
   attribute_targets:Interprocedural.Target.Set.t ->
+  skip_type_checking_callables:Ast.Reference.SerializableSet.t ->
   skip_analysis_targets:Interprocedural.Target.Set.t ->
   skip_overrides_targets:Ast.Reference.SerializableSet.t ->
   skipped_overrides:Interprocedural.OverrideGraph.skipped_overrides ->
