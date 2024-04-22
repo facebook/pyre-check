@@ -24,7 +24,7 @@ import threading
 import time
 from pathlib import Path
 from types import TracebackType
-from typing import Dict, Generator, Iterable, Optional, Pattern, Sequence
+from typing import Dict, Generator, Iterable, Optional, Pattern, Sequence, TextIO
 
 import click
 
@@ -279,21 +279,51 @@ def file_tailer(file_path: Path) -> Generator[Iterable[str], None, None]:
     logger.join()
     ```
     """
-    with subprocess.Popen(
-        ["tail", "-F", "-n", "0", str(file_path)],
-        stdout=subprocess.PIPE,
-        stderr=subprocess.DEVNULL,
-        universal_newlines=True,
-    ) as tail:
+    stop_reader: bool = False
+
+    def follow(file_path: Path) -> Iterable[str]:
+        file: Optional[TextIO] = None
+        sleep_interval_seconds = 0.01
+
+        def safely_close_file() -> None:
+            nonlocal file
+
+            if file is None:
+                return
+
+            try:
+                file.close()
+            except Exception:
+                pass
+
+            file = None
+
         try:
-            stdout = tail.stdout
-            if stdout is None:
-                raise RuntimeError(
-                    "subprocess.Popen failed to set up a pipe for stdout"
-                )
-            yield stdout
+            while not stop_reader:
+                try:
+                    if file is None:
+                        file = open(file_path, "r")
+                        file.seek(0, 2)
+                    else:
+                        line = file.readline()
+
+                        if len(line) == 0:
+                            time.sleep(sleep_interval_seconds)
+                            continue
+
+                        yield line
+                except Exception:
+                    # exception on open(), file.seek() or file.readline()
+                    # We manually use `open()` and `close()` here instead of using
+                    # `with open()`, since it would require using both an outer and
+                    # inner `while` loop and would lead to code duplication.
+                    safely_close_file()
+                    time.sleep(sleep_interval_seconds)
         finally:
-            tail.terminate()
+            safely_close_file()
+
+    yield follow(file_path)
+    stop_reader = True
 
 
 class StreamLogger:
