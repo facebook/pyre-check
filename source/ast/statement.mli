@@ -7,6 +7,8 @@
 
 val toplevel_define_name : string
 
+val class_toplevel_define_name : string
+
 module Assign : sig
   type t = {
     target: Expression.t;

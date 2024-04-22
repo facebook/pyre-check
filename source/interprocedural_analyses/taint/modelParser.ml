@@ -2853,6 +2853,8 @@ module ParsedStatement : sig
     | ParsedAttribute of parsed_attribute
     | ParsedQuery of ModelQuery.t
 
+  val mangle_top_level_name : Reference.t -> Reference.t
+
   val create_parsed_signature_from_name
     :  pyre_api:PyrePysaApi.ReadOnly.t ->
     parameters:Ast.Expression.Parameter.t list ->
@@ -2925,6 +2927,13 @@ end = struct
     List.partition_map decorators ~f:get_taint_decorator
 
 
+  let mangle_top_level_name =
+    Reference.map_last ~f:(function
+        | "__top_level__" -> Ast.Statement.toplevel_define_name
+        | "__class_top_level__" -> Ast.Statement.class_toplevel_define_name
+        | identifier -> identifier)
+
+
   let create_parsed_signature_from_name
       ~pyre_api
       ~parameters
@@ -2934,6 +2943,7 @@ end = struct
       name
     =
     let open Option.Monad_infix in
+    let name = mangle_top_level_name name in
     (* Convert delocalized signatures to localized form. Useful for nested functions. *)
     let name =
       if Option.is_some (PyrePysaApi.ReadOnly.global pyre_api name) then
@@ -3263,8 +3273,6 @@ let create_model_from_signature
       call_target
     >>= function
     | None -> (
-        (* TODO(T90320625): This is obviously wrong since it assumes the prefix is the module name.
-           This doesn't handle methods for instance. *)
         let module_name = Reference.first callable_name in
         let module_resolved =
           ModelVerifier.resolve_global ~pyre_api (Reference.create module_name)
@@ -4268,6 +4276,7 @@ let parse_decorator_modes ~path ~source =
   in
   let parse_statement actions = function
     | { Node.value = Statement.Define { signature = { name; decorators; _ }; _ }; _ } ->
+        let name = ParsedStatement.mangle_top_level_name name in
         let name =
           (* To properly work on a decorator factory implemented with a class, the user needs to
              model `Class.__call__` (since modeling a class directly is generally not allowed). We

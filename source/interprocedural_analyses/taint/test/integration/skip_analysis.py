@@ -21,3 +21,12 @@ def no_issue_due_to_skip():
     skip = SkipMe()
     skip.taint_here(x)
     _test_sink(skip.tito_here(x))
+
+
+# No issue in top level
+_test_sink(_test_source())
+
+
+class SkipTopLevel:
+    # No issue in class top level
+    _test_sink(_test_source())

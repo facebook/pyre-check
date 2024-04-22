@@ -101,61 +101,91 @@ module Global = struct
   [@@deriving show]
 end
 
+let toplevel_define_type =
+  Type.Callable.create
+    ~overloads:[]
+    ~parameters:(Type.Callable.Defined [])
+    ~annotation:Type.NoneType
+    ()
+
+
 (* Resolve global symbols, ignoring decorators. *)
 let resolve_global ~pyre_api name =
-  (* Resolve undecorated functions. *)
-  let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
-  let resolved_local =
-    if Option.is_none resolved_global then
+  let name_end = Reference.last name in
+  if Identifier.equal name_end Ast.Statement.toplevel_define_name then
+    if
       name
-      |> PyrePysaApi.ReadOnly.get_define_body pyre_api
-      >>| Node.value
-      |> function
-      | Some ({ signature = { nesting_define = Some _; _ }; _ } as define) ->
-          Some
-            (PyrePysaApi.ReadOnly.resolve_define
-               ~implementation:(Some define.signature)
-               ~overloads:[]
-               pyre_api)
-      | _ -> None
+      |> Reference.prefix
+      >>| PyrePysaApi.ReadOnly.module_exists pyre_api
+      |> Option.value ~default:false
+    then
+      Some (Global.Attribute toplevel_define_type)
     else
       None
-  in
-  match resolved_global, resolved_local with
-  | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
-  | _, Some { Analysis.AttributeResolution.undecorated_signature = signature; _ } ->
-      Some (Global.Attribute (Type.Callable signature))
-  | _ -> (
-      (* Resolve undecorated methods. *)
-      match find_method_definitions ~pyre_api name with
-      | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
-      | first :: _ :: _ as overloads ->
-          (* Note that we use the first overload as the base implementation, which might be
-             unsound. *)
-          Some
-            (Global.Attribute
-               (Type.Callable.create
-                  ~overloads
-                  ~parameters:first.parameters
-                  ~annotation:first.annotation
-                  ()))
-      | [] -> (
-          (* Fall back for anything else. *)
-          let annotation =
-            from_reference name ~location:Location.any
-            |> PyrePysaApi.ReadOnly.resolve_expression_to_annotation pyre_api
-          in
-          match Annotation.annotation annotation with
-          | Type.Parametric { name = "type"; _ }
-            when PyrePysaApi.ReadOnly.class_exists pyre_api (Reference.show name) ->
-              Some Global.Class
-          | Type.Top when PyrePysaApi.ReadOnly.module_exists pyre_api name -> Some Global.Module
-          | Type.Top when not (Annotation.is_immutable annotation) ->
-              (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
-                 to mutable annotation, while existing ones resolve to immutable annotation. This is
-                 fragile! *)
-              None
-          | annotation -> Some (Global.Attribute annotation)))
+  else if Identifier.equal name_end Ast.Statement.class_toplevel_define_name then
+    if
+      name
+      |> Reference.prefix
+      >>| Reference.show
+      >>| PyrePysaApi.ReadOnly.class_exists pyre_api
+      |> Option.value ~default:false
+    then
+      Some (Global.Attribute toplevel_define_type)
+    else
+      None
+  else (* Resolve undecorated functions. *)
+    let resolved_global = PyrePysaApi.ReadOnly.global pyre_api name in
+    let resolved_local =
+      if Option.is_none resolved_global then
+        name
+        |> PyrePysaApi.ReadOnly.get_define_body pyre_api
+        >>| Node.value
+        |> function
+        | Some ({ signature = { nesting_define = Some _; _ }; _ } as define) ->
+            Some
+              (PyrePysaApi.ReadOnly.resolve_define
+                 ~implementation:(Some define.signature)
+                 ~overloads:[]
+                 pyre_api)
+        | _ -> None
+      else
+        None
+    in
+    match resolved_global, resolved_local with
+    | Some { Analysis.AttributeResolution.Global.undecorated_signature = Some signature; _ }, _
+    | _, Some { Analysis.AttributeResolution.undecorated_signature = signature; _ } ->
+        Some (Global.Attribute (Type.Callable signature))
+    | _ -> (
+        (* Resolve undecorated methods. *)
+        match find_method_definitions ~pyre_api name with
+        | [callable] -> Some (Global.Attribute (Type.Callable.create_from_implementation callable))
+        | first :: _ :: _ as overloads ->
+            (* Note that we use the first overload as the base implementation, which might be
+               unsound. *)
+            Some
+              (Global.Attribute
+                 (Type.Callable.create
+                    ~overloads
+                    ~parameters:first.parameters
+                    ~annotation:first.annotation
+                    ()))
+        | [] -> (
+            (* Fall back for anything else. *)
+            let annotation =
+              from_reference name ~location:Location.any
+              |> PyrePysaApi.ReadOnly.resolve_expression_to_annotation pyre_api
+            in
+            match Annotation.annotation annotation with
+            | Type.Parametric { name = "type"; _ }
+              when PyrePysaApi.ReadOnly.class_exists pyre_api (Reference.show name) ->
+                Some Global.Class
+            | Type.Top when PyrePysaApi.ReadOnly.module_exists pyre_api name -> Some Global.Module
+            | Type.Top when not (Annotation.is_immutable annotation) ->
+                (* FIXME: We are relying on the fact that nonexistent functions & attributes resolve
+                   to mutable annotation, while existing ones resolve to immutable annotation. This
+                   is fragile! *)
+                None
+            | annotation -> Some (Global.Attribute annotation)))
 
 
 type parameter_requirements = {

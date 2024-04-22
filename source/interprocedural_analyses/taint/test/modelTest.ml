@@ -3751,6 +3751,43 @@ let test_parse_decorator_modes _ =
   ()
 
 
+let test_top_level_models context =
+  let assert_model = assert_model ~context in
+  assert_model
+    ~model_source:{|
+      @SkipAnalysis
+      def test.__top_level__(): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Function
+          ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis])
+          "test.$toplevel";
+      ]
+    ();
+  assert_model
+    ~source:{|
+    class TopLevel:
+      x = ...
+
+      def foo(self):
+        pass
+    |}
+    ~model_source:{|
+      @SkipAnalysis
+      def test.TopLevel.__class_top_level__(): ...
+    |}
+    ~expect:
+      [
+        outcome
+          ~kind:`Method
+          ~analysis_modes:(Model.ModeSet.of_list [SkipAnalysis])
+          "test.TopLevel.$class_toplevel";
+      ]
+    ()
+
+
 let () =
   "taint_model"
   >::: [
@@ -3784,5 +3821,6 @@ let () =
          "taint_in_taint_out_update_models" >:: test_taint_in_taint_out_update_models;
          "taint_union_models" >:: test_union_models;
          "tito_breadcrumbs" >:: test_tito_breadcrumbs;
+         "top_level_models" >:: test_top_level_models;
        ]
   |> Test.run
