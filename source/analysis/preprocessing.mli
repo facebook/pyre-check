@@ -124,7 +124,6 @@ module Qualify (_ : QualifyContext) : sig
     aliases: alias Reference.Map.t;
     immutables: Reference.Set.t;
     locals: Reference.Set.t;
-    use_forward_references: bool;
     is_top_level: bool;
     skip: Location.Set.t;
     is_in_function: bool;

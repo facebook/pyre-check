@@ -1802,7 +1802,6 @@ let test_qualify_ast _ =
           };
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
-      use_forward_references = true;
       is_top_level = true;
       skip = Location.Set.empty;
       is_in_function = false;

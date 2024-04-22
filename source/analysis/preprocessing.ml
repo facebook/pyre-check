@@ -289,7 +289,6 @@ module Qualify (Context : QualifyContext) = struct
     aliases: alias Reference.Map.t;
     immutables: Reference.Set.t;
     locals: Reference.Set.t;
-    use_forward_references: bool;
     is_top_level: bool;
     skip: Location.Set.t;
     is_in_function: bool;
@@ -656,12 +655,7 @@ module Qualify (Context : QualifyContext) = struct
           nesting_define >>| fun nesting_define -> qualify_reference ~scope nesting_define
         in
         let decorators =
-          List.map
-            decorators
-            ~f:
-              (qualify_expression
-                 ~qualify_strings:DoNotQualify
-                 ~scope:{ scope with use_forward_references = true })
+          List.map decorators ~f:(qualify_expression ~qualify_strings:DoNotQualify ~scope)
         in
         (* Take care to qualify the function name before parameters, as parameters shadow it. *)
         let scope, _ = qualify_function_name ~scope name in
@@ -1030,27 +1024,19 @@ module Qualify (Context : QualifyContext) = struct
     scope, qualify_expression ~qualify_strings:DoNotQualify ~scope target
 
 
-  and qualify_reference ~scope:{ aliases; use_forward_references; _ } reference =
+  and qualify_reference ~scope:{ aliases; _ } reference =
     match Reference.as_list reference with
     | [] -> Reference.empty
     | head :: tail -> (
         match Map.find aliases (Reference.create head) with
-        | Some { name; is_forward_reference; _ }
-          when (not is_forward_reference) || use_forward_references ->
-            Reference.combine name (Reference.create_from_list tail)
+        | Some { name; _ } -> Reference.combine name (Reference.create_from_list tail)
         | _ -> reference)
 
 
-  and qualify_name
-      ~qualify_strings
-      ~location
-      ~scope:({ aliases; use_forward_references; _ } as scope)
-    = function
+  and qualify_name ~qualify_strings ~location ~scope:({ aliases; _ } as scope) = function
     | Name.Identifier identifier -> (
         match Map.find aliases (Reference.create identifier) with
-        | Some { name; is_forward_reference; _ }
-          when (not is_forward_reference) || use_forward_references ->
-            create_name_from_reference ~location name
+        | Some { name; _ } -> create_name_from_reference ~location name
         | _ -> Name.Identifier identifier)
     | Name.Attribute { base = { Node.value = Name (Name.Identifier "builtins"); _ }; attribute; _ }
       ->
@@ -1278,7 +1264,6 @@ let qualify
       aliases = Reference.Map.empty;
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
-      use_forward_references = true;
       is_top_level = true;
       skip = Location.Set.empty;
       is_in_function = false;
