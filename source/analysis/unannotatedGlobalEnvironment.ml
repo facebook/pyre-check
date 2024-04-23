@@ -233,45 +233,6 @@ module OutgoingDataComputation = struct
     |> Option.value ~default:false
 
 
-  let legacy_resolve_exports Queries.{ get_module_metadata; _ } reference =
-    (* Resolve exports. Fixpoint is necessary due to export/module name conflicts: P59503092 *)
-    let widening_threshold = 25 in
-    let rec resolve_exports_fixpoint ~reference ~visited ~count =
-      if Set.mem visited reference || count > widening_threshold then
-        reference
-      else
-        let rec resolve_exports ~lead ~tail =
-          match tail with
-          | head :: tail -> (
-              let incremented_lead = lead @ [head] in
-              if Option.is_some (get_module_metadata (Reference.create_from_list incremented_lead))
-              then
-                resolve_exports ~lead:incremented_lead ~tail
-              else
-                get_module_metadata (Reference.create_from_list lead)
-                >>= (fun definition ->
-                      Module.legacy_aliased_export definition (Reference.create head))
-                >>| (fun export -> Reference.combine export (Reference.create_from_list tail))
-                |> function
-                | Some reference -> reference
-                | None -> resolve_exports ~lead:(lead @ [head]) ~tail)
-          | _ -> reference
-        in
-        match Reference.as_list reference with
-        | head :: tail ->
-            let exported_reference = resolve_exports ~lead:[head] ~tail in
-            if Reference.is_strict_prefix ~prefix:reference exported_reference then
-              reference
-            else
-              resolve_exports_fixpoint
-                ~reference:exported_reference
-                ~visited:(Set.add visited reference)
-                ~count:(count + 1)
-        | _ -> reference
-    in
-    resolve_exports_fixpoint ~reference ~visited:Reference.Set.empty ~count:0
-
-
   let resolve_exports Queries.{ get_module_metadata; _ } ?(from = Reference.empty) reference =
     let module ResolveExportItem = struct
       module T = struct
@@ -420,6 +381,36 @@ module OutgoingDataComputation = struct
                                })))))
     in
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
+
+
+  (* `legacy_resolve_exports` is a best effort attempt to traverse aliased imports and map a
+     Reference.t to the "cannonical" reference where a symbol is actually defined. It falls back to
+     using the original reference when the traversal runs into problems. *)
+  let legacy_resolve_exports queries reference =
+    (* A best-effort attempt to map a resolved reference back to a "flat" form. *)
+    let reference_of_resolved_reference = function
+      | ResolvedReference.Module qualifier -> qualifier
+      | ResolvedReference.PlaceholderStub { stub_module; remaining } ->
+          Ast.Reference.combine stub_module (Ast.Reference.create_from_list remaining)
+      | ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
+          Ast.Reference.combine from (Ast.Reference.create_from_list @@ (name :: remaining))
+    in
+    match resolve_exports queries reference >>| reference_of_resolved_reference with
+    | None ->
+        (* The lookup failed, in which case there is no chain of aliases that successfully
+           terminates at an actual symbol definition. Whoever is trying to resolve exports wants an
+           actual Reference.t back (e.g. so they have a name in downstream error messages when they
+           try to look up symbol infrmation) and in this case we might as well let them use the
+           current reference. *)
+        reference
+    | Some resolved_reference when Reference.is_prefix ~prefix:reference resolved_reference ->
+        (* The attempt to resolve a reference and flatten produced a reference nested underneath the
+           original one. This can *only* happen in cases where there is a fully qualified name
+           collision; it isn't a problem with `resolve_exports` per se but with the fact that when
+           we flatten the result back to a Reference.t we lose track of changes to the `from`
+           portion of the resolved reference *)
+        reference
+    | Some resolved_reference -> resolved_reference
 
 
   let first_matching_class_decorator

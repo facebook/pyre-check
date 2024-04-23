@@ -381,7 +381,7 @@ let test_resolve_exports =
                );
              ]
            "outer.inner.inner"
-           "outer.inner.inner";
+           "outer.inner.bar.inner";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve
            ~sources:
@@ -396,7 +396,7 @@ let test_resolve_exports =
                );
              ]
            "outer.inner.foo"
-           "outer.inner.foo";
+           "outer.inner.bar.foo";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve
            ~sources:
