@@ -341,11 +341,32 @@ let test_resolve_exports =
       @@ assert_resolve
            ~sources:
              [
-               "qualifier.py", "from qualifier.foo import foo";
-               "qualifier/foo/__init__.py", "foo = 1";
+               "outer/__init__.py", "from outer.inner import bar as inner";
+               ( "outer/inner.py",
+                 {|
+                 inner = 1
+                 foo = 1
+                 bar = 1
+                 |}
+               );
              ]
-           "qualifier.foo.foo"
-           "qualifier.foo.foo";
+           "outer.inner.inner"
+           "outer.inner.inner";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "outer/__init__.py", "from outer.inner import bar as inner";
+               ( "outer/inner.py",
+                 {|
+                 inner = 1
+                 foo = 1
+                 bar = 1
+                 |}
+               );
+             ]
+           "outer.inner.foo"
+           "outer.inner.foo";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve
            ~sources:
@@ -355,15 +376,6 @@ let test_resolve_exports =
              ]
            "a.foo"
            "placeholder.nonexistent.foo";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "qualifier/__init__.py", "from qualifier.a import bar as a";
-               "qualifier/a.py", "foo = 1\nbar = 1";
-             ]
-           "qualifier.a.foo"
-           "qualifier.a.foo";
     ]
 
 
