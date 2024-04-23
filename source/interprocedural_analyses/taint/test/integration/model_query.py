@@ -69,56 +69,56 @@ class AttributeTestBase:
 
 
 class AttributeTestClass1(AttributeTestBase):
-    attribute: ...
+    attribute =  ...
 
     def __init__(self):
         self.instance = None
 
 
 class AttributeTestClass2(AttributeTestBase):
-    attribute: ...
+    attribute = ...
 
     def __init__(self):
         self.instance = None
 
 
 class AttributeTestClass3:
-    attribute: ...
+    attribute = ...
 
     def __init__(self):
         self.instance = None
 
 
 class AttributeTestClass4:
-    attribute: ...
+    attribute = ...
 
     def __init__(self):
         self.instance = None
 
 
 class AttributeTestClass5:
-    foo_attribute: ...
+    foo_attribute = ...
 
     def __init__(self):
         self.foo_instance = None
 
 
 class AttributeTestClass6:
-    foo_attribute: ...
+    foo_attribute = ...
 
     def __init__(self):
         self.foo_instance = None
 
 
 class AttributeTestClass7:
-    nomatch_attribute1: ...
+    nomatch_attribute1 = ...
 
     def __init__(self):
         self.nomatch_instance1 = None
 
 
 class AttributeTestClass8(AttributeTestClass7):
-    nomatch_attribute2: ...
+    nomatch_attribute2 = ...
 
     def __init__(self):
         self.nomatch_instance2 = None

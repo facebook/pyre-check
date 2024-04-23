@@ -467,9 +467,7 @@ module State (Context : Context) = struct
   let get_untracked_annotation_errors ~resolution ~location annotation =
     let add_untracked_errors errors =
       let is_untracked_name class_name =
-        match class_name with
-        | "..." -> false
-        | _ -> not (GlobalResolution.class_hierarchy_contains_class resolution class_name)
+        not (GlobalResolution.class_hierarchy_contains_class resolution class_name)
       in
       Type.elements annotation
       |> List.dedup_and_sort ~compare:String.compare

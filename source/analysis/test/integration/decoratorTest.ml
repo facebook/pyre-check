@@ -16,7 +16,7 @@ let test_check_nested =
            {|
              from typing import Callable, Any
 
-             def wraps(wrapped: Callable[[...], Any]) -> Callable[[...], Any]: ...
+             def wraps(wrapped: Callable[..., Any]) -> Callable[..., Any]: ...
 
              def foo(f: Callable[[int], int]) -> Callable[[int], int]:
                @wraps(f)
