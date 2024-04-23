@@ -471,12 +471,11 @@ module State (Context : Context) = struct
         | "..." -> false
         | _ -> not (GlobalResolution.class_hierarchy_contains_class resolution class_name)
       in
-      let untracked =
-        List.filter (Type.elements annotation) ~f:is_untracked_name
-        |> List.dedup_and_sort ~compare:String.compare
-      in
-      List.fold untracked ~init:errors ~f:(fun errors name ->
-          emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
+      Type.elements annotation
+      |> List.dedup_and_sort ~compare:String.compare
+      |> List.filter ~f:is_untracked_name
+      |> List.fold ~init:errors ~f:(fun errors name ->
+             emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
     in
     let add_literal_value_errors errors =
       (* Literal enum class names will later be parsed as types, so we must validate them when
