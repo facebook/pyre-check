@@ -1224,7 +1224,7 @@ void hh_shared_store(value data) {
 
   global_storage[0] = size;
   memfd_reserve((char*)&global_storage[1], size);
-  memcpy(&global_storage[1], &Field(data, 0), size);
+  memcpy(&global_storage[1], String_val(data), size);
 
   CAMLreturn0;
 }
@@ -1243,8 +1243,7 @@ CAMLprim value hh_shared_load(void) {
 
   size_t size = global_storage[0];
   assert(size != 0);
-  result = caml_alloc_string(size);
-  memcpy(&Field(result, 0), &global_storage[1], size);
+  result = caml_alloc_initialized_string(size, (char*)&global_storage[1]);
 
   CAMLreturn(result);
 }
