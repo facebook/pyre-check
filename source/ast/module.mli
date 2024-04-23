@@ -28,8 +28,6 @@ type t [@@deriving eq, sexp, show, compare]
 
 val empty_stub : t -> bool
 
-val legacy_aliased_export : t -> Reference.t -> Reference.t option
-
 val create : Source.t -> t
 
 val create_implicit : ?empty_stub:bool -> unit -> t

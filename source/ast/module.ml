@@ -56,36 +56,13 @@ module ExportMap = struct
   let equal = [%compare.equal: t]
 end
 
-type legacy_aliased_exports = Reference.t Reference.Map.Tree.t [@@deriving eq, sexp]
-
-let compare_legacy_aliased_exports = Reference.Map.Tree.compare_direct Reference.compare
-
 type t =
   | Explicit of {
       exports: ExportMap.t;
-      legacy_aliased_exports: legacy_aliased_exports;
       empty_stub: bool;
     }
   | Implicit of { empty_stub: bool }
 [@@deriving eq, sexp, compare]
-
-let pp format printed_module =
-  let aliased_exports, empty_stub =
-    match printed_module with
-    | Explicit { legacy_aliased_exports; empty_stub; _ } ->
-        Map.Tree.to_alist legacy_aliased_exports, empty_stub
-    | Implicit { empty_stub } -> [], empty_stub
-  in
-  let aliased_exports =
-    aliased_exports
-    |> List.map ~f:(fun (source, target) ->
-           Format.asprintf "%a -> %a" Reference.pp source Reference.pp target)
-    |> String.concat ~sep:", "
-  in
-  Format.fprintf format "MODULE[%s, empty_stub = %b]" aliased_exports empty_stub
-
-
-let show = Format.asprintf "%a" pp
 
 let empty_stub = function
   | Implicit { empty_stub }
@@ -93,22 +70,16 @@ let empty_stub = function
       empty_stub
 
 
-let create_for_testing ~stub =
-  Explicit
-    {
-      exports = ExportMap.empty;
-      legacy_aliased_exports = Reference.Map.Tree.empty;
-      empty_stub = stub;
-    }
+let pp format printed_module =
+  Format.fprintf format "MODULE[empty_stub = %b]" (empty_stub printed_module)
 
+
+let show = Format.asprintf "%a" pp
+
+let create_for_testing ~stub = Explicit { exports = ExportMap.empty; empty_stub = stub }
 
 let create
-    ({
-       Source.module_path = { ModulePath.qualifier; _ } as module_path;
-       statements;
-       typecheck_flags = { Source.TypecheckFlags.local_mode; _ };
-       _;
-     } as source)
+    ({ Source.module_path; typecheck_flags = { Source.TypecheckFlags.local_mode; _ }; _ } as source)
   =
   let is_stub = ModulePath.is_stub module_path in
   let exports =
@@ -183,55 +154,7 @@ let create
     in
     Collector.from_source source |> List.fold ~init:Identifier.Map.Tree.empty ~f:collect_export
   in
-  let legacy_aliased_exports =
-    let rec aliased_exports aliases { Node.value; _ } =
-      match value with
-      | Statement.Import { Import.from = Some { Node.value = from; _ }; imports } ->
-          let from = ModulePath.expand_relative_import module_path ~from in
-          let export aliases { Node.value = { Import.name; alias }; _ } =
-            let alias =
-              match alias with
-              | None -> name
-              | Some alias -> Reference.create alias
-            in
-            let name =
-              if String.equal (Reference.show alias) "*" then
-                from
-              else
-                Reference.combine from name
-            in
-            Reference.Map.Tree.set aliases ~key:alias ~data:name
-          in
-          List.fold imports ~f:export ~init:aliases
-      | Statement.Import { Import.from = None; imports } ->
-          let export aliases { Node.value = { Import.name; alias }; _ } =
-            let alias =
-              match alias with
-              | None -> name
-              | Some alias -> Reference.create alias
-            in
-            let source, target =
-              if Reference.is_strict_prefix ~prefix:(Reference.combine qualifier alias) name then
-                alias, Reference.drop_prefix ~prefix:qualifier name
-              else
-                alias, name
-            in
-            Reference.Map.Tree.set aliases ~key:source ~data:target
-          in
-          List.fold imports ~f:export ~init:aliases
-      | Statement.If { If.body; orelse; _ } ->
-          let aliases = List.fold body ~init:aliases ~f:aliased_exports in
-          List.fold orelse ~init:aliases ~f:aliased_exports
-      | _ -> aliases
-    in
-    List.fold statements ~f:aliased_exports ~init:Reference.Map.Tree.empty
-  in
-  Explicit
-    {
-      exports;
-      legacy_aliased_exports;
-      empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode;
-    }
+  Explicit { exports; empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode }
 
 
 let create_implicit ?(empty_stub = false) () = Implicit { empty_stub }
@@ -254,10 +177,3 @@ let get_all_exports considered_module =
 let is_implicit = function
   | Explicit _ -> false
   | Implicit _ -> true
-
-
-let legacy_aliased_export considered_module reference =
-  match considered_module with
-  | Explicit { legacy_aliased_exports; _ } ->
-      Reference.Map.Tree.find legacy_aliased_exports reference
-  | Implicit _ -> None

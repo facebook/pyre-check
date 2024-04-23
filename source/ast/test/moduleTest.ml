@@ -15,91 +15,6 @@ let test_empty_stub _ =
   assert_false (Module.create_for_testing ~stub:false |> Module.empty_stub)
 
 
-let test_aliased_export _ =
-  let assert_aliased_exports ?(handle = "") source aliased_exports =
-    let module_definition = Module.create (parse ~handle source) in
-    let assert_aliased_export (source, expected_target) =
-      let actual_target =
-        Reference.create source
-        |> Module.legacy_aliased_export module_definition
-        |> (fun value -> Option.value value ~default:(Reference.create "$not_exported"))
-        |> Reference.show
-      in
-      assert_equal ~printer:Fn.id expected_target actual_target
-    in
-    List.iter ~f:assert_aliased_export aliased_exports
-  in
-  assert_aliased_exports
-    {|
-      from other.module import Class
-      from different.module import function
-      import blah
-      import standard_library_module as module
-    |}
-    [
-      "Class", "other.module.Class";
-      "function", "different.module.function";
-      "blah", "blah";
-      "module", "standard_library_module";
-    ];
-  assert_aliased_exports "from some.module import aliased as alias" ["alias", "some.module.aliased"];
-  assert_aliased_exports
-    "from some.module import one, two"
-    ["one", "some.module.one"; "two", "some.module.two"];
-  assert_aliased_exports "from some.module import *" ["*", "some.module"];
-  assert_aliased_exports
-    ~handle:"some/module.py"
-    "from . import path as other"
-    ["other", "some.path"];
-  assert_aliased_exports
-    ~handle:"some/long/module.py"
-    "from .relative import path as other"
-    ["other", "some.long.relative.path"];
-  assert_aliased_exports
-    ~handle:"some/long/module.py"
-    "from ..relative import path as other"
-    ["other", "some.relative.path"];
-  assert_aliased_exports
-    ~handle:"some/long/module.py"
-    "from ...relative import path as other"
-    ["other", "relative.path"];
-  assert_aliased_exports
-    ~handle:"some/module.py"
-    "from some.module.derp import path as other"
-    ["other", "some.module.derp.path"];
-  assert_aliased_exports
-    ~handle:"some/module.py"
-    "from some.module.other import other as other"
-    ["other", "some.module.other.other"];
-  assert_aliased_exports "from builtins import path as other" ["other", "path"];
-  assert_aliased_exports
-    {|
-      from other import thing
-      from other import thing
-    |}
-    ["thing", "other.thing"];
-  assert_aliased_exports
-    {|
-      if derp():
-        from other import thing
-      else:
-        from other import thing2
-    |}
-    ["thing", "other.thing"; "thing2", "other.thing2"];
-
-  (* Global assignments should not be counted *)
-  assert_aliased_exports
-    ~handle:"requests.py"
-    {|
-      from . import api
-      post = requests.api.post
-      call = requests.api.call()
-      not_exported = other.assignment
-    |}
-    [];
-  ()
-
-
 let test_exports context =
   let assert_exports ?(is_stub = false) ~expected source_text =
     let actual =
@@ -239,11 +154,4 @@ let test_exports context =
   ()
 
 
-let () =
-  "module"
-  >::: [
-         "empty_stub" >:: test_empty_stub;
-         "aliased_export" >:: test_aliased_export;
-         "exports" >:: test_exports;
-       ]
-  |> Test.run
+let () = "module" >::: ["empty_stub" >:: test_empty_stub; "exports" >:: test_exports] |> Test.run
