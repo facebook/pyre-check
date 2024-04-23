@@ -831,9 +831,40 @@ module State (Context : Context) = struct
     GlobalResolution.module_path_of_qualifier global_resolution qualifier
 
 
+  (* Make best-effort attempt to map a reference resolved to a `ResolvedReference.t` using
+     `resolve_exports` back to a "flat" form. *)
+  let resolve_reference_aliases_with_fallback ~global_resolution reference =
+    let reference_of_resolved_reference = function
+      | ResolvedReference.Module qualifier -> qualifier
+      | ResolvedReference.PlaceholderStub { stub_module; remaining } ->
+          Ast.Reference.combine stub_module (Ast.Reference.create_from_list remaining)
+      | ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
+          Ast.Reference.combine from (Ast.Reference.create_from_list @@ (name :: remaining))
+    in
+    match
+      GlobalResolution.resolve_exports global_resolution reference
+      >>| reference_of_resolved_reference
+    with
+    | None ->
+        (* The lookup failed, in which case there is no chain of aliases that successfully
+           terminates at an actual symbol definition. Whoever is trying to resolve exports wants an
+           actual Reference.t back (e.g. so they have a name in downstream error messages when they
+           try to look up symbol infrmation) and in this case we might as well let them use the
+           current reference. *)
+        reference
+    | Some resolved_reference when Reference.is_prefix ~prefix:reference resolved_reference ->
+        (* The attempt to resolve a reference and flatten produced a reference nested underneath the
+           original one. This can *only* happen in cases where there is a fully qualified name
+           collision; it isn't a problem with `resolve_exports` per se but with the fact that when
+           we flatten the result back to a Reference.t we lose track of changes to the `from`
+           portion of the resolved reference *)
+        reference
+    | Some resolved_reference -> resolved_reference
+
+
   let forward_reference ~resolution ~location ~errors reference =
     let global_resolution = Resolution.global_resolution resolution in
-    let reference = GlobalResolution.legacy_resolve_exports global_resolution reference in
+    let reference = resolve_reference_aliases_with_fallback ~global_resolution reference in
     let annotation = resolve_reference_annotation ~resolution reference in
     match annotation with
     | Some annotation ->
@@ -897,7 +928,7 @@ module State (Context : Context) = struct
         let rec partition_attribute base attribute_list =
           let base_type =
             base
-            |> GlobalResolution.legacy_resolve_exports global_resolution
+            |> resolve_reference_aliases_with_fallback ~global_resolution
             |> resolve_reference_annotation ~resolution
             >>| Annotation.annotation
             |> Option.value ~default:Type.Top

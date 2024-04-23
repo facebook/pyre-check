@@ -49,8 +49,6 @@ val class_exists : t -> Type.Primitive.t -> bool
 
 val get_module_metadata : t -> Reference.t -> Module.t option
 
-val legacy_resolve_exports : t -> Reference.t -> Reference.t
-
 val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference.t option
 
 val is_from_empty_stub : t -> Reference.t -> bool

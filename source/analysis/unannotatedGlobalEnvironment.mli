@@ -64,12 +64,6 @@ module ReadOnly : sig
 
   val is_protocol : t -> ?dependency:DependencyKey.registered -> Type.t -> bool
 
-  val legacy_resolve_exports
-    :  t ->
-    ?dependency:DependencyKey.registered ->
-    Reference.t ->
-    Reference.t
-
   val resolve_exports
     :  t ->
     ?dependency:DependencyKey.registered ->

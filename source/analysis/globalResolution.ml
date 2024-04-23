@@ -138,13 +138,6 @@ let get_module_metadata ({ dependency; _ } as resolution) =
     (unannotated_global_environment resolution)
 
 
-let legacy_resolve_exports ({ dependency; _ } as resolution) reference =
-  UnannotatedGlobalEnvironment.ReadOnly.legacy_resolve_exports
-    ?dependency
-    (unannotated_global_environment resolution)
-    reference
-
-
 let resolve_exports ({ dependency; _ } as resolution) ?from reference =
   UnannotatedGlobalEnvironment.ReadOnly.resolve_exports
     ?dependency

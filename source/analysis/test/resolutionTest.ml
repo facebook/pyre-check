@@ -313,117 +313,6 @@ let test_resolve_literal context =
   assert_resolve_literal "1 if i else i" Type.Any
 
 
-let test_resolve_exports =
-  let assert_resolve ~sources name expected context =
-    let resolution =
-      ScratchProject.setup ~context sources |> ScratchProject.build_global_resolution
-    in
-    let reference = GlobalResolution.legacy_resolve_exports resolution (Reference.create name) in
-    assert_equal ~printer:Reference.show ~cmp:Reference.equal (Reference.create expected) reference
-  in
-  test_list
-    [
-      labeled_test_case __FUNCTION__ __LINE__ @@ assert_resolve ~sources:[] "a.b" "a.b";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve ~sources:["a.py", "from b import foo"; "b.py", "foo = 1"] "a.foo" "b.foo";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "a.py", "from b import foo";
-               "b.py", "from c import bar as foo";
-               "c.py", "from d import cow as bar";
-               "d.py", "cow = 1";
-             ]
-           "a.foo"
-           "d.cow";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "outer/__init__.py", "from outer.inner import bar as inner";
-               ( "outer/inner.py",
-                 {|
-                 inner = 1
-                 foo = 1
-                 bar = 1
-                 |}
-               );
-             ]
-           "outer.bar"
-           "outer.bar";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "outer/__init__.py", "from outer.inner import bar as inner";
-               ( "outer/inner.py",
-                 {|
-                 inner = 1
-                 foo = 1
-                 bar = 1
-                 |}
-               );
-             ]
-           "outer.inner"
-           "outer.inner";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "outer/__init__.py", "from outer.inner import bar as inner";
-               ( "outer/inner.py",
-                 {|
-                 inner = 1
-                 foo = 1
-                 bar = 1
-                 |}
-               );
-             ]
-           "outer.inner.inner"
-           "outer.inner.bar.inner";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "outer/__init__.py", "from outer.inner import bar as inner";
-               ( "outer/inner.py",
-                 {|
-                 inner = 1
-                 foo = 1
-                 bar = 1
-                 |}
-               );
-             ]
-           "outer.inner.foo"
-           "outer.inner.bar.foo";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "outer/__init__.py", "from outer.inner import bar as inner";
-               ( "outer/inner.py",
-                 {|
-                 inner = 1
-                 foo = 1
-                 bar = 1
-                 |}
-               );
-             ]
-           "outer.inner.bar"
-           "outer.inner.bar";
-      labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_resolve
-           ~sources:
-             [
-               "placeholder.pyi", "# pyre-placeholder-stub";
-               "a.py", "from placeholder.nonexistent import foo";
-             ]
-           "a.foo"
-           "placeholder.nonexistent.foo";
-    ]
-
-
 let test_get_typed_dictionary context =
   let resolution =
     make_resolution
@@ -730,7 +619,6 @@ let () =
          >:: test_parse_annotation_for_no_validation_on_class_lookup_failure_environment;
          "parse_reference" >:: test_parse_reference;
          "resolve_literal" >:: test_resolve_literal;
-         test_resolve_exports;
          "get_typed_dictionary " >:: test_get_typed_dictionary;
          test_fallback_attribute;
        ]

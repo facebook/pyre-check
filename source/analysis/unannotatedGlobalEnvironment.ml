@@ -383,36 +383,6 @@ module OutgoingDataComputation = struct
     resolve_module_alias ~current_module:from ~names_to_resolve:(Reference.as_list reference) ()
 
 
-  (* `legacy_resolve_exports` is a best effort attempt to traverse aliased imports and map a
-     Reference.t to the "cannonical" reference where a symbol is actually defined. It falls back to
-     using the original reference when the traversal runs into problems. *)
-  let legacy_resolve_exports queries reference =
-    (* A best-effort attempt to map a resolved reference back to a "flat" form. *)
-    let reference_of_resolved_reference = function
-      | ResolvedReference.Module qualifier -> qualifier
-      | ResolvedReference.PlaceholderStub { stub_module; remaining } ->
-          Ast.Reference.combine stub_module (Ast.Reference.create_from_list remaining)
-      | ResolvedReference.ModuleAttribute { from; name; remaining; _ } ->
-          Ast.Reference.combine from (Ast.Reference.create_from_list @@ (name :: remaining))
-    in
-    match resolve_exports queries reference >>| reference_of_resolved_reference with
-    | None ->
-        (* The lookup failed, in which case there is no chain of aliases that successfully
-           terminates at an actual symbol definition. Whoever is trying to resolve exports wants an
-           actual Reference.t back (e.g. so they have a name in downstream error messages when they
-           try to look up symbol infrmation) and in this case we might as well let them use the
-           current reference. *)
-        reference
-    | Some resolved_reference when Reference.is_prefix ~prefix:reference resolved_reference ->
-        (* The attempt to resolve a reference and flatten produced a reference nested underneath the
-           original one. This can *only* happen in cases where there is a fully qualified name
-           collision; it isn't a problem with `resolve_exports` per se but with the fact that when
-           we flatten the result back to a Reference.t we lose track of changes to the `from`
-           portion of the resolved reference *)
-        reference
-    | Some resolved_reference -> resolved_reference
-
-
   let first_matching_class_decorator
       queries
       ~names
@@ -507,10 +477,6 @@ module ReadOnly = struct
 
   let is_protocol { get_queries; _ } ?dependency =
     get_queries ~dependency |> OutgoingDataComputation.is_protocol
-
-
-  let legacy_resolve_exports { get_queries; _ } ?dependency =
-    get_queries ~dependency |> OutgoingDataComputation.legacy_resolve_exports
 
 
   let resolve_exports { get_queries; _ } ?dependency =
