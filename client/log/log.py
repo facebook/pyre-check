@@ -18,7 +18,6 @@ import io
 import logging
 import logging.handlers
 import re
-import subprocess
 import sys
 import threading
 import time
