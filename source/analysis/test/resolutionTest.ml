@@ -350,6 +350,36 @@ let test_resolve_exports =
                  |}
                );
              ]
+           "outer.bar"
+           "outer.bar";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "outer/__init__.py", "from outer.inner import bar as inner";
+               ( "outer/inner.py",
+                 {|
+                 inner = 1
+                 foo = 1
+                 bar = 1
+                 |}
+               );
+             ]
+           "outer.inner"
+           "outer.inner";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "outer/__init__.py", "from outer.inner import bar as inner";
+               ( "outer/inner.py",
+                 {|
+                 inner = 1
+                 foo = 1
+                 bar = 1
+                 |}
+               );
+             ]
            "outer.inner.inner"
            "outer.inner.inner";
       labeled_test_case __FUNCTION__ __LINE__
@@ -367,6 +397,21 @@ let test_resolve_exports =
              ]
            "outer.inner.foo"
            "outer.inner.foo";
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_resolve
+           ~sources:
+             [
+               "outer/__init__.py", "from outer.inner import bar as inner";
+               ( "outer/inner.py",
+                 {|
+                 inner = 1
+                 foo = 1
+                 bar = 1
+                 |}
+               );
+             ]
+           "outer.inner.bar"
+           "outer.inner.bar";
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_resolve
            ~sources:
