@@ -14,7 +14,7 @@ to/from the persistent Pyre client (such as hover, definition, etc.)
 the LSP client. This currently involves doing some kind of transformation to/from a JSON string
 to the specific representation in class form.
 """
-from __future__ import annotations
+
 
 import asyncio
 import dataclasses
