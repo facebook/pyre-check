@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* Pyre has several parsers for Python code for historical reasons; one of them is the CPython
+   parser; we get access from ocaml to the AST by way of the conversion tools provided by the
+   confusingly-named `pyre-ast` opam package (which produces an ocaml binding to a CPython ast, not
+   a Pyre AST) *)
 
 open Base
 open Ast
