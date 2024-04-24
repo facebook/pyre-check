@@ -4125,7 +4125,7 @@ module State (Context : Context) = struct
     | Expression.Name (Name.Identifier _)
       when delocalize target
            |> Expression.show
-           |> GlobalResolution.get_alias global_resolution
+           |> GlobalResolution.get_type_alias global_resolution
            |> Option.is_some ->
         (* The statement has been recognized as a type alias definition instead of an actual value
            assignment. *)

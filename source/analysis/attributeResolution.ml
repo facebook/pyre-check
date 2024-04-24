@@ -4938,7 +4938,7 @@ let alias_environment class_metadata_environment =
 
 let unannotated_global_environment class_metadata_environment =
   alias_environment class_metadata_environment
-  |> AliasEnvironment.ReadOnly.unannotated_global_environment
+  |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
 
 
 let create_queries ~class_metadata_environment ~dependency =
@@ -4969,10 +4969,11 @@ let create_queries ~class_metadata_environment ~dependency =
         |> UnannotatedGlobalEnvironment.ReadOnly.class_exists ?dependency;
       parse_annotation_without_validating_type_parameters =
         alias_environment class_metadata_environment
-        |> AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters ?dependency;
+        |> TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+             ?dependency;
       parse_as_parameter_specification_instance_annotation =
         alias_environment class_metadata_environment
-        |> AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+        |> TypeAliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
              ?dependency;
       variables =
         class_hierarchy_environment class_metadata_environment

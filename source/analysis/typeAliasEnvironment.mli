@@ -11,7 +11,7 @@ open SharedMemoryKeys
 module AliasReadOnly : sig
   include Environment.ReadOnly
 
-  val get_alias
+  val get_type_alias
     :  t ->
     ?dependency:DependencyKey.registered ->
     ?replace_unbound_parameters_with_any:bool ->

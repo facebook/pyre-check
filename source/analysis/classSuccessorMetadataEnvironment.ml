@@ -159,7 +159,7 @@ module MetadataTable = Environment.EnvironmentTable.WithCache (struct
     let unannotated_global_environment =
       class_hierarchy_environment
       |> ClassHierarchyEnvironment.ReadOnly.alias_environment
-      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
     in
     let upstream =
       IncomingDataComputation.Queries.

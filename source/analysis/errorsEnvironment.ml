@@ -115,7 +115,7 @@ module AssumeDownstreamNeverNeedsUpdates = struct
     class_metadata_environment environment
     |> ClassSuccessorMetadataEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> ClassHierarchyEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
-    |> AliasEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
+    |> TypeAliasEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
     |> EmptyStubEnvironment.AssumeDownstreamNeverNeedsUpdates.upstream
 end
 
@@ -240,7 +240,7 @@ module Testing = struct
 
 
     let empty_stub_environment environment =
-      alias_environment environment |> AliasEnvironment.Testing.ReadOnly.upstream
+      alias_environment environment |> TypeAliasEnvironment.Testing.ReadOnly.upstream
 
 
     let unannotated_global_environment environment =
@@ -278,7 +278,7 @@ module Testing = struct
 
 
     let empty_stub_environment update_result =
-      alias_environment update_result |> AliasEnvironment.Testing.UpdateResult.upstream
+      alias_environment update_result |> TypeAliasEnvironment.Testing.UpdateResult.upstream
 
 
     let unannotated_global_environment update_result =

@@ -48,11 +48,11 @@ let alias_environment resolution =
 
 
 let empty_stub_environment resolution =
-  alias_environment resolution |> AliasEnvironment.ReadOnly.empty_stub_environment
+  alias_environment resolution |> TypeAliasEnvironment.ReadOnly.empty_stub_environment
 
 
 let unannotated_global_environment resolution =
-  alias_environment resolution |> AliasEnvironment.ReadOnly.unannotated_global_environment
+  alias_environment resolution |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
 
 
 let source_code_api ({ dependency; _ } as resolution) =
@@ -153,18 +153,18 @@ let is_from_empty_stub ({ dependency; _ } as resolution) reference =
     reference
 
 
-let get_alias ({ dependency; _ } as resolution) =
-  AliasEnvironment.ReadOnly.get_alias ?dependency (alias_environment resolution)
+let get_type_alias ({ dependency; _ } as resolution) =
+  TypeAliasEnvironment.ReadOnly.get_type_alias ?dependency (alias_environment resolution)
 
 
 let parse_annotation_without_validating_type_parameters ({ dependency; _ } as resolution) =
-  AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+  TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
     ?dependency
     (alias_environment resolution)
 
 
 let parse_as_parameter_specification_instance_annotation ({ dependency; _ } as resolution) =
-  AliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
+  TypeAliasEnvironment.ReadOnly.parse_as_parameter_specification_instance_annotation
     (alias_environment resolution)
     ?dependency
     ()
@@ -343,7 +343,7 @@ let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hiera
 
 let base_is_from_placeholder_stub resolution =
   AnnotatedBases.base_is_from_placeholder_stub
-    ~aliases:(get_alias resolution)
+    ~aliases:(get_type_alias resolution)
     ~is_from_empty_stub:(is_from_empty_stub resolution)
 
 

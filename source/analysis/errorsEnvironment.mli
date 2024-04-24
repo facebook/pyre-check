@@ -63,7 +63,7 @@ module Testing : sig
 
     val class_hierarchy_environment : ReadOnly.t -> ClassHierarchyEnvironment.ReadOnly.t
 
-    val alias_environment : ReadOnly.t -> AliasEnvironment.ReadOnly.t
+    val alias_environment : ReadOnly.t -> TypeAliasEnvironment.ReadOnly.t
 
     val empty_stub_environment : ReadOnly.t -> EmptyStubEnvironment.ReadOnly.t
 
@@ -85,7 +85,7 @@ module Testing : sig
 
     val class_hierarchy_environment : UpdateResult.t -> ClassHierarchyEnvironment.UpdateResult.t
 
-    val alias_environment : UpdateResult.t -> AliasEnvironment.UpdateResult.t
+    val alias_environment : UpdateResult.t -> TypeAliasEnvironment.UpdateResult.t
 
     val empty_stub_environment : UpdateResult.t -> EmptyStubEnvironment.UpdateResult.t
 

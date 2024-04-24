@@ -53,7 +53,7 @@ val resolve_exports : t -> ?from:Reference.t -> Reference.t -> ResolvedReference
 
 val is_from_empty_stub : t -> Reference.t -> bool
 
-val get_alias
+val get_type_alias
   :  t ->
   ?replace_unbound_parameters_with_any:bool ->
   Type.Primitive.t ->

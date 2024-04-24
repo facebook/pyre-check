@@ -21,7 +21,7 @@ let test_simple_registration context =
     in
     let expected = expected >>| fun expected -> Type.TypeAlias (Type.Primitive expected) in
     let printer v = v >>| Type.show_alias |> Option.value ~default:"none" in
-    assert_equal ~printer expected (AliasEnvironment.ReadOnly.get_alias read_only name)
+    assert_equal ~printer expected (TypeAliasEnvironment.ReadOnly.get_type_alias read_only name)
   in
   assert_registers {|
     class C:
@@ -65,7 +65,10 @@ let test_harder_registrations context =
     let printer alias =
       alias >>| Type.sexp_of_alias >>| Sexp.to_string_hum |> Option.value ~default:"none"
     in
-    assert_equal ~printer expected_alias (AliasEnvironment.ReadOnly.get_alias read_only name)
+    assert_equal
+      ~printer
+      expected_alias
+      (TypeAliasEnvironment.ReadOnly.get_type_alias read_only name)
   in
   let parsed_assert_registers source name expected =
     let parser expression =
@@ -321,7 +324,7 @@ let test_updates context =
         >>| Type.create ~aliases:Type.empty_aliases
         >>| fun alias -> Type.TypeAlias alias
       in
-      AliasEnvironment.ReadOnly.get_alias read_only ~dependency alias_name
+      TypeAliasEnvironment.ReadOnly.get_type_alias read_only ~dependency alias_name
       |> assert_equal ~printer expectation
     in
     List.iter middle_actions ~f:execute_action;
@@ -348,7 +351,7 @@ let test_updates context =
     assert_equal
       ~printer
       expected_triggers
-      (AliasEnvironment.UpdateResult.locally_triggered_dependencies update_result);
+      (TypeAliasEnvironment.UpdateResult.locally_triggered_dependencies update_result);
     post_actions >>| List.iter ~f:execute_action |> Option.value ~default:()
   in
   let dependency =

@@ -7,7 +7,7 @@
 
 (* EmptyStubEnvironment: layer of the environment stack
  * - upstream: UnannotatedGlobalEnvironment
- * - downstream: AliasEnvironment
+ * - downstream: TypeAliasEnvironment
  * - key: the name of a global, as a Reference.t
  * - value: boolean... is the name part of an empty stub package?
  *

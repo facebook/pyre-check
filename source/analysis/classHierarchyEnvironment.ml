@@ -6,7 +6,7 @@
  *)
 
 (* ClassHierarchyEnvironment: layer of the environment stack
- * - upstream: AliasEnvironment
+ * - upstream: TypeAliasEnvironment
  * - downstream: ClassSuccessorMetadataEnvironment
  * - key: the name type, as an Identifier.t
  * - value: ClassHierarchy.Target.t
@@ -21,7 +21,7 @@ open Core
 open Ast
 open Pyre
 open Expression
-module PreviousEnvironment = AliasEnvironment
+module PreviousEnvironment = TypeAliasEnvironment
 
 module IncomingDataComputation = struct
   module Queries = struct
@@ -29,7 +29,8 @@ module IncomingDataComputation = struct
       class_exists: string -> bool;
       get_class_summary: string -> ClassSummary.t Ast.Node.t option;
       is_from_empty_stub: Ast.Reference.t -> bool;
-      get_alias: ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
+      get_type_alias:
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
       parse_annotation_without_validating_type_parameters:
         ?modify_aliases:(?replace_unbound_parameters_with_any:bool -> Type.alias -> Type.alias) ->
         ?allow_untracked:bool ->
@@ -104,7 +105,7 @@ module IncomingDataComputation = struct
           class_exists;
           get_class_summary;
           is_from_empty_stub;
-          get_alias;
+          get_type_alias;
           parse_annotation_without_validating_type_parameters;
           _;
         }
@@ -220,7 +221,7 @@ module IncomingDataComputation = struct
         let has_placeholder_stub_parent =
           compute_extends_placeholder_stub_class
             class_summary
-            ~aliases:get_alias
+            ~aliases:get_type_alias
             ~is_from_empty_stub
         in
         Some { ClassHierarchy.Edges.parents; generic_base; has_placeholder_stub_parent }
@@ -279,7 +280,7 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
   let produce_value alias_environment key ~dependency =
     let queries =
       let empty_stub_environment =
-        AliasEnvironment.ReadOnly.empty_stub_environment alias_environment
+        TypeAliasEnvironment.ReadOnly.empty_stub_environment alias_environment
       in
       let unannotated_global_environment =
         EmptyStubEnvironment.ReadOnly.unannotated_global_environment empty_stub_environment
@@ -296,9 +297,10 @@ module Edges = Environment.EnvironmentTable.WithCache (struct
               ?dependency;
           is_from_empty_stub =
             EmptyStubEnvironment.ReadOnly.is_from_empty_stub empty_stub_environment ?dependency;
-          get_alias = AliasEnvironment.ReadOnly.get_alias alias_environment ?dependency;
+          get_type_alias =
+            TypeAliasEnvironment.ReadOnly.get_type_alias alias_environment ?dependency;
           parse_annotation_without_validating_type_parameters =
-            AliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
+            TypeAliasEnvironment.ReadOnly.parse_annotation_without_validating_type_parameters
               alias_environment
               ?dependency;
         }
@@ -334,7 +336,7 @@ module ReadOnly = struct
 
   let outgoing_queries ?dependency read_only =
     let unannotated_global_environment =
-      alias_environment read_only |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      alias_environment read_only |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
     in
     let controls = UnannotatedGlobalEnvironment.ReadOnly.controls unannotated_global_environment in
     OutgoingDataComputation.Queries.
@@ -361,7 +363,7 @@ module ReadOnly = struct
   let check_integrity read_only ~global_module_paths_api =
     let class_names =
       alias_environment read_only
-      |> AliasEnvironment.ReadOnly.unannotated_global_environment
+      |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
       |> UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes ~global_module_paths_api
     in
     ClassHierarchy.check_integrity (class_hierarchy read_only) ~class_names

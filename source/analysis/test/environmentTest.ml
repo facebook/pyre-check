@@ -377,7 +377,7 @@ let test_register_aliases context =
     let environment = register_all sources in
     let global_resolution = GlobalResolution.create environment in
     let assert_alias (alias, target) =
-      match GlobalResolution.get_alias global_resolution alias with
+      match GlobalResolution.get_type_alias global_resolution alias with
       | Some alias -> assert_equal ~printer:Type.show_alias target alias
       | None -> failwith "Alias is missing"
     in

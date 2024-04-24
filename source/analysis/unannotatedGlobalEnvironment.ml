@@ -26,7 +26,7 @@
  * the name `baz` in `my_module` actually refers to `foo.bar`.
  *
  * This name alias handling of unannotated globals is not the same as
- * TypeAlias handling, which is what AliasEnvironment does.
+ * TypeAlias handling, which is what TypeAliasEnvironment does.
  *
  * This is one of the most complicated layers of the environment stack
  * from a data flow perspective because instead of being a single cache

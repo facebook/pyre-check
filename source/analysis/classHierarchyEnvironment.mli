@@ -16,7 +16,7 @@ module HierarchyReadOnly : sig
     Ast.Identifier.t ->
     ClassHierarchy.Edges.t option
 
-  val alias_environment : t -> AliasEnvironment.ReadOnly.t
+  val alias_environment : t -> TypeAliasEnvironment.ReadOnly.t
 
   val class_hierarchy : ?dependency:DependencyKey.registered -> t -> (module ClassHierarchy.Handler)
 
@@ -38,7 +38,7 @@ end
 include
   Environment.S
     with module ReadOnly = HierarchyReadOnly
-     and module PreviousEnvironment = AliasEnvironment
+     and module PreviousEnvironment = TypeAliasEnvironment
 
 (* Exposed for testing purpose only *)
 val compute_generic_base : Type.t list -> Type.t option

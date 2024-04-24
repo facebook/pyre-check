@@ -5,7 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* AliasEnvironment: component of the environment stack
+(* TypeAliasEnvironment: component of the environment stack
  * - upstream: EmptyStubEnvironment
  * - downstream: ClassHierarchyEnvironment
  * - key: type name (as an Identifier.t)
@@ -17,7 +17,7 @@
  *
  * Note that general "aliases" (as in re-bindings of python globals to new
  * names) are handled by `resolve_exports` in UnannotatedGlobalEnvironments.
- * AliasEnvironment is only used to resolve TypeAliases.
+ * TypeAliasEnvironment is only used to resolve TypeAliases.
  *)
 
 open Core
@@ -327,7 +327,8 @@ module OutgoingDataComputation = struct
     type t = {
       class_exists: Type.Primitive.t -> bool;
       is_from_empty_stub: Ast.Reference.t -> bool;
-      get_alias: ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
+      get_type_alias:
+        ?replace_unbound_parameters_with_any:bool -> Type.Primitive.t -> Type.alias option;
     }
   end
 
@@ -336,7 +337,7 @@ module OutgoingDataComputation = struct
 
 
   let parse_annotation_without_validating_type_parameters
-      (Queries.{ is_from_empty_stub; get_alias; _ } as queries)
+      (Queries.{ is_from_empty_stub; get_type_alias; _ } as queries)
       ?modify_aliases
       ?(allow_untracked = false)
       expression
@@ -347,7 +348,7 @@ module OutgoingDataComputation = struct
     let parsed =
       let expression = preprocess_alias_value expression |> delocalize in
       let aliases ?replace_unbound_parameters_with_any name =
-        get_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
+        get_type_alias name >>| modify_aliases ?replace_unbound_parameters_with_any
       in
       Type.create ~aliases expression
     in
@@ -373,7 +374,7 @@ module OutgoingDataComputation = struct
 
 
   let parse_as_parameter_specification_instance_annotation
-      Queries.{ get_alias; _ }
+      Queries.{ get_type_alias; _ }
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
       ()
@@ -383,7 +384,7 @@ module OutgoingDataComputation = struct
     in
     Type.Variable.Variadic.Parameters.parse_instance_annotation
       ~create_type:Type.create
-      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> get_alias name)
+      ~aliases:(fun ?replace_unbound_parameters_with_any:_ name -> get_type_alias name)
       ~variable_parameter_annotation
       ~keywords_parameter_annotation
 end
@@ -460,7 +461,7 @@ include Aliases
 module ReadOnly = struct
   include Aliases.ReadOnly
 
-  let get_alias environment ?dependency ?replace_unbound_parameters_with_any:_ name =
+  let get_type_alias environment ?dependency ?replace_unbound_parameters_with_any:_ name =
     get environment ?dependency name
 
 
@@ -481,7 +482,7 @@ module ReadOnly = struct
           EmptyStubEnvironment.ReadOnly.is_from_empty_stub
             (empty_stub_environment environment)
             ?dependency;
-        get_alias = get_alias environment ?dependency;
+        get_type_alias = get_type_alias environment ?dependency;
       }
 
 

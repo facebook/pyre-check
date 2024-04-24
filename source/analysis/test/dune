@@ -1,6 +1,5 @@
 (tests
  (names
-  aliasEnvironmentTest
   analysisErrorTest
   annotatedCallTest
   annotatedCallableTest
@@ -39,6 +38,7 @@
   resolvedCallableTest
   scopeTest
   sqlAlchemyTest
+  typeAliasEnvironmentTest
   typeCheckTest
   typeConstraintsTest
   typeOperationTest
