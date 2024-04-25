@@ -4,8 +4,8 @@
  (modules generator))
 
 (library
- (name pyreParser)
- (public_name pyrelib.pyreParser)
+ (name pyreMenhirParser)
+ (public_name pyrelib.pyreMenhirParser)
  (preprocess
   (pps
    ppx_deriving.eq

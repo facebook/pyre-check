@@ -13,10 +13,13 @@ open Statement
 open Test
 
 let parse_untrimmed source =
-  let open PyreParser in
-  match Parser.parse (String.split source ~on:'\n') with
+  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
   | Result.Ok statements -> Source.create statements
-  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
+  | Result.Error
+      {
+        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
+        _;
+      } ->
       let error =
         Format.asprintf
           "Could not parse test source at line %d, column %d. Test input:\n%s"
@@ -39,8 +42,7 @@ let assert_parsed_equal source statements =
 
 
 let assert_not_parsed source =
-  let open PyreParser in
-  match Parser.parse (String.split source ~on:'\n') with
+  match PyreMenhirParser.Parser.parse (String.split source ~on:'\n') with
   | Result.Error _ -> ()
   | Result.Ok statements ->
       let error =
@@ -6107,14 +6109,14 @@ let test_setitem _ =
 
 
 let test_byte_order_mark _ =
-  let parse lines = PyreParser.Parser.parse_exn lines |> ignore in
+  let parse lines = PyreMenhirParser.Parser.parse_exn lines |> ignore in
   let byte_order_mark = [0xEF; 0xBB; 0xBF] |> List.map ~f:Char.of_int_exn |> String.of_char_list in
   (* Ensure that we can parse UTF-8 files with byte order marks properly. *)
   parse [byte_order_mark ^ "1"];
   assert_raises
-    (PyreParser.Parser.Error
+    (PyreMenhirParser.Parser.Error
        {
-         PyreParser.Parser.Error.location =
+         PyreMenhirParser.Parser.Error.location =
            {
              Location.start = { Location.line = 2; column = 0 };
              stop = { Location.line = 2; column = 0 };

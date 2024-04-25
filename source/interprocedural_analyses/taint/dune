@@ -24,7 +24,7 @@
   pyrelib.domains
   pyrelib.interprocedural
   pyrelib.json_parsing
-  pyrelib.pyreParser
+  pyrelib.pyreMenhirParser
   pyrelib.recognized
   pyrelib.statistics
   pyrelib.alarm

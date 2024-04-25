@@ -10,7 +10,6 @@ open OUnit2
 open Ast
 open Expression
 open Pyre
-open PyreParser
 open Statement
 open Test
 
@@ -615,7 +614,7 @@ let test_pp _ =
     let pretty_print_of_source =
       source
       |> String.split_on_chars ~on:['\n']
-      |> Parser.parse_exn
+      |> PyreMenhirParser.Parser.parse_exn
       |> List.map ~f:show
       |> String.concat ~sep:"\n"
       |> String.rstrip ~drop:(Char.equal '\n')

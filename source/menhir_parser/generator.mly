@@ -16,7 +16,7 @@
   (* This weird-looking empty module definition is to work around a nasty issue when *)
   (* using menhir infer mode with dune: https://github.com/ocaml/dune/issues/2450 *)
   [@@@warning "-60"]
-  module PyreParser = struct end
+  module PyreMenhirParser = struct end
   [@@@warning "+60"]
 
   let with_decorators decorators decoratee =

@@ -317,7 +317,7 @@ end
 
 let rec parse_request_exn query =
   let open Expression in
-  match PyreParser.Parser.parse [query] with
+  match PyreMenhirParser.Parser.parse [query] with
   | Ok
       [
         {

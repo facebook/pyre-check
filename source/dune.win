@@ -391,7 +391,7 @@
    ppx_compare
    ppx_sexp_conv))
  (libraries
-  pyrelib.pyreParser
+  pyrelib.pyreMenhirParser
   pyrelib.analysis
   pyrelib.ast
   pyrelib.commands

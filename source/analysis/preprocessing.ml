@@ -22,7 +22,6 @@ open Core
 open Ast
 open Expression
 open Pyre
-open PyreParser
 open Statement
 
 let expand_relative_imports
@@ -112,7 +111,7 @@ let transform_string_annotation_expression ~relative =
           (* Start at column + 1 since parsing begins after the opening quote of the string
              literal. *)
           match
-            Parser.parse
+            PyreMenhirParser.Parser.parse
               ~start_line
               ~start_column:(start_column + 1)
               [string_value ^ "\n"]
@@ -1167,7 +1166,9 @@ module Qualify (Context : QualifyContext) = struct
           match qualify_strings with
           | Qualify
           | OptionallyQualify -> (
-              match Parser.parse [value ^ "\n"] ~relative:Context.source_relative with
+              match
+                PyreMenhirParser.Parser.parse [value ^ "\n"] ~relative:Context.source_relative
+              with
               | Ok [{ Node.value = Expression expression; _ }] ->
                   qualify_expression ~qualify_strings ~scope expression
                   |> Expression.show

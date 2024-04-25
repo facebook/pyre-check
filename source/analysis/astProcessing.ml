@@ -26,7 +26,6 @@
 open Core
 open Ast
 open Pyre
-open PyreParser
 
 let wildcard_exports_of ({ Source.module_path; _ } as source) =
   let open Expression in
@@ -167,6 +166,6 @@ let source_of_qualifier ~parse_result_of_qualifier qualifier =
       (* Files that have parser errors fall back into getattr-any. *)
       let fallback_source = ["import typing"; "def __getattr__(name: str) -> typing.Any: ..."] in
       let typecheck_flags = Source.TypecheckFlags.parse ~qualifier fallback_source in
-      let statements = Parser.parse_exn ~relative fallback_source in
+      let statements = PyreMenhirParser.Parser.parse_exn ~relative fallback_source in
       Parsing.create_source ~typecheck_flags ~module_path statements
       |> Preprocessing.preprocess_after_wildcards

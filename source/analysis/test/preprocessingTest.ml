@@ -23,16 +23,19 @@ let location (start_line, start_column) (stop_line, stop_column) =
 (* This function is here for backward compatibility reason only. Please avoid using it and prefer
    `Test.parse` instead. *)
 let legacy_parse ~handle source =
-  let open PyreParser in
   let lines = String.split (Test.trim_extra_indentation source) ~on:'\n' in
-  match Parser.parse ~relative:handle lines with
+  match PyreMenhirParser.Parser.parse ~relative:handle lines with
   | Result.Ok statements ->
       let typecheck_flags =
         let qualifier = ModulePath.qualifier_from_relative_path handle in
         Source.TypecheckFlags.parse ~qualifier lines
       in
       Source.create ~typecheck_flags ~relative:handle statements
-  | Result.Error { Parser.Error.location = { Location.start = { Location.line; column }; _ }; _ } ->
+  | Result.Error
+      {
+        PyreMenhirParser.Parser.Error.location = { Location.start = { Location.line; column }; _ };
+        _;
+      } ->
       let error =
         Format.asprintf
           "Could not parse test source at line %d, column %d. Test input:\n%s"

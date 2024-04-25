@@ -19,7 +19,7 @@
   pyrelib.ast
   pyrelib.analysis
   pyrelib.interprocedural
-  pyrelib.pyreParser
+  pyrelib.pyreMenhirParser
   pyrelib.recognized
   pyrelib.statistics
   pyrelib.file

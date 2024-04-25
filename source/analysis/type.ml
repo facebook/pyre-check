@@ -13,7 +13,6 @@ open Core
 open Ast
 open Expression
 open Pyre
-open PyreParser
 module ExpressionParameter = Parameter
 
 module Record = struct
@@ -4310,7 +4309,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         let expression =
           try
             let parsed =
-              Parser.parse_exn [value]
+              PyreMenhirParser.Parser.parse_exn [value]
               |> Source.create
               |> Preprocessing.preprocess_no_wildcards
               |> Source.statements
