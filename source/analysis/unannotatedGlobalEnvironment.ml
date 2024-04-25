@@ -57,7 +57,7 @@ open SharedMemoryKeys
 
 module ModuleComponents = struct
   type t = {
-    module_metadata: Ast.Module.t;
+    module_metadata: Module.t;
     class_summaries: (Ast.Identifier.t * ClassSummary.t Ast.Node.t) list;
     unannotated_globals: UnannotatedGlobal.Collector.Result.t list;
     function_definitions: (Ast.Reference.t * FunctionDefinition.t) list;
@@ -153,7 +153,7 @@ module ModuleComponents = struct
 
   let of_source source =
     {
-      module_metadata = Ast.Module.create source;
+      module_metadata = Module.create source;
       class_summaries = class_summaries_of_source source;
       unannotated_globals = unannotated_globals_of_source source;
       function_definitions = function_definitions_of_source source;
@@ -162,7 +162,7 @@ module ModuleComponents = struct
 
   let implicit_module () =
     {
-      module_metadata = Ast.Module.create_implicit ();
+      module_metadata = Module.create_implicit ();
       class_summaries = [];
       unannotated_globals = [];
       function_definitions = [];

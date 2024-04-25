@@ -1877,7 +1877,7 @@ let resolve_callee_ignoring_decorators
         | Some
             (ResolvedReference.ModuleAttribute
               {
-                export = ResolvedReference.Exported (Module.Export.Name.Define _);
+                export = ResolvedReference.Exported (Analysis.Module.Export.Name.Define _);
                 remaining = [];
                 _;
               }) ->
@@ -1893,7 +1893,7 @@ let resolve_callee_ignoring_decorators
               {
                 from;
                 name;
-                export = ResolvedReference.Exported Module.Export.Name.Class;
+                export = ResolvedReference.Exported Analysis.Module.Export.Name.Class;
                 remaining = [attribute];
                 _;
               }) -> (

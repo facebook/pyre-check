@@ -8,6 +8,7 @@
 (* TODO(T132410158) Add a module-level doc comment. *)
 
 open Core
+open Ast
 open Statement
 
 module Export = struct

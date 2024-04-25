@@ -337,7 +337,7 @@ let handle_superclasses
   let as_exported_class_reference resolved =
     match resolved with
     | ResolvedReference.ModuleAttribute
-        { from; name; remaining = []; export = Exported Ast.Module.Export.Name.Class; _ } ->
+        { from; name; remaining = []; export = Exported Module.Export.Name.Class; _ } ->
         Some (Ast.Reference.create ~prefix:from name)
     | _ -> None
   in

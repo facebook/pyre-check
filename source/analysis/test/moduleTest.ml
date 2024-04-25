@@ -7,7 +7,7 @@
 
 open Core
 open OUnit2
-open Ast
+open Analysis
 open Test
 
 let test_empty_stub _ =
@@ -21,12 +21,12 @@ let test_exports context =
       let handle = if is_stub then "test.pyi" else "test.py" in
       parse ~handle source_text |> Module.create |> Module.get_all_exports
     in
-    let expected = List.sort expected ~compare:[%compare: Identifier.t * Module.Export.t] in
+    let expected = List.sort expected ~compare:[%compare: Ast.Identifier.t * Module.Export.t] in
     assert_equal
       ~ctxt:context
-      ~cmp:[%compare.equal: (Identifier.t * Module.Export.t) list]
+      ~cmp:[%compare.equal: (Ast.Identifier.t * Module.Export.t) list]
       ~printer:(fun exports ->
-        Sexp.to_string_hum [%message (exports : (Identifier.t * Module.Export.t) list)])
+        Sexp.to_string_hum [%message (exports : (Ast.Identifier.t * Module.Export.t) list)])
       expected
       actual
   in

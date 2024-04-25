@@ -16,10 +16,10 @@ module Export : sig
 
   type t =
     | NameAlias of {
-        from: Reference.t;
-        name: Identifier.t;
+        from: Ast.Reference.t;
+        name: Ast.Identifier.t;
       }
-    | Module of Reference.t
+    | Module of Ast.Reference.t
     | Name of Name.t
   [@@deriving sexp, compare, hash]
 end
@@ -28,13 +28,13 @@ type t [@@deriving eq, sexp, show, compare]
 
 val empty_stub : t -> bool
 
-val create : Source.t -> t
+val create : Ast.Source.t -> t
 
 val create_implicit : ?empty_stub:bool -> unit -> t
 
-val get_export : t -> Identifier.t -> Export.t option
+val get_export : t -> Ast.Identifier.t -> Export.t option
 
-val get_all_exports : t -> (Identifier.t * Export.t) list
+val get_all_exports : t -> (Ast.Identifier.t * Export.t) list
 
 val is_implicit : t -> bool
 

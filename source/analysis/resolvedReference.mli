@@ -7,7 +7,7 @@
 
 type export =
   | FromModuleGetattr
-  | Exported of Ast.Module.Export.Name.t
+  | Exported of Module.Export.Name.t
 [@@deriving show, sexp, compare, hash]
 
 type t =

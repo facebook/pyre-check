@@ -27,6 +27,7 @@
   latticeOfMapsTest
   locationBasedLookupTest
   matchTranslateTest
+  moduleTest
   moduleTrackerTest
   namedTupleTest
   newTypeTest

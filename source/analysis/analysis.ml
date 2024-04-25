@@ -40,6 +40,7 @@ module DecoratorPreprocessing = DecoratorPreprocessing
 module LatticeOfMaps = LatticeOfMaps
 module LocalAnnotationMap = LocalAnnotationMap
 module LocationBasedLookup = LocationBasedLookup
+module Module = Module
 module ModuleTracker = ModuleTracker
 module OverlaidEnvironment = OverlaidEnvironment
 module NamedTuple = NamedTuple
