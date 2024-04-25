@@ -529,3 +529,14 @@ def test_dict_get_source() -> None:
     d = {"foo": _test_source(), "bar": ""}
     _test_sink(d.get("foo"))  # Issue.
     _test_sink(d.get("bar"))  # Not an issue.
+
+
+def test_dict_multiple_targets() -> None:
+    x: dict[str, Any] = {"foo": ""}
+
+    x["foo"], x["bar"] = _test_source(), _test_source()
+
+    _test_sink(x["foo"]), _test_sink(x["bar"]) # Issue, Issue
+
+    x["foo"], x["bar"] = "", ""
+    _test_sink(x["foo"]), _test_sink(x["bar"])  # No Issue, No Issue
