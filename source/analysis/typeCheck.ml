@@ -4100,6 +4100,36 @@ module State (Context : Context) = struct
     resolution, errors
 
 
+  (* Step forward across an assignment statement, tracking type context in
+   * `Resolution.t` as well as errors. This is also used within `forward_expression`
+   * for "synthetic" assignments, such as
+   * - handling walrus operators
+   * - assigning the result of `iterable.__iter__().__next__()` to get the type
+   *   of `t` in generators like `(t for t in iterable)`
+   *
+   * Assignments are complicated because the target can be complex, for example:
+   * `a[5], b.c, *d, (e, *f, g) = some_expression`.
+   *
+   * Here is a sketch of the cases we handle:
+   * - type aliases, which are always simple names on the LHS and have custom logic
+   * - single targets, which have several subcases:
+   *   - simple-name targets like `e` which become global or local scope operations
+   *   - subscripted targets like `a[5]`, which become `__setitem__` calls.
+   *     - TODO(T146934909) - this actually isn't handled yet, see note below.
+   *   - attribute targets like `b.c`, which follow attribute-setting logic (which
+   *     is nontrivial because of properties, descriptors, and `__setattr__`), plus
+   *     in some cases we may also attempt to refine the attribute.
+   * - multi-targets (a list of one or more targets, exactly one of which may be
+   *   starred and each of which may itself be complex), which are handled in one of two ways
+   *   - if type of the RHS can be expressed as a single iterable, we will try to
+   *     unpack it, e.g. `a, *b, c = function_producing_list_of_int()`
+   *   - otherwise, we will try to match the RHS and the LHS, e.g. `a, b = 5, "s"`.
+   *   
+   * TODO(T146934909): At the moment this function never handles the subscript
+   * case. For single subscrpted assignments our AST lowering turns them into
+   * `__setitem__` calls, and we just silently ignore type errors if subscripts
+   * occur in multi-assignments.
+   *)
   and forward_assignment ~resolution ~location ~target ~annotation ~value =
     let { Node.value = { Define.signature = { parent; _ }; _ } as define; _ } = Context.define in
     let global_resolution = Resolution.global_resolution resolution in
@@ -5167,6 +5197,12 @@ module State (Context : Context) = struct
                    ~f:(fun (resolution, errors) (target, guide) ->
                      forward_assign ~resolution ~errors ~target ~guide ~resolved_value:guide None)
           | _ ->
+              (* This branch should only be hit when a LHS is subscripted; currently Pyre won't
+                 check that case if it's part of a multi-assignment, because we only handle the
+                 cases the parser could eagerly convert to `__setitem__` calls.
+
+                 All other cases should be impossible - the AST types can't rule them out, but the
+                 grammer / parser won't allow anything else here *)
               if Option.is_some annotation then
                 ( resolution,
                   emit_error
