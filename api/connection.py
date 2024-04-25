@@ -20,6 +20,7 @@ code-navigation deamons.
 import enum
 import json
 import logging
+import shlex
 import subprocess
 from pathlib import Path
 from types import TracebackType
@@ -102,31 +103,20 @@ class PyreConnection:
 
     def start_server(self) -> PyreCheckResult:
         if self.skip_initial_type_check:
-            command = [
-                "pyre",
-                "--noninteractive",
-                *self.pyre_arguments,
+            arguments = [
                 "start",
                 "--skip-initial-type-check",
             ]
             if self.wait_on_initialization:
-                command.append("--wait-on-initialization")
+                arguments.append("--wait-on-initialization")
             if self.analyze_external_sources:
-                command.append("--analyze-external-sources")
-            result = subprocess.run(
-                command,
-                stdout=subprocess.PIPE,
-                cwd=str(self.pyre_directory),
-            )
+                arguments.append("--analyze-external-sources")
+            result = self._run_pyre_command(arguments)
             self.server_initialized = True
             return PyreCheckResult(exit_code=result.returncode, errors=None)
         else:
             # incremental will start a new server when needed.
-            result = subprocess.run(
-                ["pyre", "--noninteractive", *self.pyre_arguments, "incremental"],
-                stdout=subprocess.PIPE,
-                cwd=str(self.pyre_directory),
-            )
+            result = self._run_pyre_command(["incremental"])
             self.server_initialized = True
             return _parse_check_output(result)
 
@@ -136,22 +126,12 @@ class PyreConnection:
                 "Restarts are not currently supported when using the "
                 + "skip_initial_type_check option."
             )
-        result = _parse_check_output(
-            subprocess.run(
-                ["pyre", "--noninteractive", *self.pyre_arguments, "restart"],
-                stdout=subprocess.PIPE,
-                cwd=str(self.pyre_directory),
-            )
-        )
+        result = _parse_check_output(self._run_pyre_command(["restart"]))
         self.server_initialized = True
         return result
 
     def stop_server(self, ignore_errors: bool = False) -> None:
-        subprocess.run(
-            ["pyre", "--noninteractive", *self.pyre_arguments, "stop"],
-            check=not ignore_errors,
-            cwd=str(self.pyre_directory),
-        )
+        self._run_pyre_command(["stop"], check=not ignore_errors)
 
     @staticmethod
     def _validate_query_response(response: str) -> PyreQueryResult:
@@ -179,17 +159,24 @@ class PyreConnection:
                     exit_code=result.exit_code,
                 )
 
-        LOG.debug(f"Running query: `pyre query '{query}'`")
-        result = subprocess.run(
-            ["pyre", "--noninteractive", *self.pyre_arguments, "query", query],
-            stdout=subprocess.PIPE,
-            cwd=str(self.pyre_directory),
-        )
+        result = self._run_pyre_command(["query", query])
         if result.returncode != 0:
             raise PyreQueryUnexpectedError(
                 f"Error while running query, Pyre exited with a code of {result.returncode}."
             )
         return self._validate_query_response(result.stdout.decode())
+
+    def _run_pyre_command(
+        self, arguments: List[str], check: bool = False
+    ) -> subprocess.CompletedProcess[bytes]:
+        command = ["pyre", "--noninteractive"] + self.pyre_arguments + arguments
+        LOG.debug(f"Running command: `{' '.join(map(shlex.quote, command))}`")
+        return subprocess.run(
+            command,
+            check=check,
+            stdout=subprocess.PIPE,
+            cwd=str(self.pyre_directory),
+        )
 
 
 def _parse_check_output(

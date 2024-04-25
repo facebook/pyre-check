@@ -37,11 +37,13 @@ class ConnectionApiTest(unittest.TestCase):
             [
                 call(
                     ["pyre", "--noninteractive", "incremental"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "hi"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
@@ -59,11 +61,13 @@ class ConnectionApiTest(unittest.TestCase):
             [
                 call(
                     ["pyre", "--noninteractive", "start", "--skip-initial-type-check"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "hi"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
@@ -88,11 +92,13 @@ class ConnectionApiTest(unittest.TestCase):
                         "--skip-initial-type-check",
                         "--wait-on-initialization",
                     ],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "hi"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
@@ -108,16 +114,19 @@ class ConnectionApiTest(unittest.TestCase):
             [
                 call(
                     ["pyre", "--noninteractive", "incremental"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "hi"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "bye"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
@@ -132,15 +141,22 @@ class ConnectionApiTest(unittest.TestCase):
             [
                 call(
                     ["pyre", "--noninteractive", "incremental"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
                 call(
                     ["pyre", "--noninteractive", "query", "hi"],
+                    check=False,
                     cwd="/tmp",
                     stdout=subprocess.PIPE,
                 ),
-                call(["pyre", "--noninteractive", "stop"], check=True, cwd="/tmp"),
+                call(
+                    ["pyre", "--noninteractive", "stop"],
+                    check=True,
+                    cwd="/tmp",
+                    stdout=subprocess.PIPE,
+                ),
             ],
         )
 
