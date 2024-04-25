@@ -5,7 +5,10 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-(* TODO(T132410158) Add a module-level doc comment. *)
+(* This module provides the top-level interface to Pyre's original Menhir parser. Pyre mostly uses
+   other parsers (either an ocaml wrapper around the CPython parser, or the error-recovering Errpy
+   parser), but Pysa models still use this parser and for the moment there are still a few places
+   where Pyre uses this parser to parse individual expressions *)
 
 open Core
 open Pyre
