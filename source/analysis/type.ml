@@ -4309,10 +4309,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         let expression =
           try
             let parsed =
-              PyreMenhirParser.Parser.parse_exn [value]
-              |> Source.create
-              |> Preprocessing.preprocess_no_wildcards
-              |> Source.statements
+              PyreMenhirParser.Parser.parse_exn [value] |> Source.create |> Source.statements
             in
             match parsed with
             | [{ Node.value = Expression { Node.value; _ }; _ }] -> Some value
