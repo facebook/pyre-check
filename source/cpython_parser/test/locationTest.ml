@@ -19,8 +19,8 @@ let statements_print_to_sexp statements =
 
 
 let assert_parsed ~context ~expected text =
-  match PyreNewParser.parse_module ~context ~enable_type_comment:true text with
-  | Result.Error { PyreNewParser.Error.message; _ } ->
+  match PyreCPythonParser.parse_module ~context ~enable_type_comment:true text with
+  | Result.Error { PyreCPythonParser.Error.message; _ } ->
       let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
   | Result.Ok actual ->
@@ -124,7 +124,7 @@ let test_assert_locations _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_assign_locations _ =
@@ -291,7 +291,7 @@ let test_assign_locations _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_await_locations _ =
@@ -326,7 +326,7 @@ let test_await_locations _ =
                      (node ~start:(1, 8) ~stop:(1, 9) (Expression.Constant (Constant.Integer 1))))));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_call_locations _ =
@@ -990,7 +990,7 @@ let test_call_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_class_locations _ =
@@ -1152,7 +1152,7 @@ let test_class_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_define_locations _ =
@@ -1271,7 +1271,7 @@ let test_define_locations _ =
                (node ~start:(6, 0) ~stop:(6, 1) (Expression.Constant (Constant.Integer 3))));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_delete_locations _ =
@@ -1291,7 +1291,7 @@ let test_delete_locations _ =
                ]);
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_dictionary_locations _ =
@@ -1484,7 +1484,7 @@ let test_dictionary_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_for_locations _ =
@@ -1620,7 +1620,7 @@ let test_for_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_generator_locations _ =
@@ -1679,7 +1679,7 @@ let test_generator_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_global_locations _ =
@@ -1690,7 +1690,7 @@ let test_global_locations _ =
       "global a, b"
       ~expected:[node ~start:(1, 0) ~stop:(1, 11) (Statement.Global ["a"; "b"])]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_if_locations _ =
@@ -1856,7 +1856,7 @@ let test_if_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_import_locations _ =
@@ -1956,7 +1956,7 @@ let test_import_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_lambda_locations _ =
@@ -2031,7 +2031,7 @@ let test_lambda_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_list_locations _ =
@@ -2112,7 +2112,7 @@ let test_list_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_name_locations _ =
@@ -2253,7 +2253,7 @@ let test_name_locations _ =
                         }))));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_nonlocal_locations _ =
@@ -2266,7 +2266,7 @@ let test_nonlocal_locations _ =
       "nonlocal a, b"
       ~expected:[node ~start:(1, 0) ~stop:(1, 13) (Statement.Nonlocal ["a"; "b"])]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_number_locations _ =
@@ -2343,7 +2343,7 @@ let test_number_locations _ =
                (node ~start:(1, 0) ~stop:(1, 4) (Expression.Constant (Constant.Integer (-1)))));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_operator_locations _ =
@@ -2468,7 +2468,7 @@ let test_operator_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_raise_locations _ =
@@ -2508,7 +2508,7 @@ let test_raise_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_return_locations _ =
@@ -2538,7 +2538,7 @@ let test_return_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_set_locations _ =
@@ -2669,7 +2669,7 @@ let test_set_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_string_locations _ =
@@ -2878,7 +2878,7 @@ let test_string_locations _ =
                      ])));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_stub_locations _ =
@@ -2967,7 +2967,7 @@ let test_stub_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_ternary_locations _ =
@@ -3039,7 +3039,7 @@ let test_ternary_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_try_locations _ =
@@ -3201,7 +3201,7 @@ let test_try_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_tuple_locations _ =
@@ -3318,7 +3318,7 @@ let test_tuple_locations _ =
                      ])));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_while_locations _ =
@@ -3354,7 +3354,7 @@ let test_while_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_with_locations _ =
@@ -3452,7 +3452,7 @@ let test_with_locations _ =
                });
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_walrus_locations _ =
@@ -3478,7 +3478,7 @@ let test_walrus_locations _ =
                      })));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_yield_locations _ =
@@ -3523,7 +3523,7 @@ let test_yield_locations _ =
                      (node ~start:(1, 11) ~stop:(1, 12) (Expression.Name (Name.Identifier "a"))))));
         ]
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_type_comments _ =
@@ -3694,7 +3694,7 @@ let test_type_comments _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let () =

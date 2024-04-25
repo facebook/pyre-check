@@ -1,0 +1,4 @@
+(library
+ (name pyreCPythonParser)
+ (public_name pyrelib.pyreCPythonParser)
+ (libraries base pyre-ast pyrelib.ast))

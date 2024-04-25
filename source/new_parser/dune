@@ -1,4 +1,0 @@
-(library
- (name pyreNewParser)
- (public_name pyrelib.pyreNewParser)
- (libraries base pyre-ast pyrelib.ast))

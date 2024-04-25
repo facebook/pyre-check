@@ -121,7 +121,7 @@ let labeled_test_case function_name line_number ?name test_callback =
 
 let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
   let do_parse context =
-    match PyreNewParser.parse_module ~context ~enable_type_comment:true source with
+    match PyreCPythonParser.parse_module ~context ~enable_type_comment:true source with
     | Result.Ok statements ->
         let typecheck_flags =
           let qualifier = ModulePath.qualifier_from_relative_path handle in
@@ -132,7 +132,7 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
           if coerce_special_methods then coerce_special_methods_source else Fn.id
         in
         source |> coerce_special_methods
-    | Result.Error { PyreNewParser.Error.line; column; message; _ } ->
+    | Result.Error { PyreCPythonParser.Error.line; column; message; _ } ->
         let error =
           Format.asprintf
             "Could not parse test source at line %d, column %d.\nReason: %s. Test input:\n%s"
@@ -143,7 +143,7 @@ let parse_untrimmed ?(handle = "") ?(coerce_special_methods = false) source =
         in
         failwith error
   in
-  PyreNewParser.with_context do_parse
+  PyreCPythonParser.with_context do_parse
 
 
 let parse ?(handle = "") ?(coerce_special_methods = false) source =

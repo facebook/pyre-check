@@ -17,8 +17,8 @@ let expression_location_insensitive_equal left right =
 let expression_print_to_sexp expression = Sexp.to_string_hum (Expression.sexp_of_t expression)
 
 let assert_parsed ~context ~expected text =
-  match PyreNewParser.parse_expression ~context text with
-  | Result.Error { PyreNewParser.Error.message; _ } ->
+  match PyreCPythonParser.parse_expression ~context text with
+  | Result.Error { PyreCPythonParser.Error.message; _ } ->
       let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
   | Result.Ok actual ->
@@ -30,7 +30,7 @@ let assert_parsed ~context ~expected text =
 
 
 let assert_not_parsed ~context text =
-  match PyreNewParser.parse_expression ~context text with
+  match PyreCPythonParser.parse_expression ~context text with
   | Result.Ok actual ->
       let message =
         Stdlib.Format.asprintf
@@ -53,7 +53,7 @@ let test_name _ =
     assert_not_parsed "1x";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_attribute _ =
@@ -99,7 +99,7 @@ let test_attribute _ =
     assert_not_parsed "1 .0 .a";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_constant _ =
@@ -198,7 +198,7 @@ let test_constant _ =
 
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_fstring _ =
@@ -276,7 +276,7 @@ let test_fstring _ =
     assert_not_parsed "f'{\\'a\\'}'";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_await_yield _ =
@@ -299,7 +299,7 @@ let test_await_yield _ =
     assert_not_parsed "yield from";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_ternary_walrus _ =
@@ -358,7 +358,7 @@ let test_ternary_walrus _ =
     assert_not_parsed "([a, b] := 1)";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_container_literals _ =
@@ -557,7 +557,7 @@ let test_container_literals _ =
     assert_not_parsed "{1,2";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_comprehensions _ =
@@ -740,7 +740,7 @@ let test_comprehensions _ =
     assert_not_parsed "[i+1 for i in (lambda: (j := stuff))()]";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_starred _ =
@@ -799,7 +799,7 @@ let test_starred _ =
     assert_not_parsed "[**x]";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_boolean_operators _ =
@@ -895,7 +895,7 @@ let test_boolean_operators _ =
     assert_not_parsed "or True";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_unary_operators _ =
@@ -983,7 +983,7 @@ let test_unary_operators _ =
     assert_not_parsed "+ not x";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_comparison_operators _ =
@@ -1150,7 +1150,7 @@ let test_comparison_operators _ =
             });
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_binary_operators _ =
@@ -1442,7 +1442,7 @@ let test_binary_operators _ =
             });
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_call _ =
@@ -1587,7 +1587,7 @@ let test_call _ =
             });
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_subscript _ =
@@ -2052,7 +2052,7 @@ let test_subscript _ =
     assert_not_parsed "a[:::]";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_lambda _ =
@@ -2218,7 +2218,7 @@ let test_lambda _ =
     assert_not_parsed "lambda *x, *, y: x";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let () =

@@ -92,7 +92,7 @@
   pyrelib.scheduler
   pyrelib.pyreParser
   pyrelib.pyreErrpyParser
-  pyrelib.pyreNewParser
+  pyrelib.pyreCPythonParser
   pyrelib.recognized
   pyrelib.statistics
   pyrelib.alarm

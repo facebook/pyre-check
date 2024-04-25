@@ -21,8 +21,8 @@ let statements_print_to_sexp statements =
 
 
 let assert_parsed ~context ~expected text =
-  match PyreNewParser.parse_module ~context ~enable_type_comment:true text with
-  | Result.Error { PyreNewParser.Error.message; _ } ->
+  match PyreCPythonParser.parse_module ~context ~enable_type_comment:true text with
+  | Result.Error { PyreCPythonParser.Error.message; _ } ->
       let message = Stdlib.Format.sprintf "Unexpected parsing failure: %s" message in
       assert_failure message
   | Result.Ok actual ->
@@ -49,7 +49,7 @@ let test_pass_break_continue _ =
       ~expected:[+Statement.Break; +Statement.Continue; +Statement.Pass];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_global_nonlocal _ =
@@ -65,7 +65,7 @@ let test_global_nonlocal _ =
     assert_not_parsed "nonlocal";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_expression_return_raise _ =
@@ -103,7 +103,7 @@ let test_expression_return_raise _ =
       ~expected:[+Statement.Raise { Raise.expression = Some !"a"; from = Some !"b" }];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_assert_delete _ =
@@ -160,7 +160,7 @@ let test_assert_delete _ =
     assert_not_parsed "del";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_import _ =
@@ -316,7 +316,7 @@ let test_import _ =
     assert_not_parsed "from import foo";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_for_while_if _ =
@@ -574,7 +574,7 @@ let test_for_while_if _ =
     assert_not_parsed "if a:";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_try _ =
@@ -826,7 +826,7 @@ let test_try _ =
     assert_not_parsed "try:\n\ta\nexcept* a:\n\tb\nexcept c:\n\td";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_with _ =
@@ -921,7 +921,7 @@ let test_with _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_define _ =
@@ -1913,7 +1913,7 @@ let test_define _ =
       |});
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_class _ =
@@ -2179,7 +2179,7 @@ let test_class _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_assign _ =
@@ -2668,7 +2668,7 @@ let test_assign _ =
         ];
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let test_match _ =
@@ -2782,7 +2782,7 @@ let test_match _ =
     assert_not_parsed "match x:\n  case _:\n    pass\n  case 42:\n    pass";
     ()
   in
-  PyreNewParser.with_context do_test
+  PyreCPythonParser.with_context do_test
 
 
 let () =

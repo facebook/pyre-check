@@ -96,10 +96,10 @@ let parse_raw_code_with_cpython
   let parse context =
     let typecheck_flags = Source.TypecheckFlags.parse ~qualifier (String.split raw_code ~on:'\n') in
     match
-      PyreNewParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
+      PyreCPythonParser.parse_module ~enable_type_comment:enable_type_comments ~context raw_code
     with
     | Ok statements -> Ok (create_source ~typecheck_flags ~module_path statements)
-    | Error { PyreNewParser.Error.line; column; end_line; end_column; message } ->
+    | Error { PyreCPythonParser.Error.line; column; end_line; end_column; message } ->
         Error
           (create_parse_error
              ~configuration
@@ -112,7 +112,7 @@ let parse_raw_code_with_cpython
              ~message
              ())
   in
-  PyreNewParser.with_context parse
+  PyreCPythonParser.with_context parse
 
 
 let parse_raw_code_with_errpy ~configuration ({ ModulePath.qualifier; _ } as module_path) raw_code =

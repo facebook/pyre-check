@@ -18,7 +18,7 @@ module Context : sig
   (** An opaque type representing the global state of the parser. Obtaining a value of this type is
       a pre-requisite for invoking all other parsing-related APIs.
 
-      A value of this type can be obtained via {!val: PyreNewParser.with_context}. *)
+      A value of this type can be obtained via {!val: PyreCPythonParser.with_context}. *)
   type t
 end
 
