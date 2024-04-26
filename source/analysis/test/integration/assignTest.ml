@@ -576,15 +576,22 @@ let test_check_assign =
               type `int`.";
            ];
       (* TODO(T146934909) This test case documents a bug: Pyre fails to check subscripted
-         assignments inside of multiple-target left-hand-sides. *)
+         assignments inside of multiple-target left-hand-sides, which leads to both false negatives
+         (when the assignment is a type error) and false positives (because we never even traverse
+         the key expressions, so the resolution can be wrong.) *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
               x: dict[str, int] = ...
 
-              x["key"], y = "whoops this should be an int", 42
+              x[k := "key" + 5], y = "whoops this should be an int", 42
+
+              reveal_type(k)
             |}
-           [];
+           [
+             "Revealed type [-1]: Revealed type for `k` is `unknown`.";
+             "Unbound name [10]: Name `k` is used but not defined in the current scope.";
+           ];
     ]
 
 
