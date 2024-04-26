@@ -15,6 +15,7 @@
 
    The entrypoint is therefore usually `forward_statement`, which has a number of helpers like
    `forward_assign` (used for assignment statements) and `forward_expression` (which traverses
+
    expression trees within a statement, along the way inferring types, producing type errors, and
    possibly adding to the scope for features like the walrus operator).
 
@@ -60,6 +61,8 @@ module type Context = sig
   val qualifier : Reference.t
 
   val debug : bool
+
+  val no_validation_on_class_lookup_failure : bool
 
   val define : Define.t Node.t
 
@@ -6755,6 +6758,8 @@ module DummyContext = struct
 
   let debug = false
 
+  let no_validation_on_class_lookup_failure = false
+
   let define =
     Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
     |> Node.create_with_default_location
@@ -7548,7 +7553,8 @@ let exit_state ~resolution (module Context : Context) =
 
 
 let compute_local_annotations
-    ~type_check_controls:{ EnvironmentControls.TypeCheckControls.debug; _ }
+    ~type_check_controls:
+      { EnvironmentControls.TypeCheckControls.debug; no_validation_on_class_lookup_failure; _ }
     ~global_resolution
     name
   =
@@ -7558,6 +7564,8 @@ let compute_local_annotations
       let qualifier = Reference.empty
 
       let debug = debug
+
+      let no_validation_on_class_lookup_failure = no_validation_on_class_lookup_failure
 
       let define = define_node
 
@@ -7610,6 +7618,7 @@ let check_define
         include_local_annotations;
         debug;
         include_unawaited_awaitable_errors;
+        no_validation_on_class_lookup_failure;
         _;
       }
     ~call_graph_builder:(module Builder : Callgraph.Builder)
@@ -7623,6 +7632,8 @@ let check_define
         let qualifier = qualifier
 
         let debug = debug
+
+        let no_validation_on_class_lookup_failure = no_validation_on_class_lookup_failure
 
         let define = define_node
 

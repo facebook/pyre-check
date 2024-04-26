@@ -18,6 +18,8 @@ module DefaultContext = struct
 
   let debug = false
 
+  let no_validation_on_class_lookup_failure = false
+
   let define = +Test.mock_define
 
   let resolution_fixpoint = None
@@ -127,6 +129,8 @@ let test_initial context =
       let debug = false
 
       let qualifier = Reference.empty
+
+      let no_validation_on_class_lookup_failure = false
 
       let define = +define
 

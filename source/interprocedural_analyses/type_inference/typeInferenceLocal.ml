@@ -99,6 +99,8 @@ module State (Context : Context) = struct
 
     let debug = Context.configuration.debug
 
+    let no_validation_on_class_lookup_failure = false
+
     let define = Context.define
 
     let resolution_fixpoint = Context.resolution_fixpoint

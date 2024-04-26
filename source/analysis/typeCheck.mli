@@ -22,6 +22,8 @@ module type Context = sig
 
   val debug : bool
 
+  val no_validation_on_class_lookup_failure : bool
+
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
