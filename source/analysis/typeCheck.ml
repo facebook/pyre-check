@@ -1765,43 +1765,6 @@ module State (Context : Context) = struct
               }
         | _ -> None
       in
-      let check_for_error ({ Resolved.resolved; errors; _ } as input) =
-        let is_broadcast_error = function
-          | Type.Parametric
-              {
-                name = "pyre_extensions.BroadcastError";
-                parameters = [Type.Parameter.Single _; Type.Parameter.Single _];
-              } ->
-              true
-          | _ -> false
-        in
-        match Type.collect resolved ~predicate:is_broadcast_error with
-        | [] -> input
-        | broadcast_errors ->
-            let new_errors =
-              List.fold broadcast_errors ~init:errors ~f:(fun current_errors error_type ->
-                  match error_type with
-                  | Type.Parametric
-                      {
-                        name = "pyre_extensions.BroadcastError";
-                        parameters =
-                          [Type.Parameter.Single left_type; Type.Parameter.Single right_type];
-                      } ->
-                      emit_error
-                        ~errors:current_errors
-                        ~location
-                        ~kind:
-                          (Error.BroadcastError
-                             {
-                               expression = { location; value };
-                               left = left_type;
-                               right = right_type;
-                             })
-                  | _ -> current_errors)
-            in
-
-            { input with resolved = Type.Any; errors = new_errors }
-      in
       let callables_with_selected_return_annotations, resolution, errors =
         let callable_data_list = get_callables callee |> Option.value ~default:[] in
         match callable_data_list with
@@ -1867,10 +1830,9 @@ module State (Context : Context) = struct
         ~resolution
         ~errors
         (found_return_annotations, not_found_return_annotations)
-      |> (function
-           | Some resolved -> resolved
-           | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes)
-      |> check_for_error
+      |> function
+      | Some resolved -> resolved
+      | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes
     in
     match value with
     | Await expression -> (
@@ -2562,6 +2524,44 @@ module State (Context : Context) = struct
               }
           | _ ->
               let target, dynamic = target_and_dynamic resolved_callee in
+              let detect_broadcast_errors ({ Resolved.resolved; errors; _ } as input) =
+                let is_broadcast_error = function
+                  | Type.Parametric
+                      {
+                        name = "pyre_extensions.BroadcastError";
+                        parameters = [Type.Parameter.Single _; Type.Parameter.Single _];
+                      } ->
+                      true
+                  | _ -> false
+                in
+                match Type.collect resolved ~predicate:is_broadcast_error with
+                | [] -> input
+                | broadcast_errors ->
+                    let new_errors =
+                      List.fold broadcast_errors ~init:errors ~f:(fun current_errors error_type ->
+                          match error_type with
+                          | Type.Parametric
+                              {
+                                name = "pyre_extensions.BroadcastError";
+                                parameters =
+                                  [
+                                    Type.Parameter.Single left_type; Type.Parameter.Single right_type;
+                                  ];
+                              } ->
+                              emit_error
+                                ~errors:current_errors
+                                ~location
+                                ~kind:
+                                  (Error.BroadcastError
+                                     {
+                                       expression = { location; value };
+                                       left = left_type;
+                                       right = right_type;
+                                     })
+                          | _ -> current_errors)
+                    in
+                    { input with resolved = Type.Any; errors = new_errors }
+              in
               forward_call
                 ~resolution:callee_resolution
                 ~errors:callee_errors
@@ -2569,6 +2569,7 @@ module State (Context : Context) = struct
                 ~dynamic
                 ~callee:(create_callee resolved_callee)
                 ~arguments
+              |> detect_broadcast_errors
         in
         {
           resolution = Resolution.clear_temporary_annotations updated_resolution;
