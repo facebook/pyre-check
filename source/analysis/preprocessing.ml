@@ -327,9 +327,12 @@ module Qualify (Context : QualifyContext) = struct
       =
       match value with
       | Statement.Assign
-          { Assign.target = { Node.value = Name name; _ }; annotation = Some annotation; _ }
-        when String.equal (Expression.show annotation) "_SpecialForm" ->
-          let name = name_to_reference_exn name in
+          {
+            Assign.target = { Node.value = Expression.Name (Name.Identifier target_name); _ };
+            annotation = Some { Node.value = Expression.Name (Name.Identifier "_SpecialForm"); _ };
+            _;
+          } ->
+          let name = Reference.create target_name in
           {
             scope with
             aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
