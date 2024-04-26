@@ -124,7 +124,6 @@ module Qualify (_ : QualifyContext) : sig
     immutables: Reference.Set.t;
     locals: Reference.Set.t;
     is_top_level: bool;
-    skip: Location.Set.t;
     is_in_function: bool;
     is_in_class: bool;
   }

@@ -288,7 +288,6 @@ module Qualify (Context : QualifyContext) = struct
     immutables: Reference.Set.t;
     locals: Reference.Set.t;
     is_top_level: bool;
-    skip: Location.Set.t;
     is_in_function: bool;
     is_in_class: bool;
   }
@@ -322,8 +321,8 @@ module Qualify (Context : QualifyContext) = struct
   let rec explore_scope ~scope statements =
     let global_alias ~qualifier ~name = { name = Reference.combine qualifier name; qualifier } in
     let explore_scope
-        ({ qualifier; aliases; immutables; skip; is_in_function; _ } as scope)
-        { Node.location; value }
+        ({ qualifier; aliases; immutables; is_in_function; _ } as scope)
+        { Node.value; _ }
       =
       match value with
       | Statement.Assign
@@ -333,11 +332,7 @@ module Qualify (Context : QualifyContext) = struct
             _;
           } ->
           let name = Reference.create target_name in
-          {
-            scope with
-            aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name);
-            skip = Set.add skip location;
-          }
+          { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | Class { Class.name; _ } ->
           { scope with aliases = Map.set aliases ~key:name ~data:(global_alias ~qualifier ~name) }
       | Define { Define.signature = { name; _ }; _ } when is_in_function ->
@@ -471,8 +466,8 @@ module Qualify (Context : QualifyContext) = struct
 
   and qualify_statement
       ~qualify_assign
-      ~scope:({ qualifier; aliases; skip; is_top_level; _ } as scope)
-      ({ Node.location; value } as statement)
+      ~scope:({ qualifier; aliases; is_top_level; _ } as scope)
+      ({ Node.value; _ } as statement)
     =
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier } in
@@ -495,7 +490,16 @@ module Qualify (Context : QualifyContext) = struct
           | _ -> qualify_expression ~qualify_strings:DoNotQualify value ~scope
         in
         let target_scope, target =
-          if not (Set.mem skip location) then
+          let is_special_form_assignment =
+            match target, annotation with
+            | ( { Node.value = Expression.Name (Name.Identifier _); _ },
+                Some { Node.value = Expression.Name (Name.Identifier "_SpecialForm"); _ } ) ->
+                true
+            | _ -> false
+          in
+          if is_special_form_assignment then
+            scope, target
+          else
             let rec qualify_assignment_target
                 ~scope:({ aliases; immutables; locals; _ } as scope)
                 target
@@ -602,8 +606,6 @@ module Qualify (Context : QualifyContext) = struct
               scope, { target with Node.value }
             in
             qualify_assignment_target ~scope target
-          else
-            scope, target
         in
         let qualified_annotation =
           annotation >>| qualify_expression ~qualify_strings:Qualify ~scope
@@ -1249,7 +1251,6 @@ let qualify
       locals = Reference.Set.empty;
       immutables = Reference.Set.empty;
       is_top_level = true;
-      skip = Location.Set.empty;
       is_in_function = false;
       is_in_class = false;
     }
