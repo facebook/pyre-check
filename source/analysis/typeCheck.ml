@@ -1076,6 +1076,22 @@ module State (Context : Context) = struct
   and forward_call ~resolution ~location ~errors ~target ~dynamic ~callee ~arguments =
     let global_resolution = Resolution.global_resolution resolution in
     let open CallableApplicationData in
+    let forward_arguments argument_expressions =
+      let resolution, errors, reversed_arguments =
+        let forward_argument (resolution, errors, reversed_arguments) argument =
+          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+          forward_expression ~resolution expression
+          |> fun { resolution; errors = new_errors; resolved; _ } ->
+          ( resolution,
+            List.append new_errors errors,
+            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+            :: reversed_arguments )
+        in
+        List.fold argument_expressions ~f:forward_argument ~init:(resolution, errors, [])
+      in
+      let arguments = List.rev reversed_arguments in
+      resolution, errors, arguments
+    in
     let unpack_callable_and_self_argument =
       unpack_callable_and_self_argument
         ~signature_select:
@@ -1368,19 +1384,7 @@ module State (Context : Context) = struct
       let callable_data_list = get_callables callee |> Option.value ~default:[] in
       match callable_data_list with
       | callable_data_list ->
-          let resolution, errors, reversed_arguments =
-            let forward_argument (resolution, errors, reversed_arguments) argument =
-              let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-              forward_expression ~resolution expression
-              |> fun { resolution; errors = new_errors; resolved; _ } ->
-              ( resolution,
-                List.append new_errors errors,
-                { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-                :: reversed_arguments )
-            in
-            List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
-          in
-          let arguments = List.rev reversed_arguments in
+          let resolution, errors, arguments = forward_arguments arguments in
           let callable_data_list =
             List.filter_map callable_data_list ~f:(function
                 | UnknownCallableAttribute { callable_attribute; _ } ->
