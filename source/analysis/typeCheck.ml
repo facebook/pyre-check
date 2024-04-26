@@ -7547,14 +7547,17 @@ let exit_state ~resolution (module Context : Context) =
     { errors; local_annotations = Some local_annotations; callees = Some callees })
 
 
-let compute_local_annotations ~global_environment name =
-  let global_resolution = GlobalResolution.create global_environment in
+let compute_local_annotations
+    ~type_check_controls:{ EnvironmentControls.TypeCheckControls.debug; _ }
+    ~global_resolution
+    name
+  =
   let exit_state_of_define define_node =
     let module Context = struct
       (* Doesn't matter what the qualifier is since we won't be using it *)
       let qualifier = Reference.empty
 
-      let debug = false
+      let debug = debug
 
       let define = define_node
 

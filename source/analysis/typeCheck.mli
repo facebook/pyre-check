@@ -82,7 +82,8 @@ val resolution_at_key
   Resolution.t
 
 val compute_local_annotations
-  :  global_environment:AnnotatedGlobalEnvironment.ReadOnly.t ->
+  :  type_check_controls:EnvironmentControls.TypeCheckControls.t ->
+  global_resolution:GlobalResolution.t ->
   Reference.t ->
   LocalAnnotationMap.ReadOnly.t option
 

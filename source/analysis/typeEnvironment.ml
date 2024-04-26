@@ -204,6 +204,10 @@ module ReadOnly = struct
     |> UnannotatedGlobalEnvironment.ReadOnly.get_untracked_source_code_api
 
 
+  let get_environment_controls environment =
+    unannotated_global_environment environment |> UnannotatedGlobalEnvironment.ReadOnly.controls
+
+
   let get_errors environment ?dependency reference =
     get ?dependency environment reference
     >>= TypeCheck.CheckResult.errors
@@ -222,8 +226,11 @@ module ReadOnly = struct
            via TypeEnvironment.LocalAnnotations, but to save memory we only populate this for pysa
            runs, not the normal server used by LSP). This behavior is controlled by the
            `store_type_check_resolution` flag. *)
-        let global_environment = global_environment environment in
-        TypeCheck.compute_local_annotations ~global_environment name
+        let global_resolution = global_resolution environment in
+        let type_check_controls =
+          get_environment_controls environment |> EnvironmentControls.type_check_controls
+        in
+        TypeCheck.compute_local_annotations ~type_check_controls ~global_resolution name
 end
 
 (* All SharedMemory tables are populated and stored in separate, imperative steps that must be run
