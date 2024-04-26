@@ -356,7 +356,6 @@ let test_non_data_descriptors context =
         z = Host().cm(1, 2)
     |}
     [
-      "Undefined import [21]: Could not find a name `ClassMethod` defined in module `typing`.";
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[Type[Host], int, \
        str], bool], Type[Host]]`.";
@@ -397,7 +396,6 @@ let test_non_data_descriptors context =
         reveal_type(y)
     |}
     [
-      "Undefined import [21]: Could not find a name `StaticMethod` defined in module `typing`.";
       "Missing return annotation [3]: Return type must be specified as type other than `Any`.";
       "Revealed type [-1]: Revealed type for `x` is `typing.Callable[[int, str], bool]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[int, str], bool]`.";
@@ -419,7 +417,6 @@ let test_non_data_descriptors context =
         reveal_type(y)
     |}
     [
-      "Undefined import [21]: Could not find a name `StaticMethod` defined in module `typing`.";
       "Revealed type [-1]: Revealed type for `x` is `BoundMethod[typing.Callable[[object, int], \
        str], Host]`.";
       "Revealed type [-1]: Revealed type for `y` is `typing.Callable[[object, int], str]`.";
@@ -448,7 +445,6 @@ let test_non_data_descriptors context =
         reveal_type(b)
     |}
     [
-      "Undefined import [21]: Could not find a name `StaticMethod` defined in module `typing`.";
       "Revealed type [-1]: Revealed type for `x` is `CallableClass`.";
       "Revealed type [-1]: Revealed type for `y` is `CallableClass`.";
       (* This is wrong. Unfortunately its currently avoidable as long as we resolve defs to
@@ -474,7 +470,6 @@ let test_non_data_descriptors context =
         reveal_type(y)
     |}
     [
-      "Undefined import [21]: Could not find a name `StaticMethod` defined in module `typing`.";
       "Revealed type [-1]: Revealed type for `x` is `Union[BoundMethod[typing.Callable[[object, \
        int], str], Host], int]`.";
       "Revealed type [-1]: Revealed type for `y` is `Union[typing.Callable[[object, int], str], \

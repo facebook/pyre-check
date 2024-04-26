@@ -153,7 +153,23 @@ let create
       | TupleAssign _ ->
           Identifier.Map.Tree.set sofar ~key:name ~data:Export.(Name Name.GlobalVariable)
     in
-    Collector.from_source source |> List.fold ~init:Identifier.Map.Tree.empty ~f:collect_export
+    let init =
+      let export_from_missing_classes { Node.value = { Class.name; _ }; _ } =
+        Reference.last name, Export.(Name Name.Class)
+      in
+      let exports_from_missing_classes missing_classes =
+        List.map missing_classes ~f:export_from_missing_classes |> Identifier.Map.Tree.of_alist_exn
+      in
+      (* TODO(stroxler): Deduplicate this logic from
+         UnannotatedGlobalEnvironment.ModuleComponents.class_summaries_of_source *)
+      match Reference.as_list (ModulePath.qualifier module_path) with
+      | [] -> exports_from_missing_classes MissingFromStubs.missing_builtin_classes
+      | ["typing"] -> exports_from_missing_classes MissingFromStubs.missing_typing_classes
+      | ["typing_extensions"] ->
+          exports_from_missing_classes MissingFromStubs.missing_typing_extensions_classes
+      | _ -> Identifier.Map.Tree.empty
+    in
+    Collector.from_source source |> List.fold ~init ~f:collect_export
   in
   Explicit { exports; empty_stub = is_stub && Source.TypecheckFlags.is_placeholder_stub local_mode }
 
