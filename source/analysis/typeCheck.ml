@@ -466,47 +466,47 @@ module State (Context : Context) = struct
 
 
   let get_untracked_annotation_errors ~resolution ~location annotation =
-    let is_untracked_name class_name =
-      if Context.no_validation_on_class_lookup_failure then
-        false
-      else
-        not (GlobalResolution.class_exists resolution class_name)
-    in
-    let add_untracked_errors errors =
-      Type.elements annotation
-      |> List.dedup_and_sort ~compare:String.compare
-      |> List.filter ~f:is_untracked_name
-      |> List.fold ~init:errors ~f:(fun errors name ->
-             emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
-    in
-    let add_literal_value_errors errors =
-      (* Literal enum class names will later be parsed as types, so we must validate them when
-         checking for untracked annotations. In error messaging, assume these are arbitrary
-         non-literal expressions. *)
-      let literals =
-        let is_literal_enumeration = function
-          | Type.Literal (Type.EnumerationMember _) -> true
-          | _ -> false
+    match Context.no_validation_on_class_lookup_failure with
+    | true -> []
+    | false ->
+        let is_untracked_name class_name =
+          not (GlobalResolution.class_exists resolution class_name)
         in
-        Type.collect annotation ~predicate:is_literal_enumeration
-      in
-      let add_literal_error errors literal =
-        match literal with
-        | Type.Literal
-            (Type.EnumerationMember
-              { enumeration_type = Type.Primitive enumeration_name; member_name })
-          when is_untracked_name enumeration_name ->
-            emit_error
-              ~errors
-              ~location
-              ~kind:
-                (Error.InvalidType
-                   (InvalidLiteral (Reference.create (enumeration_name ^ "." ^ member_name))))
-        | _ -> errors
-      in
-      List.fold literals ~init:errors ~f:add_literal_error
-    in
-    add_untracked_errors [] |> add_literal_value_errors
+        let add_untracked_errors errors =
+          Type.elements annotation
+          |> List.dedup_and_sort ~compare:String.compare
+          |> List.filter ~f:is_untracked_name
+          |> List.fold ~init:errors ~f:(fun errors name ->
+                 emit_error ~errors ~location ~kind:(Error.UndefinedType (Primitive name)))
+        in
+        let add_literal_value_errors errors =
+          (* Literal enum class names will later be parsed as types, so we must validate them when
+             checking for untracked annotations. In error messaging, assume these are arbitrary
+             non-literal expressions. *)
+          let literals =
+            let is_literal_enumeration = function
+              | Type.Literal (Type.EnumerationMember _) -> true
+              | _ -> false
+            in
+            Type.collect annotation ~predicate:is_literal_enumeration
+          in
+          let add_literal_error errors literal =
+            match literal with
+            | Type.Literal
+                (Type.EnumerationMember
+                  { enumeration_type = Type.Primitive enumeration_name; member_name })
+              when is_untracked_name enumeration_name ->
+                emit_error
+                  ~errors
+                  ~location
+                  ~kind:
+                    (Error.InvalidType
+                       (InvalidLiteral (Reference.create (enumeration_name ^ "." ^ member_name))))
+            | _ -> errors
+          in
+          List.fold literals ~init:errors ~f:add_literal_error
+        in
+        add_untracked_errors [] |> add_literal_value_errors
 
 
   let parse_and_check_annotation
@@ -530,22 +530,17 @@ module State (Context : Context) = struct
         else
           None
       in
-      let all_primitives_and_variables_are_valid, errors =
-        let errors, no_untracked =
-          let untracked_annotation_errors =
-            get_untracked_annotation_errors ~resolution:global_resolution ~location annotation
-          in
-          List.append errors untracked_annotation_errors, List.is_empty untracked_annotation_errors
-        in
-        let invalid_variable_error_kinds =
-          Type.Variable.all_free_variables annotation
-          |> List.filter_map ~f:(check_invalid_variables resolution)
-        in
-        ( no_untracked && List.is_empty invalid_variable_error_kinds,
-          List.fold invalid_variable_error_kinds ~init:errors ~f:(fun errors kind ->
-              emit_error ~errors ~location ~kind) )
+      let untracked_annotation_errors =
+        get_untracked_annotation_errors ~resolution:global_resolution ~location annotation
       in
-      if all_primitives_and_variables_are_valid then
+      let untracked_annotation_and_invalid_variable_errors =
+        Type.Variable.all_free_variables annotation
+        |> List.filter_map ~f:(check_invalid_variables resolution)
+        |> List.fold ~init:untracked_annotation_errors ~f:(fun errors kind ->
+               emit_error ~errors ~location ~kind)
+      in
+      let errors = List.append untracked_annotation_and_invalid_variable_errors errors in
+      if List.is_empty untracked_annotation_and_invalid_variable_errors then
         add_invalid_type_parameters_errors
           annotation
           ~resolution:global_resolution
