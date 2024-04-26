@@ -1415,7 +1415,6 @@ module State (Context : Context) = struct
         (List.filter_map callables_with_selected_return_annotations ~f:(function
             | KnownCallable { callable = { TypeOperation.callable; _ }; _ } -> Some callable
             | _ -> None))
-      ~arguments
       ~dynamic
       ~qualifier:Context.qualifier
       ~callee_type:(Callee.resolved callee)
@@ -2226,8 +2225,7 @@ module State (Context : Context) = struct
         {
           callee = { Node.value = Name (Name.Identifier "isinstance"); _ } as callee;
           arguments =
-            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }] as
-            arguments;
+            [{ Call.Argument.value = expression; _ }; { Call.Argument.value = annotations; _ }];
         } ->
         let { Resolved.resolved; _ } = forward_expression ~resolution callee in
         let callables =
@@ -2239,7 +2237,6 @@ module State (Context : Context) = struct
           ~global_resolution
           ~target:None
           ~callables
-          ~arguments
           ~dynamic:false
           ~qualifier:Context.qualifier
           ~callee_type:resolved

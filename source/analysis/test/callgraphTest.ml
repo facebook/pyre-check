@@ -22,7 +22,6 @@ let test_default_builder context =
       ~global_resolution
       ~target
       ~callables
-      ~arguments:[]
       ~dynamic:false
       ~qualifier:(Reference.create "test")
       ~callee_type:Type.Any

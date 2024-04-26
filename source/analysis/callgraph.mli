@@ -59,7 +59,6 @@ module type Builder = sig
     :  global_resolution:GlobalResolution.t ->
     target:Type.t option ->
     callables:Type.Callable.t list ->
-    arguments:Expression.Call.Argument.t list ->
     dynamic:bool ->
     qualifier:Reference.t ->
     callee_type:Type.t ->
