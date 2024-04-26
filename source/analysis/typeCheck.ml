@@ -7550,7 +7550,6 @@ let exit_state ~resolution (module Context : Context) =
 let compute_local_annotations ~global_environment name =
   let global_resolution = GlobalResolution.create global_environment in
   let exit_state_of_define define_node =
-    let resolution = resolution global_resolution (module DummyContext) in
     let module Context = struct
       (* Doesn't matter what the qualifier is since we won't be using it *)
       let qualifier = Reference.empty
@@ -7566,6 +7565,7 @@ let compute_local_annotations ~global_environment name =
       module Builder = Callgraph.NullBuilder
     end
     in
+    let resolution = resolution global_resolution (module Context) in
     exit_state ~resolution (module Context)
   in
   GlobalResolution.get_define_body_in_project global_resolution name
