@@ -200,7 +200,7 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             error_message = (
                 f"error occurred in client_setup request: {register_client_request}"
             )
-            LOG.warn(f"Failed to register daemon querier: {register_client_request}")
+            LOG.warning(f"Failed to register daemon querier: {register_client_request}")
         else:
             error_message = None
             LOG.info("Registered daemon querier.")
@@ -230,7 +230,9 @@ class PyreCodeNavigationDaemonLaunchAndSubscribeHandler(
             error_message = (
                 f"error occurred in client_teardown request: {dispose_client_request}"
             )
-            LOG.warn(f"Failed to dispose of daemon querier: {dispose_client_request}")
+            LOG.warning(
+                f"Failed to dispose of daemon querier: {dispose_client_request}"
+            )
         else:
             error_message = None
             LOG.info("Disposed daemon querier.")

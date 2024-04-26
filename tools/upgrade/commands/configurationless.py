@@ -280,7 +280,7 @@ class Configurationless(Command):
             loaded_sourcedb = json.load(file)
 
         if not isinstance(loaded_sourcedb, dict) or "build_map" not in loaded_sourcedb:
-            LOG.warn(f"Malformed sourcedb at {sourcedb_path}")
+            LOG.warning(f"Malformed sourcedb at {sourcedb_path}")
             return set()
 
         build_map = {buck_root / file for file in loaded_sourcedb["build_map"].values()}
@@ -306,7 +306,7 @@ class Configurationless(Command):
 
         sourcedb_path = self._get_sourcedb_from_buck_classic_query(classic_targets)
         if sourcedb_path is None:
-            LOG.warn("No sourcedb path produced")
+            LOG.warning("No sourcedb path produced")
             return set()
         LOG.debug(f"Sourcedb path found: {sourcedb_path}")
 

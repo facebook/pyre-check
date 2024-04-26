@@ -984,7 +984,7 @@ class RemoteIndexBackedQuerier(AbstractDaemonQuerier):
             isinstance(base_results, DaemonQueryFailure)
             and base_results.error_source is None
         ):
-            LOG.warn(
+            LOG.warning(
                 f"Pyre threw exception: {base_results.error_message} - falling back to glean"
             )
             fallback_result = await self.get_definition_locations_from_glean(
