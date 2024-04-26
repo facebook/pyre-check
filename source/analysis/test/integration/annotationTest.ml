@@ -329,6 +329,32 @@ let test_check_undefined_type =
              "Unbound name [10]: Name `Derp` is used but not defined in the current scope.";
              "Incompatible return type [7]: Expected `None` but got `int`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               { Test.handle = "a.py"; source = "class A: pass" };
+               { Test.handle = "b.py"; source = "from a import A as B" };
+             ]
+           {|
+             import b
+             def test() -> b.B: ...
+           |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           ~other_sources:
+             [
+               {
+                 Test.handle = "a.pyi";
+                 source = "from typing import Any\ndef __getattr__(name: str) -> Any: ...";
+               };
+             ]
+           {|
+             import a
+             def test() -> a.A: ...
+           |}
+           [];
     ]
 
 

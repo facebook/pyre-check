@@ -68,32 +68,45 @@ class Foo:
     def typevar_access_other(self: TFoo, other: TFoo) -> TFoo:
         return self
 
-    # pyre-ignore[11]: Self is valid type
+    # pyre-ignore[47]: Self is valid type
     def selftype_self_class_direct(self: Self) -> Self:
+        # pyre-ignore[16]: `Self` has no attribute `__class__`
         _test_sink(self.__class__.tainted_class)  # TODO(T162456612): False Negative attribute access through selftype
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_self_class(self: Self) -> Self:
+        # pyre-ignore[16]: `Self` has no attribute `tainted_class`
         _test_sink(self.tainted_class)  # TODO(T162456612): False Negative attribute access through selftype
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_self_instance(self: Self) -> Self:
+        # pyre-ignore[16]: `Self` has no attribute `tainted_instance`
         _test_sink(self.tainted_instance)  # TODO(T162456612): False Negative attribute access through selftype
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_self_extra_instance(self: Self) -> Self:
+        # pyre-ignore[16]: `Self` has no attribute `tainted_extra_instance`
         _test_sink(self.tainted_extra_instance)  # TODO(T162456612): False Negative attribute access through selftype
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_self_not_tainted(self: Self) -> Self:
+        # pyre-ignore[16]: `Self` has no attribute `tainted_class`
         _test_sink(self.not_tainted_class)
+        # pyre-ignore[16]: `Self` has no attribute `tainted_instance`
         _test_sink(self.not_tainted_instance)
+        # pyre-ignore[16]: `Self` has no attribute `tainted_extra_instance`
         _test_sink(self.not_tainted_extra_instance)
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_access_self(self: Self, other: Self) -> Self:
         return self
 
+    # pyre-ignore[47]: Self is valid type
     def selftype_access_other(self: Self, other: Self) -> Self:
         return self
 

@@ -44,7 +44,7 @@ class Base:
     def issue_mutates_and_returns(self) -> None:
         self.mutates_foo_and_returns().foo_sink()  # Issue.
 
-    # pyre-ignore[11]: Self is valid type
+    # pyre-ignore[47]: Self is a valid type
     def mutates_foo_self_annotation(self: Self) -> None:
         self.foo = _test_source()
 
