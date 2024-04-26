@@ -1374,34 +1374,31 @@ module State (Context : Context) = struct
     in
     let callables_with_selected_return_annotations, resolution, errors =
       let callable_data_list = get_callables callee |> Option.value ~default:[] in
-      match callable_data_list with
-      | callable_data_list ->
-          let callable_data_list =
-            List.filter_map callable_data_list ~f:(function
-                | UnknownCallableAttribute { callable_attribute; _ } ->
-                    inverse_operator_callable ~callee_attribute:callable_attribute arguments
-                | KnownCallable callable_data ->
-                    Some (KnownCallable { callable_data with arguments }))
-          in
-          let select_annotation_for_known_callable = function
-            | KnownCallable
-                ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
-                callable_data) ->
-                let selected_return_annotation =
-                  GlobalResolution.signature_select
-                    global_resolution
-                    ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                    ~arguments
-                    ~callable
-                    ~self_argument
-                in
-                KnownCallable
-                  (return_annotation_with_callable_and_self
-                     ~resolution
-                     { callable_data with selected_return_annotation })
-            | UnknownCallableAttribute other -> UnknownCallableAttribute other
-          in
-          List.map callable_data_list ~f:select_annotation_for_known_callable, resolution, errors
+      let callable_data_list =
+        List.filter_map callable_data_list ~f:(function
+            | UnknownCallableAttribute { callable_attribute; _ } ->
+                inverse_operator_callable ~callee_attribute:callable_attribute arguments
+            | KnownCallable callable_data -> Some (KnownCallable { callable_data with arguments }))
+      in
+      let select_annotation_for_known_callable = function
+        | KnownCallable
+            ({ callable = { TypeOperation.callable; self_argument }; arguments; _ } as
+            callable_data) ->
+            let selected_return_annotation =
+              GlobalResolution.signature_select
+                global_resolution
+                ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                ~arguments
+                ~callable
+                ~self_argument
+            in
+            KnownCallable
+              (return_annotation_with_callable_and_self
+                 ~resolution
+                 { callable_data with selected_return_annotation })
+        | UnknownCallableAttribute other -> UnknownCallableAttribute other
+      in
+      List.map callable_data_list ~f:select_annotation_for_known_callable, resolution, errors
     in
     Context.Builder.add_callee
       ~global_resolution
