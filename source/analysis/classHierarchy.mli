@@ -82,9 +82,6 @@ end
 
 val parents_of : (module Handler) -> Ast.Identifier.t -> Target.t list option
 
-(* Returns true if the class hierarchy contains the given class. *)
-val contains : (module Handler) -> Type.Primitive.t -> bool
-
 (* Returns true if the annotation can be deconstructed into primitive types that exist in the class
    hierarchy. If typing.List and int are in the class hierarchy, both `contains hierarchy
    typing.List` and `is_instantiated class hierarchy typing.List[int]` will evaluate to true, but

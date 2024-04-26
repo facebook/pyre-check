@@ -230,21 +230,16 @@ end
 module OutgoingDataComputation = struct
   module Queries = struct
     type t = {
-      controls: EnvironmentControls.t;
       class_exists: string -> bool;
       get_edges: Ast.Identifier.t -> ClassHierarchy.Edges.t option;
     }
   end
 
-  let class_hierarchy Queries.{ controls; class_exists; get_edges; _ } =
+  let class_hierarchy Queries.{ class_exists; get_edges; _ } =
     (module struct
       let edges = get_edges
 
-      let contains key =
-        if EnvironmentControls.no_validation_on_class_lookup_failure controls then
-          true
-        else
-          class_exists key
+      let contains key = class_exists key
     end : ClassHierarchy.Handler)
 
 
@@ -338,10 +333,8 @@ module ReadOnly = struct
     let unannotated_global_environment =
       alias_environment read_only |> TypeAliasEnvironment.ReadOnly.unannotated_global_environment
     in
-    let controls = UnannotatedGlobalEnvironment.ReadOnly.controls unannotated_global_environment in
     OutgoingDataComputation.Queries.
       {
-        controls;
         class_exists =
           UnannotatedGlobalEnvironment.ReadOnly.class_exists
             unannotated_global_environment

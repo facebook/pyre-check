@@ -151,21 +151,19 @@ let extends_placeholder_stub_of_target (module Handler : Handler) target =
   | Some { has_placeholder_stub_parent; _ } -> has_placeholder_stub_parent
 
 
-let contains (module Handler : Handler) = Handler.contains
-
 let is_instantiated (module Handler : Handler) annotation =
   let is_invalid = function
     | Type.Variable { constraints = Type.Variable.Unconstrained; _ } -> true
     | Type.Primitive name
     | Type.Parametric { name; _ } ->
-        not (contains (module Handler) name)
+        not (Handler.contains name)
     | _ -> false
   in
   not (Type.exists ~predicate:is_invalid annotation)
 
 
-let raise_if_untracked order annotation =
-  if not (contains order annotation) then
+let raise_if_untracked (module Handler : Handler) annotation =
+  if not (Handler.contains annotation) then
     raise (Untracked annotation)
 
 
@@ -305,7 +303,7 @@ let instantiate_successors_parameters ((module Handler : Handler) as handler) ~s
   | _ ->
       let split =
         match Type.split source with
-        | Primitive primitive, _ when not (contains handler primitive) -> None
+        | Primitive primitive, _ when not (Handler.contains primitive) -> None
         | Primitive "tuple", [Type.Parameter.Single parameter] ->
             Some ("tuple", [Type.Parameter.Single (Type.weaken_literals parameter)])
         | Primitive primitive, parameters -> Some (primitive, parameters)

@@ -466,10 +466,13 @@ module State (Context : Context) = struct
 
 
   let get_untracked_annotation_errors ~resolution ~location annotation =
+    let is_untracked_name class_name =
+      if Context.no_validation_on_class_lookup_failure then
+        false
+      else
+        not (GlobalResolution.class_exists resolution class_name)
+    in
     let add_untracked_errors errors =
-      let is_untracked_name class_name =
-        not (GlobalResolution.class_hierarchy_contains_class resolution class_name)
-      in
       Type.elements annotation
       |> List.dedup_and_sort ~compare:String.compare
       |> List.filter ~f:is_untracked_name
@@ -492,7 +495,7 @@ module State (Context : Context) = struct
         | Type.Literal
             (Type.EnumerationMember
               { enumeration_type = Type.Primitive enumeration_name; member_name })
-          when not (GlobalResolution.class_hierarchy_contains_class resolution enumeration_name) ->
+          when is_untracked_name enumeration_name ->
             emit_error
               ~errors
               ~location

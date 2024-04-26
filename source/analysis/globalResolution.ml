@@ -334,11 +334,6 @@ let location_of_global ({ dependency; _ } as resolution) =
     ?dependency
 
 
-(* Note: the only difference between this and class_exists is that when running a no-deamon-query,
-   this function will always return `true` which causes Pyre to keep more type information when it
-   cannot find the relevant source code. *)
-let class_hierarchy_contains_class resolution = ClassHierarchy.contains (class_hierarchy resolution)
-
 let immediate_parents resolution = ClassHierarchy.immediate_parents (class_hierarchy resolution)
 
 let base_is_from_placeholder_stub resolution =
