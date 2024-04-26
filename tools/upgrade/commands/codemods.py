@@ -85,7 +85,7 @@ class MissingOverrideReturnAnnotations(Command):
                     else:
                         line = line + 1
 
-            LOG.warn("Writing patched %s", str(path))
+            LOG.warning("Writing patched %s", str(path))
             path.write_text("\n".join(lines))
 
 

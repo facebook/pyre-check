@@ -284,7 +284,7 @@ def get_attributes(
                     for attribute in response["response"]["attributes"]
                 ]
             else:
-                LOG.warn(
+                LOG.warning(
                     f"Error resolving query for `{class_name=}` in get_attributes `{response=}`"
                 )
                 all_responses[class_name] = []
