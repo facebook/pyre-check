@@ -110,13 +110,6 @@ module Analysis : sig
   }
   [@@deriving show]
 
-  type constraint_solving_style =
-    | FunctionCallLevel
-    | ExpressionLevel
-  [@@deriving show]
-
-  val default_constraint_solving_style : constraint_solving_style
-
   val default_enable_readonly_analysis : bool
 
   val default_enable_unawaited_awaitable_analysis : bool
@@ -148,7 +141,6 @@ module Analysis : sig
     python_version: PythonVersion.t;
     shared_memory: shared_memory;
     enable_type_comments: bool;
-    constraint_solving_style: constraint_solving_style;
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
@@ -179,7 +171,6 @@ module Analysis : sig
     ?shared_memory_dependency_table_power_from_configuration:int ->
     ?shared_memory_hash_table_power:int ->
     ?enable_type_comments:bool ->
-    ?constraint_solving_style:constraint_solving_style ->
     ?enable_readonly_analysis:bool ->
     ?enable_unawaited_awaitable_analysis:bool ->
     ?include_suppressed_errors:bool ->

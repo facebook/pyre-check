@@ -359,13 +359,6 @@ module Analysis = struct
   }
   [@@deriving show]
 
-  type constraint_solving_style =
-    | FunctionCallLevel
-    | ExpressionLevel
-  [@@deriving show]
-
-  let default_constraint_solving_style = FunctionCallLevel
-
   let default_enable_readonly_analysis = false
 
   let default_enable_unawaited_awaitable_analysis = false
@@ -397,7 +390,6 @@ module Analysis = struct
     python_version: PythonVersion.t;
     shared_memory: shared_memory;
     enable_type_comments: bool;
-    constraint_solving_style: constraint_solving_style;
     enable_readonly_analysis: bool;
     enable_unawaited_awaitable_analysis: bool;
     include_suppressed_errors: bool;
@@ -429,7 +421,6 @@ module Analysis = struct
         default_shared_memory_dependency_table_power)
       ?(shared_memory_hash_table_power = default_shared_memory_hash_table_power)
       ?(enable_type_comments = true)
-      ?(constraint_solving_style = default_constraint_solving_style)
       ?(enable_readonly_analysis = default_enable_readonly_analysis)
       ?(enable_unawaited_awaitable_analysis = default_enable_unawaited_awaitable_analysis)
       ?(include_suppressed_errors = default_include_suppressed_errors)
@@ -484,7 +475,6 @@ module Analysis = struct
           hash_table_power = shared_memory_hash_table_power;
         };
       enable_type_comments;
-      constraint_solving_style;
       enable_readonly_analysis;
       enable_unawaited_awaitable_analysis;
       include_suppressed_errors;

@@ -63,7 +63,6 @@ let assert_allow_updates controls =
 
 module TypeCheckControls = struct
   type t = {
-    constraint_solving_style: Configuration.Analysis.constraint_solving_style;
     include_type_errors: bool;
     include_local_annotations: bool;
     include_readonly_errors: bool;
@@ -80,7 +79,6 @@ let type_check_controls
           Configuration.Analysis.debug;
           store_type_errors;
           store_type_check_resolution;
-          constraint_solving_style;
           enable_readonly_analysis;
           enable_unawaited_awaitable_analysis;
           include_suppressed_errors;
@@ -92,7 +90,6 @@ let type_check_controls
   TypeCheckControls.
     {
       debug;
-      constraint_solving_style;
       include_type_errors = store_type_errors;
       include_local_annotations = store_type_check_resolution;
       include_readonly_errors = enable_readonly_analysis;

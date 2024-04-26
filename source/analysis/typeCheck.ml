@@ -61,8 +61,6 @@ module type Context = sig
 
   val debug : bool
 
-  val constraint_solving_style : Configuration.Analysis.constraint_solving_style
-
   val define : Define.t Node.t
 
   (* Where to store local annotations during the fixpoint. `None` discards them. *)
@@ -1787,84 +1785,10 @@ module State (Context : Context) = struct
 
             { input with resolved = Type.Any; errors = new_errors }
       in
-      let select_return_annotation_bidirectional_inference
-          ({
-             callable =
-               {
-                 TypeOperation.callable =
-                   { Type.Callable.implementation = { parameters; _ }; overloads; _ } as callable;
-                 self_argument;
-               };
-             _;
-           } as callable_data)
-        =
-        let callable_data_with_return_annotation, resolution, errors =
-          match parameters, overloads with
-          | Type.Callable.Defined record_parameters, [] ->
-              let resolution, errors, reversed_arguments =
-                let forward_argument (resolution, errors, reversed_arguments) argument =
-                  let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                  forward_expression ~resolution expression
-                  |> fun { resolution; errors = new_errors; resolved; _ } ->
-                  ( resolution,
-                    List.append new_errors errors,
-                    { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-                    :: reversed_arguments )
-                in
-                List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
-              in
-              let arguments = List.rev reversed_arguments in
-              let open AttributeResolution.SignatureSelection in
-              prepare_arguments_for_signature_selection ~self_argument arguments
-              |> get_parameter_argument_mapping
-                   ~all_parameters:parameters
-                   ~parameters:record_parameters
-                   ~self_argument
-              |> check_arguments_against_parameters
-                   ~order:(GlobalResolution.full_order global_resolution)
-                   ~resolve_mutable_literals:
-                     (GlobalResolution.resolve_mutable_literals global_resolution)
-                   ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                   ~callable
-              |> instantiate_return_annotation
-                   ~order:(GlobalResolution.full_order global_resolution)
-              |> fun selected_return_annotation ->
-              { callable_data with arguments; selected_return_annotation }, resolution, errors
-          | _ ->
-              let resolution, errors, reversed_arguments =
-                let forward_argument (resolution, errors, reversed_arguments) argument =
-                  let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-                  forward_expression ~resolution expression
-                  |> fun { resolution; errors = new_errors; resolved; _ } ->
-                  ( resolution,
-                    List.append new_errors errors,
-                    { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-                    :: reversed_arguments )
-                in
-                List.fold arguments ~f:forward_argument ~init:(resolution, errors, [])
-              in
-              let arguments = List.rev reversed_arguments in
-              let selected_return_annotation =
-                GlobalResolution.signature_select
-                  global_resolution
-                  ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
-                  ~arguments
-                  ~callable
-                  ~self_argument
-              in
-              { callable_data with arguments; selected_return_annotation }, resolution, errors
-        in
-        let callable_data_with_selected_return_annotation =
-          return_annotation_with_callable_and_self ~resolution callable_data_with_return_annotation
-        in
-        [KnownCallable callable_data_with_selected_return_annotation], resolution, errors
-      in
       let callables_with_selected_return_annotations, resolution, errors =
         let callable_data_list = get_callables callee |> Option.value ~default:[] in
-        match callable_data_list, Context.constraint_solving_style with
-        | [KnownCallable callable_data], Configuration.Analysis.ExpressionLevel ->
-            select_return_annotation_bidirectional_inference callable_data
-        | callable_data_list, _ ->
+        match callable_data_list with
+        | callable_data_list ->
             let resolution, errors, reversed_arguments =
               let forward_argument (resolution, errors, reversed_arguments) argument =
                 let expression, kind = Ast.Expression.Call.Argument.unpack argument in
@@ -6831,8 +6755,6 @@ module DummyContext = struct
 
   let debug = false
 
-  let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
-
   let define =
     Define.create_toplevel ~unbound_names:[] ~qualifier:None ~statements:[]
     |> Node.create_with_default_location
@@ -7635,8 +7557,6 @@ let compute_local_annotations ~global_environment name =
 
       let debug = false
 
-      let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
-
       let define = define_node
 
       let resolution_fixpoint = Some (LocalAnnotationMap.empty ())
@@ -7683,8 +7603,7 @@ let errors_from_other_analyses
 let check_define
     ~type_check_controls:
       {
-        EnvironmentControls.TypeCheckControls.constraint_solving_style;
-        include_type_errors;
+        EnvironmentControls.TypeCheckControls.include_type_errors;
         include_local_annotations;
         debug;
         include_unawaited_awaitable_errors;
@@ -7701,8 +7620,6 @@ let check_define
         let qualifier = qualifier
 
         let debug = debug
-
-        let constraint_solving_style = constraint_solving_style
 
         let define = define_node
 

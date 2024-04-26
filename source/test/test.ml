@@ -3089,7 +3089,6 @@ module ScratchProject = struct
 
   let setup
       ?(track_dependencies = true)
-      ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
       ~context
       ?(external_sources = [])
       ?(show_error_traces = false)
@@ -3139,7 +3138,6 @@ module ScratchProject = struct
           ~filter_directories:[local_root]
           ~ignore_all_errors:[external_root]
           ~track_dependencies
-          ~constraint_solving_style
           ~show_error_traces
           ~parallel:false
           ~use_errpy_parser
@@ -3382,7 +3380,6 @@ let assert_errors
     ?(handle = "test.py")
     ?(other_sources = [])
     ?(include_line_numbers = false)
-    ?(constraint_solving_style = Configuration.Analysis.default_constraint_solving_style)
     ?python_version
     ?enable_readonly_analysis
     ?enable_unawaited_awaitable_analysis
@@ -3410,7 +3407,6 @@ let assert_errors
           in
           ScratchProject.setup
             ~context
-            ~constraint_solving_style
             ~external_sources
             ~in_memory
             ~strict

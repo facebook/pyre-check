@@ -9,33 +9,6 @@ open Test
 open OUnit2
 open IntegrationTest
 
-let assert_type_errors
-    ?include_line_numbers
-    ?other_sources
-    ?show_error_traces
-    source
-    expected_errors
-    context
-  =
-  assert_type_errors
-    ~constraint_solving_style:Configuration.Analysis.ExpressionLevel
-    ?include_line_numbers
-    ?other_sources
-    ?show_error_traces
-    source
-    expected_errors
-    context;
-  assert_type_errors
-    ~constraint_solving_style:Configuration.Analysis.FunctionCallLevel
-    ?include_line_numbers
-    ?other_sources
-    ?show_error_traces
-    source
-    expected_errors
-    context;
-  ()
-
-
 let test_check_method_returns =
   test_list
     [

@@ -16,8 +16,6 @@ open Test
 module DefaultContext = struct
   let qualifier = Reference.empty
 
-  let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
-
   let debug = false
 
   let define = +Test.mock_define
@@ -127,8 +125,6 @@ let test_initial context =
     in
     let module Context = struct
       let debug = false
-
-      let constraint_solving_style = Configuration.Analysis.default_constraint_solving_style
 
       let qualifier = Reference.empty
 
