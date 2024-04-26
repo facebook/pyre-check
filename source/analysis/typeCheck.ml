@@ -1073,25 +1073,17 @@ module State (Context : Context) = struct
     resolution, cast_annotation, resolved, errors
 
 
+  (* The `forward_call` function accepts a callee and takes arguments as type information, and
+     handles type checking and inferring the resulting type of the actual call. The incoming
+     resolution and errors should include whatever was produced when type checking arguments and
+     inferring argument types.
+
+     Separating `forward_call` from `forward_call_with_arguments`, which takes arguments as
+     expressions, allows us to type check special function calls (like implicit `__setitem__`) that
+     don't correspond in a straightforward way to an actual AST expression. *)
   and forward_call ~resolution ~location ~errors ~target ~dynamic ~callee ~arguments =
     let global_resolution = Resolution.global_resolution resolution in
     let open CallableApplicationData in
-    let forward_arguments argument_expressions =
-      let resolution, errors, reversed_arguments =
-        let forward_argument (resolution, errors, reversed_arguments) argument =
-          let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-          forward_expression ~resolution expression
-          |> fun { resolution; errors = new_errors; resolved; _ } ->
-          ( resolution,
-            List.append new_errors errors,
-            { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-            :: reversed_arguments )
-        in
-        List.fold argument_expressions ~f:forward_argument ~init:(resolution, errors, [])
-      in
-      let arguments = List.rev reversed_arguments in
-      resolution, errors, arguments
-    in
     let unpack_callable_and_self_argument =
       unpack_callable_and_self_argument
         ~signature_select:
@@ -1384,7 +1376,6 @@ module State (Context : Context) = struct
       let callable_data_list = get_callables callee |> Option.value ~default:[] in
       match callable_data_list with
       | callable_data_list ->
-          let resolution, errors, arguments = forward_arguments arguments in
           let callable_data_list =
             List.filter_map callable_data_list ~f:(function
                 | UnknownCallableAttribute { callable_attribute; _ } ->
@@ -1435,6 +1426,33 @@ module State (Context : Context) = struct
     |> function
     | Some resolved -> resolved
     | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes
+
+
+  (* The `forward_call_with_arguments` function accepts arguments as *expressions* and will traverse
+     them with forward_expression. The call itself is handled by `resolve_call`. *)
+  and forward_call_with_arguments
+      ~resolution
+      ~location
+      ~errors
+      ~target
+      ~dynamic
+      ~callee
+      ~arguments:(_ as argument_expressions)
+    =
+    let resolution, errors, reversed_arguments =
+      let forward_argument (resolution, errors, reversed_arguments) argument =
+        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+        forward_expression ~resolution expression
+        |> fun { resolution; errors = new_errors; resolved; _ } ->
+        ( resolution,
+          List.append new_errors errors,
+          { AttributeResolution.Argument.kind; expression = Some expression; resolved }
+          :: reversed_arguments )
+      in
+      List.fold argument_expressions ~f:forward_argument ~init:(resolution, errors, [])
+    in
+    let arguments = List.rev reversed_arguments in
+    forward_call ~resolution ~location ~errors ~target ~dynamic ~callee ~arguments
 
 
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
@@ -1977,7 +1995,7 @@ module State (Context : Context) = struct
             }
         | None ->
             let { Resolved.resolved; _ } = forward_expression ~resolution callee in
-            forward_call
+            forward_call_with_arguments
               ~resolution
               ~location
               ~errors:[]
@@ -2347,7 +2365,7 @@ module State (Context : Context) = struct
           in
           resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
-        forward_call
+        forward_call_with_arguments
           ~resolution
           ~location
           ~errors
@@ -2387,7 +2405,7 @@ module State (Context : Context) = struct
           in
           resolution, resolved, List.append assume_errors callee_errors, resolved_base
         in
-        forward_call
+        forward_call_with_arguments
           ~resolution
           ~location
           ~errors
@@ -2494,7 +2512,7 @@ module State (Context : Context) = struct
             ->
               let forward_inner_callable (resolution, errors, annotations) inner_resolved_callee =
                 let target, dynamic = target_and_dynamic inner_resolved_callee in
-                forward_call
+                forward_call_with_arguments
                   ~resolution
                   ~location
                   ~errors:[]
@@ -2558,7 +2576,7 @@ module State (Context : Context) = struct
                     in
                     { input with resolved = Type.Any; errors = new_errors }
               in
-              forward_call
+              forward_call_with_arguments
                 ~resolution:callee_resolution
                 ~location
                 ~errors:callee_errors
@@ -2632,7 +2650,7 @@ module State (Context : Context) = struct
                         };
                     }
                 in
-                forward_call
+                forward_call_with_arguments
                   ~resolution
                   ~location
                   ~errors
@@ -2677,7 +2695,7 @@ module State (Context : Context) = struct
                       |> Type.primitive_name
                       >>= (fun class_name -> resolve_method class_name parent method_name)
                       >>| fun callable ->
-                      forward_call
+                      forward_call_with_arguments
                         ~dynamic:true
                         ~resolution
                         ~location
@@ -2687,7 +2705,7 @@ module State (Context : Context) = struct
                         ~arguments:
                           (List.map arguments ~f:(fun value -> { Call.Argument.name = None; value }))
                     in
-                    forward_call
+                    forward_call_with_arguments
                       ~dynamic:true
                       ~resolution
                       ~location
@@ -4056,8 +4074,9 @@ module State (Context : Context) = struct
    * - type aliases, which are always simple names on the LHS and have custom logic
    * - single targets, which have several subcases:
    *   - simple-name targets like `e` which become global or local scope operations
-   *   - subscripted targets like `a[5]`, which become `__setitem__` calls.
-   *     - TODO(T146934909) - this actually isn't handled yet, see note below.
+   *   - subscripted targets like `a[5]`, which currently the parser lowers into
+   *     `__getitem__` calls on the LHS and we need to translate into `__setitem__`
+   *     calls.
    *   - attribute targets like `b.c`, which follow attribute-setting logic (which
    *     is nontrivial because of properties, descriptors, and `__setattr__`), plus
    *     in some cases we may also attempt to refine the attribute.
@@ -5139,6 +5158,7 @@ module State (Context : Context) = struct
                    ~f:(fun (resolution, errors) (target, guide) ->
                      forward_assign ~resolution ~errors ~target ~guide ~resolved_value:guide None)
           | _ ->
+              Log.dump "Hit the impossible case, target is %a" Expression.pp target;
               (* This branch should only be hit when a LHS is subscripted; currently Pyre won't
                  check that case if it's part of a multi-assignment, because we only handle the
                  cases the parser could eagerly convert to `__setitem__` calls.
