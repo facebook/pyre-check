@@ -235,6 +235,26 @@ let test_check_dataclasses =
            a.x = 43
          |}
            ["Invalid assignment [41]: Cannot reassign final attribute `a.x`."];
+      (* TODO(T178998636) Do not allow InitVar attributes to be accessed *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass, InitVar
+           @dataclass
+           class A:
+             x: int
+             y: InitVar[int]
+
+           a = A(x=42, y=42)
+           reveal_type(a.x)
+           reveal_type(a.y)
+         |}
+           [
+             "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type \
+              `InitVar[int]` but is never initialized.";
+             "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+             "Revealed type [-1]: Revealed type for `a.y` is `InitVar[int]`.";
+           ];
       (* TODO(T178998636) Do not allow `frozen` dataclasses to inherit from non-frozen. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
