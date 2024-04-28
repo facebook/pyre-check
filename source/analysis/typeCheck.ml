@@ -5155,7 +5155,6 @@ module State (Context : Context) = struct
                    ~f:(fun (resolution, errors) (target, guide) ->
                      forward_assign ~resolution ~errors ~target ~guide ~resolved_value:guide None)
           | _ ->
-              Log.dump "Hit the impossible case, target is %a" Expression.pp target;
               (* This branch should only be hit when a LHS is subscripted; currently Pyre won't
                  check that case if it's part of a multi-assignment, because we only handle the
                  cases the parser could eagerly convert to `__setitem__` calls.
