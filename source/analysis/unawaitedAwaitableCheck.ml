@@ -751,6 +751,18 @@ module State (Context : Context) = struct
                  | None -> None)
         in
         { state with awaitable_to_awaited_state }
+    | Expression.Call
+        {
+          callee =
+            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
+          arguments = [key_argument];
+        } ->
+        (* Detect awaits inside the base or key of subscript assignment targets (both of which are
+           legal). Assume that no unawaited awaitables are created. *)
+        let key_expression, _ = Call.Argument.unpack key_argument in
+        let { state; _ } = forward_expression ~resolution ~state ~expression:base in
+        let { state; _ } = forward_expression ~resolution ~state ~expression:key_expression in
+        state
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (
@@ -782,7 +794,10 @@ module State (Context : Context) = struct
                 if not (List.is_empty starred) then
                   let annotation =
                     List.fold starred ~init:Type.Bottom ~f:(fun joined (annotation, _) ->
-                        GlobalResolution.join resolution joined annotation)
+                        GlobalResolution.join
+                          (Resolution.global_resolution resolution)
+                          joined
+                          annotation)
                     |> Type.list
                   in
                   [
@@ -844,7 +859,7 @@ module State (Context : Context) = struct
         let annotation = Resolution.resolve_expression_to_type resolution value in
         forward_assign
           ~state
-          ~resolution:(Resolution.global_resolution resolution)
+          ~resolution
           ~annotation
           ~expression:value
           ~awaitable_expressions_in_value:nested_awaitable_expressions
