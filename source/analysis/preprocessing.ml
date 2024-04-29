@@ -590,18 +590,30 @@ module Qualify (Context : QualifyContext) = struct
                     in
                     scope, name
                 | Call
-                    ({
-                       callee =
-                         {
-                           Node.value =
-                             Name (Name.Attribute { Name.Attribute.attribute = "__getitem__"; _ });
-                           _;
-                         } as callee;
-                       _;
-                     } as call) ->
-                    let scope, callee = qualify_assignment_target ~scope callee in
-                    scope, Call { call with callee }
-                | target -> scope, target
+                    {
+                      callee =
+                        {
+                          Node.value =
+                            Name (Name.Attribute { Name.Attribute.attribute = "__getitem__"; _ });
+                          _;
+                        } as callee;
+                      arguments = [key_argument];
+                    } ->
+                    let callee = qualify_expression ~qualify_strings:DoNotQualify ~scope callee in
+                    let qualified_key_expression =
+                      let key_expression, _ = Call.Argument.unpack key_argument in
+                      qualify_expression ~qualify_strings:DoNotQualify ~scope key_expression
+                    in
+                    ( scope,
+                      Call
+                        {
+                          callee;
+                          arguments = [{ key_argument with value = qualified_key_expression }];
+                        } )
+                | target ->
+                    (* This case is allowed in the type signatures, but should be prevented by the
+                       parser, because the python grammar has no additional valid target forms *)
+                    scope, target
               in
               scope, { target with Node.value }
             in

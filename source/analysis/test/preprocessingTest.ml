@@ -1769,7 +1769,6 @@ let test_qualify_source _ =
           nonlocal x
           $parameter$x = "x"
     |};
-  (* TODO(T101303314) Qualification isn't handling subscript keys in assignment targets. *)
   assert_qualify
     {|
       def f():
@@ -1781,7 +1780,7 @@ let test_qualify_source _ =
       def qualifier.f():
         $local_qualifier?f$d = {}
         $local_qualifier?f$k = "k"
-        $local_qualifier?f$d[k], $local_qualifier?f$y = "v", 42
+        $local_qualifier?f$d[$local_qualifier?f$k], $local_qualifier?f$y = "v", 42
     |};
   (* TODO(T165661440) Fix nested qualification *)
   assert_qualify

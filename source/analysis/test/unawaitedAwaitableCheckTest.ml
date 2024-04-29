@@ -1285,8 +1285,6 @@ let test_assign =
            [
              "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_simple` is never \
               awaited.";
-             "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_multi_target` is never \
-              awaited.";
              "Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited.";
            ];
     ]
