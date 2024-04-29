@@ -434,21 +434,12 @@ let get_artifact_path_event ~build_system { SourcePath.Event.kind; path } =
   |> List.map ~f:(ArtifactPath.Event.create ~kind)
 
 
-let handle_non_critical_file_update ~subscriptions ~environment artifact_path_events =
+let handle_non_critical_file_update ~scheduler ~subscriptions ~environment artifact_path_events =
   match artifact_path_events with
   | [] -> Lwt.return_unit
   | _ ->
       let run_file_update () =
-        let configuration =
-          OverlaidEnvironment.root environment
-          |> ErrorsEnvironment.ReadOnly.controls
-          |> EnvironmentControls.configuration
-        in
-        Scheduler.with_scheduler
-          ~configuration
-          ~should_log_exception:(fun _ -> true)
-          ~f:(fun scheduler ->
-            OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events)
+        OverlaidEnvironment.run_update_root environment ~scheduler artifact_path_events
         |> Lwt.return
       in
       with_broadcast_busy_checking ~subscriptions ~client_id:None run_file_update
@@ -486,7 +477,7 @@ let handle_file_update
     ~events
     ~subscriptions
     ~properties:{ Server.ServerProperties.critical_files; _ }
-    { State.environment; build_system; client_states; build_failure }
+    { State.environment; scheduler; build_system; client_states; build_failure }
   =
   match CriticalFile.find critical_files ~within:(List.map events ~f:get_raw_path) with
   | Some path -> Lwt.return_error (Server.Stop.Reason.CriticalFileUpdate path)
@@ -520,7 +511,11 @@ let handle_file_update
             in
             let artifact_path_events = List.append sources changed_artifacts_from_source in
             let%lwt () =
-              handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
+              handle_non_critical_file_update
+                ~scheduler
+                ~subscriptions
+                ~environment
+                artifact_path_events
             in
             Lwt.return_ok Response.Ok
         | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
@@ -546,7 +541,7 @@ let handle_file_update
 
 let handle_working_set_update
     ~subscriptions
-    { State.environment; build_system; client_states; build_failure }
+    { State.environment; scheduler; build_system; client_states; build_failure }
   =
   let paths = State.Client.WorkingSet.to_list client_states in
   match%lwt
@@ -554,7 +549,7 @@ let handle_working_set_update
         handle_build_system_working_set_update ~build_system paths)
   with
   | Result.Ok artifact_path_events ->
-      handle_non_critical_file_update ~subscriptions ~environment artifact_path_events
+      handle_non_critical_file_update ~scheduler ~subscriptions ~environment artifact_path_events
   | Result.Error (Buck.Raw.BuckError { description; additional_logs; _ }) ->
       (* On working set errors, ignore the build error. On the next successful working set update,
          we will be consistent since we get the status for every open file. *)

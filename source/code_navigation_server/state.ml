@@ -107,6 +107,7 @@ end
 
 type t = {
   environment: Analysis.OverlaidEnvironment.t;
+  scheduler: Scheduler.t;
   build_system: BuildSystem.t;
   client_states: Client.t;
   build_failure: Server.ServerState.BuildFailure.t;

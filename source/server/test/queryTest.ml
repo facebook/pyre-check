@@ -2701,14 +2701,24 @@ let test_global_leaks context =
 
 
 let test_process_request context =
-  let assert_process_request ~request ?(build_system = BuildSystem.create_for_testing ()) expected =
+  let assert_process_request
+      ~request
+      ?(scheduler = Scheduler.create_sequential ())
+      ?(build_system = BuildSystem.create_for_testing ())
+      expected
+    =
     let type_environment, global_module_paths_api =
       let scratch_project = Test.ScratchProject.setup ~context ["test.py", ""] in
       ( Test.ScratchProject.type_environment scratch_project,
         Test.ScratchProject.global_module_paths_api scratch_project )
     in
     let result =
-      Query.process_request ~type_environment ~global_module_paths_api ~build_system request
+      Query.process_request
+        ~type_environment
+        ~global_module_paths_api
+        ~scheduler
+        ~build_system
+        request
     in
     assert_equal
       ~ctxt:context

@@ -205,6 +205,7 @@ let handle_connection
 
 let initialize_server_state
     ?watchman_subscriber
+    ~scheduler
     ~build_system_initializer
     ~saved_state_action
     ~skip_initial_type_check
@@ -218,26 +219,17 @@ let initialize_server_state
   let _ = Memory.get_heap_handle configuration in
   let start_from_scratch ~build_system () =
     Log.info "Initializing server state from scratch...";
-    let overlaid_environment =
-      Scheduler.with_scheduler
-        ~configuration
-        ~should_log_exception:(fun _ -> true)
-        ~f:(fun scheduler ->
-          let environment =
-            Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls
-          in
-          let () =
-            if skip_initial_type_check then
-              ()
-            else
-              Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api
-                environment
-              |> Analysis.GlobalModulePathsApi.type_check_qualifiers
-              |> Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
-          in
-          Analysis.OverlaidEnvironment.create environment)
+    let environment = Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls in
+    let () =
+      if skip_initial_type_check then
+        ()
+      else
+        Analysis.ErrorsEnvironment.AssumeGlobalModuleListing.global_module_paths_api environment
+        |> Analysis.GlobalModulePathsApi.type_check_qualifiers
+        |> Analysis.ErrorsEnvironment.check_and_preprocess environment ~scheduler
     in
-    ServerState.create ~build_system ~overlaid_environment ()
+    let overlaid_environment = Analysis.OverlaidEnvironment.create environment in
+    ServerState.create ~scheduler ~build_system ~overlaid_environment ()
   in
   let build_and_start_from_scratch ~build_system_initializer () =
     let open Lwt.Infix in
@@ -402,7 +394,7 @@ let initialize_server_state
                 let open Lwt.Infix in
                 BuildSystem.Initializer.load build_system_initializer
                 >>= fun build_system ->
-                let loaded_state = ServerState.load ~configuration ~build_system () in
+                let loaded_state = ServerState.load ~configuration ~scheduler ~build_system () in
                 Log.info "Processing recent updates not included in saved state...";
                 Statistics.event ~name:"saved state success" ();
                 Request.IncrementalUpdate (List.map changed_files ~f:PyrePath.absolute)
@@ -522,6 +514,7 @@ let with_server
      filesystem updates during server establishment. *)
   get_optional_watchman_subscriber ~critical_files ~extensions ~source_paths watchman
   >>= fun watchman_subscriber ->
+  let scheduler = Scheduler.create ~configuration () in
   let server_properties = ServerProperties.create ~socket_path ~critical_files ~configuration () in
   let server_state =
     (* Use a lazy lock so we do not initialize the expensive server until we know server can be
@@ -529,6 +522,7 @@ let with_server
     ExclusiveLock.Lazy.create (fun () ->
         initialize_server_state
           ?watchman_subscriber
+          ~scheduler
           ~build_system_initializer
           ~saved_state_action
           ~skip_initial_type_check
@@ -565,6 +559,7 @@ let with_server
   in
   let after_server_stops () =
     Log.info "Server is going down. Cleaning up...";
+    Scheduler.destroy scheduler;
     BuildSystem.Initializer.cleanup build_system_initializer
   in
   LwtSocketServer.SocketAddress.create_from_path socket_path

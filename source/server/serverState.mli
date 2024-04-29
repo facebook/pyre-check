@@ -34,6 +34,7 @@ module BuildFailure : sig
 end
 
 type t = private {
+  scheduler: Scheduler.t;
   build_system: BuildSystem.t;
   overlaid_environment: Analysis.OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
@@ -43,6 +44,7 @@ type t = private {
 val create
   :  ?subscriptions:Subscriptions.t ->
   ?build_failure:BuildFailure.t ->
+  scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
   overlaid_environment:Analysis.OverlaidEnvironment.t ->
   unit ->
@@ -50,6 +52,11 @@ val create
 
 val load_stored_configuration : unit -> Configuration.Analysis.t
 
-val load : configuration:Configuration.Analysis.t -> build_system:BuildSystem.t -> unit -> t
+val load
+  :  configuration:Configuration.Analysis.t ->
+  scheduler:Scheduler.t ->
+  build_system:BuildSystem.t ->
+  unit ->
+  t
 
 val store : path:PyrePath.t -> configuration:Configuration.Analysis.t -> t -> unit

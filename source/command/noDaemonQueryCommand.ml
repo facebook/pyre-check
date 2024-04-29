@@ -140,26 +140,29 @@ let with_performance_tracking ~debug f =
 
 
 let get_environment configuration no_validation_on_class_lookup_failure =
-  Scheduler.with_scheduler
+  with_performance_tracking ~debug:configuration.Configuration.Analysis.debug (fun () ->
+      let read_write_environment =
+        Analysis.EnvironmentControls.create
+          ~populate_call_graph:false
+          configuration
+          ~no_validation_on_class_lookup_failure
+        |> Analysis.ErrorsEnvironment.create_with_ast_environment
+      in
+      Analysis.OverlaidEnvironment.create read_write_environment)
+
+
+let perform_query
     ~configuration
-    ~should_log_exception:(fun _ -> true)
-    ~f:(fun _ ->
-      with_performance_tracking ~debug:configuration.debug (fun () ->
-          let read_write_environment =
-            Analysis.EnvironmentControls.create
-              ~populate_call_graph:false
-              configuration
-              ~no_validation_on_class_lookup_failure
-            |> Analysis.ErrorsEnvironment.create_with_ast_environment
-          in
-          Analysis.OverlaidEnvironment.create read_write_environment))
-
-
-let perform_query ~configuration ~build_system ~query ~no_validation_on_class_lookup_failure () =
+    ~scheduler
+    ~build_system
+    ~query
+    ~no_validation_on_class_lookup_failure
+    ()
+  =
   let overlaid_environment = get_environment configuration no_validation_on_class_lookup_failure in
   let query_response =
     (* This query does not support overlay logic *)
-    Server.Query.parse_and_process_request ~overlaid_environment ~build_system query None
+    Server.Query.parse_and_process_request ~overlaid_environment ~scheduler ~build_system query None
   in
   Server.Response.to_yojson (Server.Response.Query query_response)
 
@@ -174,18 +177,24 @@ let run_query_on_query_configuration query_configuration =
     =
     query_configuration
   in
-  Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
-      let query_response =
-        perform_query
-          ~configuration:(QueryConfiguration.analysis_configuration_of query_configuration)
-          ~build_system
-          ~query
-          ~no_validation_on_class_lookup_failure
-          ()
-      in
-      (* Prints the query response to stdout, which will be picked up by the client *)
-      Printf.printf "%s" (Yojson.Safe.to_string query_response);
-      Lwt.return ExitStatus.Ok)
+  let configuration = QueryConfiguration.analysis_configuration_of query_configuration in
+  Scheduler.with_scheduler
+    ~configuration
+    ~should_log_exception:(fun _ -> true)
+    ~f:(fun scheduler ->
+      Server.BuildSystem.with_build_system source_paths ~f:(fun build_system ->
+          let query_response =
+            perform_query
+              ~configuration
+              ~scheduler
+              ~build_system
+              ~query
+              ~no_validation_on_class_lookup_failure
+              ()
+          in
+          (* Prints the query response to stdout, which will be picked up by the client *)
+          Printf.printf "%s" (Yojson.Safe.to_string query_response);
+          Lwt.return ExitStatus.Ok))
 
 
 let run_query configuration_file =

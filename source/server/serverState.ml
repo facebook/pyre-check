@@ -52,14 +52,16 @@ module BuildFailure = struct
 end
 
 type t = {
+  scheduler: Scheduler.t;
   build_system: BuildSystem.t;
   overlaid_environment: OverlaidEnvironment.t;
   subscriptions: Subscriptions.t;
   build_failure: BuildFailure.t;
 }
 
-let create ?subscriptions ?build_failure ~build_system ~overlaid_environment () =
+let create ?subscriptions ?build_failure ~scheduler ~build_system ~overlaid_environment () =
   {
+    scheduler;
     build_system;
     overlaid_environment;
     subscriptions = Option.value subscriptions ~default:(Subscriptions.create ());
@@ -85,13 +87,13 @@ end)
 
 let load_stored_configuration = StoredConfiguration.load
 
-let load ~configuration ~build_system () =
+let load ~configuration ~scheduler ~build_system () =
   let overlaid_environment =
     EnvironmentControls.create configuration
     |> Analysis.ErrorsEnvironment.AssumeAstEnvironment.load
     |> OverlaidEnvironment.create
   in
-  create ~build_system ~overlaid_environment ()
+  create ~scheduler ~build_system ~overlaid_environment ()
 
 
 let store ~path ~configuration { overlaid_environment; build_system; _ } =

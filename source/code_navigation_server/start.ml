@@ -137,6 +137,8 @@ let initialize_shared_memory environment_controls =
 
 let initialize_server_state ~build_system_initializer ~environment_controls () =
   initialize_shared_memory environment_controls;
+  let configuration = Analysis.EnvironmentControls.configuration environment_controls in
+  let scheduler = Scheduler.create ~configuration () in
   let build_system = BuildSystem.Initializer.initialize build_system_initializer in
   let environment =
     Analysis.ErrorsEnvironment.create_with_ast_environment environment_controls
@@ -144,7 +146,7 @@ let initialize_server_state ~build_system_initializer ~environment_controls () =
   in
   let client_states = State.Client.create () in
   let build_failure = Server.ServerState.BuildFailure.create () in
-  { State.environment; build_system; client_states; build_failure }
+  { State.environment; scheduler; build_system; client_states; build_failure }
 
 
 let broadcast_server_stop_and_fail ~subscriptions ~message exn =

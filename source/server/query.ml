@@ -456,7 +456,13 @@ let parse_request query =
   | InvalidQuery reason -> Result.Error reason
 
 
-let rec process_request_exn ~type_environment ~global_module_paths_api ~build_system request =
+let rec process_request_exn
+    ~type_environment
+    ~global_module_paths_api
+    ~scheduler
+    ~build_system
+    request
+  =
   let process_request_exn () =
     let configuration =
       TypeEnvironment.ReadOnly.controls type_environment |> EnvironmentControls.configuration
@@ -536,39 +542,33 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
     in
     let setup_and_execute_model_queries model_queries =
       let pyre_api = PyrePysaApi.ReadOnly.create ~type_environment ~global_module_paths_api in
-      let scheduler_wrapper scheduler =
-        let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
-        let initial_callables =
-          Interprocedural.FetchCallables.from_qualifiers
-            ~scheduler
-            ~configuration
-            ~pyre_api
-            ~qualifiers
-        in
-        let class_hierarchy_graph =
-          Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers ~scheduler ~pyre_api ~qualifiers
-        in
-        let stubs_shared_memory_handle =
-          Interprocedural.Target.HashsetSharedMemory.from_heap
-            (Interprocedural.FetchCallables.get_stubs initial_callables)
-        in
-        Taint.ModelQueryExecution.generate_models_from_queries
-          ~pyre_api
+      let qualifiers = GlobalModulePathsApi.explicit_qualifiers global_module_paths_api in
+      let initial_callables =
+        Interprocedural.FetchCallables.from_qualifiers
           ~scheduler
-          ~class_hierarchy_graph
-          ~source_sink_filter:None
-          ~verbose:false
-          ~error_on_unexpected_models:true
-          ~error_on_empty_result:true
-          ~definitions_and_stubs:
-            (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
-          ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
-          model_queries
+          ~configuration
+          ~pyre_api
+          ~qualifiers
       in
-      Scheduler.with_scheduler
-        ~configuration
-        ~should_log_exception:(fun _ -> true)
-        ~f:scheduler_wrapper
+      let class_hierarchy_graph =
+        Interprocedural.ClassHierarchyGraph.Heap.from_qualifiers ~scheduler ~pyre_api ~qualifiers
+      in
+      let stubs_shared_memory_handle =
+        Interprocedural.Target.HashsetSharedMemory.from_heap
+          (Interprocedural.FetchCallables.get_stubs initial_callables)
+      in
+      Taint.ModelQueryExecution.generate_models_from_queries
+        ~pyre_api
+        ~scheduler
+        ~class_hierarchy_graph
+        ~source_sink_filter:None
+        ~verbose:false
+        ~error_on_unexpected_models:true
+        ~error_on_empty_result:true
+        ~definitions_and_stubs:
+          (Interprocedural.FetchCallables.get initial_callables ~definitions:true ~stubs:true)
+        ~stubs:(Interprocedural.Target.HashsetSharedMemory.read_only stubs_shared_memory_handle)
+        model_queries
     in
     let open Response in
     let get_program_call_graph () =
@@ -632,7 +632,12 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
     | Batch requests ->
         Batch
           (List.map
-             ~f:(process_request_exn ~type_environment ~global_module_paths_api ~build_system)
+             ~f:
+               (process_request_exn
+                  ~type_environment
+                  ~global_module_paths_api
+                  ~scheduler
+                  ~build_system)
              requests)
     | Callees caller ->
         (* We don't yet support a syntax for fetching property setters. *)
@@ -991,28 +996,22 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
               (* Because of lazy parsing, `UnannotatedGlobalEnvironment.ReadOnly.get_all_classes
                  only returns all *loaded* classes, which will not include all classes from external
                  modules if they are not needed for type checking. So, we force them to load. *)
-              let load_all_modules scheduler =
-                let load_modules qualifiers =
-                  let _ =
-                    List.map qualifiers ~f:(GlobalResolution.get_module_metadata global_resolution)
-                  in
-                  ()
+              let load_modules qualifiers =
+                let _ =
+                  List.map qualifiers ~f:(GlobalResolution.get_module_metadata global_resolution)
                 in
-                Scheduler.iter
-                  scheduler
-                  ~policy:
-                    (Scheduler.Policy.fixed_chunk_count
-                       ~minimum_chunks_per_worker:1
-                       ~minimum_chunk_size:100
-                       ~preferred_chunks_per_worker:5
-                       ())
-                  ~f:load_modules
-                  ~inputs:(GlobalModulePathsApi.explicit_qualifiers global_module_paths_api)
+                ()
               in
-              Scheduler.with_scheduler
-                ~configuration
-                ~should_log_exception:(fun _ -> true)
-                ~f:load_all_modules;
+              Scheduler.iter
+                scheduler
+                ~policy:
+                  (Scheduler.Policy.fixed_chunk_count
+                     ~minimum_chunks_per_worker:1
+                     ~minimum_chunk_size:100
+                     ~preferred_chunks_per_worker:5
+                     ())
+                ~f:load_modules
+                ~inputs:(GlobalModulePathsApi.explicit_qualifiers global_module_paths_api);
               UnannotatedGlobalEnvironment.ReadOnly.GlobalApis.all_classes
                 ~global_module_paths_api
                 (TypeEnvironment.ReadOnly.unannotated_global_environment type_environment)
@@ -1138,15 +1137,17 @@ let rec process_request_exn ~type_environment ~global_module_paths_api ~build_sy
       |> fun message -> Response.Error message
 
 
-let process_request ~type_environment ~global_module_paths_api ~build_system request =
-  match process_request_exn ~type_environment ~global_module_paths_api ~build_system request with
+let process_request ~type_environment ~global_module_paths_api ~scheduler ~build_system request =
+  match
+    process_request_exn ~type_environment ~global_module_paths_api ~scheduler ~build_system request
+  with
   | exception e ->
       Log.error "Fatal exception in no-daemon query: %s" (Exn.to_string e);
       Response.Error (Exn.to_string e)
   | result -> result
 
 
-let parse_and_process_request ~overlaid_environment ~build_system request overlay_id =
+let parse_and_process_request ~overlaid_environment ~scheduler ~build_system request overlay_id =
   let global_module_paths_api =
     OverlaidEnvironment.AssumeGlobalModuleListing.global_module_paths_api overlaid_environment
   in
@@ -1169,4 +1170,4 @@ let parse_and_process_request ~overlaid_environment ~build_system request overla
   match parse_request request with
   | Result.Error reason -> Response.Error reason
   | Result.Ok request ->
-      process_request ~type_environment ~global_module_paths_api ~build_system request
+      process_request ~type_environment ~global_module_paths_api ~scheduler ~build_system request

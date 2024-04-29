@@ -186,6 +186,7 @@ val parse_request : string -> (Request.t, string) Core.Result.t
 val process_request
   :  type_environment:Analysis.TypeEnvironment.TypeEnvironmentReadOnly.t ->
   global_module_paths_api:Analysis.GlobalModulePathsApi.t ->
+  scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
   Request.t ->
   Response.t
@@ -193,6 +194,7 @@ val process_request
 (* A handy wrapper that invokes `parse_request` followed by `process_request`. *)
 val parse_and_process_request
   :  overlaid_environment:Analysis.OverlaidEnvironment.t ->
+  scheduler:Scheduler.t ->
   build_system:BuildSystem.t ->
   string ->
   string option ->

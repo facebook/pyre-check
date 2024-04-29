@@ -177,7 +177,7 @@ let update_build_system ~build_system source_path_events =
 
 
 let process_successful_rebuild
-    ~configuration
+    ~scheduler
     ~subscriptions
     ~build_system
     ~overlaid_environment
@@ -194,13 +194,7 @@ let process_successful_rebuild
     |> List.append changed_paths_from_rebuild
     |> List.dedup_and_sort ~compare:ArtifactPath.Event.compare
   in
-  let () =
-    Scheduler.with_scheduler
-      ~configuration
-      ~should_log_exception:(fun _ -> true)
-      ~f:(fun scheduler ->
-        OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths)
-  in
+  OverlaidEnvironment.run_update_root overlaid_environment ~scheduler changed_paths;
   let type_error_subscriptions, status_change_subscriptions =
     List.partition_tf subscriptions ~f:Subscription.wants_type_errors
   in
@@ -229,7 +223,8 @@ let get_buck_error_message ~description ~additional_logs () =
 let process_incremental_update_request
     ~properties:{ ServerProperties.configuration; critical_files; _ }
     ~state:
-      ({ ServerState.overlaid_environment; subscriptions; build_system; build_failure } as state)
+      ({ ServerState.overlaid_environment; subscriptions; scheduler; build_system; build_failure }
+      as state)
     paths
   =
   let open Lwt.Infix in
@@ -265,7 +260,7 @@ let process_incremental_update_request
                 (* The build has succeeded and deferred events are all processed. *)
                 ServerState.BuildFailure.clear build_failure;
                 process_successful_rebuild
-                  ~configuration
+                  ~scheduler
                   ~subscriptions
                   ~build_system
                   ~overlaid_environment
@@ -325,7 +320,8 @@ let process_overlay_update
 
 let process_request
     ~properties
-    ~state:({ ServerState.overlaid_environment; build_system; build_failure; _ } as state)
+    ~state:
+      ({ ServerState.overlaid_environment; scheduler; build_system; build_failure; _ } as state)
     request
   =
   match request with
@@ -342,13 +338,19 @@ let process_request
   | Request.Query query_text ->
       let response =
         Response.Query
-          (Query.parse_and_process_request ~build_system ~overlaid_environment query_text None)
+          (Query.parse_and_process_request
+             ~scheduler
+             ~build_system
+             ~overlaid_environment
+             query_text
+             None)
       in
       Lwt.return (state, response)
   | Request.QueryWithOverlay { query_text; overlay_id } ->
       let response =
         Response.Query
           (Query.parse_and_process_request
+             ~scheduler
              ~build_system
              ~overlaid_environment
              query_text
