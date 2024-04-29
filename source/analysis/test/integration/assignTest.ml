@@ -589,7 +589,14 @@ let test_check_assign =
               reveal_type(k)
             |}
            [
-             "Revealed type [-1]: Revealed type for `k` is `unknown`.";
+             "Incompatible parameter type [6]: In call `dict.__setitem__`, for 2nd positional \
+              argument, expected `int` but got `str`.";
+             "Incompatible parameter type [6]: In call `dict.__setitem__`, for 1st positional \
+              argument, expected `str` but got `int`.";
+             "Unsupported operand [58]: `+` is not supported for operand types `str` and `int`.";
+             "Revealed type [-1]: Revealed type for `k` is `int`.";
+             (* TODO(T101303314) Type check now traverses subscripts in the LHS, but unitialized
+                local check still does not. *)
              "Unbound name [10]: Name `k` is used but not defined in the current scope.";
            ];
     ]

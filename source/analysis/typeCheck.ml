@@ -1425,6 +1425,15 @@ module State (Context : Context) = struct
     | None -> resolved_for_bad_callable ~resolution ~errors undefined_attributes
 
 
+  and forward_argument ~resolution ~errors argument =
+    let expression, kind = Ast.Expression.Call.Argument.unpack argument in
+    forward_expression ~resolution expression
+    |> fun { resolution; errors = new_errors; resolved; _ } ->
+    ( resolution,
+      List.append new_errors errors,
+      { AttributeResolution.Argument.kind; expression = Some expression; resolved } )
+
+
   (* The `forward_call_with_arguments` function accepts arguments as *expressions* and will traverse
      them with forward_expression. The call itself is handled by `resolve_call`. *)
   and forward_call_with_arguments
@@ -1437,16 +1446,11 @@ module State (Context : Context) = struct
       ~arguments:(_ as argument_expressions)
     =
     let resolution, errors, reversed_arguments =
-      let forward_argument (resolution, errors, reversed_arguments) argument =
-        let expression, kind = Ast.Expression.Call.Argument.unpack argument in
-        forward_expression ~resolution expression
-        |> fun { resolution; errors = new_errors; resolved; _ } ->
-        ( resolution,
-          List.append new_errors errors,
-          { AttributeResolution.Argument.kind; expression = Some expression; resolved }
-          :: reversed_arguments )
+      let resolve_argument (resolution, errors, reversed_arguments) raw_argument =
+        let resolution, errors, argument = forward_argument ~resolution ~errors raw_argument in
+        resolution, errors, argument :: reversed_arguments
       in
-      List.fold argument_expressions ~f:forward_argument ~init:(resolution, errors, [])
+      List.fold argument_expressions ~f:resolve_argument ~init:(resolution, errors, [])
     in
     let arguments = List.rev reversed_arguments in
     forward_call ~resolution ~location ~errors ~target ~dynamic ~callee ~arguments
@@ -5052,6 +5056,93 @@ module State (Context : Context) = struct
                   (* We process type as union again to populate resolution *)
                   propagate (resolution, errors) (Union types)
               | resolved -> inner_assignment resolution errors resolved)
+          | Expression.Call
+              {
+                callee =
+                  {
+                    value =
+                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                    _;
+                  } as getitem_callee_expression;
+                arguments = [raw_key_argument];
+              } ->
+              let {
+                Resolved.errors = errors_after_callee;
+                resolved = resolved_setitem_type;
+                base = resolved_setitem_base;
+                resolution = resolution_after_callee;
+                _;
+              }
+                =
+                let setitem_callee_expression =
+                  {
+                    getitem_callee_expression with
+                    value =
+                      Expression.Name
+                        (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                  }
+                in
+                forward_expression ~resolution setitem_callee_expression
+              in
+              (* TODO(T187163267): Try to deduplicate some of this code with the forward_expression
+                 logic for resolving a callee. *)
+              let setitem_callee =
+                Callee.Attribute
+                  {
+                    base =
+                      {
+                        expression = base;
+                        resolved_base =
+                          Resolved.resolved_base_type resolved_setitem_base
+                          |> Option.value ~default:Type.Top;
+                      };
+                    attribute = { name = "__setitem__"; resolved = resolved_setitem_type };
+                    (* TODO(T187163267) We need a placeholder expression; use the raw subscript from
+                       the LHS for now, try to find a way of relaxing this requirement. *)
+                    expression = getitem_callee_expression;
+                  }
+              in
+              (* resolve the key argument, then combine it with the value *)
+              let resolution_after_key_argument, errors_after_key_argument, setitem_arguments =
+                let updated_resolution, updated_errors, key_argument =
+                  forward_argument
+                    ~resolution:resolution_after_callee
+                    ~errors:errors_after_callee
+                    raw_key_argument
+                in
+                let value_argument =
+                  {
+                    AttributeResolution.Argument.kind = Call.Argument.Positional;
+                    expression;
+                    resolved = guide;
+                  }
+                in
+                updated_resolution, updated_errors, [key_argument; value_argument]
+              in
+              let target, dynamic =
+                if Type.is_meta resolved_setitem_type then
+                  Some (Type.single_parameter resolved_setitem_type), false
+                else
+                  match resolved_setitem_base with
+                  | Some (Resolved.Instance resolved) when not (Type.is_top resolved) ->
+                      Some resolved, true
+                  | Some (Resolved.Class resolved) when not (Type.is_top resolved) ->
+                      Some resolved, false
+                  | Some (Resolved.Super resolved) when not (Type.is_top resolved) ->
+                      Some resolved, false
+                  | _ -> None, false
+              in
+              let { Resolved.resolution; errors; _ } =
+                forward_call
+                  ~resolution:resolution_after_key_argument
+                  ~location
+                  ~errors:errors_after_key_argument
+                  ~target
+                  ~dynamic
+                  ~callee:setitem_callee
+                  ~arguments:setitem_arguments
+              in
+              resolution, errors
           | List elements
           | Tuple elements
             when is_uniform_sequence guide ->
