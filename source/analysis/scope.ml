@@ -61,6 +61,14 @@ module Binding = struct
     | Expression.Name (Name.Identifier name) -> { name; kind; location } :: sofar
     | Expression.Starred (Starred.Once element | Starred.Twice element) ->
         of_unannotated_target ~kind sofar element
+    | Expression.Call
+        {
+          callee =
+            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
+          arguments = [key_argument];
+        } ->
+        let key_expression, _ = Call.Argument.unpack key_argument in
+        of_expression (of_expression sofar base) key_expression
     | Tuple elements
     | List elements ->
         (* Tuple or list cannot be annotated. *)
@@ -68,7 +76,7 @@ module Binding = struct
     | _ -> sofar
 
 
-  let rec of_expression sofar { Node.value = expression; _ } =
+  and of_expression sofar { Node.value = expression; _ } =
     let open Expression in
     match expression with
     | Expression.WalrusOperator { WalrusOperator.target; value } ->
