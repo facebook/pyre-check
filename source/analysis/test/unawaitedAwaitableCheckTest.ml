@@ -1249,18 +1249,50 @@ let test_assign =
                   return
             |}
            ["Unawaited awaitable [1001]: `test.foo()` is never awaited."];
+      (* TODO(T101303314): Handle subscripts in multi-target assignments, not just single-target. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
               d: dict[str, str] = {}
 
               async def get_d() -> dict[str, str]:
+                  return d
           
               async def f() -> int:
-                needs_awaiting = get_d()
-                needs_awaiting["k"] = "v"
+                is_awaited_simple = get_d()
+                is_awaited_multi_target = get_d()
+                is_not_awaited = get_d()
+                (await is_awaited_simple)["k"] = "v"
+                (await is_awaited_multi_target)["k"], y = "v", 42
             |}
-           [];
+           [
+             "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_multi_target` is never \
+              awaited.";
+             "Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited.";
+           ];
+      (* TODO(T101303314): Fix false positive when key is awaited in assignment by consolidating
+         logic *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_awaitable_errors
+           {|
+              async def get_key() -> str:
+                  return "k"
+          
+              async def f() -> int:
+                is_awaited_simple = get_key()
+                is_awaited_multi_target = get_key()
+                is_not_awaited = get_key()
+                d: dict[str, str] = {}
+                d[await is_awaited_simple] = "v"
+                d[await is_awaited_multi_target], y = "v", 42
+            |}
+           [
+             "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_simple` is never \
+              awaited.";
+             "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_multi_target` is never \
+              awaited.";
+             "Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited.";
+           ];
     ]
 
 
