@@ -189,11 +189,7 @@ let ephemeral_worker_main ic oc =
       send_response (Response.Failure { exn = Base.Exn.to_string exn; backtrace });
       exit 0
 
-let win32_worker_main restore state (ic, oc) =
-  restore state;
-  ephemeral_worker_main ic oc
-
-let unix_worker_main restore state (ic, oc) =
+let worker_main restore state (ic, oc) =
   restore state;
   let in_fd = Daemon.descr_of_in_channel ic in
   if !Utils.profile then Utils.log := prerr_endline;
@@ -239,11 +235,7 @@ let register_entry_point ~restore =
     SharedMemory.connect heap_handle;
     Gc.set gc_control in
   let name = Printf.sprintf "ephemeral_worker_%d" !entry_counter in
-  Daemon.register_entry_point
-    name
-    (if Sys.win32
-     then win32_worker_main restore
-     else unix_worker_main restore)
+  Daemon.register_entry_point name (worker_main restore)
 
 (**************************************************************************
  * Creates a pool of workers.
