@@ -34,11 +34,6 @@ open Hack_heap
  * original process was still very small, those forks run much faster than forking
  * off the original process which will eventually have a large heap).
  *
- * On Windows, we do not "prespawn" when initializing Hack, but we just
- * allocate all the required information into a record. Then, we
- * spawn an ephemeral worker for each incoming request. It will also die after
- * one request.
- *
  * A worker never handle more than one request at a time.
  *
  *****************************************************************************)
@@ -54,9 +49,6 @@ type send_job_failure =
   | Other_send_job_failure of exn
 
 exception Worker_failed_to_send_job of send_job_failure
-
-(* Should we 'prespawn' the worker ? *)
-let use_prespawned = not Sys.win32
 
 (* The maximum amount of workers *)
 let max_workers = 1000
@@ -103,11 +95,8 @@ type t = {
   (* Sanity check: is the worker currently busy ? *)
   mutable busy: bool;
 
-  (* On Unix, a reference to the 'prespawned' worker. *)
-  prespawned: (void, request) Daemon.handle option;
-
-  (* On Windows, a function to spawn an ephemeral worker. *)
-  spawn: unit -> (void, request) Daemon.handle;
+  (* A reference to the worker process. *)
+  handle: (void, request) Daemon.handle;
 
 }
 
@@ -267,12 +256,12 @@ let current_worker_id = ref 0
 (* Build one worker. *)
 let make_one spawn id =
   if id >= max_workers then failwith "Too many workers";
-  let prespawned = if not use_prespawned then None else Some (spawn ()) in
+  let handle = spawn () in
   let wrap f input =
     current_worker_id := id;
     f input
   in
-  let worker = { call_wrapper = { wrap }; busy = false; killed = false; prespawned; spawn } in
+  let worker = { call_wrapper = { wrap }; busy = false; killed = false; handle } in
   worker
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
@@ -304,11 +293,7 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  (* Spawn the ephemeral worker, if not prespawned. *)
-  let { Daemon.pid = ephemeral_worker_pid; channels = (inc, outc) } as h =
-    match w.prespawned with
-    | None -> w.spawn ()
-    | Some handle -> handle in
+  let { Daemon.pid = ephemeral_worker_pid; channels = (inc, outc) } = w.handle in
   (* Prepare ourself to read answer from the ephemeral_worker. *)
   let result () : b =
     match Unix.waitpid [Unix.WNOHANG] ephemeral_worker_pid with
@@ -316,7 +301,6 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
         let result : b Response.t = Daemon.input_value inc in
         match result with
         | Response.Success { result; stats } ->
-          if w.prespawned = None then Daemon.close h;
           Measure.merge ~from:(Measure.deserialize stats) ();
           result
         | Response.Failure { exn; backtrace } ->
@@ -428,9 +412,7 @@ let get_worker h =
 let kill w =
   if not w.killed then begin
     w.killed <- true;
-    match w.prespawned with
-    | None -> ()
-    | Some handle -> Daemon.kill_and_wait handle
+    Daemon.kill_and_wait w.handle
   end
 
 let exception_backtrace = function
