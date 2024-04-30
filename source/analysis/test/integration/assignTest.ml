@@ -580,7 +580,7 @@ let test_check_assign =
            {|
               x: dict[str, int] = ...
 
-              x[k := "key" + 5], y = "whoops this should be an int", 42
+              x[(k := "key" + 5)], y = "whoops this should be an int", 42
 
               reveal_type(k)
             |}
