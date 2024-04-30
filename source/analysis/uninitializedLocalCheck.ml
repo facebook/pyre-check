@@ -149,10 +149,34 @@ let extract_reads_in_expression expression =
   |> List.map ~f:name_access_to_identifier_node
 
 
+let extract_value_expressions_from_assignment_target expression =
+  (* Assignments can sometimes involve no reads (if they just bind a name in scope), but they can
+     also resolve to either attribute setting or `__setitem__` calls for subscript targets. We
+     cannot yet handle attribute access because we don't model scope well, but we should detect both
+     the base and the key in subscript targets. *)
+  let rec extract_one_element so_far { Node.value; _ } =
+    match value with
+    | Expression.Call
+        {
+          callee =
+            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
+          arguments = [key_argument];
+        } ->
+        let key_expression, _ = Call.Argument.unpack key_argument in
+        base :: key_expression :: so_far
+    | List elements
+    | Tuple elements ->
+        List.fold ~f:extract_one_element ~init:so_far elements
+    | _ -> so_far
+  in
+  extract_one_element [] expression
+
+
 let extract_reads_in_statement { Node.value; _ } =
   let expressions =
     match value with
-    | Statement.Assign { Assign.value = expression; _ }
+    | Statement.Assign { Assign.value = expression; target; _ } ->
+        expression :: extract_value_expressions_from_assignment_target target
     | Expression expression
     | If { If.test = expression; _ }
     | While { While.test = expression; _ } ->

@@ -238,7 +238,10 @@ let test_simple context =
         d = {}
         k = "k"
     |}
-    [];
+    [
+      "Uninitialized local [61]: Local variable `d` is undefined, or not always defined.";
+      "Uninitialized local [61]: Local variable `k` is undefined, or not always defined.";
+    ];
 
   ()
 

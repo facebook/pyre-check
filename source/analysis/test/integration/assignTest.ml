@@ -575,10 +575,6 @@ let test_check_assign =
              "Incompatible variable type [9]: y is declared to have type `Never` but is used as \
               type `int`.";
            ];
-      (* TODO(T146934909) This test case documents a bug: Pyre fails to check subscripted
-         assignments inside of multiple-target left-hand-sides, which leads to both false negatives
-         (when the assignment is a type error) and false positives (because we never even traverse
-         the key expressions, so the resolution can be wrong.) *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
