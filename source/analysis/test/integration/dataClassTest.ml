@@ -235,7 +235,7 @@ let test_check_dataclasses =
            a.x = 43
          |}
            ["Invalid assignment [41]: Cannot reassign final attribute `a.x`."];
-      (* TODO(T178998636) Do not allow InitVar attributes to be accessed *)
+      (* TODO(T178998636) Find out why we have two "Undefined attribute" errors *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -250,10 +250,52 @@ let test_check_dataclasses =
            reveal_type(a.y)
          |}
            [
-             "Uninitialized attribute [13]: Attribute `y` is declared in class `A` to have type \
-              `InitVar[int]` but is never initialized.";
+             "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
              "Revealed type [-1]: Revealed type for `a.x` is `int`.";
-             "Revealed type [-1]: Revealed type for `a.y` is `InitVar[int]`.";
+             "Revealed type [-1]: Revealed type for `a.y` is `unknown`.";
+             "Undefined attribute [16]: `A` has no attribute `y`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass, InitVar, field
+           @dataclass
+           class A:
+             x: int
+             y: InitVar[int] = field(kw_only=True)
+
+           a = A(x=42, y=42)
+           reveal_type(a.x)
+           reveal_type(a.y)
+         |}
+           [
+             "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
+             "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+             "Revealed type [-1]: Revealed type for `a.y` is `unknown`.";
+             "Undefined attribute [16]: `A` has no attribute `y`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      (* (TODO T178998636: Investigate errorIncompatible attribute type [8]: Attribute `y` declared
+         in class `A` has type \ `InitVar[int]` but is used as type `int`. `default`.) *)
+      @@ assert_type_errors
+           {|
+           from dataclasses import dataclass, InitVar, field
+           @dataclass
+           class A:
+             x: int
+             y: InitVar[int] = field(default=42)
+
+           a = A(x=42, y=42)
+           reveal_type(a.x)
+           reveal_type(a.y)
+         |}
+           [
+             "Incompatible attribute type [8]: Attribute `y` declared in class `A` has type \
+              `InitVar[int]` but is used as type `int`.";
+             "Undefined attribute [16]: `typing.Type` has no attribute `y`.";
+             "Revealed type [-1]: Revealed type for `a.x` is `int`.";
+             "Revealed type [-1]: Revealed type for `a.y` is `unknown`.";
+             "Undefined attribute [16]: `A` has no attribute `y`.";
            ];
       (* TODO(T178998636) Do not allow `frozen` dataclasses to inherit from non-frozen. *)
       labeled_test_case __FUNCTION__ __LINE__
