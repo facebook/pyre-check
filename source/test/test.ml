@@ -3152,6 +3152,9 @@ module ScratchProject = struct
         external_sources
     in
     let controls =
+      let default_python_version =
+        { Configuration.PythonVersion.major = 3; minor = 12; micro = 2 }
+      in
       let configuration =
         Configuration.Analysis.create
           ~local_root
@@ -3164,7 +3167,7 @@ module ScratchProject = struct
           ~show_error_traces
           ~parallel:false
           ~use_errpy_parser
-          ?python_version
+          ~python_version:(Option.value python_version ~default:default_python_version)
           ?strict
           ?debug
           ?enable_readonly_analysis
