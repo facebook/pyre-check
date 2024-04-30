@@ -230,6 +230,15 @@ let test_simple context =
         y = None
     |}
     ["Uninitialized local [61]: Local variable `y` is undefined, or not always defined."];
+  (* TODO(T101303314) Validate use of uninitialized locals in subscript assignment targets *)
+  assert_uninitialized_errors
+    {|
+      def f():
+        d[k], y = v, 42
+        d = {}
+        k = "k"
+    |}
+    [];
 
   ()
 
