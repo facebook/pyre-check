@@ -285,22 +285,23 @@ let current_worker_id () = !current_worker_id
 let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   if w.killed then raise Worker_killed;
   if w.busy then raise Worker_busy;
-  let { Daemon.pid = ephemeral_worker_pid; channels = (inc, outc) } = w.handle in
+  let { Daemon.pid = worker_pid; channels = (inc, outc) } = w.handle in
   (* Prepare ourself to read answer from the ephemeral_worker. *)
   let result () : b =
-    match Unix.waitpid [Unix.WNOHANG] ephemeral_worker_pid with
-    | 0, _ | _, Unix.WEXITED 0 -> (
-        let result : b Response.t = Daemon.input_value inc in
-        match result with
-        | Response.Success { result; stats } ->
-          Measure.merge ~from:(Measure.deserialize stats) ();
-          result
-        | Response.Failure { exn; backtrace } ->
-          raise (Worker_exception (exn, backtrace)))
-    | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
-        raise SharedMemory.Out_of_shared_memory
-    | _, exit_status ->
-        raise (Worker_exited_abnormally (ephemeral_worker_pid, exit_status))
+    match Daemon.input_value inc with
+    | Response.Success { result; stats } ->
+      Measure.merge ~from:(Measure.deserialize stats) ();
+      result
+    | Response.Failure { exn; backtrace } ->
+      raise (Worker_exception (exn, backtrace))
+    | exception exn ->
+      let backtrace = Printexc.get_raw_backtrace () in
+      match Unix.waitpid [Unix.WNOHANG] worker_pid with
+      | 0, _ -> Printexc.raise_with_backtrace exn backtrace
+      | _, Unix.WEXITED i when i = Exit_status.(exit_code Out_of_shared_memory) ->
+          raise SharedMemory.Out_of_shared_memory
+      | _, exit_status ->
+          raise (Worker_exited_abnormally (worker_pid, exit_status))
   in
   (* Mark the worker as busy. *)
   let infd = Daemon.descr_of_in_channel inc in
@@ -314,13 +315,12 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   let () = try Daemon.to_channel outc
                  ~flush:true ~flags:[Marshal.Closures]
                  request with
-  | e -> begin
-      match Unix.waitpid [Unix.WNOHANG] ephemeral_worker_pid with
+  | e ->
+      match Unix.waitpid [Unix.WNOHANG] worker_pid with
       | 0, _ ->
           raise (Worker_failed_to_send_job (Other_send_job_failure e))
       | _, status ->
           raise (Worker_failed_to_send_job (Worker_already_exited status))
-    end
   in
   (* And returned the 'handle'. *)
   ref (Processing ephemeral_worker)
