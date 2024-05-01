@@ -137,10 +137,10 @@ let make_assert_functions context =
       class HasMeta(metaclass=Meta):
         pass
 
-      Ts = pyre_extensions.TypeVarTuple("Ts")
-      Ts2 = pyre_extensions.TypeVarTuple("Ts2")
+      Ts = typing.TypeVarTuple("Ts")
+      Ts2 = typing.TypeVarTuple("Ts2")
 
-      class Tensor(typing.Generic[T, pyre_extensions.Unpack[Ts]]): ...
+      class Tensor(typing.Generic[T, typing.Unpack[Ts]]): ...
 
       class ClassWithOverloadedConstructor(Generic[T]):
           @overload
@@ -1136,62 +1136,62 @@ let test_add_constraint_type_variable_tuple context =
   let assert_less_or_equal, assert_less_or_equal_direct, _, _ = make_assert_functions context in
   assert_less_or_equal
     ~left:"typing.Tuple[int, str, bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts]]"
     ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int, str, bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts], bool]"
     ~expected_solutions:[["Ts", "typing.Tuple[str]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts], bool]"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int, str, bool]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], T]"
+    ~right:"typing.Tuple[typing.Unpack[Ts], T]"
     ~expected_solutions:[["Ts", "typing.Tuple[int, str]"; "T", "bool"]]
     ();
   assert_less_or_equal
     ~leave_unbound_in_left:["Ts"]
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~left:"typing.Tuple[int, typing.Unpack[Ts]]"
     ~right:"typing.Tuple[int, str, bool]"
     ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
     ();
   (* Ts is bound on the left side. We fail because Ts could be any tuple. *)
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~left:"typing.Tuple[int, typing.Unpack[Ts]]"
     ~right:"typing.Tuple[int, str, bool]"
     ~expected_solutions:[]
     ();
   (* This ends up checking `[int, str] <: *Ts (bound)`, which is not valid. *)
   assert_less_or_equal
-    ~left:"typing.Callable[[typing.Tuple[pyre_extensions.Unpack[Ts]]], bool]"
+    ~left:"typing.Callable[[typing.Tuple[typing.Unpack[Ts]]], bool]"
     ~right:"typing.Callable[[typing.Tuple[int, str]], bool]"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
-    ~expected_solutions:[["Ts2", "typing.Tuple[pyre_extensions.Unpack[Ts]]"]]
+    ~left:"typing.Tuple[typing.Unpack[Ts]]"
+    ~right:"typing.Tuple[typing.Unpack[Ts2]]"
+    ~expected_solutions:[["Ts2", "typing.Tuple[typing.Unpack[Ts]]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts2]]"
-    ~expected_solutions:[["Ts2", "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"]]
+    ~left:"typing.Tuple[int, typing.Unpack[Ts], str]"
+    ~right:"typing.Tuple[typing.Unpack[Ts2]]"
+    ~expected_solutions:[["Ts2", "typing.Tuple[int, typing.Unpack[Ts], str]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"
-    ~expected_solutions:[["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]]
+    ~left:"typing.Tuple[int, bool, typing.Unpack[Ts], bool, str]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts2], str]"
+    ~expected_solutions:[["Ts2", "typing.Tuple[bool, typing.Unpack[Ts], bool]"]]
     ();
   (* No solution because the middle portion is `[*Ts (bound)] <: [bool, *Ts2 (free), bool]`. The
      bound `Ts` may not start with `bool`. *)
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
-    ~right:"typing.Tuple[int, bool, pyre_extensions.Unpack[Ts2], bool, str]"
+    ~left:"typing.Tuple[int, typing.Unpack[Ts], str]"
+    ~right:"typing.Tuple[int, bool, typing.Unpack[Ts2], bool, str]"
     ~expected_solutions:[]
     ();
   let variadic = Type.Variable.Variadic.Tuple.create "test.Ts" in
@@ -1209,7 +1209,7 @@ let test_add_constraint_type_variable_tuple context =
                ~suffix:[Type.string]
                variadic2))
       |> Type.Variable.mark_all_variables_as_bound)
-    ~expected_solutions:[["Ts", "typing.Tuple[int, pyre_extensions.Unpack[Ts2], str]"]]
+    ~expected_solutions:[["Ts", "typing.Tuple[int, typing.Unpack[Ts2], str]"]]
     ();
   (* Tuple is covariant. *)
   assert_less_or_equal
@@ -1218,7 +1218,7 @@ let test_add_constraint_type_variable_tuple context =
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~left:"typing.Tuple[int, typing.Unpack[Ts]]"
     ~right:"typing.Tuple[object, ...]"
     ~expected_solutions:[[]]
     ();
@@ -1226,7 +1226,7 @@ let test_add_constraint_type_variable_tuple context =
   (* Parametric types. *)
   assert_less_or_equal
     ~left:"test.Tensor[str, bool, str]"
-    ~right:"test.Tensor[str, pyre_extensions.Unpack[Ts]]"
+    ~right:"test.Tensor[str, typing.Unpack[Ts]]"
     ~expected_solutions:[["Ts", "typing.Tuple[bool, str]"]]
     ();
   (* Tensor is invariant in the datatype. *)
@@ -1243,25 +1243,24 @@ let test_add_constraint_type_variable_tuple context =
     ();
   assert_less_or_equal
     ~left:"test.Tensor[str, int]"
-    ~right:"test.Tensor[str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    ~right:"test.Tensor[str, typing.Unpack[typing.Tuple[int, ...]]]"
     ~expected_solutions:[[]]
     ();
 
   (* Callable. *)
   assert_less_or_equal
     ~left:"typing.Callable[[int, str, bool], None]"
-    ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts]], None]"
+    ~right:"typing.Callable[[int, typing.Unpack[Ts]], None]"
     ~expected_solutions:[["Ts", "typing.Tuple[str, bool]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]"
-    ~right:"typing.Callable[[int, pyre_extensions.Unpack[Ts2], str], None]"
-    ~expected_solutions:[["Ts2", "typing.Tuple[bool, pyre_extensions.Unpack[Ts], bool]"]]
+    ~left:"typing.Callable[[int, bool, typing.Unpack[Ts], bool, str], None]"
+    ~right:"typing.Callable[[int, typing.Unpack[Ts2], str], None]"
+    ~expected_solutions:[["Ts2", "typing.Tuple[bool, typing.Unpack[Ts], bool]"]]
     ();
   (* List of empty list means we found a satisfying solution. *)
   assert_less_or_equal
-    ~left:
-      "typing.Callable[[int, pyre_extensions.Unpack[Ts]], typing.Tuple[pyre_extensions.Unpack[Ts]]]"
+    ~left:"typing.Callable[[int, typing.Unpack[Ts]], typing.Tuple[typing.Unpack[Ts]]]"
     ~right:"typing.Callable[[int, str, bool], typing.Tuple[str, bool]]"
     ~leave_unbound_in_left:["Ts"]
     ~expected_solutions:[[]]
@@ -1270,8 +1269,8 @@ let test_add_constraint_type_variable_tuple context =
   (* Unbounded tuples. *)
   assert_less_or_equal
     ~left:"typing.Tuple[int, ...]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts]]"
-    ~expected_solutions:[["Ts", "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"]]
+    ~right:"typing.Tuple[typing.Unpack[Ts]]"
+    ~expected_solutions:[["Ts", "typing.Tuple[typing.Unpack[typing.Tuple[int, ...]]]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int, ...]"
@@ -1279,25 +1278,23 @@ let test_add_constraint_type_variable_tuple context =
     ~expected_solutions:[["T", "int"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
-    ~expected_solutions:
-      [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]]
+    ~left:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts], bool]"
+    ~expected_solutions:[["Ts", "typing.Tuple[str, typing.Unpack[typing.Tuple[str, ...]]]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[Ts], bool]"
-    ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~left:"typing.Tuple[int, typing.Unpack[Ts], bool]"
+    ~right:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
     ~leave_unbound_in_left:["Ts"]
-    ~expected_solutions:
-      [["Ts", "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[str, ...]]]"]]
+    ~expected_solutions:[["Ts", "typing.Tuple[str, typing.Unpack[typing.Tuple[str, ...]]]"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[T, ...]], bool]"
+    ~left:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], str, bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[typing.Tuple[T, ...]], bool]"
     ~expected_solutions:[["T", "str"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str]"
+    ~left:"typing.Tuple[int, typing.Unpack[typing.Tuple[str, ...]], str]"
     ~right:"typing.Tuple[T1, T2, T3, T4]"
     ~expected_solutions:[["T4", "str"; "T3", "str"; "T2", "str"; "T1", "int"]]
     ();
@@ -1315,32 +1312,32 @@ let test_add_constraint_type_variable_tuple context =
   (* Stretch the unbounded tuple to meet the expected length. *)
   assert_less_or_equal
     ~left:"typing.Tuple[int, ...]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[Ts]]"
+    ~right:"typing.Tuple[int, typing.Unpack[Ts]]"
     ~expected_solutions:[["Ts", "typing.Tuple[int, ...]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int, ...]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], int]"
+    ~right:"typing.Tuple[typing.Unpack[Ts], int]"
     ~expected_solutions:[["Ts", "typing.Tuple[int, ...]"]]
     ();
   assert_less_or_equal
     ~left:"typing.Tuple[int, ...]"
-    ~right:"typing.Tuple[pyre_extensions.Unpack[Ts], str]"
+    ~right:"typing.Tuple[typing.Unpack[Ts], str]"
     ~expected_solutions:[]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    ~right:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
+    ~left:"typing.Tuple[int, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], T, bool]"
+    ~left:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[typing.Tuple[str, ...]], T, bool]"
     ~expected_solutions:[["T", "str"]]
     ();
   assert_less_or_equal
-    ~left:"typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    ~right:"typing.Tuple[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int, bool]"
+    ~left:"typing.Tuple[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    ~right:"typing.Tuple[int, typing.Unpack[typing.Tuple[str, ...]], int, bool]"
     ~expected_solutions:[]
     ();
   ()
@@ -1481,17 +1478,25 @@ let test_add_constraint_parameter_specification context =
     ~expected_solutions:[["P2", "P"]]
     ();
   assert_less_or_equal
+    ~left:"typing.Callable[typing_extensions.Concatenate[int, P], None]"
+    ~right:"typing.Callable[typing_extensions.Concatenate[int, P2], None]"
+    ~expected_solutions:[["P2", "P"]]
+    ();
+  assert_less_or_equal
+    ~left:"typing.Callable[typing.Concatenate[int, P], None]"
+    ~right:"typing.Callable[typing.Concatenate[int, P2], None]"
+    ~expected_solutions:[["P2", "P"]]
+    ();
+  assert_less_or_equal
     ~leave_unbound_in_left:["P"]
-    ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P], None]"
-    ~right:
-      "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
+    ~left:"typing.Callable[typing.Concatenate[int, str, P], None]"
+    ~right:"typing.Callable[typing.Concatenate[int, str, P2], None]"
     ~expected_solutions:[[]]
     ();
   assert_less_or_equal
     ~leave_unbound_in_left:["P"]
-    ~left:"typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, int, P], None]"
-    ~right:
-      "typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, str, P2], None]"
+    ~left:"typing.Callable[typing.Concatenate[int, int, P], None]"
+    ~right:"typing.Callable[typing.Concatenate[int, str, P2], None]"
     ~expected_solutions:[]
     ();
   ()

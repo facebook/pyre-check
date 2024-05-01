@@ -142,9 +142,17 @@ module Record = struct
   end
 
   module OrderedTypes = struct
-    let concatenate_public_name = "pyre_extensions.type_variable_operators.Concatenate"
+    let concatenate_public_names =
+      [
+        "typing.Concatenate";
+        "pyre_extensions.type_variable_operators.Concatenate";
+        "typing_extensions.Concatenate";
+      ]
 
-    let unpack_public_name = "pyre_extensions.Unpack"
+
+    let unpack_public_names =
+      ["typing.Unpack"; "pyre_extensions.Unpack"; "typing_extensions.Unpack"]
+
 
     let show_type_list types ~pp_type =
       Format.asprintf
@@ -382,7 +390,7 @@ module Record = struct
                     (Name.Attribute
                        {
                          base =
-                           Expression.Name (create_name ~location "pyre_extensions.Unpack")
+                           Expression.Name (create_name ~location "typing.Unpack")
                            |> Node.create ~location;
                          attribute = "__getitem__";
                          special = true;
@@ -2011,7 +2019,7 @@ let parameter_variable_type_representation = function
       let concretes = head @ [Primitive name] in
       Parametric
         {
-          name = Record.OrderedTypes.concatenate_public_name;
+          name = List.hd_exn Record.OrderedTypes.concatenate_public_names;
           parameters = List.map concretes ~f:(fun concrete -> Record.Parameter.Single concrete);
         }
 
@@ -3423,14 +3431,15 @@ module OrderedTypes = struct
         Concatenation.unpackable_to_expression ~expression ~location:Location.any middle
     | concatenation ->
         parametric
-          Record.OrderedTypes.unpack_public_name
+          (List.hd_exn Record.OrderedTypes.unpack_public_names)
           (to_parameters (Concatenation concatenation))
         |> expression
 
 
   let concatenation_from_annotations ~variable_aliases annotations =
     let unpacked_element_index index = function
-      | Parametric { name; _ } when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
+      | Parametric { name; _ }
+        when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
           Some index
       | _ -> None
     in
@@ -3441,7 +3450,8 @@ module OrderedTypes = struct
         | middle :: suffix -> (
             match middle with
             | Parametric { name; parameters = [Single (Primitive variable_name)] }
-              when Identifier.equal name Record.OrderedTypes.unpack_public_name -> (
+              when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names
+              -> (
                 variable_aliases variable_name
                 >>= function
                 | Record.Variable.TupleVariadic variadic ->
@@ -3457,7 +3467,7 @@ module OrderedTypes = struct
                           (Concatenation { prefix = inner_prefix; middle; suffix = inner_suffix }));
                     ];
                 }
-              when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
+              when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
                 Some { prefix = prefix @ inner_prefix; middle; suffix = inner_suffix @ suffix }
             | _ -> None)
         | _ -> None)
@@ -3475,7 +3485,8 @@ module OrderedTypes = struct
             };
         _;
       } as annotation
-      when name_is ~name:Record.OrderedTypes.unpack_public_name base -> (
+      when List.exists ~f:(fun n -> name_is ~name:n base) Record.OrderedTypes.unpack_public_names
+      -> (
         let location = Location.any in
         let wrapped_in_tuple =
           get_item_call ~location "typing.Tuple" [annotation] |> Node.create ~location
@@ -3775,10 +3786,10 @@ let parameters_from_unpacked_annotation annotation ~variable_aliases =
   in
   match annotation with
   | Parametric { name; parameters = [Single (Primitive _ as element)] }
-    when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
+    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
       unpacked_variadic_to_parameter element >>| fun parameter -> [parameter]
   | Parametric { name; parameters = [Single (Tuple ordered_type)] }
-    when Identifier.equal name Record.OrderedTypes.unpack_public_name ->
+    when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.unpack_public_names ->
       OrderedTypes.to_parameters ordered_type |> Option.some
   | _ -> None
 
@@ -3791,7 +3802,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
             Some { Record.Callable.variable; head = [] }
         | _ -> None)
     | Parametric { name; parameters }
-      when Identifier.equal name Record.OrderedTypes.concatenate_public_name -> (
+      when List.exists ~f:(Identifier.equal name) Record.OrderedTypes.concatenate_public_names -> (
         match List.rev parameters with
         | Parameter.CallableParameters (ParameterVariadicTypeVariable { variable; head = [] })
           :: reversed_head ->
@@ -5521,7 +5532,14 @@ end = struct
                      Name
                        (Name.Attribute
                          {
-                           base = { Node.value = Name (Name.Identifier "pyre_extensions"); _ };
+                           base =
+                             {
+                               Node.value =
+                                 ( Name (Name.Identifier "pyre_extensions")
+                                 | Name (Name.Identifier "typing_extensions")
+                                 | Name (Name.Identifier "typing") );
+                               _;
+                             };
                            attribute = "TypeVarTuple";
                            special = false;
                          });

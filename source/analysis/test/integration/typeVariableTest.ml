@@ -1591,7 +1591,6 @@ let test_callable_parameter_variadics =
            {|
               from typing import *
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
 
               P = ParameterSpecification("P")
               R = TypeVar("R")
@@ -1621,10 +1620,8 @@ let test_callable_parameter_variadics =
             |}
            [
              "Revealed type [-1]: Revealed type for `test.with_client` is \
-              `typing.Callable(with_client)[[Named(f, \
-              typing.Callable[pyre_extensions.type_variable_operators.Concatenate[Foo, Client, \
-              test.P], Variable[R]])], \
-              typing.Callable[pyre_extensions.type_variable_operators.Concatenate[Foo, test.P], \
+              `typing.Callable(with_client)[[Named(f, typing.Callable[typing.Concatenate[Foo, \
+              Client, test.P], Variable[R]])], typing.Callable[typing.Concatenate[Foo, test.P], \
               Variable[R]]]`.";
              "Revealed type [-1]: Revealed type for `x.takes_int_str` is \
               `BoundMethod[typing.Callable[[Foo, Named(x, int), Named(y, str)], int], Foo]`.";
@@ -1731,14 +1728,14 @@ let test_callable_parameter_variadics =
             |}
            [
              "Revealed type [-1]: Revealed type for `foo` is \
-              `typing.Callable($local_test?outer$foo)[pyre_extensions.type_variable_operators.Concatenate[int, \
-              test.TParams], None]`.";
+              `typing.Callable($local_test?outer$foo)[typing.Concatenate[int, test.TParams], \
+              None]`.";
              "Revealed type [-1]: Revealed type for `bar` is \
-              `typing.Callable($local_test?outer$bar)[pyre_extensions.type_variable_operators.Concatenate[int, \
-              test.TParams], None]`.";
+              `typing.Callable($local_test?outer$bar)[typing.Concatenate[int, test.TParams], \
+              None]`.";
              "Revealed type [-1]: Revealed type for `baz` is \
-              `typing.Callable($local_test?outer$baz)[pyre_extensions.type_variable_operators.Concatenate[int, \
-              test.TParams], None]`.";
+              `typing.Callable($local_test?outer$baz)[typing.Concatenate[int, test.TParams], \
+              None]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1869,8 +1866,8 @@ let test_user_defined_parameter_specification_classes =
             |}
            [
              "Revealed type [-1]: Revealed type for `inner` is \
-              `typing.Callable($local_test?client$inner)[pyre_extensions.type_variable_operators.Concatenate[int, \
-              test.TParams], Variable[TReturn]]`.";
+              `typing.Callable($local_test?client$inner)[typing.Concatenate[int, test.TParams], \
+              Variable[TReturn]]`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
@@ -1894,8 +1891,7 @@ let test_user_defined_parameter_specification_classes =
       @@ assert_type_errors
            {|
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
-              from typing import TypeVar, Generic, Callable, Protocol
+              from typing import TypeVar, Generic, Callable, Protocol, Concatenate
               TParams = ParameterSpecification("TParams")
               TReturn = TypeVar("TReturn")
               def remove_int_argument(f: Callable[Concatenate[int, TParams], str]) -> Callable[TParams, int]:
@@ -1913,9 +1909,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Protocol
+            from typing import Protocol, TypeVar, Generic, Callable
             from pyre_extensions import ParameterSpecification
-            from typing import TypeVar, Generic, Callable
             TParams = ParameterSpecification("TParams")
             TReturn = TypeVar("TReturn")
             TSelf = TypeVar("TSelf")
@@ -1948,10 +1943,8 @@ let test_user_defined_parameter_specification_classes =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-            from typing import Protocol
+            from typing import Protocol, TypeVar, Generic, Callable, Concatenate
             from pyre_extensions import ParameterSpecification
-            from pyre_extensions.type_variable_operators import Concatenate
-            from typing import TypeVar, Generic, Callable
             TParams = ParameterSpecification("TParams")
             TReturn = TypeVar("TReturn")
             TSelf = TypeVar("TSelf")
@@ -1984,8 +1977,7 @@ let test_user_defined_parameter_specification_classes =
       @@ assert_type_errors
            {|
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
-              from typing import TypeVar, Generic, Callable, Protocol
+              from typing import TypeVar, Generic, Callable, Protocol, Concatenate
               TParams = ParameterSpecification("TParams")
               TReturn = TypeVar("TReturn")
               def add_on_argument(f: Callable[TParams, str]) -> Callable[Concatenate[str, TParams], int]:
@@ -3051,8 +3043,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3074,8 +3065,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3093,8 +3083,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3117,8 +3106,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3137,8 +3125,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3156,8 +3143,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3175,8 +3161,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 
@@ -3198,8 +3183,7 @@ let test_variadic_tuples =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import Tuple
-              from pyre_extensions import TypeVarTuple, Unpack
+              from typing import Tuple, TypeVarTuple, Unpack
 
               Ts = TypeVarTuple("Ts")
 

@@ -354,6 +354,51 @@ let test_bound_method =
              "Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, \
               expected `typing.Tuple[*test.Ts]` but got `str`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import *
+              from typing_extensions import Unpack, TypeVarTuple
+
+              Ts = TypeVarTuple("Ts")
+
+              def foo(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]], z: Tuple[Unpack[Ts]]) -> None:
+                pass
+
+              def bar() -> None:
+                x = (1,2,3)
+                y = (4, 5)
+                z = ("hello")
+                foo(x, y, z)
+            |}
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, \
+              expected `typing.Tuple[*test.Ts]` but got `Tuple[int, int]`.";
+             "Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, \
+              expected `typing.Tuple[*test.Ts]` but got `str`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from typing import *
+
+              Ts = TypeVarTuple("Ts")
+
+              def foo(x: Tuple[Unpack[Ts]], y: Tuple[Unpack[Ts]], z: Tuple[Unpack[Ts]]) -> None:
+                pass
+
+              def bar() -> None:
+                x = (1,2,3)
+                y = (4, 5)
+                z = ("hello")
+                foo(x, y, z)
+            |}
+           [
+             "Incompatible parameter type [6]: In call `foo`, for 2nd positional argument, \
+              expected `typing.Tuple[*test.Ts]` but got `Tuple[int, int]`.";
+             "Incompatible parameter type [6]: In call `foo`, for 3rd positional argument, \
+              expected `typing.Tuple[*test.Ts]` but got `str`.";
+           ];
     ]
 
 

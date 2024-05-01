@@ -528,10 +528,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           Reversible, SupportsInt, SupportsFloat, SupportsAbs, SupportsLenAndGetItem,
           SupportsComplex, SupportsRound, IO, BinaryIO, Union, final, TypeGuard,
           ItemsView, KeysView, ValuesView, ByteString, Optional, AnyStr, Type, Text,
-          SupportsIter, SupportsNext,
+          SupportsIter, SupportsNext, Concatenate, TypeVarTuple, Unpack
         )
         from pyre_extensions import Add, Multiply, Divide, ReadOnly
-        from typing_extensions import Literal, LiteralString, Self, ParamSpec, Concatenate
+        from typing_extensions import Literal, LiteralString, Self, ParamSpec
 
         _T = TypeVar('_T')
         _T_co = TypeVar('_T_co', covariant=True)
@@ -1278,6 +1278,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
           TypeAlias: _SpecialForm = ...
           TypeGuard: _SpecialForm = ...
 
+        if sys.version_info >= (3, 11):
+          Unpack: _SpecialForm = ...
+          TypeVarTuple: _SpecialForm = ...
+
         @runtime
         class Sized(Protocol, metaclass=ABCMeta):
             @abstractmethod
@@ -1526,9 +1530,9 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
     "asyncio/__init__.pyi", "import asyncio.coroutines";
     ( "abc.pyi",
       {|
-        from typing import Type, TypeVar
+        from typing import Type, TypeVar, Concatenate
         from collections.abc import Callable
-        from typing_extensions import Concatenate, Literal, ParamSpec
+        from typing_extensions import Literal, ParamSpec
         _T = TypeVar("_T")
         _FuncT = TypeVar('FuncT')
         _R_co = TypeVar("_R_co", covariant=True)
@@ -1730,6 +1734,10 @@ let typeshed_stubs ?(include_helper_builtins = true) () =
 
         Required: _SpecialForm = ...
         NotRequired: _SpecialForm = ...
+
+        Unpack: _SpecialForm = ...
+        TypeVarTuple: _SpecialForm = ...
+        Concatenate: _SpecialForm = ...
 
         Self: _SpecialForm = ...
 

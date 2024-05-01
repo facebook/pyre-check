@@ -1097,7 +1097,7 @@ let test_invalid_type_parameters context =
       (fun ?replace_unbound_parameters_with_any:_ -> function
         | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
         | _ -> None)
-    ~given_type:"typing.List[pyre_extensions.Unpack[Ts]]"
+    ~given_type:"typing.List[typing.Unpack[Ts]]"
     ~expected_transformed_type:"typing.List[typing.Any]"
     [
       {
@@ -1139,14 +1139,44 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters
     ~source:
       {|
-      from typing import Generic
-      from pyre_extensions import TypeVarTuple, Unpack
+      from typing import Generic, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
     |}
     ~given_type:"test.Foo[int, str]"
     ~expected_transformed_type:"test.Foo[int, str]"
+    [];
+  assert_invalid_type_parameters
+    ~aliases:
+      (fun ?replace_unbound_parameters_with_any:_ -> function
+        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None)
+    ~source:
+      {|
+      from typing import Generic, TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+      class Foo(Generic[Unpack[Ts]]): ...
+    |}
+    ~given_type:"test.Foo[typing.Unpack[Ts]]"
+    ~expected_transformed_type:"test.Foo[typing.Unpack[Ts]]"
+    [];
+  assert_invalid_type_parameters
+    ~aliases:
+      (fun ?replace_unbound_parameters_with_any:_ -> function
+        | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
+        | _ -> None)
+    ~source:
+      {|
+      from typing import Generic
+      from typing_extensions import TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+      class Foo(Generic[Unpack[Ts]]): ...
+    |}
+    ~given_type:"test.Foo[typing_extensions.Unpack[Ts]]"
+    ~expected_transformed_type:"test.Foo[typing_extensions.Unpack[Ts]]"
     [];
   assert_invalid_type_parameters
     ~aliases:
@@ -1167,8 +1197,7 @@ let test_invalid_type_parameters context =
   assert_invalid_type_parameters_direct
     ~source:
       {|
-      from typing import Generic
-      from pyre_extensions import TypeVarTuple, Unpack
+      from typing import Generic, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
       class Foo(Generic[Unpack[Ts]]): ...
@@ -1210,16 +1239,14 @@ let test_invalid_type_parameters context =
         | _ -> None)
     ~source:
       {|
-      from typing import Generic, TypeVar
-      from pyre_extensions import TypeVarTuple, Unpack
+      from typing import Generic, TypeVar, Unpack, TypeVarTuple
 
       Ts = TypeVarTuple("Ts")
       T = TypeVar("T")
       class Foo(Generic[T, Unpack[Ts]]): ...
     |}
-    ~given_type:"test.Foo[pyre_extensions.Unpack[Ts]]"
-    ~expected_transformed_type:
-      "test.Foo[typing.Any, pyre_extensions.Unpack[typing.Tuple[typing.Any, ...]]]"
+    ~given_type:"test.Foo[typing.Unpack[Ts]]"
+    ~expected_transformed_type:"test.Foo[typing.Any, typing.Unpack[typing.Tuple[typing.Any, ...]]]"
     [
       {
         name = "test.Foo";

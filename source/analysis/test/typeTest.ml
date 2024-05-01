@@ -448,7 +448,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Compose[
         int,
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         str
       ]
     |}
@@ -501,7 +501,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Compose[
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
           typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[3]]
         ],
         typing.Callable[[int], int]
@@ -573,7 +573,7 @@ let test_create_type_operator _ =
       pyre_extensions.Compose[
         pyre_extensions.Compose[
           pyre_extensions.Compose[
-            pyre_extensions.Unpack[Ts],
+            typing.Unpack[Ts],
             typing.Callable[[bytes], int]
           ],
           pyre_extensions.Compose[
@@ -690,7 +690,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Product[
         str,
-        pyre_extensions.Unpack[Ts]
+        typing.Unpack[Ts]
       ]
     |}
     Type.Top;
@@ -702,7 +702,7 @@ let test_create_type_operator _ =
       pyre_extensions.Product[
         typing_extensions.Literal[2],
         typing_extensions.Literal[0],
-        pyre_extensions.Unpack[Ts]
+        typing.Unpack[Ts]
       ]
     |}
     (Type.literal_integer 0);
@@ -714,7 +714,7 @@ let test_create_type_operator _ =
       pyre_extensions.Product[
         typing_extensions.Literal[1],
         typing_extensions.Literal[1],
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing_extensions.Literal[1],
         typing_extensions.Literal[1],
       ]
@@ -737,7 +737,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Product[
         int,
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
       ]
     |}
     (Type.Primitive "int");
@@ -748,7 +748,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Product[
         typing.Any,
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
       ]
     |}
     Type.Any;
@@ -764,7 +764,7 @@ let test_create_type_operator _ =
           N2
         ],
         typing_extensions.Literal[4],
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing_extensions.Literal[2],
         N,
         typing_extensions.Literal[3]
@@ -792,7 +792,7 @@ let test_create_type_operator _ =
         N2,
         N2,
         typing_extensions.Literal[4],
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing_extensions.Literal[2],
         N,
         typing_extensions.Literal[3]
@@ -819,10 +819,10 @@ let test_create_type_operator _ =
       pyre_extensions.Product[
         pyre_extensions.Product[
           N2,
-          pyre_extensions.Unpack[Ts]
+          typing.Unpack[Ts]
         ],
         typing_extensions.Literal[4],
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing_extensions.Literal[2],
         N,
         typing_extensions.Literal[3]
@@ -845,7 +845,7 @@ let test_create_type_operator _ =
   assert_create
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             typing_extensions.Literal[2],
             ...
@@ -857,7 +857,7 @@ let test_create_type_operator _ =
   assert_create
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             int,
             ...
@@ -870,7 +870,7 @@ let test_create_type_operator _ =
     ~aliases
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             pyre_extensions.Add[N, typing_extensions.Literal[1]],
             ...
@@ -883,7 +883,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Product[
         typing_extensions.Literal[2],
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             typing_extensions.Literal[0],
             ...
@@ -896,7 +896,7 @@ let test_create_type_operator _ =
     {|
       pyre_extensions.Product[
         typing_extensions.Literal[2],
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             typing_extensions.Literal[1],
             ...
@@ -915,9 +915,9 @@ let test_create_type_operator _ =
       pyre_extensions.Product[
         N,
         N2,
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
             typing.Tuple[
               typing_extensions.Literal[2],
               typing_extensions.Literal[2]
@@ -952,9 +952,9 @@ let test_create_type_operator _ =
       pyre_extensions.Product[
         N,
         N2,
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
             typing.Tuple[int, ...]
           ]
         ],
@@ -985,8 +985,8 @@ let test_create_type_operator _ =
       | other -> aliases other)
     {|
       pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts],
-          pyre_extensions.Unpack[Ts]
+          typing.Unpack[Ts],
+          typing.Unpack[Ts]
       ]
     |}
     Type.Top;
@@ -996,9 +996,9 @@ let test_create_type_operator _ =
       | other -> aliases other)
     {|
       pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts]
+            typing.Unpack[Ts]
           ]
       ]
     |}
@@ -1033,13 +1033,13 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "Foo[pyre_extensions.Unpack[Ts]]"
+    "Foo[typing.Unpack[Ts]]"
     (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)]);
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "Foo[int, pyre_extensions.Unpack[Ts], str]"
+    "Foo[int, typing.Unpack[Ts], str]"
     (Type.parametric
        "Foo"
        [
@@ -1051,14 +1051,14 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "Foo[pyre_extensions.Unpack[typing.Tuple[int, str]]]"
+    "Foo[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.parametric "Foo" [Single Type.integer; Single Type.string]);
   (* Nested unpacks get normalized. *)
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "Foo[int, pyre_extensions.Unpack[typing.Tuple[str, pyre_extensions.Unpack[Ts]]]]"
+    "Foo[int, typing.Unpack[typing.Tuple[str, typing.Unpack[Ts]]]]"
     (Type.parametric
        "Foo"
        [
@@ -1067,7 +1067,7 @@ let test_create_variadic_tuple _ =
          Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic);
        ]);
   assert_create
-    "Foo[pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    "Foo[typing.Unpack[typing.Tuple[int, ...]]]"
     (Type.parametric
        "Foo"
        [Unpacked (Type.OrderedTypes.Concatenation.create_unbounded_unpackable Type.integer)]);
@@ -1077,13 +1077,13 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    "typing.Tuple[typing.Unpack[Ts]]"
     (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    "typing.Tuple[int, typing.Unpack[Ts], str]"
     (Type.Tuple
        (Concatenation
           (Type.OrderedTypes.Concatenation.create
@@ -1094,21 +1094,20 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Tuple[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts]]"
+    "typing.Tuple[typing.Unpack[Ts], typing.Unpack[Ts]]"
     Type.Top;
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Tuple[pyre_extensions.Unpack[typing.Tuple[int, str]]]"
+    "typing.Tuple[typing.Unpack[typing.Tuple[int, str]]]"
     (Type.tuple [Type.integer; Type.string]);
   (* Nested concrete unpacks get normalized. *)
   assert_create
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Tuple[bool, pyre_extensions.Unpack[typing.Tuple[int, \
-     pyre_extensions.Unpack[typing.Tuple[int, str]]]]]"
+    "typing.Tuple[bool, typing.Unpack[typing.Tuple[int, typing.Unpack[typing.Tuple[int, str]]]]]"
     (Type.tuple [Type.bool; Type.integer; Type.integer; Type.string]);
 
   (* Callables. *)
@@ -1116,7 +1115,7 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], int]"
+    "typing.Callable[[int, typing.Unpack[Ts], str], int]"
     (Type.Callable.create
        ~parameters:
          (Defined
@@ -1134,8 +1133,7 @@ let test_create_variadic_tuple _ =
     ~aliases:(function
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
-    "typing.Callable[[int, pyre_extensions.Unpack[typing.Tuple[bool, pyre_extensions.Unpack[Ts], \
-     bool]], str], int]"
+    "typing.Callable[[int, typing.Unpack[typing.Tuple[bool, typing.Unpack[Ts], bool]], str], int]"
     (Type.Callable.create
        ~parameters:
          (Defined
@@ -1154,8 +1152,8 @@ let test_create_variadic_tuple _ =
       | "Ts" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic))
       | "Ts2" -> Some (VariableAlias (Type.Variable.TupleVariadic variadic2))
       | _ -> None)
-    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], \
-     typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts2], str)], int]]"
+    "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Callable[[Variable(int, \
+     typing.Unpack[Ts2], str)], int]]"
     (Type.Callable.create
        ~parameters:
          (Defined
@@ -1220,7 +1218,7 @@ let test_create_variadic_tuple _ =
     {|
       pyre_extensions.Broadcast[
         typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2]],
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
       ]
     |}
     (Type.Tuple
@@ -1238,8 +1236,8 @@ let test_create_variadic_tuple _ =
       | _ -> None)
     {|
       pyre_extensions.Broadcast[
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
       ]
     |}
     (Type.Tuple (Concatenation (Type.OrderedTypes.Concatenation.create variadic)));
@@ -1250,10 +1248,10 @@ let test_create_variadic_tuple _ =
       | _ -> None)
     {|
       typing.Tuple[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
           ]
         ]
       ]
@@ -1628,7 +1626,7 @@ let test_expression _ =
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   assert_expression
     (Type.parametric "Foo" [Unpacked (Type.OrderedTypes.Concatenation.create_unpackable variadic)])
-    "Foo[pyre_extensions.Unpack[Ts]]";
+    "Foo[typing.Unpack[Ts]]";
   assert_expression
     (Type.Tuple
        (Type.OrderedTypes.Concatenation
@@ -1640,10 +1638,10 @@ let test_expression _ =
              ())))
     {|
       typing.Tuple[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[(
             typing.Tuple[typing_extensions.Literal[5]],
-            typing.Tuple[pyre_extensions.Unpack[Ts]]
+            typing.Tuple[typing.Unpack[Ts]]
           )]
         ]
       ]
@@ -1659,10 +1657,10 @@ let test_expression _ =
              (Type.OrderedTypes.Concatenation.create variadic))))
     {|
       typing.Tuple[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[(
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
-            typing.Tuple[pyre_extensions.Unpack[Ts]]
+            typing.Tuple[typing.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]]
           )]
         ]
       ]
@@ -1679,7 +1677,7 @@ let test_expression _ =
              ())))
     {|
       typing.Tuple[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[(
             typing.Tuple[T2],
             typing.Tuple[T1]
@@ -1694,7 +1692,7 @@ let test_expression _ =
              ~prefix:[Type.integer]
              ~suffix:[Type.string]
              variadic)))
-    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]";
+    "typing.Tuple[int, typing.Unpack[Ts], str]";
   assert_expression
     (Type.Callable.create
        ~parameters:
@@ -1709,7 +1707,7 @@ let test_expression _ =
             ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Variable(int, pyre_extensions.Unpack[Ts], str)], int))";
+    "typing.Callable.__getitem__(([Variable(int, typing.Unpack[Ts], str)], int))";
 
   (* Compose *)
   let callable1 =
@@ -2111,9 +2109,15 @@ let test_expression_contains_any _ =
           "pyre_extensions.type_variable_operators.Map[typing.List, int]"));
   assert_false
     (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "foo[typing.Concatenate[int, bool, Ts]]"));
+  assert_false
+    (Type.expression_contains_any
        (parse_single_expression
           ~preprocess:true
           "foo[pyre_extensions.type_variable_operators.Concatenate[int, bool, Ts]]"));
+  assert_false
+    (Type.expression_contains_any
+       (parse_single_expression ~preprocess:true "foo[type_extensions.Concatenate[int, bool, Ts]]"));
   ()
 
 
@@ -3543,7 +3547,7 @@ let test_replace_all _ =
     {|
         typing.Tuple[
             typing_extensions.Literal[99],
-            pyre_extensions.Unpack[
+            typing.Unpack[
                 pyre_extensions.Broadcast[
                     typing.Tuple[T1, T2],
                     typing.Tuple[T2, T1],
@@ -3559,7 +3563,7 @@ let test_replace_all _ =
     {|
         typing.Tuple[
             typing_extensions.Literal[99],
-            pyre_extensions.Unpack[
+            typing.Unpack[
                 pyre_extensions.Broadcast[
                     typing.Tuple[T1, T2],
                     typing.Tuple[T2, typing_extensions.Literal[99]],
@@ -3576,7 +3580,7 @@ let test_replace_all _ =
     {|
         typing.Tuple[
             typing_extensions.Literal[99],
-            pyre_extensions.Unpack[
+            typing.Unpack[
                 pyre_extensions.Broadcast[
                     typing.Tuple[T1, T2],
                     typing.Tuple[T2, T4_not_replaced],
@@ -3586,7 +3590,7 @@ let test_replace_all _ =
         ]
     |}
     "typing.Tuple[typing_extensions.Literal[99], \
-     pyre_extensions.Unpack[pyre_extensions.Broadcast[typing.Tuple[typing_extensions.Literal[5], \
+     typing.Unpack[pyre_extensions.Broadcast[typing.Tuple[typing_extensions.Literal[5], \
      typing_extensions.Literal[5]], typing.Tuple[typing_extensions.Literal[5], T4_not_replaced]]], \
      typing_extensions.Literal[99]]";
 
@@ -3650,33 +3654,33 @@ let test_replace_all _ =
   in
   assert_replaced
     ~replace:replace_with_concrete
-    "Foo[int, pyre_extensions.Unpack[Ts], str]"
+    "Foo[int, typing.Unpack[Ts], str]"
     "Foo[int, bool, bool, str]";
   assert_replaced
     ~replace:replace_with_concatenation
-    "Foo[int, pyre_extensions.Unpack[Ts], str]"
-    "Foo[int, bool, pyre_extensions.Unpack[Ts], bool, str]";
+    "Foo[int, typing.Unpack[Ts], str]"
+    "Foo[int, bool, typing.Unpack[Ts], bool, str]";
   assert_replaced
     ~replace:replace_with_concrete
-    "Foo[Bar[int, pyre_extensions.Unpack[Ts], str], Bar[int, pyre_extensions.Unpack[Ts2], str]]"
-    "Foo[Bar[int, bool, bool, str], Bar[int, pyre_extensions.Unpack[Ts2], str]]";
+    "Foo[Bar[int, typing.Unpack[Ts], str], Bar[int, typing.Unpack[Ts2], str]]"
+    "Foo[Bar[int, bool, bool, str], Bar[int, typing.Unpack[Ts2], str]]";
   assert_replaced ~replace:replace_with_concrete "typing.Tuple[int, str]" "typing.Tuple[int, str]";
   assert_replaced
     ~replace:replace_with_concrete
-    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
+    "typing.Tuple[int, typing.Unpack[Ts], str]"
     "typing.Tuple[int, bool, bool, str]";
   assert_replaced
     ~replace:replace_with_concatenation
-    "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]"
-    "typing.Tuple[int, bool, pyre_extensions.Unpack[Ts], bool, str]";
+    "typing.Tuple[int, typing.Unpack[Ts], str]"
+    "typing.Tuple[int, bool, typing.Unpack[Ts], bool, str]";
   assert_replaced
     ~replace:replace_with_concrete
-    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
+    "typing.Callable[[int, typing.Unpack[Ts], str], None]"
     "typing.Callable[[int, bool, bool, str], None]";
   assert_replaced
     ~replace:replace_with_concatenation
-    "typing.Callable[[int, pyre_extensions.Unpack[Ts], str], None]"
-    "typing.Callable[[int, bool, pyre_extensions.Unpack[Ts], bool, str], None]";
+    "typing.Callable[[int, typing.Unpack[Ts], str], None]"
+    "typing.Callable[[int, bool, typing.Unpack[Ts], bool, str], None]";
 
   (* Broadcasts. *)
   let replace_with_concrete = function
@@ -3700,7 +3704,7 @@ let test_replace_all _ =
     ~replace:replace_with_concrete
     {|
       pyre_extensions.Broadcast[
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
         typing.Tuple[typing_extensions.Literal[5]],
       ]
     |}
@@ -3709,7 +3713,7 @@ let test_replace_all _ =
     ~replace:replace_with_concatenation
     {|
       pyre_extensions.Broadcast[
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
         typing.Tuple[typing_extensions.Literal[5]],
       ]
     |}
@@ -3722,7 +3726,7 @@ let test_replace_all _ =
           typing_extensions.Literal[2],
           typing_extensions.Literal[1],
         ],
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
       ]
     |}
     {|
@@ -3739,7 +3743,7 @@ let test_replace_all _ =
           typing_extensions.Literal[2],
           typing_extensions.Literal[2],
         ],
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts]],
       ]
     |}
     "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[2], \
@@ -3750,8 +3754,8 @@ let test_replace_all _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
         ]
     |}
     "typing.Tuple[typing_extensions.Literal[5]]";
@@ -3759,8 +3763,8 @@ let test_replace_all _ =
     ~replace:replace_with_concatenation
     {|
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
         ]
     |}
     "typing.Tuple[int, ...]";
@@ -3768,8 +3772,8 @@ let test_replace_all _ =
     ~replace:replace_with_concrete
     {|
       pyre_extensions.Broadcast[
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
-        typing.Tuple[pyre_extensions.Unpack[Ts2]],
+        typing.Tuple[typing.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Ts2]],
       ]
   |}
     "pyre_extensions.BroadcastError[typing.Tuple[typing_extensions.Literal[1], \
@@ -3785,8 +3789,8 @@ let test_replace_all _ =
           typing_extensions.Literal[5],
         ],
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
-          typing.Tuple[pyre_extensions.Unpack[Ts2], typing_extensions.Literal[5]],
+          typing.Tuple[typing.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts2], typing_extensions.Literal[5]],
         ]
       ]
     |}
@@ -3807,8 +3811,8 @@ let test_replace_all _ =
           typing_extensions.Literal[5],
         ],
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
-          typing.Tuple[pyre_extensions.Unpack[Ts2]],
+          typing.Tuple[typing.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts2]],
         ]
       ]
     |}
@@ -3820,7 +3824,7 @@ let test_replace_all _ =
           typing_extensions.Literal[5]
         ],
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
           typing.Tuple[int, ...]
         ]
       ]
@@ -3832,13 +3836,13 @@ let test_replace_all _ =
     {|
       Foo[
         int,
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[
               typing_extensions.Literal[2],
               typing_extensions.Literal[1],
             ],
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
           ]
         ]
       ]
@@ -3849,30 +3853,30 @@ let test_replace_all _ =
     {|
       Foo[
         int,
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[
               typing_extensions.Literal[2],
               typing_extensions.Literal[1],
             ],
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
           ]
         ]
       ]
     |}
-    "Foo[int, pyre_extensions.Unpack[typing.Tuple[int, ...]]]";
+    "Foo[int, typing.Unpack[typing.Tuple[int, ...]]]";
   assert_replaced
     ~replace:replace_with_concrete
     {|
       Foo[
         int,
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[
               typing_extensions.Literal[2],
               typing_extensions.Literal[2],
             ],
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
           ]
         ]
       ]
@@ -3885,13 +3889,13 @@ let test_replace_all _ =
       List[
         Tensor[
           int,
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[
                 typing_extensions.Literal[2],
                 typing_extensions.Literal[2],
               ],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts]],
             ]
           ]
         ]
@@ -3906,10 +3910,10 @@ let test_replace_all _ =
     {|
       typing.Callable[
         [
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts]],
             ]
           ]
         ],
@@ -3927,10 +3931,10 @@ let test_replace_all _ =
     {|
       typing.Callable[
         [
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts]],
             ]
           ]
         ],
@@ -3939,7 +3943,7 @@ let test_replace_all _ =
     |}
     {|
       typing.Callable[
-        [pyre_extensions.Unpack[typing.Tuple[int, ...]]],
+        [typing.Unpack[typing.Tuple[int, ...]]],
         int
       ]
     |};
@@ -3948,10 +3952,10 @@ let test_replace_all _ =
     {|
       typing.Callable[
         [
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts]],
             ]
           ]
         ],
@@ -3973,7 +3977,7 @@ let test_replace_all _ =
             x,
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts]],
             ])
         ],
         int
@@ -3998,7 +4002,7 @@ let test_replace_all _ =
         [
           pyre_extensions.Broadcast[
             typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
           ]
         ],
         int
@@ -4056,7 +4060,7 @@ let test_replace_all _ =
     {|
       pyre_extensions.Compose[
         typing.Callable[[float], int],
-        pyre_extensions.Unpack[Ts]
+        typing.Unpack[Ts]
       ]
     |}
     "pyre_extensions.Compose[typing.Callable[[float], int], typing.Callable[[int], str], \
@@ -4066,7 +4070,7 @@ let test_replace_all _ =
     {|
       pyre_extensions.Compose[
         pyre_extensions.Compose[
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           typing.Callable[[bool], bool]
         ],
         typing.Callable[[bool], float],
@@ -4085,13 +4089,13 @@ let test_replace_all _ =
     {|
       pyre_extensions.Compose[
         typing.Callable[[int], int],
-        pyre_extensions.Unpack[Ts]
+        typing.Unpack[Ts]
       ]
     |}
     {|
       pyre_extensions.Compose[
         typing.Callable[[int], int],
-        pyre_extensions.Unpack[
+        typing.Unpack[
           typing.Tuple[
             typing.Callable[[int], int],
             ...
@@ -4104,13 +4108,13 @@ let test_replace_all _ =
     {|
       pyre_extensions.Compose[
         typing.Callable[[int], int],
-        pyre_extensions.Unpack[Ts2]
+        typing.Unpack[Ts2]
       ]
     |}
     {|
       pyre_extensions.Compose[
         typing.Callable[[int], int],
-        pyre_extensions.Unpack[Ts]
+        typing.Unpack[Ts]
       ]
     |};
   ()
@@ -4158,14 +4162,14 @@ let test_product_replace_variadic _ =
   in
   assert_replaced
     ~replace:replace_with_concrete
-    "pyre_extensions.Product[pyre_extensions.Unpack[Ts]]"
+    "pyre_extensions.Product[typing.Unpack[Ts]]"
     "typing_extensions.Literal[6]";
   assert_replaced
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
           typing_extensions.Literal[2],
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           typing_extensions.Literal[4]
         ]
       |}
@@ -4175,23 +4179,23 @@ let test_product_replace_variadic _ =
     {|
         pyre_extensions.Product[
           typing_extensions.Literal[2],
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           typing_extensions.Literal[4]
         ]
       |}
     {|
       pyre_extensions.Product[
         typing_extensions.Literal[16],
-        pyre_extensions.Unpack[Ts2]
+        typing.Unpack[Ts2]
       ]
     |};
   assert_replaced
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts],
+            typing.Unpack[Ts],
             typing_extensions.Literal[1]
           ]
         ]
@@ -4201,10 +4205,10 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]]
+              typing.Tuple[typing.Unpack[Ts]]
             ]
           ]
         ]
@@ -4214,13 +4218,13 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[
+          typing.Unpack[
             typing.Tuple[
               pyre_extensions.Product[
-                pyre_extensions.Unpack[
+                typing.Unpack[
                   pyre_extensions.Broadcast[
                     typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]],
-                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                    typing.Tuple[typing.Unpack[Ts]]
                   ]
                 ]
               ],
@@ -4239,13 +4243,13 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_ones
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[
+          typing.Unpack[
             typing.Tuple[
               pyre_extensions.Product[
-                pyre_extensions.Unpack[
+                typing.Unpack[
                   pyre_extensions.Broadcast[
                     typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[1]],
-                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                    typing.Tuple[typing.Unpack[Ts]]
                   ]
                 ]
               ],
@@ -4259,10 +4263,10 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]]
+              typing.Tuple[typing.Unpack[Ts]]
             ]
           ]
         ]
@@ -4274,21 +4278,21 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concatenation
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-            typing.Tuple[pyre_extensions.Unpack[Ts]]
+            typing.Tuple[typing.Unpack[Ts]]
           ]
         ]
       ]
     |}
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
             typing.Tuple[
-              typing_extensions.Literal[2], pyre_extensions.Unpack[Ts2]
+              typing_extensions.Literal[2], typing.Unpack[Ts2]
             ]
           ]
         ]
@@ -4298,12 +4302,12 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts2],
+          typing.Unpack[Ts2],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2]
+            typing.Unpack[Ts2]
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts]
+            typing.Unpack[Ts]
           ]
         ]
       |}
@@ -4329,12 +4333,12 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_both
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts2],
+          typing.Unpack[Ts2],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2]
+            typing.Unpack[Ts2]
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts]
+            typing.Unpack[Ts]
           ]
         ]
     |}
@@ -4344,15 +4348,15 @@ let test_product_replace_variadic _ =
     {|
         pyre_extensions.Add[
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2],
+            typing.Unpack[Ts2],
             pyre_extensions.Product[
-              pyre_extensions.Unpack[Ts2]
+              typing.Unpack[Ts2]
             ],
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2],
+            typing.Unpack[Ts2],
             pyre_extensions.Product[
-              pyre_extensions.Unpack[Ts2]
+              typing.Unpack[Ts2]
             ],
           ]
         ]
@@ -4363,15 +4367,15 @@ let test_product_replace_variadic _ =
     {|
         pyre_extensions.Add[
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2],
+            typing.Unpack[Ts2],
             pyre_extensions.Product[
-              pyre_extensions.Unpack[Ts2]
+              typing.Unpack[Ts2]
             ],
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2],
+            typing.Unpack[Ts2],
             pyre_extensions.Product[
-              pyre_extensions.Unpack[Ts2]
+              typing.Unpack[Ts2]
             ],
           ]
         ]
@@ -4382,9 +4386,9 @@ let test_product_replace_variadic _ =
     {|
         pyre_extensions.Product[
           N,
-          pyre_extensions.Unpack[Ts2],
+          typing.Unpack[Ts2],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2]
+            typing.Unpack[Ts2]
           ]
         ]
     |}
@@ -4396,10 +4400,10 @@ let test_product_replace_variadic _ =
     ~replace:replace_with_concrete
     {|
         pyre_extensions.Product[
-          pyre_extensions.Unpack[
+          typing.Unpack[
             pyre_extensions.Broadcast[
               typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[2]],
-              typing.Tuple[pyre_extensions.Unpack[Ts]]
+              typing.Tuple[typing.Unpack[Ts]]
             ]
           ]
         ]
@@ -4412,15 +4416,15 @@ let test_product_replace_variadic _ =
     {|
         pyre_extensions.Divide[
           pyre_extensions.Product[
-            pyre_extensions.Unpack[
+            typing.Unpack[
               pyre_extensions.Broadcast[
                 typing.Tuple[typing_extensions.Literal[3], typing_extensions.Literal[4]],
-                typing.Tuple[pyre_extensions.Unpack[Ts]]
+                typing.Tuple[typing.Unpack[Ts]]
               ]
             ]
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2]
+            typing.Unpack[Ts2]
           ]
         ]
       |}
@@ -4433,10 +4437,10 @@ let test_product_replace_variadic _ =
           pyre_extensions.Product[
             pyre_extensions.Divide[
               pyre_extensions.Product[
-                pyre_extensions.Unpack[
+                typing.Unpack[
                   pyre_extensions.Broadcast[
                     typing.Tuple[typing_extensions.Literal[2], typing_extensions.Literal[4]],
-                    typing.Tuple[pyre_extensions.Unpack[Ts]]
+                    typing.Tuple[typing.Unpack[Ts]]
                   ]
                 ]
               ],
@@ -4445,7 +4449,7 @@ let test_product_replace_variadic _ =
             typing_extensions.Literal[8]
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2]
+            typing.Unpack[Ts2]
           ]
         ]
       |}
@@ -4638,24 +4642,24 @@ let test_collect_all _ =
          (Type.create ~aliases (parse_single_expression ~preprocess:true annotation)))
   in
   assert_collected "typing.Tuple[int, str]" [];
-  assert_collected "typing.Tuple[int, pyre_extensions.Unpack[Ts], str]" [variadic];
-  assert_collected "Foo[int, pyre_extensions.Unpack[Ts], str]" [variadic];
+  assert_collected "typing.Tuple[int, typing.Unpack[Ts], str]" [variadic];
+  assert_collected "Foo[int, typing.Unpack[Ts], str]" [variadic];
   assert_collected
-    "Foo[Bar[int, pyre_extensions.Unpack[Ts], str], Baz[pyre_extensions.Unpack[Ts2]]]"
+    "Foo[Bar[int, typing.Unpack[Ts], str], Baz[typing.Unpack[Ts2]]]"
     [variadic; variadic2];
   assert_collected
-    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], typing.Tuple[int, \
-     pyre_extensions.Unpack[Ts2], str]]"
+    "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Tuple[int, \
+     typing.Unpack[Ts2], str]]"
     [variadic2; variadic];
   assert_collected
-    "typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts], str)], \
-     typing.Callable[[Variable(int, pyre_extensions.Unpack[Ts2], str)], bool]]"
+    "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], typing.Callable[[Variable(int, \
+     typing.Unpack[Ts2], str)], bool]]"
     [variadic2; variadic];
   assert_collected
     {|
       typing.Tuple[
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts]],
           typing.Tuple[typing_extensions.Literal[1]],
         ],
       ]
@@ -4675,8 +4679,8 @@ let test_collect_all _ =
     {|
       typing.Tuple[
         pyre_extensions.Broadcast[
-          typing.Tuple[pyre_extensions.Unpack[Ts]],
-          typing.Tuple[pyre_extensions.Unpack[Ts2]],
+          typing.Tuple[typing.Unpack[Ts]],
+          typing.Tuple[typing.Unpack[Ts2]],
         ],
       ]
     |}
@@ -4684,17 +4688,17 @@ let test_collect_all _ =
   assert_collected
     {|
       typing.Tuple[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
             typing.Tuple[
-              pyre_extensions.Unpack[
+              typing.Unpack[
                 pyre_extensions.Broadcast[
                   typing.Tuple[typing_extensions.Literal[1], typing_extensions.Literal[2]],
-                  typing.Tuple[pyre_extensions.Unpack[Ts]]
+                  typing.Tuple[typing.Unpack[Ts]]
                 ]
               ]
             ],
-            typing.Tuple[pyre_extensions.Unpack[Ts2]]
+            typing.Tuple[typing.Unpack[Ts2]]
           ]
         ]
       ]
@@ -4703,12 +4707,12 @@ let test_collect_all _ =
   assert_collected
     {|
       typing.Callable[
-        [pyre_extensions.Unpack[
+        [typing.Unpack[
           pyre_extensions.Broadcast[
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
             pyre_extensions.Broadcast[
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
-              typing.Tuple[pyre_extensions.Unpack[Ts2]]
+              typing.Tuple[typing.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts2]]
             ]
           ]
         ]],
@@ -4719,12 +4723,12 @@ let test_collect_all _ =
   assert_collected
     {|
       Foo[
-        pyre_extensions.Unpack[
+        typing.Unpack[
           pyre_extensions.Broadcast[
-            typing.Tuple[pyre_extensions.Unpack[Ts]],
+            typing.Tuple[typing.Unpack[Ts]],
             pyre_extensions.Broadcast[
-              typing.Tuple[pyre_extensions.Unpack[Ts]],
-              typing.Tuple[pyre_extensions.Unpack[Ts2]]
+              typing.Tuple[typing.Unpack[Ts]],
+              typing.Tuple[typing.Unpack[Ts2]]
             ]
           ]
         ]
@@ -4736,7 +4740,7 @@ let test_collect_all _ =
   assert_collected
     {|
       pyre_extensions.Compose[
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing.Callable[[int], int]
       ]
     |}
@@ -4746,7 +4750,7 @@ let test_collect_all _ =
       pyre_extensions.Compose[
         pyre_extensions.Compose[
           typing.Callable[[int], int],
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
         ],
         typing.Callable[[int], int]
       ]
@@ -4773,7 +4777,7 @@ let test_collect_all _ =
   assert_collected
     {|
       pyre_extensions.Product[
-        pyre_extensions.Unpack[Ts],
+        typing.Unpack[Ts],
         typing_extensions.Literal[2]
       ]
     |}
@@ -4790,11 +4794,11 @@ let test_collect_all _ =
     {|
       pyre_extensions.Product[
         pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           typing_extensions.Literal[2]
         ],
         pyre_extensions.Product[
-          pyre_extensions.Unpack[Ts],
+          typing.Unpack[Ts],
           typing_extensions.Literal[3]
         ]
       ]
@@ -4805,11 +4809,11 @@ let test_collect_all _ =
       pyre_extensions.Product[
         pyre_extensions.Divide[
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts],
+            typing.Unpack[Ts],
             typing_extensions.Literal[2]
           ],
           pyre_extensions.Product[
-            pyre_extensions.Unpack[Ts2],
+            typing.Unpack[Ts2],
             typing_extensions.Literal[3]
           ]
         ]
@@ -4839,9 +4843,15 @@ let test_parse_type_variable_declarations _ =
     (Type.Variable.ParameterVariadic (Type.Variable.Variadic.Parameters.create "target"));
   assert_declaration_does_not_parse "pyre_extensions.ParameterSpecification('Tparams', int, str)";
   assert_parses_declaration
+    "typing.TypeVarTuple('Ts')"
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+  assert_parses_declaration
+    "typing_extensions.TypeVarTuple('Ts')"
+    (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
+  assert_parses_declaration
     "pyre_extensions.TypeVarTuple('Ts')"
     (Type.Variable.TupleVariadic (Type.Variable.Variadic.Tuple.create "target"));
-  assert_declaration_does_not_parse "pyre_extensions.TypeVarTuple('Ts', covariant=True)";
+  assert_declaration_does_not_parse "typing.TypeVarTuple('Ts', covariant=True)";
   ()
 
 
@@ -4856,10 +4866,10 @@ let test_starred_annotation_expression _ =
   let variadic = Type.Variable.Variadic.Tuple.create "Ts" in
   assert_starred_expression
     (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic)
-    "pyre_extensions.Unpack[Ts]";
+    "typing.Unpack[Ts]";
   assert_starred_expression
     (Type.OrderedTypes.Concatenation.create ~prefix:[Type.integer] ~suffix:[Type.string] variadic)
-    "pyre_extensions.Unpack[(int, pyre_extensions.Unpack[Ts], str)]";
+    "typing.Unpack[(int, typing.Unpack[Ts], str)]";
   ()
 
 
@@ -4882,10 +4892,10 @@ let test_concatenation_from_unpack_expression _ =
          (parse_single_expression ~coerce_special_methods:true expression))
   in
   assert_concatenation
-    "pyre_extensions.Unpack[Ts]"
+    "typing.Unpack[Ts]"
     (Some (Type.OrderedTypes.Concatenation.create ~prefix:[] ~suffix:[] variadic));
   assert_concatenation
-    "pyre_extensions.Unpack[typing.Tuple[int, pyre_extensions.Unpack[Ts], str]]"
+    "typing.Unpack[typing.Tuple[int, typing.Unpack[Ts], str]]"
     (Some
        (Type.OrderedTypes.Concatenation.create
           ~prefix:[Type.integer]
@@ -5156,7 +5166,7 @@ let test_split_ordered_types _ =
        });
   assert_split
     "[int, str, bool, int, str]"
-    "[int, pyre_extensions.Unpack[Ts], int, str]"
+    "[int, typing.Unpack[Ts], int, str]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer];
@@ -5166,14 +5176,14 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
        });
   (* Not enough elements. *)
-  assert_split "[int]" "[int, str, pyre_extensions.Unpack[Ts]]" None;
-  assert_split "[str]" "[pyre_extensions.Unpack[Ts], int, str]" None;
-  assert_split "[int, int]" "[int, pyre_extensions.Unpack[Ts], int, str]" None;
-  assert_split "[int, int]" "[int, pyre_extensions.Unpack[Ts], int, str]" None;
+  assert_split "[int]" "[int, str, typing.Unpack[Ts]]" None;
+  assert_split "[str]" "[typing.Unpack[Ts], int, str]" None;
+  assert_split "[int, int]" "[int, typing.Unpack[Ts], int, str]" None;
+  assert_split "[int, int]" "[int, typing.Unpack[Ts], int, str]" None;
   (* *Ts can match against zero elements. *)
   assert_split
     "[int, int, str]"
-    "[int, pyre_extensions.Unpack[Ts], int, str]"
+    "[int, typing.Unpack[Ts], int, str]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer];
@@ -5185,8 +5195,8 @@ let test_split_ordered_types _ =
 
   (* Concatenation vs concatenation. *)
   assert_split
-    "[int, pyre_extensions.Unpack[Ts], bool]"
-    "[int, pyre_extensions.Unpack[Ts], int]"
+    "[int, typing.Unpack[Ts], bool]"
+    "[int, typing.Unpack[Ts], int]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer];
@@ -5196,8 +5206,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.bool, Type.integer];
        });
   assert_split
-    "[int, str, pyre_extensions.Unpack[Ts], bool]"
-    "[int, pyre_extensions.Unpack[Ts], str, int]"
+    "[int, str, typing.Unpack[Ts], bool]"
+    "[int, typing.Unpack[Ts], str, int]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer];
@@ -5211,8 +5221,8 @@ let test_split_ordered_types _ =
   (* There are no matching elements of known length in either the prefix_pairs or the
      suffix_pairs. *)
   assert_split
-    "[pyre_extensions.Unpack[Ts], str]"
-    "[int, pyre_extensions.Unpack[Ts]]"
+    "[typing.Unpack[Ts], str]"
+    "[int, typing.Unpack[Ts]]"
     (Some
        {
          prefix_pairs = [];
@@ -5224,8 +5234,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [];
        });
   assert_split
-    "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
-    "[int, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool]"
+    "[int, str, typing.Unpack[typing.Tuple[str, ...]], str, bool]"
+    "[int, typing.Unpack[typing.Tuple[int, ...]], bool]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer; Type.string, Type.integer];
@@ -5233,8 +5243,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.integer; Type.bool, Type.bool];
        });
   assert_split
-    "[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
+    "[int, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    "[int, str, typing.Unpack[typing.Tuple[str, ...]], str, bool]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
@@ -5242,8 +5252,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.string; Type.bool, Type.bool];
        });
   assert_split
-    "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool]"
-    "[int, pyre_extensions.Unpack[typing.Tuple[str, ...]], str, bool]"
+    "[int, str, typing.Unpack[typing.Tuple[str, ...]], bool]"
+    "[int, typing.Unpack[typing.Tuple[str, ...]], str, bool]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer; Type.string, Type.string];
@@ -5251,8 +5261,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.string; Type.bool, Type.bool];
        });
   assert_split
-    "[pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
-    "[int, pyre_extensions.Unpack[Ts], int]"
+    "[typing.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, typing.Unpack[Ts], int]"
     (Some
        {
          prefix_pairs = [Type.string, Type.integer];
@@ -5263,8 +5273,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.integer, Type.integer];
        });
   assert_split
-    "[int, int, pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
-    "[int, pyre_extensions.Unpack[Ts], int]"
+    "[int, int, typing.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, typing.Unpack[Ts], int]"
     (Some
        {
          prefix_pairs = [Type.integer, Type.integer];
@@ -5277,8 +5287,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.integer, Type.integer];
        });
   assert_split
-    "[pyre_extensions.Unpack[typing.Tuple[str, ...]]]"
-    "[pyre_extensions.Unpack[Ts], str]"
+    "[typing.Unpack[typing.Tuple[str, ...]]]"
+    "[typing.Unpack[Ts], str]"
     (Some
        {
          prefix_pairs = [];
@@ -5289,8 +5299,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.string];
        });
   assert_split
-    "[pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
-    "[int, pyre_extensions.Unpack[Ts], str, int]"
+    "[typing.Unpack[typing.Tuple[str, ...]], int]"
+    "[int, typing.Unpack[Ts], str, int]"
     (Some
        {
          prefix_pairs = [Type.string, Type.integer];
@@ -5301,8 +5311,8 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
        });
   assert_split
-    "[str, pyre_extensions.Unpack[typing.Tuple[str, ...]], int]"
-    "[pyre_extensions.Unpack[Ts], str, int]"
+    "[str, typing.Unpack[typing.Tuple[str, ...]], int]"
+    "[typing.Unpack[Ts], str, int]"
     (Some
        {
          prefix_pairs = [];
@@ -5315,7 +5325,7 @@ let test_split_ordered_types _ =
          suffix_pairs = [Type.string, Type.string; Type.integer, Type.integer];
        });
   assert_split
-    "[pyre_extensions.Unpack[typing.Tuple[str, ...]]]"
+    "[typing.Unpack[typing.Tuple[str, ...]]]"
     "[str, str]"
     (Some
        {
@@ -5324,7 +5334,7 @@ let test_split_ordered_types _ =
          suffix_pairs = [];
        });
   assert_split
-    "[str, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    "[str, str, typing.Unpack[typing.Tuple[int, ...]]]"
     "[str, str]"
     (Some
        {
@@ -5333,7 +5343,7 @@ let test_split_ordered_types _ =
          suffix_pairs = [];
        });
   assert_split
-    "[str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]"
+    "[str, typing.Unpack[typing.Tuple[int, ...]], str]"
     "[str, bool]"
     (Some
        {
@@ -5341,7 +5351,7 @@ let test_split_ordered_types _ =
          middle_pair = Concrete [], Concrete [];
          suffix_pairs = [];
        });
-  assert_split "[str, str, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]" "[str, str]" None;
+  assert_split "[str, str, str, typing.Unpack[typing.Tuple[int, ...]]]" "[str, str]" None;
   assert_split
     "[str, ...]"
     "[int]"
@@ -5378,26 +5388,26 @@ let test_coalesce_ordered_types _ =
   assert_coalesce ["[int, str]"; "[bool, bool]"] (Some "[int, str, bool, bool]");
   assert_coalesce
     ["[int, str]"; "[int, ...]"; "[bool, bool]"]
-    (Some "[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool, bool]");
+    (Some "[int, str, typing.Unpack[typing.Tuple[int, ...]], bool, bool]");
   assert_coalesce
-    ["[int, str]"; "[pyre_extensions.Unpack[Ts]]"; "[bool, bool]"]
-    (Some "[int, str, pyre_extensions.Unpack[Ts], bool, bool]");
-  assert_coalesce ["[int, ...]"; "[pyre_extensions.Unpack[Ts]]"] None;
+    ["[int, str]"; "[typing.Unpack[Ts]]"; "[bool, bool]"]
+    (Some "[int, str, typing.Unpack[Ts], bool, bool]");
+  assert_coalesce ["[int, ...]"; "[typing.Unpack[Ts]]"] None;
   assert_coalesce ["[int, ...]"; "[int, ...]"] (Some "[int, ...]");
   assert_coalesce ["[int, ...]"; "[str, ...]"] (Some "[typing.Union[int, str], ...]");
   assert_coalesce
     [
       "[int, int]";
-      "[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], bool, bool]";
+      "[int, str, typing.Unpack[typing.Tuple[int, ...]], bool, bool]";
       "[bool, bool]";
-      "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool, bool]";
+      "[int, str, typing.Unpack[typing.Tuple[str, ...]], bool, bool]";
       "[bool, bool]";
-      "[int, str, pyre_extensions.Unpack[typing.Tuple[str, ...]], bool, bool]";
+      "[int, str, typing.Unpack[typing.Tuple[str, ...]], bool, bool]";
       "[bool, bool]";
     ]
     (Some
-       "[int, int, int, str, pyre_extensions.Unpack[typing.Tuple[typing.Union[int, bool, str], \
-        ...]], bool, bool, bool, bool]");
+       "[int, int, int, str, typing.Unpack[typing.Tuple[typing.Union[int, bool, str], ...]], bool, \
+        bool, bool, bool]");
   ()
 
 
@@ -5426,25 +5436,25 @@ let test_drop_prefix_ordered_type _ =
   assert_drop_prefix ~length:3 "typing.Tuple[int, str]" None;
   assert_drop_prefix
     ~length:0
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
-    (Some "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]");
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[int, ...]]]"
+    (Some "typing.Tuple[int, str, typing.Unpack[typing.Tuple[int, ...]]]");
   assert_drop_prefix
     ~length:1
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]"
-    (Some "typing.Tuple[str, pyre_extensions.Unpack[typing.Tuple[int, ...]], str]");
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[int, ...]], str]"
+    (Some "typing.Tuple[str, typing.Unpack[typing.Tuple[int, ...]], str]");
   assert_drop_prefix
     ~length:2
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[int, ...]]]"
     (Some "typing.Tuple[int, ...]");
   assert_drop_prefix
     ~length:2
-    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts]]"
-    (Some "typing.Tuple[pyre_extensions.Unpack[Ts]]");
+    "typing.Tuple[int, str, typing.Unpack[Ts]]"
+    (Some "typing.Tuple[typing.Unpack[Ts]]");
   assert_drop_prefix
     ~length:3
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[int, ...]]]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[int, ...]]]"
     (Some "typing.Tuple[int, ...]");
-  assert_drop_prefix ~length:3 "typing.Tuple[int, str, pyre_extensions.Unpack[Ts]]" None;
+  assert_drop_prefix ~length:3 "typing.Tuple[int, str, typing.Unpack[Ts]]" None;
   ()
 
 
@@ -5474,38 +5484,32 @@ let test_index_ordered_type _ =
   assert_index ~python_index:(-3) "typing.Tuple[int, str]" None;
   assert_index
     ~python_index:0
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]]]"
     (Some "int");
   assert_index
     ~python_index:2
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]]]"
     (Some "bool");
   assert_index
     ~python_index:99
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]]]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]]]"
     (Some "bool");
   assert_index
     ~python_index:(-1)
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]], str]"
     (Some "str");
   assert_index
     ~python_index:(-2)
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]], str]"
     (Some "bool");
   assert_index
     ~python_index:(-99)
-    "typing.Tuple[int, str, pyre_extensions.Unpack[typing.Tuple[bool, ...]], str]"
+    "typing.Tuple[int, str, typing.Unpack[typing.Tuple[bool, ...]], str]"
     (Some "bool");
-  assert_index
-    ~python_index:1
-    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]"
-    (Some "str");
-  assert_index
-    ~python_index:(-1)
-    "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]"
-    (Some "bool");
-  assert_index ~python_index:2 "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]" None;
-  assert_index ~python_index:(-2) "typing.Tuple[int, str, pyre_extensions.Unpack[Ts], bool]" None;
+  assert_index ~python_index:1 "typing.Tuple[int, str, typing.Unpack[Ts], bool]" (Some "str");
+  assert_index ~python_index:(-1) "typing.Tuple[int, str, typing.Unpack[Ts], bool]" (Some "bool");
+  assert_index ~python_index:2 "typing.Tuple[int, str, typing.Unpack[Ts], bool]" None;
+  assert_index ~python_index:(-2) "typing.Tuple[int, str, typing.Unpack[Ts], bool]" None;
   ()
 
 
@@ -5649,8 +5653,8 @@ let test_zip_variables_with_parameters _ =
 
   (* Variadic tuples. *)
   assert_zipped
-    ~generic_class:"Generic[pyre_extensions.Unpack[Ts]]"
-    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    ~generic_class:"Generic[typing.Unpack[Ts]]"
+    ~instantiation:"Foo[typing.Unpack[Ts]]"
     (Some
        [
          {
@@ -5662,7 +5666,7 @@ let test_zip_variables_with_parameters _ =
          };
        ]);
   assert_zipped
-    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
+    ~generic_class:"Generic[T, typing.Unpack[Ts]]"
     ~instantiation:"Foo[int]"
     (Some
        [
@@ -5676,7 +5680,7 @@ let test_zip_variables_with_parameters _ =
          };
        ]);
   assert_zipped
-    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
+    ~generic_class:"Generic[T, typing.Unpack[Ts]]"
     ~instantiation:"Foo[int, str, int, bool]"
     (Some
        [
@@ -5692,8 +5696,8 @@ let test_zip_variables_with_parameters _ =
          };
        ]);
   assert_zipped
-    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts], T2]"
-    ~instantiation:"Foo[int, str, pyre_extensions.Unpack[Ts2], bool, str]"
+    ~generic_class:"Generic[T, typing.Unpack[Ts], T2]"
+    ~instantiation:"Foo[int, str, typing.Unpack[Ts2], bool, str]"
     (Some
        [
          {
@@ -5725,7 +5729,7 @@ let test_zip_variables_with_parameters _ =
        ]);
   (* Mix of unary, variadic, and ParamSpec. *)
   assert_zipped
-    ~generic_class:"Generic[T, TParams, pyre_extensions.Unpack[Ts]]"
+    ~generic_class:"Generic[T, TParams, typing.Unpack[Ts]]"
     ~instantiation:"Foo[int, TParams, str, bool]"
     (Some
        [
@@ -5749,8 +5753,8 @@ let test_zip_variables_with_parameters _ =
          };
        ]);
   assert_zipped
-    ~generic_class:"Generic[T, TParams, pyre_extensions.Unpack[Ts]]"
-    ~instantiation:"Foo[int, TParams, str, pyre_extensions.Unpack[Ts2]]"
+    ~generic_class:"Generic[T, TParams, typing.Unpack[Ts]]"
+    ~instantiation:"Foo[int, TParams, str, typing.Unpack[Ts2]]"
     (Some
        [
          {
@@ -5789,7 +5793,7 @@ let test_zip_variables_with_parameters _ =
   (* Wrong kind of parameter passed to `T` and `TParams`. *)
   assert_zipped
     ~generic_class:"Generic[T]"
-    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[typing.Unpack[Ts]]"
     (Some
        [
          {
@@ -5800,7 +5804,7 @@ let test_zip_variables_with_parameters _ =
        ]);
   assert_zipped
     ~generic_class:"Generic[TParams]"
-    ~instantiation:"Foo[pyre_extensions.Unpack[Ts]]"
+    ~instantiation:"Foo[typing.Unpack[Ts]]"
     (Some
        [
          {
@@ -5810,7 +5814,7 @@ let test_zip_variables_with_parameters _ =
          };
        ]);
   assert_zipped
-    ~generic_class:"Generic[pyre_extensions.Unpack[Ts]]"
+    ~generic_class:"Generic[typing.Unpack[Ts]]"
     ~instantiation:"Foo[TParams]"
     (Some
        [
@@ -5836,11 +5840,11 @@ let test_zip_variables_with_parameters _ =
      because `Ts` might be an empty tuple, in which case the generic `T` won't be bound to any
      type. *)
   assert_zipped
-    ~generic_class:"Generic[T, pyre_extensions.Unpack[Ts]]"
-    ~instantiation:"Foo[pyre_extensions.Unpack[Ts2]]"
+    ~generic_class:"Generic[T, typing.Unpack[Ts]]"
+    ~instantiation:"Foo[typing.Unpack[Ts2]]"
     None;
   assert_zipped
-    ~generic_class:"Generic[pyre_extensions.Unpack[Ts], pyre_extensions.Unpack[Ts2]]"
+    ~generic_class:"Generic[typing.Unpack[Ts], typing.Unpack[Ts2]]"
     ~instantiation:"Foo[int, str]"
     None;
   ()

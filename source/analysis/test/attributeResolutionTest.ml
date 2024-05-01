@@ -513,7 +513,96 @@ let test_get_parameter_argument_mapping _ =
   (* We slice the `*xs` argument to assign it across `x: str` and `*args: *Tuple[<...>]`. *)
   assert_parameter_argument_mapping
     ~callable:
+      "typing.Callable[[Named(x, str), Variable(str, typing.Unpack[typing.Tuple[int, ...]])], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved =
+          Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Variable (Concatenation tuple_str_unbounded_int),
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:1
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  assert_parameter_argument_mapping
+    ~callable:
       "typing.Callable[[Named(x, str), Variable(str, pyre_extensions.Unpack[typing.Tuple[int, \
+       ...]])], None]"
+    ~self_argument:None
+    [
+      {
+        Argument.WithPosition.resolved =
+          Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+        kind = SingleStar;
+        expression = None;
+        position = 1;
+      };
+    ]
+    {
+      parameter_argument_mapping =
+        Parameter.Map.of_alist_exn
+          [
+            ( Named { name = "x"; annotation = Type.string; default = false },
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:0
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+            ( Variable (Concatenation tuple_str_unbounded_int),
+              [
+                make_matched_argument
+                  ~index_into_starred_tuple:1
+                  {
+                    Argument.WithPosition.resolved =
+                      Type.tuple [Type.string; Type.string; Type.integer; Type.integer];
+                    kind = SingleStar;
+                    expression = None;
+                    position = 1;
+                  };
+              ] );
+          ];
+      reasons = { arity = []; annotation = [] };
+    };
+  assert_parameter_argument_mapping
+    ~callable:
+      "typing.Callable[[Named(x, str), Variable(str, typing_extensions.Unpack[typing.Tuple[int, \
        ...]])], None]"
     ~self_argument:None
     [
@@ -750,8 +839,7 @@ let test_check_arguments_against_parameters context =
      ...]`. *)
   assert_arguments_against_parameters
     ~callable:
-      "typing.Callable[[Named(x, str), Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], \
-       None]"
+      "typing.Callable[[Named(x, str), Variable(typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -904,8 +992,7 @@ let test_check_arguments_against_parameters context =
   in
   (* Pass an unpacked list to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:
-      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
+    ~callable:"typing.Callable[[Variable(int, typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -927,8 +1014,7 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass multiple unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:
-      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
+    ~callable:"typing.Callable[[Variable(int, typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -971,8 +1057,7 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass multiple, heterogeneous, unpacked lists to `*args: *Tuple[int, *Tuple[int, ...]]`. *)
   assert_arguments_against_parameters
-    ~callable:
-      "typing.Callable[[Variable(int, pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
+    ~callable:"typing.Callable[[Variable(int, typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -1027,7 +1112,7 @@ let test_check_arguments_against_parameters context =
   in
   (* Pass an unpacked list of strings to `*args: *Tuple[int, ...]`. *)
   assert_arguments_against_parameters
-    ~callable:"typing.Callable[[Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
+    ~callable:"typing.Callable[[Variable(typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =
@@ -1067,7 +1152,7 @@ let test_check_arguments_against_parameters context =
     [TypeConstraints.empty];
   (* Pass part of an unpacked tuple to `*args: *Tuple[int, ...]`. *)
   assert_arguments_against_parameters
-    ~callable:"typing.Callable[[Variable(pyre_extensions.Unpack[typing.Tuple[int, ...]])], None]"
+    ~callable:"typing.Callable[[Variable(typing.Unpack[typing.Tuple[int, ...]])], None]"
     ~parameter_argument_mapping_with_reasons:
       {
         parameter_argument_mapping =

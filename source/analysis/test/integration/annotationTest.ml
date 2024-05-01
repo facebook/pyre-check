@@ -2537,8 +2537,8 @@ let test_check_typevar_arithmetic =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import Generic, TypeVar
-              from pyre_extensions import TypeVarTuple, Add
+              from typing import Generic, TypeVar, TypeVarTuple
+              from pyre_extensions import Add
               from typing_extensions import Literal as L
 
               N = TypeVar("N", bound=int)
@@ -2552,8 +2552,8 @@ let test_check_typevar_arithmetic =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from typing import Generic, TypeVar
-              from pyre_extensions import TypeVarTuple, Add
+              from typing import Generic, TypeVar, TypeVarTuple
+              from pyre_extensions import Add
               from typing_extensions import Literal as L
 
               N = TypeVar("N", bound=int)
@@ -3241,8 +3241,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack
-              from typing import Tuple
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Unpack
               from typing_extensions import Literal as L
 
               def foo(x: Broadcast[Tuple[L[2], L[1]], Tuple[L[2]]]) -> None:
@@ -3255,8 +3255,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack
-              from typing import Tuple
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Unpack
               from typing_extensions import Literal as L
 
               def foo(x: Broadcast[Tuple[L[2], L[1]], Tuple[L[3], L[2]]]) -> None:
@@ -3271,8 +3271,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack, TypeVarTuple
-              from typing import Tuple
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               Ts = TypeVarTuple("Ts")
@@ -3296,8 +3296,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack, TypeVarTuple
-              from typing import Tuple, Generic, TypeVar
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Generic, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               DType = TypeVar("DType")
@@ -3331,8 +3331,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack, TypeVarTuple
-              from typing import Tuple, Generic, TypeVar, List
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Generic, TypeVar, List, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               Ts = TypeVarTuple("Ts")
@@ -3371,8 +3371,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack, TypeVarTuple
-              from typing import Tuple, Generic, TypeVar, overload, Union, Any
+              from pyre_extensions import Broadcast
+              from typing import Tuple, Generic, TypeVar, overload, Union, Any, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3411,8 +3411,8 @@ let test_check_broadcast =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Broadcast, Unpack
-              from typing import Tuple, TypeVar
+              from pyre_extensions import Broadcast
+              from typing import Tuple, TypeVar, Unpack
 
               N1 = TypeVar("N1", bound=int)
               N2 = TypeVar("N2", bound=int)
@@ -3461,8 +3461,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3530,8 +3530,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3606,8 +3606,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3639,8 +3639,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3669,8 +3669,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3697,8 +3697,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               Ts = TypeVarTuple("Ts")
@@ -3733,8 +3733,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3774,8 +3774,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, Unpack, TypeVarTuple
-              from typing import Generic, Callable, TypeVar, Tuple, overload, Union
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Tuple, overload, Union, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3820,8 +3820,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3853,8 +3853,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3883,8 +3883,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -3936,8 +3936,8 @@ let test_check_compose =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Compose, TypeVarTuple, Unpack
-              from typing import Generic, Callable, TypeVar
+              from pyre_extensions import Compose
+              from typing import Generic, Callable, TypeVar, Unpack, TypeVarTuple
               from typing_extensions import Literal as L
 
               T = TypeVar("T")
@@ -4139,25 +4139,25 @@ let test_check_product =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Product, Unpack
+              from pyre_extensions import Product
               from typing_extensions import Literal as L
-              from typing import Tuple
+              from typing import Tuple, Unpack
 
               x: Product[Unpack[Tuple[Tuple[L[2]], ...]]]
               reveal_type(x)
             |}
            [
              "Invalid type [31]: Expression \
-              `pyre_extensions.Product[pyre_extensions.Unpack[typing.Tuple[(typing.Tuple[typing_extensions.Literal[2]], \
+              `pyre_extensions.Product[typing.Unpack[typing.Tuple[(typing.Tuple[typing_extensions.Literal[2]], \
               ...)]]]` is not a valid type.";
              "Revealed type [-1]: Revealed type for `x` is `typing.Any`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Product, Unpack, Broadcast, TypeVarTuple
+              from pyre_extensions import Product, Broadcast
               from typing_extensions import Literal as L
-              from typing import Tuple, TypeVar
+              from typing import Tuple, TypeVar, Unpack, TypeVarTuple
 
               N = TypeVar("N", bound=int)
               Ts = TypeVarTuple("Ts")
@@ -4175,9 +4175,9 @@ let test_check_product =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors
            {|
-              from pyre_extensions import Product, Unpack, TypeVarTuple
+              from pyre_extensions import Product
               from typing_extensions import Literal as L
-              from typing import Tuple, TypeVar, Generic
+              from typing import Tuple, TypeVar, Generic, Unpack, TypeVarTuple
 
               DType = TypeVar("DType")
               Ts = TypeVarTuple("Ts")
@@ -4197,6 +4197,62 @@ let test_check_product =
              "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
               typing_extensions.Literal[24]]`.";
              "Revealed type [-1]: Revealed type for `result2` is `Tensor[int, undefined]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
+              from pyre_extensions import Product, Broadcast
+              from typing_extensions import Literal as L
+              from typing import Tuple, TypeVar, Generic, Unpack, TypeVarTuple
+
+              DType = TypeVar("DType")
+              Ts = TypeVarTuple("Ts")
+
+              class Tensor(Generic[DType, Unpack[Ts]]): ...
+              def foo(input: Tensor[DType, Unpack[Ts]]) -> Tensor[DType, Product[Unpack[Broadcast[Tuple[Unpack[Ts]], Tuple[L[2], L[1]]]]]]: ...
+
+              x: Tensor[int, L[2], L[3]]
+              result = foo(x)
+              reveal_type(result)
+
+              y: Tensor[int, str, L[3], L[3]]
+              result2 = foo(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+              typing_extensions.Literal[6]]`.";
+             "Broadcast error [2001]: Broadcast error at expression `test.foo(y)`; types \
+              `Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]]` and `Tuple[str, \
+              typing_extensions.Literal[3], typing_extensions.Literal[3]]` cannot be broadcasted \
+              together.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_default_type_errors
+           {|
+              from pyre_extensions import Product, Broadcast
+              from typing_extensions import Literal as L, Unpack, TypeVarTuple
+              from typing import Tuple, TypeVar, Generic
+
+              DType = TypeVar("DType")
+              Ts = TypeVarTuple("Ts")
+
+              class Tensor(Generic[DType, Unpack[Ts]]): ...
+              def foo(input: Tensor[DType, Unpack[Ts]]) -> Tensor[DType, Product[Unpack[Broadcast[Tuple[Unpack[Ts]], Tuple[L[2], L[1]]]]]]: ...
+
+              x: Tensor[int, L[2], L[3]]
+              result = foo(x)
+              reveal_type(result)
+
+              y: Tensor[int, str, L[3], L[3]]
+              result2 = foo(y)
+            |}
+           [
+             "Revealed type [-1]: Revealed type for `result` is `Tensor[int, \
+              typing_extensions.Literal[6]]`.";
+             "Broadcast error [2001]: Broadcast error at expression `test.foo(y)`; types \
+              `Tuple[typing_extensions.Literal[2], typing_extensions.Literal[1]]` and `Tuple[str, \
+              typing_extensions.Literal[3], typing_extensions.Literal[3]]` cannot be broadcasted \
+              together.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_default_type_errors

@@ -1004,6 +1004,41 @@ let test_check_variable_arguments context =
   (* These two ways of annotating `*args` are equivalent. *)
   assert_type_errors
     {|
+      from typing import Tuple, Unpack
+
+      def simple_starred_args( *args: str) -> None: ...
+      def unbounded_tuple_starred_args( *args: Unpack[Tuple[str, ...]]) -> None: ...
+
+      def main() -> None:
+        simple_starred_args(1, "hello")
+        unbounded_tuple_starred_args(1, "hello")
+   |}
+    [
+      "Incompatible parameter type [6]: In call `simple_starred_args`, for 1st positional \
+       argument, expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `unbounded_tuple_starred_args`, for 1st positional \
+       argument, expected `str` but got `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import Tuple
+      from typing_extensions import Unpack
+
+      def simple_starred_args( *args: str) -> None: ...
+      def unbounded_tuple_starred_args( *args: Unpack[Tuple[str, ...]]) -> None: ...
+
+      def main() -> None:
+        simple_starred_args(1, "hello")
+        unbounded_tuple_starred_args(1, "hello")
+   |}
+    [
+      "Incompatible parameter type [6]: In call `simple_starred_args`, for 1st positional \
+       argument, expected `str` but got `int`.";
+      "Incompatible parameter type [6]: In call `unbounded_tuple_starred_args`, for 1st positional \
+       argument, expected `str` but got `int`.";
+    ];
+  assert_type_errors
+    {|
       from typing import Tuple
       from pyre_extensions import Unpack
 

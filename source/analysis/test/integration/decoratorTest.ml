@@ -1557,9 +1557,8 @@ let test_classmethod_decorator =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeVar, Type, Callable
+              from typing import TypeVar, Type, Callable, Concatenate
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
 
               T = TypeVar("T")
               P = ParameterSpecification("P")
@@ -1588,9 +1587,8 @@ let test_classmethod_decorator =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeVar, Type, Callable
+              from typing import TypeVar, Type, Callable, Concatenate
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
 
               T = TypeVar("T")
               P = ParameterSpecification("P")
@@ -1721,9 +1719,8 @@ let test_staticmethod_decorator =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeVar, Type, Callable
+              from typing import TypeVar, Type, Callable, Concatenate
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
 
               T = TypeVar("T")
               P = ParameterSpecification("P")
@@ -1752,9 +1749,8 @@ let test_staticmethod_decorator =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
-              from typing import TypeVar, Type, Callable
+              from typing import TypeVar, Type, Callable, Concatenate
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
 
               T = TypeVar("T")
               P = ParameterSpecification("P")
@@ -1831,8 +1827,7 @@ let test_named_callable_against_decorator_factory =
       @@ assert_type_errors
            {|
               from pyre_extensions import ParameterSpecification
-              from pyre_extensions.type_variable_operators import Concatenate
-              from typing import Awaitable, Callable, TypeVar, Protocol
+              from typing import Awaitable, Callable, Concatenate, TypeVar, Protocol
 
               P = ParameterSpecification("P")
               R = TypeVar("R")
@@ -1850,6 +1845,33 @@ let test_named_callable_against_decorator_factory =
                   return decorator
             |}
            [];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from pyre_extensions import ParameterSpecification
+              from typing import Awaitable, Callable, Concatenate, TypeVar, Protocol
+
+              P = ParameterSpecification("P")
+              R = TypeVar("R")
+
+              class MyDecorator(Protocol):
+                  def __call__(
+                    self, f: Callable[Concatenate[int, str, P], str]
+                  ) -> Callable[Concatenate[int, str, P], str]: ...
+
+              def foo() -> MyDecorator:
+                  def decorator(
+                      f: Callable[Concatenate[int, P], str]
+                  ) -> Callable[Concatenate[int, P], str]: ...
+
+                  return decorator
+            |}
+           [
+             "Incompatible return type [7]: Expected `MyDecorator` but got \
+              `typing.Callable($local_test?foo$decorator)[[Named(f, \
+              typing.Callable[typing.Concatenate[int, test.P], str])], \
+              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
@@ -1875,9 +1897,36 @@ let test_named_callable_against_decorator_factory =
            [
              "Incompatible return type [7]: Expected `MyDecorator` but got \
               `typing.Callable($local_test?foo$decorator)[[Named(f, \
-              typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, test.P], \
-              str])], typing.Callable[pyre_extensions.type_variable_operators.Concatenate[int, \
-              test.P], str]]`.";
+              typing.Callable[typing.Concatenate[int, test.P], str])], \
+              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              from pyre_extensions import ParameterSpecification
+              from typing_extensions import Concatenate
+              from typing import Awaitable, Callable, TypeVar, Protocol
+
+              P = ParameterSpecification("P")
+              R = TypeVar("R")
+
+              class MyDecorator(Protocol):
+                  def __call__(
+                    self, f: Callable[Concatenate[int, str, P], str]
+                  ) -> Callable[Concatenate[int, str, P], str]: ...
+
+              def foo() -> MyDecorator:
+                  def decorator(
+                      f: Callable[Concatenate[int, P], str]
+                  ) -> Callable[Concatenate[int, P], str]: ...
+
+                  return decorator
+            |}
+           [
+             "Incompatible return type [7]: Expected `MyDecorator` but got \
+              `typing.Callable($local_test?foo$decorator)[[Named(f, \
+              typing.Callable[typing.Concatenate[int, test.P], str])], \
+              typing.Callable[typing.Concatenate[int, test.P], str]]`.";
            ];
     ]
 

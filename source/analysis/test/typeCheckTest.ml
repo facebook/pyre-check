@@ -929,14 +929,44 @@ let test_forward_expression context =
   assert_forward
     ~environment:
       {|
+      Ts = typing.TypeVarTuple("Ts")
+      Rs = typing.TypeVarTuple("Rs")
+      def foo(
+        x: typing.Tuple[typing.Unpack[Ts]],
+        y: typing.Tuple[typing.Unpack[Rs]]
+      ) -> pyre_extensions.Broadcast[
+        typing.Tuple[typing.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Rs]],
+      ]: ...
+    |}
+    "foo((2, 2), (3, 3))"
+    Type.Any;
+  assert_forward
+    ~environment:
+      {|
+      Ts = typing_extensions.TypeVarTuple("Ts")
+      Rs = typing_extensions.TypeVarTuple("Rs")
+      def foo(
+        x: typing.Tuple[typing.Unpack[Ts]],
+        y: typing.Tuple[typing.Unpack[Rs]]
+      ) -> pyre_extensions.Broadcast[
+        typing.Tuple[typing.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Rs]],
+      ]: ...
+    |}
+    "foo((2, 2), (3, 3))"
+    Type.Any;
+  assert_forward
+    ~environment:
+      {|
       Ts = pyre_extensions.TypeVarTuple("Ts")
       Rs = pyre_extensions.TypeVarTuple("Rs")
       def foo(
-        x: typing.Tuple[pyre_extensions.Unpack[Ts]],
-        y: typing.Tuple[pyre_extensions.Unpack[Rs]]
+        x: typing.Tuple[typing.Unpack[Ts]],
+        y: typing.Tuple[typing.Unpack[Rs]]
       ) -> pyre_extensions.Broadcast[
-        typing.Tuple[pyre_extensions.Unpack[Ts]],
-        typing.Tuple[pyre_extensions.Unpack[Rs]],
+        typing.Tuple[typing.Unpack[Ts]],
+        typing.Tuple[typing.Unpack[Rs]],
       ]: ...
     |}
     "foo((2, 2), (3, 3))"

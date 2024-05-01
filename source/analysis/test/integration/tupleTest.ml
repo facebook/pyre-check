@@ -663,8 +663,20 @@ let test_unpacking context =
     ];
   assert_type_errors
     {|
+      from typing import Tuple, TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: int, xs: Tuple[str, Unpack[Ts], bool]) -> Tuple[int, str, Unpack[Ts], bool]:
+        y = (x, *xs)
+        reveal_type(y)
+        return y
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, *test.Ts, bool]`."];
+  assert_type_errors
+    {|
       from typing import Tuple
-      from pyre_extensions import TypeVarTuple, Unpack
+      from typing_extensions import TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
@@ -678,6 +690,18 @@ let test_unpacking context =
     {|
       from typing import Tuple
       from pyre_extensions import TypeVarTuple, Unpack
+
+      Ts = TypeVarTuple("Ts")
+
+      def foo(x: int, xs: Tuple[str, Unpack[Ts], bool]) -> Tuple[int, str, Unpack[Ts], bool]:
+        y = (x, *xs)
+        reveal_type(y)
+        return y
+    |}
+    ["Revealed type [-1]: Revealed type for `y` is `typing.Tuple[int, str, *test.Ts, bool]`."];
+  assert_type_errors
+    {|
+      from typing import Tuple, TypeVarTuple, Unpack
 
       Ts = TypeVarTuple("Ts")
 
@@ -749,8 +773,7 @@ let test_star_args context =
   (* We should be able to pass an unpacked list to `*args`. *)
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import List, Tuple
+      from typing import List, Tuple, Unpack
 
       def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
 
@@ -760,8 +783,7 @@ let test_star_args context =
     [];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import List, Tuple
+      from typing import List, Tuple, Unpack
 
       def expect_int( *args: Unpack[Tuple[int, ...]]) -> None: ...
 
@@ -775,8 +797,8 @@ let test_star_args context =
   (* ParamSpec `P.args` should be treated as having type `Tuple[object, ...]`. *)
   assert_type_errors
     {|
-      from pyre_extensions import ParameterSpecification, Unpack
-      from typing import Callable, Tuple
+      from pyre_extensions import ParameterSpecification
+      from typing import Callable, Tuple, Unpack
 
       P = ParameterSpecification("P")
 
@@ -796,8 +818,7 @@ let test_star_args context =
   (* We should be able to pass multiple unpacked lists to `*args`. *)
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import List, Tuple
+      from typing import List, Tuple, Unpack
 
       def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
 
@@ -807,8 +828,7 @@ let test_star_args context =
     [];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import List, Tuple
+      from typing import List, Tuple, Unpack
 
       def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
 
@@ -821,8 +841,7 @@ let test_star_args context =
     ];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import List, Tuple
+      from typing import List, Tuple, Unpack
 
       def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
 
@@ -834,8 +853,21 @@ let test_star_args context =
     ];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
       from typing import List, Tuple
+      from typing_extensions import Unpack
+
+      def expect_int( *args: Unpack[Tuple[int, Unpack[Tuple[int, ...]]]]) -> None: ...
+
+      def main(x: int) -> None:
+        expect_int( *x)
+    |}
+    [
+      "Invalid argument [32]: Unpacked argument `x` must have an unpackable type but has type `int`.";
+    ];
+  assert_type_errors
+    {|
+      from typing import List, Tuple
+      from pyre_extensions import Unpack
 
       def expect_int( *args: int) -> None: ...
 
@@ -847,8 +879,7 @@ let test_star_args context =
     ];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import Tuple
+      from typing import Tuple, Unpack
 
       def foo( *args: Unpack[Tuple[str, Unpack[Tuple[int, ...]]]]) -> None: ...
 
@@ -858,8 +889,7 @@ let test_star_args context =
     [];
   assert_type_errors
     {|
-      from pyre_extensions import Unpack
-      from typing import Tuple
+      from typing import Tuple, Unpack
 
       def foo(x: str, y: int, *args: Unpack[Tuple[int, ...]]) -> None: ...
 

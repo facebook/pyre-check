@@ -625,6 +625,40 @@ let test_compute_inferred_generic_base context =
   assert_inferred_generic
     ~target:"test.Child"
     {|
+      Ts = typing.TypeVarTuple("Ts")
+
+      class Base(typing.Generic[typing.Unpack[Ts]]): ...
+
+      class Child(Base[typing.Unpack[Ts]]): ...
+    |}
+    (Some
+       (Type.parametric
+          "typing.Generic"
+          [
+            Unpacked
+              (Type.OrderedTypes.Concatenation.create_unpackable
+                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+          ]));
+  assert_inferred_generic
+    ~target:"test.Child"
+    {|
+      Ts = typing_extensions.TypeVarTuple("Ts")
+
+      class Base(typing.Generic[typing_extensios.Unpack[Ts]]): ...
+
+      class Child(Base[typing_extensions.Unpack[Ts]]): ...
+    |}
+    (Some
+       (Type.parametric
+          "typing.Generic"
+          [
+            Unpacked
+              (Type.OrderedTypes.Concatenation.create_unpackable
+                 (Type.Variable.Variadic.Tuple.create "test.Ts"));
+          ]));
+  assert_inferred_generic
+    ~target:"test.Child"
+    {|
       Ts = pyre_extensions.TypeVarTuple("Ts")
 
       class Base(typing.Generic[pyre_extensions.Unpack[Ts]]): ...
@@ -639,6 +673,7 @@ let test_compute_inferred_generic_base context =
               (Type.OrderedTypes.Concatenation.create_unpackable
                  (Type.Variable.Variadic.Tuple.create "test.Ts"));
           ]));
+
   (* We should not sort the generic variables in alphabetical order. *)
   assert_inferred_generic
     ~target:"test.Foo"

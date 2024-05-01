@@ -1786,7 +1786,25 @@ let test_join _ =
       match name with
       | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
       | _ -> None)
+    "typing.Tuple[typing.Unpack[Ts]]"
+    "typing.Tuple[int, ...]"
+    "typing.Tuple[object, ...]";
+
+  assert_join
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+      match name with
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
     "typing.Tuple[pyre_extensions.Unpack[Ts]]"
+    "typing.Tuple[int, ...]"
+    "typing.Tuple[object, ...]";
+
+  assert_join
+    ~aliases:(fun ?replace_unbound_parameters_with_any:_ name ->
+      match name with
+      | "Ts" -> Some (Type.VariableAlias (Type.Variable.TupleVariadic variadic))
+      | _ -> None)
+    "typing.Tuple[typing_extensions.Unpack[Ts]]"
     "typing.Tuple[int, ...]"
     "typing.Tuple[object, ...]";
 

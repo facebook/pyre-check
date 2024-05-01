@@ -992,9 +992,62 @@ let test_inline_decorators context =
   |};
   assert_inlined
     {|
-    from typing import Callable
+    from typing import Callable, Concatenate
     from pyre_extensions import ParameterSpecification
-    from pyre_extensions.type_variable_operators import Concatenate
+
+    from builtins import _test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(x: int, y: str, z: bool) -> None:
+      print(x, y, z)
+  |}
+    {|
+    from typing import Callable, Concatenate
+    from pyre_extensions import ParameterSpecification
+
+    from builtins import _test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    def foo(x: int, y: str, z: bool) -> None:
+
+      def _original_function(x: int, y: str, z: bool) -> None:
+        print(x, y, z)
+
+      def _inlined_with_logging(x: int, y: str, z: bool) -> None:
+        _args = (y, z)
+        _kwargs = {"y": y, "z": z}
+        _original_function(x, y, z)
+        print(x)
+        print(_args, _kwargs)
+
+      return _inlined_with_logging(x, y, z)
+  |};
+  assert_inlined
+    {|
+    from typing import Callable
+    from typing_extensions import Concatenate
+    from pyre_extensions import ParameterSpecification
 
     from builtins import _test_sink
 
@@ -1015,8 +1068,63 @@ let test_inline_decorators context =
   |}
     {|
     from typing import Callable
+    from typing_extensions import Concatenate
     from pyre_extensions import ParameterSpecification
+
+    from builtins import _test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    def foo(x: int, y: str, z: bool) -> None:
+
+      def _original_function(x: int, y: str, z: bool) -> None:
+        print(x, y, z)
+
+      def _inlined_with_logging(x: int, y: str, z: bool) -> None:
+        _args = (y, z)
+        _kwargs = {"y": y, "z": z}
+        _original_function(x, y, z)
+        print(x)
+        print(_args, _kwargs)
+
+      return _inlined_with_logging(x, y, z)
+  |};
+  assert_inlined
+    {|
+    from typing import Callable
     from pyre_extensions.type_variable_operators import Concatenate
+    from pyre_extensions import ParameterSpecification
+
+    from builtins import _test_sink
+
+    P = ParameterSpecification("P")
+
+    def with_logging(f: Callable[Concatenate[int, P], None]) -> Callable[Concatenate[int, P], None]:
+
+      def inner(first_parameter: int, *args: P.args, **kwargs: P.kwargs) -> None:
+        f(first_parameter, *args, **kwargs)
+        print(first_parameter)
+        print(args, kwargs)
+
+      return inner
+
+    @with_logging
+    def foo(x: int, y: str, z: bool) -> None:
+      print(x, y, z)
+  |}
+    {|
+    from typing import Callable
+    from pyre_extensions.type_variable_operators import Concatenate
+    from pyre_extensions import ParameterSpecification
 
     from builtins import _test_sink
 
