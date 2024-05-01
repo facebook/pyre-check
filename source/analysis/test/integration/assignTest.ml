@@ -592,6 +592,13 @@ let test_check_assign =
              "Unsupported operand [58]: `+` is not supported for operand types `str` and `int`.";
              "Revealed type [-1]: Revealed type for `k` is `int`.";
            ];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
+              x: dict[str, int] = ...
+              x["k"], y = "oops, cannot add to an int" + 5, 42
+            |}
+           [];
     ]
 
 
