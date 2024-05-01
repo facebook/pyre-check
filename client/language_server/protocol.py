@@ -15,7 +15,6 @@ the LSP client. This currently involves doing some kind of transformation to/fro
 to the specific representation in class form.
 """
 
-
 import asyncio
 import dataclasses
 import enum
@@ -23,7 +22,7 @@ import logging
 import urllib
 from dataclasses import field
 from pathlib import Path
-from typing import Dict, Iterable, List, Optional, Type, TypeVar
+from typing import Dict, Iterable, List, Optional, Type, TypeVar, Union
 
 import dataclasses_json
 from pyre_extensions import override
@@ -362,7 +361,7 @@ class Diagnostic(json_mixins.CamlCaseAndExcludeJsonMixin):
     range: LspRange
     message: str
     severity: Optional[DiagnosticSeverity] = None
-    code: Optional[int | str] = None
+    code: Optional[Union[int, str]] = None
     code_description: Optional[CodeDescription] = None
     source: Optional[str] = None
 
