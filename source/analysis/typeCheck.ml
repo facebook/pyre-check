@@ -5067,7 +5067,7 @@ module State (Context : Context) = struct
                 arguments = [raw_key_argument];
               } ->
               let {
-                Resolved.errors = errors_after_callee;
+                Resolved.errors = callee_errors;
                 resolved = resolved_setitem_type;
                 base = resolved_setitem_base;
                 resolution = resolution_after_callee;
@@ -5103,11 +5103,11 @@ module State (Context : Context) = struct
                   }
               in
               (* resolve the key argument, then combine it with the value *)
-              let resolution_after_key_argument, errors_after_key_argument, setitem_arguments =
-                let updated_resolution, updated_errors, key_argument =
+              let resolution_after_key_argument, base_and_callee_errors, setitem_arguments =
+                let updated_resolution, base_and_callee_errors, key_argument =
                   forward_argument
                     ~resolution:resolution_after_callee
-                    ~errors:errors_after_callee
+                    ~errors:callee_errors
                     raw_key_argument
                 in
                 let value_argument =
@@ -5117,7 +5117,7 @@ module State (Context : Context) = struct
                     resolved = guide;
                   }
                 in
-                updated_resolution, updated_errors, [key_argument; value_argument]
+                updated_resolution, base_and_callee_errors, [key_argument; value_argument]
               in
               let target, dynamic =
                 if Type.is_meta resolved_setitem_type then
@@ -5132,17 +5132,17 @@ module State (Context : Context) = struct
                       Some resolved, false
                   | _ -> None, false
               in
-              let { Resolved.resolution; errors; _ } =
+              let { Resolved.resolution; errors = setitem_errors; _ } =
                 forward_call
                   ~resolution:resolution_after_key_argument
                   ~location
-                  ~errors:errors_after_key_argument
+                  ~errors:base_and_callee_errors
                   ~target
                   ~dynamic
                   ~callee:setitem_callee
                   ~arguments:setitem_arguments
               in
-              resolution, errors
+              resolution, setitem_errors @ errors
           | List elements
           | Tuple elements
             when is_uniform_sequence guide ->

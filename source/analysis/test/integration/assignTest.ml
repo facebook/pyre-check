@@ -598,7 +598,7 @@ let test_check_assign =
               x: dict[str, int] = ...
               x["k"], y = "oops, cannot add to an int" + 5, 42
             |}
-           [];
+           ["Unsupported operand [58]: `+` is not supported for operand types `str` and `int`."];
     ]
 
 
