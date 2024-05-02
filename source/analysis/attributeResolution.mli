@@ -139,6 +139,7 @@ module SignatureSelection : sig
       expected:Type.t ->
       WeakenMutableLiterals.weakened_type) ->
     resolve_with_locals:(locals:(Reference.t * Annotation.t) list -> Expression.t -> Type.t) ->
+    location:Location.t ->
     callable:Type.Callable.t ->
     Type.t ParameterArgumentMapping.t ->
     signature_match
@@ -171,6 +172,7 @@ module SignatureSelection : sig
       expected:Type.t ->
       WeakenMutableLiterals.weakened_type) ->
     arguments:Type.t Argument.t list ->
+    location:Location.t ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
     signature_match option
@@ -291,6 +293,7 @@ module AttributeReadOnly : sig
     resolve_with_locals:
       (locals:(Reference.t * Annotation.t) list -> Expression.expression Node.t -> Type.t) ->
     arguments:Type.t Argument.t list ->
+    location:Location.t ->
     callable:Type.Callable.t ->
     self_argument:Type.t option ->
     SignatureSelectionTypes.instantiated_return_annotation

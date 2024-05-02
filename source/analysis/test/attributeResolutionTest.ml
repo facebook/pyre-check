@@ -787,6 +787,7 @@ let test_check_arguments_against_parameters context =
         ~resolve_mutable_literals:(fun ~resolve:_ ~expression:_ ~resolved ~expected:_ ->
           WeakenMutableLiterals.make_weakened_type resolved)
         ~resolve_with_locals:(fun ~locals:_ _ -> failwith "don't care")
+        ~location:Location.any
         ~callable:(parse_callable_record callable)
         parameter_argument_mapping_with_reasons
     in

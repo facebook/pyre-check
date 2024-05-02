@@ -1432,6 +1432,7 @@ module SignatureSelection = struct
       ~order
       ~resolve_mutable_literals
       ~resolve_with_locals
+      ~location
       ~callable
       { ParameterArgumentMapping.parameter_argument_mapping; reasons }
     =
@@ -1668,7 +1669,7 @@ module SignatureSelection = struct
                   in
                   let location =
                     Option.first_some (name >>| Node.location) (expression >>| Node.location)
-                    |> Option.value ~default:Location.any
+                    |> Option.value ~default:location
                   in
                   let is_mismatch =
                     TypeOrder.OrderedConstraintsSet.add
@@ -1751,7 +1752,7 @@ module SignatureSelection = struct
                 { argument = { expression; position; kind; resolved }; index_into_starred_tuple }
               :: tail -> (
                 let argument_location =
-                  expression >>| Node.location |> Option.value ~default:Location.any
+                  expression >>| Node.location |> Option.value ~default:location
                 in
                 let name =
                   match kind with
@@ -1783,7 +1784,7 @@ module SignatureSelection = struct
                     iterable_item_type
                   =
                   let argument_location =
-                    expression >>| Node.location |> Option.value ~default:Location.any
+                    expression >>| Node.location |> Option.value ~default:location
                   in
                   match iterable_item_type with
                   | Some iterable_item_type ->
@@ -1797,7 +1798,7 @@ module SignatureSelection = struct
                       |> check ~arguments:tail
                   | None ->
                       let argument_location =
-                        expression >>| Node.location |> Option.value ~default:Location.any
+                        expression >>| Node.location |> Option.value ~default:location
                       in
                       { expression; annotation = resolved }
                       |> Node.create ~location:argument_location
@@ -2061,6 +2062,7 @@ module SignatureSelection = struct
       ~order
       ~resolve_mutable_literals
       ~resolve_with_locals
+      ~location
       ~callable
       ~self_argument
       ~(arguments : Type.t Argument.WithPosition.t list)
@@ -2080,7 +2082,11 @@ module SignatureSelection = struct
     in
     let { parameters = all_parameters; _ } = implementation in
     let check_arguments_against_parameters =
-      check_arguments_against_parameters ~order ~resolve_mutable_literals ~resolve_with_locals
+      check_arguments_against_parameters
+        ~location
+        ~order
+        ~resolve_mutable_literals
+        ~resolve_with_locals
     in
     match all_parameters with
     | Defined parameters ->
@@ -2128,6 +2134,7 @@ module SignatureSelection = struct
             ~order
             ~resolve_mutable_literals
             ~resolve_with_locals
+            ~location
             ~callable
             ~self_argument
             ~arguments:back
@@ -2376,6 +2383,7 @@ module SignatureSelection = struct
       ~resolve_with_locals
       ~resolve_mutable_literals
       ~arguments
+      ~location
       ~callable:({ Type.Callable.implementation; overloads; _ } as callable)
       ~self_argument
     =
@@ -2385,6 +2393,7 @@ module SignatureSelection = struct
           ~order
           ~resolve_with_locals
           ~resolve_mutable_literals
+          ~location
           ~callable
           ~self_argument
           ~arguments:(prepare_arguments_for_signature_selection ~self_argument arguments)
@@ -3606,6 +3615,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                           };
                         ]
                       ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
+                      ~location:Location.any
                       ~callable
                       ~self_argument:None
                       ~skip_marking_escapees:true
@@ -4501,6 +4511,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                         ~assumptions
                         ~resolve_with_locals:(fun ~locals:_ _ -> Type.Top)
                         ~arguments
+                        ~location:Location.any
                         ~callable:factory_callable
                         ~self_argument:None
                         ~skip_marking_escapees:false
@@ -4540,6 +4551,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                               ~resolve_with_locals:(fun ~locals:_ _ -> Type.object_primitive)
                               ~arguments:
                                 [{ kind = Positional; expression = None; resolved = argument }]
+                              ~location:Location.any
                               ~callable
                               ~self_argument:None
                               ~skip_marking_escapees:false
@@ -4663,6 +4675,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~assumptions
         ~resolve_with_locals
         ~arguments
+        ~location
         ~callable
         ~self_argument
         ~skip_marking_escapees =
@@ -4672,6 +4685,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
         ~resolve_with_locals
         ~resolve_mutable_literals:(self#resolve_mutable_literals ~assumptions)
         ~arguments
+        ~location
         ~callable
         ~self_argument
       >>| SignatureSelection.instantiate_return_annotation ~skip_marking_escapees ~order

@@ -1089,6 +1089,7 @@ module State (Context : Context) = struct
         ~signature_select:
           (GlobalResolution.signature_select
              global_resolution
+             ~location
              ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution))
         ~global_resolution
     in
@@ -1213,6 +1214,7 @@ module State (Context : Context) = struct
                           (Resolution.global_resolution resolution)
                           ~arguments
                           ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
+                          ~location
                           ~callable
                           ~self_argument;
                       (* Make sure we emit errors against the inverse function, not the original *)
@@ -1389,6 +1391,7 @@ module State (Context : Context) = struct
                 global_resolution
                 ~resolve_with_locals:(resolve_expression_type_with_locals ~resolution)
                 ~arguments
+                ~location
                 ~callable
                 ~self_argument
             in

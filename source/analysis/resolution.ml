@@ -394,6 +394,7 @@ let fallback_attribute
                   ~resolve_with_locals:(resolve_expression_to_type_with_locals resolution)
                   ~arguments:
                     [{ expression = None; kind = Positional; resolved = Type.literal_string name }]
+                  ~location:Location.any
                   ~callable
                   ~self_argument:(Some self_argument)
               with

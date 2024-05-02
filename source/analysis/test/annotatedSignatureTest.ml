@@ -169,6 +169,7 @@ let test_unresolved_select context =
           GlobalResolution.signature_select
             global_resolution
             ~arguments:resolved_arguments
+            ~location:Location.any
             ~callable
             ~self_argument:None
             ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution) )
@@ -281,6 +282,7 @@ let test_unresolved_select context =
       GlobalResolution.signature_select
         global_resolution
         ~arguments:resolved_arguments
+        ~location:Location.any
         ~callable
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
@@ -813,6 +815,7 @@ let test_resolved_select context =
       GlobalResolution.signature_select
         global_resolution
         ~arguments
+        ~location:Location.any
         ~callable
         ~self_argument:None
         ~resolve_with_locals:(Resolution.resolve_expression_to_type_with_locals resolution)
