@@ -81,18 +81,6 @@ module Policy = struct
           1
 end
 
-let save () =
-  (* These states need to be restored in the worker process. *)
-  Log.GlobalState.get (), PyreProfiling.GlobalState.get (), Statistics.GlobalState.get ()
-
-
-let restore (log_state, profiling_state, statistics_state) =
-  Log.GlobalState.restore log_state;
-  PyreProfiling.GlobalState.restore profiling_state;
-  Statistics.GlobalState.restore statistics_state;
-  ()
-
-
 let create
     ~configuration:({ Configuration.Analysis.parallel; number_of_workers; _ } as configuration)
     ()
@@ -101,8 +89,6 @@ let create
   if parallel then
     let workers =
       Hack_parallel.Std.Worker.make
-        ~saved_state:(save ())
-        ~restore
         ~nbr_procs:number_of_workers
         ~heap_handle
         ~gc_control:Memory.worker_garbage_control

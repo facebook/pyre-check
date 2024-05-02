@@ -245,9 +245,8 @@ let make_one fork id =
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
  * the workload is wrapped in the call_wrapper. *)
-let make ~saved_state ~restore ~nbr_procs ~gc_control ~heap_handle =
+let make ~nbr_procs ~gc_control ~heap_handle =
   let restore () =
-    restore saved_state;
     SharedMemory.connect heap_handle;
     Gc.set gc_control
   in

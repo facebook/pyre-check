@@ -52,8 +52,6 @@ type 'a handle
 
 (** Creates a pool of workers. *)
 val make:
-  saved_state : 'a ->
-  restore     : ('a -> unit) ->
   nbr_procs   : int ->
   gc_control  : Gc.control ->
   heap_handle : Hack_heap.SharedMemory.handle ->
