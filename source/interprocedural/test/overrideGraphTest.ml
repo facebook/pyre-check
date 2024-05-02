@@ -93,6 +93,4 @@ let test_method_overrides context =
     ~expected:[]
 
 
-let () =
-  Scheduler.initialize ();
-  "overrideGraph" >::: ["overrides" >:: test_method_overrides] |> Test.run
+let () = "overrideGraph" >::: ["overrides" >:: test_method_overrides] |> Test.run

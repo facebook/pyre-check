@@ -37,7 +37,6 @@ let () =
   try
     Exception.record_backtrace true;
     Random.self_init ();
-    Scheduler.initialize ();
     run ()
   with
   | error ->

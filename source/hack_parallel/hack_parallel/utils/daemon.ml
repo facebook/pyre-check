@@ -39,124 +39,6 @@ let descr_of_out_channel : 'a out_channel -> Unix.file_descr =
 let cast_in ic = ic
 let cast_out oc = oc
 
-(* We cannot fork() on Windows, so in order to emulate this in a
- * cross-platform way, we use create_process() and set the HH_SERVER_DAEMON
- * environment variable to indicate which function the child should
- * execute. On Unix, create_process() does fork + exec, so global state is
- * not copied; in particular, if you have set a mutable reference the
- * daemon will not see it. All state must be explicitly passed via
- * environment variables; see set/get_context() below.
- *
- * With some factoring we could make the daemons into separate binaries
- * altogether and dispense with this emulation. *)
-
-module Entry : sig
-
-  (* All the 'untyped' operations---that are required for the
-     entry-points hashtable and the parameters stored in env
-     variable---are hidden in this sub-module, behind a 'type-safe'
-     interface. *)
-
-  type ('param, 'input, 'output) t
-
-  val register:
-    string -> ('param -> ('input, 'output) channel_pair -> unit) ->
-    ('param, 'input, 'output) t
-
-  val find:
-    ('param, 'input, 'output) t ->
-    'param ->
-    ('input, 'output) channel_pair -> unit
-
-  val set_context:
-    ('param, 'input, 'output) t ->
-    'param ->
-    Unix.file_descr * Unix.file_descr ->
-    unit
-
-  val get_context:
-    unit ->
-    (('param, 'input, 'output) t * 'param * ('input, 'output) channel_pair)
-
-  val clear_context:
-    unit -> unit
-
-end = struct
-
-  type ('param, 'input, 'output) t = string
-
-  (* Store functions as 'Obj.t' *)
-  let entry_points : (string, Obj.t) Hashtbl.t = Hashtbl.create 23
-  let register name f =
-    if Hashtbl.mem entry_points name then
-      Printf.ksprintf failwith
-        "Daemon.register_entry_point: duplicate entry point %S."
-        name;
-    Hashtbl.add entry_points name (Obj.repr f);
-    name
-
-  let find name =
-    try Obj.obj (Hashtbl.find entry_points name)
-    with Not_found ->
-      Printf.ksprintf failwith
-        "Unknown entry point %S" name
-
-  let set_context entry param (ic, oc) =
-    let data = (ic, oc, param) in
-    Unix.putenv "HH_SERVER_DAEMON" entry;
-    let file, oc =
-      Filename.open_temp_file
-        ~mode:[Open_binary]
-        ~temp_dir:Sys_utils.temp_dir_name
-        "daemon_param" ".bin" in
-    output_value oc data;
-    close_out oc;
-    Unix.putenv "HH_SERVER_DAEMON_PARAM" file
-
-  (* How this works on Unix: It may appear like we are passing file descriptors
-   * from one process to another here, but in_handle / out_handle are actually
-   * file descriptors that are already open in the current process -- they were
-   * created by the parent process before it did fork + exec. However, since
-   * exec causes the child to "forget" everything, we have to pass the numbers
-   * of these file descriptors as arguments.
-   *
-   * I'm not entirely sure what this does on Windows. *)
-  let get_context () =
-    let entry = Unix.getenv "HH_SERVER_DAEMON" in
-    if entry = "" then raise Not_found;
-    let (in_handle, out_handle, param) =
-      try
-        let file = Sys.getenv "HH_SERVER_DAEMON_PARAM" in
-        if file = "" then raise Not_found;
-        let ic = Sys_utils.open_in_bin_no_fail file in
-        let res = Marshal.from_channel ic in
-        Sys_utils.close_in_no_fail "Daemon.get_context" ic;
-        Sys.remove file;
-        res
-      with _exn ->
-        failwith "Can't find daemon parameters." in
-    (entry, param,
-     (Timeout.in_channel_of_descr in_handle,
-      Unix.out_channel_of_descr out_handle))
-
-  let clear_context () =
-    Unix.putenv "HH_SERVER_DAEMON" "";
-    Unix.putenv "HH_SERVER_DAEMON_PARAM" "";
-
-end
-
-type ('param, 'input, 'output) entry = ('param, 'input, 'output) Entry.t
-
-let exec entry param ic oc =
-  let f = Entry.find entry in
-  try f param (ic, oc); exit 0
-  with e ->
-    prerr_endline (Printexc.to_string e);
-    Printexc.print_backtrace stderr;
-    exit 2
-
-let register_entry_point = Entry.register
-
 let fd_of_path path =
   Sys_utils.with_umask 0o111 begin fun () ->
     Sys_utils.mkdir_no_fail (Filename.dirname path);
@@ -231,58 +113,11 @@ let fork
       close_pipe channel_mode (child_in, child_out);
       { channels = parent_in, parent_out; pid }
 
-let spawn
-    (type param) (type input) (type output)
-    ?(channel_mode = `pipe)
-    (stdin, stdout, stderr)
-    (entry: (param, input, output) entry)
-    (param: param)
-    : (output, input) handle =
-  let (parent_in, child_out), (child_in, parent_out) =
-    setup_channels channel_mode in
-  Entry.set_context entry param (child_in, child_out);
-  let exe = Sys_utils.executable_path () in
-  let pid = Unix.create_process exe [|exe|] stdin stdout stderr in
-  Entry.clear_context ();
-  (match channel_mode with
-   | `pipe ->
-       Unix.close child_in;
-       Unix.close child_out;
-   | `socket ->
-       (* the in and out FD's are the same. Close only once. *)
-       Unix.close child_in);
-  if stdin <> Unix.stdin then Unix.close stdin;
-  if stdout <> Unix.stdout then Unix.close stdout;
-  if stderr <> Unix.stderr && stderr <> stdout then
-    Unix.close stderr;
-  { channels = Timeout.in_channel_of_descr parent_in,
-               Unix.out_channel_of_descr parent_out;
-    pid }
-
 (* for testing code *)
 let devnull () =
   let ic = Timeout.open_in "/dev/null" in
   let oc = open_out "/dev/null" in
   {channels = ic, oc; pid = 0}
-
-(**
- * In order for the Daemon infrastructure to work, the beginning of your
- * program (or very close to the beginning) must start with a call to
- * check_entry_point.
- *
- * Details: Daemon.spawn essentially does a fork then exec of the currently
- * running program. Thus, the child process will just end up running the exact
- * same program as the parent if you forgot to start with a check_entry_point.
- * The parent process sees this as a NOOP when its program starts, but a
- * child process (from Daemon.spawn) will use this as a GOTO to its entry
- * point.
-*)
-let check_entry_point () =
-  try
-    let entry, param, (ic, oc) = Entry.get_context () in
-    Entry.clear_context ();
-    exec entry param ic oc
-  with Not_found -> ()
 
 let close { channels = (ic, oc); _ } =
   Timeout.close_in ic;

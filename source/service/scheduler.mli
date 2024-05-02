@@ -5,8 +5,6 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-val initialize : unit -> unit
-
 val is_master : unit -> bool
 
 module Policy : sig

@@ -26,6 +26,4 @@ module Std = struct
   module MyMap = Hack_collections.MyMap
 
   module PrintSignal = Hack_utils.PrintSignal
-
-  let daemon_check_entry_point = Hack_utils.Daemon.check_entry_point
 end

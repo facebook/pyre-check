@@ -224,19 +224,6 @@ let worker_main restore state (ic, oc) =
     assert false
   with End_of_file -> exit 0
 
-type 'a entry_state = 'a * Gc.control * SharedMemory.handle
-type 'a entry = ('a entry_state, request, void) Daemon.entry
-
-let entry_counter = ref 0
-let register_entry_point ~restore =
-  incr entry_counter;
-  let restore (st, gc_control, heap_handle) =
-    restore st;
-    SharedMemory.connect heap_handle;
-    Gc.set gc_control in
-  let name = Printf.sprintf "ephemeral_worker_%d" !entry_counter in
-  Daemon.register_entry_point name (worker_main restore)
-
 (**************************************************************************
  * Creates a pool of workers.
  *
@@ -246,9 +233,9 @@ let register_entry_point ~restore =
 let current_worker_id = ref 0
 
 (* Build one worker. *)
-let make_one spawn id =
+let make_one fork id =
   if id >= max_workers then failwith "Too many workers";
-  let handle = spawn () in
+  let handle = fork () in
   let wrap f input =
     current_worker_id := id;
     f input
@@ -258,20 +245,16 @@ let make_one spawn id =
 
 (** Make a few workers. When workload is given to a worker (via "call" below),
  * the workload is wrapped in the call_wrapper. *)
-let make ~saved_state ~entry ~nbr_procs ~gc_control ~heap_handle =
-  let spawn _log_fd =
-    Unix.clear_close_on_exec heap_handle.SharedMemory.h_fd;
-    let handle =
-      Daemon.spawn
-        (Daemon.null_fd (), Unix.stdout, Unix.stderr)
-        entry
-        (saved_state, gc_control, heap_handle) in
-    Unix.set_close_on_exec heap_handle.SharedMemory.h_fd;
-    handle
+let make ~saved_state ~restore ~nbr_procs ~gc_control ~heap_handle =
+  let restore () =
+    restore saved_state;
+    SharedMemory.connect heap_handle;
+    Gc.set gc_control
   in
+  let fork _log_fd = Daemon.fork (Unix.stdout, Unix.stderr) (worker_main restore) () in
   let made_workers = ref [] in
   for n = 1 to nbr_procs do
-    made_workers := make_one spawn n :: !made_workers
+    made_workers := make_one fork n :: !made_workers
   done;
   !made_workers
 

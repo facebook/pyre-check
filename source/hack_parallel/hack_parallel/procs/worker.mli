@@ -50,14 +50,10 @@ type t
 (*****************************************************************************)
 type 'a handle
 
-type 'a entry
-val register_entry_point:
-  restore:('a -> unit) -> 'a entry
-
 (** Creates a pool of workers. *)
 val make:
   saved_state : 'a ->
-  entry       : 'a entry ->
+  restore     : ('a -> unit) ->
   nbr_procs   : int ->
   gc_control  : Gc.control ->
   heap_handle : Hack_heap.SharedMemory.handle ->

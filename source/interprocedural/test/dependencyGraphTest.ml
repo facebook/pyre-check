@@ -680,7 +680,6 @@ let test_prune_callables _ =
 
 
 let () =
-  Scheduler.initialize ();
   "callGraph"
   >::: [
          "type_collection" >:: test_type_collection;
