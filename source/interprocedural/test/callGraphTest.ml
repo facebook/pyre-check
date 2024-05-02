@@ -3409,6 +3409,51 @@ let test_call_graph_of_define =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_call_graph_of_define
            ~source:{|
+      def foo(x: object):
+        return f"{x}:{x}"
+    |}
+           ~define_name:"test.foo"
+           ~expected:
+             [
+               ( "3:9-3:19",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_string_format
+                      (StringFormatCallees.from_f_string_targets
+                         [
+                           CallTarget.create
+                             ~return_type:None
+                             Target.StringCombineArtificialTargets.format_string;
+                         ])) );
+               ( "3:12-3:13",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_string_format
+                      (StringFormatCallees.from_stringify_targets
+                         [
+                           (* TODO(T112761296): Probably wrong call resolution *)
+                           CallTarget.create
+                             ~implicit_receiver:true
+                             ~receiver_class:"object"
+                             (Target.Method
+                                { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                         ])) );
+               ( "3:16-3:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_string_format
+                      (StringFormatCallees.from_stringify_targets
+                         [
+                           (* TODO(T112761296): Probably wrong call resolution *)
+                           CallTarget.create
+                             ~implicit_receiver:true
+                             ~receiver_class:"object"
+                             ~index:1
+                             (Target.Method
+                                { class_name = "object"; method_name = "__repr__"; kind = Normal });
+                         ])) );
+             ]
+           ();
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_call_graph_of_define
+           ~source:{|
       def foo(x: Any):
         return f"{x}"
     |}

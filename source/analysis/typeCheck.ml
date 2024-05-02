@@ -3031,16 +3031,29 @@ module State (Context : Context) = struct
     | FormatString substrings ->
         let forward_substring ((resolution, has_non_literal, errors) as sofar) = function
           | Substring.Literal _ -> sofar
-          | Substring.Format { value; _ } ->
-              (* TODO: T101294406 support format specifiers *)
-              forward_expression ~resolution value
-              |> fun { resolution; errors = new_errors; resolved; _ } ->
-              let has_non_literal =
-                match resolved with
-                | Type.Literal _ -> has_non_literal
-                | _ -> true
+          | Substring.Format { value; format_spec } -> (
+              let format_substring_resolved
+                  Resolved.{ resolution; errors = new_errors; resolved; _ }
+                =
+                let has_non_literal =
+                  match resolved with
+                  | Type.Literal _ -> has_non_literal
+                  | _ -> true
+                in
+                resolution, has_non_literal, new_errors
               in
-              resolution, has_non_literal, List.append new_errors errors
+              let value_resolution, value_has_non_literal, value_errors =
+                forward_expression ~resolution value |> format_substring_resolved
+              in
+              match format_spec with
+              | Some format_spec ->
+                  let format_spec_resolution, format_spec_has_non_literal, format_spec_errors =
+                    forward_expression ~resolution format_spec |> format_substring_resolved
+                  in
+                  ( format_spec_resolution,
+                    format_spec_has_non_literal || value_has_non_literal,
+                    value_errors @ format_spec_errors @ errors )
+              | None -> value_resolution, value_has_non_literal, value_errors @ errors)
         in
         let resolution, has_non_literal, errors =
           List.fold substrings ~f:forward_substring ~init:(resolution, false, [])

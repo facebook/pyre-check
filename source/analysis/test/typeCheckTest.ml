@@ -881,7 +881,9 @@ let test_forward_expression context =
   assert_forward "'string'" (Type.literal_string "string");
   assert_forward "f'string'" Type.literal_any_string;
   assert_forward "f'string{1}'" Type.literal_any_string;
+  assert_forward "f'string{1:1}'" Type.literal_any_string;
   assert_forward "f'string{undefined}'" Type.string;
+  assert_forward "f'string{1:{undefined}}'" Type.string;
 
   (* Ternaries. *)
   assert_forward "3 if True else 1" (Type.union [Type.literal_integer 3; Type.literal_integer 1]);

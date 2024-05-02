@@ -2220,12 +2220,14 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         analyze_expression ~pyre_in_context ~taint ~state ~expression
     | FormatString substrings ->
         let substrings =
-          List.map substrings ~f:(function
-              (* TODO: T101294406 handle format specifier *)
-              | Substring.Format { value; _ } -> value
+          List.concat_map substrings ~f:(function
+              | Substring.Format { value; format_spec = None } -> [value]
+              | Substring.Format { value; format_spec = Some format_spec } -> [value; format_spec]
               | Substring.Literal { Node.value; location } ->
-                  Expression.Constant (Constant.String { StringLiteral.value; kind = String })
-                  |> Node.create ~location)
+                  [
+                    Expression.Constant (Constant.String { StringLiteral.value; kind = String })
+                    |> Node.create ~location;
+                  ])
         in
         let string_literal, substrings = CallModel.arguments_for_string_format substrings in
         analyze_joined_string

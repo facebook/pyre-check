@@ -965,6 +965,14 @@ let test_string context =
       def tainted_format_string() -> str:
         input = _test_source()
         return f"{input}"
+
+      def format_string_with_second_format_tainted() -> str:
+        input = _test_source()
+        return f"{1}{input}"
+
+      def format_string_with_tainted_format_spec() -> str:
+        input = _test_source()
+        return f"{1:{input}}"
     |}
     [
       outcome ~kind:`Function ~returns:[] "qualifier.normal_string";
@@ -973,6 +981,14 @@ let test_string context =
         ~kind:`Function
         ~returns:[Sources.NamedSource "Test"]
         "qualifier.tainted_format_string";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.NamedSource "Test"]
+        "qualifier.format_string_with_second_format_tainted";
+      outcome
+        ~kind:`Function
+        ~returns:[Sources.NamedSource "Test"]
+        "qualifier.format_string_with_tainted_format_spec";
     ]
 
 

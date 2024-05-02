@@ -2543,38 +2543,44 @@ struct
               callees;
             List.iter substrings ~f:(function
                 | Substring.Literal _ -> ()
-                | Substring.Format
-                    (* TODO: T101294406 support format specifier *)
-                    { value = { Node.location = expression_location; _ } as expression; _ } ->
-                    let { CallCallees.call_targets; _ } =
-                      let callee =
-                        let method_name = resolve_stringify_call ~pyre_in_context expression in
-                        {
-                          Node.value =
-                            Expression.Name
-                              (Name.Attribute
-                                 { base = expression; attribute = method_name; special = false });
-                          location = expression_location;
-                        }
+                | Substring.Format { value; format_spec } -> (
+                    let register_call_targets
+                        ({ Node.location = expression_location; _ } as expression)
+                      =
+                      let { CallCallees.call_targets; _ } =
+                        let callee =
+                          let method_name = resolve_stringify_call ~pyre_in_context expression in
+                          {
+                            Node.value =
+                              Expression.Name
+                                (Name.Attribute
+                                   { base = expression; attribute = method_name; special = false });
+                            location = expression_location;
+                          }
+                        in
+                        CallTargetIndexer.generate_fresh_indices call_indexer;
+                        resolve_regular_callees
+                          ~pyre_in_context
+                          ~override_graph
+                          ~call_indexer
+                          ~return_type:(lazy Type.string)
+                          ~callee
                       in
-                      CallTargetIndexer.generate_fresh_indices call_indexer;
-                      resolve_regular_callees
-                        ~pyre_in_context
-                        ~override_graph
-                        ~call_indexer
-                        ~return_type:(lazy Type.string)
-                        ~callee
-                    in
 
-                    if not (List.is_empty call_targets) then
-                      let callees =
-                        ExpressionCallees.from_string_format
-                          (StringFormatCallees.from_stringify_targets call_targets)
-                      in
-                      register_targets
-                        ~expression_identifier:DefineCallGraph.string_format_expression_identifier
-                        ~location:expression_location
-                        callees)
+                      if not (List.is_empty call_targets) then
+                        let callees =
+                          ExpressionCallees.from_string_format
+                            (StringFormatCallees.from_stringify_targets call_targets)
+                        in
+                        register_targets
+                          ~expression_identifier:DefineCallGraph.string_format_expression_identifier
+                          ~location:expression_location
+                          callees
+                    in
+                    register_call_targets value;
+                    match format_spec with
+                    | Some format_spec -> register_call_targets format_spec
+                    | None -> ()))
         | _ -> ()
       in
       (* Special-case `getattr()` and `setattr()` for the taint analysis. *)
