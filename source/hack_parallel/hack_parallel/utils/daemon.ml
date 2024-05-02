@@ -18,10 +18,6 @@ type ('in_, 'out) handle = {
   pid : int;
 }
 
-(* Windows: ensure that the serialize/deserialize functions
-   for the custom block of "Unix.file_descr" are registred. *)
-let () = Lazy.force Handle.init
-
 let to_channel :
   'a out_channel -> ?flags:Marshal.extern_flags list -> ?flush:bool ->
   'a -> unit =
