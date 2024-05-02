@@ -1993,7 +1993,9 @@ let is_generator statements =
     | Expression.FormatString substrings ->
         let is_substring_generator = function
           | Substring.(Literal _) -> false
-          | Substring.Format expression -> is_expression_generator expression
+          | Substring.Format format ->
+              is_expression_generator format.value
+              || is_optional_expression_generator format.format_spec
         in
         List.exists substrings ~f:is_substring_generator
     | Expression.Ternary { Ternary.target; test; alternative } ->
@@ -2013,8 +2015,7 @@ let is_generator statements =
     is_element_generator element
     || List.exists generators ~f:(fun { Comprehension.Generator.iterator; conditions; _ } ->
            is_expression_generator iterator || List.exists conditions ~f:is_expression_generator)
-  in
-  let is_optional_expression_generator =
+  and is_optional_expression_generator =
     Option.value_map ~f:is_expression_generator ~default:false
   in
   let rec is_statement_generator { Node.value; _ } =

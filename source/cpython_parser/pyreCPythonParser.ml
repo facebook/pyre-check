@@ -420,8 +420,8 @@ let expression =
     in
     Expression.Call { Call.callee = func; arguments } |> Node.create ~location
   in
-  let formatted_value ~location ~value ~conversion:_ ~format_spec:_ =
-    Expression.FormatString [Substring.Format value] |> Node.create ~location
+  let formatted_value ~location ~value ~conversion:_ ~format_spec =
+    Expression.FormatString [Substring.Format { format_spec; value }] |> Node.create ~location
   in
   let joined_str ~location ~values =
     let collapse_formatted_value ({ Node.value; location } as expression) =
@@ -432,7 +432,7 @@ let expression =
       | Expression.FormatString [substring] -> substring
       | _ ->
           (* NOTE (grievejia): It may be impossible for CPython parser to reach this branch *)
-          Substring.Format expression
+          Substring.Format { value = expression; format_spec = None }
     in
     Expression.FormatString (List.map values ~f:collapse_formatted_value) |> Node.create ~location
   in

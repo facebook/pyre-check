@@ -141,7 +141,9 @@ module ParserToAst = struct
                     string
                 with
                 | Ok expression ->
-                    AstExpression.Substring.Format (convert_expression expression) :: sofar
+                    AstExpression.Substring.Format
+                      { value = convert_expression expression; format_spec = None }
+                    :: sofar
                 | Error error -> raise (Error error))
           in
           let value_length = String.length value in

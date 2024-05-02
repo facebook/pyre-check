@@ -262,7 +262,8 @@ let test_fstring =
     in
     let assert_not_parsed = assert_not_parsed ~context in
     let literal value = Substring.Literal (+value) in
-    let format value = Substring.Format (+value) in
+    let format value = Substring.Format { format_spec = None; value = +value } in
+    let format_spec value spec = Substring.Format { format_spec = Some (+spec); value = +value } in
     test_list
       [
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_parsed "f'foo'" ~expected:[literal "foo"];
@@ -278,23 +279,48 @@ let test_fstring =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14:10.10}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString [literal "10.10"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14:.10f}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString [literal ".10f"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14!s:10.10}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString [literal "10.10"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14!r:10.10}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString [literal "10.10"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14!a:10.10}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString [literal "10.10"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__ @@ assert_parsed "f'a{{'" ~expected:[literal "a{"];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed "f'a{{b}}c'" ~expected:[literal "a{b}c"];
@@ -315,11 +341,27 @@ let test_fstring =
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{x=!r:^20}'"
-             ~expected:[literal "x="; format (Expression.Name (Name.Identifier "x"))];
+             ~expected:
+               [
+                 literal "x=";
+                 format_spec
+                   (Expression.Name (Name.Identifier "x"))
+                   (Expression.FormatString [literal "^20"]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'{3.14!a:{w}.{p}}'"
-             ~expected:[format (Expression.Constant (Constant.Float 3.14))];
+             ~expected:
+               [
+                 format_spec
+                   (Expression.Constant (Constant.Float 3.14))
+                   (Expression.FormatString
+                      [
+                        format (Expression.Name (Name.Identifier "w"));
+                        literal ".";
+                        format (Expression.Name (Name.Identifier "p"));
+                      ]);
+               ];
         labeled_test_case __FUNCTION__ __LINE__
         @@ assert_parsed
              "f'a{b}c'"

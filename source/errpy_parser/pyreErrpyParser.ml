@@ -371,7 +371,14 @@ let rec translate_expression (expression : Errpyast.expr) =
                 generators = List.map ~f:translate_comprehension dict_comprehension.generators;
               }
         | Errpyast.FormattedValue formatted_value ->
-            Expression.FormatString [Substring.Format (translate_expression formatted_value.value)]
+            Expression.FormatString
+              [
+                Substring.Format
+                  {
+                    value = translate_expression formatted_value.value;
+                    format_spec = Option.map ~f:translate_expression formatted_value.format_spec;
+                  };
+              ]
         | Errpyast.JoinedStr joined_string ->
             let values = List.map ~f:translate_expression joined_string in
             let collapse_formatted_value ({ Node.value; location } as expression) =
@@ -381,7 +388,7 @@ let rec translate_expression (expression : Errpyast.expr) =
               | Expression.FormatString [substring] -> substring
               | _ ->
                   (* NOTE: May be impossible for ERRPY to reach this branch *)
-                  Substring.Format expression
+                  Substring.Format { value = expression; format_spec = None }
             in
             Expression.FormatString (List.map values ~f:collapse_formatted_value)
         | Errpyast.Lambda lambda ->

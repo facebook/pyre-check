@@ -3080,10 +3080,14 @@ let test_string_locations =
                             [
                               Substring.Literal (node ~start:(1, 0) ~stop:(1, 10) "foo ");
                               Substring.Format
-                                (node
-                                   ~start:(1, 7)
-                                   ~stop:(1, 8)
-                                   (Expression.Name (Name.Identifier "x")));
+                                {
+                                  format_spec = None;
+                                  value =
+                                    node
+                                      ~start:(1, 7)
+                                      ~stop:(1, 8)
+                                      (Expression.Name (Name.Identifier "x"));
+                                };
                             ])));
                ];
         labeled_test_case __FUNCTION__ __LINE__
@@ -3207,10 +3211,15 @@ let test_string_locations =
                             [
                               Substring.Literal (node ~start:(1, 0) ~stop:(3, 3) "\n");
                               Substring.Format
-                                (node
-                                   ~start:(2, 1)
-                                   ~stop:(2, 4)
-                                   (Expression.Constant (Constant.String (StringLiteral.create "a"))));
+                                {
+                                  format_spec = None;
+                                  value =
+                                    node
+                                      ~start:(2, 1)
+                                      ~stop:(2, 4)
+                                      (Expression.Constant
+                                         (Constant.String (StringLiteral.create "a")));
+                                };
                               Substring.Literal (node ~start:(1, 0) ~stop:(3, 3) "b\n");
                             ])));
                ];

@@ -103,7 +103,12 @@ module Make (Transformer : Transformer) = struct
     in
     let transform_substring substring ~transform_expression =
       match substring with
-      | Substring.Format expression -> Substring.Format (transform_expression expression)
+      | Substring.Format { value; format_spec } ->
+          Substring.Format
+            {
+              value = transform_expression value;
+              format_spec = format_spec >>| transform_expression;
+            }
       | Substring.Literal _ -> substring
     in
     let rec transform_expression expression =

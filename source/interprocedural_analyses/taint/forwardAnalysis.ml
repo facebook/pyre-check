@@ -2673,7 +2673,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       | FormatString substrings ->
           let substrings =
             List.map substrings ~f:(function
-                | Substring.Format expression -> expression
+                (* TODO: T101294406 support format specifier *)
+                | Substring.Format { value; _ } -> value
                 | Substring.Literal { Node.value; location } ->
                     Expression.Constant (Constant.String { StringLiteral.value; kind = String })
                     |> Node.create ~location)

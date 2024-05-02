@@ -91,7 +91,9 @@ module AccessCollector = struct
     | FormatString substrings ->
         let from_substring sofar = function
           | Substring.Literal _ -> sofar
-          | Substring.Format expression -> from_expression sofar expression
+          | Substring.Format { value; format_spec } ->
+              let sofar = from_expression sofar value in
+              Option.value_map format_spec ~default:sofar ~f:(from_expression sofar)
         in
         List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)

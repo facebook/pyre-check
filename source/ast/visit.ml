@@ -133,7 +133,9 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
             substrings;
           if Visitor.visit_format_string_children !state expression then
             let visit_children = function
-              | Substring.Format expression -> visit_expression expression
+              | Substring.Format format ->
+                  visit_expression format.value;
+                  Option.iter ~f:visit_expression format.format_spec
               | _ -> ()
             in
             List.iter ~f:visit_children substrings
@@ -487,7 +489,7 @@ let collect_locations source =
           | Argument { Argument.argument; _ } -> Some (Node.location argument)
           | Parameter node -> Some (Node.location node)
           | Reference node -> Some (Node.location node)
-          | Substring (Substring.Format node) -> Some (Node.location node)
+          | Substring (Substring.Format { value; _ }) -> Some (Node.location value)
           | Substring _
           | Generator _ ->
               None

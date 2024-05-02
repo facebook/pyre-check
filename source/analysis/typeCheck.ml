@@ -3031,8 +3031,9 @@ module State (Context : Context) = struct
     | FormatString substrings ->
         let forward_substring ((resolution, has_non_literal, errors) as sofar) = function
           | Substring.Literal _ -> sofar
-          | Substring.Format expression ->
-              forward_expression ~resolution expression
+          | Substring.Format { value; _ } ->
+              (* TODO: T101294406 support format specifiers *)
+              forward_expression ~resolution value
               |> fun { resolution; errors = new_errors; resolved; _ } ->
               let has_non_literal =
                 match resolved with

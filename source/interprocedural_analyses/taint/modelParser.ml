@@ -1760,74 +1760,90 @@ let parse_format_string ~find_clause ~allow_parameter_name ~allow_parameter_posi
     | Ast.Expression.Substring.Literal { Node.value; _ } ->
         Ok (ModelQuery.FormatString.Substring.Literal value)
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Constant (Constant.Integer value); _ } ->
+        { value = { Node.value = Expression.Constant (Constant.Integer value); _ }; _ } ->
         Ok (ModelQuery.FormatString.Substring.Integer (Constant value))
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Name (Identifier ("class_name" as identifier)); _ } ->
+        { value = { Node.value = Expression.Name (Identifier ("class_name" as identifier)); _ }; _ }
+      ->
         check_find_is ~identifier ModelQuery.Find.Method
         >>| fun () -> ModelQuery.FormatString.Substring.ClassName
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Name (Identifier ("function_name" as identifier)); _ } ->
+        {
+          value = { Node.value = Expression.Name (Identifier ("function_name" as identifier)); _ };
+          _;
+        } ->
         check_find_is ~identifier ModelQuery.Find.Function
         >>| fun () -> ModelQuery.FormatString.Substring.FunctionName
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Name (Identifier ("method_name" as identifier)); _ } ->
+        {
+          value = { Node.value = Expression.Name (Identifier ("method_name" as identifier)); _ };
+          _;
+        } ->
         check_find_is ~identifier ModelQuery.Find.Method
         >>| fun () -> ModelQuery.FormatString.Substring.MethodName
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Name (Identifier "parameter_name"); _ } ->
+        { value = { Node.value = Expression.Name (Identifier "parameter_name"); _ }; _ } ->
         if allow_parameter_name then
           Ok ModelQuery.FormatString.Substring.ParameterName
         else
           Error
             (ModelVerificationError.FormatStringError.InvalidIdentifierForContext "parameter_name")
     | Ast.Expression.Substring.Format
-        { Node.value = Expression.Name (Identifier "parameter_position"); _ } ->
+        { value = { Node.value = Expression.Name (Identifier "parameter_position"); _ }; _ } ->
         if allow_parameter_position then
           Ok (ModelQuery.FormatString.Substring.Integer ParameterPosition)
         else
           Error
             (ModelVerificationError.FormatStringError.InvalidIdentifierForContext
                "parameter_position")
-    | Ast.Expression.Substring.Format { Node.value = Expression.Name (Identifier identifier); _ } ->
+    | Ast.Expression.Substring.Format
+        { value = { Node.value = Expression.Name (Identifier identifier); _ }; _ } ->
         Error (ModelVerificationError.FormatStringError.InvalidIdentifier identifier)
     | Ast.Expression.Substring.Format
         {
-          Node.value =
-            Expression.Call
-              {
-                callee = { Node.value = Expression.Name (Identifier "capture"); _ };
-                arguments =
-                  [
-                    {
-                      Call.Argument.value = { Node.value = Expression.Name (Identifier name); _ };
-                      _;
-                    };
-                  ];
-              };
+          value =
+            {
+              Node.value =
+                Expression.Call
+                  {
+                    callee = { Node.value = Expression.Name (Identifier "capture"); _ };
+                    arguments =
+                      [
+                        {
+                          Call.Argument.value = { Node.value = Expression.Name (Identifier name); _ };
+                          _;
+                        };
+                      ];
+                  };
+              _;
+            };
           _;
         } ->
         Ok (ModelQuery.FormatString.Substring.Capture name)
     | Ast.Expression.Substring.Format
-        ({
-           Node.value =
-             Expression.Call
-               {
-                 callee =
-                   {
-                     Node.value =
-                       Expression.Name
-                         (Name.Attribute { attribute = "__add__" | "__sub__" | "__mul__"; _ });
-                     _;
-                   };
-                 arguments = [_];
-               };
-           _;
-         } as expression) ->
+        {
+          value =
+            {
+              Node.value =
+                Expression.Call
+                  {
+                    callee =
+                      {
+                        Node.value =
+                          Expression.Name
+                            (Name.Attribute { attribute = "__add__" | "__sub__" | "__mul__"; _ });
+                        _;
+                      };
+                    arguments = [_];
+                  };
+              _;
+            } as expression;
+          _;
+        } ->
         parse_integer_expression expression
         >>| fun expression -> ModelQuery.FormatString.Substring.Integer expression
-    | Ast.Expression.Substring.Format expression ->
-        Error (ModelVerificationError.FormatStringError.InvalidExpression expression)
+    | Ast.Expression.Substring.Format format ->
+        Error (ModelVerificationError.FormatStringError.InvalidExpression format.value)
   in
   List.map ~f:parse_substring substrings |> Result.all
 

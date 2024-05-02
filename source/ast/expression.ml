@@ -677,20 +677,34 @@ end
 and Substring : sig
   type t =
     | Literal of string Node.t
-    | Format of Expression.t
+    | Format of {
+        value: Expression.t;
+        format_spec: Expression.t option;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 end = struct
   type t =
     | Literal of string Node.t
-    | Format of Expression.t
+    | Format of {
+        value: Expression.t;
+        format_spec: Expression.t option;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   let location_insensitive_compare left right =
     match left, right with
     | Literal left, Literal right -> Node.location_insensitive_compare String.compare left right
-    | Format left, Format right -> Expression.location_insensitive_compare left right
+    | Format left, Format right -> begin
+        match Expression.location_insensitive_compare left.value right.value with
+        | x when not (Int.equal x 0) -> x
+        | _ ->
+            Option.compare
+              Expression.location_insensitive_compare
+              left.format_spec
+              right.format_spec
+      end
     | Literal _, _ -> -1
     | Format _, _ -> 1
 end
@@ -1090,8 +1104,16 @@ end = struct
       | FormatString substrings ->
           let pp_substring formatter = function
             | Substring.Literal { Node.value; _ } -> Format.fprintf formatter "\"%s\"" value
-            | Substring.Format expression ->
+            | Substring.Format { value = expression; format_spec = None } ->
                 Format.fprintf formatter "f\"{%a}\"" pp_expression_t expression
+            | Substring.Format { value = expression; format_spec = Some format_expr } ->
+                Format.fprintf
+                  formatter
+                  "f\"{%a:{%a}}\""
+                  pp_expression_t
+                  expression
+                  pp_expression_t
+                  format_expr
           in
           List.iter substrings ~f:(pp_substring formatter)
       | ComparisonOperator { ComparisonOperator.left; operator; right } ->
@@ -1334,7 +1356,8 @@ module Mapper = struct
   let default_map_substring_with_location ~mapper ~map_location = function
     | Substring.Literal { Node.value; location } ->
         Substring.Literal { Node.value; location = map_location location }
-    | Substring.Format expression -> Substring.Format (map ~mapper expression)
+    | Substring.Format { value; format_spec } ->
+        Substring.Format { value = map ~mapper value; format_spec = map_option ~mapper format_spec }
 
 
   let default_map_substrings_with_location ~mapper ~map_location substrings =
@@ -1983,7 +2006,9 @@ module Folder = struct
 
   let default_fold_substring_with_location ~folder ~state ~fold_location = function
     | Substring.Literal { Node.value = _; location } -> fold_location ~state location
-    | Substring.Format expression -> fold ~folder ~state expression
+    | Substring.Format { value; format_spec } ->
+        let state = fold ~folder ~state value in
+        fold_option ~folder ~state format_spec
 
 
   let default_fold_substrings_with_location ~folder ~state ~fold_location substrings =

@@ -118,7 +118,9 @@ module Binding = struct
     | Expression.FormatString substrings ->
         let of_substring sofar = function
           | Substring.(Literal _) -> sofar
-          | Substring.Format expression -> of_expression sofar expression
+          | Substring.Format format ->
+              let sofar = of_expression sofar format.value in
+              of_optional_expression sofar format.format_spec
         in
         List.fold substrings ~init:sofar ~f:of_substring
     | Constant _
@@ -156,10 +158,13 @@ module Binding = struct
     of_element sofar element
 
 
+  and of_optional ~f sofar = Option.value_map ~default:sofar ~f:(f sofar)
+
+  and of_optional_expression sofar = of_optional ~f:of_expression sofar
+
   let rec of_statement sofar { Node.value = statement; location } =
-    let of_optional ~f sofar = Option.value_map ~default:sofar ~f:(f sofar) in
-    let of_optional_expression sofar = of_optional ~f:of_expression sofar in
     let open Statement in
+    let of_optional ~f sofar = Option.value_map ~default:sofar ~f:(f sofar) in
     match statement with
     | Statement.Assert { test; message; _ } ->
         let sofar = of_expression sofar test in

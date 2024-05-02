@@ -2543,7 +2543,9 @@ struct
               callees;
             List.iter substrings ~f:(function
                 | Substring.Literal _ -> ()
-                | Substring.Format ({ Node.location = expression_location; _ } as expression) ->
+                | Substring.Format
+                    (* TODO: T101294406 support format specifier *)
+                    { value = { Node.location = expression_location; _ } as expression; _ } ->
                     let { CallCallees.call_targets; _ } =
                       let callee =
                         let method_name = resolve_stringify_call ~pyre_in_context expression in

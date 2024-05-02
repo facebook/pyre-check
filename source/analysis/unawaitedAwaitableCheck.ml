@@ -680,7 +680,17 @@ module State (Context : Context) = struct
           ~init:{ state; nested_awaitable_expressions = [] }
           ~f:(fun { state; nested_awaitable_expressions } substring ->
             match substring with
-            | Substring.Format expression -> forward_expression ~resolution ~state ~expression
+            | Substring.Format format -> begin
+                let { state; nested_awaitable_expressions } =
+                  forward_expression ~resolution ~state ~expression:format.value
+                  |>> nested_awaitable_expressions
+                in
+                match format.format_spec with
+                | Some f ->
+                    forward_expression ~resolution ~state ~expression:f
+                    |>> nested_awaitable_expressions
+                | None -> { state; nested_awaitable_expressions }
+              end
             | Substring.Literal _ -> { state; nested_awaitable_expressions })
     (* Base cases. *)
     | Constant _

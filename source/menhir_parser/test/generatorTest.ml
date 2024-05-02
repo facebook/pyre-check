@@ -7177,19 +7177,25 @@ let test_format_string =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'{1}'"
-           [Substring.Format (+Expression.Constant (Constant.Integer 1))];
+           [
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
+           ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'foo{1}'"
            [
-             Substring.Literal (+"foo"); Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Literal (+"foo");
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'foo{1}' 'foo{2}'"
            [
              Substring.Literal (+"foo");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+"foo{2}");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7198,24 +7204,29 @@ let test_format_string =
            [
              Substring.Literal (+"foo{1}");
              Substring.Literal (+"foo");
-             Substring.Format (+Expression.Constant (Constant.Integer 2));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'foo{1}' f'foo{2}'"
            [
              Substring.Literal (+"foo");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+"foo");
-             Substring.Format (+Expression.Constant (Constant.Integer 2));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'foo{1}{2}foo'"
            [
              Substring.Literal (+"foo");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
-             Substring.Format (+Expression.Constant (Constant.Integer 2));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 2) };
              Substring.Literal (+"foo");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7228,7 +7239,8 @@ let test_format_string =
            [
              Substring.Literal (+"foo");
              Substring.Literal (+"{{ ");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+" }}");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7237,7 +7249,8 @@ let test_format_string =
            [
              Substring.Literal (+"foo");
              Substring.Literal (+"{{");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+" }}");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7246,7 +7259,8 @@ let test_format_string =
            [
              Substring.Literal (+"foo");
              Substring.Literal (+"{{ ");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+"}}");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7255,7 +7269,8 @@ let test_format_string =
            [
              Substring.Literal (+"foo");
              Substring.Literal (+"{{");
-             Substring.Format (+Expression.Constant (Constant.Integer 1));
+             Substring.Format
+               { format_spec = None; value = +Expression.Constant (Constant.Integer 1) };
              Substring.Literal (+"}}");
            ];
       labeled_test_case __FUNCTION__ __LINE__
@@ -7268,43 +7283,51 @@ let test_format_string =
            [
              Substring.Literal (+"foo");
              Substring.Format
-               (+Expression.Call
-                   {
-                     Call.callee =
-                       +Expression.Name
-                          (Name.Attribute
-                             {
-                               Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
-                               attribute = "__add__";
-                               special = true;
-                             });
-                     arguments =
-                       [
-                         {
-                           Call.Argument.name = None;
-                           value = +Expression.Constant (Constant.Integer 2);
-                         };
-                       ];
-                   });
+               {
+                 format_spec = None;
+                 value =
+                   +Expression.Call
+                      {
+                        Call.callee =
+                          +Expression.Name
+                             (Name.Attribute
+                                {
+                                  Name.Attribute.base = +Expression.Constant (Constant.Integer 1);
+                                  attribute = "__add__";
+                                  special = true;
+                                });
+                        arguments =
+                          [
+                            {
+                              Call.Argument.name = None;
+                              value = +Expression.Constant (Constant.Integer 2);
+                            };
+                          ];
+                      };
+               };
            ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_format_string
            "f'{x for x in []}'"
            [
              Substring.Format
-               (+Expression.Generator
-                   {
-                     Comprehension.element = +Expression.Name (Name.Identifier "x");
-                     generators =
-                       [
-                         {
-                           Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
-                           iterator = +Expression.List [];
-                           conditions = [];
-                           async = false;
-                         };
-                       ];
-                   });
+               {
+                 format_spec = None;
+                 value =
+                   +Expression.Generator
+                      {
+                        Comprehension.element = +Expression.Name (Name.Identifier "x");
+                        generators =
+                          [
+                            {
+                              Comprehension.Generator.target = +Expression.Name (Name.Identifier "x");
+                              iterator = +Expression.List [];
+                              conditions = [];
+                              async = false;
+                            };
+                          ];
+                      };
+               };
            ];
     ]
 

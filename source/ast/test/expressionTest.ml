@@ -742,7 +742,8 @@ let test_default_folder context =
         })
     ~expected:15;
   assert_count
-    (+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 1)])
+    (+Expression.FormatString
+        [Substring.Literal (+"abc"); Substring.Format { format_spec = None; value = integer 1 }])
     ~expected:1;
   assert_count
     (+Expression.Lambda
@@ -933,8 +934,11 @@ let test_default_mapper context =
               ];
           });
   assert_transformed
-    (+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 1)])
-    ~expected:(+Expression.FormatString [Substring.Literal (+"abc"); Substring.Format (integer 2)]);
+    (+Expression.FormatString
+        [Substring.Literal (+"abc"); Substring.Format { format_spec = None; value = integer 1 }])
+    ~expected:
+      (+Expression.FormatString
+          [Substring.Literal (+"abc"); Substring.Format { format_spec = None; value = integer 2 }]);
   assert_transformed
     (+Expression.Lambda
         {

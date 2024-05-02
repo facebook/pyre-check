@@ -239,7 +239,10 @@ end
 and Substring : sig
   type t =
     | Literal of string Node.t
-    | Format of Expression.t
+    | Format of {
+        value: Expression.t;
+        format_spec: Expression.t option;
+      }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int

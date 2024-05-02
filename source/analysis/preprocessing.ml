@@ -1178,8 +1178,13 @@ module Qualify (Context : QualifyContext) = struct
       | FormatString substrings ->
           let qualify_substring = function
             | Substring.Literal _ as substring -> substring
-            | Substring.Format expression ->
-                Substring.Format (qualify_expression ~qualify_strings ~scope expression)
+            | Substring.Format { value; format_spec } ->
+                Substring.Format
+                  {
+                    value = qualify_expression ~qualify_strings ~scope value;
+                    format_spec =
+                      Option.map ~f:(qualify_expression ~qualify_strings ~scope) format_spec;
+                  }
           in
           FormatString (List.map substrings ~f:qualify_substring)
       | Constant (Constant.String { StringLiteral.value; kind }) -> (
@@ -3108,7 +3113,9 @@ module AccessCollector = struct
     | FormatString substrings ->
         let from_substring sofar = function
           | Substring.Literal _ -> sofar
-          | Substring.Format expression -> from_expression sofar expression
+          | Substring.Format format ->
+              let sofar = from_expression sofar format.value in
+              Option.value_map format.format_spec ~default:sofar ~f:(from_expression sofar)
         in
         List.fold substrings ~init:collected ~f:from_substring
     | Starred (Starred.Once expression)

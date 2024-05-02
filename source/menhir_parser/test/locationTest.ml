@@ -2690,7 +2690,11 @@ let test_string_locations _ =
                  [
                    Substring.Literal (node ~start:(1, 2) ~stop:(1, 6) "foo ");
                    Substring.Format
-                     (node ~start:(1, 7) ~stop:(1, 8) (Expression.Constant (Constant.Integer 1)));
+                     {
+                       format_spec = None;
+                       value =
+                         node ~start:(1, 7) ~stop:(1, 8) (Expression.Constant (Constant.Integer 1));
+                     };
                  ])));
     ];
   assert_source_locations
@@ -2723,13 +2727,24 @@ let test_string_locations _ =
                  [
                    Substring.Literal (node ~start:(1, 2) ~stop:(1, 5) "foo");
                    Substring.Format
-                     (node ~start:(1, 6) ~stop:(1, 9) (Expression.Constant (Constant.Integer 123)));
+                     {
+                       format_spec = None;
+                       value =
+                         node
+                           ~start:(1, 6)
+                           ~stop:(1, 9)
+                           (Expression.Constant (Constant.Integer 123));
+                     };
                    Substring.Literal (node ~start:(1, 10) ~stop:(1, 11) "a");
                    Substring.Format
-                     (node
-                        ~start:(1, 12)
-                        ~stop:(1, 15)
-                        (Expression.Constant (Constant.Integer 456)));
+                     {
+                       format_spec = None;
+                       value =
+                         node
+                           ~start:(1, 12)
+                           ~stop:(1, 15)
+                           (Expression.Constant (Constant.Integer 456));
+                     };
                  ])));
     ];
   assert_source_locations
@@ -2750,16 +2765,24 @@ let test_string_locations _ =
                        [
                          Substring.Literal (node ~start:(1, 9) ~stop:(1, 12) "foo");
                          Substring.Format
-                           (node
-                              ~start:(1, 13)
-                              ~stop:(1, 16)
-                              (Expression.Constant (Constant.Integer 123)));
+                           {
+                             format_spec = None;
+                             value =
+                               node
+                                 ~start:(1, 13)
+                                 ~stop:(1, 16)
+                                 (Expression.Constant (Constant.Integer 123));
+                           };
                          Substring.Literal (node ~start:(1, 17) ~stop:(1, 18) "a");
                          Substring.Format
-                           (node
-                              ~start:(1, 19)
-                              ~stop:(1, 22)
-                              (Expression.Constant (Constant.Integer 456)));
+                           {
+                             format_spec = None;
+                             value =
+                               node
+                                 ~start:(1, 19)
+                                 ~stop:(1, 22)
+                                 (Expression.Constant (Constant.Integer 456));
+                           };
                        ]));
            });
     ];
@@ -2782,16 +2805,34 @@ let test_string_locations _ =
                  [
                    Substring.Literal (node ~start:(2, 4) ~stop:(3, 3) "\nfoo");
                    Substring.Format
-                     (node ~start:(3, 4) ~stop:(3, 7) (Expression.Constant (Constant.Integer 123)));
+                     {
+                       format_spec = None;
+                       value =
+                         node
+                           ~start:(3, 4)
+                           ~stop:(3, 7)
+                           (Expression.Constant (Constant.Integer 123));
+                     };
                    Substring.Literal (node ~start:(3, 8) ~stop:(3, 9) "a");
                    Substring.Format
-                     (node
-                        ~start:(3, 10)
-                        ~stop:(3, 13)
-                        (Expression.Constant (Constant.Integer 456)));
+                     {
+                       format_spec = None;
+                       value =
+                         node
+                           ~start:(3, 10)
+                           ~stop:(3, 13)
+                           (Expression.Constant (Constant.Integer 456));
+                     };
                    Substring.Literal (node ~start:(3, 14) ~stop:(4, 1) "\nb");
                    Substring.Format
-                     (node ~start:(4, 2) ~stop:(4, 5) (Expression.Constant (Constant.Integer 789)));
+                     {
+                       format_spec = None;
+                       value =
+                         node
+                           ~start:(4, 2)
+                           ~stop:(4, 5)
+                           (Expression.Constant (Constant.Integer 789));
+                     };
                    Substring.Literal (node ~start:(4, 6) ~stop:(5, 0) "\n");
                  ])));
     ];
