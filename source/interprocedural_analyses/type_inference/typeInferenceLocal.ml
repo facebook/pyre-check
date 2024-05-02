@@ -539,11 +539,7 @@ module State (Context : Context) = struct
         in
         match value with
         | Statement.Assign
-            {
-              value = { value = Dictionary { keywords = []; entries = [] }; _ };
-              target = { Node.value = Name name; _ };
-              _;
-            }
+            { value = { value = Dictionary []; _ }; target = { Node.value = Name name; _ }; _ }
           when is_simple_name name ->
             let resolution =
               refine_local

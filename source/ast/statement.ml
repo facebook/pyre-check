@@ -1968,13 +1968,16 @@ let is_generator statements =
         is_expression_generator callee
         || List.exists arguments ~f:(fun { Call.Argument.value; _ } ->
                is_expression_generator value)
-    | Expression.Dictionary { Dictionary.entries; keywords } ->
-        List.exists entries ~f:(fun { Dictionary.Entry.key; value } ->
-            is_expression_generator key || is_expression_generator value)
-        || List.exists keywords ~f:is_expression_generator
+    | Expression.Dictionary entries ->
+        List.exists entries ~f:(fun entry ->
+            let open Dictionary.Entry in
+            match entry with
+            | KeyValue KeyValue.{ key; value } ->
+                is_expression_generator key || is_expression_generator value
+            | Splat s -> is_expression_generator s)
     | Expression.DictionaryComprehension comprehension ->
         is_comprehension_generator
-          ~is_element_generator:(fun { Dictionary.Entry.key; value } ->
+          ~is_element_generator:(fun Dictionary.Entry.KeyValue.{ key; value } ->
             is_expression_generator key || is_expression_generator value)
           comprehension
     | Expression.Generator comprehension

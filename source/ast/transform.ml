@@ -94,8 +94,12 @@ module Make (Transformer : Transformer) = struct
         async;
       }
     in
-    let transform_entry { Dictionary.Entry.key; value } ~transform_expression =
-      { Dictionary.Entry.key = transform_expression key; value = transform_expression value }
+    let transform_entry entry ~transform_expression =
+      let open Dictionary.Entry in
+      match entry with
+      | KeyValue KeyValue.{ key; value } ->
+          KeyValue KeyValue.{ key = transform_expression key; value = transform_expression value }
+      | Splat s -> Splat (transform_expression s)
     in
     let transform_substring substring ~transform_expression =
       match substring with
@@ -128,17 +132,15 @@ module Make (Transformer : Transformer) = struct
                 right = transform_expression right;
               }
         | Constant _ -> value
-        | Dictionary { Dictionary.entries; keywords } ->
-            Dictionary
-              {
-                Dictionary.entries =
-                  transform_list entries ~f:(transform_entry ~transform_expression);
-                keywords = transform_list keywords ~f:transform_expression;
-              }
-        | DictionaryComprehension { Comprehension.element; generators } ->
+        | Dictionary entries ->
+            Dictionary (transform_list entries ~f:(transform_entry ~transform_expression))
+        | DictionaryComprehension
+            { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators } ->
             DictionaryComprehension
               {
-                Comprehension.element = transform_entry element ~transform_expression;
+                Comprehension.element =
+                  Dictionary.Entry.KeyValue.
+                    { key = transform_expression key; value = transform_expression value };
                 generators =
                   transform_list generators ~f:(transform_generator ~transform_expression);
               }

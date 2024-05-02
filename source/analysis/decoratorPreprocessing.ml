@@ -482,25 +482,27 @@ let make_args_assignment_from_parameters ~args_local_variable_name parameters =
 let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameters =
   let location = Location.any in
   let parameter_to_keyword_or_entry parameter =
+    let open Dictionary.Entry in
     match convert_parameter_to_argument ~location parameter with
     | { Call.Argument.value = { Node.value = Expression.Starred (Twice keyword); _ }; _ } ->
-        `Fst keyword
-    | { Call.Argument.value = { Node.value = Expression.Starred (Once _); _ }; _ } -> `Snd ()
+        First (Splat keyword)
+    | { Call.Argument.value = { Node.value = Expression.Starred (Once _); _ }; _ } -> Second ()
     | { Call.Argument.value = argument; _ } ->
         let raw_argument_string = Expression.show argument in
         let argument_string =
           String.chop_prefix ~prefix:"$parameter$" raw_argument_string
           |> Option.value ~default:raw_argument_string
         in
-        `Trd
-          {
-            Dictionary.Entry.key =
-              Expression.Constant (Constant.String (StringLiteral.create argument_string))
-              |> Node.create_with_default_location;
-            value = argument;
-          }
+        First
+          (KeyValue
+             {
+               key =
+                 Expression.Constant (Constant.String (StringLiteral.create argument_string))
+                 |> Node.create_with_default_location;
+               value = argument;
+             })
   in
-  let keywords, _, entries = List.partition3_map parameters ~f:parameter_to_keyword_or_entry in
+  let entries, _ = List.partition_map parameters ~f:parameter_to_keyword_or_entry in
   Statement.Assign
     {
       target =
@@ -508,7 +510,7 @@ let make_kwargs_assignment_from_parameters ~kwargs_local_variable_name parameter
           (create_name_from_reference ~location (Reference.create kwargs_local_variable_name))
         |> Node.create ~location;
       annotation = None;
-      value = Expression.Dictionary { Dictionary.keywords; entries } |> Node.create ~location;
+      value = Expression.Dictionary entries |> Node.create ~location;
     }
   |> Node.create ~location
 

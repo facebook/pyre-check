@@ -250,7 +250,8 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
             | _ -> ()
           in
           List.iter ~f:annotate_argument_name arguments
-      | DictionaryComprehension { element = { key; value }; generators; _ } ->
+      | DictionaryComprehension
+          { element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ } ->
           let resolution =
             List.fold generators ~f:store_generator_and_compute_resolution ~init:resolution
           in

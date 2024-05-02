@@ -100,11 +100,9 @@ module Binding = struct
               of_expression sofar value)
         in
         of_expression sofar callee
-    | Expression.Dictionary { Dictionary.entries; keywords } ->
-        let sofar = List.fold entries ~init:sofar ~f:of_dictionary_entry in
-        List.fold keywords ~init:sofar ~f:of_expression
+    | Expression.Dictionary entries -> List.fold entries ~init:sofar ~f:of_dictionary_entry
     | Expression.DictionaryComprehension comprehension ->
-        of_comprehension sofar comprehension ~of_element:of_dictionary_entry
+        of_comprehension sofar comprehension ~of_element:of_keyvalue
     | Expression.Generator comprehension
     | Expression.ListComprehension comprehension
     | Expression.SetComprehension comprehension ->
@@ -130,7 +128,16 @@ module Binding = struct
         sofar
 
 
-  and of_dictionary_entry sofar { Expression.Dictionary.Entry.key; value } =
+  and of_dictionary_entry sofar entry =
+    let open Expression.Dictionary.Entry in
+    match entry with
+    | KeyValue { key; value } ->
+        let sofar = of_expression sofar key in
+        of_expression sofar value
+    | Splat s -> of_expression sofar s
+
+
+  and of_keyvalue sofar { key; value } =
     let sofar = of_expression sofar key in
     of_expression sofar value
 

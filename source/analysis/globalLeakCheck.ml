@@ -362,21 +362,18 @@ module State (Context : Context) = struct
               reachable_globals
               (value_errors @ errors);
         }
-    | Dictionary { entries; keywords } ->
-        let forward_entries { Dictionary.Entry.key; value } =
-          let { errors = key_errors; _ } = forward_expression key in
-          let { errors = value_errors; _ } = forward_expression value in
-          key_errors @ value_errors
+    | Dictionary entries ->
+        let forward_entries entry =
+          let open Dictionary.Entry in
+          match entry with
+          | KeyValue { key; value } ->
+              let { errors = key_errors; _ } = forward_expression key in
+              let { errors = value_errors; _ } = forward_expression value in
+              key_errors @ value_errors
+          | Splat s -> (forward_expression s).errors
         in
         let entry_errors = List.concat_map ~f:forward_entries entries in
-        let keyword_errors =
-          List.concat_map
-            ~f:(fun expression ->
-              let { errors; _ } = forward_expression expression in
-              errors)
-            keywords
-        in
-        { empty_result with errors = entry_errors @ keyword_errors }
+        { empty_result with errors = entry_errors }
     | DictionaryComprehension { element = { key; value }; generators } ->
         let { errors = key_errors; _ } = forward_expression key in
         let { errors = value_errors; _ } = forward_expression value in

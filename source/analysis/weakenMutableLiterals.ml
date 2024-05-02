@@ -280,9 +280,8 @@ let rec weaken_mutable_literals
       Type.OrderedTypes.Concatenation.extract_sole_unbounded_annotation concatenation
       >>= weakened_tuple
       |> Option.value ~default:(make_weakened_type resolved)
-  | ( Some { Node.value = Expression.Dictionary { entries; keywords = [] }; location },
-      _,
-      Type.Primitive _ ) -> (
+  | Some { Node.value = Expression.Dictionary entries; location }, _, Type.Primitive _
+    when Dictionary.has_no_keywords entries -> (
       let open Type.Record.TypedDictionary in
       match get_typed_dictionary expected with
       | Some ({ fields = expected_fields; name = expected_class_name } as expected_typed_dictionary)
@@ -293,34 +292,40 @@ let rec weaken_mutable_literals
             in
             List.find ~f:matching_name
           in
-          let resolve_entry { Dictionary.Entry.key; value } =
-            let key = resolve key in
-            match key with
-            | Type.Literal (Type.String (Type.LiteralValue name)) ->
-                let annotation, required =
-                  let resolved = resolve value in
-                  let relax { annotation; _ } =
-                    if Type.is_dictionary resolved || Option.is_some (get_typed_dictionary resolved)
-                    then
-                      weaken_mutable_literals
-                        ~resolve
-                        ~expression:(Some value)
-                        ~resolved
-                        ~expected:annotation
-                        ~comparator:comparator_without_override
-                        ~resolve_items_individually
-                        ~get_typed_dictionary
-                    else if comparator ~left:resolved ~right:annotation then
-                      make_weakened_type annotation
-                    else
-                      make_weakened_type resolved
-                  in
-                  find_matching_field expected_fields ~name
-                  >>| (fun field -> relax field, field.required)
-                  |> Option.value ~default:(make_weakened_type resolved, true)
-                in
-                Some { name; annotation; required }
-            | _ -> None
+          let resolve_entry entry =
+            match entry with
+            | Dictionary.Entry.KeyValue { key; value } -> begin
+                let key = resolve key in
+                match key with
+                | Type.Literal (Type.String (Type.LiteralValue name)) ->
+                    let annotation, required =
+                      let resolved = resolve value in
+                      let relax { annotation; _ } =
+                        if
+                          Type.is_dictionary resolved
+                          || Option.is_some (get_typed_dictionary resolved)
+                        then
+                          weaken_mutable_literals
+                            ~resolve
+                            ~expression:(Some value)
+                            ~resolved
+                            ~expected:annotation
+                            ~comparator:comparator_without_override
+                            ~resolve_items_individually
+                            ~get_typed_dictionary
+                        else if comparator ~left:resolved ~right:annotation then
+                          make_weakened_type annotation
+                        else
+                          make_weakened_type resolved
+                      in
+                      find_matching_field expected_fields ~name
+                      >>| (fun field -> relax field, field.required)
+                      |> Option.value ~default:(make_weakened_type resolved, true)
+                    in
+                    Some { name; annotation; required }
+                | _ -> None
+              end
+            | Splat _ -> None
           in
           let add_missing_fields_if_all_non_required sofar =
             let is_missing ({ name; _ } : Type.t typed_dictionary_field) =
@@ -462,7 +467,7 @@ let rec weaken_mutable_literals
         | _ -> weakened_fallback_type
       in
       make_weakened_type ~typed_dictionary_errors resolved
-  | ( Some { Node.value = Expression.Dictionary { entries; _ }; _ },
+  | ( Some { Node.value = Expression.Dictionary entries; _ },
       Type.Parametric
         { name = "dict"; parameters = [Single actual_key_type; Single actual_value_type] },
       Type.Parametric
@@ -563,30 +568,38 @@ and weaken_dictionary_entries
   let comparator_without_override = comparator in
   let comparator = comparator ~get_typed_dictionary_override:(fun _ -> None) in
   let { resolved = weakened_key_type; typed_dictionary_errors = key_errors } =
-    List.map
-      ~f:(fun { key; _ } ->
-        weaken_mutable_literals
-          ~get_typed_dictionary
-          ~resolve
-          ~expression:(Some key)
-          ~resolved:actual_key_type
-          ~expected:expected_key_type
-          ~resolve_items_individually
-          ~comparator:comparator_without_override)
+    List.filter_map
+      ~f:(fun entry ->
+        match entry with
+        | KeyValue { key; _ } ->
+            Some
+              (weaken_mutable_literals
+                 ~get_typed_dictionary
+                 ~resolve
+                 ~expression:(Some key)
+                 ~resolved:actual_key_type
+                 ~expected:expected_key_type
+                 ~resolve_items_individually
+                 ~comparator:comparator_without_override)
+        | Splat _ -> None)
       entries
     |> combine_weakened_types
   in
   let { resolved = weakened_value_type; typed_dictionary_errors = value_errors } =
-    List.map
-      ~f:(fun { value; _ } ->
-        weaken_mutable_literals
-          ~get_typed_dictionary
-          ~resolve
-          ~expression:(Some value)
-          ~resolved:(if resolve_items_individually then resolve value else actual_value_type)
-          ~expected:expected_value_type
-          ~resolve_items_individually
-          ~comparator:comparator_without_override)
+    List.filter_map
+      ~f:(fun entry ->
+        match entry with
+        | KeyValue { value; _ } ->
+            Some
+              (weaken_mutable_literals
+                 ~get_typed_dictionary
+                 ~resolve
+                 ~expression:(Some value)
+                 ~resolved:(if resolve_items_individually then resolve value else actual_value_type)
+                 ~expected:expected_value_type
+                 ~resolve_items_individually
+                 ~comparator:comparator_without_override)
+        | Splat _ -> None)
       entries
     |> combine_weakened_types
   in

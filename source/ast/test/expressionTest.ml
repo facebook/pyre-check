@@ -321,16 +321,13 @@ let test_pp _ =
   assert_pp_equal (parse_single_expression "'string {}'.format(1)") "\"string {}\".format(1)";
   assert_pp_equal
     (+Expression.Dictionary
-        {
-          Dictionary.entries =
-            [
-              {
-                Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                value = +Expression.Constant (Constant.Integer 2);
-              };
-            ];
-          keywords = [];
-        })
+        [
+          KeyValue
+            {
+              key = +Expression.Constant (Constant.Integer 1);
+              value = +Expression.Constant (Constant.Integer 2);
+            };
+        ])
     "{ 1:2 }";
   assert_pp_equal (+Expression.Yield None) "(yield)";
   assert_pp_equal (+Expression.Yield (Some (+Expression.Constant (Constant.Integer 5)))) "(yield 5)";
@@ -712,16 +709,12 @@ let test_default_folder context =
     ~expected:3;
   assert_count (+Expression.Constant Constant.NoneLiteral) ~expected:0;
   assert_count
-    (+Expression.Dictionary
-        {
-          Dictionary.entries = [{ Dictionary.Entry.key = integer 1; value = integer 2 }];
-          keywords = [integer 3];
-        })
+    (+Expression.Dictionary [KeyValue { key = integer 1; value = integer 2 }; Splat (integer 3)])
     ~expected:6;
   assert_count
     (+Expression.DictionaryComprehension
         {
-          Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 1 };
+          Comprehension.element = { key = !"x"; value = integer 1 };
           generators =
             [
               {
@@ -880,21 +873,13 @@ let test_default_mapper context =
     (+Expression.Constant Constant.NoneLiteral)
     ~expected:(+Expression.Constant Constant.NoneLiteral);
   assert_transformed
-    (+Expression.Dictionary
-        {
-          Dictionary.entries = [{ Dictionary.Entry.key = integer 1; value = integer 2 }];
-          keywords = [integer 3];
-        })
+    (+Expression.Dictionary [KeyValue { key = integer 1; value = integer 2 }; Splat (integer 3)])
     ~expected:
-      (+Expression.Dictionary
-          {
-            Dictionary.entries = [{ Dictionary.Entry.key = integer 2; value = integer 3 }];
-            keywords = [integer 4];
-          });
+      (+Expression.Dictionary [KeyValue { key = integer 2; value = integer 3 }; Splat (integer 4)]);
   assert_transformed
     (+Expression.DictionaryComprehension
         {
-          Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 1 };
+          Comprehension.element = { key = !"x"; value = integer 1 };
           generators =
             [
               {
@@ -908,7 +893,7 @@ let test_default_mapper context =
     ~expected:
       (+Expression.DictionaryComprehension
           {
-            Comprehension.element = { Dictionary.Entry.key = !"x"; value = integer 2 };
+            Comprehension.element = { key = !"x"; value = integer 2 };
             generators =
               [
                 {

@@ -24,9 +24,13 @@ module NameAccessSet = Set.Make (Define.NameAccess)
 module AccessCollector = struct
   let rec from_expression collected { Node.value; location = expression_location } =
     let open Expression in
-    let from_entry collected { Dictionary.Entry.key; value } =
-      let collected = from_expression collected key in
-      from_expression collected value
+    let from_entry collected entry =
+      let open Dictionary.Entry in
+      match entry with
+      | KeyValue { key; value } ->
+          let collected = from_expression collected key in
+          from_expression collected value
+      | Splat s -> from_expression collected s
     in
     match value with
     (* Lambdas are special -- they bind their own names, which we want to exclude *)
@@ -68,11 +72,14 @@ module AccessCollector = struct
         let collected = from_expression collected callee in
         List.fold arguments ~init:collected ~f:(fun collected { Call.Argument.value; _ } ->
             from_expression collected value)
-    | Dictionary { Dictionary.entries; keywords } ->
-        let collected = List.fold entries ~init:collected ~f:from_entry in
-        List.fold keywords ~init:collected ~f:from_expression
+    | Dictionary entries -> List.fold entries ~init:collected ~f:from_entry
     | DictionaryComprehension comprehension ->
-        from_comprehension ~collected from_entry comprehension
+        from_comprehension
+          ~collected
+          (fun collected Dictionary.Entry.KeyValue.{ key; value } ->
+            let collected = from_expression collected key in
+            from_expression collected value)
+          comprehension
     | Generator comprehension
     | ListComprehension comprehension
     | SetComprehension comprehension ->

@@ -650,140 +650,116 @@ let test_container_literals =
                    +Expression.Constant (Constant.Integer 2);
                  ]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed
-           "{}"
-           ~expected:(+Expression.Dictionary { Dictionary.entries = []; keywords = [] });
+      @@ assert_parsed "{}" ~expected:(+Expression.Dictionary []);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed
-           "{{}}"
-           ~expected:
-             (+Expression.Set [+Expression.Dictionary { Dictionary.entries = []; keywords = [] }]);
+      @@ assert_parsed "{{}}" ~expected:(+Expression.Set [+Expression.Dictionary []]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{1:2}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                     ];
-                   keywords = [];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{1:2,}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                     ];
-                   keywords = [];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{1:2,3:4}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
-                         value = +Expression.Constant (Constant.Integer 4);
-                       };
-                     ];
-                   keywords = [];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 3);
+                       value = +Expression.Constant (Constant.Integer 4);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{1:2,3:4,}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
-                         value = +Expression.Constant (Constant.Integer 4);
-                       };
-                     ];
-                   keywords = [];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 3);
+                       value = +Expression.Constant (Constant.Integer 4);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{\n\t1:2,\n\t3:4\n}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 3);
-                         value = +Expression.Constant (Constant.Integer 4);
-                       };
-                     ];
-                   keywords = [];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 3);
+                       value = +Expression.Constant (Constant.Integer 4);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
-      @@ assert_parsed
-           "{**foo}"
-           ~expected:(+Expression.Dictionary { Dictionary.entries = []; keywords = [!"foo"] });
+      @@ assert_parsed "{**foo}" ~expected:(+Expression.Dictionary [Splat !"foo"]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{**foo, **bar}"
-           ~expected:
-             (+Expression.Dictionary { Dictionary.entries = []; keywords = [!"foo"; !"bar"] });
+           ~expected:(+Expression.Dictionary [Splat !"foo"; Splat !"bar"]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{**foo, 1:2}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                     ];
-                   keywords = [!"foo"];
-                 });
+                 [
+                   Splat !"foo";
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
            "{1:2,**foo}"
            ~expected:
              (+Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key = +Expression.Constant (Constant.Integer 1);
-                         value = +Expression.Constant (Constant.Integer 2);
-                       };
-                     ];
-                   keywords = [!"foo"];
-                 });
+                 [
+                   KeyValue
+                     {
+                       key = +Expression.Constant (Constant.Integer 1);
+                       value = +Expression.Constant (Constant.Integer 2);
+                     };
+                   Splat !"foo";
+                 ]);
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "(1,2";
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "[1,2";
       labeled_test_case __FUNCTION__ __LINE__ @@ assert_not_parsed "{1,2";
@@ -958,10 +934,7 @@ let test_comprehensions =
              (+Expression.DictionaryComprehension
                  {
                    Comprehension.element =
-                     {
-                       Dictionary.Entry.key = !"a";
-                       value = +Expression.Constant (Constant.Integer 0);
-                     };
+                     { key = !"a"; value = +Expression.Constant (Constant.Integer 0) };
                    generators =
                      [
                        {

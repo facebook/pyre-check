@@ -111,28 +111,34 @@ end
 
 and Dictionary : sig
   module Entry : sig
-    type t = {
-      key: Expression.t;
-      value: Expression.t;
-    }
+    module KeyValue : sig
+      type t = {
+        key: Expression.t;
+        value: Expression.t;
+      }
+    end
+
+    type t =
+      | KeyValue of KeyValue.t
+      | Splat of Expression.t
   end
 
-  type t = {
-    entries: Entry.t list;
-    keywords: Expression.t list;
-  }
+  type t = Entry.t list
 end = struct
   module Entry = struct
-    type t = {
-      key: Expression.t;
-      value: Expression.t;
-    }
+    module KeyValue = struct
+      type t = {
+        key: Expression.t;
+        value: Expression.t;
+      }
+    end
+
+    type t =
+      | KeyValue of KeyValue.t
+      | Splat of Expression.t
   end
 
-  type t = {
-    entries: Entry.t list;
-    keywords: Expression.t list;
-  }
+  type t = Entry.t list
 end
 
 and Lambda : sig
@@ -247,7 +253,7 @@ and Expression : sig
     | ComparisonOperator of ComparisonOperator.t
     | Constant of AstExpression.Constant.t
     | Dictionary of Dictionary.t
-    | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
+    | DictionaryComprehension of Dictionary.Entry.KeyValue.t Comprehension.t
     | Generator of t Comprehension.t
     | FormatString of Substring.t list
     | Lambda of Lambda.t
@@ -274,7 +280,7 @@ end = struct
     | ComparisonOperator of ComparisonOperator.t
     | Constant of AstExpression.Constant.t
     | Dictionary of Dictionary.t
-    | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
+    | DictionaryComprehension of Dictionary.Entry.KeyValue.t Comprehension.t
     | Generator of t Comprehension.t
     | FormatString of Substring.t list
     | Lambda of Lambda.t

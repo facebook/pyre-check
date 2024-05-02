@@ -279,20 +279,18 @@ let rec translate_expression (expression : Errpyast.expr) =
         | Errpyast.List list -> Expression.List (List.map ~f:translate_expression list.elts)
         | Errpyast.Set set_items -> Expression.Set (List.map ~f:translate_expression set_items)
         | Errpyast.Dict { keys; values } ->
-            let entries, keywords =
-              (* `keys` and `values` are guaranteed by ERRPY parser to be of the same length. *)
+            let open Dictionary.Entry in
+            (* `keys` and `values` are guaranteed by ERRPY parser to be of the same length. *)
+            let entries =
               List.zip_exn keys values
-              |> List.partition_map ~f:(fun (key, value) ->
+              |> List.map ~f:(fun (key, value) ->
                      match key with
-                     | None -> Either.Second (translate_expression value)
+                     | None -> Splat (translate_expression value)
                      | Some key ->
-                         Either.First
-                           {
-                             Dictionary.Entry.key = translate_expression key;
-                             value = translate_expression value;
-                           })
+                         KeyValue
+                           { key = translate_expression key; value = translate_expression value })
             in
-            Expression.Dictionary { Dictionary.entries; keywords }
+            Expression.Dictionary entries
         | Errpyast.IfExp ifexp ->
             Expression.Ternary
               {
@@ -367,7 +365,7 @@ let rec translate_expression (expression : Errpyast.expr) =
               {
                 Comprehension.element =
                   {
-                    Dictionary.Entry.key = translate_expression dict_comprehension.key;
+                    key = translate_expression dict_comprehension.key;
                     value = translate_expression dict_comprehension.value;
                   };
                 generators = List.map ~f:translate_comprehension dict_comprehension.generators;

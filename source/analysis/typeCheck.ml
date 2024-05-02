@@ -1462,7 +1462,7 @@ module State (Context : Context) = struct
   (** Resolves types by moving forward through nodes in the CFG starting at an expression. *)
   and forward_expression ~resolution { Node.location; value } =
     let global_resolution = Resolution.global_resolution resolution in
-    let forward_entry ~resolution ~errors ~entry:{ Dictionary.Entry.key; value } =
+    let forward_entry ~resolution ~errors ~entry:Dictionary.Entry.KeyValue.{ key; value } =
       let { Resolved.resolution; resolved = key_resolved; errors = key_errors; _ } =
         forward_expression ~resolution key
       in
@@ -2874,7 +2874,15 @@ module State (Context : Context) = struct
           resolved_annotation = None;
           base = None;
         }
-    | Dictionary { Dictionary.entries; keywords } ->
+    | Dictionary entries ->
+        let keyvalue_entries, splatted_entries =
+          List.partition_map
+            ~f:(fun entry ->
+              match entry with
+              | KeyValue kv -> First kv
+              | Splat s -> Second s)
+            entries
+        in
         let key, value, resolution, errors =
           let forward_entry (key, value, resolution, errors) entry =
             let new_key, new_value, resolution, errors = forward_entry ~resolution ~errors ~entry in
@@ -2883,16 +2891,19 @@ module State (Context : Context) = struct
               resolution,
               errors )
           in
-          List.fold entries ~f:forward_entry ~init:(Type.Bottom, Type.Bottom, resolution, [])
+          List.fold
+            keyvalue_entries
+            ~f:forward_entry
+            ~init:(Type.Bottom, Type.Bottom, resolution, [])
         in
         let key =
-          if List.is_empty keywords && Type.is_unbound key then
+          if List.is_empty splatted_entries && Type.is_unbound key then
             Type.variable "_KT" |> Type.Variable.mark_all_free_variables_as_escaped
           else
             key
         in
         let value =
-          if List.is_empty keywords && Type.is_unbound value then
+          if List.is_empty splatted_entries && Type.is_unbound value then
             Type.variable "_VT" |> Type.Variable.mark_all_free_variables_as_escaped
           else
             value
@@ -2940,7 +2951,7 @@ module State (Context : Context) = struct
                         in
                         None, resolution, errors))
           in
-          List.fold keywords ~f:forward_keyword ~init:(Some (key, value), resolution, errors)
+          List.fold splatted_entries ~f:forward_keyword ~init:(Some (key, value), resolution, errors)
         in
         let resolved =
           resolved_key_and_value
@@ -3546,7 +3557,7 @@ module State (Context : Context) = struct
     | Expression.Constant (Constant.String { StringLiteral.value = ""; _ })
     | Expression.List []
     | Expression.Tuple []
-    | Expression.Dictionary { Dictionary.entries = []; keywords = [] } ->
+    | Expression.Dictionary [] ->
         Unreachable
     (* Type is the same as `annotation_expression` *)
     | ComparisonOperator

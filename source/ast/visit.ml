@@ -74,9 +74,13 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       visit_expression iterator;
       List.iter conditions ~f:visit_expression
     in
-    let visit_entry { Dictionary.Entry.key; value } ~visit_expression =
-      visit_expression key;
-      visit_expression value
+    let visit_entry entry ~visit_expression =
+      let open Dictionary.Entry in
+      match entry with
+      | KeyValue KeyValue.{ key; value } ->
+          visit_expression key;
+          visit_expression value
+      | Splat s -> visit_expression s
     in
     let visit_children value =
       let open Expression in
@@ -96,12 +100,12 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
             visit_expression value
           in
           List.iter arguments ~f:visit_argument
-      | Dictionary { Dictionary.entries; keywords } ->
-          List.iter entries ~f:(visit_entry ~visit_expression);
-          List.iter keywords ~f:visit_expression |> ignore
-      | DictionaryComprehension { Comprehension.element; generators } ->
+      | Dictionary entries -> List.iter entries ~f:(visit_entry ~visit_expression)
+      | DictionaryComprehension
+          { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators } ->
           List.iter generators ~f:(visit_generator ~visit_expression);
-          visit_entry element ~visit_expression
+          visit_expression key;
+          visit_expression value
       | Generator { Comprehension.element; generators } ->
           List.iter generators ~f:(visit_generator ~visit_expression);
           visit_expression element

@@ -147,24 +147,31 @@ end
 
 and Dictionary : sig
   module Entry : sig
-    type t = {
-      key: Expression.t;
-      value: Expression.t;
-    }
+    module KeyValue : sig
+      type t = {
+        key: Expression.t;
+        value: Expression.t;
+      }
+      [@@deriving equal, compare, sexp, show, hash, to_yojson]
+
+      val location_insensitive_compare : t -> t -> int
+    end
+
+    type t =
+      | KeyValue of KeyValue.t
+      | Splat of Expression.t
     [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
     val location_insensitive_compare : t -> t -> int
   end
 
-  type t = {
-    entries: Entry.t list;
-    keywords: Expression.t list;
-  }
-  [@@deriving equal, compare, sexp, show, hash, to_yojson]
+  type t = Entry.t list [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
   val location_insensitive_compare : t -> t -> int
 
   val string_literal_keys : Entry.t list -> (string * Expression.t) list option
+
+  val has_no_keywords : t -> bool
 end
 
 and Lambda : sig
@@ -288,7 +295,7 @@ and Expression : sig
     | ComparisonOperator of ComparisonOperator.t
     | Constant of Constant.t
     | Dictionary of Dictionary.t
-    | DictionaryComprehension of Dictionary.Entry.t Comprehension.t
+    | DictionaryComprehension of Dictionary.Entry.KeyValue.t Comprehension.t
     | Generator of t Comprehension.t
     | FormatString of Substring.t list
     | Lambda of Lambda.t
@@ -327,7 +334,7 @@ module Mapper : sig
     map_constant:(mapper:'a t -> location:Location.t -> Constant.t -> 'a) ->
     map_dictionary:(mapper:'a t -> location:Location.t -> Dictionary.t -> 'a) ->
     map_dictionary_comprehension:
-      (mapper:'a t -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+      (mapper:'a t -> location:Location.t -> Dictionary.Entry.KeyValue.t Comprehension.t -> 'a) ->
     map_generator:(mapper:'a t -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
     map_format_string:(mapper:'a t -> location:Location.t -> Substring.t list -> 'a) ->
     map_lambda:(mapper:'a t -> location:Location.t -> Lambda.t -> 'a) ->
@@ -359,7 +366,7 @@ module Mapper : sig
     ?map_dictionary_comprehension:
       (mapper:Expression.t t ->
       location:Location.t ->
-      Dictionary.Entry.t Comprehension.t ->
+      Dictionary.Entry.KeyValue.t Comprehension.t ->
       Expression.t) ->
     ?map_generator:
       (mapper:Expression.t t -> location:Location.t -> Expression.t Comprehension.t -> Expression.t) ->
@@ -394,8 +401,8 @@ module Mapper : sig
     ?map_dictionary:(mapper:Expression.t t -> Dictionary.t -> Dictionary.t) ->
     ?map_dictionary_comprehension:
       (mapper:Expression.t t ->
-      Dictionary.Entry.t Comprehension.t ->
-      Dictionary.Entry.t Comprehension.t) ->
+      Dictionary.Entry.KeyValue.t Comprehension.t ->
+      Dictionary.Entry.KeyValue.t Comprehension.t) ->
     ?map_generator:
       (mapper:Expression.t t -> Expression.t Comprehension.t -> Expression.t Comprehension.t) ->
     ?map_format_string:(mapper:Expression.t t -> Substring.t list -> Substring.t list) ->
@@ -438,7 +445,11 @@ module Folder : sig
     ?fold_constant:(folder:'a t -> state:'a -> location:Location.t -> Constant.t -> 'a) ->
     ?fold_dictionary:(folder:'a t -> state:'a -> location:Location.t -> Dictionary.t -> 'a) ->
     ?fold_dictionary_comprehension:
-      (folder:'a t -> state:'a -> location:Location.t -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+      (folder:'a t ->
+      state:'a ->
+      location:Location.t ->
+      Dictionary.Entry.KeyValue.t Comprehension.t ->
+      'a) ->
     ?fold_generator:
       (folder:'a t -> state:'a -> location:Location.t -> Expression.t Comprehension.t -> 'a) ->
     ?fold_format_string:(folder:'a t -> state:'a -> location:Location.t -> Substring.t list -> 'a) ->
@@ -468,7 +479,7 @@ module Folder : sig
     ?fold_constant:(folder:'a t -> state:'a -> Constant.t -> 'a) ->
     ?fold_dictionary:(folder:'a t -> state:'a -> Dictionary.t -> 'a) ->
     ?fold_dictionary_comprehension:
-      (folder:'a t -> state:'a -> Dictionary.Entry.t Comprehension.t -> 'a) ->
+      (folder:'a t -> state:'a -> Dictionary.Entry.KeyValue.t Comprehension.t -> 'a) ->
     ?fold_generator:(folder:'a t -> state:'a -> Expression.t Comprehension.t -> 'a) ->
     ?fold_format_string:(folder:'a t -> state:'a -> Substring.t list -> 'a) ->
     ?fold_lambda:(folder:'a t -> state:'a -> Lambda.t -> 'a) ->

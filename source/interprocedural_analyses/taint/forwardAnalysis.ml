@@ -1198,17 +1198,25 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~is_result_used
       (taint, state)
-      { Dictionary.Entry.key; value }
+      entry
     =
-    let field_name = AccessPath.get_index key in
-    let key_taint, state =
-      analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:key
-      |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
-    in
-    analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
-    |>> ForwardState.Tree.prepend [field_name]
-    |>> ForwardState.Tree.join taint
-    |>> ForwardState.Tree.join key_taint
+    let open Dictionary.Entry in
+    match entry with
+    | KeyValue { key; value } ->
+        let field_name = AccessPath.get_index key in
+        let key_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:key
+          |>> ForwardState.Tree.prepend [AccessPath.dictionary_keys]
+        in
+        analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:value
+        |>> ForwardState.Tree.prepend [field_name]
+        |>> ForwardState.Tree.join taint
+        |>> ForwardState.Tree.join key_taint
+    | Splat s ->
+        let new_taint, state =
+          analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:s
+        in
+        ForwardState.Tree.join new_taint taint, state
 
 
   and analyze_list_element
@@ -1285,7 +1293,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
       ~(pyre_in_context : PyrePysaApi.InContext.t)
       ~state
       ~is_result_used
-      { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ }
+      { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators; _ }
     =
     let state, pyre_in_context =
       analyze_comprehension_generators ~pyre_in_context ~state generators
@@ -1886,13 +1894,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments =
-       [
-         {
-           Call.Argument.value =
-             { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
-           name = None;
-         };
-       ];
+       [{ Call.Argument.value = { Node.value = Expression.Dictionary entries; _ }; name = None }];
     }
       when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
@@ -2577,20 +2579,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
               location;
             }
       | Constant _ -> ForwardState.Tree.empty, state
-      | Dictionary { Dictionary.entries; keywords } ->
-          let taint, state =
-            List.fold
-              entries
-              ~f:(analyze_dictionary_entry ~pyre_in_context ~is_result_used)
-              ~init:(ForwardState.Tree.empty, state)
-          in
-          let analyze_dictionary_keywords (taint, state) keywords =
-            let new_taint, state =
-              analyze_expression ~pyre_in_context ~state ~is_result_used ~expression:keywords
-            in
-            ForwardState.Tree.join new_taint taint, state
-          in
-          List.fold keywords ~f:analyze_dictionary_keywords ~init:(taint, state)
+      | Dictionary entries ->
+          List.fold
+            entries
+            ~f:(analyze_dictionary_entry ~pyre_in_context ~is_result_used)
+            ~init:(ForwardState.Tree.empty, state)
       | DictionaryComprehension comprehension ->
           analyze_dictionary_comprehension ~pyre_in_context ~state ~is_result_used comprehension
       | Generator comprehension ->

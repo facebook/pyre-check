@@ -1266,17 +1266,16 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     state
 
 
-  and analyze_dictionary_entry
-      ~(pyre_in_context : PyrePysaApi.InContext.t)
-      taint
-      state
-      { Dictionary.Entry.key; value }
-    =
-    let key_taint = read_tree [AccessPath.dictionary_keys] taint in
-    let state = analyze_expression ~pyre_in_context ~taint:key_taint ~state ~expression:key in
-    let field_name = AccessPath.get_index key in
-    let value_taint = read_tree [field_name] taint in
-    analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression:value
+  and analyze_dictionary_entry ~(pyre_in_context : PyrePysaApi.InContext.t) taint state entry =
+    let open Dictionary.Entry in
+    match entry with
+    | KeyValue { key; value } ->
+        let key_taint = read_tree [AccessPath.dictionary_keys] taint in
+        let state = analyze_expression ~pyre_in_context ~taint:key_taint ~state ~expression:key in
+        let field_name = AccessPath.get_index key in
+        let value_taint = read_tree [field_name] taint in
+        analyze_expression ~pyre_in_context ~taint:value_taint ~state ~expression:value
+    | Splat s -> analyze_expression ~pyre_in_context ~taint ~state ~expression:s
 
 
   and analyze_reverse_list_element
@@ -1650,13 +1649,7 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
          _;
        };
      arguments =
-       [
-         {
-           Call.Argument.value =
-             { Node.value = Expression.Dictionary { Dictionary.entries; keywords = [] }; _ };
-           name = None;
-         };
-       ];
+       [{ Call.Argument.value = { Node.value = Expression.Dictionary entries; _ }; name = None }];
     }
       when CallGraph.CallCallees.is_mapping_method callees
            && Option.is_some (Dictionary.string_literal_keys entries) ->
@@ -2165,16 +2158,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     | Call { callee; arguments } ->
         analyze_call ~pyre_in_context ~location ~taint ~state ~callee ~arguments
     | Constant _ -> state
-    | Dictionary { Dictionary.entries; keywords } ->
-        let state =
-          List.fold ~f:(analyze_dictionary_entry ~pyre_in_context taint) entries ~init:state
-        in
-        let analyze_dictionary_keywords state keywords =
-          analyze_expression ~pyre_in_context ~taint ~state ~expression:keywords
-        in
-        List.fold keywords ~f:analyze_dictionary_keywords ~init:state
-    | DictionaryComprehension
-        { Comprehension.element = { Dictionary.Entry.key; value }; generators; _ } ->
+    | Dictionary entries ->
+        List.fold ~f:(analyze_dictionary_entry ~pyre_in_context taint) entries ~init:state
+    | DictionaryComprehension { Comprehension.element = { key; value }; generators; _ } ->
         let pyre_in_context = PyrePysaApi.InContext.resolve_generators pyre_in_context generators in
         let state =
           analyze_expression

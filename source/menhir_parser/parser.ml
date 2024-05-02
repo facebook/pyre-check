@@ -254,11 +254,14 @@ module ParserToAst = struct
 
 
   and convert_expression { Node.location; value } =
-    let convert_entry { Dictionary.Entry.key; value } =
-      {
-        AstExpression.Dictionary.Entry.key = convert_expression key;
-        value = convert_expression value;
-      }
+    let convert_entry entry =
+      let open Dictionary.Entry in
+      match entry with
+      | KeyValue KeyValue.{ key; value } ->
+          AstExpression.Dictionary.Entry.KeyValue
+            AstExpression.Dictionary.Entry.KeyValue.
+              { key = convert_expression key; value = convert_expression value }
+      | Splat s -> AstExpression.Dictionary.Entry.Splat (convert_expression s)
     in
     let convert_generator { Comprehension.Generator.target; iterator; conditions; async } =
       {
@@ -296,17 +299,16 @@ module ParserToAst = struct
           }
         |> Node.create ~location
     | Constant value -> AstExpression.Expression.Constant value |> Node.create ~location
-    | Dictionary { Dictionary.entries; keywords } ->
-        AstExpression.Expression.Dictionary
-          {
-            AstExpression.Dictionary.entries = List.map ~f:convert_entry entries;
-            keywords = List.map ~f:convert_expression keywords;
-          }
+    | Dictionary entries ->
+        AstExpression.Expression.Dictionary (List.map ~f:convert_entry entries)
         |> Node.create ~location
-    | DictionaryComprehension { Comprehension.element; generators } ->
+    | DictionaryComprehension
+        { Comprehension.element = Dictionary.Entry.KeyValue.{ key; value }; generators } ->
         AstExpression.Expression.DictionaryComprehension
           {
-            AstExpression.Comprehension.element = convert_entry element;
+            AstExpression.Comprehension.element =
+              AstExpression.Dictionary.Entry.KeyValue.
+                { key = convert_expression key; value = convert_expression value };
             generators = List.map ~f:convert_generator generators;
           }
         |> Node.create ~location

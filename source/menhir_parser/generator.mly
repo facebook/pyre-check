@@ -35,13 +35,11 @@
   type entry =
     | Entry of Dictionary.Entry.t
     | Item of Expression.t
-    | Keywords of Expression.t
     | Comprehension of Comprehension.Generator.t
 
   type entries = {
       entries: Dictionary.Entry.t list;
       items: Expression.t list;
-      keywords: Expression.t list;
       comprehensions: Comprehension.Generator.t list;
     }
 
@@ -51,8 +49,6 @@
         { so_far with entries = entry :: so_far.entries }
     | Item item ->
         { so_far with items = item :: so_far.items }
-    | Keywords keyword ->
-        { so_far with keywords = keyword :: so_far.keywords }
     | Comprehension comprehension ->
         { so_far with comprehensions = comprehension :: so_far.comprehensions }
 
@@ -1886,18 +1882,18 @@ set_or_dictionary_entry:
   | test = test {
       match test with
       | { Node.value = Expression.Starred (Starred.Twice keywords); _ } ->
-          Keywords keywords
+          Entry (Dictionary.Entry.Splat keywords)
       | _ ->
           Item test
     }
   | key = test; COLON; value = test {
-      Entry { Dictionary.Entry.key = key; value = value; }
+      Entry (Dictionary.Entry.KeyValue Dictionary.Entry.KeyValue.{ key = key; value = value; })
     }
   ;
 
 set_or_dictionary_maker:
   | entry = set_or_dictionary_entry {
-      add_entry { entries = []; comprehensions = []; items = []; keywords = [] } entry
+      add_entry { entries = []; comprehensions = []; items = [] } entry
     }
   | items = set_or_dictionary_maker; COMMA; entry = set_or_dictionary_entry {
       add_entry items entry
@@ -1911,22 +1907,22 @@ set_or_dictionary:
   | start = LEFTCURLY; stop = RIGHTCURLY {
       {
         Node.location = Location.create ~start ~stop;
-        value = Expression.Dictionary { Dictionary.entries = []; keywords = [] };
+        value = Expression.Dictionary [];
       }
     }
   | start = LEFTCURLY; items = set_or_dictionary_maker; COMMA?; stop = RIGHTCURLY {
       let value =
         match items with
-        | { entries; keywords; comprehensions = []; items = [] } ->
-             Expression.Dictionary { Dictionary.entries = List.rev entries; keywords = List.rev keywords }
-        | { entries = [entry]; keywords = []; items = []; comprehensions  } ->
+        | { entries; comprehensions = []; items = [] } ->
+             Expression.Dictionary (List.rev entries)
+        | { entries = [Dictionary.Entry.KeyValue entry]; items = []; comprehensions  } ->
               Expression.DictionaryComprehension {
                 Comprehension.element = entry;
                 generators = List.rev comprehensions;
               }
-        | { items; entries = []; comprehensions = []; keywords = [] } ->
+        | { items; entries = []; comprehensions = [] } ->
                Expression.Set (List.rev items)
-        | { items = [item]; comprehensions; keywords = []; entries = [] } ->
+        | { items = [item]; comprehensions; entries = [] } ->
              Expression.SetComprehension {
                Comprehension.element = item;
                generators = List.rev comprehensions;

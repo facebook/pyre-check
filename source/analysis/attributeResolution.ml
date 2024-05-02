@@ -4221,11 +4221,16 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
               Result.ok decorated |> Option.value ~default:Type.Any
           | _ -> resolve_name expression)
       | Name _ -> resolve_name expression
-      | Dictionary { Dictionary.entries; keywords = [] } ->
+      | Dictionary entries when Dictionary.has_no_keywords entries ->
           let key_annotation, value_annotation =
-            let join_entry (key_annotation, value_annotation) { Dictionary.Entry.key; value } =
-              ( TypeOrder.join order key_annotation (self#resolve_literal ~assumptions key),
-                TypeOrder.join order value_annotation (self#resolve_literal ~assumptions value) )
+            let join_entry (key_annotation, value_annotation) entry =
+              let open Dictionary.Entry in
+              match entry with
+              | KeyValue { key; value } ->
+                  ( TypeOrder.join order key_annotation (self#resolve_literal ~assumptions key),
+                    TypeOrder.join order value_annotation (self#resolve_literal ~assumptions value)
+                  )
+              | Splat _ -> key_annotation, value_annotation
             in
             List.fold ~init:(Type.Bottom, Type.Bottom) ~f:join_entry entries
           in

@@ -1401,11 +1401,7 @@ let test_dictionary_locations _ =
       node
         ~start:(1, 0)
         ~stop:(1, 2)
-        (Statement.Expression
-           (node
-              ~start:(1, 0)
-              ~stop:(1, 2)
-              (Expression.Dictionary { Dictionary.entries = []; keywords = [] })));
+        (Statement.Expression (node ~start:(1, 0) ~stop:(1, 2) (Expression.Dictionary [])));
     ];
   assert_source_locations
     "{1: 2,}"
@@ -1418,24 +1414,15 @@ let test_dictionary_locations _ =
               ~start:(1, 0)
               ~stop:(1, 7)
               (Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key =
-                           node
-                             ~start:(1, 1)
-                             ~stop:(1, 2)
-                             (Expression.Constant (Constant.Integer 1));
-                         value =
-                           node
-                             ~start:(1, 4)
-                             ~stop:(1, 5)
-                             (Expression.Constant (Constant.Integer 2));
-                       };
-                     ];
-                   keywords = [];
-                 })));
+                 [
+                   KeyValue
+                     {
+                       key =
+                         node ~start:(1, 1) ~stop:(1, 2) (Expression.Constant (Constant.Integer 1));
+                       value =
+                         node ~start:(1, 4) ~stop:(1, 5) (Expression.Constant (Constant.Integer 2));
+                     };
+                 ])));
     ];
   assert_source_locations
     "{1: 2, **durp, **hurp}"
@@ -1448,28 +1435,19 @@ let test_dictionary_locations _ =
               ~start:(1, 0)
               ~stop:(1, 22)
               (Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key =
-                           node
-                             ~start:(1, 1)
-                             ~stop:(1, 2)
-                             (Expression.Constant (Constant.Integer 1));
-                         value =
-                           node
-                             ~start:(1, 4)
-                             ~stop:(1, 5)
-                             (Expression.Constant (Constant.Integer 2));
-                       };
-                     ];
-                   keywords =
-                     [
-                       node ~start:(1, 9) ~stop:(1, 13) (Expression.Name (Name.Identifier "durp"));
-                       node ~start:(1, 17) ~stop:(1, 21) (Expression.Name (Name.Identifier "hurp"));
-                     ];
-                 })));
+                 [
+                   KeyValue
+                     {
+                       key =
+                         node ~start:(1, 1) ~stop:(1, 2) (Expression.Constant (Constant.Integer 1));
+                       value =
+                         node ~start:(1, 4) ~stop:(1, 5) (Expression.Constant (Constant.Integer 2));
+                     };
+                   Splat
+                     (node ~start:(1, 9) ~stop:(1, 13) (Expression.Name (Name.Identifier "durp")));
+                   Splat
+                     (node ~start:(1, 17) ~stop:(1, 21) (Expression.Name (Name.Identifier "hurp")));
+                 ])));
     ];
   assert_source_locations
     "{\n\t1: 2,\n\t2: 3}"
@@ -1482,36 +1460,22 @@ let test_dictionary_locations _ =
               ~start:(1, 0)
               ~stop:(3, 6)
               (Expression.Dictionary
-                 {
-                   Dictionary.entries =
-                     [
-                       {
-                         Dictionary.Entry.key =
-                           node
-                             ~start:(2, 1)
-                             ~stop:(2, 2)
-                             (Expression.Constant (Constant.Integer 1));
-                         value =
-                           node
-                             ~start:(2, 4)
-                             ~stop:(2, 5)
-                             (Expression.Constant (Constant.Integer 2));
-                       };
-                       {
-                         Dictionary.Entry.key =
-                           node
-                             ~start:(3, 1)
-                             ~stop:(3, 2)
-                             (Expression.Constant (Constant.Integer 2));
-                         value =
-                           node
-                             ~start:(3, 4)
-                             ~stop:(3, 5)
-                             (Expression.Constant (Constant.Integer 3));
-                       };
-                     ];
-                   keywords = [];
-                 })));
+                 [
+                   KeyValue
+                     {
+                       key =
+                         node ~start:(2, 1) ~stop:(2, 2) (Expression.Constant (Constant.Integer 1));
+                       value =
+                         node ~start:(2, 4) ~stop:(2, 5) (Expression.Constant (Constant.Integer 2));
+                     };
+                   KeyValue
+                     {
+                       key =
+                         node ~start:(3, 1) ~stop:(3, 2) (Expression.Constant (Constant.Integer 2));
+                       value =
+                         node ~start:(3, 4) ~stop:(3, 5) (Expression.Constant (Constant.Integer 3));
+                     };
+                 ])));
     ];
   assert_source_locations
     "{a if a else a: b for a in []}"
@@ -1527,7 +1491,7 @@ let test_dictionary_locations _ =
                  {
                    Comprehension.element =
                      {
-                       Dictionary.Entry.key =
+                       key =
                          node
                            ~start:(1, 1)
                            ~stop:(1, 14)

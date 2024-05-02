@@ -735,17 +735,14 @@ let test_sanitize_statement _ =
                     annotation = None;
                     value =
                       +Expression.Dictionary
-                         {
-                           Dictionary.entries =
-                             [
-                               {
-                                 Dictionary.Entry.key =
-                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                 value = !"$parameter$a";
-                               };
-                             ];
-                           keywords = [];
-                         };
+                         [
+                           KeyValue
+                             {
+                               key =
+                                 +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                               value = !"$parameter$a";
+                             };
+                         ];
                   };
                +Statement.Expression
                   (+Expression.Call
@@ -799,17 +796,14 @@ let test_sanitize_statement _ =
                     annotation = None;
                     value =
                       +Expression.Dictionary
-                         {
-                           Dictionary.entries =
-                             [
-                               {
-                                 Dictionary.Entry.key =
-                                   +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                                 value = !"a";
-                               };
-                             ];
-                           keywords = [];
-                         };
+                         [
+                           KeyValue
+                             {
+                               key =
+                                 +Expression.Constant (Constant.String (StringLiteral.create "a"));
+                               value = !"a";
+                             };
+                         ];
                   };
                +Statement.Expression
                   (+Expression.Call

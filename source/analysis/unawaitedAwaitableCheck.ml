@@ -582,20 +582,21 @@ module State (Context : Context) = struct
           forward_expression ~resolution ~state ~expression:left
         in
         forward_expression ~resolution ~state ~expression:right |>> nested_awaitable_expressions
-    | Dictionary { Dictionary.entries; keywords } ->
-        let forward_entry { state; nested_awaitable_expressions } { Dictionary.Entry.key; value } =
-          let { state; nested_awaitable_expressions } =
-            forward_expression ~resolution ~state ~expression:key |>> nested_awaitable_expressions
-          in
-          forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
+    | Dictionary entries ->
+        let forward_entry { state; nested_awaitable_expressions } entry =
+          let open Dictionary.Entry in
+          match entry with
+          | KeyValue { key; value } ->
+              let { state; nested_awaitable_expressions } =
+                forward_expression ~resolution ~state ~expression:key
+                |>> nested_awaitable_expressions
+              in
+              forward_expression ~resolution ~state ~expression:value
+              |>> nested_awaitable_expressions
+          | Splat s ->
+              forward_expression ~resolution ~state ~expression:s |>> nested_awaitable_expressions
         in
-        let { state; nested_awaitable_expressions } =
-          List.fold entries ~init:{ state; nested_awaitable_expressions = [] } ~f:forward_entry
-        in
-        let forward_keywords { state; nested_awaitable_expressions } expression =
-          forward_expression ~resolution ~state ~expression |>> nested_awaitable_expressions
-        in
-        List.fold keywords ~init:{ state; nested_awaitable_expressions } ~f:forward_keywords
+        List.fold entries ~init:{ state; nested_awaitable_expressions = [] } ~f:forward_entry
     | Lambda { Lambda.body; _ } -> forward_expression ~resolution ~state ~expression:body
     | Starred (Starred.Once expression)
     | Starred (Starred.Twice expression) ->
@@ -642,18 +643,23 @@ module State (Context : Context) = struct
             ~f:(forward_generator ~resolution)
         in
         forward_expression ~resolution ~state ~expression:element |>> nested_awaitable_expressions
-    | DictionaryComprehension
-        { Comprehension.element = { Dictionary.Entry.key; value }; generators } ->
+    | DictionaryComprehension { Comprehension.element = entry; generators } ->
         let { state; nested_awaitable_expressions } =
           List.fold
             generators
             ~init:{ state; nested_awaitable_expressions = [] }
             ~f:(forward_generator ~resolution)
         in
-        let { state; nested_awaitable_expressions } =
-          forward_expression ~resolution ~state ~expression:key |>> nested_awaitable_expressions
+        let forward_entry
+            { state; nested_awaitable_expressions }
+            Dictionary.Entry.KeyValue.{ key; value }
+          =
+          let { state; nested_awaitable_expressions } =
+            forward_expression ~resolution ~state ~expression:key |>> nested_awaitable_expressions
+          in
+          forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
         in
-        forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
+        forward_entry { state; nested_awaitable_expressions } entry
     | Name (Name.Attribute { base; _ }) -> forward_expression ~resolution ~state ~expression:base
     | Name name when is_simple_name name ->
         let nested_awaitable_expressions =
