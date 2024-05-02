@@ -69,7 +69,6 @@ let max_workers = 1000
 type request = Request of (serializer -> unit)
 and serializer = { send: 'a. 'a -> unit }
 and void (* an empty type *)
-type call_wrapper = { wrap: 'x 'b. ('x -> 'b) -> 'x -> 'b }
 
 (*****************************************************************************
  * Everything we need to know about a worker.
@@ -77,18 +76,6 @@ type call_wrapper = { wrap: 'x 'b. ('x -> 'b) -> 'x -> 'b }
  *****************************************************************************)
 
 type t = {
-
-  (* The call wrapper will wrap any workload sent to the worker (via "call"
-   * below) before invoking the workload.
-   *
-   * That is, when calling the worker with workload `f x`, it will be wrapped
-   * as `wrap (f x)`.
-   *
-   * This allows universal handling of workload at the time we create the actual
-   * workers. For example, this can be useful to handle exceptions uniformly
-   * across workers regardless what workload is called on them. *)
-  call_wrapper: call_wrapper;
-
   (* Sanity check: is the worker still available ? *)
   mutable killed: bool;
 
@@ -232,30 +219,24 @@ let worker_main restore state (ic, oc) =
 
 let current_worker_id = ref 0
 
-(* Build one worker. *)
-let make_one fork id =
-  if id >= max_workers then failwith "Too many workers";
-  let handle = fork () in
-  let wrap f input =
-    current_worker_id := id;
-    f input
-  in
-  let worker = { call_wrapper = { wrap }; busy = false; killed = false; handle } in
-  worker
-
-(** Make a few workers. When workload is given to a worker (via "call" below),
- * the workload is wrapped in the call_wrapper. *)
+(** Make a few workers. *)
 let make ~nbr_procs ~gc_control ~heap_handle =
-  let restore () =
+  if nbr_procs <= 0 then invalid_arg "Number of workers must be positive";
+  if nbr_procs >= max_workers then failwith "Too many workers";
+  let restore worker_id =
+    current_worker_id := worker_id;
     SharedMemory.connect heap_handle;
     Gc.set gc_control
   in
-  let fork _log_fd = Daemon.fork (Unix.stdout, Unix.stderr) (worker_main restore) () in
-  let made_workers = ref [] in
-  for n = 1 to nbr_procs do
-    made_workers := make_one fork n :: !made_workers
-  done;
-  !made_workers
+  let fork worker_id = Daemon.fork (Unix.stdout, Unix.stderr) (worker_main restore) worker_id in
+  let rec loop acc n =
+    if n = 0 then acc
+    else
+      let handle = fork n in
+      let worker = { busy = false; killed = false; handle } in
+      loop (worker :: acc) (n - 1)
+  in
+  loop [] nbr_procs
 
 let current_worker_id () = !current_worker_id
 
@@ -290,8 +271,7 @@ let call w (type a) (type b) (f : a -> b) (x : a) : b handle =
   let ephemeral_worker = { result; infd; worker = w; } in
   w.busy <- true;
   let request =
-    let { wrap } = w.call_wrapper in
-    Request (fun { send } -> send (wrap f x))
+    Request (fun { send } -> send (f x))
   in
   (* Send the job to the ephemeral worker. *)
   let () = try Daemon.to_channel outc
