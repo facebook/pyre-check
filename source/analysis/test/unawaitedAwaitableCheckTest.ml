@@ -1215,6 +1215,20 @@ let test_assign =
                 await d
             |}
            [];
+      (* TODO(T101303314) The handling of "proper" subscripts on the left-side of assignments is not
+         correctly propagating the unawaited awaitable into `d`, which needs to be fixed before we
+         remove `__setitem__` lowering from the parser. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_awaitable_errors
+           {|
+              async def awaitable() -> tuple[int, int]: ...
+
+              async def foo() -> None:
+                d = {}
+                d["bar"], d["bar"] = awaitable()
+                await d
+            |}
+           ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
