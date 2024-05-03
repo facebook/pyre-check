@@ -1738,6 +1738,7 @@ let test_concise _ =
   in
   assert_concise Type.Bottom "?";
   assert_concise Type.Top "unknown";
+  assert_concise (Type.Primitive "...") "...";
   assert_concise
     (Type.Callable.create
        ~name:!&"foo"

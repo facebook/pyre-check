@@ -2192,6 +2192,7 @@ and pp_concise format annotation =
       Format.fprintf format "%s[%a]" name (pp_parameters ~pp_type:pp) parameters
   | ParameterVariadicComponent component ->
       Record.Variable.RecordVariadic.RecordParameters.RecordComponents.pp_concise format component
+  | Primitive "..." -> Format.fprintf format "..."
   | Primitive name -> Format.fprintf format "%s" (strip_qualification name)
   | ReadOnly type_ -> Format.fprintf format "pyre_extensions.ReadOnly[%a]" pp type_
   | RecursiveType { name; _ } -> Format.fprintf format "%s" name
