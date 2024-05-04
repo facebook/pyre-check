@@ -34,6 +34,29 @@ let test_check_dataclasses =
              "Unexpected keyword [28]: Unexpected keyword argument `frozen` to call `dataclass`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
+      (* TODO T178998636: There should be an error here about mutating an immutable attribute *)
+      @@ assert_type_errors
+           {|
+            from typing import dataclass_transform, Any, TypeVar, Type
+            from dataclasses import dataclass
+            T = TypeVar("T")
+
+            @dataclass_transform(frozen_default=True)
+            def custom_dataclass(cls: type[T]) -> type[T]:
+                return dataclass(cls)
+
+            @custom_dataclass
+            class Foo:
+                x: int
+
+            a = Foo(x=10)
+            a.x = 20
+         |}
+           [
+             "Invalid decoration [56]: Decorator `typing.dataclass_transform(...)` could not be \
+              called, because its type `unknown` is not callable.";
+           ];
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
            from dataclasses import dataclass
