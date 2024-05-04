@@ -13,6 +13,33 @@ let test_transform_environment =
   test_list
     [
       labeled_test_case __FUNCTION__ __LINE__
+      (* TODO: generated attribute (id) should be marked as final *)
+      @@ assert_equivalent_attributes
+           ~source:
+             {|
+              from typing import dataclass_transform
+
+              @dataclass_transform(frozen_default=True)
+              class ModelBaseFrozen:
+                pass
+
+              class Customer3(ModelBaseFrozen):
+                  id: int
+
+              c3_1 = Customer3(id=2)
+
+              # This should generate an error because Customer3 is frozen.
+              c3_1.id = 4  # E
+            |}
+           ~class_name:"Customer3"
+           {|
+                class Customer3:
+                  id: int
+                  def __init__(self, id: int) -> None:
+                    self.id = id
+                  def __eq__(self, o: object) -> bool: ...
+              |};
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_equivalent_attributes
            ~source:
              {|
