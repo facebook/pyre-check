@@ -559,6 +559,43 @@ module State (Context : Context) = struct
                 ~annotation:(Annotation.create_mutable (Type.list Type.Bottom))
             in
             Value { state with resolution }
+        | Statement.Assign
+            {
+              value;
+              target =
+                {
+                  Node.value =
+                    Expression.Call
+                      {
+                        callee =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    attribute = "__getitem__";
+                                    base = { Node.value = Name name; _ } as base;
+                                    _;
+                                  });
+                            _;
+                          };
+                        arguments = [{ Call.Argument.value = key; _ }];
+                        _;
+                      };
+                  _;
+                };
+              _;
+            }
+          when is_simple_name name && Type.is_dictionary (resolve base) ->
+            let resolution =
+              refine_local
+                ~resolution
+                ~name
+                ~annotation:
+                  (Annotation.create_mutable
+                     (Type.dictionary ~key:(resolve key) ~value:(resolve value)))
+            in
+            Value { state with resolution }
         | Statement.Expression
             {
               Node.value =
