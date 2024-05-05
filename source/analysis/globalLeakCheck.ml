@@ -451,7 +451,50 @@ module State (Context : Context) = struct
                 base_globals
         in
         { base_result with reachable_globals }
-    | Call _ -> forward_expression ~resolution expression
+    | Starred (Once expression) -> forward_assignment_target expression
+    | List expressions
+    | Tuple expressions ->
+        let fold_sub_expression_targets { reachable_globals; errors } expression =
+          let { reachable_globals = expression_globals; errors = expression_errors } =
+            forward_assignment_target expression
+          in
+          {
+            reachable_globals = reachable_globals @ expression_globals;
+            errors = expression_errors @ errors;
+          }
+        in
+        List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
+    | Expression.Call
+        {
+          callee =
+            { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ }
+            as callee;
+          arguments;
+        } ->
+        (* Construct a synthetic __setitem__ call. This call isn't exactly correct, because the
+           arity should be 2 instead of 1 (we don't have an actual expression for the second
+           argument, which is coming from the RHS of assignment). But globalLeakCheck doesn't care
+           about arity so this works. *)
+        let synthetic_setitem_expression =
+          {
+            expression with
+            value =
+              Expression.Call
+                {
+                  callee =
+                    {
+                      callee with
+                      value =
+                        Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                    };
+                  arguments;
+                };
+          }
+        in
+        forward_expression ~resolution synthetic_setitem_expression
+    | Call _ ->
+        (* This case can pop up in the base of an attribute assignment. *)
+        forward_expression ~resolution expression
     | Constant _
     | UnaryOperator _
     | Await _
@@ -471,19 +514,6 @@ module State (Context : Context) = struct
     | Ternary _
     | WalrusOperator _ ->
         empty_result
-    | Starred (Once expression) -> forward_assignment_target expression
-    | List expressions
-    | Tuple expressions ->
-        let fold_sub_expression_targets { reachable_globals; errors } expression =
-          let { reachable_globals = expression_globals; errors = expression_errors } =
-            forward_assignment_target expression
-          in
-          {
-            reachable_globals = reachable_globals @ expression_globals;
-            errors = expression_errors @ errors;
-          }
-        in
-        List.fold ~init:empty_result ~f:fold_sub_expression_targets expressions
 
 
   and forward_assert ~resolution ?(origin = Assert.Origin.Assertion) test =

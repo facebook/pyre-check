@@ -1671,10 +1671,9 @@ let test_object_global_leaks context =
       def foo() -> None:
         my_global[0].x = 1
     |}
-    (* TODO (T142189949): This error should be fixed to find the right type of the attribute x. *)
     [
-      "Leak to other types [3104]: Data write to global variable `test.my_global.x` of type \
-       `unknown`.";
+      "Leak to a mutable datastructure [3101]: Data write to global variable `test.my_global` of \
+       type `typing.List[test.MyClass]`.";
     ]
     context;
   ()
