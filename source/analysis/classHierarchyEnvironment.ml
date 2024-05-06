@@ -118,7 +118,8 @@ module IncomingDataComputation = struct
     let extract_supertype base_expression =
       let value = delocalize base_expression in
       match Node.value value with
-      | Call _
+      | Call
+          { callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ }; _ }
       | Name _ -> (
           let supertype, parameters =
             parse_annotation_without_validating_type_parameters ~allow_untracked:true value
