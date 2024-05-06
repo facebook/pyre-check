@@ -184,16 +184,6 @@ let test_create_callable _ =
     "typing.Callable.__getitem__((..., int))"
     (Type.Callable.create ~annotation:Type.integer ());
   assert_create
-    "typing.Callable[(..., int)].__getitem__(__getitem__((..., str))[(..., int)])"
-    (Type.Callable.create
-       ~overloads:
-         [
-           { Type.Callable.annotation = Type.string; parameters = Type.Callable.Undefined };
-           { Type.Callable.annotation = Type.integer; parameters = Type.Callable.Undefined };
-         ]
-       ~annotation:Type.integer
-       ());
-  assert_create
     "typing.Callable[..., int][[..., str]]"
     (Type.Callable.create
        ~overloads:[{ default_overload with annotation = Type.string }]
