@@ -418,7 +418,7 @@ module ParserToAst = struct
             {
               AstStatement.Assign.target = convert_expression target;
               annotation = annotation >>| convert_expression;
-              value = convert_expression value;
+              value = value >>| convert_expression;
             }
       | Assert { Assert.test; message } ->
           AstStatement.Statement.Assert

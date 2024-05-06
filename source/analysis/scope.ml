@@ -177,10 +177,10 @@ module Binding = struct
           value;
           _;
         } ->
-        let sofar = of_expression sofar value in
+        let sofar = of_optional_expression sofar value in
         { name; kind = Kind.AssignTarget (Some annotation); location } :: sofar
     | Statement.Assign { Assign.target; value; _ } ->
-        let sofar = of_expression sofar value in
+        let sofar = of_optional_expression sofar value in
         of_unannotated_target ~kind:(Kind.AssignTarget None) sofar target
     | Statement.Class { Class.name; base_arguments; decorators; _ } ->
         let sofar = List.fold ~init:sofar ~f:of_expression decorators in

@@ -539,7 +539,7 @@ module State (Context : Context) = struct
         in
         match value with
         | Statement.Assign
-            { value = { value = Dictionary []; _ }; target = { Node.value = Name name; _ }; _ }
+            { value = Some { value = Dictionary []; _ }; target = { Node.value = Name name; _ }; _ }
           when is_simple_name name ->
             let resolution =
               refine_local
@@ -550,7 +550,7 @@ module State (Context : Context) = struct
             in
             Value { state with resolution }
         | Statement.Assign
-            { value = { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
+            { value = Some { value = List []; _ }; target = { Node.value = Name name; _ }; _ }
           when is_simple_name name ->
             let resolution =
               refine_local
@@ -561,7 +561,7 @@ module State (Context : Context) = struct
             Value { state with resolution }
         | Statement.Assign
             {
-              value;
+              value = Some value;
               target =
                 {
                   Node.value =
@@ -896,8 +896,8 @@ module State (Context : Context) = struct
                   resolution
             | _ -> resolution
           in
-          match Node.value target, Node.value value with
-          | Tuple targets, Tuple values when List.length targets = List.length values ->
+          match Node.value target, value >>| Node.value with
+          | Tuple targets, Some (Tuple values) when List.length targets = List.length values ->
               let target_annotations =
                 let resolve expression =
                   forward_expression ~state:{ state with resolution } expression
@@ -905,9 +905,11 @@ module State (Context : Context) = struct
                 List.map targets ~f:resolve
               in
               List.fold2_exn ~init:resolution ~f:propagate_assign target_annotations values
-          | _, _ ->
+          | _, _ -> (
               let resolved = forward_expression ~state:{ state with resolution } target in
-              propagate_assign resolution resolved value)
+              match value with
+              | Some value -> propagate_assign resolution resolved value
+              | None -> resolution))
       | Return { Return.expression = Some { Node.value = Name name; _ }; _ }
         when is_simple_name name ->
           let return_annotation =

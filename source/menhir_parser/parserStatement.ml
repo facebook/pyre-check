@@ -17,7 +17,7 @@ module Assign = struct
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
-    value: Expression.t;
+    value: Expression.t option;
   }
 end
 

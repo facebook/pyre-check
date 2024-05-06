@@ -236,7 +236,7 @@ module Make (Transformer : Transformer) = struct
               {
                 Assign.target = transform_expression target;
                 annotation = annotation >>| transform_expression;
-                value = transform_expression value;
+                value = value >>| transform_expression;
               }
         | Assert { Assert.test; message; origin } ->
             Assert

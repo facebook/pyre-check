@@ -27,7 +27,7 @@ let missing_builtin_globals =
           {
             explicit_annotation = Some (Type.expression annotation);
             target_location = Location.WithModule.any;
-            value = Node.create_with_default_location (Expression.Constant Constant.Ellipsis);
+            value = Some (Node.create_with_default_location (Expression.Constant Constant.Ellipsis));
           };
     }
   in
@@ -67,7 +67,7 @@ let callable_body =
             (Expression.Name
                (Ast.Expression.create_name ~location:Location.any "typing.Callable.__call__"));
         annotation = Some (Type.expression Type.object_primitive);
-        value = Node.create_with_default_location (Expression.Constant Constant.NoneLiteral);
+        value = Some (Node.create_with_default_location (Expression.Constant Constant.NoneLiteral));
       };
     Statement.Assign
       {
@@ -77,9 +77,10 @@ let callable_body =
                (Ast.Expression.create_name ~location:Location.any "typing.Callable.__qualname__"));
         annotation = Some (Type.expression Type.string);
         value =
-          Node.create_with_default_location
-            (Expression.Constant
-               (Constant.String { StringLiteral.kind = StringLiteral.String; value = "" }));
+          Some
+            (Node.create_with_default_location
+               (Expression.Constant
+                  (Constant.String { StringLiteral.kind = StringLiteral.String; value = "" })));
       };
   ]
   |> List.map ~f:Node.create_with_default_location

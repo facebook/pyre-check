@@ -91,8 +91,7 @@ let translate_alias (alias : Errpyast.alias) =
 
 
 let create_assign ~location ~target ~annotation ~value () =
-  let value =
-    (* TODO(T101298692): Make `value` optional in assign statement and stop auto-filling `...` *)
+  let default_value =
     let location =
       let open Ast.Location in
       { location with start = location.stop }
@@ -118,7 +117,7 @@ let create_assign ~location ~target ~annotation ~value () =
               Expression.Name
                 (Name.Attribute { Name.Attribute.base; attribute = "__setitem__"; special = true })
               |> Node.create ~location:callee_location;
-            arguments = List.append arguments [{ Call.Argument.name = None; value }];
+            arguments = List.append arguments [{ Call.Argument.name = None; value = default_value }];
           }
         |> Node.create ~location
       in

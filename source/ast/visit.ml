@@ -168,7 +168,7 @@ module MakeNodeVisitor (Visitor : NodeVisitor) = struct
       | Assign { Assign.target; annotation; value; _ } ->
           visit_expression target;
           Option.iter ~f:visit_expression annotation;
-          visit_expression value
+          Option.iter ~f:visit_expression value
       | Assert { Assert.test; message; _ } ->
           visit_expression test;
           Option.iter ~f:visit_expression message

@@ -381,7 +381,8 @@ let test_try_block_preamble _ =
               Assign.target =
                 { Node.location = ~@"4:18-5:2"; value = Expression.Name (Name.Identifier "error") };
               annotation = None;
-              value = Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis);
+              value =
+                Some (Node.create ~location:~@"4:7-4:14" (Expression.Constant Constant.Ellipsis));
             };
       };
       {
@@ -475,52 +476,53 @@ let test_for_loop_preamble _ =
               { Node.value = Expression.Name (Name.Identifier "a"); location = ~@"1:4-1:5" };
             annotation = None;
             value =
-              {
-                Node.value =
-                  Expression.Call
-                    {
-                      Call.callee =
-                        {
-                          Node.location = ~@"1:9-1:10";
-                          value =
-                            Expression.Name
-                              (Name.Attribute
-                                 {
-                                   Name.Attribute.base =
-                                     {
-                                       Node.location = ~@"1:9-1:10";
-                                       value =
-                                         Expression.Call
-                                           {
-                                             Call.callee =
-                                               {
-                                                 Node.location = ~@"1:9-1:10";
-                                                 value =
-                                                   Expression.Name
-                                                     (Name.Attribute
-                                                        {
-                                                          Name.Attribute.base =
-                                                            {
-                                                              Node.value =
-                                                                Expression.Name
-                                                                  (Name.Identifier "b");
-                                                              location = ~@"1:9-1:10";
-                                                            };
-                                                          attribute = "__iter__";
-                                                          special = true;
-                                                        });
-                                               };
-                                             arguments = [];
-                                           };
-                                     };
-                                   attribute = "__next__";
-                                   special = true;
-                                 });
-                        };
-                      arguments = [];
-                    };
-                location = ~@"1:9-1:10";
-              };
+              Some
+                {
+                  Node.value =
+                    Expression.Call
+                      {
+                        Call.callee =
+                          {
+                            Node.location = ~@"1:9-1:10";
+                            value =
+                              Expression.Name
+                                (Name.Attribute
+                                   {
+                                     Name.Attribute.base =
+                                       {
+                                         Node.location = ~@"1:9-1:10";
+                                         value =
+                                           Expression.Call
+                                             {
+                                               Call.callee =
+                                                 {
+                                                   Node.location = ~@"1:9-1:10";
+                                                   value =
+                                                     Expression.Name
+                                                       (Name.Attribute
+                                                          {
+                                                            Name.Attribute.base =
+                                                              {
+                                                                Node.value =
+                                                                  Expression.Name
+                                                                    (Name.Identifier "b");
+                                                                location = ~@"1:9-1:10";
+                                                              };
+                                                            attribute = "__iter__";
+                                                            special = true;
+                                                          });
+                                                 };
+                                               arguments = [];
+                                             };
+                                       };
+                                     attribute = "__next__";
+                                     special = true;
+                                   });
+                          };
+                        arguments = [];
+                      };
+                  location = ~@"1:9-1:10";
+                };
           };
       location = ~@"1:4-1:10";
     };
@@ -537,57 +539,58 @@ let test_for_loop_preamble _ =
               { Node.value = Expression.Name (Name.Identifier "a"); location = ~@"2:10-2:11" };
             annotation = None;
             value =
-              {
-                Node.value =
-                  Expression.Await
-                    {
-                      Node.value =
-                        Expression.Call
-                          {
-                            Call.callee =
-                              {
-                                Node.location = ~@"3:2-3:4";
-                                value =
-                                  Expression.Name
-                                    (Name.Attribute
-                                       {
-                                         Name.Attribute.base =
-                                           {
-                                             Node.location = ~@"3:2-3:4";
-                                             value =
-                                               Expression.Call
-                                                 {
-                                                   Call.callee =
-                                                     {
-                                                       Node.location = ~@"3:2-3:4";
-                                                       value =
-                                                         Expression.Name
-                                                           (Name.Attribute
-                                                              {
-                                                                Name.Attribute.base =
-                                                                  {
-                                                                    Node.value =
-                                                                      Expression.Name
-                                                                        (Name.Identifier "xs");
-                                                                    location = ~@"3:2-3:4";
-                                                                  };
-                                                                attribute = "__aiter__";
-                                                                special = true;
-                                                              });
-                                                     };
-                                                   arguments = [];
-                                                 };
-                                           };
-                                         attribute = "__anext__";
-                                         special = true;
-                                       });
-                              };
-                            arguments = [];
-                          };
-                      location = ~@"3:2-3:4";
-                    };
-                location = ~@"3:2-3:4";
-              };
+              Some
+                {
+                  Node.value =
+                    Expression.Await
+                      {
+                        Node.value =
+                          Expression.Call
+                            {
+                              Call.callee =
+                                {
+                                  Node.location = ~@"3:2-3:4";
+                                  value =
+                                    Expression.Name
+                                      (Name.Attribute
+                                         {
+                                           Name.Attribute.base =
+                                             {
+                                               Node.location = ~@"3:2-3:4";
+                                               value =
+                                                 Expression.Call
+                                                   {
+                                                     Call.callee =
+                                                       {
+                                                         Node.location = ~@"3:2-3:4";
+                                                         value =
+                                                           Expression.Name
+                                                             (Name.Attribute
+                                                                {
+                                                                  Name.Attribute.base =
+                                                                    {
+                                                                      Node.value =
+                                                                        Expression.Name
+                                                                          (Name.Identifier "xs");
+                                                                      location = ~@"3:2-3:4";
+                                                                    };
+                                                                  attribute = "__aiter__";
+                                                                  special = true;
+                                                                });
+                                                       };
+                                                     arguments = [];
+                                                   };
+                                             };
+                                           attribute = "__anext__";
+                                           special = true;
+                                         });
+                                };
+                              arguments = [];
+                            };
+                        location = ~@"3:2-3:4";
+                      };
+                  location = ~@"3:2-3:4";
+                };
           };
       location = ~@"2:10-3:4";
     };

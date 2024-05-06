@@ -165,10 +165,6 @@
     let location = Location.create ~start ~stop in
     Node.create (Expression.Constant AstExpression.Constant.Ellipsis) ~location
 
-  let create_ellipsis_after { Node.location; _ } =
-    Node.create
-      (Expression.Constant AstExpression.Constant.Ellipsis)
-      ~location:{ location with Location.start = location.Location.stop }
 
   let subscript_argument subscripts =
     let value =
@@ -549,7 +545,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = None;
-          value = value;
+          value = Some value;
         };
       }]
     }
@@ -563,7 +559,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = Some annotation;
-          value = create_ellipsis_after annotation;
+          value = None;
         };
       }]
     }
@@ -577,7 +573,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = Some annotation;
-          value = create_ellipsis_after annotation;
+          value = None;
         };
       }]
     }
@@ -593,7 +589,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = Some annotation;
-          value = value;
+          value = Some value;
         };
       }]
     }
@@ -609,7 +605,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = Some annotation;
-          value = value;
+          value = Some value;
         };
       }]
     }
@@ -633,7 +629,7 @@ small_statement:
         value = Statement.Assign {
           Assign.target = target;
           annotation = Some annotation;
-          value = ellipsis;
+          value = Some ellipsis;
         };
       }]
     }
@@ -1358,7 +1354,7 @@ import:
           value = Statement.Assign {
             Assign.target = target;
             annotation = annotation;
-            value = value;
+            value = Some value;
           };
         }
       in

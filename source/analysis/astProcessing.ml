@@ -34,7 +34,7 @@ let wildcard_exports_of ({ Source.module_path; _ } as source) =
     | {
         Collector.Result.name = "__all__";
         unannotated_global =
-          SimpleAssign { value = { Node.value = Expression.(List names | Tuple names); _ }; _ };
+          SimpleAssign { value = Some { Node.value = Expression.(List names | Tuple names); _ }; _ };
       } ->
         let to_identifier = function
           | { Node.value = Expression.Constant (Constant.String { value = name; _ }); _ } ->

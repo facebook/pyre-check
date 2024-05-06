@@ -3347,7 +3347,7 @@ module State (Context : Context) = struct
     | WalrusOperator { value; target } ->
         let resolution, errors =
           let post_resolution, errors =
-            forward_assignment ~resolution ~location ~target ~value ~annotation:None
+            forward_assignment ~resolution ~location ~target ~value:(Some value) ~annotation:None
           in
           resolution_or_default post_resolution ~default:resolution, errors
         in
@@ -4140,6 +4140,10 @@ module State (Context : Context) = struct
             Type.class_variable_value annotation |> Option.value ~default:annotation
           in
           annotation_errors, is_final, Option.map final_annotation ~f:unwrap_class_variable
+    in
+    (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
+    let value =
+      Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
     in
     match Node.value target with
     | Expression.Name (Name.Identifier _)

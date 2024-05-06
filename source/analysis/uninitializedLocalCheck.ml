@@ -184,8 +184,10 @@ let extract_value_expressions_from_assignment_target expression =
 let extract_reads_in_statement { Node.value; _ } =
   let expressions =
     match value with
-    | Statement.Assign { Assign.value = expression; target; _ } ->
+    | Statement.Assign { Assign.value = Some expression; target; _ } ->
         expression :: extract_value_expressions_from_assignment_target target
+    | Statement.Assign { Assign.value = None; target; _ } ->
+        extract_value_expressions_from_assignment_target target
     | Expression expression
     | If { If.test = expression; _ }
     | While { While.test = expression; _ } ->

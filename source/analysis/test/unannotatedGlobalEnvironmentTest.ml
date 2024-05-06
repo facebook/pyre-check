@@ -278,7 +278,7 @@ let test_simple_global_registration context =
     bar = 8
   |}
     "test.bar"
-    (Some (SimpleAssign { explicit_annotation = None; value; target_location }));
+    (Some (SimpleAssign { explicit_annotation = None; value = Some value; target_location }));
   assert_registers {|
     other.bar = 8
   |} "test.other.bar" None;
@@ -298,10 +298,11 @@ let test_simple_global_registration context =
           {
             explicit_annotation = None;
             value =
-              create_with_location
-                (Expression.Expression.Constant (Expression.Constant.Integer 8))
-                (3, 8)
-                (3, 9);
+              Some
+                (create_with_location
+                   (Expression.Expression.Constant (Expression.Constant.Integer 8))
+                   (3, 8)
+                   (3, 9));
             target_location =
               { Location.start = { line = 3; column = 2 }; stop = { line = 3; column = 5 } }
               |> Location.with_module ~module_reference:(Reference.create "test");
@@ -1252,7 +1253,8 @@ let test_get_unannotated_global context =
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
-                   value = { (parse_single_expression "7") with location = location (2, 9) (2, 10) };
+                   value =
+                     Some { (parse_single_expression "7") with location = location (2, 9) (2, 10) };
                    target_location = Location.WithModule.any;
                  }) );
       ]
@@ -1267,7 +1269,8 @@ let test_get_unannotated_global context =
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
-                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
+                   value =
+                     Some { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
                    target_location = Location.WithModule.any;
                  }) );
       ]
@@ -1425,7 +1428,7 @@ let test_get_unannotated_global context =
             Some
               (UnannotatedGlobal.TupleAssign
                  {
-                   value = tuple_expression;
+                   value = Some tuple_expression;
                    index = 0;
                    target_location = Location.WithModule.any;
                    total_length = 3;
@@ -1436,7 +1439,7 @@ let test_get_unannotated_global context =
             Some
               (UnannotatedGlobal.TupleAssign
                  {
-                   value = tuple_expression;
+                   value = Some tuple_expression;
                    index = 1;
                    target_location = Location.WithModule.any;
                    total_length = 3;
@@ -1447,7 +1450,7 @@ let test_get_unannotated_global context =
             Some
               (UnannotatedGlobal.TupleAssign
                  {
-                   value = tuple_expression;
+                   value = Some tuple_expression;
                    index = 2;
                    target_location = Location.WithModule.any;
                    total_length = 3;
@@ -1478,7 +1481,7 @@ let test_get_unannotated_global context =
                  {
                    explicit_annotation = None;
                    value =
-                     { (parse_single_expression "int") with location = location (2, 4) (2, 7) };
+                     Some { (parse_single_expression "int") with location = location (2, 4) (2, 7) };
                    target_location = Location.WithModule.any;
                  }) );
       ]
@@ -1521,7 +1524,7 @@ let test_get_unannotated_global context =
                  {
                    explicit_annotation = None;
                    value =
-                     { (parse_single_expression "int") with location = location (3, 6) (3, 9) };
+                     Some { (parse_single_expression "int") with location = location (3, 6) (3, 9) };
                    target_location = Location.WithModule.any;
                  }) );
       ]
@@ -1657,7 +1660,8 @@ let test_dependencies_and_new_values context =
                  {
                    explicit_annotation =
                      Some { (parse_single_expression "int") with location = location (2, 3) (2, 6) };
-                   value = { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
+                   value =
+                     Some { (parse_single_expression "9") with location = location (2, 9) (2, 10) };
                    target_location = Location.WithModule.any;
                  }) );
       ]

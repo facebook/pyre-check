@@ -906,7 +906,7 @@ let test_qualify_source _ =
       $local_qualifier$LiteralAlias = typing_extensions.Literal
 
       $local_qualifier$x: int = 7
-      $local_qualifier$valid_string_literal: $local_qualifier$LiteralAlias["$local_qualifier$x"] = ...
+      $local_qualifier$valid_string_literal: $local_qualifier$LiteralAlias["$local_qualifier$x"]
     |};
 
   (* Qualify parameters *)
@@ -2059,7 +2059,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "NotFoo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2090,13 +2090,14 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                              target = +Expression.Name (Name.Identifier "x");
                              annotation = Some (+Expression.Name (Name.Identifier "Foo"));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base = +Expression.Name (Name.Identifier "self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -2109,7 +2110,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "$local_Foo$NotFoo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2150,13 +2151,15 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                                           special = false;
                                         }));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "$parameter$self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base =
+                                            +Expression.Name (Name.Identifier "$parameter$self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -2172,7 +2175,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "Foo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2203,13 +2206,14 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                              target = +Expression.Name (Name.Identifier "x");
                              annotation = Some (+Expression.Name (Name.Identifier "Foo"));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base = +Expression.Name (Name.Identifier "self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -2222,7 +2226,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "$local_Foo$Foo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2255,13 +2259,15 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                                +Expression.Name (Name.Identifier "$local_Foo?Foo?some_method$x");
                              annotation = Some (+Expression.Name (Name.Identifier "$local_Foo$Foo"));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "$parameter$self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base =
+                                            +Expression.Name (Name.Identifier "$parameter$self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -2277,7 +2283,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "Foo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2308,13 +2314,14 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                              target = +Expression.Name (Name.Identifier "x");
                              annotation = Some (+Expression.Name (Name.Identifier "Foo"));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base = +Expression.Name (Name.Identifier "self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -2327,7 +2334,7 @@ let test_qualify_ast_class_with_same_name_as_local _ =
          {
            target = +Expression.Name (Name.Identifier "$local_NotFoo$Foo");
            annotation = None;
-           value = +Expression.Name (Name.Identifier "None");
+           value = Some (+Expression.Name (Name.Identifier "None"));
          };
       +Statement.Class
          {
@@ -2361,13 +2368,15 @@ let test_qualify_ast_class_with_same_name_as_local _ =
                              annotation =
                                Some (+Expression.Name (Name.Identifier "$local_NotFoo$Foo"));
                              value =
-                               +Expression.Name
-                                  (Name.Attribute
-                                     {
-                                       base = +Expression.Name (Name.Identifier "$parameter$self");
-                                       attribute = "some_attribute";
-                                       special = false;
-                                     });
+                               Some
+                                 (+Expression.Name
+                                     (Name.Attribute
+                                        {
+                                          base =
+                                            +Expression.Name (Name.Identifier "$parameter$self");
+                                          attribute = "some_attribute";
+                                          special = false;
+                                        }));
                            };
                       ];
                   };
@@ -3642,8 +3651,9 @@ let test_toplevel_assigns _ =
                [+Expression.Name (Name.Identifier "a"); +Expression.Name (Name.Identifier "b")];
           annotation = None;
           Assign.value =
-            +Expression.Tuple
-               [+Expression.Name (Name.Identifier "c"); +Expression.Name (Name.Identifier "d")];
+            Some
+              (+Expression.Tuple
+                  [+Expression.Name (Name.Identifier "c"); +Expression.Name (Name.Identifier "d")]);
         };
     }
   in
@@ -3655,7 +3665,7 @@ let test_toplevel_assigns _ =
           {
             Assign.target = +Expression.Name (Name.Identifier "b");
             annotation = None;
-            Assign.value = +Expression.Name (Name.Identifier "d");
+            Assign.value = Some (+Expression.Name (Name.Identifier "d"));
           };
       };
       {
@@ -3664,7 +3674,7 @@ let test_toplevel_assigns _ =
           {
             Assign.target = +Expression.Name (Name.Identifier "a");
             annotation = None;
-            Assign.value = +Expression.Name (Name.Identifier "c");
+            Assign.value = Some (+Expression.Name (Name.Identifier "c"));
           };
       };
     ]
@@ -3855,8 +3865,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3864,8 +3874,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3873,8 +3883,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3905,8 +3915,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3916,8 +3926,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3927,8 +3937,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3940,8 +3950,8 @@ let test_expand_typed_dictionaries _ =
     {|
       class Derp:
         class Movie(TypedDictionary):
-          name: str
-          year: int
+          name: str = ...
+          year: int = ...
     |};
   assert_expand
     {|
@@ -3955,10 +3965,10 @@ let test_expand_typed_dictionaries _ =
     {|
       if foo:
         class Movie(TypedDictionary):
-          name: str
+          name: str = ...
       else:
         class Movie2(TypedDictionary):
-          year: int
+          year: int = ...
     |};
   assert_expand
     {|
@@ -3968,8 +3978,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3979,8 +3989,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary, NonTotalTypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -3990,8 +4000,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -4002,8 +4012,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
 
   (* Invalid TypedDicts *)
@@ -4030,8 +4040,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -4041,8 +4051,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -4052,8 +4062,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -4063,8 +4073,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   assert_expand
     {|
@@ -4108,8 +4118,8 @@ let test_expand_typed_dictionaries _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: int
+        name: str = ...
+        year: int = ...
     |};
   ()
 
@@ -4130,8 +4140,8 @@ let test_expand_typed_dictionaries__required_not_required _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: str
-        year: typing_extensions.NotRequired[int]
+        name: str = ...
+        year: typing_extensions.NotRequired[int] = ...
     |};
   assert_expand
     {|
@@ -4142,8 +4152,8 @@ let test_expand_typed_dictionaries__required_not_required _ =
     |}
     {|
       class Movie(TypedDictionary):
-        name: typing_extensions.Required[str]
-        year: typing_extensions.Required[int]
+        name: typing_extensions.Required[str] = ...
+        year: typing_extensions.Required[int] = ...
     |};
   assert_expand
     {|
@@ -4155,8 +4165,8 @@ let test_expand_typed_dictionaries__required_not_required _ =
     |}
     {|
       class Movie(TypedDictionary, NonTotalTypedDictionary):
-        name: str
-        year: typing_extensions.Required[int]
+        name: str = ...
+        year: typing_extensions.Required[int] = ...
     |};
   ()
 
@@ -4212,7 +4222,7 @@ let test_transform_ast _ =
         def __init__(self, a: typing.Any) -> None:
           self.a = a
         _fields: typing.Tuple[str] = ('a',)
-        a: typing.Final[typing.Any]
+        a: typing.Final[typing.Any] = ...
     |};
   assert_expand
     {|
@@ -4225,8 +4235,8 @@ let test_transform_ast _ =
          self.one = one
          self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Final[typing.Any]
-        two: typing.Final[typing.Any]
+        one: typing.Final[typing.Any] = ...
+        two: typing.Final[typing.Any] = ...
     |};
   assert_expand
     {|
@@ -4239,8 +4249,8 @@ let test_transform_ast _ =
          self.one = one
          self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Final[int]
-        two: typing.Final[str]
+        one: typing.Final[int] = ...
+        two: typing.Final[str] = ...
     |};
   assert_expand
     {|
@@ -4258,9 +4268,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any]
-        b: typing.Final[typing.Any]
-        c: typing.Final[typing.Any]
+        a: typing.Final[typing.Any] = ...
+        b: typing.Final[typing.Any] = ...
+        c: typing.Final[typing.Any] = ...
     |};
   assert_expand
     {|
@@ -4278,9 +4288,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any]
-        b: typing.Final[typing.Any]
-        c: typing.Final[typing.Any]
+        a: typing.Final[typing.Any] = ...
+        b: typing.Final[typing.Any] = ...
+        c: typing.Final[typing.Any] = ...
     |};
 
   (* The purpose of the following tests is to test for multiple consecutive commas and whitespaces
@@ -4302,9 +4312,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: typing.Final[typing.Any]
-        b: typing.Final[typing.Any]
-        c: typing.Final[typing.Any]
+        a: typing.Final[typing.Any] = ...
+        b: typing.Final[typing.Any] = ...
+        c: typing.Final[typing.Any] = ...
   |};
   assert_expand
     {|
@@ -4320,8 +4330,8 @@ let test_transform_ast _ =
           self.a = a
           self.b = b
         _fields: typing.Tuple[str, str] = ('a', 'b')
-        a: typing.Final[typing.Any]
-        b: typing.Final[typing.Any]
+        a: typing.Final[typing.Any] = ...
+        b: typing.Final[typing.Any] = ...
   |};
   assert_expand
     {|
@@ -4335,8 +4345,8 @@ let test_transform_ast _ =
           self.one = one
           self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Final[typing.Any]
-        two: typing.Final[typing.Any]
+        one: typing.Final[typing.Any] = ...
+        two: typing.Final[typing.Any] = ...
         three: int = 1
     |};
   assert_expand
@@ -4354,9 +4364,9 @@ let test_transform_ast _ =
           self.b = b
           self.c = c
         _fields: typing.Tuple[str, str, str] = ('a', 'b', 'c')
-        a: typing.Final[int]
-        b: typing.Final[str]
-        c: typing.Final[int]
+        a: typing.Final[int] = ...
+        b: typing.Final[str] = ...
+        c: typing.Final[int] = ...
     |};
   assert_expand
     {|
@@ -4386,11 +4396,11 @@ let test_transform_ast _ =
            self.ts = ts
            self.lazy = lazy
          _fields: typing.Tuple[str, str, str, str, str] = ('op', 'path', 'value', 'ts', 'lazy')
-         op: typing.Final[typing.Any]
-         path: typing.Final[typing.Any]
-         value: typing.Final[typing.Any]
-         ts: typing.Final[typing.Any]
-         lazy: typing.Final[typing.Any]
+         op: typing.Final[typing.Any] = ...
+         path: typing.Final[typing.Any] = ...
+         value: typing.Final[typing.Any] = ...
+         ts: typing.Final[typing.Any] = ...
+         lazy: typing.Final[typing.Any] = ...
          pass
     |};
   assert_expand
@@ -4406,8 +4416,8 @@ let test_transform_ast _ =
             self.a = a
             self.b = b
           _fields: typing.Tuple[str, str] = ('a', 'b')
-          a: typing.Final[typing.Any]
-          b: typing.Final[typing.Any]
+          a: typing.Final[typing.Any] = ...
+          b: typing.Final[typing.Any] = ...
     |};
   assert_expand
     {|
@@ -4441,8 +4451,8 @@ let test_transform_ast _ =
     {|
       class Foo(typing.NamedTuple):
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Final[typing.Any]
-        two: typing.Final[typing.Any]
+        one: typing.Final[typing.Any] = ...
+        two: typing.Final[typing.Any] = ...
         def __new__(cls, one) -> typing.NamedTuple:
           return super(Foo, cls).__new__(cls, one, two=0)
     |};
@@ -4457,8 +4467,8 @@ let test_transform_ast _ =
           self.one = one
           self.two = two
         _fields: typing.Tuple[str, str] = ('one', 'two')
-        one: typing.Final[int]
-        two: typing.Final[str]
+        one: typing.Final[int] = ...
+        two: typing.Final[str] = ...
     |}
 
 

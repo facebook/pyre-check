@@ -570,9 +570,6 @@ module State (Context : Context) = struct
           errors
       | Assign { target; value; _ } ->
           let { reachable_globals; errors } = forward_assignment_target ~resolution target in
-          let { errors = value_errors; reachable_globals = value_reachable_globals } =
-            forward_expression ~resolution value
-          in
           let leaks_to_global_variables =
             append_errors_for_reachable_globals
               ~resolution
@@ -581,13 +578,25 @@ module State (Context : Context) = struct
               reachable_globals
               []
           in
-          let global_writes_to_locals =
-            append_errors_for_reachable_globals
-              ~resolution
-              ~location
-              (construct_global_write_to_local_variable target)
-              value_reachable_globals
-              []
+          let value_errors, global_writes_to_locals =
+            let value_errors, value_reachable_globals =
+              match value with
+              | Some value ->
+                  let { errors = value_errors; reachable_globals = value_reachable_globals } =
+                    forward_expression ~resolution value
+                  in
+                  value_errors, value_reachable_globals
+              | None -> [], []
+            in
+            let global_writes_to_locals =
+              append_errors_for_reachable_globals
+                ~resolution
+                ~location
+                (construct_global_write_to_local_variable target)
+                value_reachable_globals
+                []
+            in
+            value_errors, global_writes_to_locals
           in
           leaks_to_global_variables @ global_writes_to_locals @ value_errors @ errors
       | Expression expression ->

@@ -224,7 +224,7 @@ module CreateDefinitionAndAnnotationLookupVisitor = struct
 
               iterator |> to_call "__iter__" |> to_call "__next__"
             in
-            { Assign.target; value = iterator_element_call; annotation = None }
+            { Assign.target; value = Some iterator_element_call; annotation = None }
           in
           Resolution.resolve_assignment resolution target_assignment
         in
@@ -340,9 +340,11 @@ module CreateLookupsIncludingTypeAnnotationsVisitor = struct
       | Statement.Assign { Assign.target; annotation; value; _ } -> (
           postcondition_visit target;
           annotation >>| store_type_annotation |> ignore;
-          match Node.value value with
-          | Constant Ellipsis -> ()
-          | _ -> precondition_visit value)
+          match value with
+          | Some { value = Constant Ellipsis; _ }
+          | None ->
+              ()
+          | Some value -> precondition_visit value)
       | Define
           ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
           define) ->
@@ -633,7 +635,7 @@ module FindNarrowestSpanningExpressionOrTypeAnnotation (PositionData : PositionD
         | Statement.Assign { Assign.target; annotation; value; _ } ->
             visit_using_postcondition_info target;
             Option.iter annotation ~f:store_type_annotation;
-            visit_using_precondition_info value
+            Option.iter value ~f:visit_using_precondition_info
         | Define
             ({ Define.signature = { name; parameters; decorators; return_annotation; _ }; _ } as
             define) ->

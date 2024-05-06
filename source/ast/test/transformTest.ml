@@ -546,14 +546,16 @@ let test_statement_transformer _ =
       let count, value =
         match value with
         | Statement.Assign
-            ({ Assign.value = { Node.value = Constant (Constant.Integer number); _ } as value; _ }
-            as assign) ->
+            ({
+               Assign.value = Some ({ Node.value = Constant (Constant.Integer number); _ } as value);
+               _;
+             } as assign) ->
             ( count + number,
               Statement.Assign
                 {
                   assign with
                   Assign.value =
-                    { value with Node.value = Constant (Constant.Integer (number + 1)) };
+                    Some { value with Node.value = Constant (Constant.Integer (number + 1)) };
                 } )
         | _ -> count, value
       in
@@ -734,15 +736,17 @@ let test_sanitize_statement _ =
                     Assign.target = !"$local_test?foo?bar$my_kwargs";
                     annotation = None;
                     value =
-                      +Expression.Dictionary
-                         [
-                           KeyValue
-                             {
-                               key =
-                                 +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                               value = !"$parameter$a";
-                             };
-                         ];
+                      Some
+                        (+Expression.Dictionary
+                            [
+                              KeyValue
+                                {
+                                  key =
+                                    +Expression.Constant
+                                       (Constant.String (StringLiteral.create "a"));
+                                  value = !"$parameter$a";
+                                };
+                            ]);
                   };
                +Statement.Expression
                   (+Expression.Call
@@ -795,15 +799,17 @@ let test_sanitize_statement _ =
                     Assign.target = !"my_kwargs";
                     annotation = None;
                     value =
-                      +Expression.Dictionary
-                         [
-                           KeyValue
-                             {
-                               key =
-                                 +Expression.Constant (Constant.String (StringLiteral.create "a"));
-                               value = !"a";
-                             };
-                         ];
+                      Some
+                        (+Expression.Dictionary
+                            [
+                              KeyValue
+                                {
+                                  key =
+                                    +Expression.Constant
+                                       (Constant.String (StringLiteral.create "a"));
+                                  value = !"a";
+                                };
+                            ]);
                   };
                +Statement.Expression
                   (+Expression.Call

@@ -40,7 +40,8 @@ module Heap = struct
           Node.value =
             {
               Assign.target = { Node.value = Expression.Name (_ as name); _ };
-              Assign.value = { Node.value = Expression.Constant (Constant.String (_ as value)); _ };
+              Assign.value =
+                Some { Node.value = Expression.Constant (Constant.String (_ as value)); _ };
               _;
             };
           _;

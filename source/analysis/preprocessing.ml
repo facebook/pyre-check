@@ -160,14 +160,14 @@ let transform_annotations ~transform_annotation_expression source =
                   });
             _;
           } ->
-          { assign with Assign.value = transform_annotation_expression assign_value }
+          { assign with Assign.value = assign_value >>| transform_annotation_expression }
       | _ -> (
-          match Node.value assign_value with
-          | Expression.Call { callee; _ } when is_type_variable_definition callee ->
+          match assign_value >>| Node.value with
+          | Some (Expression.Call { callee; _ }) when is_type_variable_definition callee ->
               {
                 assign with
                 Assign.annotation = annotation >>| transform_annotation_expression;
-                Assign.value = transform_annotation_expression assign_value;
+                Assign.value = assign_value >>| transform_annotation_expression;
               }
           | _ -> { assign with Assign.annotation = annotation >>| transform_annotation_expression })
 
@@ -472,20 +472,20 @@ module Qualify (Context : QualifyContext) = struct
     let scope, value =
       let local_alias ~qualifier ~name = { name; qualifier } in
       let qualify_assign { Assign.target; annotation; value } =
-        let qualify_value ~qualify_potential_alias_strings ~scope = function
+        let qualify_value ~qualify_potential_alias_strings ~scope value =
+          match value with
           | { Node.value = Expression.Constant (Constant.String _); _ } ->
               (* String literal assignments might be type aliases. *)
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | {
-              Node.value =
-                Call
-                  {
-                    callee =
-                      { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
-                    _;
-                  };
-              _;
-            } ->
+           Node.value =
+             Call
+               {
+                 callee = { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ };
+                 _;
+               };
+           _;
+          } ->
               qualify_expression ~qualify_strings:qualify_potential_alias_strings value ~scope
           | _ -> qualify_expression ~qualify_strings:DoNotQualify value ~scope
         in
@@ -629,7 +629,7 @@ module Qualify (Context : QualifyContext) = struct
             | None when is_top_level -> OptionallyQualify
             | _ -> DoNotQualify
           in
-          qualify_value ~scope:target_scope ~qualify_potential_alias_strings value
+          value >>| qualify_value ~scope:target_scope ~qualify_potential_alias_strings
         in
         target_scope, { Assign.target; annotation = qualified_annotation; value = qualified_value }
       in
@@ -1967,14 +1967,14 @@ let toplevel_expand_tuple_assign = function
       Node.value =
         {
           Assign.target = { Node.value = Expression.Tuple targets; _ };
-          value = { Node.value = Expression.Tuple values; _ };
+          value = Some { Node.value = Expression.Tuple values; _ };
           _;
         };
       location;
     }
     when Int.equal (List.length targets) (List.length values) ->
       List.rev_map2_exn targets values ~f:(fun target value ->
-          { Node.value = { Assign.target; value; annotation = None }; Node.location })
+          { Node.value = { Assign.target; value = Some value; annotation = None }; Node.location })
   | assign -> [assign]
 
 
@@ -2033,28 +2033,29 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
           {
             Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
-              {
-                Node.value =
-                  Expression.Call
-                    {
-                      callee;
-                      arguments =
-                        [
-                          {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Expression.Constant
-                                    (Constant.String
-                                      { StringLiteral.kind = String; value = literal });
-                                _;
-                              };
-                            _;
-                          };
-                        ];
-                    };
-                _;
-              };
+              Some
+                {
+                  Node.value =
+                    Expression.Call
+                      {
+                        callee;
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                {
+                                  Node.value =
+                                    Expression.Constant
+                                      (Constant.String
+                                        { StringLiteral.kind = String; value = literal });
+                                  _;
+                                };
+                              _;
+                            };
+                          ];
+                      };
+                  _;
+                };
             _;
           }
         when is_lazy_import callee ->
@@ -2081,39 +2082,40 @@ let replace_lazy_import ?(is_lazy_import = is_lazy_import) source =
           {
             Assign.target = { Node.value = Expression.Name (Name.Identifier identifier); _ };
             value =
-              {
-                Node.value =
-                  Expression.Call
-                    {
-                      callee;
-                      arguments =
-                        [
-                          {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Expression.Constant
-                                    (Constant.String
-                                      { StringLiteral.kind = String; value = from_literal });
-                                _;
-                              };
-                            _;
-                          };
-                          {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Expression.Constant
-                                    (Constant.String
-                                      { StringLiteral.kind = String; value = import_literal });
-                                _;
-                              };
-                            _;
-                          };
-                        ];
-                    };
-                _;
-              };
+              Some
+                {
+                  Node.value =
+                    Expression.Call
+                      {
+                        callee;
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                {
+                                  Node.value =
+                                    Expression.Constant
+                                      (Constant.String
+                                        { StringLiteral.kind = String; value = from_literal });
+                                  _;
+                                };
+                              _;
+                            };
+                            {
+                              Call.Argument.value =
+                                {
+                                  Node.value =
+                                    Expression.Constant
+                                      (Constant.String
+                                        { StringLiteral.kind = String; value = import_literal });
+                                  _;
+                                };
+                              _;
+                            };
+                          ];
+                      };
+                  _;
+                };
             _;
           }
         when is_lazy_import callee ->
@@ -2159,7 +2161,7 @@ let replace_mypy_extensions_stub ({ Source.module_path; statements; _ } as sourc
                          attribute = "_SpecialForm";
                          special = false;
                        })));
-          value = node (Expression.Constant Constant.Ellipsis);
+          value = Some (node (Expression.Constant Constant.Ellipsis));
         }
       |> node
     in
@@ -2217,7 +2219,8 @@ let expand_typed_dictionary_declarations
                                   })
                              |> Node.create ~location;
                            annotation = Some value;
-                           value = Node.create ~location (Expression.Constant Constant.Ellipsis);
+                           value =
+                             Some (Node.create ~location (Expression.Constant Constant.Ellipsis));
                          }
                       |> Node.create ~location)
                 | _ -> None
@@ -2293,40 +2296,41 @@ let expand_typed_dictionary_declarations
       | Statement.Assign
           {
             value =
-              {
-                Node.value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Name
-                                          (Name.Identifier
-                                            ("mypy_extensions" | "typing_extensions" | "typing"));
-                                      _;
-                                    };
-                                  attribute = "TypedDict";
-                                  _;
-                                });
-                          _;
-                        };
-                      arguments =
-                        { Call.Argument.name = None; value = name }
-                        :: {
-                             Call.Argument.name = None;
-                             value = { Node.value = Dictionary entries; _ };
-                             _;
-                           }
-                        :: argument_tail;
-                    };
-                _;
-              };
+              Some
+                {
+                  Node.value =
+                    Call
+                      {
+                        callee =
+                          {
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    base =
+                                      {
+                                        Node.value =
+                                          Name
+                                            (Name.Identifier
+                                              ("mypy_extensions" | "typing_extensions" | "typing"));
+                                        _;
+                                      };
+                                    attribute = "TypedDict";
+                                    _;
+                                  });
+                            _;
+                          };
+                        arguments =
+                          { Call.Argument.name = None; value = name }
+                          :: {
+                               Call.Argument.name = None;
+                               value = { Node.value = Dictionary entries; _ };
+                               _;
+                             }
+                          :: argument_tail;
+                      };
+                  _;
+                };
             _;
           } ->
           extract_string_literal name
@@ -2546,7 +2550,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
         {
           Assign.target = Reference.create ~prefix:parent "_fields" |> from_reference ~location;
           annotation = Some annotation;
-          value;
+          value = Some value;
         }
       |> Node.create ~location
     in
@@ -2583,7 +2587,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
             {
               Assign.target;
               annotation = Some annotation;
-              value = Node.create (Expression.Constant Constant.Ellipsis) ~location;
+              value = Some (Node.create (Expression.Constant Constant.Ellipsis) ~location);
             }
           |> Node.create ~location
         in
@@ -2652,7 +2656,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                                  special = false;
                                }));
                      annotation = None;
-                     value = Node.create (Expression.Name (Identifier name)) ~location;
+                     value = Some (Node.create (Expression.Name (Identifier name)) ~location);
                    })
                 ~location
             in
@@ -2691,7 +2695,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
       | Statement.Assign { Assign.target = { Node.value = Name name; _ }; value = expression; _ }
         -> (
           let name = name_to_reference name >>| Reference.delocalize in
-          match extract_attributes expression, name with
+          match Option.map expression ~f:extract_attributes |> Option.join, name with
           | Some attributes, Some name
           (* TODO (T42893621): properly handle the excluded case *)
             when not (Reference.is_prefix ~prefix:(Reference.create "$parameter$cls") name) ->
@@ -2748,7 +2752,7 @@ let expand_named_tuples ({ Source.statements; _ } as source) =
                     in
                     Option.value annotation ~default:any
                   in
-                  Either.First (Node.create ~location (last, annotation, Some value))
+                  Either.First (Node.create ~location (last, annotation, value))
               | statement -> Either.Second statement
             in
             let attributes, other = List.partition_map body ~f:extract_assign in
@@ -2869,65 +2873,67 @@ let expand_new_types ({ Source.statements; _ } as source) =
       | Statement.Assign
           {
             Assign.value =
-              {
-                Node.value =
-                  Call
-                    {
-                      callee =
-                        {
-                          Node.value =
-                            Name
-                              (Name.Attribute
-                                {
-                                  base = { Node.value = Name (Name.Identifier "typing"); _ };
-                                  attribute = "NewType";
-                                  _;
-                                });
-                          _;
-                        };
-                      arguments =
-                        [
+              Some
+                {
+                  Node.value =
+                    Call
+                      {
+                        callee =
                           {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Constant (Constant.String { StringLiteral.value = name; _ });
-                                _;
-                              };
+                            Node.value =
+                              Name
+                                (Name.Attribute
+                                  {
+                                    base = { Node.value = Name (Name.Identifier "typing"); _ };
+                                    attribute = "NewType";
+                                    _;
+                                  });
                             _;
                           };
-                          base_argument;
-                        ];
-                    };
-                _;
-              };
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                {
+                                  Node.value =
+                                    Constant (Constant.String { StringLiteral.value = name; _ });
+                                  _;
+                                };
+                              _;
+                            };
+                            base_argument;
+                          ];
+                      };
+                  _;
+                };
             _;
           } ->
           create_class_for_newtype ~location ~base_argument (Reference.create name)
       | Statement.Assign
           {
             Assign.value =
-              {
-                Node.value =
-                  Call
-                    {
-                      callee = { Node.value = Name (Name.Identifier "NewType"); _ };
-                      arguments =
-                        [
-                          {
-                            Call.Argument.value =
-                              {
-                                Node.value =
-                                  Constant (Constant.String { StringLiteral.value = name; _ });
-                                _;
-                              };
-                            _;
-                          };
-                          base_argument;
-                        ];
-                    };
-                _;
-              };
+              Some
+                {
+                  Node.value =
+                    Call
+                      {
+                        callee = { Node.value = Name (Name.Identifier "NewType"); _ };
+                        arguments =
+                          [
+                            {
+                              Call.Argument.value =
+                                {
+                                  Node.value =
+                                    Constant (Constant.String { StringLiteral.value = name; _ });
+                                  _;
+                                };
+                              _;
+                            };
+                            base_argument;
+                          ];
+                      };
+                  _;
+                };
             _;
           }
         when Lazy.force imported_newtype_from_typing ->
@@ -2968,7 +2974,8 @@ let expand_sqlalchemy_declarative_base ({ Source.statements; _ } as source) =
       | Statement.Assign
           {
             target = { Node.value = Name name; _ };
-            value = { Node.value = Call { callee = { Node.value = Name function_name; _ }; _ }; _ };
+            value =
+              Some { Node.value = Call { callee = { Node.value = Name function_name; _ }; _ }; _ };
             _;
           } -> (
           match
@@ -3181,7 +3188,7 @@ module AccessCollector = struct
     | Statement.Assign { Assign.target; value; annotation; _ } ->
         let collected = from_expression collected target in
         let collected = from_optional_expression collected annotation in
-        from_expression collected value
+        from_optional_expression collected value
     | Assert { Assert.test; message; _ } ->
         let collected = from_expression collected test in
         Option.value_map message ~f:(from_expression collected) ~default:collected
@@ -4180,7 +4187,7 @@ let expand_pytorch_register_buffer source =
                     |> Reference.create
                     |> from_reference ~location;
                   annotation;
-                  value = initial_value;
+                  value = Some initial_value;
                 }
               |> Node.create ~location:statement_location;
             ] )
@@ -4234,7 +4241,7 @@ let add_dataclass_keyword_only_specifiers source =
                        });
                  _;
                };
-           value = _;
+           _;
          };
      _;
     } ->
@@ -4252,32 +4259,37 @@ let add_dataclass_keyword_only_specifiers source =
       value = Expression.Constant Constant.True |> Node.create_with_default_location;
     }
   in
-  let set_keyword_only_field statement =
-    match statement with
-    | {
-     Node.value =
-       Statement.Assign
-         { value = { Node.value = expression; _ } as expression_node; target; annotation };
-     _;
-    } ->
+  let set_keyword_only_field statement_node =
+    match statement_node with
+    | { Node.value = Statement.Assign { value = expression_node; target; annotation }; location } ->
+        (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
+        let expression_node =
+          Option.value
+            expression_node
+            ~default:(Node.create ~location (Expression.Constant Ellipsis))
+        in
         let attribute_value =
-          match expression with
-          | Expression.Call
-              {
-                callee =
-                  {
-                    value =
-                      Expression.Name
-                        (Name.Attribute
-                          {
-                            base = { value = Expression.Name (Name.Identifier "dataclasses"); _ };
-                            attribute = "field";
-                            special = false;
-                          });
-                    _;
-                  } as callee;
-                arguments;
-              } ->
+          match expression_node with
+          | {
+           value =
+             Expression.Call
+               {
+                 callee =
+                   {
+                     value =
+                       Expression.Name
+                         (Name.Attribute
+                           {
+                             base = { value = Expression.Name (Name.Identifier "dataclasses"); _ };
+                             attribute = "field";
+                             special = false;
+                           });
+                     _;
+                   } as callee;
+                 arguments;
+               };
+           _;
+          } ->
               let arguments =
                 if List.exists arguments ~f:is_keyword_only_argument then
                   arguments
@@ -4286,7 +4298,7 @@ let add_dataclass_keyword_only_specifiers source =
               in
               let expression = Expression.Call { callee; arguments } in
               { expression_node with value = expression }
-          | value ->
+          | { value; _ } ->
               let arguments =
                 [
                   keyword_only_argument;
@@ -4311,8 +4323,11 @@ let add_dataclass_keyword_only_specifiers source =
               in
               { expression_node with value = Expression.Call { callee; arguments } }
         in
-        { statement with value = Statement.Assign { target; annotation; value = attribute_value } }
-    | statement -> statement
+        {
+          statement_node with
+          value = Statement.Assign { target; annotation; value = Some attribute_value };
+        }
+    | _ -> statement_node
   in
   let set_keyword_only_after_pseudo_field body =
     let before, after = List.split_while body ~f:is_not_keyword_only_pseudo_field in
@@ -4628,33 +4643,38 @@ module SelfType = struct
       {
         target = from_reference ~location self_variable_reference;
         value =
-          Expression.Call
-            {
-              callee = Reference.create "typing.TypeVar" |> from_reference ~location;
-              arguments =
-                [
-                  {
-                    Call.Argument.name = None;
-                    value =
-                      Expression.Constant
-                        (Constant.String
-                           {
-                             StringLiteral.kind = String;
-                             value = self_variable_name class_reference;
-                           })
-                      |> Node.create_with_default_location;
-                  };
-                  {
-                    Call.Argument.name = Some (Node.create_with_default_location "$parameter$bound");
-                    value =
-                      Expression.Constant
-                        (Constant.String
-                           { StringLiteral.kind = String; value = Reference.show class_reference })
-                      |> Node.create_with_default_location;
-                  };
-                ];
-            }
-          |> Node.create_with_default_location;
+          Some
+            (Expression.Call
+               {
+                 callee = Reference.create "typing.TypeVar" |> from_reference ~location;
+                 arguments =
+                   [
+                     {
+                       Call.Argument.name = None;
+                       value =
+                         Expression.Constant
+                           (Constant.String
+                              {
+                                StringLiteral.kind = String;
+                                value = self_variable_name class_reference;
+                              })
+                         |> Node.create_with_default_location;
+                     };
+                     {
+                       Call.Argument.name =
+                         Some (Node.create_with_default_location "$parameter$bound");
+                       value =
+                         Expression.Constant
+                           (Constant.String
+                              {
+                                StringLiteral.kind = String;
+                                value = Reference.show class_reference;
+                              })
+                         |> Node.create_with_default_location;
+                     };
+                   ];
+               }
+            |> Node.create_with_default_location);
         annotation = None;
       }
     |> Node.create_with_default_location
@@ -4724,7 +4744,9 @@ let expand_enum_functional_syntax
                   }
                 |> Node.create ~location
               in
-              Some (Statement.Assign { target; annotation = None; value } |> Node.create ~location)
+              Some
+                (Statement.Assign { target; annotation = None; value = Some value }
+                |> Node.create ~location)
           | _ -> None
         in
         match List.filter_map members ~f:field_for_member with
@@ -4752,47 +4774,48 @@ let expand_enum_functional_syntax
     | Statement.Assign
         {
           value =
-            {
-              Node.value =
-                Call
-                  {
-                    callee =
-                      {
-                        Node.value =
-                          Name
-                            (Name.Attribute
-                              {
-                                base = { Node.value = Name (Name.Identifier "enum"); _ };
-                                attribute = "Enum";
-                                _;
-                              });
-                        _;
-                      };
-                    arguments =
-                      [
+            Some
+              {
+                Node.value =
+                  Call
+                    {
+                      callee =
                         {
-                          Call.Argument.name = None;
-                          value =
-                            {
-                              Node.value =
-                                Expression.Constant
-                                  (Constant.String
-                                    {
-                                      StringLiteral.value = class_name;
-                                      kind = StringLiteral.String;
-                                    });
-                              _;
-                            };
-                        };
-                        {
-                          Call.Argument.name = None;
-                          value = { Node.value = List members | Tuple members; _ };
+                          Node.value =
+                            Name
+                              (Name.Attribute
+                                {
+                                  base = { Node.value = Name (Name.Identifier "enum"); _ };
+                                  attribute = "Enum";
+                                  _;
+                                });
                           _;
                         };
-                      ];
-                  };
-              _;
-            };
+                      arguments =
+                        [
+                          {
+                            Call.Argument.name = None;
+                            value =
+                              {
+                                Node.value =
+                                  Expression.Constant
+                                    (Constant.String
+                                      {
+                                        StringLiteral.value = class_name;
+                                        kind = StringLiteral.String;
+                                      });
+                                _;
+                              };
+                          };
+                          {
+                            Call.Argument.name = None;
+                            value = { Node.value = List members | Tuple members; _ };
+                            _;
+                          };
+                        ];
+                    };
+                _;
+              };
           _;
         } ->
         let expanded_declaration =

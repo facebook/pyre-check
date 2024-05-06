@@ -4866,26 +4866,27 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             {
               explicit_annotation = None;
               value =
-                {
-                  Node.value =
-                    Call
-                      {
-                        callee =
-                          {
-                            value =
-                              Name
-                                (Attribute
-                                  {
-                                    base = { Node.value = Name (Identifier "typing"); _ };
-                                    attribute = "TypeAlias";
-                                    _;
-                                  });
-                            _;
-                          };
-                        _;
-                      };
-                  _;
-                };
+                Some
+                  {
+                    Node.value =
+                      Call
+                        {
+                          callee =
+                            {
+                              value =
+                                Name
+                                  (Attribute
+                                    {
+                                      base = { Node.value = Name (Identifier "typing"); _ };
+                                      attribute = "TypeAlias";
+                                      _;
+                                    });
+                              _;
+                            };
+                          _;
+                        };
+                    _;
+                  };
               target_location = location;
             } ->
             let location = Location.strip_module location in
@@ -4896,7 +4897,14 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             |> Annotation.create_immutable
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
-        | SimpleAssign { explicit_annotation; value; _ } ->
+        | SimpleAssign { explicit_annotation; value; target_location = location } ->
+            (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
+            let location = Location.strip_module location in
+            let value =
+              Option.value
+                value
+                ~default:(Ast.Expression.Expression.Constant Ellipsis |> Node.create ~location)
+            in
             let explicit_annotation =
               explicit_annotation
               >>| self#parse_annotation ~assumptions
@@ -4914,7 +4922,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
             produce_assignment_global ~is_explicit ~is_final annotation
             |> fun annotation ->
             Some { Global.annotation; undecorated_signature = None; problem = None }
-        | TupleAssign { value; index; total_length; _ } ->
+        | TupleAssign { value = Some value; index; total_length; _ } ->
             let extracted =
               match self#resolve_literal ~assumptions value with
               | Type.Tuple (Concrete parameters) when List.length parameters = total_length ->

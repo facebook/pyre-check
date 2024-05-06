@@ -854,7 +854,7 @@ module State (Context : Context) = struct
     |> Resolution.with_parent ~parent
 
 
-  let forward ~statement_key state ~statement:{ Node.value; _ } =
+  let forward ~statement_key state ~statement:{ Node.value; location } =
     let { Node.value = { Define.signature = { Define.Signature.parent; _ }; _ }; _ } =
       Context.define
     in
@@ -869,6 +869,10 @@ module State (Context : Context) = struct
     | Statement.Assert { Assert.test; _ } ->
         forward_expression ~resolution ~state ~expression:test |> result_state
     | Assign { value; target; _ } ->
+        (* TODO: T101298692 don't substitute ellipsis for missing RHS of assignment *)
+        let value =
+          Option.value value ~default:(Node.create ~location (Expression.Constant Ellipsis))
+        in
         let { state; nested_awaitable_expressions } =
           forward_expression ~resolution ~state ~expression:value
         in

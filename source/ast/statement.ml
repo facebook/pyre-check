@@ -35,7 +35,7 @@ module Assign = struct
   type t = {
     target: Expression.t;
     annotation: Expression.t option;
-    value: Expression.t;
+    value: Expression.t option;
   }
   [@@deriving equal, compare, sexp, show, hash, to_yojson]
 
@@ -47,7 +47,7 @@ module Assign = struct
           Option.compare Expression.location_insensitive_compare left.annotation right.annotation
         with
         | x when not (Int.equal x 0) -> x
-        | _ -> Expression.location_insensitive_compare left.value right.value)
+        | _ -> Option.compare Expression.location_insensitive_compare left.value right.value)
 end
 
 module Import = struct
@@ -1039,7 +1039,7 @@ end = struct
     {
       Node.location =
         { Location.start = Location.start target_location; stop = Location.stop iterator_location };
-      Node.value = Statement.Assign { Assign.target; annotation = None; value };
+      Node.value = Statement.Assign { Assign.target; annotation = None; value = Some value };
     }
 
 
@@ -1314,7 +1314,7 @@ end = struct
               {
                 Assign.target;
                 annotation = None;
-                value = Node.create ~location (Expression.Constant Constant.Ellipsis);
+                value = Some (Node.create ~location (Expression.Constant Constant.Ellipsis));
               };
         };
         {
@@ -1465,7 +1465,7 @@ end = struct
       in
       match target with
       | Some target ->
-          let assign = { Assign.target; annotation = None; value = enter_call } in
+          let assign = { Assign.target; annotation = None; value = Some enter_call } in
           Node.create ~location (Statement.Assign assign)
       | None -> Node.create ~location (Statement.Expression enter_call)
     in
@@ -1671,7 +1671,7 @@ end = struct
               };
         }
     in
-    { Assign.target; annotation = None; value }
+    { Assign.target; annotation = None; value = Some value }
 end
 
 include Statement
@@ -1732,8 +1732,8 @@ module PrettyPrinter = struct
       target
       pp_expression_option
       (": ", annotation)
-      Expression.pp
-      value
+      pp_expression_option
+      ("", value)
 
 
   and pp_class formatter { Class.name; base_arguments; body; decorators; _ } =
@@ -2020,7 +2020,8 @@ let is_generator statements =
   in
   let rec is_statement_generator { Node.value; _ } =
     match value with
-    | Assign { Assign.value; _ } -> is_expression_generator value
+    | Assign { Assign.value = Some value; _ } -> is_expression_generator value
+    | Assign _ -> false
     | Assert { Assert.test; message; _ } ->
         is_expression_generator test || is_optional_expression_generator message
     | Delete expressions -> List.exists expressions ~f:is_expression_generator

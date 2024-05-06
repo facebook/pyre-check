@@ -1258,7 +1258,10 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
         Statement.Statement.generator_assignment generator
       in
       let assign_value_taint, state =
-        analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
+        match value with
+        | Some value ->
+            analyze_expression ~pyre_in_context ~state ~is_result_used:true ~expression:value
+        | None -> ForwardState.Tree.empty, state
       in
       let state =
         analyze_assignment ~pyre_in_context target assign_value_taint assign_value_taint state
@@ -2855,9 +2858,11 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
   let analyze_statement ~pyre_in_context { Node.value = statement; location } state =
     match statement with
     | Statement.Statement.Assign
-        { value = { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
+        { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
         state
-    | Assign { value = { Node.value = Expression.Constant Constant.NoneLiteral; _ }; target; _ }
+    | Assign { value = None; _ } -> state
+    | Assign
+        { value = Some { Node.value = Expression.Constant Constant.NoneLiteral; _ }; target; _ }
       -> (
         match AccessPath.of_expression ~self_parameter target with
         | Some { AccessPath.root; path } ->
@@ -2869,7 +2874,8 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
             else
               state
         | _ -> state)
-    | Assign { target = { Node.location; value = target_value } as target; value; _ } -> (
+    | Assign { target = { Node.location; value = target_value } as target; value = Some value; _ }
+      -> (
         let target_global_model =
           GlobalModel.from_expression
             ~pyre_in_context

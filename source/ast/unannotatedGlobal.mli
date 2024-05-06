@@ -33,11 +33,11 @@ end
 type t =
   | SimpleAssign of {
       explicit_annotation: Expression.t option;
-      value: Expression.t;
+      value: Expression.t option;
       target_location: Location.WithModule.t;
     }
   | TupleAssign of {
-      value: Expression.t;
+      value: Expression.t option;
       target_location: Location.WithModule.t;
       index: int;
       total_length: int;

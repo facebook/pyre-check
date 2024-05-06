@@ -125,7 +125,8 @@ module IncomingDataComputation = struct
 
   let extract_alias Queries.{ class_exists; get_unannotated_global; _ } name =
     let extract_alias = function
-      | UnannotatedGlobal.SimpleAssign { explicit_annotation; value; _ } -> (
+      | UnannotatedGlobal.SimpleAssign { value = None; _ } -> None
+      | UnannotatedGlobal.SimpleAssign { explicit_annotation; value = Some value; _ } -> (
           let target_annotation =
             Type.create ~aliases:Type.empty_aliases (from_reference ~location:Location.any name)
           in
