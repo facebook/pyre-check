@@ -2,4 +2,4 @@ Flask==2.3.3
 lxml
 jsonpickle
 requests
-Werkzeug==2.3.7
+Werkzeug==3.0.3
