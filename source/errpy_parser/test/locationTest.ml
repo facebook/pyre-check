@@ -821,47 +821,49 @@ let test_call_locations =
                node
                  ~start:(1, 4)
                  ~stop:(1, 12)
-                 (Statement.Expression
-                    (node
-                       ~start:(1, 4)
-                       ~stop:(1, 12)
-                       (Expression.Call
-                          {
-                            Call.callee =
-                              node
-                                ~start:(1, 4)
-                                ~stop:(1, 5)
-                                (Expression.Name
-                                   (Name.Attribute
-                                      {
-                                        Name.Attribute.base =
-                                          node
-                                            ~start:(1, 4)
-                                            ~stop:(1, 5)
-                                            (Expression.Name (Name.Identifier "i"));
-                                        attribute = "__setitem__";
-                                        special = true;
-                                      }));
-                            arguments =
-                              [
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    node
-                                      ~start:(1, 6)
-                                      ~stop:(1, 7)
-                                      (Expression.Name (Name.Identifier "j"));
-                                };
-                                {
-                                  Call.Argument.name = None;
-                                  value =
-                                    node
-                                      ~start:(1, 11)
-                                      ~stop:(1, 12)
-                                      (Expression.Name (Name.Identifier "y"));
-                                };
-                              ];
-                          })));
+                 (Statement.Assign
+                    {
+                      Assign.target =
+                        node
+                          ~start:(1, 4)
+                          ~stop:(1, 8)
+                          (Expression.Call
+                             {
+                               Call.callee =
+                                 node
+                                   ~start:(1, 4)
+                                   ~stop:(1, 5)
+                                   (Expression.Name
+                                      (Name.Attribute
+                                         {
+                                           Name.Attribute.base =
+                                             node
+                                               ~start:(1, 4)
+                                               ~stop:(1, 5)
+                                               (Expression.Name (Name.Identifier "i"));
+                                           attribute = "__getitem__";
+                                           special = true;
+                                         }));
+                               arguments =
+                                 [
+                                   {
+                                     Call.Argument.name = None;
+                                     value =
+                                       node
+                                         ~start:(1, 6)
+                                         ~stop:(1, 7)
+                                         (Expression.Name (Name.Identifier "j"));
+                                   };
+                                 ];
+                             });
+                      value =
+                        Some
+                          (node
+                             ~start:(1, 11)
+                             ~stop:(1, 12)
+                             (Expression.Name (Name.Identifier "y")));
+                      annotation = None;
+                    });
              ];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_parsed
