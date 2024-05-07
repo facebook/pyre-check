@@ -369,22 +369,29 @@ module State (Context : Context) = struct
       { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
 
 
-  let mark_awaitable_as_awaited
+  (* Mark any awaitables covered by an expression as awaited, using the location of the expression.
+     There are two ways we could find awaitables:
+
+     - we could get a "direct" hit looking up this location as an originator key for an awaitable
+
+     - or we could get an "indirect" hit by finding an AnonymousExpression owner which might track
+     many awaitables. *)
+  let mark_expression_at_location_as_awaited
       { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
-      ~awaitable
+      ~location
     =
-    if Map.mem awaitable_to_awaited_state awaitable then
+    let location_as_awaitable, location_as_anonymous_owner =
+      Awaitable.create location, AnonymousExpression { location }
+    in
+    if Map.mem awaitable_to_awaited_state location_as_awaitable then
       {
-        awaitable_to_awaited_state = Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited;
+        awaitable_to_awaited_state =
+          Map.set awaitable_to_awaited_state ~key:location_as_awaitable ~data:Awaited;
         owner_to_awaitables;
         expect_expressions_to_be_awaited;
       }
     else
-      match
-        Map.find
-          owner_to_awaitables
-          (AnonymousExpression { location = Awaitable.to_location awaitable })
-      with
+      match Map.find owner_to_awaitables location_as_anonymous_owner with
       | Some awaitables ->
           let awaitable_to_awaited_state =
             Set.fold awaitables ~init:awaitable_to_awaited_state ~f:await_awaitable
@@ -610,10 +617,10 @@ module State (Context : Context) = struct
         in
         let state =
           List.fold nested_awaitable_expressions ~init:state ~f:(fun state { Node.location; _ } ->
-              mark_awaitable_as_awaited ~awaitable:(Awaitable.create location) state)
+              mark_expression_at_location_as_awaited ~location state)
         in
         {
-          state = mark_awaitable_as_awaited state ~awaitable:(Awaitable.create location);
+          state = mark_expression_at_location_as_awaited state ~location;
           nested_awaitable_expressions;
         }
     | BooleanOperator { BooleanOperator.left; right; _ } ->
