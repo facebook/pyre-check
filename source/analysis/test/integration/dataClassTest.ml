@@ -59,6 +59,23 @@ let test_check_dataclasses =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
+            from dataclasses import dataclass
+            @dataclass(frozen=True)
+            class Foo():
+                x: int = 1
+
+            @dataclass(frozen=False)
+            class Bar(Foo):
+                y : int = 3
+
+            b = Bar()
+            b.x = 5
+            b.y = 4
+         |}
+           ["Invalid assignment [41]: Cannot reassign final attribute `b.x`."];
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_type_errors
+           {|
             from typing import dataclass_transform
 
             @dataclass_transform(frozen_default=True)
