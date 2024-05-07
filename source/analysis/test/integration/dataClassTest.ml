@@ -208,6 +208,20 @@ let test_check_dataclasses =
          |}
            [];
       labeled_test_case __FUNCTION__ __LINE__
+      (* TODO T178998636: complain when a frozen dataclass inherits from a non-frozen dataclass *)
+      @@ assert_type_errors
+           {|
+            from dataclasses import dataclass
+            @dataclass(frozen=False)
+            class Foo():
+                x: int = 1
+
+            @dataclass(frozen=True)
+            class Bar(Foo):
+                pass
+         |}
+           [];
+      labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|
            from dataclasses import dataclass
