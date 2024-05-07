@@ -453,15 +453,21 @@ module State (Context : Context) = struct
       | Expression.Name (Name.Attribute { special = true; _ }) -> true
       | _ -> false
     in
-    let forward_arguments { state; nested_awaitable_expressions } =
-      let forward_argument { state; nested_awaitable_expressions } { Call.Argument.value; _ } =
+    let forward_arguments
+        { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee }
+      =
+      let forward_argument
+          { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
+          { Call.Argument.value; _ }
+        =
         (* For special methods such as `+`, ensure that we still require you to await the
            expressions. *)
         if is_special_function callee then
-          forward_expression ~resolution ~state ~expression:value |>> nested_awaitable_expressions
+          forward_expression ~resolution ~state ~expression:value
+          |>> nested_awaitable_expressions_so_far
         else
           let state = await_all_subexpressions ~state ~expression:value in
-          { state; nested_awaitable_expressions }
+          { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
       in
       match Node.value callee, arguments with
       (* a["b"] = c gets converted to a.__setitem__("b", c). *)
@@ -492,9 +498,9 @@ module State (Context : Context) = struct
               {
                 state = { state with owner_to_awaitables };
                 nested_awaitable_expressions =
-                  List.rev_append new_awaitable_expressions nested_awaitable_expressions;
+                  List.rev_append new_awaitable_expressions nested_awaitable_expressions_from_callee;
               }
-          | _ -> { state; nested_awaitable_expressions })
+          | _ -> { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee })
       | _ ->
           let expect_expressions_to_be_awaited = state.expect_expressions_to_be_awaited in
           (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
@@ -506,37 +512,39 @@ module State (Context : Context) = struct
                 {
                   state =
                     { state with expect_expressions_to_be_awaited = is_special_function callee };
-                  nested_awaitable_expressions;
+                  nested_awaitable_expressions = nested_awaitable_expressions_from_callee;
                 }
               ~f:forward_argument
           in
           let state = { state with expect_expressions_to_be_awaited } in
           { state; nested_awaitable_expressions }
     in
-    let expression = { Node.value = Expression.Call call; location } in
     let {
       state =
         { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited } as
         state;
-      nested_awaitable_expressions;
+      nested_awaitable_expressions = nested_awaitable_expressions_in_callee_and_arguments;
     }
       =
       forward_expression ~resolution ~state ~expression:callee |> forward_arguments
     in
-    let annotation = Resolution.resolve_expression_to_type resolution expression in
+    let call_expression = { Node.value = Expression.Call call; location } in
+    let annotation = Resolution.resolve_expression_to_type resolution call_expression in
     if
       expect_expressions_to_be_awaited
       && can_lead_to_runtime_warning_if_unawaited
            ~global_resolution:(Resolution.global_resolution resolution)
            annotation
     then
-      let nested_awaitable_expressions = expression :: nested_awaitable_expressions in
-      let awaitable = Awaitable.create location in
+      let nested_awaitable_expressions =
+        call_expression :: nested_awaitable_expressions_in_callee_and_arguments
+      in
+      let awaitable_for_call = Awaitable.create location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
           match
             ( awaitables_pointed_to_by_expression ~state base,
-              Map.find awaitable_to_awaited_state awaitable )
+              Map.find awaitable_to_awaited_state awaitable_for_call )
           with
           | Some awaitables, Some (Unawaited _) ->
               (* The callee is an awaitable method on an unawaited `base`, so assume that the
@@ -559,7 +567,10 @@ module State (Context : Context) = struct
                   {
                     state with
                     awaitable_to_awaited_state =
-                      Map.set awaitable_to_awaited_state ~key:awaitable ~data:(Unawaited expression);
+                      Map.set
+                        awaitable_to_awaited_state
+                        ~key:awaitable_for_call
+                        ~data:(Unawaited call_expression);
                   };
                 nested_awaitable_expressions;
               })
@@ -569,7 +580,10 @@ module State (Context : Context) = struct
               {
                 state with
                 awaitable_to_awaited_state =
-                  Map.set awaitable_to_awaited_state ~key:awaitable ~data:(Unawaited expression);
+                  Map.set
+                    awaitable_to_awaited_state
+                    ~key:awaitable_for_call
+                    ~data:(Unawaited call_expression);
               };
             nested_awaitable_expressions;
           }
@@ -594,10 +608,18 @@ module State (Context : Context) = struct
                         ~key:(AnonymousExpression { location })
                         ~data:awaitables;
                   };
-                nested_awaitable_expressions;
+                nested_awaitable_expressions = nested_awaitable_expressions_in_callee_and_arguments;
               }
-          | None -> { state; nested_awaitable_expressions })
-      | _ -> { state; nested_awaitable_expressions }
+          | None ->
+              {
+                state;
+                nested_awaitable_expressions = nested_awaitable_expressions_in_callee_and_arguments;
+              })
+      | _ ->
+          {
+            state;
+            nested_awaitable_expressions = nested_awaitable_expressions_in_callee_and_arguments;
+          }
 
 
   (** Add any awaitables introduced in the expression to the tracked awaitables in state. If any
