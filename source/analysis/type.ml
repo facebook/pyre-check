@@ -4630,7 +4630,16 @@ let class_name annotation =
     let rec collect_identifiers identifiers = function
       | {
           Node.value =
-            Expression.Call { callee = { Node.value = Name (Name.Attribute { base; _ }); _ }; _ };
+            Expression.Call
+              {
+                callee =
+                  {
+                    Node.value =
+                      Name (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                    _;
+                  };
+                _;
+              };
           _;
         } ->
           collect_identifiers identifiers base
