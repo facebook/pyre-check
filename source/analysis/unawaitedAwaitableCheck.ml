@@ -460,51 +460,62 @@ module State (Context : Context) = struct
     forward_expression ~resolution ~state ~expression:iterator |>> nested_awaitable_expressions
 
 
+  (* Handle the special semantics of subscript assignments / `__setitem__` calls. We assume that
+     `__setitem__` behaves "normally":
+
+     - it assigns some internal data on `base` using the key and value, making `base` an owner of
+     any awaitable data coming from the key and value
+
+     - the base, while it *can contain awaitables, will not itself *be* an awaitable (or if it does,
+     that will typically be a type error so we can ignore it) be) returns None (so we don't need any
+     special handling of the return value)
+
+     - the base, while it cantain awaitable expressions, is not itself awaitable *)
+  and forward_setitem ~resolution ~state ~base ~key_expression ~value_expression =
+    let { state; nested_awaitable_expressions = awaitable_expressions_from_base } =
+      forward_expression ~resolution ~state ~expression:base
+    in
+    let { state; nested_awaitable_expressions = awaitable_expressions_from_key } =
+      forward_expression ~resolution ~state ~expression:key_expression
+    in
+    let { state; nested_awaitable_expressions = awaitable_expressions_from_value } =
+      forward_expression ~resolution ~state ~expression:value_expression
+    in
+    let new_awaitable_expressions_referrable_from_base =
+      awaitable_expressions_from_base
+      @ awaitable_expressions_from_key
+      @ awaitable_expressions_from_value
+    in
+    match Node.value base with
+    | Expression.Name name
+      when is_simple_name name && not (List.is_empty new_awaitable_expressions_referrable_from_base)
+      ->
+        let { owner_to_awaitables; _ } = state in
+        let name = name_to_reference_exn name in
+        let new_awaitables =
+          new_awaitable_expressions_referrable_from_base
+          |> List.map ~f:Node.location
+          |> List.map ~f:Awaitable.of_location
+          |> Awaitable.Set.of_list
+        in
+        let owner_to_awaitables =
+          match Map.find owner_to_awaitables (NamedOwner name) with
+          | Some nested_awaitable_expressions ->
+              Map.set
+                owner_to_awaitables
+                ~key:(NamedOwner name)
+                ~data:(Set.union nested_awaitable_expressions new_awaitables)
+          | None -> Map.set owner_to_awaitables ~key:(NamedOwner name) ~data:new_awaitables
+        in
+        { state with owner_to_awaitables }
+    | _ -> state
+
+
   and forward_call ~resolution ~state ~location ({ Call.callee; arguments } as call) =
     let forward_arguments
         { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee }
       =
       match Node.value callee, arguments with
-      (* a["b"] = c gets converted to a.__setitem__("b", c). *)
-      | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
-          [
-            { Call.Argument.value = key_expression; _ };
-            { Call.Argument.value = value_expression; _ };
-          ] ) -> (
-          let { state; nested_awaitable_expressions = awaitable_expressions_from_key } =
-            forward_expression ~resolution ~state ~expression:key_expression
-          in
-          let { state; nested_awaitable_expressions = awaitable_expressions_from_value } =
-            forward_expression ~resolution ~state ~expression:value_expression
-          in
-          let new_awaitable_expressions =
-            awaitable_expressions_from_key @ awaitable_expressions_from_value
-          in
-          match Node.value base with
-          | Name name when is_simple_name name && not (List.is_empty new_awaitable_expressions) ->
-              let { owner_to_awaitables; _ } = state in
-              let name = name_to_reference_exn name in
-              let new_awaitables =
-                new_awaitable_expressions
-                |> List.map ~f:Node.location
-                |> List.map ~f:Awaitable.of_location
-                |> Awaitable.Set.of_list
-              in
-              let owner_to_awaitables =
-                match Map.find owner_to_awaitables (NamedOwner name) with
-                | Some nested_awaitable_expressions ->
-                    Map.set
-                      owner_to_awaitables
-                      ~key:(NamedOwner name)
-                      ~data:(Set.union nested_awaitable_expressions new_awaitables)
-                | None -> Map.set owner_to_awaitables ~key:(NamedOwner name) ~data:new_awaitables
-              in
-              {
-                state = { state with owner_to_awaitables };
-                nested_awaitable_expressions =
-                  List.rev_append new_awaitable_expressions nested_awaitable_expressions_from_callee;
-              }
-          | _ -> { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee })
       | _ ->
           let is_special_function =
             match Node.value callee with
@@ -677,6 +688,19 @@ module State (Context : Context) = struct
           state;
           nested_awaitable_expressions =
             List.rev_append left_awaitable_expressions right_awaitable_expressions;
+        }
+    | Call
+        {
+          callee = { Node.value = Name (Name.Attribute { attribute = "__setitem__"; base; _ }); _ };
+          arguments =
+            [
+              { Call.Argument.value = key_expression; _ };
+              { Call.Argument.value = value_expression; _ };
+            ];
+        } ->
+        {
+          state = forward_setitem ~resolution ~state ~base ~key_expression ~value_expression;
+          nested_awaitable_expressions = [];
         }
     | Call call -> forward_call ~resolution ~state ~location call
     | ComparisonOperator { ComparisonOperator.left; right; _ } ->
