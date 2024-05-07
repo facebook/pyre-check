@@ -148,6 +148,8 @@ val is_final : 'a t -> bool
 
 val with_initialized : 'a t -> initialized:initialized -> 'a t
 
+val with_visibility : 'a t -> visibility:visibility -> 'a t
+
 val undecorated_signature : 'a t -> Type.Callable.t option
 
 val problem : 'a t -> problem option

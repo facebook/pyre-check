@@ -34,7 +34,6 @@ let test_check_dataclasses =
              "Unexpected keyword [28]: Unexpected keyword argument `frozen` to call `dataclass`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
-      (* TODO T178998636: There should be an error here about mutating an immutable attribute *)
       @@ assert_type_errors
            {|
             from typing import dataclass_transform, Any, TypeVar, Type
@@ -55,10 +54,9 @@ let test_check_dataclasses =
            [
              "Invalid decoration [56]: Decorator `typing.dataclass_transform(...)` could not be \
               called, because its type `unknown` is not callable.";
+             "Invalid assignment [41]: Cannot reassign final attribute `a.x`.";
            ];
       labeled_test_case __FUNCTION__ __LINE__
-      (* TODO T178998636: Taken directly from comformance tests. Similar to the above, there should
-         be an error here about mutating an immutable attribute *)
       @@ assert_type_errors
            {|
             from typing import dataclass_transform
@@ -73,9 +71,9 @@ let test_check_dataclasses =
             c3_1 = Customer3(id=2)
 
             # This should generate an error because Customer3 is frozen.
-            c3_1.id = 4  # E
+            c3_1.id = 4
          |}
-           [];
+           ["Invalid assignment [41]: Cannot reassign final attribute `c3_1.id`."];
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_type_errors
            {|

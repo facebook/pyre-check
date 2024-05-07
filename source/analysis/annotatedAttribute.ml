@@ -229,6 +229,8 @@ let parent_prefix attribute =
 
 let initialized { initialized; _ } = initialized
 
+let visibility { visibility; _ } = visibility
+
 let defined { defined; _ } = defined
 
 let class_variable { class_variable; _ } = class_variable
@@ -244,8 +246,6 @@ let static { payload = InstantiatedAnnotation.{ uninstantiated_annotation; _ }; 
 
 
 let property { property; _ } = property
-
-let visibility { visibility; _ } = visibility
 
 let undecorated_signature { undecorated_signature; _ } = undecorated_signature
 
@@ -278,3 +278,5 @@ let instantiate attribute ~annotation ~original_annotation ~uninstantiated_annot
 
 
 let with_initialized attribute ~initialized = { attribute with initialized }
+
+let with_visibility attribute ~visibility = { attribute with visibility }
