@@ -467,9 +467,18 @@ module State (Context : Context) = struct
       match Node.value callee, arguments with
       (* a["b"] = c gets converted to a.__setitem__("b", c). *)
       | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
-          [_; { Call.Argument.value; _ }] ) -> (
-          let { state; nested_awaitable_expressions = new_awaitable_expressions } =
-            forward_expression ~resolution ~state ~expression:value
+          [
+            { Call.Argument.value = key_expression; _ };
+            { Call.Argument.value = value_expression; _ };
+          ] ) -> (
+          let { state; nested_awaitable_expressions = awaitable_expressions_from_key } =
+            forward_expression ~resolution ~state ~expression:key_expression
+          in
+          let { state; nested_awaitable_expressions = awaitable_expressions_from_value } =
+            forward_expression ~resolution ~state ~expression:value_expression
+          in
+          let new_awaitable_expressions =
+            awaitable_expressions_from_key @ awaitable_expressions_from_value
           in
           match Node.value base with
           | Name name when is_simple_name name && not (List.is_empty new_awaitable_expressions) ->

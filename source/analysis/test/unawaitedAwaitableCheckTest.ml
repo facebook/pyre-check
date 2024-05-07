@@ -1263,7 +1263,6 @@ let test_assign =
                   return
             |}
            ["Unawaited awaitable [1001]: `test.foo()` is never awaited."];
-      (* TODO(T101303314): Handle subscripts in multi-target assignments, not just single-target. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
@@ -1280,8 +1279,6 @@ let test_assign =
                 (await is_awaited_multi_target)["k"], y = "v", 42
             |}
            ["Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited."];
-      (* TODO(T101303314): Fix false positive when key is awaited in assignment by consolidating
-         logic *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
@@ -1296,11 +1293,7 @@ let test_assign =
                 d[await is_awaited_simple] = "v"
                 d[await is_awaited_multi_target], y = "v", 42
             |}
-           [
-             "Unawaited awaitable [1001]: Awaitable assigned to `is_awaited_simple` is never \
-              awaited.";
-             "Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited.";
-           ];
+           ["Unawaited awaitable [1001]: Awaitable assigned to `is_not_awaited` is never awaited."];
     ]
 
 
