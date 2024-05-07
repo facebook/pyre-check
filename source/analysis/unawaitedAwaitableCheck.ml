@@ -35,8 +35,14 @@
     certain point without being "killed" in between is called reaching-definition analysis.
 
     In our case, a "definition" is an awaitable expression (more precisely, its location in the
-    code). "Killing" an awaitable means using `await` on it. We want all definitions (awaitables)
-    that reach the return point of the function without being killed (awaited).
+    code). "Killing" or consuming an awaitable means doing one of the following:
+
+    - using `await` on it, which consumes it directly.
+    - passing it in a function call, which transfers ownership (the callee should consume it).
+    - yeilding or returning it, which transfers ownership to a calling / consuming scope.
+
+    We want all definitions (awaitables) that reach the return point of the function without being
+    killed (awaited or otherwise consumed).
 
     Reaching-definitions analysis means we need a forward analysis. For more details, see
     https://en.wikipedia.org/wiki/Reaching_definition.
@@ -76,6 +82,27 @@ let can_lead_to_runtime_warning_if_unawaited ~global_resolution:_ = function
   | _ -> false
 
 
+(* In order to do reachability and aliasability analysis at the same time, it is helpful to track
+   the state (reachability) of an awaitable separately from the ownership (aliasability), and only
+   move between them when we are ready to consume (or "kill" in reachability vocab) all the
+   awaitables tracked by some owner.
+
+   This requires using two separate maps to track them, and we need a persistent identifier for
+   them. So we key awaitables based on the location of the *originator* expression where they were
+   first introduced. This originator location remains the same even as ownership can bubble up (and
+   be aggregated, i.e. one owner can track many separate originators) into larger expressions or
+   into variables by way of assignment.
+
+   For example:
+
+   - in `await asyncio.gather(awaitable())` we will store the location of the `awaitable()` call as
+   the `Awaitable.t` originator, even as ownership bubbles up to the `asyncio.gather` expression
+   (and awaitability gets "consumed" when that owner is awaited)
+
+   - in `x = awaitable()` we will store the location of the `awaitable()` call as the `Awaitable.t`
+   originator, even though ownership will be transferred to the name `x` (and awaitability can
+   eventually be consumed if we consume x by awaiting it, returning it, or passing it as an argument
+   in a call). *)
 module Awaitable : sig
   type t [@@deriving show, sexp, compare]
 
@@ -88,11 +115,6 @@ module Awaitable : sig
   val to_location : t -> Location.t
 end = struct
   module T = struct
-    (* We represent an awaitable by the location of the expression where it was introduced.
-
-       For example, if we have `x = awaitable()`, then we store the location of the right-hand side
-       expression. If any variable pointing to it (x or any other alias) is awaited, then we need to
-       mark it as awaited. *)
     type t = Location.t [@@deriving show, sexp, compare]
   end
 
