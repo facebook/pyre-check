@@ -890,14 +890,9 @@ module State (Context : Context) = struct
         {
           callee =
             { value = Name (Name.Attribute { base; attribute = "__getitem__"; special = true }); _ };
-          arguments = [key_argument];
+          arguments = [{ Call.Argument.value = key_expression; _ }];
         } ->
-        (* Detect awaits inside the base or key of subscript assignment targets (both of which are
-           legal). Assume that no unawaited awaitables are created. *)
-        let key_expression, _ = Call.Argument.unpack key_argument in
-        let { state; _ } = forward_expression ~resolution ~state ~expression:base in
-        let { state; _ } = forward_expression ~resolution ~state ~expression:key_expression in
-        state
+        forward_setitem ~resolution ~state ~base ~key_expression ~value_expression:expression
     | List elements
     | Tuple elements
       when is_nonuniform_sequence ~minimum_length:(List.length elements) annotation -> (

@@ -1215,9 +1215,6 @@ let test_assign =
                 await d
             |}
            [];
-      (* TODO(T101303314) The handling of "proper" subscripts on the left-side of assignments is not
-         correctly propagating the unawaited awaitable into `d`, which needs to be fixed before we
-         remove `__setitem__` lowering from the parser. *)
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
@@ -1228,7 +1225,7 @@ let test_assign =
                 d["foo"], d["bar"] = awaitable(), 5
                 await d
             |}
-           ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+           [];
       (* Known failure case: we don't track ownership of awaitables in the RHS of an assign into the
          LHS when we cannot destructure a literal tuple. *)
       labeled_test_case __FUNCTION__ __LINE__
