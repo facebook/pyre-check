@@ -511,7 +511,8 @@ let matches_annotation_constraint
                         {
                           base =
                             { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                          _;
+                          attribute = "__getitem__";
+                          special = true;
                         });
                   _;
                 };
@@ -1467,7 +1468,8 @@ module CallableQueryExecutor = MakeQueryExecutor (struct
                     {
                       base =
                         { Node.value = Name (Name.Attribute { attribute = "Annotated"; _ }); _ };
-                      _;
+                      attribute = "__getitem__";
+                      special = true;
                     }) -> (
                   match arguments with
                   | [
