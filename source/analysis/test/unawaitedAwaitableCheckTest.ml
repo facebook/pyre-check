@@ -1221,11 +1221,24 @@ let test_assign =
       labeled_test_case __FUNCTION__ __LINE__
       @@ assert_awaitable_errors
            {|
+              async def awaitable() -> int: ...
+
+              async def foo() -> None:
+                d = {}
+                d["foo"], d["bar"] = awaitable(), 5
+                await d
+            |}
+           ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
+      (* Known failure case: we don't track ownership of awaitables in the RHS of an assign into the
+         LHS when we cannot destructure a literal tuple. *)
+      labeled_test_case __FUNCTION__ __LINE__
+      @@ assert_awaitable_errors
+           {|
               async def awaitable() -> tuple[int, int]: ...
 
               async def foo() -> None:
                 d = {}
-                d["bar"], d["bar"] = awaitable()
+                d["foo"], d["bar"] = awaitable()
                 await d
             |}
            ["Unawaited awaitable [1001]: `test.awaitable()` is never awaited."];
