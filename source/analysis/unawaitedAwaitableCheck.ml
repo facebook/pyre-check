@@ -377,7 +377,7 @@ module State (Context : Context) = struct
      - or we could get an "indirect" hit by finding an AnonymousExpression owner which might track
      many awaitables. *)
   let mark_expression_at_location_as_awaited
-      { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
+      ({ awaitable_to_awaited_state; owner_to_awaitables; _ } as state)
       ~location
     =
     let location_as_awaitable, location_as_anonymous_owner =
@@ -385,10 +385,9 @@ module State (Context : Context) = struct
     in
     if Map.mem awaitable_to_awaited_state location_as_awaitable then
       {
+        state with
         awaitable_to_awaited_state =
           Map.set awaitable_to_awaited_state ~key:location_as_awaitable ~data:Awaited;
-        owner_to_awaitables;
-        expect_expressions_to_be_awaited;
       }
     else
       match Map.find owner_to_awaitables location_as_anonymous_owner with
@@ -396,9 +395,23 @@ module State (Context : Context) = struct
           let awaitable_to_awaited_state =
             Set.fold awaitables ~init:awaitable_to_awaited_state ~f:await_awaitable
           in
-          { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
-      | None ->
-          { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
+          { state with awaitable_to_awaited_state }
+      | None -> state
+
+
+  (* Mark awaitable originating at an expression as awaited, but do not mark any owned awaitables
+     originating elsewhere as awaited. *)
+  let mark_awaitable_originating_at_expression_as_awaited
+      ({ awaitable_to_awaited_state; _ } as state)
+      ~expression:{ Ast.Node.location; _ }
+    =
+    let awaitable_to_awaited_state =
+      Awaitable.of_location location
+      |> Map.change awaitable_to_awaited_state ~f:(function
+             | Some _ -> Some Awaited
+             | None -> None)
+    in
+    { state with awaitable_to_awaited_state }
 
 
   let ( |>> ) { state; nested_awaitable_expressions } existing_awaitables =
@@ -840,14 +853,7 @@ module State (Context : Context) = struct
     | Name (Attribute _) ->
         (* Unsoundly assume that any awaitable assigned to an attribute is being awaited somewhere.
            Otherwise, we risk getting many false positives for attribute assignments. *)
-        let awaitable_to_awaited_state =
-          Node.location expression
-          |> Awaitable.of_location
-          |> Map.change awaitable_to_awaited_state ~f:(function
-                 | Some _ -> Some Awaited
-                 | None -> None)
-        in
-        { state with awaitable_to_awaited_state }
+        mark_awaitable_originating_at_expression_as_awaited ~expression state
     | Expression.Call
         {
           callee =
