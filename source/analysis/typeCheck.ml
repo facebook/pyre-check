@@ -581,6 +581,17 @@ module State (Context : Context) = struct
                       annotation = Type.Primitive (Expression.show expression);
                       expected = "`Callable[[<parameters>], <return type>]`";
                     }))
+      | Type.Callable { implementation = { annotation; _ }; _ } when Type.is_ellipsis annotation ->
+          emit_error
+            ~errors:[]
+            ~location
+            ~kind:
+              (Error.InvalidType
+                 (InvalidType
+                    {
+                      annotation = Type.Primitive (Expression.show expression);
+                      expected = "annotation other than ... for return type";
+                    }))
       | _ when Type.contains_unknown annotation ->
           emit_error
             ~errors:[]

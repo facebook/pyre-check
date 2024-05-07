@@ -840,7 +840,7 @@ module Record = struct
       | ParameterVariadicTypeVariable of 'annotation parameter_variadic_type_variable
 
     and 'annotation overload = {
-      annotation: 'annotation;
+      annotation: 'annotation; (* return type annotation *)
       parameters: 'annotation record_parameters;
     }
 
@@ -1870,7 +1870,7 @@ let is_dictionary_or_mapping = function
 
 
 let is_ellipsis = function
-  | Primitive "ellipsis" -> true
+  | Primitive "..." -> true
   | _ -> false
 
 
