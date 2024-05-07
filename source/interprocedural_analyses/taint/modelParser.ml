@@ -91,27 +91,6 @@ let signature_is_property signature =
   Set.exists decorators ~f:(Define.Signature.has_decorator signature)
 
 
-(* Return `X` if the expression is of the form `X[Y]`, otherwise `None`. *)
-let base_name expression =
-  match expression with
-  | {
-   Node.value =
-     Expression.Name
-       (Name.Attribute
-         {
-           base = { Node.value = Name (Name.Identifier identifier); _ };
-           attribute = "__getitem__";
-           special = true;
-         });
-   _;
-  } ->
-      Some identifier
-  | _ -> None
-
-
-(* Return true if the expression has the form `name[X]`. *)
-let is_base_name expression name = Option.equal String.equal (base_name expression) (Some name)
-
 let parse_access_path ~path ~location expression =
   let module TreeLabel = Abstract.TreeDomain.Label in
   let module ModelLabel = TaintPath.Label in
@@ -344,7 +323,23 @@ let rec parse_annotations
           >>| fun position ->
           [AccessPath.Root.PositionalParameter { name; position; positional_only = false }]
       | Tuple expressions -> List.map ~f:parse_expression expressions |> all >>| List.concat
-      | Call { callee; _ } when is_base_name callee "WithTag" -> Ok []
+      | Call
+          {
+            callee =
+              {
+                Node.value =
+                  Expression.Name
+                    (Name.Attribute
+                      {
+                        base = { Node.value = Name (Name.Identifier "WithTag"); _ };
+                        attribute = "__getitem__";
+                        special = true;
+                      });
+                _;
+              };
+            _;
+          } ->
+          Ok []
       | _ -> Error (annotation_error (Format.sprintf "Invalid expression for `%s`" via_kind))
     in
     parse_expression expression
@@ -356,7 +351,18 @@ let rec parse_annotations
     match expression.Node.value with
     | Expression.Call
         {
-          callee;
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier "WithTag"); _ };
+                      attribute = "__getitem__";
+                      _;
+                    });
+              _;
+            };
           arguments =
             [
               {
@@ -368,8 +374,7 @@ let rec parse_annotations
                 _;
               };
             ];
-        }
-      when is_base_name callee "WithTag" ->
+        } ->
         Ok (Some value)
     | Expression.Name (Name.Identifier _) when requires_parameter_name -> Ok None
     | Tuple expressions ->
@@ -462,19 +467,34 @@ let rec parse_annotations
             check_tito_annotation identifier name
             >>| fun () -> TaintKindsWithFeatures.from_collapse_depth CollapseDepth.NoCollapse
         | taint_kind -> Ok (TaintKindsWithFeatures.from_kind (Kind.from_name taint_kind)))
-    | Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
-        match base_name callee with
-        | Some "Via" -> extract_breadcrumbs argument >>| TaintKindsWithFeatures.from_breadcrumbs
-        | Some "ViaDynamicFeature" ->
+    | Call
+        {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ };
+                      attribute = "__getitem__";
+                      _;
+                    });
+              _;
+            };
+          arguments = [{ Call.Argument.value = argument; _ }];
+        } -> (
+        match base_identifier with
+        | "Via" -> extract_breadcrumbs argument >>| TaintKindsWithFeatures.from_breadcrumbs
+        | "ViaDynamicFeature" ->
             extract_breadcrumbs ~is_dynamic:true argument
             >>| TaintKindsWithFeatures.from_breadcrumbs
-        | Some "ViaValueOf" ->
+        | "ViaValueOf" ->
             extract_via_tag ~requires_parameter_name:true "ViaValueOf" argument
             >>= fun tag ->
             extract_via_parameters "ViaValueOf" argument
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaValueOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
-        | Some "ViaTypeOf" ->
+        | "ViaTypeOf" ->
             let requires_parameter_name =
               not (AnnotationOrigin.is_attribute origin || AnnotationOrigin.is_model_query origin)
             in
@@ -489,14 +509,14 @@ let rec parse_annotations
             parameters
             >>| List.map ~f:(fun parameter -> Features.ViaFeature.ViaTypeOf { parameter; tag })
             >>| TaintKindsWithFeatures.from_via_features
-        | Some "ViaAttributeName" ->
+        | "ViaAttributeName" ->
             check_attribute_annotation "ViaAttributeName" origin
             >>= fun () ->
             extract_via_tag ~requires_parameter_name:false "ViaAttributeName" argument
             >>| fun tag ->
             [Features.ViaFeature.ViaAttributeName { tag }]
             |> TaintKindsWithFeatures.from_via_features
-        | Some "Updates" ->
+        | "Updates" ->
             check_tito_annotation "Updates" name
             >>= fun () ->
             check_parameter_annotation "Updates" origin
@@ -507,12 +527,12 @@ let rec parse_annotations
             in
             extract_names argument
             >>= fun names -> List.map ~f:to_leaf names |> all >>| TaintKindsWithFeatures.from_kinds
-        | Some "ParameterPath" ->
+        | "ParameterPath" ->
             check_parameter_annotation "ParameterPath" origin
             >>= fun () ->
             parse_access_path ~path ~location argument
             >>| TaintKindsWithFeatures.from_parameter_path
-        | Some "ReturnPath" ->
+        | "ReturnPath" ->
             if not (AnnotationOrigin.is_return origin || AnnotationName.is_tito name) then
               Error
                 (annotation_error
@@ -520,27 +540,21 @@ let rec parse_annotations
                     `TaintInTaintOut[]`")
             else
               parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_return_path
-        | Some "UpdatePath" ->
+        | "UpdatePath" ->
             check_tito_annotation "UpdatePath" name
             >>= fun () ->
             check_parameter_annotation "UpdatePath" origin
             >>= fun () ->
             parse_access_path ~path ~location argument >>| TaintKindsWithFeatures.from_update_path
-        | Some "CollapseDepth" ->
+        | "CollapseDepth" ->
             check_tito_annotation "CollapseDepth" name
             >>= fun () ->
             extract_collapse_depth argument
             >>| fun depth -> TaintKindsWithFeatures.from_collapse_depth (CollapseDepth.Value depth)
-        | Some taint_kind ->
+        | taint_kind ->
             extract_subkind argument
             >>| fun subkind ->
-            TaintKindsWithFeatures.from_kind { Kind.name = taint_kind; subkind = Some subkind }
-        | None ->
-            Error
-              (annotation_error
-                 (Format.sprintf
-                    "Invalid expression for taint kind: %s"
-                    (Expression.show expression))))
+            TaintKindsWithFeatures.from_kind { Kind.name = taint_kind; subkind = Some subkind })
     | Tuple expressions ->
         List.map ~f:(extract_kinds_with_features ~name) expressions
         |> all
@@ -672,25 +686,40 @@ let rec parse_annotations
     | _ -> invalid_annotation_error ()
   in
   let rec parse_annotation = function
-    | Expression.Call { callee; arguments = [{ Call.Argument.value = argument; _ }] } -> (
+    | Expression.Call
+        {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier base_identifier); _ };
+                      attribute = "__getitem__";
+                      _;
+                    });
+              _;
+            };
+          arguments = [{ Call.Argument.value = argument; _ }];
+        } -> (
         let open Core.Result in
-        match base_name callee, argument with
-        | Some "TaintSink", _ -> get_sink_kinds argument
-        | Some "TaintSource", _ -> get_source_kinds argument
-        | Some "TaintInTaintOut", _ -> get_taint_in_taint_out argument
-        | Some "AddFeatureToArgument", _ ->
+        match base_identifier, argument with
+        | "TaintSink", _ -> get_sink_kinds argument
+        | "TaintSource", _ -> get_source_kinds argument
+        | "TaintInTaintOut", _ -> get_taint_in_taint_out argument
+        | "AddFeatureToArgument", _ ->
             extract_kinds_with_features ~name:AddFeatureToArgument argument
             >>| fun { features; _ } -> [TaintAnnotation.AddFeatureToArgument { features }]
-        | Some "AttachToSink", _ ->
+        | "AttachToSink", _ ->
             extract_attach_features ~name:AttachToSink argument
             >>| fun features -> [TaintAnnotation.Sink { sink = Sinks.Attach; features }]
-        | Some "AttachToTito", _ ->
+        | "AttachToTito", _ ->
             extract_attach_features ~name:AttachToTito argument
             >>| fun features -> [TaintAnnotation.Tito { tito = Sinks.Attach; features }]
-        | Some "AttachToSource", _ ->
+        | "AttachToSource", _ ->
             extract_attach_features ~name:AttachToSource argument
             >>| fun features -> [TaintAnnotation.Source { source = Sources.Attach; features }]
-        | Some "ViaTypeOf", _ ->
+        | "ViaTypeOf", _ ->
             check_attribute_annotation "ViaTypeOf" origin
             >>= fun () ->
             (* Attribute annotations of the form `a: ViaTypeOf[...]`. *)
@@ -706,7 +735,7 @@ let rec parse_annotations
                   features = { TaintFeatures.empty with via_features = [via_feature] };
                 };
             ]
-        | Some "ViaAttributeName", _ ->
+        | "ViaAttributeName", _ ->
             check_attribute_annotation "ViaAttributeName" origin
             >>= fun () ->
             (* Attribute annotations of the form `a: ViaAttributeName[...]`. *)
@@ -720,16 +749,16 @@ let rec parse_annotations
                   features = { TaintFeatures.empty with via_features = [via_feature] };
                 };
             ]
-        | Some "PartialSink", _ ->
+        | "PartialSink", _ ->
             check_parameter_annotation "PartialSink" origin
             >>= fun () ->
             get_partial_sink_kind argument
             >>| fun partial_sink ->
             [TaintAnnotation.Sink { sink = partial_sink; features = TaintFeatures.empty }]
-        | Some "Sanitize", _ ->
+        | "Sanitize", _ ->
             parse_sanitize_annotation (Node.value argument)
             >>| fun annotations -> [TaintAnnotation.Sanitize annotations]
-        | ( Some "AppliesTo",
+        | ( "AppliesTo",
             {
               value = Expression.Tuple [{ Node.value = index; _ }; { Node.value = expression; _ }];
               _;
@@ -778,9 +807,9 @@ let rec parse_annotations
             >>= fun field ->
             parse_annotation expression
             >>= fun annotations -> List.map ~f:(extend_applies_to field) annotations |> all
-        | Some "CrossRepositoryTaint", _ -> parse_cross_repository_producer argument
-        | Some "CrossRepositoryTaintAnchor", _ -> parse_cross_repository_anchor argument
-        | Some "Union", { value = Tuple expressions; _ } ->
+        | "CrossRepositoryTaint", _ -> parse_cross_repository_producer argument
+        | "CrossRepositoryTaintAnchor", _ -> parse_cross_repository_anchor argument
+        | "Union", { value = Tuple expressions; _ } ->
             List.map expressions ~f:(fun expression ->
                 parse_annotations
                   ~path
@@ -851,8 +880,21 @@ let rec parse_annotations
         |> all
         >>| List.concat
     | Expression.Call
-        { Call.callee; arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }] }
-      when is_base_name callee "TaintInTaintOut" ->
+        {
+          callee =
+            {
+              Node.value =
+                Name
+                  (Name.Attribute
+                    {
+                      base = { Node.value = Expression.Name (Name.Identifier "TaintInTaintOut"); _ };
+                      attribute = "__getitem__";
+                      special = true;
+                    });
+              _;
+            };
+          arguments = [{ Call.Argument.value = { Node.value = expression; _ }; _ }];
+        } ->
         let gather_sources_sinks (sources, sinks) = function
           | TaintAnnotation.Source { source; features } when TaintFeatures.is_empty features ->
               Ok (source :: sources, sinks)
@@ -3168,9 +3210,35 @@ let parse_decorator_annotations
         | _ -> failwith "impossible")
     | Some
         [
-          { Call.Argument.value = { Node.value = Expression.Call { Call.callee; arguments }; _ }; _ };
-        ]
-      when is_base_name callee "Parameters" ->
+          {
+            Call.Argument.value =
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      callee =
+                        {
+                          Node.value =
+                            Name
+                              (Name.Attribute
+                                {
+                                  base =
+                                    {
+                                      Node.value = Expression.Name (Name.Identifier "Parameters");
+                                      _;
+                                    };
+                                  attribute = "__getitem__";
+                                  special = true;
+                                });
+                          _;
+                        };
+                      arguments;
+                    };
+                _;
+              };
+            _;
+          };
+        ] ->
         parse_sanitize_annotations ~location ~original_expression arguments
         >>| Model.Sanitizers.from_parameters
     | Some arguments -> (
