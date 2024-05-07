@@ -2759,15 +2759,13 @@ let test_lookup_unknown_accesses context =
     [
       "2:4-2:7/typing.Callable(test.foo)[[], None]";
       "2:13-2:17/typing.Type[None]";
-      "3:4-3:28/typing.Any";
+      "3:4-3:20/typing.Any";
       "3:14-3:19/typing_extensions.Literal['key']";
     ];
   assert_annotation
     ~position:{ Location.line = 3; column = 4 }
-    ~annotation:(Some "3:4-3:28/typing.Any");
-  assert_annotation
-    ~position:{ Location.line = 3; column = 23 }
-    ~annotation:(Some "3:4-3:28/typing.Any")
+    ~annotation:(Some "3:4-3:20/typing.Any");
+  assert_annotation ~position:{ Location.line = 3; column = 23 } ~annotation:None
 
 
 let test_classify_coverage_data _ =

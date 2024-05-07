@@ -1003,8 +1003,8 @@ let test_dict_global_leaks context =
         my_dict["my_global"] = my_global
     |}
     [
-      "Leak via method argument [3107]: Potential data leak to global `test.my_global` of type \
-       `int` via method arguments to method `my_dict.__setitem__`.";
+      "Leak via local variable [3106]: Potential data leak to global `test.my_global` of type \
+       `int` via alias to local `my_dict[\"my_global\"]`.";
     ]
     context;
   ()

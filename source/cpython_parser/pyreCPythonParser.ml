@@ -659,44 +659,9 @@ let pattern =
 
 
 let create_assign ~location ~target ~annotation ~value () =
-  let open Ast.Expression in
   let open Ast.Statement in
   let module Node = Ast.Node in
-  let default_value =
-    let location =
-      let open Ast.Location in
-      { location with start = location.stop }
-    in
-    Option.value value ~default:(Expression.Constant Constant.Ellipsis |> Node.create ~location)
-  in
-  match Node.value target with
-  | Expression.Call
-      {
-        Call.callee =
-          {
-            Node.value =
-              Expression.Name
-                (Name.Attribute { Name.Attribute.base; attribute = "__getitem__"; special = true });
-            location = callee_location;
-          };
-        arguments;
-      } ->
-      let setitem =
-        Expression.Call
-          {
-            Call.callee =
-              Expression.Name
-                (Name.Attribute { Name.Attribute.base; attribute = "__setitem__"; special = true })
-              |> Node.create ~location:callee_location;
-            arguments = List.append arguments [{ Call.Argument.name = None; value = default_value }];
-          }
-        |> Node.create ~location
-      in
-      Statement.Expression setitem |> Node.create ~location
-  | _ ->
-      (* TODO(T101303314): This does not take into account things like `a[0], b = ...`, where we'll
-         need to turn `a[0]` into `__setitem__` call. *)
-      Statement.Assign { Assign.target; annotation; value } |> Node.create ~location
+  Statement.Assign { Assign.target; annotation; value } |> Node.create ~location
 
 
 let process_function_type_comment

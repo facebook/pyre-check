@@ -2039,29 +2039,17 @@ let test_call_graph_of_define =
            ~expected:
              [
                ( "10:2-10:7",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "__setitem__",
-                          ExpressionCallees.from_attribute_access
-                            {
-                              AttributeAccessCallees.property_targets = [];
-                              global_targets = [];
-                              is_attribute = true;
-                            } );
-                        ( "foo",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     (Target.Function { name = "test.foo"; kind = Normal });
-                                 ]
-                               ()) );
-                      ]) );
-               ( "10:2-10:20",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create (Target.Function { name = "test.foo"; kind = Normal });
+                           ]
+                         ())) );
+               ( "10:2-10:20",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call_with_empty_attribute
                       (CallCallees.create
                          ~call_targets:
                            [
@@ -2087,7 +2075,7 @@ let test_call_graph_of_define =
                          ())) );
                ( "11:2-11:18",
                  LocationCallees.Singleton
-                   (ExpressionCallees.from_call
+                   (ExpressionCallees.from_call_with_empty_attribute
                       (CallCallees.create
                          ~call_targets:
                            [
@@ -2124,36 +2112,25 @@ let test_call_graph_of_define =
                            ]
                          ())) );
                ( "12:2-12:8",
-                 LocationCallees.Compound
-                   (SerializableStringMap.of_alist_exn
-                      [
-                        ( "__getitem__",
-                          ExpressionCallees.from_call
-                            (CallCallees.create
-                               ~call_targets:
-                                 [
-                                   CallTarget.create
-                                     ~implicit_receiver:true
-                                     ~receiver_class:"dict"
-                                     (Target.Method
-                                        {
-                                          class_name = "dict";
-                                          method_name = "__getitem__";
-                                          kind = Normal;
-                                        });
-                                 ]
-                               ()) );
-                        ( "__setitem__",
-                          ExpressionCallees.from_attribute_access
-                            {
-                              AttributeAccessCallees.property_targets = [];
-                              global_targets = [];
-                              is_attribute = true;
-                            } );
-                      ]) );
-               ( "12:2-12:17",
                  LocationCallees.Singleton
                    (ExpressionCallees.from_call
+                      (CallCallees.create
+                         ~call_targets:
+                           [
+                             CallTarget.create
+                               ~implicit_receiver:true
+                               ~receiver_class:"dict"
+                               (Target.Method
+                                  {
+                                    class_name = "dict";
+                                    method_name = "__getitem__";
+                                    kind = Normal;
+                                  });
+                           ]
+                         ())) );
+               ( "12:2-12:17",
+                 LocationCallees.Singleton
+                   (ExpressionCallees.from_call_with_empty_attribute
                       (CallCallees.create
                          ~call_targets:
                            [
