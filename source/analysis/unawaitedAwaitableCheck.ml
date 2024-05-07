@@ -349,15 +349,16 @@ module State (Context : Context) = struct
 
   let widen ~previous ~next ~iteration:_ = join previous next
 
+  let await_awaitable awaitable_to_awaited_state awaitable =
+    Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited
+
+
   let mark_name_as_awaited
       { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
       ~name
     =
     if is_simple_name name then
       let awaitable_to_awaited_state =
-        let await_awaitable awaitable_to_awaited_state awaitable =
-          Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited
-        in
         Map.find owner_to_awaitables (NamedOwner (name_to_reference_exn name))
         >>| (fun awaitables ->
               Set.fold awaitables ~init:awaitable_to_awaited_state ~f:await_awaitable)
@@ -386,11 +387,7 @@ module State (Context : Context) = struct
       with
       | Some awaitables ->
           let awaitable_to_awaited_state =
-            Set.fold
-              awaitables
-              ~init:awaitable_to_awaited_state
-              ~f:(fun awaitable_to_awaited_state awaitable ->
-                Map.set awaitable_to_awaited_state ~key:awaitable ~data:Awaited)
+            Set.fold awaitables ~init:awaitable_to_awaited_state ~f:await_awaitable
           in
           { awaitable_to_awaited_state; owner_to_awaitables; expect_expressions_to_be_awaited }
       | None ->
