@@ -1784,6 +1784,58 @@ let redirect_special_calls ~pyre_in_context call =
       PyrePysaApi.InContext.redirect_special_calls pyre_in_context call
 
 
+let redirect_assignments = function
+  | {
+      Node.value =
+        Statement.Assign
+          {
+            Assign.target =
+              {
+                Node.value =
+                  Expression.Call
+                    {
+                      callee =
+                        {
+                          value =
+                            Name
+                              (Name.Attribute { base; attribute = "__getitem__"; special = true });
+                          _;
+                        };
+                      arguments = [key_argument];
+                    };
+                _;
+              };
+            value = Some value_expression;
+            _;
+          };
+      location;
+    } ->
+      (* TODO(T187636576): For now, we translate assignments such as `d[a] = b` into
+         `d.__setitem__(a, b)`. Unfortunately, this won't work for multi-target assignments such as
+         `x, y[a], z = w`. In the future, we should implement proper logic to handle those. *)
+      let value_argument = { Call.Argument.value = value_expression; name = None } in
+      {
+        Node.location;
+        value =
+          Statement.Expression
+            {
+              Node.location;
+              value =
+                Expression.Call
+                  {
+                    callee =
+                      {
+                        value =
+                          Name (Name.Attribute { base; attribute = "__setitem__"; special = true });
+                        location;
+                      };
+                    arguments = [key_argument; value_argument];
+                  };
+            };
+      }
+  | statement -> statement
+
+
 let resolve_recognized_callees
     ~debug
     ~pyre_in_context
@@ -2798,6 +2850,7 @@ struct
 
     let forward_statement ~pyre_in_context ~statement =
       log "Building call graph of statement: `%a`" Ast.Statement.pp statement;
+      let statement = redirect_assignments statement in
       match Node.value statement with
       | Statement.Assign { Assign.target; value = Some value; _ } ->
           CalleeVisitor.visit_expression

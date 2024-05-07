@@ -2363,8 +2363,9 @@ module State (FunctionContext : FUNCTION_CONTEXT) = struct
     analyze_expression ~pyre_in_context ~taint ~state ~expression:value
 
 
-  let analyze_statement ~pyre_in_context state { Node.value = statement; location } =
-    match statement with
+  let analyze_statement ~pyre_in_context state ({ Node.location; _ } as statement) =
+    let statement = CallGraph.redirect_assignments statement in
+    match Node.value statement with
     | Statement.Statement.Assign
         { value = Some { Node.value = Expression.Constant Constant.Ellipsis; _ }; _ } ->
         state

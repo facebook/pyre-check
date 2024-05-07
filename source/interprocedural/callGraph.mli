@@ -298,6 +298,8 @@ val call_graph_of_define
 
 val redirect_special_calls : pyre_in_context:PyrePysaApi.InContext.t -> Call.t -> Call.t
 
+val redirect_assignments : Statement.t -> Statement.t
+
 val call_graph_of_callable
   :  static_analysis_configuration:Configuration.StaticAnalysis.t ->
   pyre_api:PyrePysaApi.ReadOnly.t ->
