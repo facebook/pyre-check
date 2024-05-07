@@ -461,27 +461,9 @@ module State (Context : Context) = struct
 
 
   and forward_call ~resolution ~state ~location ({ Call.callee; arguments } as call) =
-    let is_special_function callee =
-      match Node.value callee with
-      | Expression.Name (Name.Attribute { special = true; _ }) -> true
-      | _ -> false
-    in
     let forward_arguments
         { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee }
       =
-      let forward_argument
-          { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
-          { Call.Argument.value; _ }
-        =
-        (* For special methods such as `+`, ensure that we still require you to await the
-           expressions. *)
-        if is_special_function callee then
-          forward_expression ~resolution ~state ~expression:value
-          |>> nested_awaitable_expressions_so_far
-        else
-          let state = await_all_subexpressions ~state ~expression:value in
-          { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
-      in
       match Node.value callee, arguments with
       (* a["b"] = c gets converted to a.__setitem__("b", c). *)
       | ( Name (Name.Attribute { attribute = "__setitem__"; base; _ }),
@@ -515,6 +497,24 @@ module State (Context : Context) = struct
               }
           | _ -> { state; nested_awaitable_expressions = nested_awaitable_expressions_from_callee })
       | _ ->
+          let is_special_function =
+            match Node.value callee with
+            | Expression.Name (Name.Attribute { special = true; _ }) -> true
+            | _ -> false
+          in
+          let forward_argument
+              { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
+              { Call.Argument.value; _ }
+            =
+            (* For special methods such as `+`, ensure that we still require you to await the
+               expressions. *)
+            if is_special_function then
+              forward_expression ~resolution ~state ~expression:value
+              |>> nested_awaitable_expressions_so_far
+            else
+              let state = await_all_subexpressions ~state ~expression:value in
+              { state; nested_awaitable_expressions = nested_awaitable_expressions_so_far }
+          in
           let expect_expressions_to_be_awaited = state.expect_expressions_to_be_awaited in
           (* Don't introduce awaitables for the arguments of a call, as they will be consumed by the
              call anyway. *)
@@ -523,8 +523,7 @@ module State (Context : Context) = struct
               arguments
               ~init:
                 {
-                  state =
-                    { state with expect_expressions_to_be_awaited = is_special_function callee };
+                  state = { state with expect_expressions_to_be_awaited = is_special_function };
                   nested_awaitable_expressions = nested_awaitable_expressions_from_callee;
                 }
               ~f:forward_argument
