@@ -110,7 +110,7 @@ module Awaitable : sig
 
   module Set : Set.S with type Elt.t = t
 
-  val create : Location.t -> t
+  val of_location : Location.t -> t
 
   val to_location : t -> Location.t
 end = struct
@@ -122,7 +122,7 @@ end = struct
   module Map = Map.Make (T)
   module Set = Set.Make (T)
 
-  let create = Fn.id
+  let of_location = Fn.id
 
   let to_location = Fn.id
 end
@@ -381,7 +381,7 @@ module State (Context : Context) = struct
       ~location
     =
     let location_as_awaitable, location_as_anonymous_owner =
-      Awaitable.create location, AnonymousExpression { location }
+      Awaitable.of_location location, AnonymousExpression { location }
     in
     if Map.mem awaitable_to_awaited_state location_as_awaitable then
       {
@@ -422,7 +422,7 @@ module State (Context : Context) = struct
       ~state:{ awaitable_to_awaited_state; owner_to_awaitables; _ }
       { Node.value; location }
     =
-    let awaitable = Awaitable.create location in
+    let awaitable = Awaitable.of_location location in
     if Map.mem awaitable_to_awaited_state awaitable then
       Some (Awaitable.Set.singleton awaitable)
     else
@@ -483,7 +483,7 @@ module State (Context : Context) = struct
               let new_awaitables =
                 new_awaitable_expressions
                 |> List.map ~f:Node.location
-                |> List.map ~f:Awaitable.create
+                |> List.map ~f:Awaitable.of_location
                 |> Awaitable.Set.of_list
               in
               let owner_to_awaitables =
@@ -539,7 +539,7 @@ module State (Context : Context) = struct
       let nested_awaitable_expressions =
         call_expression :: nested_awaitable_expressions_in_callee_and_arguments
       in
-      let awaitable_for_call = Awaitable.create location in
+      let awaitable_for_call = Awaitable.of_location location in
       match Node.value callee with
       | Name (Name.Attribute { base; _ }) -> (
           match
@@ -815,7 +815,7 @@ module State (Context : Context) = struct
             in
             { state with owner_to_awaitables }
         | _ ->
-            let value_awaitable = Node.location expression |> Awaitable.create in
+            let value_awaitable = Node.location expression |> Awaitable.of_location in
             let key = NamedOwner (Reference.create target_name) in
             let owner_to_awaitables =
               if not (List.is_empty awaitable_expressions_in_value) then
@@ -825,7 +825,7 @@ module State (Context : Context) = struct
                    `target` should point to the awaitables. *)
                 let awaitables_in_value =
                   List.map awaitable_expressions_in_value ~f:Node.location
-                  |> List.map ~f:Awaitable.create
+                  |> List.map ~f:Awaitable.of_location
                   |> Awaitable.Set.of_list
                 in
                 Map.set owner_to_awaitables ~key ~data:awaitables_in_value
@@ -842,7 +842,7 @@ module State (Context : Context) = struct
            Otherwise, we risk getting many false positives for attribute assignments. *)
         let awaitable_to_awaited_state =
           Node.location expression
-          |> Awaitable.create
+          |> Awaitable.of_location
           |> Map.change awaitable_to_awaited_state ~f:(function
                  | Some _ -> Some Awaited
                  | None -> None)
