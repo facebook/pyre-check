@@ -188,26 +188,6 @@
     Expression.Call { Call.callee; arguments = [subscript_argument subscripts] }
     |> Node.create ~location:{ subscript_location with Location.start = location.Location.start }
 
-  let subscript_mutation ~subscript ~value ~annotation:_ =
-    let head, subscripts, subscript_location = subscript in
-    let callee =
-      let location =
-        { head.Node.location with Location.stop = subscript_location.Location.stop }
-      in
-      Expression.Name (Name.Attribute { Name.Attribute.base = head; attribute = "__setitem__"; special = true })
-      |> Node.create ~location
-    in
-    let location =
-      { head.Node.location with Location.stop = value.Node.location.Location.stop }
-    in
-    Expression.Call {
-      Call.callee;
-      arguments = [subscript_argument subscripts; { Call.Argument.name = None; value }];
-    }
-    |> Node.create ~location
-    |> fun expression -> Statement.Expression expression
-    |> Node.create ~location
-
   let with_annotation ~parameter ~annotation =
     let value =
       let { Node.value = { Parameter.annotation = existing; _ } as value; _ } = parameter in
@@ -523,16 +503,6 @@ simple_statement:
   ;
 
 small_statement:
-  | subscript = subscript; compound = compound_operator; value = value {
-      let value =
-        binary_operator
-          ~compound:true
-          ~left:(subscript_access subscript)
-          ~operator:compound
-          ~right:value
-      in
-      [subscript_mutation ~subscript ~value ~annotation:None]
-  }
   | target = test_list;
     compound = compound_operator;
     value = value {
@@ -1360,7 +1330,6 @@ import:
       in
       assignment_with_annotation
     }
-  | subscript = subscript { subscript_mutation ~subscript }
 
 targets:
   | target = target; EQUALS { [target] }
