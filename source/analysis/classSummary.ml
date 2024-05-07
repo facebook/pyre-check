@@ -51,7 +51,6 @@ module Attribute = struct
     annotation: Expression.t option;
     values: value_and_origin list;
     primitive: bool;
-    frozen: bool;
     toplevel: bool;
     implicit: bool;
     nested_class: bool;
@@ -194,7 +193,6 @@ module Attribute = struct
       ?annotation
       ?value_and_origin
       ?(primitive = false)
-      ?(frozen = false)
       ?(toplevel = true)
       ?(implicit = false)
       ?(nested_class = false)
@@ -202,10 +200,7 @@ module Attribute = struct
       ()
     =
     let values = Option.to_list value_and_origin in
-    {
-      name;
-      kind = Simple { annotation; values; primitive; frozen; toplevel; implicit; nested_class };
-    }
+    { name; kind = Simple { annotation; values; primitive; toplevel; implicit; nested_class } }
     |> Node.create ~location
 
 
@@ -267,7 +262,6 @@ module ClassAttributes = struct
                     Attribute.annotation;
                     values = [{ value; origin = Implicit }];
                     primitive = true;
-                    frozen = false;
                     toplevel;
                     implicit = true;
                     nested_class = false;
@@ -595,7 +589,6 @@ module ClassAttributes = struct
             Attribute.name ~parent:parent_name target
             |> function
             | Some name ->
-                let frozen = Class.is_frozen definition in
                 let attribute =
                   Attribute.create_simple
                     ~location
@@ -603,7 +596,6 @@ module ClassAttributes = struct
                     ~value_and_origin:{ value; origin = Explicit }
                     ?annotation
                     ~primitive:true
-                    ~frozen
                     ()
                 in
                 Identifier.SerializableMap.set map ~key:name ~data:attribute

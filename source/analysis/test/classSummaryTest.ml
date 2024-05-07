@@ -17,7 +17,6 @@ open Statement
 let test_attributes _ =
   let create_attribute
       ~annotation
-      ?(frozen = false)
       ?(implicit = true)
       ?(location = Location.any)
       ~name
@@ -30,7 +29,7 @@ let test_attributes _ =
     let values = value >>| (fun value -> { Attribute.value; origin }) |> Option.to_list in
     {
       Attribute.kind =
-        Simple { annotation; frozen; implicit; primitive; toplevel; values; nested_class = false };
+        Simple { annotation; implicit; primitive; toplevel; values; nested_class = false };
       name;
     }
     |> Node.create ~location
@@ -221,7 +220,6 @@ let test_attributes _ =
                 values =
                   List.map values ~f:(fun (value, origin) ->
                       { Attribute.value = parse_single_expression value; origin });
-                frozen = false;
                 toplevel = true;
                 implicit = false;
                 nested_class;

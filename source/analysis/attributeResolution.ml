@@ -3829,7 +3829,7 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
       let class_annotation = Type.Primitive parent_name in
       let annotation, class_variable, visibility, undecorated_signature, problem =
         match kind with
-        | Simple { annotation; values; frozen; toplevel; implicit; primitive; _ } ->
+        | Simple { annotation; values; toplevel; implicit; primitive; _ } ->
             let value = List.hd values >>| fun { value; _ } -> value in
             let parsed_annotation = annotation >>| self#parse_annotation ~assumptions in
             (* Account for class attributes. *)
@@ -3870,8 +3870,6 @@ class base ~queries:(Queries.{ controls; _ } as queries) =
                 let visibility =
                   if final then
                     AnnotatedAttribute.ReadOnly (Refinable { overridable = false })
-                  else if frozen then
-                    ReadOnly (Refinable { overridable = true })
                   else
                     ReadWrite
                 in

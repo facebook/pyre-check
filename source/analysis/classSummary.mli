@@ -44,7 +44,6 @@ module Attribute : sig
     annotation: Expression.t option;
     values: value_and_origin list;
     primitive: bool;
-    frozen: bool;
     toplevel: bool;
     implicit: bool;
     nested_class: bool;
