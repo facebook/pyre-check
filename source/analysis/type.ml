@@ -4147,8 +4147,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         variable value ~constraints:LiteralIntegers
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { attribute = "__getitem__"; _ }); _ } as callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments =
             [
               {
@@ -4158,16 +4157,14 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               };
             ];
         }
-      when name_is ~name:"pyre_extensions.Broadcast.__getitem__" callee ->
+      when name_is ~name:"pyre_extensions.Broadcast" base ->
         (match List.map ~f:create_logic arguments with
         | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
         | _ -> Bottom)
         |> resolve_aliases
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-            callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments =
             [
               {
@@ -4177,7 +4174,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               };
             ];
         }
-      when name_is ~name:"pyre_extensions.Add.__getitem__" callee ->
+      when name_is ~name:"pyre_extensions.Add" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
         (match created_type with
         | Top -> create_parametric ~base ~argument
@@ -4185,9 +4182,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         |> resolve_aliases
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-            callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments =
             [
               {
@@ -4197,7 +4192,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               };
             ];
         }
-      when name_is ~name:"pyre_extensions.Multiply.__getitem__" callee ->
+      when name_is ~name:"pyre_extensions.Multiply" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
         (match created_type with
         | Top -> create_parametric ~base ~argument
@@ -4205,9 +4200,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         |> resolve_aliases
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-            callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments =
             [
               {
@@ -4217,7 +4210,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               };
             ];
         }
-      when name_is ~name:"pyre_extensions.Subtract.__getitem__" callee ->
+      when name_is ~name:"pyre_extensions.Subtract" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Subtract in
         (match created_type with
         | Top -> create_parametric ~base ~argument
@@ -4225,9 +4218,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
         |> resolve_aliases
     | Call
         {
-          callee =
-            { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ } as
-            callee;
+          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
           arguments =
             [
               {
@@ -4237,7 +4228,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               };
             ];
         }
-      when name_is ~name:"pyre_extensions.Divide.__getitem__" callee ->
+      when name_is ~name:"pyre_extensions.Divide" base ->
         let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
         (match created_type with
         | Top -> create_parametric ~base ~argument
