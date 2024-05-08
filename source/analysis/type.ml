@@ -4146,98 +4146,57 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       when name_is ~name:"typing_extensions.IntVar" callee ->
         variable value ~constraints:LiteralIntegers
     | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value = { Node.value = Expression.Tuple arguments; _ };
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"pyre_extensions.Broadcast" base ->
-        (match List.map ~f:create_logic arguments with
-        | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
-        | _ -> Bottom)
-        |> resolve_aliases
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value = { Node.value = Expression.Tuple arguments; _ } as argument;
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"pyre_extensions.Add" base ->
-        let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
-        (match created_type with
-        | Top -> create_parametric ~base ~argument
-        | _ -> created_type)
-        |> resolve_aliases
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value = { Node.value = Expression.Tuple arguments; _ } as argument;
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"pyre_extensions.Multiply" base ->
-        let created_type = create_int_expression_from_arguments arguments ~operation:`Multiply in
-        (match created_type with
-        | Top -> create_parametric ~base ~argument
-        | _ -> created_type)
-        |> resolve_aliases
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value = { Node.value = Expression.Tuple arguments; _ } as argument;
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"pyre_extensions.Subtract" base ->
-        let created_type = create_int_expression_from_arguments arguments ~operation:`Subtract in
-        (match created_type with
-        | Top -> create_parametric ~base ~argument
-        | _ -> created_type)
-        |> resolve_aliases
-    | Call
-        {
-          callee = { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
-          arguments =
-            [
-              {
-                Call.Argument.name = None;
-                value = { Node.value = Expression.Tuple arguments; _ } as argument;
-                _;
-              };
-            ];
-        }
-      when name_is ~name:"pyre_extensions.Divide" base ->
-        let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
-        (match created_type with
-        | Top -> create_parametric ~base ~argument
-        | _ -> created_type)
-        |> resolve_aliases
-    | Call
-        {
-          callee =
-            {
+        ({
+           callee =
+             {
+               Node.value =
+                 Name (Name.Attribute { base; attribute = "__getitem__"; _ }) as callee_value;
+               location;
+             };
+           arguments =
+             [
+               {
+                 Call.Argument.value = { Node.value = index_value; _ } as index_expression;
+                 name = None;
+                 _;
+               };
+             ] as getitem_arguments;
+         } as getitem_call) -> (
+        match base, index_value with
+        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Broadcast" base ->
+            (match List.map ~f:create_logic arguments with
+            | [left_type; right_type] -> OrderedTypes.broadcast left_type right_type
+            | _ -> Bottom)
+            |> resolve_aliases
+        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Add" base ->
+            let created_type = create_int_expression_from_arguments arguments ~operation:`Add in
+            (match created_type with
+            | Top -> create_parametric ~base ~argument:index_expression
+            | _ -> created_type)
+            |> resolve_aliases
+        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Subtract" base ->
+            let created_type =
+              create_int_expression_from_arguments arguments ~operation:`Subtract
+            in
+            (match created_type with
+            | Top -> create_parametric ~base ~argument:index_expression
+            | _ -> created_type)
+            |> resolve_aliases
+        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Multiply" base ->
+            let created_type =
+              create_int_expression_from_arguments arguments ~operation:`Multiply
+            in
+            (match created_type with
+            | Top -> create_parametric ~base ~argument:index_expression
+            | _ -> created_type)
+            |> resolve_aliases
+        | _, Expression.Tuple arguments when name_is ~name:"pyre_extensions.Divide" base ->
+            let created_type = create_int_expression_from_arguments arguments ~operation:`Divide in
+            (match created_type with
+            | Top -> create_parametric ~base ~argument:index_expression
+            | _ -> created_type)
+            |> resolve_aliases
+        | ( {
               Node.value =
                 Expression.Name
                   (Name.Attribute
@@ -4246,60 +4205,37 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                         {
                           Node.value =
                             Expression.Name
-                              (Name.Attribute
-                                {
-                                  base =
-                                    {
-                                      Node.value =
-                                        Expression.Name
-                                          ( Name.Identifier "typing"
-                                          | Name.Identifier "typing_extensions" );
-                                      _;
-                                    };
-                                  attribute = "Literal";
-                                  _;
-                                });
+                              (Name.Identifier "typing" | Name.Identifier "typing_extensions");
                           _;
                         };
-                      attribute = "__getitem__";
+                      attribute = "Literal";
                       _;
                     });
               _;
-            };
-          arguments;
-        } ->
-        let arguments =
-          match arguments with
-          | [{ Call.Argument.name = None; value = { Node.value = Expression.Tuple arguments; _ } }]
-            ->
-              Some (List.map arguments ~f:Node.value)
-          | [{ Call.Argument.name = None; value = { Node.value = argument; _ } }] -> Some [argument]
-          | _ -> None
-        in
-        arguments
-        >>| List.map ~f:create_literal
-        >>= Option.all
-        >>| union
-        |> Option.value ~default:Top
-    | Call
-        ({
-           callee =
-             {
-               Node.value =
-                 Expression.Name (Name.Attribute { base; attribute = "__getitem__"; _ }) as callee;
-               location;
-             };
-           arguments;
-         } as callee_expression) -> (
-        let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee in
-        match arguments with
-        | _ when is_typing_callable resolved_callee ->
-            parse_callable
-              (Call { callee_expression with callee = { Node.value = resolved_callee; location } })
-        | [{ Call.Argument.name = None; value = argument; _ }] ->
-            (* TODO(T84854853): Add back support for `Length` and `Product`. *)
-            create_parametric ~base ~argument
-        | _ -> Top)
+            },
+            _ ) ->
+            let arguments =
+              match index_value with
+              | Expression.Tuple arguments -> Some (List.map arguments ~f:Node.value)
+              | argument -> Some [argument]
+            in
+            arguments
+            >>| List.map ~f:create_literal
+            >>= Option.all
+            >>| union
+            |> Option.value ~default:Top
+        (* This is the "general" parametric type case, which includes both special handling of
+           `typing.Callable` and "normal" parametric types. *)
+        | _, _ -> (
+            let resolved_callee = Callable.resolve_getitem_callee ~resolve_aliases callee_value in
+            match getitem_arguments with
+            | _ when is_typing_callable resolved_callee ->
+                parse_callable
+                  (Call { getitem_call with callee = { Node.value = resolved_callee; location } })
+            | [{ Call.Argument.name = None; value = argument; _ }] ->
+                (* TODO(T84854853): Add back support for `Length` and `Product`. *)
+                create_parametric ~base ~argument
+            | _ -> Top))
     | Constant Constant.NoneLiteral -> none
     | Name (Name.Identifier identifier) ->
         let sanitized = Identifier.sanitized identifier in
