@@ -3842,8 +3842,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
      return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
      caller will then parse the expression as a normal parametric type). *)
   let parse_callable_if_appropriate ~location ~base ~subscript_index =
-    let rec resolve_base base_value =
-      match base_value with
+    let rec resolve_base base =
+      match Node.value base with
       | Expression.Name
           (Name.Attribute
             {
@@ -3851,7 +3851,7 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               attribute = "Callable";
               _;
             }) ->
-          base_value
+          base
       | Name base_name ->
           Ast.Expression.name_to_reference base_name
           >>| Reference.show
@@ -3864,15 +3864,19 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                       overloads = [];
                       _;
                     } ->
-                    Expression.Name
-                      (Name.Attribute
-                         {
-                           base = { Node.value = Name (Name.Identifier "typing"); location };
-                           attribute = "Callable";
-                           special = false;
-                         })
-                | _ -> base_value)
-          |> Option.value ~default:base_value
+                    {
+                      base with
+                      Node.value =
+                        Expression.Name
+                          (Name.Attribute
+                             {
+                               base = { Node.value = Name (Name.Identifier "typing"); location };
+                               attribute = "Callable";
+                               special = false;
+                             });
+                    }
+                | _ -> base)
+          |> Option.value ~default:base
       | Call
           ({
              callee =
@@ -3884,22 +3888,21 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
              _;
            } as call) ->
           let resolved_callee =
-            let resolved_base = { base with value = resolve_base (Node.value base) } in
             {
               callee with
               Node.value =
                 Expression.Name
                   (Name.Attribute
-                     { base = resolved_base; attribute = "__getitem__"; special = true });
+                     { base = resolve_base base; attribute = "__getitem__"; special = true });
             }
           in
-          Call { call with callee = resolved_callee }
-      | Call ({ callee = { Node.value = callee_value; _ } as callee; _ } as call) ->
-          let resolved_callee = { callee with Node.value = resolve_base callee_value } in
-          Call { call with callee = resolved_callee }
-      | _ -> base_value
+          { base with Node.value = Call { call with callee = resolved_callee } }
+      | Call ({ callee; _ } as call) ->
+          { base with Node.value = Call { call with callee = resolve_base callee } }
+      | _ -> base
     in
-    let rec is_typing_callable = function
+    let rec is_typing_callable base =
+      match Node.value base with
       | Expression.Name
           (Name.Attribute
             {
@@ -3908,15 +3911,15 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
               _;
             }) ->
           true
-      | Name (Name.Attribute { base; _ }) -> is_typing_callable (Node.value base)
+      | Name (Name.Attribute { base; _ }) -> is_typing_callable base
       | Call
           {
             callee =
               { Node.value = Name (Name.Attribute { base; attribute = "__getitem__"; _ }); _ };
             _;
           } ->
-          is_typing_callable (Node.value base)
-      | Call { callee; _ } -> is_typing_callable (Node.value callee)
+          is_typing_callable base
+      | Call { callee; _ } -> is_typing_callable callee
       | _ -> false
     in
     let parse_callable ~resolved_base ~subscript_index =
@@ -4016,9 +4019,8 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    let resolved_base_value = resolve_base (Node.value base) in
-    if is_typing_callable resolved_base_value then
-      let resolved_base = { base with Node.value = resolved_base_value } in
+    let resolved_base = resolve_base base in
+    if is_typing_callable resolved_base then
       Some (parse_callable ~resolved_base ~subscript_index)
     else
       None
