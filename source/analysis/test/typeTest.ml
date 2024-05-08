@@ -6241,81 +6241,61 @@ let test_parameter_create _ =
     ]
 
 
-let test_resolve_getitem_callee _ =
-  let open Expression in
-  let assert_resolved_getitem_callee ?(resolve_aliases = Fn.id) actual expected =
-    let parse_callee given =
-      match parse_single_expression given |> Node.value with
-      | Expression.Call { callee = { Node.value = callee; _ }; _ } -> callee
-      | _ -> failwith "expected Call"
+let test_resolve_alias_before_handling_callable _ =
+  let assert_resolved_getitem_callee ~resolve_aliases aliased bare =
+    let aliases ?replace_unbound_parameters_with_any:_ (annotation : string) =
+      Some (Type.TypeAlias (resolve_aliases annotation))
     in
     assert_equal
-      ~cmp:(fun left right ->
-        Expression.location_insensitive_compare
-          (Node.create_with_default_location left)
-          (Node.create_with_default_location right)
-        = 0)
-      ~printer:[%show: Expression.expression]
-      (parse_callee expected)
-      (Type.Callable.resolve_getitem_callee ~resolve_aliases (parse_callee actual))
+      ~cmp:Type.equal
+      ~printer:Type.show
+      (parse_single_expression bare |> Type.create ~aliases:Type.empty_aliases)
+      (parse_single_expression aliased |> Type.create ~aliases)
   in
-  assert_resolved_getitem_callee "NotAlias[int]" "NotAlias[int]";
-  assert_resolved_getitem_callee "typing.Callable[[int], str]" "typing.Callable[[int], str]";
-  assert_resolved_getitem_callee
-    "typing.Callable[[int], str][[int], str]"
-    "typing.Callable[[int], str][[int], str]";
-  assert_resolved_getitem_callee
-    "typing.Callable[[int], str][[int], str][[int], str]"
-    "typing.Callable[[int], str][[int], str][[int], str]";
 
   assert_resolved_getitem_callee
     ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
-      | annotation -> annotation)
+      | "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> Type.Primitive annotation)
     "bar.baz.Callable[[int], str]"
     "typing.Callable[[int], str]";
 
   assert_resolved_getitem_callee
     ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.Callable" ->
-          Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ()
-      | annotation -> annotation)
+      | "bar.baz.Callable" -> Type.Callable.create ~annotation:Type.Any ~parameters:Undefined ()
+      | annotation -> Type.Primitive annotation)
     "bar.baz.Callable[[int], str]"
     "typing.Callable[[int], str]";
 
   assert_resolved_getitem_callee
     ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.CallableAlias" ->
+      | "bar.baz.CallableAlias" ->
           Type.Callable.create
             ~annotation:Type.integer
             ~parameters:
               (Defined
                  [PositionalOnly { index = 0; annotation = Type.variable "T"; default = false }])
             ()
-      | annotation -> annotation)
+      | annotation -> Type.Primitive annotation)
     "bar.baz.CallableAlias[str]"
-    "bar.baz.CallableAlias[str]";
+    "typing.Callable[[str], int]";
 
   assert_resolved_getitem_callee
     ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
-      | annotation -> annotation)
+      | "bar.baz.Callable" -> Type.Primitive "typing.Callable"
+      | annotation -> Type.Primitive annotation)
     "bar.baz.Callable[[int], str][[int], str][[int], str]"
     "typing.Callable[[int], str][[int], str][[int], str]";
 
   assert_resolved_getitem_callee
-    ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
-      | annotation -> annotation)
+    ~resolve_aliases:(fun annotation -> Type.Primitive annotation)
     "not_an_alias.Callable[[int], str]"
-    "not_an_alias.Callable[[int], str]";
+    "not_an_alias.Callable";
 
   assert_resolved_getitem_callee
-    ~resolve_aliases:(function
-      | Type.Primitive "bar.baz.Callable" -> Type.Primitive "typing.Callable"
-      | annotation -> annotation)
+    ~resolve_aliases:(fun annotation -> Type.Primitive annotation)
     "Foo[int].Callable[[int], str]"
-    "Foo[int].Callable[[int], str]";
+    "Foo.Callable";
   ()
 
 
@@ -6729,7 +6709,7 @@ let () =
          "with_return_annotation" >:: test_with_return_annotation;
          "overload_parameters" >:: test_overload_parameters;
          "parameter_create" >:: test_parameter_create;
-         "resolve_getitem_callee" >:: test_resolve_getitem_callee;
+         "resolve_alias_before_handling_callable" >:: test_resolve_alias_before_handling_callable;
          "lift_readonly_for_container" >:: test_lift_readonly_if_possible;
        ]
   |> Test.run
