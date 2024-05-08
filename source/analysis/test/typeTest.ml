@@ -42,10 +42,8 @@ let test_create _ =
   assert_create
     "foo[bar, baz]"
     (Type.parametric "foo" ![Type.Primitive "bar"; Type.Primitive "baz"]);
-  assert_create "typing.List.__getitem__(int)" (Type.list Type.integer);
-  assert_create
-    "typing.Dict.__getitem__((int, str))"
-    (Type.dictionary ~key:Type.integer ~value:Type.string);
+  assert_create "typing.List[int]" (Type.list Type.integer);
+  assert_create "typing.Dict[int, str]" (Type.dictionary ~key:Type.integer ~value:Type.string);
 
   (* Type aliases in typeshed. *)
   assert_create "typing.Counter" (Type.Primitive "collections.Counter");
@@ -75,7 +73,6 @@ let test_create _ =
   assert_create "tuple" (Type.Primitive "tuple");
   assert_create "typing.Any" Type.Any;
   assert_create "typing.Optional[int]" (Type.optional Type.integer);
-  assert_create "typing.Optional.__getitem__(int)" (Type.optional Type.integer);
   assert_create "typing.Set[int]" (Type.set Type.integer);
   assert_create "typing.Union[int, str]" (Type.union [Type.integer; Type.string]);
   assert_create "typing.Union[int, typing.Any]" (Type.union [Type.integer; Type.Any]);
@@ -180,9 +177,6 @@ let test_create_callable _ =
   let open Type.Callable in
   assert_create "typing.Callable" (Type.Primitive "typing.Callable");
   assert_create "typing.Callable[..., int]" (Type.Callable.create ~annotation:Type.integer ());
-  assert_create
-    "typing.Callable.__getitem__((..., int))"
-    (Type.Callable.create ~annotation:Type.integer ());
   assert_create
     "typing.Callable[..., int][[..., str]]"
     (Type.Callable.create

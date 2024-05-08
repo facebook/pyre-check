@@ -3842,35 +3842,21 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
      return `Some callable_type` for the resulting `Type.t` value. Otherwise, return `None` (the
      caller will then parse the expression as a normal parametric type). *)
   let parse_callable_if_appropriate ~location ~callee_value ~getitem_call =
-    let rec resolve_getitem_callee callee =
-      match callee with
+    let rec resolve_base base_value =
+      match base_value with
       | Expression.Name
           (Name.Attribute
             {
-              base =
-                {
-                  Node.value =
-                    Name
-                      (Name.Attribute
-                        {
-                          base = { Node.value = Name (Name.Identifier "typing"); _ };
-                          attribute = "Callable";
-                          _;
-                        });
-                  _;
-                };
-              attribute = "__getitem__";
+              base = { Node.value = Name (Name.Identifier "typing"); _ };
+              attribute = "Callable";
               _;
             }) ->
-          callee
-      | Expression.Name
-          (Name.Attribute
-            ({ base = { Node.value = Name name; location } as base; attribute = "__getitem__"; _ }
-            as attribute)) ->
-          Ast.Expression.name_to_reference name
+          base_value
+      | Name base_name ->
+          Ast.Expression.name_to_reference base_name
           >>| Reference.show
-          >>| (fun name ->
-                match resolve_aliases (Primitive name) with
+          >>| (fun resolved_base_name ->
+                match resolve_aliases (Primitive resolved_base_name) with
                 | Primitive "typing.Callable"
                 | Callable
                     {
@@ -3881,30 +3867,41 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
                     Expression.Name
                       (Name.Attribute
                          {
-                           attribute with
-                           base =
-                             {
-                               base with
-                               Node.value =
-                                 Name
-                                   (Name.Attribute
-                                      {
-                                        base =
-                                          { Node.value = Name (Name.Identifier "typing"); location };
-                                        attribute = "Callable";
-                                        special = false;
-                                      });
-                             };
+                           base = { Node.value = Name (Name.Identifier "typing"); location };
+                           attribute = "Callable";
+                           special = false;
                          })
-                | _ -> callee)
-          |> Option.value ~default:callee
-      | Name (Name.Attribute ({ base = { Node.value = base; location }; _ } as attribute)) ->
-          Name
-            (Name.Attribute
-               { attribute with base = { Node.location; value = resolve_getitem_callee base } })
-      | Call ({ callee = { Node.value = callee; location }; _ } as call) ->
-          Call { call with callee = { Node.value = resolve_getitem_callee callee; location } }
-      | _ -> callee
+                | _ -> base_value)
+          |> Option.value ~default:base_value
+      | Call
+          ({
+             callee =
+               {
+                 Node.value =
+                   Name
+                     (Name.Attribute
+                       { base = subscript_base; attribute = "__getitem__"; special = true });
+                 _;
+               } as callee;
+             _;
+           } as call) ->
+          let resolved_callee =
+            let resolved_base =
+              { subscript_base with value = resolve_base (Node.value subscript_base) }
+            in
+            {
+              callee with
+              Node.value =
+                Expression.Name
+                  (Name.Attribute
+                     { base = resolved_base; attribute = "__getitem__"; special = true });
+            }
+          in
+          Call { call with callee = resolved_callee }
+      | Call ({ callee = { Node.value = callee_value; _ } as callee; _ } as call) ->
+          let resolved_callee = { callee with Node.value = resolve_base callee_value } in
+          Call { call with callee = resolved_callee }
+      | _ -> base_value
     in
 
     let rec is_typing_callable = function
@@ -4042,7 +4039,18 @@ let rec create_logic ~resolve_aliases ~variable_aliases { Node.value = expressio
       in
       Callable { kind; implementation; overloads }
     in
-    let resolved_callee = resolve_getitem_callee callee_value in
+    let resolved_callee =
+      match callee_value with
+      | Expression.Name (Name.Attribute { base; attribute = "__getitem__"; special = true }) ->
+          let resolved_base = { base with Node.value = resolve_base (Node.value base) } in
+          Expression.Name
+            (Name.Attribute { base = resolved_base; attribute = "__getitem__"; special = true })
+      | bad_callee ->
+          (* This case is not possible on legal type annotations, although it currently can be hit
+             if someone *explicitly* calls `__getitem__` (so that special = true won't match
+             above). *)
+          bad_callee
+    in
     if is_typing_callable resolved_callee then
       Some
         (parse_callable
