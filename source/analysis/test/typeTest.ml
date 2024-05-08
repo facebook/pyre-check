@@ -1533,23 +1533,21 @@ let test_expression _ =
   assert_expression (Type.Primitive "foo") "foo";
   assert_expression (Type.Primitive "...") "...";
   assert_expression (Type.Primitive "foo.bar") "foo.bar";
-  assert_expression (Type.parametric "foo.bar" ![Type.Primitive "baz"]) "foo.bar.__getitem__(baz)";
+  assert_expression (Type.parametric "foo.bar" ![Type.Primitive "baz"]) "foo.bar[baz]";
   assert_expression
     (Type.Tuple (Type.OrderedTypes.Concrete [Type.integer; Type.string]))
-    "typing.Tuple.__getitem__((int, str))";
+    "typing.Tuple[int, str]";
   assert_expression
     (Type.Tuple (Type.OrderedTypes.create_unbounded_concatenation Type.integer))
-    "typing.Tuple.__getitem__((int, ...))";
-  assert_expression (Type.parametric "list" ![Type.integer]) "typing.List.__getitem__(int)";
+    "typing.Tuple[int, ...]";
+  assert_expression (Type.parametric "list" ![Type.integer]) "typing.List[int]";
 
   (* Callables. *)
   let open Type.Callable in
-  assert_expression
-    (Type.Callable.create ~annotation:Type.integer ())
-    "typing.Callable.__getitem__((..., int))";
+  assert_expression (Type.Callable.create ~annotation:Type.integer ()) "typing.Callable[..., int]";
   assert_expression
     (Type.Callable.create ~name:!&"name" ~annotation:Type.integer ())
-    "typing.Callable.__getitem__((..., int))";
+    "typing.Callable[..., int]";
   assert_expression
     (Type.Callable.create
        ~overloads:
@@ -1570,7 +1568,7 @@ let test_expression _ =
             ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Named(__0, int), Named(__1, str)], int))";
+    "typing.Callable[[Named(__0, int), Named(__1, str)], int]";
   assert_expression
     (Type.Callable.create
        ~parameters:
@@ -1581,7 +1579,7 @@ let test_expression _ =
             ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Named(a, int), Named(b, str)], int))";
+    "typing.Callable[[Named(a, int), Named(b, str)], int]";
   assert_expression
     (Type.Callable.create
        ~parameters:
@@ -1589,7 +1587,7 @@ let test_expression _ =
             [Parameter.Named { name = "a"; annotation = Type.integer; default = true }])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Named(a, int, default)], int))";
+    "typing.Callable[[Named(a, int, default)], int]";
   assert_expression
     (Type.parametric
        "G"
@@ -1691,7 +1689,7 @@ let test_expression _ =
             ])
        ~annotation:Type.integer
        ())
-    "typing.Callable.__getitem__(([Variable(int, typing.Unpack[Ts], str)], int))";
+    "typing.Callable[[Variable(int, typing.Unpack[Ts], str)], int]";
 
   (* Compose *)
   let callable1 =
