@@ -1559,7 +1559,7 @@ let test_expression _ =
          ]
        ~annotation:Type.integer
        ())
-    "typing.Callable[(..., int)].__getitem__(__getitem__((..., str))[(..., int)])";
+    "typing.Callable[(..., int)][[..., str][..., int]]";
   assert_expression
     (Type.Callable.create
        ~parameters:

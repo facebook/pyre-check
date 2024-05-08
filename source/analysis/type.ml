@@ -2456,14 +2456,22 @@ let rec expression annotation =
     match annotation with
     | Bottom -> create_name "$bottom"
     | Callable { implementation; overloads; _ } -> (
-        let convert_signature { annotation; parameters; _ } =
-          {
-            Call.Argument.name = None;
-            value =
-              Node.create
-                ~location
-                (Expression.Tuple [callable_parameters_expression parameters; expression annotation]);
-          }
+        (* Pyre currently allows writing (and pretty-printing) overload types using a closed-form
+           expression written like `Callable[[Any], Any][[[str], str][[int],int]]`. *)
+        let convert_signature_as_leftmost_overload { annotation; parameters; _ } =
+          Node.create
+            ~location
+            (Expression.List [callable_parameters_expression parameters; expression annotation])
+        in
+        (* TODO(T101303314) Once we are using proper Subscript nodes, we should cut this over to
+           just returning `index_expression` and constructing a subscript node. *)
+        let convert_signature_as_argument { annotation; parameters; _ } =
+          let index_expression =
+            Node.create
+              ~location
+              (Expression.Tuple [callable_parameters_expression parameters; expression annotation])
+          in
+          { Call.Argument.name = None; value = index_expression }
         in
         let base_callable =
           Expression.Call
@@ -2480,20 +2488,13 @@ let rec expression annotation =
                            special = true;
                          });
                 };
-              arguments = [convert_signature implementation];
+              arguments = [convert_signature_as_argument implementation];
             }
         in
         let overloads =
           let convert_overload sofar overload =
             match sofar with
-            | None ->
-                Expression.Call
-                  {
-                    callee = { Node.location; value = Name (Name.Identifier "__getitem__") };
-                    arguments = [convert_signature overload];
-                  }
-                |> Node.create ~location
-                |> Option.some
+            | None -> Some (convert_signature_as_leftmost_overload overload)
             | Some expression ->
                 Expression.Call
                   {
@@ -2505,7 +2506,7 @@ let rec expression annotation =
                             (Name.Attribute
                                { base = expression; attribute = "__getitem__"; special = true });
                       };
-                    arguments = [convert_signature overload];
+                    arguments = [convert_signature_as_argument overload];
                   }
                 |> Node.create ~location
                 |> Option.some
